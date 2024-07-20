@@ -1,20 +1,4 @@
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, LoggingState, Map1, ReadState, RMap1, State, StateContract, TState};
-
-pub trait StateExt<T>: Into<TState<T>> + Clone
-where
-    T: StateContract,
-{
-    // /// Example: size.mapped(|t: &f64| { format!("{:.2}", t) })
-    // fn mapped<TO: StateContract + Default + 'static, M: Map<T, TO> + Clone>(
-    //     &self,
-    //     map: M,
-    // ) -> TState<TO> {
-    //     MapOwnedState::<T, TO>::new(self.clone(), move |s: &T, _: &_, _: &_| map(s)).into()
-    // }
-}
-
-impl<T: StateContract, U> StateExt<T> for U where U: Into<TState<T>> + Clone {}
-
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, LoggingState, Map1, ReadState, RMap1, State, StateContract};
 
 pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateContract {
     fn as_dyn(&self) -> Box<dyn AnyState<T=T>> {

@@ -1,4 +1,5 @@
 use std::time::Duration;
+use carbide::color::ColorExt;
 use carbide::draw::Color;
 use carbide::environment::IntoColorReadState;
 use carbide::state::{ReadStateExtNew, ReadStateExtTransition};
@@ -54,7 +55,7 @@ impl<L: ReadState<T=String>> PlainSwitchDelegate for SwitchDelegate<L> {
         let border_color = background_color
             .clone()
             .color()
-            .map(|a| a.lightened(0.08))
+            .lightened(0.08)
             .transition()
             .duration(transition_duration);
 

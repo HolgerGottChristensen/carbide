@@ -2,10 +2,12 @@ use cgmath::Matrix4;
 pub use render::*;
 pub use render_context::*;
 pub use style::*;
+pub use layer::*;
 
 mod render;
 mod render_context;
 mod style;
+mod layer;
 
 pub type CarbideTransform = Matrix4<f32>;
 

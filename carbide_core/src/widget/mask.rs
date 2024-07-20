@@ -6,7 +6,7 @@ use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
@@ -35,15 +35,10 @@ impl Mask<Empty, Empty> {
     }
 }
 
-impl<M: Widget, W: Widget> StateSync for Mask<M, W> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.child.capture_state(env);
-        self.mask.capture_state(env);
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.child.release_state(env);
-        self.mask.release_state(env);
+impl<M: Widget, W: Widget> WidgetSync for Mask<M, W> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.child.sync(env);
+        self.mask.sync(env);
     }
 }
 

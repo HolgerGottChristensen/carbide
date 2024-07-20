@@ -49,13 +49,21 @@ impl<T: StateContract> ConvertIntoRead<Option<T>> for T {
     }
 }
 
-impl ConvertIntoRead<u32> for i32 {
-    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&i32)->u32, i32, u32, G>;
+#[macro_export]
+macro_rules! impl_convert_into_read {
+    ($($typ_from: ty => $typ_to: ty),*) => {
+        $(
+        impl ConvertIntoRead<$typ_to> for $typ_from {
+            type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&$typ_from)->$typ_to, $typ_from, $typ_to, G>;
 
-    fn convert<F: AnyReadState<T=i32> + Clone>(f: F) -> Self::Output<F> {
-        Map1::read_map(f, |c| {
-            *c as u32
-        })
-    }
+            fn convert<F: AnyReadState<T=$typ_from> + Clone>(f: F) -> Self::Output<F> {
+                Map1::read_map(f, |c| {
+                    *c as $typ_to
+                })
+            }
+        }
+        )*
+    };
 }
 
+impl_convert_into_read!(i32 => u32, f64 => f32, f32 => f64);

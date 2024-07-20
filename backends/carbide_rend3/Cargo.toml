@@ -9,7 +9,7 @@ edition = "2021"
 rend3 = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "ed38b90a57ce62a2d90dc6b23309446ec0585e8c"}
 rend3-routine = { git = "https://github.com/BVE-Reborn/rend3.git", rev = "ed38b90a57ce62a2d90dc6b23309446ec0585e8c"}
 carbide_core = { path = "../../carbide_core" }
-wgpu = { version = "0.16.1" }
+wgpu.workspace = true
 futures = "0.3.21"
 image = "0.23"
 carbide_wgpu = { path = "../carbide_wgpu" }

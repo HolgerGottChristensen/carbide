@@ -1,55 +1,40 @@
-use carbide_core::state::AnyState;
 use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync, ReadState, State, StateContract, TState, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, StateSync, ReadState, StateContract, ValueRef};
 
 #[derive(Debug, Clone)]
-pub struct Flatten<T>
+pub struct FlattenedReadState<T, S, SS>
 where
     T: StateContract,
+    S: ReadState<T=T>,
+    SS: ReadState<T=S>,
 {
-    state: TState<TState<T>>,
-    current_inner: Option<TState<T>>,
+    state: SS,
+    current: Option<S>,
 }
 
-impl<T: StateContract> Flatten<T> {
+/*impl<T: StateContract> FlattenedReadState<T> {
     pub fn new(s: impl Into<TState<TState<T>>>) -> TState<T> {
         TState::new(Box::new(Flatten {
             state: s.into(),
             current_inner: None,
         }))
     }
-}
+}*/
 
-impl<T: StateContract> NewStateSync for Flatten<T> {
+impl<T: StateContract, S: ReadState<T=T>, SS: ReadState<T=S>> StateSync for FlattenedReadState<T, S, SS> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         if self.state.sync(env) {
-            self.current_inner = Some(self.state.value().clone());
-            self.current_inner.as_mut().unwrap().sync(env)
+            self.current = Some(self.state.value().clone());
+            self.current.as_mut().unwrap().sync(env)
         } else {
             false
         }
     }
 }
 
-impl<T: StateContract> AnyReadState for Flatten<T> {
+impl<T: StateContract, S: ReadState<T=T>, SS: ReadState<T=S>> AnyReadState for FlattenedReadState<T, S, SS> {
     type T = T;
     fn value_dyn(&self) -> ValueRef<T> {
-        self.current_inner
-            .as_ref()
-            .expect("Tried to get value without having synced first.")
-            .value()
-    }
-}
-
-impl<T: StateContract> AnyState for Flatten<T> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        panic!("You can not set the value of a map state this way. Please use the set_state macro instead")
-    }
-
-    fn set_value_dyn(&mut self, value: T) {
-        self.current_inner
-            .as_mut()
-            .expect("Tried to get value without having synced first.")
-            .set_value(value)
+        self.current.as_ref().unwrap().value()
     }
 }

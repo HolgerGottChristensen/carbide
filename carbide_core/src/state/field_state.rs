@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, NewStateSync, StateContract};
+use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, StateContract};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -15,7 +15,7 @@ use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 /// macro as this will do all the dirty work of creating the mapping functions provided you
 /// specify which field it should access.
 ///
-/// When [NewStateSync::sync()] events are received, it will delegate if further to the
+/// When [StateSync::sync()] events are received, it will delegate if further to the
 /// parent state, making sure the parent is up to date. FieldState does not need to handle sync
 /// itself.
 #[derive(Clone)]
@@ -49,7 +49,7 @@ impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> FieldState<S, FRO
     }
 }
 
-impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> NewStateSync for FieldState<S, FROM, TO> {
+impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> StateSync for FieldState<S, FROM, TO> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env)
     }
@@ -80,6 +80,15 @@ impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> Debug for FieldSt
         f.debug_struct("FieldState")
             .field("value", &*self.value())
             .finish()
+    }
+}
+
+impl<T: StateContract, S: State<T=FROM>, FROM: StateContract, TO: StateContract> Functor<T> for FieldState<S, FROM, TO> where FieldState<S, FROM, TO>: IntoReadState<T> {
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <FieldState<S, FROM, TO> as IntoReadState<T>>::Output>;
+
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }
 

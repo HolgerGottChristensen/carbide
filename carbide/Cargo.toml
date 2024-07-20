@@ -18,14 +18,18 @@ default = ["carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
 controls = ["carbide_controls"]
 media = ["carbide_media"]
 i18n = ["carbide_fluent"]
+3d = ["carbide_3d", "carbide_wgpu_3d"]
 
 [dependencies]
 carbide_core = { path = "../carbide_core" }
 carbide_macro = { path = "../carbide_macro", optional = true }
 carbide_controls = { path = "../carbide_controls", optional = true }
 carbide_wgpu = { path = "../backends/carbide_wgpu", optional = true }
+carbide_3d = { path = "../carbide_3d", optional = true }
+carbide_wgpu_3d = { path = "../backends/carbide_wgpu_3d", optional = true }
 carbide_media = { path = "../carbide_media", optional = true }
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true}
+ctor = "0.2.4"
 
 [dev-dependencies]
 carbide_controls = { path = "../carbide_controls" }

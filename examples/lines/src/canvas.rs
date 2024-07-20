@@ -1,6 +1,6 @@
 use carbide::draw::{Dimension, Position, Rect};
 use carbide::environment::{Environment, EnvironmentColor};
-use carbide::state::{LocalState, NewStateSync, State, ValueRefMut};
+use carbide::state::{LocalState, StateSync, State, ValueRefMut};
 use carbide::widget::canvas::{CanvasContext, Context};
 
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};

@@ -29,7 +29,6 @@ impl InnerImageContext for WGPUImageContext {
         BIND_GROUPS.with(|bind_groups| {
             let bind_groups = &mut *bind_groups.borrow_mut();
 
-            //println!("Update image called");
             let bind_group = create_bind_group(texture);
             bind_groups.insert(id, bind_group);
 

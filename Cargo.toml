@@ -15,6 +15,7 @@ members = [
     # "backends/carbide_rendy",
     # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
+    "backends/carbide_wgpu_3d",
     "backends/carbide_windows",
     "backends/carbide_rend3",
     "backends/carbide_text",
@@ -30,6 +31,9 @@ members = [
     "examples/othello",
     "examples/drawing_paths_and_shapes",
     "carbide",
+    "carbide_3d",
+    "examples/scene_viewer",
+
 ]
 
 [workspace.package]
@@ -43,3 +47,8 @@ raw-window-handle = "0.5"
 lyon = { path = "../Repositories/lyon/crates/lyon" }
 dashmap = "5.5.3"
 once_cell = "1.19.0"
+wgpu = "0.16.1"
+bitflags = "2.4.0"
+bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
+include_dir = "0.7.4"
+

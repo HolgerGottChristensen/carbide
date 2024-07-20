@@ -5,9 +5,10 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
 use crate::flags::WidgetFlag;
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, StateSync, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
@@ -94,7 +95,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
     }*/
 }
 
-impl<T, M, U, W, I> StateSync for ForEach<T, M, U, W, I>
+impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
     where
         T: StateContract,
         M: State<T=Vec<T>>,
@@ -102,7 +103,7 @@ impl<T, M, U, W, I> StateSync for ForEach<T, M, U, W, I>
         U: Delegate<T, W>,
         I: ReadState<T=usize>
 {
-    fn capture_state(&mut self, env: &mut carbide::environment::Environment) {
+    fn sync(&mut self, env: &mut Environment) {
         self.model.sync(env);
         self.index_offset.sync(env);
 
@@ -128,11 +129,6 @@ impl<T, M, U, W, I> StateSync for ForEach<T, M, U, W, I>
                 self.children.push(widget);
             }
         }
-    }
-
-    fn release_state(&mut self, env: &mut carbide::environment::Environment) {
-        self.model.sync(env);
-        self.index_offset.sync(env);
     }
 }
 

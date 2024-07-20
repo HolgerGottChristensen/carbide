@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, AnyState, StateContract};
-use crate::state::{NewStateSync, ReadState, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
+use crate::state::{StateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
 pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(TState, PhantomData<T>);
@@ -20,7 +20,7 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyReadState fo
     }
 }
 
-impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> NewStateSync for IgnoreWritesState<T, TState> {
+impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> StateSync for IgnoreWritesState<T, TState> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.0.sync(env)
     }
@@ -33,6 +33,15 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyState for Ig
 
     fn set_value_dyn(&mut self, _: T) {
         println!("WARNING: You are trying to set a state that is set to ignore writes");
+    }
+}
+
+impl<T: StateContract, V: StateContract, TState: ReadState<T=V> + Clone + 'static> Functor<T> for IgnoreWritesState<V, TState> where IgnoreWritesState<V, TState>: IntoReadState<T> {
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <IgnoreWritesState<V, TState> as IntoReadState<T>>::Output>;
+
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }
 

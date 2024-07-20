@@ -9,8 +9,8 @@ use crate::draw::pre_multiply::PreMultiply;
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, Style, RenderContext};
-use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget};
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget, WidgetSync};
 use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -19,8 +19,7 @@ use crate::widget::types::ScaleMode;
 pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style> {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
-    #[state]
-    pub image_id: Id,
+    #[state] image_id: Id,
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<C>,
@@ -184,7 +183,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<Id, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
 
         if let Some(color) = &mut self.color {
             color.sync(context.env);

@@ -6,9 +6,9 @@ use crate::draw::{Dimension, Position};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
-use crate::state::{IntoReadState, ReadState, StateSync};
+use crate::state::{IntoReadState, ReadState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::widget::types::Wrap;
 
 /// Displays some given text centered within a rectangular area.
@@ -225,7 +225,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Layout for Text<T, S, C, FS, FW> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.capture_state(ctx.env);
+        self.sync(ctx.env);
 
         ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
         self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
@@ -280,7 +280,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Render for Text<T, S, C, FS, FW> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
 
         let default_color = self.color.value();
 

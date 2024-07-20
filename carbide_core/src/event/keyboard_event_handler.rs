@@ -1,12 +1,12 @@
+use carbide::state::StateSync;
 use crate::draw::InnerImageContext;
 use crate::environment::Environment;
 use crate::event::{Key, ModifierKey};
 use crate::focus::Focusable;
-use crate::state::StateSync;
 use crate::text::InnerTextContext;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetSync};
 
-pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
+pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
     /// A function that will get called when a keyboard event occurs.
     /// This event will be given to all widgets, no matter if they are in focus or not.
     /// This is because the focus will be decided by the widgets themselves.
@@ -39,9 +39,8 @@ pub trait KeyboardEventHandler: CommonWidget + StateSync + Focusable {
         }*/
 
         if *ctx.is_current {
-            self.capture_state(ctx.env);
+            self.sync(ctx.env);
             self.handle_keyboard_event(event, ctx);
-            self.release_state(ctx.env);
         }
 
         self.foreach_child_direct(&mut |child| {

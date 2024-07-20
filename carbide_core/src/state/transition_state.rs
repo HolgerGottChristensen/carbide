@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use crate::animation::{Animatable, ease_in_out};
 use crate::environment::Environment;
-use crate::state::{AnyReadState, InnerState, NewStateSync, ReadState, StateContract, ValueCell, ValueRef};
+use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
 
 #[derive(Clone)]
 pub struct TransitionState<T, S>
@@ -93,7 +93,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Transition
     }*/
 }
 
-impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> NewStateSync for TransitionState<T, S> {
+impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync for TransitionState<T, S> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         let res = self.inner.sync(env);
 
@@ -161,6 +161,15 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> AnyReadSta
 impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Debug for TransitionState<T, S> {
     fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
+    }
+}
+
+impl<T: StateContract, V: StateContract + Animatable<V> + PartialEq, S: ReadState<T=V>> Functor<T> for TransitionState<V, S> where TransitionState<V, S>: IntoReadState<T> {
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <TransitionState<V, S> as IntoReadState<T>>::Output>;
+
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }
 

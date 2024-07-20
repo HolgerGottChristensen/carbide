@@ -1,12 +1,15 @@
 #![allow(unsafe_code)]
 
+use std::any::Any;
 use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use dyn_clone::DynClone;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
+use crate::state::AnyReadState;
 
 type BorrowFlag = isize;
 
@@ -179,6 +182,11 @@ impl Clone for BorrowRef<'_> {
         }
     }
 }
+
+pub trait Value: DynClone + Any {}
+dyn_clone::clone_trait_object!(Value);
+
+impl<T: Clone + Any> Value for T {}
 
 pub enum ValueRef<'a, T: 'a> {
     CellBorrow { value: &'a T, borrow: BorrowRef<'a> },

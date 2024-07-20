@@ -1,11 +1,10 @@
 use std::process::{Command, Stdio};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::widget::{Circle, CornerRadii, HStack, Image, Rectangle, RoundedRectangle, Text, VStack, WidgetExt, ZStack};
-use carbide_core::window::TWindow;
 use carbide_printpdf::Pdf;
 
 fn main() {
-    let mut pdf = Pdf::new("test_rectangle");
+    /*let mut pdf = Pdf::new("test_rectangle");
 
     //pdf.set_widgets(Rectangle::new().fill(EnvironmentColor::Red).frame(100.0, 100.0));
 
@@ -57,5 +56,5 @@ fn main() {
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .output()
-        .unwrap();
+        .unwrap();*/
 }

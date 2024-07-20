@@ -7,10 +7,12 @@ use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
 pub use application::Application;
 use carbide_core::draw::ImageId;
 pub use wgpu_window::WGPUWindow as Window;
+pub use render_target::RenderTarget;
 
 use crate::image::BindGroupExtended;
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
-use crate::application::{ADAPTER, DEVICE, INSTANCE, QUEUE};
+use crate::application::{ADAPTER, INSTANCE};
+pub use crate::application::{DEVICE, QUEUE};
 use crate::wgpu_window::BIND_GROUPS;
 
 mod bind_group_layouts;

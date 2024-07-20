@@ -1,9 +1,9 @@
 use std::fmt::{Debug, Formatter};
 
-use crate::state::state_sync::NewStateSync;
+use crate::state::state_sync::StateSync;
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, ReadState, StateContract, AnyState};
+use crate::state::{AnyReadState, ReadState, StateContract, AnyState, Functor, IntoReadState, RMap1, Fn2, Map1};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
@@ -25,7 +25,7 @@ impl<T: StateContract> StaticState<T> {
     }
 }
 
-impl<T: StateContract> NewStateSync for StaticState<T> {
+impl<T: StateContract> StateSync for StaticState<T> {
     fn sync(&mut self, _env: &mut Environment) -> bool {
         // TODO: find a smarter way to determine if static state has been updated.
         // I guess we can figuring it out by storing a frame number in the local state
@@ -57,5 +57,14 @@ impl<T: StateContract> Debug for StaticState<T> {
         f.debug_struct("StaticState")
             .field("value", &*self.value())
             .finish()
+    }
+}
+
+impl<T: StateContract, V: StateContract> Functor<T> for StaticState<V> where StaticState<V>: IntoReadState<T> {
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <StaticState<V> as IntoReadState<T>>::Output>;
+
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }

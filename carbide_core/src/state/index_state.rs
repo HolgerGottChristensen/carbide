@@ -2,10 +2,10 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 
-use carbide_core::state::{AnyState, NewStateSync};
+use carbide_core::state::{AnyState, StateSync};
 
 use crate::environment::Environment;
-use crate::state::{AnyReadState, ReadState, StateContract};
+use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, ReadState, RMap1, StateContract};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
@@ -83,7 +83,7 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
 */
 
 
-impl<T, U, Idx, ST, SIdx> NewStateSync for IndexState<T, U, Idx, ST, SIdx>
+impl<T, U, Idx, ST, SIdx> StateSync for IndexState<T, U, Idx, ST, SIdx>
 where
     T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
     U: StateContract,
@@ -149,6 +149,22 @@ where
     }
 }
 
+impl<T: StateContract, V, U, Idx, ST, SIdx> Functor<T> for IndexState<V, U, Idx, ST, SIdx>
+where
+    IndexState<V, U, Idx, ST, SIdx>: IntoReadState<T>,
+    V: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    U: StateContract,
+    Idx: StateContract,
+    ST: State<T=V> + Clone + 'static,
+    SIdx: ReadState<T=Idx> + Clone + 'static
+{
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <IndexState<V, U, Idx, ST, SIdx> as IntoReadState<T>>::Output>;
+
+    fn map<K: StateContract, F: Fn2<T, K>>(self, f: F) -> Self::Output<K, F> {
+        Map1::read_map(self.into_read_state(), f)
+    }
+}
 
 /*pub trait IndexableState<T, U, Idx>
 where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,

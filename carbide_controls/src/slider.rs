@@ -65,7 +65,7 @@ impl Slider {
     }
 
     fn thumb<V: SliderValue>(_state: Box<dyn AnyState<T=V>>, _start: Box<dyn AnyReadState<T=V>>, _end: Box<dyn AnyReadState<T=V>>, steps: Box<dyn AnyReadState<T=Option<V>>>, _focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>,) -> impl Widget {
-        let is_stepped = steps.map(|s| s.is_some());
+        let is_stepped = Map1::read_map(steps, |s| s.is_some());
 
         let thumb_color = Map1::read_map(enabled, |enabled| {
             if *enabled {

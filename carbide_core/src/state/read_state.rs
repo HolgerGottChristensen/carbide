@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
-use cgmath::Matrix4;
+use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::DynClone;
 use carbide::text::FontWeight;
 
@@ -12,7 +12,7 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::*;
-use crate::state::state_sync::NewStateSync;
+use crate::state::state_sync::StateSync;
 use crate::state::util::value_cell::ValueRef;
 use crate::text::FontStyle;
 use crate::widget::{EdgeInsets, Gradient};
@@ -29,7 +29,7 @@ pub trait ReadState: AnyReadState + Clone + IntoReadState<Self::T> + private::Se
 }
 
 /// The trait to implement for read-only state.
-pub trait AnyReadState: DynClone + NewStateSync + Debug + 'static {
+pub trait AnyReadState: DynClone + StateSync + Debug + 'static {
     type T: StateContract;
 
     fn value_dyn(&self) -> ValueRef<Self::T>;
@@ -39,7 +39,7 @@ pub trait AnyReadState: DynClone + NewStateSync + Debug + 'static {
 //  Implementations
 // ---------------------------------------------------
 
-impl<T: StateContract> NewStateSync for Box<dyn AnyReadState<T=T>> {
+impl<T: StateContract> StateSync for Box<dyn AnyReadState<T=T>> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }
@@ -90,52 +90,7 @@ mod private {
 
 
 
-
-
-impl<G> NewStateSync for Vec<G> {}
-impl<G: Debug + Clone + 'static> AnyReadState for Vec<G> {
-    type T = Vec<G>;
-    fn value_dyn(&self) -> ValueRef<Vec<G>> {
-        ValueRef::Borrow(self)
-    }
-}
-impl<G: Debug + Clone + 'static> AnyState for Vec<G> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Vec<G>> {
-        ValueRefMut::Borrow(Some(self))
-    }
-
-    fn set_value_dyn(&mut self, value: Vec<G>) {
-        *self = value;
-    }
-}
-
-
-impl<G> NewStateSync for Matrix4<G> {}
-impl<G: Debug + Clone + 'static> AnyReadState for Matrix4<G> {
-    type T = Matrix4<G>;
-    fn value_dyn(&self) -> ValueRef<Matrix4<G>> {
-        ValueRef::Borrow(self)
-    }
-}
-
-impl<G> NewStateSync for Option<G> {}
-impl<G: Debug + Clone + 'static> AnyReadState for Option<G> {
-    type T = Option<G>;
-    fn value_dyn(&self) -> ValueRef<Option<G>> {
-        ValueRef::Borrow(self)
-    }
-}
-impl<G: Debug + Clone + 'static> AnyState for Option<G> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Option<G>> {
-        ValueRefMut::Borrow(Some(self))
-    }
-
-    fn set_value_dyn(&mut self, value: Option<G>) {
-        *self = value;
-    }
-}
-
-impl<G: NewStateSync> NewStateSync for Box<G> {
+impl<G: StateSync> StateSync for Box<G> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }
@@ -147,7 +102,7 @@ impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> AnyReadState for Box
     }
 }
 
-impl<T, E> NewStateSync for Result<T, E> {}
+impl<T, E> StateSync for Result<T, E> {}
 impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyReadState for Result<T, E> {
     type T = Result<T, E>;
     fn value_dyn(&self) -> ValueRef<Result<T, E>> {
@@ -168,7 +123,7 @@ impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result
 macro_rules! impl_read_state {
     ($($typ: ty),*) => {
         $(
-        impl carbide_core::state::NewStateSync for $typ {
+        impl carbide_core::state::StateSync for $typ {
             fn sync(&mut self, _env: &mut carbide_core::environment::Environment) -> bool {
                 true
             }
@@ -222,3 +177,29 @@ impl IntoReadStateHelper<i32, i32, f64> for i32 {
         })
     }
 }*/
+
+#[macro_export]
+macro_rules! impl_read_state1 {
+    ($($typ: ident),*) => {
+        $(
+        impl<G> StateSync for $typ<G> {}
+        impl<G: Debug + Clone + 'static> AnyReadState for $typ<G> {
+            type T = $typ<G>;
+            fn value_dyn(&self) -> ValueRef<$typ<G>> {
+                ValueRef::Borrow(self)
+            }
+        }
+        impl<G: Debug + Clone + 'static> AnyState for $typ<G> {
+            fn value_dyn_mut(&mut self) -> ValueRefMut<$typ<G>> {
+                ValueRefMut::Borrow(Some(self))
+            }
+
+            fn set_value_dyn(&mut self, value: $typ<G>) {
+                *self = value;
+            }
+        }
+        )*
+    };
+}
+
+impl_read_state1!(Option, Vec, Matrix4, Matrix3, Matrix2, Vector1, Vector2, Vector3, Vector4);

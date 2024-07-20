@@ -66,6 +66,26 @@ var mask_texture: texture_2d<f32>;
 @group(4) @binding(1)
 var mask_sampler: sampler;
 
+@vertex
+fn main_vs(
+    @location(0) position: vec4<f32>,
+    @location(1) tex_coord: vec2<f32>,
+    @location(2) color: vec4<f32>,
+    @location(3) mode: u32,
+    @location(4) line_coords: vec4<f32>,
+    @location(5) line_utils: vec4<f32>,
+) -> VertexOutput {
+    var out: VertexOutput;
+    out.tex_coord = tex_coord;
+    out.position = uniforms.transform * position;
+    out.gradient_coord = position.xy;
+    out.color = color;
+    out.mode = mode;
+    out.line_coords = line_coords;
+    out.line_utils = line_utils;
+    return out;
+}
+
 @fragment
 fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let atlas_pixel = textureSample(atlas_texture, main_sampler, in.tex_coord);
@@ -195,26 +215,6 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(hsl_to_rgb(hsl) * a, a);
     }
     return vec4<f32>(hsl_to_rgb(hsl) * col.a, col.a);
-}
-
-@vertex
-fn main_vs(
-    @location(0) position: vec4<f32>,
-    @location(1) tex_coord: vec2<f32>,
-    @location(2) color: vec4<f32>,
-    @location(3) mode: u32,
-    @location(4) line_coords: vec4<f32>,
-    @location(5) line_utils: vec4<f32>,
-) -> VertexOutput {
-    var out: VertexOutput;
-    out.tex_coord = tex_coord;
-    out.position = uniforms.transform * position;
-    out.gradient_coord = position.xy;
-    out.color = color;
-    out.mode = mode;
-    out.line_coords = line_coords;
-    out.line_utils = line_utils;
-    return out;
 }
 
 fn cap(x: f32, y: f32, w: f32, ty: u32) -> bool {

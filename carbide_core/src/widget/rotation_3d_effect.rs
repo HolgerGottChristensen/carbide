@@ -4,8 +4,8 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
-use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
@@ -15,10 +15,8 @@ pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = Angle>, R2: ReadS
     position: Position,
     dimension: Dimension,
     anchor: Alignment,
-    #[state]
-    rotation_x: R1,
-    #[state]
-    rotation_y: R2,
+    #[state] rotation_x: R1,
+    #[state] rotation_y: R2,
     fov: f64,
 }
 
@@ -126,7 +124,7 @@ impl<R1: ReadState<T = Angle> + Clone, R2: ReadState<T = Angle> + Clone, C: Widg
 
 impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for Rotation3DEffect<R1, R2, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
         let fov = self.fov as f32;
         let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);

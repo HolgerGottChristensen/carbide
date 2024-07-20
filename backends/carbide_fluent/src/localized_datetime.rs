@@ -5,7 +5,7 @@ use fluent::types::{FluentDateTime, FluentDateTimeOptions, FluentNumber};
 use icu::locid::Locale;
 use carbide_core::environment::Environment;
 use carbide_core::impl_read_state;
-use carbide_core::state::{AnyReadState, IntoReadState, NewStateSync, ReadState, ValueRef, ValueState};
+use carbide_core::state::{AnyReadState, IntoReadState, StateSync, ReadState, ValueRef, ValueState};
 use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};
 use crate::locale_ext::LOCALE_IDENT;
@@ -68,7 +68,7 @@ impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadSt
     }
 }
 
-impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle>> NewStateSync for LocalizedDateTime<S, D, T, Tz> {
+impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle>> StateSync for LocalizedDateTime<S, D, T, Tz> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.datetime.sync(env);
         self.date_style.sync(env);

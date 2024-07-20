@@ -1,9 +1,8 @@
 use carbide_core::draw::{Dimension};
-use carbide_rend3::Scene3d;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new();
+    /*let mut application = Application::new();
 
     application.set_scene(
         Window::new(
@@ -15,5 +14,5 @@ fn main() {
         ).close_application_on_window_close()
     );
 
-    application.launch()
+    application.launch()*/
 }

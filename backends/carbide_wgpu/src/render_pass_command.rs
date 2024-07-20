@@ -1,4 +1,5 @@
 use carbide_core::draw::{Rect, ImageId, DrawGradient, StrokeDashPattern};
+use carbide_core::render::LayerId;
 use carbide_core::widget::FilterId;
 use crate::gradient::{Dashes, Gradient};
 
@@ -59,4 +60,5 @@ pub enum WGPUBindGroup {
     // Default,
     Image(ImageId),
     Target(usize),
+    Layer(LayerId)
 }

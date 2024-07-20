@@ -4,8 +4,8 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
-use crate::state::{IntoReadState, Map1, ReadState, StateSync, RMap1};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::state::{IntoReadState, Map1, ReadState, RMap1};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
@@ -157,7 +157,7 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
 
 impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
         let bounding_box = Rect::new(self.position, self.dimension);
         let matrix = *self.matrix.value();
 
@@ -229,9 +229,6 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
                 unimplemented!()
             }
         };
-
-
-        self.release_state(context.env);
 
         context.transform(new_transform, |this| {
             self.foreach_child_mut(&mut |child| {

@@ -2,8 +2,8 @@ use std::rc::Rc;
 
 use crate::environment::Environment;
 use crate::state::{
-    CacheRState, CacheTState, NewStateSync, ReadState, ReadWidgetState, RState, State,
-    StateContract, ValueRef, ValueRefMut, AnyReadState, AnyState, TState, WidgetState, InnerState, ValueCell,
+    StateSync, ReadState, State, Functor, IntoReadState, Fn2,
+    StateContract, ValueRef, ValueRefMut, AnyReadState, AnyState, InnerState, ValueCell,
 };
 
 macro_rules! tuple_state {
@@ -35,16 +35,6 @@ macro_rules! tuple_state {
                 }
             }
 
-            #[allow(unused_parens)]
-            pub fn read_map_cached<$($type: StateContract),*, TO: StateContract>($($name: impl Into<RState<$type>>),*, map: fn($($name: &$type),*) -> TO) -> RState<TO> {
-                let n = $read_map_name {
-                    $(
-                        $name: $name.into(),
-                    )*
-                    map,
-                };
-                CacheRState::new(ReadWidgetState::new(Box::new(n)))
-            }
 
             #[allow(unused_parens)]
             pub fn map<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static, REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE) -> $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
@@ -67,18 +57,6 @@ macro_rules! tuple_state {
                     map,
                     replace,
                 }
-            }
-
-            #[allow(unused_parens)]
-            pub fn map_cached<$($type: StateContract),*, TO: StateContract>($($name: impl Into<TState<$type>>),*, map: fn($($name: &$type),*) -> TO, replace: fn(TO, $($name: ValueRefMut<$type>),*)) -> TState<TO> {
-                let n = $map_name {
-                    $(
-                        $name: $name.into(),
-                    )*
-                    map,
-                    replace,
-                };
-                CacheTState::new(WidgetState::new(Box::new(n)))
             }
         }
 
@@ -132,9 +110,9 @@ macro_rules! tuple_state {
 
         #[derive(Clone)]
         #[allow(unused_parens)]
-        pub struct $env_map_name<MAP, $($type),*, TO: Default, $($type2),*> where
+        pub struct $env_map_name<MAP, $($type),*, TO, $($type2),*> where
             $($type: StateContract),*,
-            TO: StateContract,
+            TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
             MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
         {
@@ -145,6 +123,68 @@ macro_rules! tuple_state {
             value: TO,
         }
 
+        impl<
+            V: StateContract,
+            $($type: StateContract),*,
+            TO: StateContract,
+            $($type2: AnyState<T=$type> + Clone + 'static),*,
+            MAP: Fn($(&$type),*) -> TO + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
+        > Functor<V> for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> where $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*>: IntoReadState<V> {
+            // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+            type Output<G: StateContract, F: Fn2<V, G>> = RMap1<F, V, G, <$map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> as IntoReadState<V>>::Output>;
+
+            fn map<U: StateContract, F: Fn2<V, U>>(self, f: F) -> Self::Output<U, F> {
+                Map1::read_map(self.into_read_state(), f)
+            }
+        }
+
+        impl<
+            V: StateContract,
+            $($type: StateContract),*,
+            TO: StateContract,
+            $($type2: AnyState<T=$type> + Clone + 'static),*,
+            MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
+            REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
+        > Functor<V> for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> where $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*>: IntoReadState<V> {
+            // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+            type Output<G: StateContract, F: Fn2<V, G>> = RMap1<F, V, G, <$map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> as IntoReadState<V>>::Output>;
+
+            fn map<U: StateContract, F: Fn2<V, U>>(self, f: F) -> Self::Output<U, F> {
+                Map1::read_map(self.into_read_state(), f)
+            }
+        }
+
+        impl<
+            V: StateContract,
+            $($type: StateContract),*,
+            TO: StateContract,
+            $($type2: AnyReadState<T=$type> + Clone + 'static),*,
+            MAP: Fn($(&$type),*) -> TO + Clone + 'static
+        > Functor<V> for $read_map_name<MAP, $($type),*, TO, $($type2),*> where $read_map_name<MAP, $($type),*, TO, $($type2),*>: IntoReadState<V> {
+            // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+            type Output<G: StateContract, F: Fn2<V, G>> = RMap1<F, V, G, <$read_map_name<MAP, $($type),*, TO, $($type2),*> as IntoReadState<V>>::Output>;
+
+            fn map<U: StateContract, F: Fn2<V, U>>(self, f: F) -> Self::Output<U, F> {
+                Map1::read_map(self.into_read_state(), f)
+            }
+        }
+
+        impl<
+            V: StateContract,
+            $($type: StateContract),*,
+            TO: StateContract + Default,
+            $($type2: AnyReadState<T=$type> + Clone + 'static),*,
+            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+        > Functor<V> for $env_map_name<MAP, $($type),*, TO, $($type2),*> where $env_map_name<MAP, $($type),*, TO, $($type2),*>: IntoReadState<V> {
+            // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+            type Output<G: StateContract, F: Fn2<V, G>> = RMap1<F, V, G, <$env_map_name<MAP, $($type),*, TO, $($type2),*> as IntoReadState<V>>::Output>;
+
+            fn map<U: StateContract, F: Fn2<V, U>>(self, f: F) -> Self::Output<U, F> {
+                Map1::read_map(self.into_read_state(), f)
+            }
+        }
+
 
         /// Implement NewStateSync for the RMap
         impl<
@@ -152,7 +192,7 @@ macro_rules! tuple_state {
             TO: StateContract,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static
-        > NewStateSync for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
+        > StateSync for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
 
@@ -172,7 +212,7 @@ macro_rules! tuple_state {
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
             REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
-        > NewStateSync for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
+        > StateSync for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
 
@@ -192,7 +232,7 @@ macro_rules! tuple_state {
             $($type2: AnyState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
             REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
-        > NewStateSync for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
+        > StateSync for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 let mut updated = false;
 
@@ -211,7 +251,7 @@ macro_rules! tuple_state {
             TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
             MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
-        > NewStateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        > StateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn sync(&mut self, env: &mut Environment) -> bool {
                 $(
                     self.$name.sync(env);

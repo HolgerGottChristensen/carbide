@@ -2,17 +2,16 @@ use crate::draw::{Dimension, InnerImageContext, Position, Scalar};
 use crate::environment::Environment;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetSync};
 
-pub trait WindowEventHandler: CommonWidget + StateSync {
+pub trait WindowEventHandler: CommonWidget + WidgetSync {
     #[allow(unused_variables)]
     fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {}
 
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         if *ctx.is_current {
-            self.capture_state(ctx.env);
+            self.sync(ctx.env);
             self.handle_window_event(event, ctx);
-            self.release_state(ctx.env);
         }
 
         self.foreach_child_direct(&mut |child| {

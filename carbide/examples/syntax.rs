@@ -1,11 +1,11 @@
 use carbide_macro::{CarbideUI, gen_optionals};
 use carbide::cursor::MouseCursor;
-use carbide::state::{State, TState};
+use carbide::state::{State};
 use carbide_controls::Button;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::environment::EnvironmentFontSize;
-use carbide_core::state::{LocalState, ReadState, StateExt};
+use carbide_core::state::{LocalState, ReadState};
 use carbide_core::widget::*;
 use carbide_core::task;
 use carbide_wgpu::{Application, Window};

@@ -49,7 +49,7 @@ pub trait AnyState: AnyReadState {
 // ---------------------------------------------------
 //  Implementations
 // ---------------------------------------------------
-impl<T: StateContract> NewStateSync for Box<dyn AnyState<T=T>> {
+impl<T: StateContract> StateSync for Box<dyn AnyState<T=T>> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }

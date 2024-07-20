@@ -16,7 +16,7 @@ use rand::Rng;
 
 use crate::animation::Animatable;
 use crate::render::Style;
-use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
+use crate::state::{AnyReadState, ConvertIntoRead, Functor, Map1, RMap1};
 use crate::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
@@ -201,306 +201,6 @@ impl Color {
         )
     }
 
-    /// The percent should be between 0 and 1.
-    /// Lighting with negative values will darken the color.
-    pub fn lightened(self, percent: f32) -> Color {
-        let Hsla(h, s, l, a) = self.to_hsl();
-        Color::Hsla(h, s, clampf32(l + percent), a)
-    }
-
-    /// The percent should be between 0 and 1.
-    /// Darkening with negative values will lighten the color.
-    pub fn darkened(self, percent: f32) -> Color {
-        let Hsla(h, s, l, a) = self.to_hsl();
-        Color::Hsla(h, s, clampf32(l - percent), a)
-    }
-
-    /// Produce a complementary color. The two colors will accent each other. This is the same as
-    /// rotating the hue by 180 degrees.
-    pub fn complement(self) -> Color {
-        match self {
-            Color::Hsla(h, s, l, a) => hsla(h + f32::to_radians(180.0), s, l, a),
-            Color::Rgba(r, g, b, a) => {
-                let (h, s, l) = rgb_to_hsl(r, g, b);
-                hsla(h + f32::to_radians(180.0), s, l, a)
-            }
-        }
-    }
-
-    /// Return either black or white, depending which contrasts the Color the most. This will be
-    /// useful for determining a readable color for text on any given background Color.
-    pub fn plain_contrast(self) -> Color {
-        match self {
-            Color::Hsla(h, s, l, _) => {
-                let (r, g, b) = hsl_to_rgb(h, s, l);
-                rgb(r, g, b).plain_contrast()
-            }
-            Color::Rgba(r, g, b, _) => {
-                let l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                if l > 0.5 {
-                    BLACK
-                } else {
-                    WHITE
-                }
-            }
-        }
-    }
-
-    /// Extract the components of a color in the HSL format.
-    pub fn to_hsl(self) -> Hsla {
-        match self {
-            Color::Hsla(h, s, l, a) => Hsla(h, s, l, a),
-            Color::Rgba(r, g, b, a) => {
-                let (h, s, l) = rgb_to_hsl(r, g, b);
-                Hsla(h, s, l, a)
-            }
-        }
-    }
-
-    /// Extract the components of a color in the RGB format.
-    pub fn to_rgb(self) -> Rgba {
-        match self {
-            Color::Rgba(r, g, b, a) => Rgba(r, g, b, a),
-            Color::Hsla(h, s, l, a) => {
-                let (r, g, b) = hsl_to_rgb(h, s, l);
-                Rgba(r, g, b, a)
-            }
-        }
-    }
-
-    /// Pre multiply the color. https://microsoft.github.io/Win2D/WinUI3/html/PremultipliedAlpha.htm
-    pub fn pre_multiply(self) -> Self {
-        let Rgba(r, g, b, a) = self.to_rgb();
-        Color::Rgba(r * a, g * a, b * a, a)
-    }
-
-    /// Extract the components of a color in the RGB format within a fixed-size array.
-    pub fn to_fsa(self) -> [f32; 4] {
-        let Rgba(r, g, b, a) = self.to_rgb();
-        [r, g, b, a]
-    }
-
-    /// Same as `to_fsa`, except r, g, b and a are represented in byte form.
-    pub fn to_byte_fsa(self) -> [u8; 4] {
-        let Rgba(r, g, b, a) = self.to_rgb();
-        [
-            f32_to_byte(r),
-            f32_to_byte(g),
-            f32_to_byte(b),
-            f32_to_byte(a),
-        ]
-    }
-
-    // /// Return the hex representation of this color in the format #RRGGBBAA
-    // /// e.g. `Color(1.0, 0.0, 5.0, 1.0) == "#FF0080FF"`
-    // pub fn to_hex(self) -> String {
-    //     let vals = self.to_byte_fsa();
-    //     let hex = vals.to_hex().to_ascii_uppercase();
-    //     format!("#{}", &hex)
-    // }
-
-    /// Calculate and return the luminance of the Color.
-    pub fn luminance(&self) -> f32 {
-        match *self {
-            Color::Rgba(r, g, b, _) => (r + g + b) / 3.0,
-            Color::Hsla(_, _, l, _) => l,
-        }
-    }
-
-    /// Return the same color but with the given luminance.
-    pub fn with_luminance(self, l: f32) -> Color {
-        let Hsla(h, s, _, a) = self.to_hsl();
-        Color::Hsla(h, s, l, a)
-    }
-
-    /// Return the same color but with the alpha multiplied by the given alpha.
-    pub fn alpha(self, alpha: f32) -> Color {
-        match self {
-            Color::Rgba(r, g, b, a) => Color::Rgba(r, g, b, a * alpha),
-            Color::Hsla(h, s, l, a) => Color::Hsla(h, s, l, a * alpha),
-        }
-    }
-
-    /// Return the same color but with the given alpha.
-    pub fn with_alpha(self, a: f32) -> Color {
-        match self {
-            Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
-            Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
-        }
-    }
-
-    /// Return the opacity of the color.
-    pub fn opacity(self) -> f32 {
-        match self {
-            Color::Rgba(_, _, _, a) => a,
-            Color::Hsla(_, _, _, a) => a,
-        }
-    }
-
-    /// Return the same color but with the given opacity/alpha.
-    pub fn with_opacity(self, a: f32) -> Color {
-        match self {
-            Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
-            Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
-        }
-    }
-
-    /// Return a highlighted version of the current Color.
-    pub fn highlighted(self) -> Color {
-        let luminance = self.luminance();
-        let Rgba(r, g, b, a) = self.to_rgb();
-        let (r, g, b) = {
-            if luminance > 0.8 {
-                (r - 0.2, g - 0.2, b - 0.2)
-            } else if luminance < 0.2 {
-                (r + 0.2, g + 0.2, b + 0.2)
-            } else {
-                (
-                    clampf32((1.0 - r) * 0.5 * r + r),
-                    clampf32((1.0 - g) * 0.1 * g + g),
-                    clampf32((1.0 - b) * 0.1 * b + b),
-                )
-            }
-        };
-        let a = clampf32((1.0 - a) * 0.5 + a);
-        rgba(r, g, b, a)
-    }
-
-    /// Return a clicked version of the current Color.
-    pub fn clicked(&self) -> Color {
-        let luminance = self.luminance();
-        let Rgba(r, g, b, a) = self.to_rgb();
-        let (r, g, b) = {
-            if luminance > 0.8 {
-                (r, g - 0.2, b - 0.2)
-            } else if luminance < 0.2 {
-                (r + 0.4, g + 0.2, b + 0.2)
-            } else {
-                (
-                    clampf32((1.0 - r) * 0.75 + r),
-                    clampf32((1.0 - g) * 0.25 + g),
-                    clampf32((1.0 - b) * 0.25 + b),
-                )
-            }
-        };
-        let a = clampf32((1.0 - a) * 0.75 + a);
-        rgba(r, g, b, a)
-    }
-
-    /// Return the Color's invert.
-    pub fn invert(self) -> Color {
-        let Rgba(r, g, b, a) = self.to_rgb();
-        rgba((r - 1.0).abs(), (g - 1.0).abs(), (b - 1.0).abs(), a)
-    }
-
-    /// Return the red component. The value returned should be between 0.0 and 1.0
-    pub fn red(&self) -> f32 {
-        let Rgba(r, _, _, _) = self.to_rgb();
-        r
-    }
-
-    /// Return the same color but with the given red component.
-    /// The value provided should be between 0.0 and 1.0
-    pub fn with_red(self, r: f32) -> Color {
-        debug_assert!(
-            (0.0 <= r && r <= 1.0),
-            "The value r={} should be [0.0, 1.0]",
-            r
-        );
-        let Rgba(_, g, b, a) = self.to_rgb();
-        rgba(r, g, b, a)
-    }
-
-    /// Return the green value. The value returned should be between 0.0 and 1.0
-    pub fn green(&self) -> f32 {
-        let Rgba(_, g, _, _) = self.to_rgb();
-        g
-    }
-
-    /// Return the same color but with the given green component.
-    /// The value provided should be between 0.0 and 1.0
-    pub fn with_green(self, g: f32) -> Color {
-        debug_assert!(
-            (0.0 <= g && g <= 1.0),
-            "The value g={} should be [0.0, 1.0]",
-            g
-        );
-        let Rgba(r, _, b, a) = self.to_rgb();
-        rgba(r, g, b, a)
-    }
-
-    /// Return the blue value. The value returned should be between 0.0 and 1.0
-    pub fn blue(&self) -> f32 {
-        let Rgba(_, _, b, _) = self.to_rgb();
-        b
-    }
-
-    /// Return the same color but with the given green component.
-    /// The value provided should be between 0.0 and 1.0
-    pub fn with_blue(self, b: f32) -> Color {
-        debug_assert!(
-            (0.0 <= b && b <= 1.0),
-            "The value b={} should be [0.0, 1.0]",
-            b
-        );
-        let Rgba(r, g, _, a) = self.to_rgb();
-        rgba(r, g, b, a)
-    }
-
-    /// Return the hue value. The value returned should be between 0.0 and 1.0
-    pub fn hue(&self) -> f32 {
-        let Hsla(h, _, _, _) = self.to_hsl();
-        h
-    }
-
-    /// Return the same color but with the given hue.
-    /// The value returned should be between 0.0 and 1.0
-    pub fn with_hue(self, h: f32) -> Color {
-        debug_assert!(
-            (0.0 <= h && h <= 1.0),
-            "The value h={} should be [0.0, 1.0]",
-            h
-        );
-        let Hsla(_, s, l, a) = self.to_hsl();
-        hsla(h, s, l, a)
-    }
-
-    /// Return the saturation value. The value returned should be between 0.0 and 1.0
-    pub fn saturation(&self) -> f32 {
-        let Hsla(_, s, _, _) = self.to_hsl();
-        s
-    }
-
-    /// Return the same color but with the given saturation.
-    /// The value returned should be between 0.0 and 1.0
-    pub fn with_saturation(self, s: f32) -> Color {
-        debug_assert!(
-            (0.0 <= s && s <= 1.0),
-            "The value s={} should be [0.0, 1.0]",
-            s
-        );
-        let Hsla(h, _, l, a) = self.to_hsl();
-        hsla(h, s, l, a)
-    }
-
-    /// Return the lightness value. The value returned should be between 0.0 and 1.0
-    pub fn lightness(&self) -> f32 {
-        let Hsla(_, s, _, _) = self.to_hsl();
-        s
-    }
-
-    /// Return the same color but with the given lightness.
-    /// The value returned should be between 0.0 and 1.0
-    pub fn with_lightness(self, l: f32) -> Color {
-        debug_assert!(
-            (0.0 <= l && l <= 1.0),
-            "The value l={} should be [0.0, 1.0]",
-            l
-        );
-        let Hsla(h, s, _, a) = self.to_hsl();
-        hsla(h, s, l, a)
-    }
-
     /// Set the red value.
     /// Notice: This will mutate self. Use [Self::with_red()] for a pure function.
     pub fn set_red(&mut self, r: f32) {
@@ -520,21 +220,6 @@ impl Color {
     pub fn set_blue(&mut self, b: f32) {
         let Rgba(r, g, _, a) = self.to_rgb();
         *self = rgba(r, g, b, a);
-    }
-
-    pub fn gamma_srgb_to_linear(&self) -> Color {
-        let rgba = self.to_rgb();
-
-        fn component(f: f32) -> f32 {
-            // Taken from https://github.com/PistonDevelopers/graphics/src/color.rs#L42
-            if f <= 0.04045 {
-                f / 12.92
-            } else {
-                ((f + 0.055) / 1.055).powf(2.4)
-            }
-        }
-
-        Color::Rgba(component(rgba.0), component(rgba.1), component(rgba.2), rgba.3)
     }
 }
 
@@ -725,6 +410,365 @@ pub const DARK_CHARCOAL: Color = make_color!(46, 52, 54);
 /// Transparent
 pub const TRANSPARENT: Color = Color::Rgba(0.0, 0.0, 0.0, 0.0);
 
+
+
+
+// ---------------------------------------------------
+//  Conversion implementations
+// ---------------------------------------------------
+
+impl ConvertIntoRead<Style> for Color {
+    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&Color)->Style, Color, Style, G>;
+
+    fn convert<F: AnyReadState<T=Color> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |c| {
+            Style::Color(*c)
+        })
+    }
+}
+
+// ---------------------------------------------------
+//  Method implementations
+// ---------------------------------------------------
+
+pub trait ColorExt: Functor<Color> + Sized {
+    /// Return the red component. The value returned should be between 0.0 and 1.0
+    fn red(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Rgba(r, _, _, _) = color.to_rgb();
+            r
+        })
+    }
+
+    /// Return the green value. The value returned should be between 0.0 and 1.0
+    fn green(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Rgba(_, g, _, _) = color.to_rgb();
+            g
+        })
+    }
+
+    /// Return the blue value. The value returned should be between 0.0 and 1.0
+    fn blue(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Rgba(_, _, b, _) = color.to_rgb();
+            b
+        })
+    }
+
+    /// Return the opacity of the color.
+    fn opacity(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            match *color {
+                Color::Rgba(_, _, _, a) => a,
+                Color::Hsla(_, _, _, a) => a,
+            }
+        })
+    }
+
+    /// Calculate and return the luminance of the Color.
+    fn luminance(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            match *color {
+                Color::Rgba(r, g, b, _) => (r + g + b) / 3.0,
+                Color::Hsla(_, _, l, _) => l,
+            }
+        })
+    }
+
+    /// Return the same color but with the alpha multiplied by the given alpha.
+    fn alpha(self, alpha: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            match *color {
+                Color::Rgba(r, g, b, a) => Color::Rgba(r, g, b, a * alpha),
+                Color::Hsla(h, s, l, a) => Color::Hsla(h, s, l, a * alpha),
+            }
+        })
+    }
+
+    /// Return the Color's invert.
+    fn invert(self) -> Self::Output<Color, fn(&Color)->Color> {
+        self.map(|color| {
+            let Rgba(r, g, b, a) = color.to_rgb();
+            rgba((r - 1.0).abs(), (g - 1.0).abs(), (b - 1.0).abs(), a)
+        })
+    }
+
+    /// Return the hue value. The value returned should be between 0.0 and 1.0
+    fn hue(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Hsla(h, _, _, _) = color.to_hsl();
+            h
+        })
+    }
+
+    /// Return the saturation value. The value returned should be between 0.0 and 1.0
+    fn saturation(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Hsla(_, s, _, _) = color.to_hsl();
+            s
+        })
+    }
+
+    /// Return the lightness value. The value returned should be between 0.0 and 1.0
+    fn lightness(self) -> Self::Output<f32, fn(&Color)->f32> {
+        self.map(|color| {
+            let Hsla(_, s, _, _) = color.to_hsl();
+            s
+        })
+    }
+
+    /// The percent should be between 0 and 1.
+    /// Lighting with negative values will darken the color.
+    fn lightened(self, percent: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            let Hsla(h, s, l, a) = color.to_hsl();
+            Color::Hsla(h, s, clampf32(l + percent), a)
+        })
+    }
+
+    /// The percent should be between 0 and 1.
+    /// Darkening with negative values will lighten the color.
+    fn darkened(self, percent: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            let Hsla(h, s, l, a) = color.to_hsl();
+            Color::Hsla(h, s, clampf32(l - percent), a)
+        })
+    }
+
+    /// Produce a complementary color. The two colors will accent each other. This is the same as
+    /// rotating the hue by 180 degrees.
+    fn complement(self) -> Self::Output<Color, fn(&Color)->Color> {
+        self.map(|color| {
+            match *color {
+                Color::Hsla(h, s, l, a) => hsla(h + f32::to_radians(180.0), s, l, a),
+                Color::Rgba(r, g, b, a) => {
+                    let (h, s, l) = rgb_to_hsl(r, g, b);
+                    hsla(h + f32::to_radians(180.0), s, l, a)
+                }
+            }
+        })
+    }
+
+    /// Return either black or white, depending which contrasts the Color the most. This will be
+    /// useful for determining a readable color for text on any given background Color.
+    fn plain_contrast(self) -> Self::Output<Color, fn(&Color)->Color> {
+        self.map(|color| {
+            match *color {
+                Color::Hsla(h, s, l, _) => {
+                    let (r, g, b) = hsl_to_rgb(h, s, l);
+                    rgb(r, g, b).plain_contrast()
+                }
+                Color::Rgba(r, g, b, _) => {
+                    let l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    if l > 0.5 {
+                        BLACK
+                    } else {
+                        WHITE
+                    }
+                }
+            }
+        })
+    }
+
+    /// Extract the components of a color in the HSL format.
+    fn to_hsl(self) -> Self::Output<Hsla, fn(&Color)->Hsla> {
+        self.map(|color| {
+            match *color {
+                Color::Hsla(h, s, l, a) => Hsla(h, s, l, a),
+                Color::Rgba(r, g, b, a) => {
+                    let (h, s, l) = rgb_to_hsl(r, g, b);
+                    Hsla(h, s, l, a)
+                }
+            }
+        })
+    }
+
+    /// Extract the components of a color in the RGB format.
+    fn to_rgb(self) -> Self::Output<Rgba, fn(&Color)->Rgba> {
+        self.map(|color| {
+            match *color {
+                Color::Rgba(r, g, b, a) => Rgba(r, g, b, a),
+                Color::Hsla(h, s, l, a) => {
+                    let (r, g, b) = hsl_to_rgb(h, s, l);
+                    Rgba(r, g, b, a)
+                }
+            }
+        })
+    }
+
+    /// Pre multiply the color. https://microsoft.github.io/Win2D/WinUI3/html/PremultipliedAlpha.htm
+    fn pre_multiply(self) -> Self::Output<Color, fn(&Color)->Color> {
+        self.map(|color| {
+            let Rgba(r, g, b, a) = color.to_rgb();
+            Color::Rgba(r * a, g * a, b * a, a)
+        })
+    }
+
+    /// Extract the components of a color in the RGB format within a fixed-size array.
+    fn to_fsa(self) -> Self::Output<[f32; 4], fn(&Color)->[f32; 4]> {
+        self.map(|color| {
+            let Rgba(r, g, b, a) = color.to_rgb();
+            [r, g, b, a]
+        })
+    }
+
+    /// Same as `to_fsa`, except r, g, b and a are represented in byte form.
+    fn to_byte_fsa(self) -> Self::Output<[u8; 4], fn(&Color)->[u8; 4]> {
+        self.map(|color| {
+            let Rgba(r, g, b, a) = color.to_rgb();
+            [
+                f32_to_byte(r),
+                f32_to_byte(g),
+                f32_to_byte(b),
+                f32_to_byte(a),
+            ]
+        })
+    }
+
+    fn gamma_srgb_to_linear(self) -> Self::Output<Color, fn(&Color)->Color> {
+        self.map(|color| {
+            let rgba = color.to_rgb();
+
+            fn component(f: f32) -> f32 {
+                // Taken from https://github.com/PistonDevelopers/graphics/src/color.rs#L42
+                if f <= 0.04045 {
+                    f / 12.92
+                } else {
+                    ((f + 0.055) / 1.055).powf(2.4)
+                }
+            }
+
+            Color::Rgba(component(rgba.0), component(rgba.1), component(rgba.2), rgba.3)
+        })
+    }
+
+    /// Return the same color but with the given luminance.
+    fn with_luminance(self, l: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            let Hsla(h, s, _, a) = color.to_hsl();
+            Color::Hsla(h, s, l, a)
+        })
+    }
+
+    /// Return the same color but with the given alpha.
+    fn with_alpha(self, a: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            match *color {
+                Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
+                Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
+            }
+        })
+    }
+
+    /// Return the same color but with the given opacity/alpha.
+    fn with_opacity(self, a: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            match *color {
+                Color::Rgba(r, g, b, _) => Color::Rgba(r, g, b, a),
+                Color::Hsla(h, s, l, _) => Color::Hsla(h, s, l, a),
+            }
+        })
+
+    }
+
+    /// Return the same color but with the given red component.
+    /// The value provided should be between 0.0 and 1.0
+    fn with_red(self, r: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= r && r <= 1.0),
+                "The value r={} should be [0.0, 1.0]",
+                r
+            );
+            let Rgba(_, g, b, a) = color.to_rgb();
+            rgba(r, g, b, a)
+        })
+
+    }
+
+    /// Return the same color but with the given green component.
+    /// The value provided should be between 0.0 and 1.0
+    fn with_green(self, g: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= g && g <= 1.0),
+                "The value g={} should be [0.0, 1.0]",
+                g
+            );
+            let Rgba(r, _, b, a) = color.to_rgb();
+            rgba(r, g, b, a)
+        })
+    }
+
+    /// Return the same color but with the given green component.
+    /// The value provided should be between 0.0 and 1.0
+    fn with_blue(self, b: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= b && b <= 1.0),
+                "The value b={} should be [0.0, 1.0]",
+                b
+            );
+            let Rgba(r, g, _, a) = color.to_rgb();
+            rgba(r, g, b, a)
+        })
+    }
+
+    /// Return the same color but with the given hue.
+    /// The value returned should be between 0.0 and 1.0
+    fn with_hue(self, h: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= h && h <= 1.0),
+                "The value h={} should be [0.0, 1.0]",
+                h
+            );
+            let Hsla(_, s, l, a) = color.to_hsl();
+            hsla(h, s, l, a)
+        })
+    }
+
+    /// Return the same color but with the given saturation.
+    /// The value returned should be between 0.0 and 1.0
+    fn with_saturation(self, s: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= s && s <= 1.0),
+                "The value s={} should be [0.0, 1.0]",
+                s
+            );
+            let Hsla(h, _, l, a) = color.to_hsl();
+            hsla(h, s, l, a)
+        })
+    }
+
+    /// Return the same color but with the given lightness.
+    /// The value returned should be between 0.0 and 1.0
+    fn with_lightness(self, l: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
+        self.map(move |color| {
+            debug_assert!(
+                (0.0 <= l && l <= 1.0),
+                "The value l={} should be [0.0, 1.0]",
+                l
+            );
+            let Hsla(h, s, _, a) = color.to_hsl();
+            hsla(h, s, l, a)
+        })
+    }
+
+    /// Return the hex representation of this color in the format #RRGGBBAA
+    /// e.g. `RGBA(1.0, 0.0, 0.5, 1.0) == "#FF0080FF"`
+    fn hex(self) -> Self::Output<String, impl Fn(&Color)->String + Clone + 'static> {
+        self.map(|color| {
+            let vals = color.to_byte_fsa();
+            format!("#{:02X?}{:02X?}{:02X?}{:02X?}", vals[0], vals[1], vals[2], vals[3])
+        })
+    }
+}
+
+impl<T: Functor<Color> + Sized> ColorExt for T {}
+
 #[test]
 fn plain_contrast_should_weight_colors() {
     // Contrast tests.
@@ -761,42 +805,3 @@ fn plain_contrast_should_weight_colors() {
     assert_eq!(g, 1.0);
     assert_eq!(b, 1.0);
 }
-
-
-// ---------------------------------------------------
-//  Conversion implementations
-// ---------------------------------------------------
-
-impl ConvertIntoRead<Style> for Color {
-    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&Color)->Style, Color, Style, G>;
-
-    fn convert<F: AnyReadState<T=Color> + Clone>(f: F) -> Self::Output<F> {
-        Map1::read_map(f, |c| {
-            Style::Color(*c)
-        })
-    }
-}
-
-
-/*trait ColorStateExt: ReadState<T=Color> {
-    fn darkened1<T: IntoReadState<f32>>(&self, percent: T) -> Box<dyn AnyReadState<T=Color>> {
-        Box::new(Map2::read_map(self.clone(), percent.into_read_state(), |col, percent| {
-            col.darkened(*percent)
-        }))
-    }
-}
-impl<T: ReadState<T=Color>> ColorStateExt for T {}*/
-
-
-
-/*impl<T> IntoReadStateHelper<T, Color, Style> for T where T: AnyReadState<T=Color> + Clone {
-    type Output = RMap1<fn(&Color)->Style, Color, Style, T>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
-            Style::Color(*c)
-        })
-    }
-}*/
-
-

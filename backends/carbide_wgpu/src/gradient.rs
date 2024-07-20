@@ -1,3 +1,4 @@
+use carbide_core::color::ColorExt;
 use carbide_core::draw::{ColorSpace, DrawGradient};
 use carbide_core::widget::{GradientRepeat, GradientType};
 

@@ -5,7 +5,7 @@ use carbide::{Application, Window};
 use carbide::controls::{Button, Slider, TextInput};
 use carbide::draw::{Dimension, Position, Scalar};
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExt};
+use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State};
 use carbide::widget::*;
 use carbide::widget::canvas::Canvas;
 

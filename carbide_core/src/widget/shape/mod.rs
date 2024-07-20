@@ -8,6 +8,7 @@ use lyon::tessellation::{
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
+use carbide::draw::Dimension;
 pub use circle::*;
 pub use ellipse::*;
 pub use rectangle::*;
@@ -17,7 +18,7 @@ use crate::color::Color;
 use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, StrokeDashPattern};
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
-use crate::render::{CarbideTransform, InnerRenderContext, RenderContext};
+use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext, TextId};
 use crate::widget::{AnyWidget, FilterId};
 use crate::widget::types::{PrimitiveStore, ShapeStyle, StrokeStyle};
@@ -102,6 +103,16 @@ impl InnerRenderContext for Tris {
     fn mask_in(&mut self) {}
 
     fn mask_end(&mut self) {}
+
+    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer {
+        static LAYER: NoopLayer = NoopLayer;
+        Layer {
+            inner: &LAYER,
+            inner2: &LAYER,
+        }
+    }
+
+    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {}
 }
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {

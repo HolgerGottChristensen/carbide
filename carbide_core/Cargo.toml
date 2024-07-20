@@ -28,7 +28,7 @@ raw-window-handle.workspace = true
 carbide_derive = { path = "../carbide_derive" }
 carbide_macro = { path = "../carbide_macro", optional = true }
 rand = "0.8.5"
-bitflags = "2.4.0"
+bitflags.workspace = true
 dyn-clone.workspace = true
 parking_lot = "0.12.1"
 smallvec = "1"

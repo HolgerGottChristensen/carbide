@@ -1,3 +1,4 @@
+use carbide::color::ColorExt;
 use carbide::environment::IntoColorReadState;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};

@@ -4,9 +4,9 @@ use crate::event::Event;
 use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetSync};
 
-pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
+pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
     /// This will get called if there are event that are not covered by the other functions.
     /// This will get delegated to all widgets.
     /// It will never get called with mouse or keyboard events.
@@ -16,9 +16,8 @@ pub trait OtherEventHandler: CommonWidget + StateSync + Focusable {
 
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         //if ctx.env.is_event_current() {
-            self.capture_state(ctx.env);
+            self.sync(ctx.env);
             self.handle_other_event(event, ctx);
-            self.release_state(ctx.env);
         //}
 
         self.foreach_child_direct(&mut |child| {

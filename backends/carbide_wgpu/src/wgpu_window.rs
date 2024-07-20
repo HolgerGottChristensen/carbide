@@ -20,11 +20,11 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
-use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{IntoReadState, ReadState, StateSync};
+use carbide_core::render::{LayerId, Render, RenderContext};
+use carbide_core::state::{IntoReadState, ReadState};
 use carbide_core::text::InnerTextContext;
 use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
 use carbide_core::window::WindowId;
 use carbide_winit::{convert_mouse_cursor, update_scale_factor};
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
@@ -455,14 +455,8 @@ impl<T: ReadState<T=String>> CommonWidget for WGPUWindow<T> {
     }
 }
 
-impl<T: ReadState<T=String>> StateSync for WGPUWindow<T> {
-    fn capture_state(&mut self, _env: &mut Environment) {
-
-    }
-
-    fn release_state(&mut self, _env: &mut Environment) {
-
-    }
+impl<T: ReadState<T=String>> WidgetSync for WGPUWindow<T> {
+    fn sync(&mut self, _: &mut Environment) {}
 }
 
 impl<T: ReadState<T=String>> Focusable for WGPUWindow<T> {}
@@ -586,7 +580,7 @@ impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
             let is_current = *ctx.window_id == id;
 
             if is_current {
-                self.capture_state(env);
+                self.sync(env);
                 self.handle_window_event(event, &mut WindowEventContext {
                     text: ctx.text,
                     image: ctx.image,
@@ -594,7 +588,6 @@ impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
                     is_current: &is_current,
                     window_id: ctx.window_id,
                 });
-                self.release_state(env);
             }
 
             self.foreach_child_direct(&mut |child| {
@@ -1007,14 +1000,14 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                         match inner_command {
                             RenderPassCommand::SetBindGroup { bind_group } => {
                                 match bind_group {
-                                    /*WGPUBindGroup::Default => {
-                                        render_pass.set_bind_group(0, &bind_groups[&ImageId::default()].bind_group, &[]);
-                                    }*/
                                     WGPUBindGroup::Image(id) => {
                                         render_pass.set_bind_group(0, &bind_groups[&id].bind_group, &[]);
                                     }
                                     WGPUBindGroup::Target(index) => {
                                         render_pass.set_bind_group(0, &self.targets[index].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Layer(id) => {
+                                        render_pass.set_bind_group(0, self.render_context.layer_bind_group(id), &[])
                                     }
                                 }
                             }
@@ -1099,14 +1092,14 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                             }
                             RenderPassCommand::SetMaskBindGroup { bind_group } => {
                                 match bind_group {
-                                    /*WGPUBindGroup::Default => {
-                                        render_pass.set_bind_group(4, &bind_groups[&ImageId::default()].bind_group, &[]);
-                                    }*/
                                     WGPUBindGroup::Image(id) => {
                                         render_pass.set_bind_group(4, &bind_groups[&id].bind_group, &[]);
                                     }
                                     WGPUBindGroup::Target(index) => {
                                         render_pass.set_bind_group(4, &self.targets[index].bind_group, &[]);
+                                    }
+                                    WGPUBindGroup::Layer(id) => {
+                                        render_pass.set_bind_group(4, self.render_context.layer_bind_group(id), &[]);
                                     }
                                 }
                             }

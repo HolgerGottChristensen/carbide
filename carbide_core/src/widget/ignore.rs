@@ -7,9 +7,9 @@ use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::state::{IntoReadState, ReadState, StateSync};
+use crate::state::{IntoReadState, StateSync, ReadState};
 use crate::update::{Update, UpdateContext};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Clone, Debug)]
 pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> where
@@ -236,8 +236,8 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> StateSync for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
-    fn capture_state(&mut self, env: &mut Environment) {
+> WidgetSync for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    fn sync(&mut self, env: &mut Environment) {
         self.state_sync.sync(env);
         self.mouse_event.sync(env);
         self.keyboard_event.sync(env);
@@ -248,22 +248,7 @@ impl<T: Widget,
         self.update.sync(env);
 
         if *self.state_sync.value() {
-            self.inner.capture_state(env);
-        }
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.state_sync.sync(env);
-        self.mouse_event.sync(env);
-        self.keyboard_event.sync(env);
-        self.other_event.sync(env);
-        self.layout_event.sync(env);
-        self.render_event.sync(env);
-        self.focus_event.sync(env);
-        self.update.sync(env);
-
-        if *self.state_sync.value() {
-            self.inner.release_state(env)
+            self.inner.sync(env);
         }
     }
 }

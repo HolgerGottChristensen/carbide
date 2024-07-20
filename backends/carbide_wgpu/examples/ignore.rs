@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use carbide_core::draw::Dimension;
-use carbide_core::state::{AnimatedState, ReadStateExtNew};
+use carbide_core::state::{AnimatedState, ReadStateExtNew, Functor};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -17,7 +17,7 @@ fn main() {
             .repeat_alternate()
             .duration(Duration::new(1, 0))
             .range(0.0, 100.0)
-            .map(|val| *val < 50.0);
+            .map(|val: &f64| *val < 50.0);
 
     application.set_scene(
         Window::new(

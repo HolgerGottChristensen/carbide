@@ -5,9 +5,9 @@ use crate::event::{EventId, ModifierKey, TouchPhase};
 use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetSync};
 
-pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
+pub trait MouseEventHandler: CommonWidget + WidgetSync + Focusable {
     /// A function that will be called when a mouse event occurs.
     /// It will only get called on the events where the cursor is inside.
     /// Return true if the event is consumed, and will thus not be delegated to other
@@ -17,9 +17,8 @@ pub trait MouseEventHandler: CommonWidget + StateSync + Focusable {
 
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*ctx.consumed && *ctx.is_current {
-            self.capture_state(ctx.env);
+            self.sync(ctx.env);
             self.handle_mouse_event(event, ctx);
-            self.release_state(ctx.env);
         }
 
         self.foreach_child_direct(&mut |child| {

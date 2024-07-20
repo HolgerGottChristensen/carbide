@@ -4,7 +4,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use crate::state::{AnyReadState, NewStateSync, RMap1};
+use crate::state::{AnyReadState, StateSync, RMap1};
 use crate::animation::Animatable;
 use crate::animation::animation_curve::linear;
 use crate::environment::Environment;
@@ -112,7 +112,7 @@ impl AnimatedState {
     }
 }
 
-impl NewStateSync for AnimatedState {
+impl StateSync for AnimatedState {
     fn sync(&mut self, env: &mut Environment) -> bool {
         env.request_animation_frame();
         false

@@ -1,3 +1,4 @@
+use carbide::color::ColorExt;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::Alignment;
 use carbide_core::environment::EnvironmentColor;

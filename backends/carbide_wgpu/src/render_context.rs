@@ -1,17 +1,20 @@
+use std::collections::HashMap;
 use std::ops::Range;
 
 use cgmath::{Matrix4, SquareMatrix};
+use wgpu::BindGroup;
 
-use carbide_core::color::{Color, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH};
+use carbide_core::color::{Color, ColorExt, WHITE};
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH, Dimension};
 use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::render::{CarbideTransform, InnerRenderContext};
+use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{InnerTextContext, TextId};
 use carbide_core::widget::FilterId;
 
 use crate::gradient::{Dashes, Gradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
+use crate::render_target::RenderTarget;
 use crate::vertex::Vertex;
 
 #[derive(Debug)]
@@ -44,6 +47,8 @@ pub struct WGPURenderContext {
     skip_rendering: bool,
     masked: bool,
     current_target: usize,
+
+    layers: HashMap<LayerId, RenderTarget>,
 }
 
 #[derive(Debug, Clone)]
@@ -139,7 +144,12 @@ impl WGPURenderContext {
             targets: TargetStates::new(),
             current_target: 0,
             current_stroke_dash: None,
+            layers: Default::default(),
         }
+    }
+
+    pub fn layer_bind_group(&self, layer_id: LayerId) -> &BindGroup {
+        &self.layers[&layer_id].bind_group
     }
 
     pub fn target_count(&self) -> usize {
@@ -252,6 +262,80 @@ impl WGPURenderContext {
             ], target_index: self.current_target });
             self.current_bind_group = None;
         }
+    }
+
+    fn draw_image(&mut self, id: Option<WGPUBindGroup>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
+        if self.skip_rendering {
+            return;
+        }
+
+        if let Some(id) = id {
+            let command = if let Some(current) = &mut self.current_bind_group {
+                if current != &id {
+                    *current = id.clone();
+                    Some(RenderPassCommand::SetBindGroup {
+                        bind_group: id,
+                    })
+                } else {
+                    None
+                }
+            } else {
+                self.current_bind_group = Some(id.clone());
+                Some(RenderPassCommand::SetBindGroup {
+                    bind_group: id,
+                })
+            };
+
+            if let Some(command) = command {
+                self.push_command(command);
+            }
+        }
+
+        let (color, is_gradient) = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())).clone() {
+            WGPUStyle::Color(c) => {
+                (c, false)
+            },
+            WGPUStyle::Gradient(gradient) => {
+                self.ensure_state_gradient(&gradient);
+                ([0.0, 0.0, 0.0, 1.0], true)
+            }
+        };
+
+        let (uv_l, uv_r, uv_b, uv_t) = source_rect.l_r_b_t();
+
+        if mode == MODE_ICON && is_gradient {
+            mode = MODE_GRADIENT_ICON;
+        }
+        if mode == MODE_TEXT && is_gradient {
+            mode = MODE_GRADIENT_TEXT;
+        }
+
+        let mode = if self.masked { mode | 0b100000 } else { mode };
+
+        let create_vertex = |x, y, tx, ty| Vertex {
+            position: [x as f32, y as f32, 0.0],
+            tex_coords: [tx as f32, ty as f32],
+            rgba: color,
+            mode,
+            line_coords: [0.0, 0.0, 0.0, 0.0],
+            line_utils: [0.0, 0.0, 0.0, 0.0],
+        };
+
+
+        let (l, r, b, t) = bounding_box.l_r_b_t();
+
+        let start = self.vertices.len();
+        // Bottom left triangle.
+        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
+        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
+        self.vertices.push(create_vertex(l, b, uv_l, uv_b));
+
+        // Top right triangle.
+        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
+        self.vertices.push(create_vertex(r, t, uv_r, uv_t));
+        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
+
+        self.draw(start as u32, self.vertices.len() as u32);
     }
 
     fn push_command(&mut self, command: RenderPassCommand) {
@@ -684,80 +768,8 @@ impl InnerRenderContext for WGPURenderContext {
         self.stroke_dash_stack.pop();
     }
 
-    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
-        if self.skip_rendering {
-            return;
-        }
-
-        if let Some(id) = id {
-            let id = WGPUBindGroup::Image(id);
-
-            let command = if let Some(current) = &mut self.current_bind_group {
-                if current != &id {
-                    *current = id.clone();
-                    Some(RenderPassCommand::SetBindGroup {
-                        bind_group: id,
-                    })
-                } else {
-                    None
-                }
-            } else {
-                self.current_bind_group = Some(id.clone());
-                Some(RenderPassCommand::SetBindGroup {
-                    bind_group: id,
-                })
-            };
-
-            if let Some(command) = command {
-                self.push_command(command);
-            }
-        }
-
-        let (color, is_gradient) = match self.style_stack.last().unwrap_or(&WGPUStyle::Color(WHITE.gamma_srgb_to_linear().to_fsa())).clone() {
-            WGPUStyle::Color(c) => {
-                (c, false)
-            },
-            WGPUStyle::Gradient(gradient) => {
-                self.ensure_state_gradient(&gradient);
-                ([0.0, 0.0, 0.0, 1.0], true)
-            }
-        };
-
-        let (uv_l, uv_r, uv_b, uv_t) = source_rect.l_r_b_t();
-
-        if mode == MODE_ICON && is_gradient {
-            mode = MODE_GRADIENT_ICON;
-        }
-        if mode == MODE_TEXT && is_gradient {
-            mode = MODE_GRADIENT_TEXT;
-        }
-
-        let mode = if self.masked { mode | 0b100000 } else { mode };
-
-        let create_vertex = |x, y, tx, ty| Vertex {
-            position: [x as f32, y as f32, 0.0],
-            tex_coords: [tx as f32, ty as f32],
-            rgba: color,
-            mode,
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
-        };
-
-
-        let (l, r, b, t) = bounding_box.l_r_b_t();
-
-        let start = self.vertices.len();
-        // Bottom left triangle.
-        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
-        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
-        self.vertices.push(create_vertex(l, b, uv_l, uv_b));
-
-        // Top right triangle.
-        self.vertices.push(create_vertex(l, t, uv_l, uv_t));
-        self.vertices.push(create_vertex(r, t, uv_r, uv_t));
-        self.vertices.push(create_vertex(r, b, uv_r, uv_b));
-
-        self.draw(start as u32, self.vertices.len() as u32);
+    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32) {
+        self.draw_image(id.map(|id| WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
     }
 
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
@@ -926,5 +938,40 @@ impl InnerRenderContext for WGPURenderContext {
         let (mask, _) = self.mask_target_stack.pop().unwrap();
         self.masked = false;
         self.targets.free(mask);
+    }
+
+    fn layer(&mut self, layer_id: LayerId, requested_size: Dimension) -> Layer {
+        let width = requested_size.width.floor().max(1.0) as u32;
+        let height = requested_size.height.floor().max(1.0) as u32;
+
+        if self.layers.contains_key(&layer_id) {
+            let target = self.layers.get_mut(&layer_id).unwrap();
+
+            if target.texture.width() != width || target.texture.height() != height {
+                *target = RenderTarget::new(width, height);
+            }
+
+            Layer {
+                inner: target,
+                inner2: target,
+            }
+        } else {
+            let new_layer = RenderTarget::new(width, height);
+
+            self.layers.insert(layer_id, new_layer);
+
+            let inner = self.layers.get_mut(&layer_id).unwrap();
+
+            Layer {
+                inner,
+                inner2: inner
+            }
+        }
+    }
+
+    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {
+        let bind_group = WGPUBindGroup::Layer(layer_id);
+
+        self.draw_image(Some(bind_group), bounding_box, Rect::from_corners(Position::new(0.0, 0.0), Position::new(1.0, 1.0)), MODE_IMAGE)
     }
 }

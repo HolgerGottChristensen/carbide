@@ -8,8 +8,8 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
-use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, ZStack};
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{Blur, CommonWidget, CornerRadii, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -97,7 +97,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for RoundedRectangle<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
 
-        self.capture_state(context.env);
+        self.sync(context.env);
 
         let rectangle = rect(
             self.x() as f32,

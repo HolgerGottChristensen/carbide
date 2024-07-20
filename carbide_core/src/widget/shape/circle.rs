@@ -9,8 +9,8 @@ use crate::draw::{Color, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
-use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -23,10 +23,8 @@ pub struct Circle<S, F> where S: ReadState<T=Style>, F: ReadState<T=Style> {
     pub id: WidgetId,
     position: Position,
     dimension: Dimension,
-    #[state]
-    stroke_color: S,
-    #[state]
-    fill_color: F,
+    #[state] stroke_color: S,
+    #[state] fill_color: F,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
@@ -103,7 +101,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Ci
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Circle<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
 
         let radius = self.width() as f32 / 2.0;
         let center = point(self.x() as f32 + radius, self.y() as f32 + radius);

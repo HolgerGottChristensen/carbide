@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::color::ColorExt;
 use carbide::environment::IntoColorReadState;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::color::ORANGE;

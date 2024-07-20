@@ -1,4 +1,5 @@
 use carbide::color::Color;
+use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
 use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
@@ -9,6 +10,7 @@ use crate::render::CarbideTransform;
 use crate::text::{InnerTextContext, TextId};
 use crate::widget::FilterId;
 use crate::environment::Environment;
+use crate::render::layer::{Layer, LayerId, NoopLayer};
 
 pub struct RenderContext<'a> {
     pub render: &'a mut dyn InnerRenderContext,
@@ -158,6 +160,14 @@ impl<'a> RenderContext<'a> {
     pub fn text(&mut self, text: TextId) {
         self.render.text(text, self.text);
     }
+
+    pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
+        let layer = self.render.layer(layer_id, bounding_box.dimension);
+        let res = f(layer, self.env);
+        self.render.render_layer(layer_id, bounding_box);
+
+        res
+    }
 }
 
 pub trait InnerRenderContext {
@@ -206,6 +216,9 @@ pub trait InnerRenderContext {
     fn mask_start(&mut self);
     fn mask_in(&mut self);
     fn mask_end(&mut self);
+
+    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer;
+    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect);
 }
 
 pub struct NoopRenderContext;
@@ -254,4 +267,14 @@ impl InnerRenderContext for NoopRenderContext {
     fn mask_start(&mut self) {}
     fn mask_in(&mut self) {}
     fn mask_end(&mut self) {}
+
+    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension) -> Layer {
+        static LAYER: NoopLayer = NoopLayer;
+        Layer {
+            inner: &LAYER,
+            inner2: &LAYER
+        }
+    }
+
+    fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
 }

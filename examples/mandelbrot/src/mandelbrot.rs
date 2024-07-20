@@ -9,6 +9,7 @@ use num::complex::ComplexFloat;
 use uuid::Uuid;
 
 use carbide::asynchronous::get_event_sink;
+use carbide::color::ColorExt;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::draw::ImageId;

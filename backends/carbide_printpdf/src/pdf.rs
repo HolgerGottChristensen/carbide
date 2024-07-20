@@ -17,7 +17,7 @@ use carbide_core::layout::{Layout};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::text::{FontId, FontStyle, FontWeight};
 use carbide_core::widget::{Empty, AnyWidget, WidgetExt};
-use carbide_core::window::TWindow;
+//use carbide_core::window::TWindow;
 use crate::image_context::PDFImageContext;
 use crate::render_context::PDFRenderContext;
 
@@ -29,10 +29,10 @@ pub struct Pdf {
 }
 
 impl Pdf {
-    pub fn new(title: impl Into<String>) -> Self {
+    /*pub fn new(title: impl Into<String>) -> Self {
         let title = title.into();
 
-        let mut environment = Environment::new(
+        /*let mut environment = Environment::new(
             Dimension::new(210.0, 297.0),
             0.5,
             Box::new(NoopEventSink)
@@ -48,8 +48,8 @@ impl Pdf {
             widgets: Empty::new().boxed(),
             title,
             document
-        }
-    }
+        }*/
+    }*/
 /*
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
     /// For each sub folder in the fonts folder will create a new family with the name of that folder

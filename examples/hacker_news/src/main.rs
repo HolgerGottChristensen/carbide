@@ -11,7 +11,7 @@ use carbide::color::TRANSPARENT;
 use carbide::controls::List;
 use carbide::draw::{Alignment, Color, Dimension};
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
-use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExt};
+use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State};
 use carbide::text::FontWeight;
 use carbide::widget::*;
 

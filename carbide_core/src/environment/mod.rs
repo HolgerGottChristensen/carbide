@@ -5,8 +5,6 @@ pub use environment_color::*;
 pub use environment_font_size::EnvironmentFontSize;
 pub(crate) use environment_variable::EnvironmentVariable;
 
-use crate::draw::Color;
-use crate::state::TState;
 use crate::widget::AnyWidget;
 
 mod environment;
@@ -24,39 +22,4 @@ pub enum WidgetTransferAction {
     PopN(usize),
     PopAll,
     ReplaceAll(Box<dyn AnyWidget>),
-}
-
-pub enum EnvironmentStateContainer {
-    String {
-        key: String,
-        value: TState<String>,
-    },
-    U32 {
-        key: String,
-        value: TState<u32>,
-    },
-    F64 {
-        key: String,
-        value: TState<f64>,
-    },
-    Color {
-        key: EnvironmentColor,
-        value: TState<Color>,
-    },
-    FontSize {
-        key: EnvironmentFontSize,
-        value: TState<u32>,
-    },
-    I32 {
-        key: String,
-        value: TState<i32>,
-    },
-    Bool {
-        key: &'static str,
-        value: Box<dyn AnyReadState<T=bool>>,
-    },
-    Any {
-        key: &'static str,
-        value: Box<dyn AnyReadState<T=Box<dyn Any>>>,
-    }
 }

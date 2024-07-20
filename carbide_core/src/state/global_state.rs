@@ -5,19 +5,8 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use carbide_core::state::AnyReadState;
 
 use crate::environment::Environment;
-use crate::state::{AnyState, NewStateSync, ReadState, StateContract, ValueRef, ValueRefMut};
+use crate::state::{AnyState, Fn2, Functor, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueRef, ValueRefMut};
 
-/// # Local state
-/// The local state is used as a shared state between multiple widgets within the same widget tree.
-/// When cloning this the inner state will be shared between the original and the clone.
-/// The same is the case for the list of listeners.
-///
-/// Local state is [Listenable]. You are able to [Listenable::subscribe()] for notifications
-/// whenever this state changes.
-///
-/// Local state does not need to do any updating when [NewStateSync::sync()] is called because
-/// all state is stored directly within.
-/// Also it does not depend on any other states and therefore the event can be ignored.
 #[derive(Clone)]
 pub struct GlobalState<T>
     where
@@ -37,7 +26,7 @@ impl<T: StateContract> GlobalState<T> {
     }
 }
 
-impl<T: StateContract> NewStateSync for GlobalState<T> {
+impl<T: StateContract> StateSync for GlobalState<T> {
     fn sync(&mut self, _env: &mut Environment) -> bool {
         // TODO: find a smarter way to determine if local state has been updated.
         // I guess we can figuring it out by storing a frame number in the local state
@@ -73,5 +62,13 @@ impl<T: StateContract> Debug for GlobalState<T> {
         f.debug_struct("GlobalState")
             .field("value", &*self.value())
             .finish()
+    }
+}
+
+impl<T: StateContract, V: StateContract> Functor<T> for GlobalState<V> where GlobalState<V>: IntoReadState<T> {
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <GlobalState<V> as IntoReadState<T>>::Output>;
+
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }

@@ -20,9 +20,9 @@ carbide_text = { path = "../carbide_text" }
 cgmath.workspace = true
 env_logger = "0.7"
 log = "0.4"
-wgpu = { version = "0.16.1" }
+wgpu.workspace = true
 futures = "0.3"
-bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
+bytemuck.workspace = true
 anyhow = "1.0"
 raw-window-handle.workspace = true
 walkdir = "2.4.0"

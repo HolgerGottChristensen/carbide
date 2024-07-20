@@ -1,5 +1,7 @@
 use std::ops::Deref;
 use std::time::Duration;
+use carbide::color::ColorExt;
+use carbide::widget::WidgetSync;
 
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
@@ -167,9 +169,8 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if *ctx.is_current {
             if !*ctx.consumed {
-                self.capture_state(ctx.env);
+                self.sync(ctx.env);
                 self.handle_mouse_event(event, ctx);
-                self.release_state(ctx.env);
             }
         }
 
@@ -222,13 +223,12 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
         self.video.render(context);
 
         if self.video_overlay_visible || *self.buffering.value() {
             self.video_overlay.render(context);
         }
-        self.release_state(context.env);
     }
 }
 

@@ -5,8 +5,8 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::state::{ReadState, StateContract, StateSync};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::state::{StateSync, ReadState, StateContract};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 pub trait Changed<T: StateContract>: Fn(Option<&T>, &T) + Clone + 'static {}
 
@@ -52,23 +52,8 @@ impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> 
 
 }
 
-impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> StateSync for OnChange<W, T, S, F> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.state.sync(env);
-
-        if let Some(val) = &mut self.prev {
-            if &*self.state.value() != val {
-                (self.f)(Some(val), &*self.state.value());
-            }
-
-            *val = self.state.value().clone();
-        } else {
-            (self.f)(None, &self.state.value());
-            self.prev = Some(self.state.value().clone())
-        }
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
+impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> WidgetSync for OnChange<W, T, S, F> {
+    fn sync(&mut self, env: &mut Environment) {
         self.state.sync(env);
 
         if let Some(val) = &mut self.prev {

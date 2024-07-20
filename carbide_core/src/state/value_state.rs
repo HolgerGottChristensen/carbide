@@ -1,11 +1,11 @@
 use std::fmt::{Debug, Formatter};
 
 use carbide_core::state::AnyState;
-use carbide_core::state::NewStateSync;
+use carbide_core::state::StateSync;
 
 use crate::draw::Color;
 use crate::render::Style;
-use crate::state::{AnyReadState, ReadWidgetState, RState, StateContract, TState, WidgetState};
+use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
 use crate::state::{ValueRef, ValueRefMut};
 
 // TODO: This should not be needed after the transition to new states.
@@ -20,7 +20,7 @@ use crate::state::{ValueRef, ValueRefMut};
 /// large values those will be cloned as well. Using a local state, it is only a Rc that will be
 /// cloned which will be way more efficient and use much less space.
 ///
-/// Local state implements [NewStateSync] where [NewStateSync::sync()] is a NoOp.
+/// Local state implements [StateSync] where [StateSync::sync()] is a NoOp.
 #[derive(Clone)]
 pub struct ValueState<T>
 where
@@ -40,7 +40,7 @@ impl<T: StateContract> ValueState<T> {
     }
 }
 
-impl<T: StateContract> NewStateSync for ValueState<T> {}
+impl<T: StateContract> StateSync for ValueState<T> {}
 
 impl<T: StateContract> AnyReadState for ValueState<T> {
     type T = T;
@@ -67,34 +67,12 @@ impl<T: StateContract> Debug for ValueState<T> {
     }
 }
 
-impl<T: StateContract> Into<TState<T>> for Box<ValueState<T>> {
-    fn into(self) -> TState<T> {
-        WidgetState::Value(*self)
-    }
-}
+impl<T: StateContract, V: StateContract> Functor<T> for ValueState<V> where ValueState<V>: IntoReadState<T> {
+    // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
+    type Output<G: StateContract, F: Fn2<T, G>> = RMap1<F, T, G, <ValueState<V> as IntoReadState<T>>::Output>;
 
-// This should implement into T state for pretty much all T.
-impl<T: StateContract> From<T> for TState<T> {
-    fn from(t: T) -> Self {
-        WidgetState::Value(ValueState::new(t))
-    }
-}
-
-impl From<u32> for TState<f64> {
-    fn from(t: u32) -> Self {
-        WidgetState::Value(ValueState::new(t as f64))
-    }
-}
-
-impl From<&str> for TState<String> {
-    fn from(t: &str) -> Self {
-        WidgetState::Value(ValueState::new(t.to_string()))
-    }
-}
-
-impl From<&str> for RState<String> {
-    fn from(t: &str) -> Self {
-        ReadWidgetState::ReadWriteState(WidgetState::Value(ValueState::new(t.to_string())))
+    fn map<U: StateContract, F: Fn2<T, U>>(self, f: F) -> Self::Output<U, F> {
+        Map1::read_map(self.into_read_state(), f)
     }
 }
 
@@ -234,9 +212,3 @@ impl From<&str> for RState<String> {
 //             .ignore_writes()
 //     }
 // }
-
-impl Into<TState<Style>> for Color {
-    fn into(self) -> TState<Style> {
-        WidgetState::Value(ValueState::new(Style::Color(self)))
-    }
-}

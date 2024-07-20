@@ -12,7 +12,7 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
 use crate::update::{Update, UpdateContext};
-use crate::widget::{CommonWidget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 
 // TODO Rename to AnyWidget and create a widget that is anywidget and clone
 pub trait AnyWidget: EventHandler + Update + Layout + Render + Focusable + DynClone + Debug + 'static {}
@@ -144,13 +144,9 @@ impl<T: AnyWidget + ?Sized> OtherEventHandler for Box<T> {
     }
 }
 
-impl<T: AnyWidget + ?Sized> StateSync for Box<T> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.deref_mut().capture_state(env);
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.deref_mut().release_state(env)
+impl<T: AnyWidget + ?Sized> WidgetSync for Box<T> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.deref_mut().sync(env);
     }
 }
 

@@ -1,4 +1,6 @@
+use std::fmt::{Debug, Formatter};
 use wgpu::{BindGroup, Texture, TextureDescriptor, TextureFormat, TextureUsages, TextureView};
+use carbide_core::render::InnerLayer;
 
 use crate::application::DEVICE;
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
@@ -57,5 +59,26 @@ impl RenderTarget {
             view,
             bind_group,
         }
+    }
+
+    pub fn view(&self) -> &TextureView {
+        &self.view
+    }
+
+    pub fn texture_format(&self) -> TextureFormat {
+        self.texture.format()
+    }
+}
+
+impl InnerLayer for RenderTarget {
+    fn dimensions(&self) -> (u32, u32) {
+        (self.texture.width(), self.texture.height())
+    }
+}
+
+impl Debug for RenderTarget {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RenderTarget")
+            .finish()
     }
 }

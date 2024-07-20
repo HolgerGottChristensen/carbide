@@ -4,7 +4,7 @@ use fluent::types::{FluentDateTime, FluentNumber};
 use icu::locid::Locale;
 use carbide_core::environment::Environment;
 use carbide_core::impl_read_state;
-use carbide_core::state::{AnyReadState, NewStateSync, ReadState, ValueRef};
+use carbide_core::state::{AnyReadState, StateSync, ReadState, ValueRef};
 use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};
 use crate::locale_ext::LOCALE_IDENT;
@@ -38,7 +38,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> LocalizedString<K, S, V> {
 }
 
 
-impl<K: Localizable, S: ReadState<T=K>, V: Args> NewStateSync for LocalizedString<K, S, V> {
+impl<K: Localizable, S: ReadState<T=K>, V: Args> StateSync for LocalizedString<K, S, V> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         if let Some(locale) = env.value::<&'static str, Locale>(LOCALE_IDENT) {
             //println!("Synced locale: {}", locale);

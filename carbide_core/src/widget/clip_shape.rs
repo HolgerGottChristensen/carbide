@@ -6,7 +6,7 @@ use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
-use crate::widget::{CommonWidget, Empty, Shape, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Shape, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
@@ -35,15 +35,10 @@ impl ClipShape<Empty, Empty> {
     }
 }
 
-impl<C: Widget, S: Shape + Clone> StateSync for ClipShape<C, S> {
-    fn capture_state(&mut self, env: &mut Environment) {
-        self.child.capture_state(env);
-        self.shape.capture_state(env);
-    }
-
-    fn release_state(&mut self, env: &mut Environment) {
-        self.child.release_state(env);
-        self.shape.release_state(env);
+impl<C: Widget, S: Shape + Clone> WidgetSync for ClipShape<C, S> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.child.sync(env);
+        self.shape.sync(env);
     }
 }
 

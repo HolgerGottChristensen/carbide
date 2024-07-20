@@ -8,8 +8,8 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
-use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, ZStack};
+use crate::state::{IntoReadState, ReadState};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::PrimitiveStore;
 use crate::widget::types::ShapeStyle;
@@ -22,10 +22,8 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
     id: WidgetId,
     position: Position,
     dimension: Dimension,
-    #[state]
-    stroke_color: S,
-    #[state]
-    fill_color: F,
+    #[state] stroke_color: S,
+    #[state] fill_color: F,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     triangle_store: PrimitiveStore,
@@ -106,7 +104,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Cap
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.capture_state(context.env);
+        self.sync(context.env);
 
         let rect = rect(
             self.x() as f32,

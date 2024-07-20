@@ -5,7 +5,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
-use crate::state::{AnyReadState, AnyState, IntoState, NewStateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State, ValueRef, ValueRefMut};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
@@ -216,7 +216,7 @@ enum Fixity<T: State<T=f64>> {
     Fixed(T),
 }
 
-impl<T: State<T=f64> + Clone> NewStateSync for Fixity<T> {
+impl<T: State<T=f64> + Clone> StateSync for Fixity<T> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             Fixity::Expand(_) => false,

@@ -2,16 +2,16 @@ use crate::environment::Environment;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
 use crate::state::StateSync;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetSync};
 
-pub trait Focusable: CommonWidget + StateSync {
+pub trait Focusable: CommonWidget + WidgetSync {
     fn request_focus(&mut self, env: &mut Environment) {
         self.set_focus(Focus::FocusRequested);
         env.request_focus(Refocus::FocusRequest);
     }
 
     fn process_focus_request(&mut self, ctx: &mut FocusContext) {
-        self.capture_state(ctx.env);
+        self.sync(ctx.env);
 
         if self.is_focusable() {
             if self.get_focus() == Focus::FocusRequested {
@@ -28,7 +28,7 @@ pub trait Focusable: CommonWidget + StateSync {
     }
 
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
-        self.capture_state(ctx.env);
+        self.sync(ctx.env);
 
         if self.is_focusable() {
             if *ctx.available {
@@ -51,7 +51,7 @@ pub trait Focusable: CommonWidget + StateSync {
     }
 
     fn process_focus_previous(&mut self, ctx: &mut FocusContext) {
-        self.capture_state(ctx.env);
+        self.sync(ctx.env);
 
         if self.is_focusable() {
             if *ctx.available {
