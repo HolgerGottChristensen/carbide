@@ -1,20 +1,25 @@
-use carbide_3d::{InnerRenderContext3d, Mesh, Object};
+use carbide_3d::{InnerImageContext3d, InnerRenderContext3d, Mesh, Object};
 use carbide_core::render::{InnerLayer, Layer};
 use std::any::Any;
+use std::collections::HashMap;
 use encase::{ArrayLength, ShaderSize, ShaderType};
-use wgpu::{AddressMode, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, BufferDescriptor, BufferUsages, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, SamplerBindingType, SamplerDescriptor, ShaderStages, StencilFaceState, StencilOperation, StencilState, Texture, TextureFormat, TextureView, VertexState};
+use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, BufferDescriptor, BufferUsages, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, SamplerBindingType, SamplerDescriptor, ShaderStages, StencilFaceState, StencilOperation, StencilState, Texture, TextureFormat, TextureSampleType, TextureView, TextureViewDimension, VertexState};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
-use carbide_3d::material::Material;
+use carbide_3d::material::albedo_component::AlbedoComponent;
+use carbide_3d::material::{Material};
+use carbide_3d::material::pbr_material::{PbrMaterial};
 use carbide_core::color::{Color, ColorExt};
 use carbide_core::render::matrix::{Matrix4, SquareMatrix, Transform, Vector2, Vector3, Vector4, Zero};
+use carbide_core::state::ReadState;
 use carbide_wgpu::{DEVICE, QUEUE, RenderTarget};
 use crate::camera::WgpuCamera;
 use crate::directional_light::{WgpuDirectionalLight, WgpuDirectionalLightBuffer};
+use crate::image_context_3d::ImageContext3d;
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
-use crate::pbr_material::WgpuPbrMaterial;
+use crate::pbr_material::{create_pbr_bind_group, PBR_BIND_GROUPS_LAYOUT, WgpuPbrMaterial, WgpuPbrMaterialTextures};
 use crate::point_light::WgpuPointLightBuffer;
 use crate::render_pass_command::RenderPassCommand;
 use crate::SHADER;
@@ -28,9 +33,9 @@ pub(crate) fn render_context_3d_initializer() -> Box<dyn InnerRenderContext3d> {
 
 #[derive(Debug)]
 pub struct WGPURenderContext3d {
-    material_stack: Vec<WgpuMaterial>,
-    materials: Vec<WgpuMaterial>,
-    current_material: Option<(WgpuMaterial, usize)>,
+    material_stack: Vec<(WgpuMaterial, WgpuPbrMaterialTextures)>,
+    materials: Vec<(WgpuMaterial, WgpuPbrMaterialTextures)>,
+    current_material: Option<(WgpuMaterial, WgpuPbrMaterialTextures, usize)>,
 
     transform_stack: Vec<(Matrix4<f32>, usize)>,
     objects: Vec<WgpuObject>,
@@ -43,6 +48,8 @@ pub struct WGPURenderContext3d {
     indices: Vec<u32>,
 
     commands: Vec<RenderPassCommand>,
+
+    bind_groups: HashMap<WgpuPbrMaterialTextures, BindGroup>
 }
 
 
@@ -66,6 +73,13 @@ impl WGPURenderContext3d {
 
         let view = depth_texture.create_view(&Default::default());
 
+        let mut map = HashMap::new();
+
+        let default = WgpuPbrMaterialTextures::default();
+        let bind_group = create_pbr_bind_group(&default);
+
+        map.insert(default, bind_group);
+
         WGPURenderContext3d {
             material_stack: vec![],
             materials: vec![],
@@ -80,6 +94,7 @@ impl WGPURenderContext3d {
             vertices: vec![],
             indices: vec![],
             commands: vec![],
+            bind_groups: map,
         }
     }
 
@@ -100,27 +115,28 @@ impl WGPURenderContext3d {
 
     fn ensure_current_object(&mut self) {
         if let Some(object) = self.objects.last() {
-            if object.material_index == self.current_material.as_ref().unwrap().1 as u32 && self.transform_stack.last().unwrap().0 == object.transform {
+            if object.material_index == self.current_material.as_ref().unwrap().2 as u32 && self.transform_stack.last().unwrap().0 == object.transform {
                 return;
             }
         }
 
         self.objects.push(WgpuObject {
             transform: self.transform_stack.last().unwrap().0,
-            material_index: self.current_material.as_ref().unwrap().1 as u32,
+            material_index: self.current_material.as_ref().unwrap().2 as u32,
         })
     }
 
-    fn ensure_current_material(&mut self, material: &WgpuMaterial) {
-        let needs_update = if let Some((current, _)) = &self.current_material {
+    fn ensure_current_material(&mut self, material: &WgpuMaterial, tex: &WgpuPbrMaterialTextures) {
+        let needs_update = if let Some((current, _, _)) = &self.current_material {
             current != material
         } else {
             true
         };
 
         if needs_update {
-            self.materials.push((*material).clone());
-            self.current_material = Some(((*material).clone(), self.materials.len() - 1));
+            self.materials.push((material.clone(), tex.clone()));
+            self.current_material = Some((material.clone(), tex.clone(), self.materials.len() - 1));
+            self.push_command(RenderPassCommand::SetPbrMaterial(tex.clone()))
         }
     }
 
@@ -246,6 +262,7 @@ impl InnerRenderContext3d for WGPURenderContext3d {
             bind_group_layouts: &[
                 &bind_group_layout,
                 &bind_group_layout2,
+                &*PBR_BIND_GROUPS_LAYOUT,
             ],
             push_constant_ranges: &[],
         });
@@ -261,8 +278,8 @@ impl InnerRenderContext3d for WGPURenderContext3d {
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
-                front_face: FrontFace::Ccw,
-                cull_mode: None,
+                front_face: FrontFace::Cw,
+                cull_mode: Some(Face::Back),
                 unclipped_depth: false,
                 polygon_mode: PolygonMode::Fill,
                 conservative: false,
@@ -302,7 +319,13 @@ impl InnerRenderContext3d for WGPURenderContext3d {
             border_color: None,
         });
 
-        let pbr_materials = self.materials.iter().cloned().map(|a| match a { WgpuMaterial::PBR(m) => m }).collect::<Vec<_>>();
+        let pbr_materials = self.materials.iter().cloned().map(|(a, _)| match a { WgpuMaterial::PBR(m) => m }).collect::<Vec<_>>();
+
+        for (_, tex) in &self.materials {
+            if !self.bind_groups.contains_key(tex) {
+                self.bind_groups.insert(tex.clone(), create_pbr_bind_group(tex));
+            }
+        }
 
         //println!("{:#?}", pbr_materials);
         //println!("{:#?}", self.objects);
@@ -310,9 +333,12 @@ impl InnerRenderContext3d for WGPURenderContext3d {
         //println!("{:#?}", self.indices);
         let mut materials_buffer = StorageBuffer::from(pbr_materials);
         let mut objects_buffer = StorageBuffer::from(self.objects.clone());
+
+        let dimensions = layer.inner2.dimensions();
+        let aspect_ratio = dimensions.0 as f32 / dimensions.1 as f32;
         let mut camera_buffer = StorageBuffer::from(WgpuCamera {
             view: camera.view(),
-            view_proj: camera.view_projection(1.0),
+            view_proj: camera.view_projection(aspect_ratio),
             orig_view: Matrix4::from_cols(
                 camera.view().x,
                 camera.view().y,
@@ -320,7 +346,7 @@ impl InnerRenderContext3d for WGPURenderContext3d {
                 Vector4::unit_w(),
             ),
             inv_view: camera.view().invert().unwrap(),
-            aspect_ratio: 1.0,
+            aspect_ratio,
         });
         let mut uniforms = StorageBuffer::from(WgpuUniforms {
             ambient: Vector4::new(0.1, 0.1, 0.1, 1.0)
@@ -397,58 +423,63 @@ impl InnerRenderContext3d for WGPURenderContext3d {
             usage: BufferUsages::VERTEX | BufferUsages::INDEX | BufferUsages::COPY_DST,
         });
 
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: render_target.view(),
-                resolve_target: None,
-                ops: Operations {
-                    load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.0,
-                        g: 0.0,
-                        b: 0.0,
-                        a: 0.0,
+        {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: render_target.view(),
+                    resolve_target: None,
+                    ops: Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                            r: 0.0,
+                            g: 0.0,
+                            b: 0.0,
+                            a: 0.0,
+                        }),
+                        store: true,
+                    },
+                })],
+                depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                    view: &self.depth_stencil_view,
+                    depth_ops: Some(Operations {
+                        load: wgpu::LoadOp::Clear(0.0),
+                        store: true,
                     }),
-                    store: true,
-                },
-            })],
-            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                view: &self.depth_stencil_view,
-                depth_ops: Some(Operations {
-                    load: wgpu::LoadOp::Clear(0.0),
-                    store: true,
+                    stencil_ops: Some(Operations {
+                        load: wgpu::LoadOp::Clear(0),
+                        store: true,
+                    }),
                 }),
-                stencil_ops: Some(Operations {
-                    load: wgpu::LoadOp::Clear(0),
-                    store: true,
-                }),
-            }),
-        });
+            });
 
-        render_pass.set_pipeline(&pipeline);
-        render_pass.set_vertex_buffer(0, new_vertex_buffer.slice(..));
-        render_pass.set_index_buffer(new_index_buffer.slice(..), IndexFormat::Uint32);
-        render_pass.set_bind_group(0, &material_bind_group, &[]);
-        render_pass.set_bind_group(1, &bind_group2, &[]);
+            render_pass.set_pipeline(&pipeline);
+            render_pass.set_vertex_buffer(0, new_vertex_buffer.slice(..));
+            render_pass.set_index_buffer(new_index_buffer.slice(..), IndexFormat::Uint32);
+            render_pass.set_bind_group(0, &material_bind_group, &[]);
+            render_pass.set_bind_group(1, &bind_group2, &[]);
+            render_pass.set_bind_group(2, &self.bind_groups[&WgpuPbrMaterialTextures::default()], &[]);
 
-        //println!("{:#?}", self.commands);
+            //println!("{:#?}", self.commands);
 
-        for command in &self.commands {
-            match command {
-                RenderPassCommand::DrawIndexed(range) => {
-                    render_pass.draw_indexed(range.clone(), 0, 0..1);
+            for command in &self.commands {
+                match command {
+                    RenderPassCommand::DrawIndexed(range) => {
+                        render_pass.draw_indexed(range.clone(), 0, 0..1);
+                    }
+                    RenderPassCommand::SetPbrMaterial(pbr) => {
+                        render_pass.set_bind_group(2, &self.bind_groups[pbr], &[]);
+                    }
                 }
             }
         }
 
-        drop(render_pass);
         QUEUE.submit(std::iter::once(encoder.finish()));
     }
 
     fn mesh(&mut self, mesh: &Mesh) {
-        let material = self.material_stack.last().unwrap().clone();
+        let (material, material_tex) = self.material_stack.last().unwrap().clone();
 
-        self.ensure_current_material(&material);
+        self.ensure_current_material(&material, &material_tex);
         self.ensure_current_object();
 
         let index = self.indices.len();
@@ -465,9 +496,17 @@ impl InnerRenderContext3d for WGPURenderContext3d {
     fn material(&mut self, material: &Material) {
         self.material_stack.push(
         match material {
-                Material::PBR(material) => WgpuMaterial::PBR(WgpuPbrMaterial::from_material(material))
+                Material::PBR(material) => {
+                    (
+                        WgpuMaterial::PBR(WgpuPbrMaterial::from_material(material)),
+                        WgpuPbrMaterialTextures {
+                            albedo: material.albedo.value().to_texture().cloned().unwrap_or_default(),
+                            normal: material.normal.value().to_texture().cloned().unwrap_or_default(),
+                        }
+                    )
+                }
             }
-        )
+        );
     }
 
     fn pop_material(&mut self) {

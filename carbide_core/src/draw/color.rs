@@ -494,7 +494,7 @@ pub trait ColorExt: Functor<Color> + Sized {
         })
     }
 
-    /// Return the hue value. The value returned should be between 0.0 and 1.0
+    /// Return the hue value. The value returned should be between 0.0 and 2.0*PI
     fn hue(self) -> Self::Output<f32, fn(&Color)->f32> {
         self.map(|color| {
             let Hsla(h, _, _, _) = color.to_hsl();

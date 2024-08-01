@@ -3,8 +3,9 @@ use std::path::{Path, PathBuf};
 use include_dir::{Dir, include_dir};
 use once_cell::sync::Lazy;
 use wgpu::{ShaderModule, ShaderModuleDescriptor, ShaderSource};
-use carbide_3d::register_render_context3d_initializer;
+use carbide_3d::{register_image_context3d_initializer, register_render_context3d_initializer};
 use carbide_wgpu::DEVICE;
+use crate::image_context_3d::image_context_3d_initializer;
 use crate::render_context_3d::render_context_3d_initializer;
 
 mod render_context_3d;
@@ -18,9 +19,11 @@ mod camera;
 mod directional_light;
 mod point_light;
 mod uniforms;
+mod image_context_3d;
 
 pub fn init() {
     register_render_context3d_initializer("carbide_wgpu_3d", render_context_3d_initializer);
+    register_image_context3d_initializer("carbide_wgpu_3d", image_context_3d_initializer);
 }
 
 static SHADERS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/shaders");

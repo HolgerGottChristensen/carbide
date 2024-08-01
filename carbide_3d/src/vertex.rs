@@ -29,4 +29,9 @@ impl Vertex {
         self.normal = normal;
         self
     }
+
+    pub fn texture_coords_0(mut self, coords: Vector2<f32>) -> Vertex {
+        self.texture_coords_0 = coords;
+        self
+    }
 }

@@ -44,6 +44,11 @@ var primary_sampler: sampler;
 @group(1) @binding(3)
 var<storage> uniforms: Uniforms;
 
+@group(2) @binding(0)
+var albedo_tex: texture_2d<f32>;
+@group(2) @binding(1)
+var normal_tex: texture_2d<f32>;
+
 @vertex
 fn main_vs(
     @location(0) position: vec3<f32>,
@@ -66,8 +71,14 @@ fn main_vs(
 
     var out: VertexOutput;
     out.position = model_view_proj * vec4<f32>(position, 1.0);
-    out.normal = normalize(mv_mat3 * (inv_scale_sq * normal));
+    out.normal = normalize(mv_mat3 * (inv_scale_sq * -normal));
     out.tangent = normalize(mv_mat3 * (inv_scale_sq * tangent));
+    //out.normal = normalize((inv_scale_sq * normal));
+    //out.tangent = normalize((inv_scale_sq * tangent));
+    //out.normal = normalize((mv_mat3 * normal));
+    //out.tangent = normalize((mv_mat3 * tangent));
+    //out.normal = normalize(normal);
+    //out.tangent = normalize(tangent);
     out.texture_coords_0 = texture_coords_0;
     out.texture_coords_1 = texture_coords_1;
     out.color_0 = color_0;
@@ -86,12 +97,12 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let uvdx = dpdx(coords);
     let uvdy = dpdy(coords);
 
-    pixel.albedo = get_albedo(material, primary_sampler, in);
+    pixel.albedo = get_albedo(material, primary_sampler, in, coords, uvdx, uvdy);
 
     if (pixel.albedo.a < material.alpha_cutout) {
         discard;
     }
-    pixel.normal = get_normal(in);
+    pixel.normal = get_normal(material, primary_sampler, in, coords, uvdx, uvdy);
 
     let aomr = get_aomr(material);
     pixel.ambient_occlusion = aomr.x;
@@ -178,6 +189,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let ambient = uniforms.ambient * pixel.albedo;
     let shaded = vec4<f32>(color, pixel.albedo.a);
     return max(ambient, shaded);
+    //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);
     //return pixel.albedo;
 }

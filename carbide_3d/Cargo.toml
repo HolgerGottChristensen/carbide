@@ -12,6 +12,7 @@ once_cell.workspace = true
 bitflags.workspace = true
 dyn-clone.workspace = true
 tobj = "4.0.2"
+downcast-rs = "1.2.1"
 
 [dev-dependencies]
 carbide_wgpu = { path = "../backends/carbide_wgpu" }

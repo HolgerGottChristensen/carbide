@@ -1,7 +1,10 @@
 use bitflags::Flags;
 use carbide::color::WHITE;
 use carbide::draw::{Color, ImageId};
+use carbide::environment::EnvironmentColor;
+use carbide::impl_read_state;
 use carbide::render::matrix::Vector4;
+use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 use crate::material::material_flags::MaterialFlags;
 
 /// How the albedo color should be determined.
@@ -101,5 +104,28 @@ impl AlbedoComponent {
             | Self::TextureValue { ref texture, .. }
             | Self::TextureVertexValue { ref texture, .. } => Some(texture),
         }
+    }
+}
+
+impl_read_state!(AlbedoComponent);
+
+impl ConvertIntoRead<AlbedoComponent> for Color {
+    type Output<G: AnyReadState<T=Color> + Clone> = RMap1<fn(&Color)->AlbedoComponent, Color, AlbedoComponent, G>;
+
+    fn convert<F: AnyReadState<T=Color> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |color| {
+            AlbedoComponent::Value(*color)
+        })
+    }
+}
+
+
+impl ConvertIntoRead<AlbedoComponent> for ImageId {
+    type Output<G: AnyReadState<T=ImageId> + Clone> = RMap1<fn(&ImageId)->AlbedoComponent, ImageId, AlbedoComponent, G>;
+
+    fn convert<F: AnyReadState<T=ImageId> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |id| {
+            AlbedoComponent::Texture(id.clone())
+        })
     }
 }

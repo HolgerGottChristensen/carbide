@@ -1,11 +1,11 @@
-use crate::state::{AnyReadState, Map1, ReadState, RMap1, StateContract};
+use crate::state::{AnyReadState, Map1, ReadState, ReadStateExtNew, RMap1, StateContract};
 
 // ---------------------------------------------------
 //  Definitions
 // ---------------------------------------------------
 
 pub trait IntoReadState<T>: Clone where T: StateContract {
-    type Output: ReadState<T=T>;
+    type Output: ReadState<T=T> + ReadStateExtNew<T>;
 
     fn into_read_state(self) -> Self::Output;
 }
@@ -50,7 +50,7 @@ impl<T: StateContract> ConvertIntoRead<Option<T>> for T {
 }
 
 #[macro_export]
-macro_rules! impl_convert_into_read {
+macro_rules! impl_convert_into_read_cast {
     ($($typ_from: ty => $typ_to: ty),*) => {
         $(
         impl ConvertIntoRead<$typ_to> for $typ_from {
@@ -66,4 +66,4 @@ macro_rules! impl_convert_into_read {
     };
 }
 
-impl_convert_into_read!(i32 => u32, f64 => f32, f32 => f64);
+impl_convert_into_read_cast!(i32 => u32, f64 => f32, f32 => f64);

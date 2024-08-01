@@ -21,4 +21,6 @@ struct Material {
     ambient_occlusion: f32,
     alpha_cutout: f32,
     flags: u32,
+    // -- 16 --
+    texture_enable: u32,
 }

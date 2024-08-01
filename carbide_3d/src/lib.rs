@@ -12,6 +12,7 @@ mod transform;
 pub mod light;
 pub mod node3d;
 mod node3d_sequence;
+mod image_context3d;
 
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
@@ -21,6 +22,7 @@ pub use mesh::*;
 pub use vertex::*;
 pub use object::*;
 pub use handedness::*;
+pub use image_context3d::*;
 
 extern crate carbide_core as carbide;
 
@@ -35,5 +37,18 @@ pub fn register_render_context3d_initializer(identifier: &'static str, initializ
 
 pub(crate) fn render_context3d() -> Box<dyn InnerRenderContext3d> {
     let initializer = AVAILABLE_CONTEXT3D_INITIALIZERS.iter().next().expect("No initializers for render context 3d present");
+    initializer()
+}
+
+pub(crate) static AVAILABLE_IMAGE_CONTEXT3D_INITIALIZERS: Lazy<DashMap<&'static str, fn()->Box<dyn InnerImageContext3d>>> = Lazy::new(|| {
+    DashMap::new()
+});
+
+pub fn register_image_context3d_initializer(identifier: &'static str, initializer: fn()->Box<dyn InnerImageContext3d>) {
+    AVAILABLE_IMAGE_CONTEXT3D_INITIALIZERS.insert(identifier, initializer);
+}
+
+pub(crate) fn image_context3d() -> Box<dyn InnerImageContext3d> {
+    let initializer = AVAILABLE_IMAGE_CONTEXT3D_INITIALIZERS.iter().next().expect("No initializers for image context 3d present");
     initializer()
 }

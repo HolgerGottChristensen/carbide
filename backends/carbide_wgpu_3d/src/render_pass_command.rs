@@ -1,6 +1,8 @@
 use std::ops::Range;
+use crate::pbr_material::WgpuPbrMaterialTextures;
 
 #[derive(Debug, Clone)]
 pub enum RenderPassCommand {
-    DrawIndexed(Range<u32>)
+    SetPbrMaterial(WgpuPbrMaterialTextures),
+    DrawIndexed(Range<u32>),
 }

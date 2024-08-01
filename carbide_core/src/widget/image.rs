@@ -123,7 +123,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
                 };
 
                 let image = image::open(path)
-                    .expect("Couldn't load logo")
+                    .expect("Couldn't load image")
                     .pre_multiplied();
 
                 let texture = Texture {

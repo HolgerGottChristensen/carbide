@@ -1,5 +1,7 @@
 use bitflags::Flags;
 use carbide::draw::ImageId;
+use carbide::impl_read_state;
+use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 use crate::material::material_flags::MaterialFlags;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
 
@@ -49,5 +51,17 @@ impl NormalTexture {
             | Self::BicomponentSwizzled(_, NormalTextureYDirection::Down) => base | MaterialFlags::YDOWN_NORMAL,
             _ => base,
         }
+    }
+}
+
+impl_read_state!(NormalTexture);
+
+impl ConvertIntoRead<NormalTexture> for ImageId {
+    type Output<G: AnyReadState<T=ImageId> + Clone> = RMap1<fn(&ImageId)->NormalTexture, ImageId, NormalTexture, G>;
+
+    fn convert<F: AnyReadState<T=ImageId> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |id| {
+            NormalTexture::Tricomponent(id.clone(), NormalTextureYDirection::Down)
+        })
     }
 }

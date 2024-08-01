@@ -1,33 +1,37 @@
 use carbide::draw::Rect;
 use carbide::render::{LayerId, RenderContext};
+use carbide::render::matrix::Matrix4;
+use carbide::state::ReadState;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::Render;
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
-use crate::{InnerRenderContext3d, render_context3d, RenderContext3d};
+use crate::{image_context3d, InnerImageContext3d, InnerRenderContext3d, render_context3d, RenderContext3d};
 use crate::camera::SimpleCamera;
 use crate::node3d_sequence::Node3dSequence;
 use crate::render3d::Render3d;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
-pub struct Scene3d<C> where C: Node3dSequence {
+pub struct Scene3d<C, V> where C: Node3dSequence, V: ReadState<T=Matrix4<f32>> {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
 
     target: LayerId,
     context: Box<dyn InnerRenderContext3d>,
+    image_context: Box<dyn InnerImageContext3d>,
 
     nodes: C,
 
-    camera: SimpleCamera,
+    camera: SimpleCamera<V>,
 }
 
-impl Scene3d<()> {
-    pub fn new(nodes: impl Node3dSequence, camera: SimpleCamera) -> Scene3d<impl Node3dSequence> {
+impl Scene3d<(), Matrix4<f32>> {
+    pub fn new<V: ReadState<T=Matrix4<f32>>>(nodes: impl Node3dSequence, camera: SimpleCamera<V>) -> Scene3d<impl Node3dSequence, V> {
         let context = render_context3d();
+        let image_context = image_context3d();
 
         Scene3d {
             id: WidgetId::new(),
@@ -35,17 +39,18 @@ impl Scene3d<()> {
             dimension: Dimension::default(),
             target: LayerId::new(),
             context,
+            image_context,
             nodes,
             camera,
         }
     }
 }
 
-impl<C: Node3dSequence> CommonWidget for Scene3d<C> {
+impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> CommonWidget for Scene3d<C, V> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
-impl<C: Node3dSequence> Render for Scene3d<C> {
+impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
     fn render(&mut self, context: &mut RenderContext) {
         context.env.request_animation_frame();
         context.layer(self.target, Rect::new(self.position, self.dimension), |layer, env| {
@@ -54,6 +59,7 @@ impl<C: Node3dSequence> Render for Scene3d<C> {
             self.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
                     render: &mut *self.context,
+                    image: &mut *self.image_context,
                     env,
                 });
             });
@@ -63,4 +69,4 @@ impl<C: Node3dSequence> Render for Scene3d<C> {
     }
 }
 
-impl<C: Node3dSequence> WidgetExt for Scene3d<C> {}
+impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> WidgetExt for Scene3d<C, V> {}

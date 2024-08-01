@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::env::current_dir;
+use std::f32::consts::PI;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tobj::GPU_LOAD_OPTIONS;
@@ -10,11 +11,12 @@ use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::Material;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::node3d::Node3dExt;
-use carbide_core::color::{BLACK, BLUE, ColorExt, DARK_CHARCOAL, DARK_GREEN, GREEN, GREY, ORANGE, RED, WHITE};
-use carbide_core::draw::{Color, Dimension};
-use carbide_core::environment::EnvironmentColor;
-use carbide_core::render::matrix::{Deg, Euler, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3};
-use carbide_core::state::{AnimatedState, Functor, GlobalState, LocalState, ReadState, ReadStateExtNew};
+use carbide_core::animation::ease_in_out;
+use carbide_core::color::{BLACK, BLUE, ColorExt, DARK_BLUE, DARK_CHARCOAL, DARK_GREEN, GREEN, GREY, ORANGE, RED, WHITE};
+use carbide_core::draw::{Color, Dimension, ImageId};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
+use carbide_core::render::matrix::{Deg, Euler, InnerSpace, Matrix3, Matrix4, Point3, Rad, SquareMatrix, Vector2, Vector3, Vector4, Zero};
+use carbide_core::state::{AnimatedState, GlobalState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
 
@@ -36,29 +38,73 @@ fn main() {
 
     let mut application = Application::new();
 
-    let material = PbrMaterial::new(ORANGE);
-    let material2 = PbrMaterial::new(DARK_CHARCOAL);
+    let animated_color = AnimatedState::linear(None).duration(Duration::from_secs_f64(40.0)).repeat().range(0.0, 2.0*PI).map(|h| Color::Hsla(*h, 1.0, 0.5, 1.0));
+
+    let material = PbrMaterial::new()
+        .color(animated_color.clone());
+    let material2 = PbrMaterial::new()
+        .color(animated_color)
+        //.color(ImageId::new("materials/ground068/Ground068.color.png"))
+        //.normal(ImageId::new("materials/ground068/Ground068.normal.dx.png"))
+        .normal(ImageId::new("images/normalmap.png"))
+        ;
+        //.color(ImageId::new("materials/plaster/Plaster001.color.png"));
+
+    let material_green = PbrMaterial::new().color(DARK_GREEN);
+    let material_red = PbrMaterial::new().color(RED);
+    let material_blue = PbrMaterial::new().color(DARK_BLUE);
+    let material_white = PbrMaterial::new().color(WHITE);
 
 
     /*let object = Object::new(mesh, material);
     let object2 = Object::new(mesh2, material2);*/
 
-    //let object = Object::new(create_mesh(), material);
+    let object = Object::new(create_plane(Vector3::new(0.0, 0.0, -0.05), 0.4), material2);
+    let object2 = Object::new(create_plane(Vector3::new(0.0, 0.0, -0.06), 0.45), material);
+    //let object = Object::new(create_mesh(), material2);
     //let object = Object::new(create_icosahedron(5), material);
-    let object = Object::new(Mesh::from(models[0].clone()), material.clone());
-    let object2 = Object::new(Mesh::from(models[1].clone()), material2);
+    //let object = Object::new(Mesh::from(models[0].clone()), material);
+    //let object2 = Object::new(Mesh::from(models[1].clone()), material2);
+    let center = Object::new(create_cube(Vector3::zero(), 0.05), material_white);
+    let x = Object::new(create_cube(Vector3::new(0.05, 0.0, 0.0), 0.03), material_red);
+    let y = Object::new(create_cube(Vector3::new(0.0, 0.05, 0.0), 0.03), material_green);
+    let z = Object::new(create_cube(Vector3::new(0.0, 0.0, 0.05), 0.03), material_blue);
 
-    //let view = Matrix4::look_at_lh(Point3::new(0.0, 1.0, 2.0), Point3::new(0.0, 0.0, 0.0), Vector3::unit_y());
-    let view = Matrix4::look_at_lh(Point3::new(0.0, 0.5, 1.2), Point3::new(0.0, 0.5, 0.0), Vector3::unit_y());
+    let animated = AnimatedState::custom(ease_in_out, None).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(0.0f32, 0.25f32);
+    //let animated = AnimatedState::linear(None).duration(Duration::from_secs_f64(3.0)).repeat().range(0.0f32, 1.0f32);
+    let rotation = Map1::read_map(animated, |t| Matrix4::<f32>::from(Euler::new(Deg(0.0), Deg(*t * 360.0), Deg(0.0))));
+    let view = Matrix4::look_at_lh(Point3::new(1.0, 0.0, 1.0), Point3::new(0.0, 0.0, 0.0), Vector3::unit_y());
+    let view2 = Matrix4::look_at_lh(Point3::new(1.0, 1.0, 1.0), Point3::new(0.0, 0.0, 0.0), Vector3::unit_y());
+    let view3 = Matrix4::look_at_lh(Point3::new(0.0, 0.0, 1.0), Point3::new(0.0, 0.0, 0.0), Vector3::unit_y());
+    let rotating_view = Map2::read_map(rotation, view, |rotation, view| {
+         *view * *rotation
+    });
+
+    //let view = Matrix4::look_at_lh(Point3::new(0.0, 0.5, 1.2), Point3::new(0.0, 0.5, 0.0), Vector3::unit_y());
 
     let camera = SimpleCamera {
-        projection: CameraProjection::Perspective { vfov: 60.0, near: 0.1 },
-        //projection: CameraProjection::Orthographic { size: Vector3::new(3.0, 3.0, 100.0) },
-        view,
+        //projection: CameraProjection::Perspective { vfov: 60.0, near: 0.1 },
+        projection: CameraProjection::Orthographic { size: Vector3::new(0.5, 0.5, 100.0) },
+        //view: rotating_view,
+        //view: view2,
+        view: view3,
     };
 
     //let light = DirectionalLight::new(WHITE, 10.0, Vector3::new(-1.0, -1.0, -2.0));
-    let light = DirectionalLight::new(Vector3::new(-1.0, -1.0, -1.0))
+    /*let light = DirectionalLight::new(Vector3::new(-1.0, -1.0, -1.0))
+        .color(WHITE)
+        .intensity(5.0);*/
+
+
+    let animated = AnimatedState::custom(ease_in_out, None).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(-0.15f32, 0.15f32);
+    let rotation = Map1::read_map(animated, |t| Matrix3::<f32>::from(Euler::new(Deg(-20.0), Deg(*t * 360.0), Deg(0.0))));
+
+    let direction = Map1::read_map(rotation, |rotation| {
+        *rotation * Vector3::new(0.0, 0.0, 1.0)
+    });
+
+    //let light = DirectionalLight::new(Vector3::new(0.0, 0.0, 1.0))
+    let light = DirectionalLight::new(direction)
         .color(WHITE)
         .intensity(5.0);
 
@@ -75,8 +121,9 @@ fn main() {
         Window::new(
             "Cube example",
             Dimension::new(600.0, 600.0),
+            Scene3d::new((center, x, y, z, object, object2, light), camera)
             //Scene3d::new((object, light), camera)
-            Scene3d::new((object, object2, light), camera)
+            //Scene3d::new((object, object2, light), camera)
         ).close_application_on_window_close()
     );
 
@@ -88,38 +135,60 @@ fn vertex(pos: [f32; 3]) -> Vertex {
     Vertex::new(Vector3::from(pos))
 }
 
-fn create_mesh() -> Mesh {
+fn vertex_coord(pos: [f32; 3], coord: [f32; 2]) -> Vertex {
+    Vertex::new(Vector3::from(pos))
+        .texture_coords_0(Vector2::from(coord))
+}
+
+fn create_plane(origin: Vector3<f32>, width: f32) -> Mesh {
+    let vertex_positions = [
+        vertex_coord([-0.5 * width + origin.x, 0.5 * width + origin.y, origin.z], [0.0, 0.0]),
+        vertex_coord([0.5 * width + origin.x, 0.5 * width + origin.y, origin.z], [1.0, 0.0]),
+        vertex_coord([0.5 * width + origin.x, -0.5 * width + origin.y, origin.z], [1.0, 1.0]),
+        vertex_coord([-0.5 * width + origin.x, -0.5 * width + origin.y, origin.z], [0.0, 1.0]),
+    ];
+
+    let index_data: &[u32] = &[
+        0, 2, 1, 2, 0, 3,
+    ];
+
+    Mesh::new(vertex_positions.to_vec(), index_data.to_vec())
+        .calculate_normals(Handedness::Left)
+        .calculate_tangents()
+}
+
+fn create_cube(origin: Vector3<f32>, width: f32) -> Mesh {
     let vertex_positions = [
         // far side (0.0, 0.0, 0.5)
-        vertex([-0.5, -0.5, 0.5]),
-        vertex([0.5, -0.5, 0.5]),
-        vertex([0.5, 0.5, 0.5]),
-        vertex([-0.5, 0.5, 0.5]),
-        // near side (0.0, 0.0, -0.5)
-        vertex([-0.5, 0.5, -0.5]),
-        vertex([0.5, 0.5, -0.5]),
-        vertex([0.5, -0.5, -0.5]),
-        vertex([-0.5, -0.5, -0.5]),
-        // right side (0.5, 0.0, 0.0)
-        vertex([0.5, -0.5, -0.5]),
-        vertex([0.5, 0.5, -0.5]),
-        vertex([0.5, 0.5, 0.5]),
-        vertex([0.5, -0.5, 0.5]),
-        // left side (-0.5, 0.0, 0.0)
-        vertex([-0.5, -0.5, 0.5]),
-        vertex([-0.5, 0.5, 0.5]),
-        vertex([-0.5, 0.5, -0.5]),
-        vertex([-0.5, -0.5, -0.5]),
-        // top (0.0, 0.5, 0.0)
-        vertex([0.5, 0.5, -0.5]),
-        vertex([-0.5, 0.5, -0.5]),
-        vertex([-0.5, 0.5, 0.5]),
-        vertex([0.5, 0.5, 0.5]),
-        // bottom (0.0, -0.5, 0.0)
-        vertex([0.5, -0.5, 0.5]),
-        vertex([-0.5, -0.5, 0.5]),
-        vertex([-0.5, -0.5, -0.5]),
-        vertex([0.5, -0.5, -0.5]),
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        // near side (0.0, 0.0, -0.5 * width)
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
+        // right side (0.5 * width, 0.0, 0.0)
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        // left side (-0.5 * width, 0.0, 0.0)
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
+        // top (0.0, 0.5 * width, 0.0)
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, 0.5 * width + origin.y, 0.5 * width + origin.z]),
+        // bottom (0.0, -0.5 * width, 0.0)
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, 0.5 * width + origin.z]),
+        vertex([-0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
+        vertex([0.5 * width + origin.x, -0.5 * width + origin.y, -0.5 * width + origin.z]),
     ];
 
     let index_data: &[u32] = &[

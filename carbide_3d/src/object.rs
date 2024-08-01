@@ -1,5 +1,8 @@
 use carbide::render::matrix::{Deg, Euler, Matrix4, SquareMatrix};
+use carbide::state::StateSync;
+use carbide::widget::Empty;
 use crate::material::Material;
+use crate::material::pbr_material::PbrMaterial;
 use crate::mesh::Mesh;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use crate::render3d::Render3d;
@@ -14,19 +17,20 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn new(mesh: Mesh, material: Material) -> Object {
+    pub fn new(mesh: Mesh, material: impl Into<Material>) -> Object {
         Object {
             id: Default::default(),
             mesh,
             transform: Matrix4::identity(),
-            material,
+            material: material.into(),
         }
     }
 }
 
 impl Render3d for Object {
     fn render(&mut self, context: &mut RenderContext3d) {
-        self.transform = Matrix4::from(Euler::new(Deg(0.0), Deg(0.5), Deg(0.0))) * self.transform;
+        self.material.sync(context.env);
+        //self.transform = Matrix4::from(Euler::new(Deg(0.0), Deg(0.5), Deg(0.0))) * self.transform;
 
         context.material(&self.material, |context| {
             context.transform(&self.transform, |context| {

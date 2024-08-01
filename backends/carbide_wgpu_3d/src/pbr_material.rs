@@ -1,10 +1,23 @@
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use dashmap::DashMap;
 use encase::ShaderType;
+use once_cell::sync::Lazy;
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, ShaderStages, TextureSampleType, TextureViewDimension};
+use carbide_3d::InnerImageContext3d;
+use carbide_3d::material::albedo_component::AlbedoComponent;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
+use carbide_core::draw::{ImageId, Texture, TextureFormat};
+use carbide_core::draw::pre_multiply::PreMultiply;
+use carbide_core::image;
 use carbide_core::render::matrix::{Matrix3, Vector3, Vector4, Zero};
+use carbide_core::state::ReadState;
+use carbide_wgpu::DEVICE;
+use crate::image_context_3d::{ImageContext3d, TEXTURES};
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
 pub struct WgpuPbrMaterial {
@@ -23,6 +36,7 @@ pub struct WgpuPbrMaterial {
     alpha_cutout: f32,
 
     material_flags: u32,
+    texture_enable: u32,
 }
 
 unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
@@ -30,13 +44,20 @@ unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
     pub(crate) fn from_material(material: &PbrMaterial) -> Self {
-        let albedo = material.albedo.to_value();
+        let albedo = material.albedo.value().to_value();
+
+        if let Some(image_id) = material.albedo.value().to_texture() {
+            load_image(image_id);
+        }
+        if let Some(image_id) = material.normal.value().to_texture() {
+            load_image(image_id);
+        }
 
         Self {
             uv_transform0: material.uv_transform0,
             uv_transform1: material.uv_transform1,
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
-            roughness: material.roughness_factor.unwrap_or(0.0),
+            roughness: material.roughness_factor.value().unwrap_or(0.0),
             metallic: material.metallic_factor.unwrap_or(0.0),
             reflectance: material.reflectance.to_value(0.5),
             clear_coat: material.clearcoat_factor.unwrap_or(0.0),
@@ -49,8 +70,8 @@ impl WgpuPbrMaterial {
                 _ => 0.0,
             },
             material_flags: {
-                let mut flags = material.albedo.to_flags();
-                flags |= material.normal.to_flags();
+                let mut flags = material.albedo.value().to_flags();
+                flags |= material.normal.value().to_flags();
                 flags |= material.aomr_textures.to_flags();
                 flags |= material.clearcoat_textures.to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
@@ -64,6 +85,102 @@ impl WgpuPbrMaterial {
                 //println!("{:#?}", flags);
                 flags.bits()
             },
+            texture_enable: {
+                let list = &[
+                    material.albedo.value().is_texture(),
+                    material.normal.value().to_texture().is_some(),
+                ];
+                let mut bits = 0x0;
+                for t in list.into_iter().rev() {
+                    // Shift must happen first, if it happens second, the last bit will also be shifted
+                    bits <<= 1;
+                    bits |= *t as u32;
+                }
+                bits
+            }
         }
     }
+}
+
+fn load_image(id: &ImageId) {
+    if !ImageContext3d.texture_exist(id) {
+        let path = if id.is_relative() {
+            let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
+                .for_folder("assets")
+                .unwrap();
+
+            assets.join(id)
+        } else {
+            id.as_ref().to_path_buf()
+        };
+
+        let image = image::open(path)
+            .expect("Couldn't load image")
+            .pre_multiplied();
+
+        let texture = Texture {
+            width: image.width(),
+            height: image.height(),
+            bytes_per_row: image.width() * 4,
+            format: TextureFormat::RGBA8,
+            data: &image.to_rgba8().into_raw(),
+        };
+
+        ImageContext3d.update_texture(id.clone(), texture);
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Default)]
+pub struct WgpuPbrMaterialTextures {
+    pub(crate) albedo: ImageId,
+    pub(crate) normal: ImageId,
+}
+
+pub(crate) static PBR_BIND_GROUPS_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
+    DEVICE.create_bind_group_layout(&BindGroupLayoutDescriptor {
+        label: None,
+        entries: &[
+            BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Texture {
+                    sample_type: TextureSampleType::Float { filterable: true },
+                    view_dimension: TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            BindGroupLayoutEntry {
+                binding: 1,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Texture {
+                    sample_type: TextureSampleType::Float { filterable: true },
+                    view_dimension: TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ],
+    })
+});
+
+
+pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures) -> BindGroup {
+    let layout = &*PBR_BIND_GROUPS_LAYOUT;
+
+    let views = &[
+        TEXTURES.get(&textures.albedo).unwrap().create_view(&Default::default()),
+        TEXTURES.get(&textures.normal).unwrap().create_view(&Default::default())
+    ];
+
+    DEVICE.create_bind_group(&BindGroupDescriptor {
+        label: None,
+        layout,
+        entries: &views.into_iter().enumerate().map(|(idx, view)| {
+            wgpu::BindGroupEntry {
+                binding: idx as u32,
+                resource: wgpu::BindingResource::TextureView(view),
+            }
+        }).collect::<Vec<_>>(),
+    })
 }

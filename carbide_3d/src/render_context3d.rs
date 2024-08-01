@@ -5,12 +5,13 @@ use carbide::environment::Environment;
 use carbide::render::Layer;
 use carbide::render::matrix::{Matrix4, Vector3};
 use crate::camera::Camera;
-use crate::light::DirectionalLight;
+use crate::image_context3d::InnerImageContext3d;
 use crate::material::Material;
 use crate::mesh::Mesh;
 
 pub struct RenderContext3d<'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
+    pub(crate) image: &'a mut dyn InnerImageContext3d,
     pub env: &'a mut Environment,
 
 }
