@@ -116,6 +116,8 @@ impl<'a> RenderContext<'a> {
         self.render.geometry(geometry);
     }
 
+
+
     pub fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {
         if stroke.is_empty() {
             return;

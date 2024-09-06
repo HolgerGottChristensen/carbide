@@ -5,6 +5,7 @@ use lyon::math::vector;
 
 use crate::draw::Dimension;
 
+/// This type is a wrapper around an svg builder, allowing us to clone the actions.
 #[derive(Clone)]
 pub struct SVGPathBuilder {
     actions: Vec<SVGBuildAction>,

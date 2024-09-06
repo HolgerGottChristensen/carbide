@@ -10,7 +10,7 @@ mod line_controller;
 mod scatter_controller;
 
 pub trait DatasetController: Debug + Clone + 'static {
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment, padding: EdgeInsets);
+    fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets);
 
     fn update_scales_min_max(&mut self);
 }

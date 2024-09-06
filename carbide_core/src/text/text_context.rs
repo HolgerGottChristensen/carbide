@@ -51,6 +51,8 @@ pub trait InnerTextContext {
     fn hit(&self, id: TextId, position: Position) -> (usize, usize);
 
     fn position_of(&self, id: TextId, line: usize, index: usize) -> Position;
+
+    fn remove(&mut self, id: TextId);
 }
 
 pub struct NOOPTextContext;
@@ -93,6 +95,10 @@ impl InnerTextContext for NOOPTextContext {
     }
 
     fn position_of(&self, _id: TextId, _line: usize, _index: usize) -> Position {
+        unimplemented!()
+    }
+
+    fn remove(&mut self, id: TextId) {
         unimplemented!()
     }
 }

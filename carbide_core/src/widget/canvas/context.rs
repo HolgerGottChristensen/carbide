@@ -1,10 +1,10 @@
+use std::fmt::{Debug, Formatter};
+
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
-
-use carbide_core::state::AnyReadState;
 
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashPattern};
 use crate::draw::Color;
@@ -12,73 +12,103 @@ use crate::draw::shape::triangle::Triangle;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
 use crate::render::{RenderContext, Style};
-use crate::state::{IntoReadState, ReadState};
+use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::state::ReadStateExtNew;
+use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
+use crate::widget::Wrap;
 
-#[derive(Debug, Clone)]
-pub struct CanvasContext {
-    generator: Vec<ContextAction>,
+pub struct CanvasContext<'a, 'b> {
+    render_context: &'a mut RenderContext<'b>,
+    current_state: ContextState,
+    state_stack: Vec<ContextState>,
     position: Position,
     dimension: Dimension,
+    path_builder: SVGPathBuilder,
 }
 
-impl CanvasContext {
-    pub fn new(position: Position, dimension: Dimension) -> CanvasContext {
+#[derive(Debug, Clone)]
+pub struct ContextState {
+    stroke_color: Style,
+    fill_color: Style,
+    cap_style: LineCap,
+    join_style: LineJoin,
+    line_width: Scalar,
+    dash_pattern: Option<Vec<f64>>,
+    dash_offset: Scalar,
+    miter_limit: f32,
+    text_alignment: Alignment,
+    clip_count: u32,
+}
+
+impl<'a, 'b> CanvasContext<'a, 'b> {
+    pub fn new(position: Position, dimension: Dimension, render_context: &'a mut RenderContext<'b>) -> CanvasContext<'a, 'b> {
         CanvasContext {
-            generator: vec![ContextAction::MoveTo(Position::new(0.0, 0.0))],
+            render_context,
+            current_state: ContextState {
+                stroke_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+                fill_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
+                cap_style: LineCap::Round,
+                join_style: LineJoin::Round,
+                line_width: 2.0,
+                dash_pattern: None,
+                dash_offset: 0.0,
+                miter_limit: StrokeOptions::DEFAULT_MITER_LIMIT,
+                text_alignment: Alignment::TopLeading,
+                clip_count: 0,
+            },
+            state_stack: vec![],
             position,
             dimension,
+            path_builder: SVGPathBuilder::new(),
         }
-    }
-
-    pub fn position(&self) -> Position {
-        self.position
     }
 
     pub fn dimension(&self) -> Dimension {
         self.dimension
     }
 
-    pub fn append(&mut self, mut other: CanvasContext) {
-        self.generator.append(&mut other.generator);
+    pub fn env(&mut self) -> &mut Environment {
+        self.render_context.env
     }
 
     pub fn set_line_width(&mut self, width: f64) {
-        self.generator.push(ContextAction::LineWidth(width))
+        self.current_state.line_width = width;
     }
 
     pub fn set_dash_pattern(&mut self, pattern: Option<Vec<f64>>) {
-        self.generator.push(ContextAction::LineDashPattern(pattern));
+        self.current_state.dash_pattern = pattern;
     }
 
     pub fn set_dash_offset(&mut self, offset: f64) {
-        self.generator.push(ContextAction::LineDashOffset(offset));
+        self.current_state.dash_offset = offset;
     }
 
     pub fn set_line_join(&mut self, join: LineJoin) {
-        self.generator.push(ContextAction::LineJoin(join))
+        self.current_state.join_style = join;
     }
 
     pub fn set_line_cap(&mut self, cap: LineCap) {
-        self.generator.push(ContextAction::LineCap(cap))
+        self.current_state.cap_style = cap;
     }
 
     pub fn set_miter_limit(&mut self, limit: f64) {
-        self.generator.push(ContextAction::MiterLimit(limit))
+        self.current_state.miter_limit = limit as f32;
     }
 
     pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
-        self.generator.push(ContextAction::FillStyle(style.into_read_state().as_dyn_read()))
+        let mut read_state = style.into_read_state();
+        read_state.sync(self.render_context.env);
+        self.current_state.fill_color = read_state.value().clone();
     }
 
     pub fn set_stroke_style<C: IntoReadState<Style>>(&mut self, style: C) {
-        self.generator
-            .push(ContextAction::StrokeStyle(style.into_read_state().as_dyn_read()))
+        let mut read_state = style.into_read_state();
+        read_state.sync(self.render_context.env);
+        self.current_state.stroke_color = read_state.value().clone();
     }
 
     pub fn rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
-        self.generator
-            .push(ContextAction::Rect(x, y, width, height))
+        todo!()
     }
 
     /// x, y is the top left corner of the box enclosing the circle
@@ -99,249 +129,193 @@ impl CanvasContext {
     }
 
     pub fn fill(&mut self) {
-        self.generator.push(ContextAction::Fill)
+        let path = self.path_builder.clone().build();
+        let fill_options = FillOptions::default();
+        let geometry = self.get_fill_geometry(path, fill_options);
+        self.render_context.style(self.current_state.fill_color.convert(self.position, self.dimension), |ctx| {
+            ctx.geometry(&geometry)
+        });
     }
 
     pub fn stroke(&mut self) {
-        self.generator.push(ContextAction::Stroke)
-    }
+        let stroke_options = StrokeOptions::default()
+            .with_line_cap(self.current_state.cap_style)
+            .with_line_width(self.current_state.line_width as f32)
+            .with_miter_limit(self.current_state.miter_limit)
+            .with_line_join(self.current_state.join_style);
 
-    pub fn begin_path(&mut self) {
-        if let Some(ContextAction::MoveTo(_)) = self.generator.last() {
-            self.generator.pop();
-        }
-        self.generator.push(ContextAction::BeginPath)
-    }
+        let path = self.path_builder.clone().build();
+        let dashes = self.current_state.dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
+            StrokeDashPattern {
+                pattern: pattern.clone(),
+                offset: self.current_state.dash_offset,
+                start_cap: StrokeDashCap::None,
+                end_cap: StrokeDashCap::None,
+            }
+        });
 
-    pub fn move_to(&mut self, x: f64, y: f64) {
-        if let Some(ContextAction::MoveTo(_)) = self.generator.last() {
-            self.generator.pop();
-        }
-        self.generator
-            .push(ContextAction::MoveTo(Position::new(x, y)))
-    }
-
-    pub fn close_path(&mut self) {
-        self.generator.push(ContextAction::Close)
-    }
-
-    pub fn line_to(&mut self, x: f64, y: f64) {
-        self.generator
-            .push(ContextAction::LineTo(Position::new(x, y)))
-    }
-
-    pub fn add_lines(&mut self, lines: impl IntoIterator<Item=Position>) {
-        self.generator
-            .extend(lines.into_iter().map(|pos| ContextAction::LineTo(pos)))
-    }
-
-    pub fn clip(&mut self) {
-        self.generator.push(ContextAction::Clip)
-    }
-
-    pub fn save(&mut self) {
-        self.generator.push(ContextAction::Save)
-    }
-
-    pub fn restore(&mut self) {
-        self.generator.push(ContextAction::Restore)
-    }
-
-    pub fn quadratic_curve_to(&mut self, ctrl: Position, to: Position) {
-        self.generator
-            .push(ContextAction::QuadraticBezierTo { ctrl, to })
-    }
-
-    pub fn bezier_curve_to(&mut self, ctrl1: Position, ctrl2: Position, to: Position) {
-        self.generator
-            .push(ContextAction::CubicBezierTo { ctrl1, ctrl2, to })
-    }
-
-    pub fn arc(&mut self, x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64) {
-        self.generator.push(ContextAction::Arc {
-            x,
-            y,
-            r,
-            start_angle,
-            end_angle,
+        let draw_style = self.current_state.stroke_color.convert(self.position, self.dimension);
+        let geometry = self.get_stroke_geometry(path, stroke_options);
+        self.render_context.style(draw_style, |render_context| {
+            render_context.stroke_dash_pattern(dashes, |render_context| {
+                render_context.stroke(&geometry)
+            })
         })
     }
 
+    pub fn begin_path(&mut self) {
+        self.path_builder = SVGPathBuilder::new();
+    }
+
+    pub fn move_to(&mut self, x: f64, y: f64) {
+        let position = Position::new(x, y) + self.position;
+        self.path_builder.move_to(point(position.x as f32, position.y as f32));
+    }
+
+    pub fn close_path(&mut self) {
+        self.path_builder.close();
+    }
+
+    pub fn line_to(&mut self, x: f64, y: f64) {
+        let position = Position::new(x, y) + self.position;
+        self.path_builder.line_to(point(position.x as f32, position.y as f32));
+    }
+
+    pub fn add_lines(&mut self, lines: impl IntoIterator<Item=Position>) {
+        for line in lines {
+            let position = line + self.position;
+            self.path_builder.line_to(point(position.x as f32, position.y as f32));
+        }
+    }
+
+    pub fn clip(&mut self) {
+        let path = self.path_builder.clone().build();
+        let fill_options = FillOptions::default();
+        let geometry = self.get_fill_geometry(path, fill_options);
+        self.render_context.render.stencil(&geometry);
+        self.current_state.clip_count += 1;
+    }
+
+    pub fn save(&mut self) {
+        self.state_stack.push(self.current_state.clone());
+    }
+
+    pub fn restore(&mut self) {
+        let current_clip = self.current_state.clip_count;
+
+        if let Some(state) = self.state_stack.pop() {
+            // Restore clip state
+            let clip_diff = current_clip - state.clip_count;
+
+            for _ in 0..clip_diff {
+                self.render_context.render.pop_stencil();
+            }
+
+            self.current_state = state;
+        } else {
+            println!("Trying to restore a stack without any saved state.");
+        }
+    }
+
+    pub fn quadratic_curve_to(&mut self, ctrl: Position, to: Position) {
+        let ctrl = ctrl + self.position;
+        let to = to + self.position;
+
+        self.path_builder.quadratic_bezier_to(
+            point(ctrl.x as f32, ctrl.y as f32),
+            point(to.x as f32, to.y as f32)
+        );
+    }
+
+    pub fn bezier_curve_to(&mut self, ctrl1: Position, ctrl2: Position, to: Position) {
+        let ctrl1 = ctrl1 + self.position;
+        let ctrl2 = ctrl2 + self.position;
+        let to = to + self.position;
+
+        self.path_builder.cubic_bezier_to(
+            point(ctrl1.x as f32, ctrl1.y as f32),
+            point(ctrl2.x as f32, ctrl2.y as f32),
+            point(to.x as f32, to.y as f32)
+        );
+    }
+
+    pub fn arc(&mut self, x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64) {
+        let sweep_angle = end_angle - start_angle;
+
+        let x = x + self.position.x;
+        let y = y + self.position.y;
+
+        self.path_builder.arc(
+            point(x as f32, y as f32),
+            Dimension::new(r, r),
+            sweep_angle as f32,
+            start_angle as f32,
+        )
+    }
+
     pub fn arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, r: f64) {
-        self.generator
-            .push(ContextAction::ArcTo { x1, y1, x2, y2, r })
+        todo!()
     }
 
     pub fn set_text_align(&mut self, alignment: Alignment) {
-        self.generator.push(ContextAction::TextAlignment(alignment));
+        self.current_state.text_alignment = alignment;
     }
 
-    pub fn fill_text(&mut self, text: String, x: Scalar, y: Scalar) {
-        self.generator.push(ContextAction::FillText(text, Position::new(x, y)))
-    }
+    pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
+        let text_id = TextId::new();
 
-    pub fn to_paths(&self, offset: Position, env: &mut Environment) -> Vec<(Path, ShapeStyleWithOptions)> {
-        let mut current_stroke_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
-        let mut current_fill_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
-        let mut current_cap_style = LineCap::Round;
-        let mut current_join_style = LineJoin::Round;
-        let mut current_line_width = 2.0;
-        let mut current_dash_pattern = None;
-        let mut current_dash_offset = 0.0;
-        let mut current_miter_limit = StrokeOptions::DEFAULT_MITER_LIMIT;
-        let mut current_text_alignment = Alignment::Leading;
-        let mut paths: Vec<(Path, ShapeStyleWithOptions)> = vec![];
-        let mut current_builder = SVGPathBuilder::new();
-        let mut current_builder_begun = false;
+        let text_style = TextStyle {
+            family: "Noto Sans".to_string(),
+            font_size: 14,
+            line_height: 1.0,
+            font_style: FontStyle::Normal,
+            font_weight: FontWeight::Normal,
+            text_decoration: TextDecoration::None,
+            color: None,
+            wrap: Wrap::Character,
+        };
 
-        let mut clip_stack = vec![];
+        self.render_context.text.update(text_id, text, &text_style);
+        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env);
 
-        let mut save_stack = vec![];
+        let position = match self.current_state.text_alignment {
+            Alignment::TopLeading => Position::new(x, y),
+            Alignment::Top => Position::new(x - size.width / 2.0, y),
+            Alignment::TopTrailing => Position::new(x - size.width, y),
 
-        struct SaveState {
-            clip_stack_index: usize,
-        }
+            Alignment::Leading => Position::new(x, y - size.height / 2.0),
+            Alignment::Center => Position::new(x - size.width / 2.0, y - size.height / 2.0),
+            Alignment::Trailing => Position::new(x - size.width, y - size.height / 2.0),
 
-        let offset_point =
-            |p: Position| point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32);
+            Alignment::BottomLeading => Position::new(x, y - size.height),
+            Alignment::Bottom => Position::new(x - size.width / 2.0, y - size.height),
+            Alignment::BottomTrailing => Position::new(x - size.width, y - size.height),
 
-        for action in &self.generator {
-            if !current_builder_begun {
-                current_builder = SVGPathBuilder::new();
-                current_builder_begun = true;
-            }
+            Alignment::Custom(px, py) => Position::new(x - size.width * px, y - size.height * py),
+        };
 
-            match action {
-                ContextAction::MoveTo(point) => {
-                    current_builder.move_to(offset_point(*point));
-                }
-                ContextAction::LineTo(point) => {
-                    current_builder.line_to(offset_point(*point));
-                }
-                ContextAction::QuadraticBezierTo { ctrl, to } => {
-                    current_builder.quadratic_bezier_to(offset_point(*ctrl), offset_point(*to));
-                }
-                ContextAction::CubicBezierTo { ctrl1, ctrl2, to } => {
-                    current_builder.cubic_bezier_to(
-                        offset_point(*ctrl1),
-                        offset_point(*ctrl2),
-                        offset_point(*to),
-                    );
-                }
-                ContextAction::Close => {
-                    current_builder.close();
-                }
-                ContextAction::LineWidth(width) => {
-                    current_line_width = *width;
-                }
-                ContextAction::LineJoin(join) => {
-                    current_join_style = *join;
-                }
-                ContextAction::LineCap(cap) => {
-                    current_cap_style = *cap;
-                }
-                ContextAction::MiterLimit(limit) => {
-                    current_miter_limit = *limit as f32;
-                }
-                ContextAction::Rect(_, _, _, _) => {
-                    todo!()
-                }
-                ContextAction::BeginPath => {
-                    current_builder_begun = false;
-                }
-                ContextAction::Arc {
-                    x,
-                    y,
-                    r,
-                    start_angle,
-                    end_angle,
-                } => {
-                    let sweep_angle = *end_angle - *start_angle;
+        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env);
 
-                    current_builder.arc(
-                        offset_point(Position::new(*x, *y)),
-                        Dimension::new(*r, *r),
-                        sweep_angle as f32,
-                        *start_angle as f32,
-                    )
-                }
-                ContextAction::ArcTo { x1: _x1, y1: _y1, x2: _x2, y2: _y2, r: _r } => {
-                    todo!()
-                }
-                ContextAction::FillStyle(color) => {
-                    color.clone().sync(env);
-                    current_fill_color = color.value().clone();
-                }
-                ContextAction::StrokeStyle(color) => {
-                    color.clone().sync(env);
-                    current_stroke_color = color.value().clone();
-                }
-                ContextAction::Fill => {
-                    let fill_options = FillOptions::default();
-                    let color = current_fill_color.clone();
-                    let path = current_builder.clone().build();
-                    paths.push((path, ShapeStyleWithOptions::Fill(fill_options, color)));
-                }
-                ContextAction::Stroke => {
-                    let stroke_options = StrokeOptions::default()
-                        .with_line_cap(current_cap_style)
-                        .with_line_width(current_line_width as f32)
-                        .with_miter_limit(current_miter_limit)
-                        .with_line_join(current_join_style);
-                    let color = current_stroke_color.clone();
-                    let path = current_builder.clone().build();
-                    let dashes = current_dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
-                        StrokeDashPattern {
-                            pattern: pattern.clone(),
-                            offset: current_dash_offset,
-                            start_cap: StrokeDashCap::None,
-                            end_cap: StrokeDashCap::None,
-                        }
-                    });
-                    paths.push((path, ShapeStyleWithOptions::Stroke(stroke_options, color, dashes)));
-                }
-                ContextAction::LineDashOffset(offset) => {
-                    current_dash_offset = *offset;
-                }
-                ContextAction::LineDashPattern(pattern) => {
-                    current_dash_pattern = pattern.clone();
-                }
-                ContextAction::Clip => {
-                    let path = current_builder.clone().build();
-                    clip_stack.push(path.clone());
-                    paths.push((path, ShapeStyleWithOptions::Clip));
-                }
-                ContextAction::Save => {
-                    save_stack.push(SaveState {
-                        clip_stack_index: clip_stack.len(),
-                    })
-                }
-                ContextAction::Restore => {
-                    if let Some(state) = save_stack.pop() {
-                        // Restore clip state
-                        let clip_diff = save_stack.len() - state.clip_stack_index;
+        let style = self.current_state.fill_color.convert(position + self.position, size);
+        self.render_context.style(style, |render_context| {
+            render_context.text(text_id);
+        });
 
-                        for _ in 0..clip_diff {
-                            if let Some(clip) = clip_stack.pop() {
-                                paths.push((clip, ShapeStyleWithOptions::UnClip));
-                            }
-                        }
-
-                    } else {
-                        println!("Trying to restore a stack without any saved state.");
-                    }
-                }
-                ContextAction::TextAlignment(alignment) => {
-                    current_text_alignment = *alignment;
-                }
-            }
-        }
-
-        paths
+        self.render_context.text.remove(text_id);
     }
 }
 
-impl CanvasContext {
+impl<'a, 'b> Drop for CanvasContext<'a, 'b> {
+    fn drop(&mut self) {
+        if self.current_state.clip_count > 0 {
+            for _ in 0..self.current_state.clip_count {
+                self.render_context.render.pop_stencil();
+            }
+        }
+    }
+}
+
+impl<'a, 'b> CanvasContext<'a, 'b> {
     pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = FillTessellator::new();
@@ -415,96 +389,15 @@ impl CanvasContext {
 
         Triangle::from_point_list(points)
     }
+}
 
-    pub fn render(&self, render_context: &mut RenderContext) {
-        let paths = self.to_paths(self.position, render_context.env);
-
-        let mut clip_counter = 0;
-
-        for (path, options) in paths {
-            match options {
-                ShapeStyleWithOptions::Fill(fill_options, style) => {
-                    render_context.style(style.convert(self.position, self.dimension), |this| {
-                        this.geometry(&self.get_fill_geometry(path, fill_options))
-                    })
-                }
-                ShapeStyleWithOptions::Stroke(stroke_options, style, dashes) => {
-                    render_context.style(style.convert(self.position, self.dimension), |render_context| {
-                        render_context.stroke_dash_pattern(dashes, |render_context| {
-                            render_context.stroke(&self.get_stroke_geometry(path, stroke_options))
-                        })
-                    })
-                }
-                ShapeStyleWithOptions::Clip => {
-                    render_context.render.stencil(&self.get_fill_geometry(path, FillOptions::default()));
-                    clip_counter += 1;
-                }
-                ShapeStyleWithOptions::UnClip => {
-                    render_context.render.pop_stencil();
-                    clip_counter -= 1;
-                }
-            }
-        }
-
-        if clip_counter > 0 {
-            for _ in 0..clip_counter {
-                render_context.render.pop_stencil();
-            }
-        }
+impl<'a, 'b> Debug for CanvasContext<'a, 'b> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CanvasContext")
+            .field("current_state", &self.current_state)
+            .field("state_stack", &self.state_stack)
+            .field("position", &self.position)
+            .field("dimension", &self.dimension)
+            .finish_non_exhaustive()
     }
-}
-
-#[derive(Debug)]
-pub enum ShapeStyleWithOptions {
-    Fill(FillOptions, Style),
-    Stroke(StrokeOptions, Style, Option<StrokeDashPattern>),
-    Clip,
-    UnClip
-}
-
-#[derive(Debug, Clone)]
-enum ContextAction {
-    MoveTo(Position),
-    LineTo(Position),
-    QuadraticBezierTo {
-        ctrl: Position,
-        to: Position,
-    },
-    CubicBezierTo {
-        ctrl1: Position,
-        ctrl2: Position,
-        to: Position,
-    },
-    Fill,
-    Stroke,
-    Clip,
-    Save,
-    Restore,
-    Close,
-    LineDashOffset(f64),
-    LineDashPattern(Option<Vec<f64>>),
-    LineWidth(f64),
-    LineJoin(LineJoin),
-    LineCap(LineCap),
-    MiterLimit(f64),
-    Rect(f64, f64, f64, f64),
-    BeginPath,
-    Arc {
-        x: f64,
-        y: f64,
-        r: f64,
-        start_angle: f64,
-        end_angle: f64,
-    },
-    ArcTo {
-        x1: f64,
-        y1: f64,
-        x2: f64,
-        y2: f64,
-        r: f64,
-    },
-    TextAlignment(Alignment),
-    FillText(String, Position),
-    FillStyle(Box<dyn AnyReadState<T=Style>>),
-    StrokeStyle(Box<dyn AnyReadState<T=Style>>),
 }

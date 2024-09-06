@@ -13,7 +13,7 @@ fn main() {
             "Chart example - Carbide",
             Dimension::new(700.0, 700.0),
             Chart::scatter(iter::repeat_with(|| {
-                Position::new((rand::random::<Scalar>() * 1000.0).round() / 10.0, (rand::random::<Scalar>() * 1000.0).round() / 10.0)
+                Position::new((rand::random::<Scalar>() * 200.0).round() / 10.0, (rand::random::<Scalar>() * 1000.0).round() / 10.0)
             }).take(20).collect())
                 .border()
                 .padding(50.0)

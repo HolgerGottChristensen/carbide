@@ -24,7 +24,7 @@ impl ScatterController<LinearScale, LinearScale> {
 }
 
 impl<X: Scale, Y: Scale> DatasetController for ScatterController<X, Y> {
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment, padding: EdgeInsets) {
+    fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets) {
 
         let x_ticks_width = if self.x_scale.display_ticks() { 10.0 } else { 0.0 };
         let y_ticks_width = if self.x_scale.display_ticks() { 10.0 } else { 0.0 };
@@ -34,10 +34,10 @@ impl<X: Scale, Y: Scale> DatasetController for ScatterController<X, Y> {
             Dimension::new(ctx.dimension().width - padding.left - padding.right, ctx.dimension().height - padding.top - padding.bottom - y_ticks_width)
         );
 
-        self.x_scale.draw_grid(ctx, env, chart_area);
-        self.y_scale.draw_grid(ctx, env, chart_area);
-        self.x_scale.draw_border(ctx, env, chart_area);
-        self.y_scale.draw_border(ctx, env, chart_area);
+        self.x_scale.draw_grid(ctx, chart_area);
+        self.y_scale.draw_grid(ctx, chart_area);
+        self.x_scale.draw_border(ctx, chart_area);
+        self.y_scale.draw_border(ctx, chart_area);
 
         ctx.save();
 

@@ -17,7 +17,7 @@ use crate::environment::Environment;
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
-use crate::widget::canvas::{CanvasContext, ShapeStyleWithOptions};
+use crate::widget::canvas::{CanvasContext};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
@@ -34,16 +34,16 @@ where
 }
 
 pub trait Context: Clone + 'static {
-    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment);
+    fn call(&mut self, context: &mut CanvasContext);
 }
 
-impl<T> Context for T where T: Fn(Rect, &mut CanvasContext, &mut Environment) + Clone + 'static {
-    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment) {
-        self(area, context, env)
+impl<T> Context for T where T: Fn(&mut CanvasContext) + Clone + 'static {
+    fn call(&mut self, context: &mut CanvasContext) {
+        self(context)
     }
 }
 
-type DefaultCanvasContext = fn(Rect, &mut CanvasContext, &mut Environment);
+type DefaultCanvasContext = fn(&mut CanvasContext);
 
 impl Canvas<DefaultCanvasContext> {
 
@@ -77,7 +77,7 @@ impl<C: Context> Shape for Canvas<C> {
     }
 
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        let mut context = CanvasContext::new(self.position, self.dimension);
+        /*let mut context = CanvasContext::new(self.position, self.dimension);
 
         let rectangle = Rect::new(self.position(), self.dimension());
 
@@ -103,18 +103,17 @@ impl<C: Context> Shape for Canvas<C> {
             }
         }
 
-        triangles
+        triangles*/
+
+        todo!()
     }
 }
 
 impl<C: Context> Render for Canvas<C> {
     fn render(&mut self, render_context: &mut RenderContext) {
-        let mut context = CanvasContext::new(self.position, self.dimension);
+        let mut context = CanvasContext::new(self.position, self.dimension, render_context);
 
-        let rectangle = Rect::new(self.position(), self.dimension());
-        self.context.call(rectangle, &mut context, render_context.env);
-
-        context.render(render_context);
+        self.context.call(&mut context);
     }
 }
 

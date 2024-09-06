@@ -20,7 +20,7 @@ impl LineController<LinearScale, LinearScale> {
 }
 
 impl<X: Scale, Y: Scale> DatasetController for LineController<X, Y> {
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment, padding: EdgeInsets) {
+    fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets) {
         //self.x_scale.draw(ctx, env, padding);
         //self.y_scale.draw(ctx, env, padding);
     }

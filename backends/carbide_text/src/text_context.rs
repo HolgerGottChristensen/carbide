@@ -286,6 +286,10 @@ impl InnerTextContext for TextContext {
 
         unreachable!()
     }
+
+    fn remove(&mut self, id: TextId) {
+        self.map.remove(&id);
+    }
 }
 
 fn swash_image(

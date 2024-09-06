@@ -59,11 +59,9 @@ impl<C: DatasetController> Update for Chart<C> {
 
 impl<C: DatasetController> Render for Chart<C> {
     fn render(&mut self, context: &mut RenderContext) {
-        let mut canvas = CanvasContext::new(self.position, self.dimension);
+        let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
-        self.dataset_controller.draw(&mut canvas, context.env, self.padding);
-
-        canvas.render(context);
+        self.dataset_controller.draw(&mut canvas, self.padding);
     }
 }
 
