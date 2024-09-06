@@ -6,7 +6,7 @@ use carbide_core::focus::Focus;
 use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract, Map2};
 use carbide_core::widget::*;
-use carbide_core::widget::canvas::{Canvas, Context, LineCap};
+use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
 
 use crate::{PlainPopUpButton, PopupItemDelegate};
 
@@ -41,7 +41,7 @@ impl PopUpButton {
 
         let label_color = mark_color.clone();
 
-        let arrows = Canvas::new(move |_rect: Rect, context: &mut Context, _env: &mut Environment| {
+        let arrows = Canvas::new(move |_rect: Rect, context: &mut CanvasContext, _env: &mut Environment| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);

@@ -4,7 +4,7 @@ use carbide_core::draw::{Alignment, Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
-use carbide_core::widget::canvas::{Canvas, Context, LineCap, LineJoin};
+use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
@@ -16,7 +16,7 @@ fn main() {
         Window::new(
             "Stroke example",
             Dimension::new(600.0, 600.0),
-            Canvas::new(move |_, context: &mut Context, env: &mut Environment| {
+            Canvas::new(move |_, context: &mut CanvasContext, env: &mut Environment| {
                 env.request_animation_frame();
                 context.move_to(100.0, 100.0);
                 /*context.line_to(500.0, 100.0);

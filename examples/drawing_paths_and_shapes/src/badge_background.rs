@@ -1,7 +1,7 @@
 use carbide::draw::{Alignment, Color, Dimension, Position, Rect};
 use carbide::environment::Environment;
 use carbide::widget::{Gradient, Widget, WidgetExt};
-use carbide::widget::canvas::{Canvas, Context};
+use carbide::widget::canvas::{Canvas, CanvasContext};
 
 use crate::hexagon_parameters::HexagonParameters;
 
@@ -11,7 +11,7 @@ impl BadgeBackground {
     pub fn new() -> impl Widget {
         let hexagon = HexagonParameters::new();
 
-        Canvas::new(move |rect: Rect, context: &mut Context, _: &mut Environment| {
+        Canvas::new(move |rect: Rect, context: &mut CanvasContext, _: &mut Environment| {
             let mut width = rect.width().min(rect.height());
             let height = width;
 

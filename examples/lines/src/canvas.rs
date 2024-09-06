@@ -1,7 +1,7 @@
 use carbide::draw::{Dimension, Position, Rect};
 use carbide::environment::{Environment, EnvironmentColor};
 use carbide::state::{LocalState, StateSync, State, ValueRefMut};
-use carbide::widget::canvas::{CanvasContext, Context};
+use carbide::widget::canvas::{Context, CanvasContext};
 
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
 use crate::graph::Graph;
@@ -11,8 +11,8 @@ use crate::line::Line;
 #[derive(Clone)]
 pub struct GraphCanvas(pub LocalState<Graph>);
 
-impl CanvasContext for GraphCanvas {
-    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment) {
+impl Context for GraphCanvas {
+    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment) {
         self.0.sync(env);
         let mut graph = self.0.value_mut();
         context.set_line_width(1.0);
@@ -91,7 +91,7 @@ impl CanvasContext for GraphCanvas {
 
 
 fn draw_selection_selected(
-    mut context: &mut Context,
+    mut context: &mut CanvasContext,
     mut graph: ValueRefMut<Graph>,
     selected: SelectedState,
 ) {
@@ -121,7 +121,7 @@ fn draw_selection_selected(
 }
 
 fn draw_selection_hovered(
-    mut context: &mut Context,
+    mut context: &mut CanvasContext,
     mut graph: &mut ValueRefMut<Graph>,
     hovered: SelectedState,
 ) {
@@ -150,7 +150,7 @@ fn draw_selection_hovered(
     }
 }
 
-fn draw_edges(mut context: &mut Context, mut graph: &mut ValueRefMut<Graph>) {
+fn draw_edges(mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph>) {
     context.begin_path();
 
     context.set_stroke_style(EnvironmentColor::DarkText);
@@ -177,7 +177,7 @@ fn draw_edges(mut context: &mut Context, mut graph: &mut ValueRefMut<Graph>) {
     context.stroke();
 }
 
-fn draw_nodes(mut context: &mut Context, graph: &mut ValueRefMut<Graph>) {
+fn draw_nodes(mut context: &mut CanvasContext, graph: &mut ValueRefMut<Graph>) {
     context.set_fill_style(EnvironmentColor::DarkText);
     context.begin_path();
 
@@ -200,15 +200,15 @@ fn draw_nodes(mut context: &mut Context, graph: &mut ValueRefMut<Graph>) {
     context.fill();
 }
 
-fn line_between(context: &mut Context, line: &Line, offset: Position) {
+fn line_between(context: &mut CanvasContext, line: &Line, offset: Position) {
     if line.len().is_normal() {
         context.move_to(offset.x + line.start.x, offset.y + line.start.y);
         context.line_to(offset.x + line.end.x, offset.y + line.end.y);
     }
 }
 
-fn draw_guides(rect: &Rect, mut context: &mut Context, mut graph: &mut ValueRefMut<Graph>) {
-    let mut point_context = Context::new();
+fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph>) {
+    let mut point_context = CanvasContext::new();
     point_context.begin_path();
     point_context.set_fill_style(EnvironmentColor::Green);
 

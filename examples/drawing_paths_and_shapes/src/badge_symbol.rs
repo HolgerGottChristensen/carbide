@@ -1,14 +1,14 @@
 use carbide::draw::{Alignment, Color, Position, Rect};
 use carbide::environment::Environment;
 use carbide::state::IntoReadState;
-use carbide::widget::canvas::{Canvas, Context};
+use carbide::widget::canvas::{Canvas, CanvasContext};
 use carbide::widget::{Widget, WidgetExt};
 
 pub struct BadgeSymbol;
 
 impl BadgeSymbol {
     pub fn new(rotation: impl IntoReadState<f64>) -> impl Widget {
-        Canvas::new(|rect: Rect, context: &mut Context, env: &mut Environment| {
+        Canvas::new(|rect: Rect, context: &mut CanvasContext, env: &mut Environment| {
             let width = f64::min(rect.width(), rect.height());
             let height = width * 0.75;
             let spacing = width * 0.030;

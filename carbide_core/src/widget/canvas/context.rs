@@ -2,31 +2,44 @@
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
-use lyon::tessellation::{FillOptions, LineCap, LineJoin, StrokeOptions};
+use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
 
 use carbide_core::state::AnyReadState;
 
-use crate::draw::{Dimension, Position, StrokeDashCap, StrokeDashPattern};
+use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashPattern};
 use crate::draw::Color;
+use crate::draw::shape::triangle::Triangle;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
-use crate::render::Style;
+use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::state::ReadStateExtNew;
 
 #[derive(Debug, Clone)]
-pub struct Context {
+pub struct CanvasContext {
     generator: Vec<ContextAction>,
+    position: Position,
+    dimension: Dimension,
 }
 
-impl Context {
-    pub fn new() -> Context {
-        Context {
+impl CanvasContext {
+    pub fn new(position: Position, dimension: Dimension) -> CanvasContext {
+        CanvasContext {
             generator: vec![ContextAction::MoveTo(Position::new(0.0, 0.0))],
+            position,
+            dimension,
         }
     }
 
-    pub fn append(&mut self, mut other: Context) {
+    pub fn position(&self) -> Position {
+        self.position
+    }
+
+    pub fn dimension(&self) -> Dimension {
+        self.dimension
+    }
+
+    pub fn append(&mut self, mut other: CanvasContext) {
         self.generator.append(&mut other.generator);
     }
 
@@ -72,8 +85,8 @@ impl Context {
     pub fn circle(&mut self, x: f64, y: f64, diameter: f64) {
         self.move_to(x, y + diameter / 2.0);
         self.arc(
-            x + diameter / 2.0,
-            y + diameter / 2.0,
+            x,
+            y,
             diameter / 2.0,
             0.0,
             360.0,
@@ -123,7 +136,15 @@ impl Context {
     }
 
     pub fn clip(&mut self) {
-        todo!()
+        self.generator.push(ContextAction::Clip)
+    }
+
+    pub fn save(&mut self) {
+        self.generator.push(ContextAction::Save)
+    }
+
+    pub fn restore(&mut self) {
+        self.generator.push(ContextAction::Restore)
     }
 
     pub fn quadratic_curve_to(&mut self, ctrl: Position, to: Position) {
@@ -151,7 +172,15 @@ impl Context {
             .push(ContextAction::ArcTo { x1, y1, x2, y2, r })
     }
 
-    pub fn to_paths(mut self, offset: Position, env: &mut Environment) -> Vec<(Path, ShapeStyleWithOptions)> {
+    pub fn set_text_align(&mut self, alignment: Alignment) {
+        self.generator.push(ContextAction::TextAlignment(alignment));
+    }
+
+    pub fn fill_text(&mut self, text: String, x: Scalar, y: Scalar) {
+        self.generator.push(ContextAction::FillText(text, Position::new(x, y)))
+    }
+
+    pub fn to_paths(&self, offset: Position, env: &mut Environment) -> Vec<(Path, ShapeStyleWithOptions)> {
         let mut current_stroke_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         let mut current_fill_color = Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
         let mut current_cap_style = LineCap::Round;
@@ -160,14 +189,23 @@ impl Context {
         let mut current_dash_pattern = None;
         let mut current_dash_offset = 0.0;
         let mut current_miter_limit = StrokeOptions::DEFAULT_MITER_LIMIT;
+        let mut current_text_alignment = Alignment::Leading;
         let mut paths: Vec<(Path, ShapeStyleWithOptions)> = vec![];
         let mut current_builder = SVGPathBuilder::new();
         let mut current_builder_begun = false;
 
+        let mut clip_stack = vec![];
+
+        let mut save_stack = vec![];
+
+        struct SaveState {
+            clip_stack_index: usize,
+        }
+
         let offset_point =
             |p: Position| point(p.x as f32 + offset.x as f32, p.y as f32 + offset.y as f32);
 
-        for action in &mut self.generator {
+        for action in &self.generator {
             if !current_builder_begun {
                 current_builder = SVGPathBuilder::new();
                 current_builder_begun = true;
@@ -231,11 +269,11 @@ impl Context {
                     todo!()
                 }
                 ContextAction::FillStyle(color) => {
-                    color.sync(env);
+                    color.clone().sync(env);
                     current_fill_color = color.value().clone();
                 }
                 ContextAction::StrokeStyle(color) => {
-                    color.sync(env);
+                    color.clone().sync(env);
                     current_stroke_color = color.value().clone();
                 }
                 ContextAction::Fill => {
@@ -268,6 +306,34 @@ impl Context {
                 ContextAction::LineDashPattern(pattern) => {
                     current_dash_pattern = pattern.clone();
                 }
+                ContextAction::Clip => {
+                    let path = current_builder.clone().build();
+                    clip_stack.push(path.clone());
+                    paths.push((path, ShapeStyleWithOptions::Clip));
+                }
+                ContextAction::Save => {
+                    save_stack.push(SaveState {
+                        clip_stack_index: clip_stack.len(),
+                    })
+                }
+                ContextAction::Restore => {
+                    if let Some(state) = save_stack.pop() {
+                        // Restore clip state
+                        let clip_diff = save_stack.len() - state.clip_stack_index;
+
+                        for _ in 0..clip_diff {
+                            if let Some(clip) = clip_stack.pop() {
+                                paths.push((clip, ShapeStyleWithOptions::UnClip));
+                            }
+                        }
+
+                    } else {
+                        println!("Trying to restore a stack without any saved state.");
+                    }
+                }
+                ContextAction::TextAlignment(alignment) => {
+                    current_text_alignment = *alignment;
+                }
             }
         }
 
@@ -275,9 +341,125 @@ impl Context {
     }
 }
 
+impl CanvasContext {
+    pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
+        let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
+        let mut tessellator = FillTessellator::new();
+
+        {
+            // Compute the tessellation.
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &fill_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: FillVertex| {
+                        let point = vertex.position().to_array();
+                        Position::new(point[0] as Scalar, point[1] as Scalar)
+                    }),
+                )
+                .unwrap();
+        }
+
+        let point_iter = geometry
+            .indices
+            .iter()
+            .map(|index| geometry.vertices[*index as usize]);
+
+        let points: Vec<Position> = point_iter.collect();
+
+        Triangle::from_point_list(points)
+    }
+
+    pub fn get_stroke_geometry(
+        &self,
+        path: Path,
+        stroke_options: StrokeOptions,
+    ) -> Vec<Triangle<(Position, (Position, Position, f32, f32))>> {
+        let mut geometry: VertexBuffers<(Position, f32), u16> = VertexBuffers::new();
+        let mut tessellator = StrokeTessellator::new();
+
+        //println!("{:?}", path);
+
+        {
+            // Compute the tessellation.
+            tessellator
+                .tessellate_path(
+                    &path,
+                    &stroke_options,
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                        /*dbg!(
+                            &vertex.position(),
+                            &vertex.advancement(),
+                            &vertex.source(),
+                            &vertex.normal(),
+                        );*/
+                        let point = vertex.position();
+
+                        (Position::new(point.x as Scalar, point.y as Scalar), vertex.line_width())
+                    }),
+                )
+                .unwrap();
+        }
+
+        let point_iter = geometry
+            .indices
+            .iter()
+            .enumerate()
+            .map(|(e, index)| {
+                //let dir = geometry.points[e / 3];
+                let dir = (point(0.0, 0.0), point(400.0, 400.0), 0.0);
+                (geometry.vertices[*index as usize].0, (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64), dir.2, geometry.vertices[*index as usize].1))
+            });
+
+        let points: Vec<_> = point_iter.collect();
+
+        Triangle::from_point_list(points)
+    }
+
+    pub fn render(&self, render_context: &mut RenderContext) {
+        let paths = self.to_paths(self.position, render_context.env);
+
+        let mut clip_counter = 0;
+
+        for (path, options) in paths {
+            match options {
+                ShapeStyleWithOptions::Fill(fill_options, style) => {
+                    render_context.style(style.convert(self.position, self.dimension), |this| {
+                        this.geometry(&self.get_fill_geometry(path, fill_options))
+                    })
+                }
+                ShapeStyleWithOptions::Stroke(stroke_options, style, dashes) => {
+                    render_context.style(style.convert(self.position, self.dimension), |render_context| {
+                        render_context.stroke_dash_pattern(dashes, |render_context| {
+                            render_context.stroke(&self.get_stroke_geometry(path, stroke_options))
+                        })
+                    })
+                }
+                ShapeStyleWithOptions::Clip => {
+                    render_context.render.stencil(&self.get_fill_geometry(path, FillOptions::default()));
+                    clip_counter += 1;
+                }
+                ShapeStyleWithOptions::UnClip => {
+                    render_context.render.pop_stencil();
+                    clip_counter -= 1;
+                }
+            }
+        }
+
+        if clip_counter > 0 {
+            for _ in 0..clip_counter {
+                render_context.render.pop_stencil();
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum ShapeStyleWithOptions {
     Fill(FillOptions, Style),
     Stroke(StrokeOptions, Style, Option<StrokeDashPattern>),
+    Clip,
+    UnClip
 }
 
 #[derive(Debug, Clone)]
@@ -295,6 +477,9 @@ enum ContextAction {
     },
     Fill,
     Stroke,
+    Clip,
+    Save,
+    Restore,
     Close,
     LineDashOffset(f64),
     LineDashPattern(Option<Vec<f64>>),
@@ -318,6 +503,8 @@ enum ContextAction {
         y2: f64,
         r: f64,
     },
+    TextAlignment(Alignment),
+    FillText(String, Position),
     FillStyle(Box<dyn AnyReadState<T=Style>>),
     StrokeStyle(Box<dyn AnyReadState<T=Style>>),
 }

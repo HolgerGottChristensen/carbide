@@ -15,7 +15,7 @@ fn main() {
         Window::new(
             "Canvas example",
             Dimension::new(600.0, 600.0),
-            Canvas::new(|_, context: &mut Context, _: &mut Environment| {
+            Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
                 draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_fill_style(EnvironmentColor::Accent);
                 context.fill();
@@ -31,7 +31,7 @@ fn draw_star(
     number_of_spikes: u32,
     outer_radius: f64,
     inner_radius: f64,
-    context: &mut Context,
+    context: &mut CanvasContext,
 ) {
     let mut rotation = PI / 2.0 * 3.0;
 

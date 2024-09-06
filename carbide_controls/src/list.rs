@@ -8,7 +8,7 @@ use carbide::a;
 use carbide::draw::Rect;
 use carbide::state::{AnyReadState, AnyState, Map1};
 use carbide::widget::{AnyWidget, MouseArea};
-use carbide::widget::canvas::Context;
+use carbide::widget::canvas::CanvasContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -547,7 +547,7 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
             TreeDisclosure::Arrow => {
                 let rotation = Map1::read_map(opened.clone(), |b| if *b { 90.0 } else { 0.0 });
 
-                Canvas::new(|_: Rect, context: &mut Context, _: &mut Environment| {
+                Canvas::new(|_: Rect, context: &mut CanvasContext, _: &mut Environment| {
                     context.move_to(8.0, 5.0);
                     context.line_to(13.0, 10.0);
                     context.line_to(8.0, 15.0);

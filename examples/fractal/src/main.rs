@@ -64,7 +64,7 @@ struct FractalClock {
 
 // https://codepen.io/slavanossar/pen/RezLEa
 impl FractalClock {
-    fn draw(&self, center: Position, angle: Angles, context: &mut Context) {
+    fn draw(&self, center: Position, angle: Angles, context: &mut CanvasContext) {
         context.begin_path();
         context.move_to(center.x, center.y);
         context.line_to(center.x + angle.hours.cos() * 50.0, center.y + angle.hours.sin() * 50.0);
@@ -73,7 +73,7 @@ impl FractalClock {
         self.draw_minutes_seconds(center, 0.0, angle, self.depth, 100.0, 1.0, context);
     }
 
-    fn draw_minutes_seconds(&self, center: Position, angle_offset: f64, angle: Angles, depth: u32, length: f64, alpha: f64, context: &mut Context) {
+    fn draw_minutes_seconds(&self, center: Position, angle_offset: f64, angle: Angles, depth: u32, length: f64, alpha: f64, context: &mut CanvasContext) {
 
         context.set_stroke_style(self.color.alpha(alpha as f32));
 
@@ -105,8 +105,8 @@ impl FractalClock {
 }
 
 
-impl CanvasContext for FractalClock {
-    fn call(&mut self, area: Rect, context: &mut Context, env: &mut Environment) {
+impl Context for FractalClock {
+    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment) {
         env.request_animation_frame();
 
         let angles = Angles::current();
