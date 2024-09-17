@@ -100,7 +100,7 @@ impl DataSet for Vec<Scalar> {
     }
 }
 
-impl<T: DataPoint + Debug + Copy + 'static> DataSet for T  {
+/*impl<T: DataPoint + Debug + Copy + 'static> DataSet for T  {
     type Item<'a> = T;
     type Iter<'a> = Once<T> where T: 'a;
 
@@ -117,4 +117,4 @@ impl<T: DataPoint + Debug + Copy + 'static> DataSet for T  {
         let point = self.points().next().unwrap();
         (point.x(), point.y(), point.z())
     }
-}
+}*/

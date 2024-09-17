@@ -5,7 +5,6 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::{DataColor, DataPoint, DataSetSequence};
 use crate::scale::{Axis, LinearScale, Scale};
-use crate::dataset::DataSet;
 
 #[derive(Clone, Debug)]
 pub struct ScatterController<X: Scale, Y: Scale, D: DataSetSequence> {
@@ -14,7 +13,7 @@ pub struct ScatterController<X: Scale, Y: Scale, D: DataSetSequence> {
     dataset_sequence: D
 }
 
-impl ScatterController<LinearScale, LinearScale, (Scalar, Scalar)> {
+impl ScatterController<LinearScale, LinearScale, Vec<(Scalar, Scalar)>> {
     pub fn new<D: DataSetSequence>(dataset: D) -> ScatterController<LinearScale, LinearScale, D> {
         ScatterController {
             default_x_scale: LinearScale::new(Axis::Horizontal),
@@ -58,12 +57,12 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>> Datas
             ctx.begin_path();
             ctx.circle(
                 chart_area.width() * x + chart_area.left(),
-                chart_area.height() * y + chart_area.bottom(),
+                chart_area.height() * (1.0 - y) + chart_area.bottom(),
                 10.0
             );
 
             match point.color() {
-                DataColor::Inherit => ctx.set_fill_style(colors[index]),
+                DataColor::Inherit => ctx.set_fill_style(colors[index % colors.len()]),
                 DataColor::Color(color) => ctx.set_fill_style(color)
             }
 
