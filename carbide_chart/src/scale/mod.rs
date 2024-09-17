@@ -6,6 +6,7 @@ use std::fmt::Debug;
 use std::ops::Range;
 use carbide::color::{GREEN, RED, WHITE, YELLOW};
 use carbide::draw::{Alignment, Rect};
+use carbide::state::{ReadState, StateSync};
 use carbide::widget::EdgeInsets;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::environment::Environment;
@@ -30,7 +31,8 @@ pub trait Scale: Clone + Debug + 'static {
 
             let tick_offset = if self.display_ticks() { 10.0 } else { 0.0 };
 
-            let (ticks, range) = self.ticks();
+            let ticks = self.ticks();
+            let range = self.range();
 
             let difference = range.end - range.start;
 
@@ -46,7 +48,9 @@ pub trait Scale: Clone + Debug + 'static {
                         ctx.move_to(area.left() + x * area.width(), area.top() + tick_offset);
                         ctx.line_to(area.left() + x * area.width(), area.bottom());
 
-                        ctx.fill_text(&format!("{}", tick), area.left() + x * area.width(), area.top() + tick_offset);
+                        let value = &format_tick(*tick, ctx.env());
+
+                        ctx.fill_text(value, area.left() + x * area.width(), area.top() + tick_offset);
                     }
                 }
                 Axis::Vertical => {
@@ -56,7 +60,9 @@ pub trait Scale: Clone + Debug + 'static {
                         ctx.move_to(area.left() - tick_offset, area.bottom() + y * area.height());
                         ctx.line_to(area.right(), area.bottom() + y * area.height());
 
-                        ctx.fill_text(&format!("{}", tick), area.left() - tick_offset, area.bottom() + y * area.height());
+                        let value = &format_tick(*tick, ctx.env());
+
+                        ctx.fill_text(value, area.left() - tick_offset, area.bottom() + y * area.height());
                     }
                 }
                 Axis::Radial => {}
@@ -104,7 +110,9 @@ pub trait Scale: Clone + Debug + 'static {
     fn set_range(&mut self, min: Scalar, max: Scalar);
     fn display_ticks(&self) -> bool;
     fn display_grid(&self) -> bool;
-    fn ticks(&self) -> (Vec<Scalar>, Range<Scalar>);
+    fn recalculate_ticks(&mut self);
+    fn ticks(&self) -> &[Scalar];
+    fn range(&self) -> Range<Scalar>;
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -112,4 +120,19 @@ pub enum Axis {
     Horizontal,
     Vertical,
     Radial,
+}
+
+#[cfg(feature = "carbide_fluent")]
+fn format_tick(x: Scalar, env: &mut Environment) -> String {
+    use carbide_fluent::LocalizedNumber;
+
+    let mut number = LocalizedNumber::new(x);
+    number.sync(env);
+
+    let x = number.value().to_string(); x
+}
+
+#[cfg(not(feature = "carbide_fluent"))]
+fn format_tick(x: Scalar, env: &mut Environment) -> String {
+    format!("{}", x)
 }

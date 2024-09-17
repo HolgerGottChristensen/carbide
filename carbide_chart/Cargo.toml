@@ -8,7 +8,13 @@ version.workspace = true
 [dependencies]
 carbide_derive = { path = "../carbide_derive" }
 carbide_core = { path = "../carbide_core" }
+carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
 
 [dev-dependencies]
 carbide_wgpu = { path = "../backends/carbide_wgpu" }
 rand.workspace = true
+carbide_fluent = { path = "../backends/carbide_fluent" }
+
+
+[features]
+default = ["carbide_fluent"]

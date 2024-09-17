@@ -1,7 +1,7 @@
-use std::ops::{Range, RangeInclusive};
-use carbide::draw::{Dimension, Position, Scalar};
-use carbide::environment::Environment;
-use carbide::widget::canvas::CanvasContext;
+use std::ops::Range;
+
+use carbide::draw::Scalar;
+
 use crate::scale::{Axis, Scale};
 use crate::scale::bounds::Bounds;
 use crate::scale::percent_or_value::PercentOrValue;
@@ -15,6 +15,7 @@ pub struct LinearScale {
     max: Option<Scalar>,
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
+    ticks: Vec<Scalar>,
     begin_at_zero: bool,
     grace: PercentOrValue,
     include_bounds: bool,
@@ -31,6 +32,7 @@ impl LinearScale {
             max: None,
             range: 0.0..1.0,
             nice_range: 0.0..1.0,
+            ticks: vec![],
             begin_at_zero: false,
             grace: PercentOrValue::None,
             include_bounds: true,
@@ -93,11 +95,11 @@ impl Scale for LinearScale {
     }
 
     fn min(&self) -> Scalar {
-        self.range.start
+        self.nice_range.start
     }
 
     fn max(&self) -> Scalar {
-        self.range.end
+        self.nice_range.end
     }
 
     fn set_range(&mut self, min: Scalar, max: Scalar) {
@@ -116,6 +118,7 @@ impl Scale for LinearScale {
         self.calculate_begin_zero();
 
         self.calculate_grace();
+        self.recalculate_ticks();
     }
 
     fn display_ticks(&self) -> bool {
@@ -126,7 +129,11 @@ impl Scale for LinearScale {
         true
     }
 
-    fn ticks(&self) -> (Vec<Scalar>, Range<Scalar>) {
+    fn range(&self) -> Range<Scalar> {
+        self.nice_range.clone()
+    }
+
+    fn recalculate_ticks(&mut self) {
         let range_min = self.range.start;
         let range_max = self.range.end;
         let min = self.min;
@@ -146,7 +153,9 @@ impl Scale for LinearScale {
         // Beyond MIN_TICK_SPACING floating point numbers being to lose precision
         // such that we can't do the math necessary to generate ticks
         if spacing <= MIN_TICK_SPACING {
-            return (vec![range_min, range_max], range_min..range_max);
+            self.nice_range = range_min..range_max;
+            self.ticks = vec![range_min, range_max];
+            return;
         }
 
         let mut num_spaces = (f64::ceil(range_max / spacing) - f64::floor(range_min / spacing)) as u32;
@@ -230,7 +239,12 @@ impl Scale for LinearScale {
             ticks.push(nice_max);
         }
 
-        (ticks, nice_min..nice_max)
+        self.nice_range = nice_min..nice_max;
+        self.ticks = ticks;
+    }
+
+    fn ticks(&self) -> &[Scalar] {
+        &self.ticks
     }
 }
 

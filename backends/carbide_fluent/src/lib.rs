@@ -5,11 +5,11 @@ use std::io::Read;
 use std::str::FromStr;
 
 use fluent::FluentResource;
-use icu::locid::{Locale, locale};
+use icu::locid::{Locale};
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
 
-use carbide_core::locate_folder;
+use carbide_core::{impl_read_state, locate_folder};
 pub use localized_string::*;
 pub use localized_datetime::*;
 pub use localized_number::*;
@@ -17,6 +17,7 @@ pub use localizable::Localizable;
 pub use args::Arg;
 pub use args::LocalizedArg;
 pub use locale_ext::LocaleExt;
+pub use icu::locid::locale;
 
 mod localized_string;
 mod localizable;
@@ -24,6 +25,7 @@ mod args;
 mod locale_ext;
 mod localized_datetime;
 mod localized_number;
+
 
 type Bundle = fluent::bundle::FluentBundle<FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>;
 

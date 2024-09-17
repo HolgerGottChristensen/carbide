@@ -21,23 +21,12 @@ pub struct Chart<C> where C: DatasetController {
 }
 
 impl Chart<LineController<LinearScale, LinearScale>> {
-    pub fn new() -> Chart<LineController<LinearScale, LinearScale>> {
+    pub fn new<C: DatasetController>(controller: C) -> Chart<C> {
         Chart {
             id: Default::default(),
             position: Default::default(),
             dimension: Default::default(),
-            dataset_controller: LineController::new(),
-            padding: EdgeInsets::all(30.0),
-        }
-    }
-
-    pub fn scatter(points: Vec<Position>) -> Chart<ScatterController<LinearScale, LinearScale>>{
-        println!("{:#?}", points);
-        Chart {
-            id: Default::default(),
-            position: Default::default(),
-            dimension: Default::default(),
-            dataset_controller: ScatterController::new(points),
+            dataset_controller: controller,
             padding: EdgeInsets::all(30.0),
         }
     }
