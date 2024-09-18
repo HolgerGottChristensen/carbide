@@ -3,6 +3,7 @@ use std::iter::{Copied, Enumerate, Map, once, Once};
 use std::slice::Iter;
 use carbide::draw::Scalar;
 use carbide::render::matrix::{One, Zero};
+use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;
 use crate::dataset::datavalue::DataValue;
 
@@ -14,6 +15,10 @@ pub trait DataSet: Debug + Clone + 'static {
 
     fn min(&self) -> (<Self::Item<'_> as DataPoint>::X, <Self::Item<'_> as DataPoint>::Y, <Self::Item<'_> as DataPoint>::Z);
     fn max(&self) -> (<Self::Item<'_> as DataPoint>::X, <Self::Item<'_> as DataPoint>::Y, <Self::Item<'_> as DataPoint>::Z);
+
+    fn color(&self) -> DataColor {
+        DataColor::Inherit
+    }
 }
 
 impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, T: DataPoint<X=X, Y=Y, Z=Z> + PartialOrd + Clone + Debug + 'static> DataSet for Vec<T> {

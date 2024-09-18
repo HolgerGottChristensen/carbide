@@ -26,9 +26,9 @@ fn main() {
     application.launch();
 }
 
-/// Create a circle of n * 2 points.
+/// Create a circle of n * 2 + 1 points.
 fn circle(n: usize) -> Vec<Position> {
-    (0..n * 2)
+    (0..n * 2 + 1)
         .into_iter()
         .map(|a| {
             Position::new(

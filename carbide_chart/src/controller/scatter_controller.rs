@@ -51,6 +51,42 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>> Datas
 
         let colors = vec![WHITE, GREEN, RED];
 
+        ctx.begin_path();
+        let mut current_index = -1;
+        self.dataset_sequence.foreach(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+            let x = (point.x() - x_min) / (x_max - x_min);
+            let y = (point.y() - y_min) / (y_max - y_min);
+
+            if current_index != index as i32 {
+                if index != 0 {
+                    ctx.stroke();
+                }
+
+                ctx.begin_path();
+                current_index = index as i32;
+
+                ctx.move_to(
+                    chart_area.width() * x + chart_area.left(),
+                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                );
+
+            } else {
+                ctx.line_to(
+                    chart_area.width() * x + chart_area.left(),
+                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                );
+            }
+
+            match point.color() {
+                DataColor::Inherit => ctx.set_stroke_style(colors[index % colors.len()]),
+                DataColor::Color(color) => ctx.set_stroke_style(color)
+            }
+
+        });
+
+
+        ctx.stroke();
+
         self.dataset_sequence.foreach(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
             let x = (point.x() - x_min) / (x_max - x_min);
             let y = (point.y() - y_min) / (y_max - y_min);
@@ -58,7 +94,7 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>> Datas
             ctx.circle(
                 chart_area.width() * x + chart_area.left(),
                 chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                10.0
+                5.0
             );
 
             match point.color() {

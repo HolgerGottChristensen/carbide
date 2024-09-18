@@ -8,7 +8,7 @@ pub trait DataSetSequence: Debug + Clone + 'static {
     fn min(&self) -> (Self::X, Self::Y, Self::Z);
     fn max(&self) -> (Self::X, Self::Y, Self::Z);
 
-    fn foreach<F: FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)>(&self, f: F);
+    fn foreach<F: FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>), G: FnMut(usize, &dyn DataSet)>(&self, f: F);
 }
 
 impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, T> DataSetSequence for Vec<T>

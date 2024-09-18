@@ -1,8 +1,8 @@
-use std::f64::consts::PI;
 use std::iter;
+
 use carbide_chart::{Chart, ScatterController};
 use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::state::{Functor, ValueState};
+use carbide_core::state::ValueState;
 use carbide_core::widget::WidgetExt;
 use carbide_fluent::{locale, LocaleExt};
 use carbide_wgpu::{Application, Window};
@@ -43,7 +43,7 @@ fn main() {
         Window::new(
             "Chart example - Carbide",
             Dimension::new(700.0, 700.0),
-            Chart::new(ScatterController::new((data1, data3, data6)))
+            Chart::new(ScatterController::new((data3, data6)))
                 .border()
                 .padding(50.0)
                 .locale(ValueState::new(locale!("da")))
