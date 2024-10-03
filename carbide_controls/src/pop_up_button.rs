@@ -1,10 +1,9 @@
-use carbide::color::ColorExt;
-use carbide_core::color::TRANSPARENT;
-use carbide_core::draw::{Alignment, Rect};
-use carbide_core::environment::{Environment, EnvironmentColor, IntoColorReadState};
+use carbide_core::color::{TRANSPARENT, ColorExt};
+use carbide_core::draw::Alignment;
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, ReadState, ReadStateExtNew, State, StateContract, Map2};
+use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateContract};
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
 
@@ -41,7 +40,7 @@ impl PopUpButton {
 
         let label_color = mark_color.clone();
 
-        let arrows = Canvas::new(move |_rect: Rect, context: &mut CanvasContext, _env: &mut Environment| {
+        let arrows = Canvas::new(move |context: &mut CanvasContext| {
             context.move_to(6.0, 9.0);
             context.line_to(10.0, 5.0);
             context.line_to(14.0, 9.0);

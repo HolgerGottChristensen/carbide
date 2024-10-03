@@ -253,7 +253,7 @@ impl WGPUWindow<String> {
         });
 
         let dashes = Dashes {
-            dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            dashes: [1.0; 32],
             dash_count: 2,
             start_cap: 0,
             end_cap: 0,
@@ -868,7 +868,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
                 });
 
             let dashes = Dashes {
-                dashes: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                dashes: [1.0; 32],
                 dash_count: 2,
                 start_cap: 0,
                 end_cap: 0,

@@ -85,7 +85,7 @@ impl Application {
 
         let proxy = EVENT_LOOP.with(|a| {
             match &*a.borrow() {
-                EventLoop::Owned(e) => {e.create_proxy()}
+                EventLoop::Owned(e) => e.create_proxy(),
                 EventLoop::StaticBorrow(_) => unreachable!(),
                 EventLoop::None => unreachable!(),
             }

@@ -31,7 +31,7 @@ struct Gradient {
 }
 
 struct Dashes {
-    dashes: array<f32,16u>,
+    dashes: array<f32,32u>,
     dash_count: u32,
     start_cap: u32,
     end_cap: u32,
@@ -149,7 +149,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             let distance_x = dot(in.gradient_coord.xy - in.line_coords.xy, dir);
 
             // Clamp the distance and apply the offset of the line segment and the dash offset.
-            let clamped_distance = clamp(distance_x, 0.0, len) + line_offset + dashes.dash_offset * line_width;
+            let clamped_distance = clamp(distance_x, 0.0, len) + line_offset + dashes.dash_offset * line_width + total_dash_length;
 
             // Project the fragment onto the line segment, but flipped 90 degrees.
             // This gives us the y distance from the line segment. We take the absolute
@@ -159,6 +159,10 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             // Mod the distance to get the position within the dash range. This is because
             // the dashes are repeating over the dash pattern.
             let s3 = clamped_distance % total_dash_length;
+
+            if (s3 < 0.0) {
+                col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            }
 
             // Stores the start of the dash in the dash pattern.
             var start = 0.0;

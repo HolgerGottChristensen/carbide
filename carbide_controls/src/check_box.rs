@@ -70,14 +70,14 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0)
                 .boxed(),
-            IfElse::new(checked_intermediate).when_true(Canvas::new(move |_rect: Rect, context: &mut CanvasContext, _env: &mut Environment| {
+            IfElse::new(checked_intermediate).when_true(Canvas::new(move |context: &mut CanvasContext| {
                 context.move_to(4.0, 7.0);
                 context.line_to(10.0, 7.0);
                 context.set_stroke_style(mark_color.clone());
                 context.set_line_width(2.0);
                 context.stroke();
             })),
-            IfElse::new(checked_true).when_true(Canvas::new(move |_rect: Rect, context: &mut CanvasContext, _env: &mut Environment| {
+            IfElse::new(checked_true).when_true(Canvas::new(move |context: &mut CanvasContext| {
                 context.move_to(4.0, 8.0);
                 context.line_to(6.0, 10.0);
                 context.line_to(10.0, 4.0);

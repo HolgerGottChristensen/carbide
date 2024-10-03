@@ -12,6 +12,7 @@ carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
 
 [dev-dependencies]
 carbide_wgpu = { path = "../backends/carbide_wgpu" }
+carbide_controls = { path = "../carbide_controls" }
 rand.workspace = true
 carbide_fluent = { path = "../backends/carbide_fluent" }
 

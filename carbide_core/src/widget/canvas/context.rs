@@ -35,6 +35,8 @@ pub struct ContextState {
     line_width: Scalar,
     dash_pattern: Option<Vec<f64>>,
     dash_offset: Scalar,
+    dash_start_cap: StrokeDashCap,
+    dash_end_cap: StrokeDashCap,
     miter_limit: f32,
     text_alignment: Alignment,
     clip_count: u32,
@@ -52,6 +54,8 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                 line_width: 2.0,
                 dash_pattern: None,
                 dash_offset: 0.0,
+                dash_start_cap: StrokeDashCap::None,
+                dash_end_cap: StrokeDashCap::None,
                 miter_limit: StrokeOptions::DEFAULT_MITER_LIMIT,
                 text_alignment: Alignment::TopLeading,
                 clip_count: 0,
@@ -81,6 +85,19 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
 
     pub fn set_dash_offset(&mut self, offset: f64) {
         self.current_state.dash_offset = offset;
+    }
+
+    pub fn set_dash_cap(&mut self, cap: StrokeDashCap) {
+        self.set_dash_start_cap(cap);
+        self.set_dash_end_cap(cap);
+    }
+
+    pub fn set_dash_start_cap(&mut self, cap: StrokeDashCap) {
+        self.current_state.dash_start_cap = cap;
+    }
+
+    pub fn set_dash_end_cap(&mut self, cap: StrokeDashCap) {
+        self.current_state.dash_end_cap = cap;
     }
 
     pub fn set_line_join(&mut self, join: LineJoin) {
@@ -149,8 +166,8 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
             StrokeDashPattern {
                 pattern: pattern.clone(),
                 offset: self.current_state.dash_offset,
-                start_cap: StrokeDashCap::None,
-                end_cap: StrokeDashCap::None,
+                start_cap: self.current_state.dash_start_cap,
+                end_cap: self.current_state.dash_end_cap,
             }
         });
 
@@ -380,9 +397,14 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
             .iter()
             .enumerate()
             .map(|(e, index)| {
-                //let dir = geometry.points[e / 3];
-                let dir = (point(0.0, 0.0), point(400.0, 400.0), 0.0);
-                (geometry.vertices[*index as usize].0, (Position::new(dir.0.x as f64, dir.0.y as f64), Position::new(dir.1.x as f64, dir.1.y as f64), dir.2, geometry.vertices[*index as usize].1))
+                let dir = geometry.points[e / 3];
+                let position = geometry.vertices[*index as usize].0;
+                let linewidth = geometry.vertices[*index as usize].1;
+                let direction_from = Position::new(dir.0.x as f64, dir.0.y as f64);
+                let direction_to = Position::new(dir.1.x as f64, dir.1.y as f64);
+                let point_offset = dir.2;
+
+                (position, (direction_from, direction_to, point_offset, linewidth))
             });
 
         let points: Vec<_> = point_iter.collect();

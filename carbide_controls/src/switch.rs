@@ -2,7 +2,7 @@ use std::time::Duration;
 use carbide::color::ColorExt;
 use carbide::draw::Color;
 use carbide::environment::IntoColorReadState;
-use carbide::state::{ReadStateExtNew, ReadStateExtTransition};
+use carbide::state::ReadStateExtTransition;
 use carbide_core::color::{TRANSPARENT};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::focus::Focus;

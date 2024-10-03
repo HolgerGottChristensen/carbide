@@ -3,7 +3,8 @@ use carbide::draw::{Dimension, Position, Rect, Scalar};
 use carbide::widget::EdgeInsets;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::{DataColor, DataPoint, DataSetSequence};
+use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataSetSequence};
+use crate::element::Stepped;
 use crate::scale::{Axis, LinearScale, Scale};
 
 #[derive(Clone, Debug)]
@@ -23,7 +24,7 @@ impl ScatterController<LinearScale, LinearScale, Vec<(Scalar, Scalar)>> {
     }
 }
 
-impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>> DatasetController for ScatterController<X, Y, D> {
+impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for ScatterController<X, Y, D> {
     fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets) {
 
         let x_ticks_width = if self.default_x_scale.display_ticks() { 10.0 } else { 0.0 };
@@ -51,59 +52,131 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>> Datas
 
         let colors = vec![WHITE, GREEN, RED];
 
-        ctx.begin_path();
-        let mut current_index = -1;
-        self.dataset_sequence.foreach(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
-            let x = (point.x() - x_min) / (x_max - x_min);
-            let y = (point.y() - y_min) / (y_max - y_min);
+        self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+            let options = dataset.options(ctx.env());
 
-            if current_index != index as i32 {
-                if index != 0 {
-                    ctx.stroke();
+            ctx.begin_path();
+
+            let mut first_in_dataset = true;
+            let mut prev_x = 0.0;
+            let mut prev_y = 0.0;
+
+            dataset.points(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+                let x = (point.x() - x_min) / (x_max - x_min);
+                let y = (point.y() - y_min) / (y_max - y_min);
+
+                if first_in_dataset {
+                    ctx.move_to(
+                        chart_area.width() * x + chart_area.left(),
+                        chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                    );
+                    first_in_dataset = false;
+                    prev_x = x;
+                    prev_y = y;
+                } else {
+                    match options.stepped {
+                        Stepped::Before => {
+                            ctx.line_to(
+                                chart_area.width() * prev_x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                        }
+                        Stepped::After => {
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - prev_y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                        }
+                        Stepped::Middle => {
+                            let middle_x = (x - prev_x) / 2.0 + prev_x;
+                            ctx.line_to(
+                                chart_area.width() * middle_x + chart_area.left(),
+                                chart_area.height() * (1.0 - prev_y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * middle_x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                        }
+                        Stepped::MiddleVertical => {
+                            let middle_y = (y - prev_y) / 2.0 + prev_y;
+                            ctx.line_to(
+                                chart_area.width() * prev_x + chart_area.left(),
+                                chart_area.height() * (1.0 - middle_y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - middle_y) + chart_area.bottom(),
+                            );
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                        }
+                        Stepped::None => {
+                            ctx.line_to(
+                                chart_area.width() * x + chart_area.left(),
+                                chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                            );
+                        }
+                    }
+
+                    prev_x = x;
+                    prev_y = y;
+                }
+            });
+
+            let color = match options.color {
+                DataColor::Inherit => colors[dataset_index % colors.len()],
+                DataColor::Color(c) => c
+            };
+
+            ctx.set_stroke_style(color);
+            ctx.stroke();
+        });
+
+        self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+            let options = dataset.options(ctx.env());
+            dataset.points(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+                let x = (point.x() - x_min) / (x_max - x_min);
+                let y = (point.y() - y_min) / (y_max - y_min);
+                ctx.begin_path();
+                ctx.circle(
+                    chart_area.width() * x + chart_area.left(),
+                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
+                    7.0
+                );
+
+                match point.color() {
+                    DataColor::Inherit => {
+                        match options.color {
+                            DataColor::Inherit => ctx.set_fill_style(colors[dataset_index % colors.len()]),
+                            DataColor::Color(color) => ctx.set_fill_style(color)
+                        }
+                    },
+                    DataColor::Color(color) => ctx.set_fill_style(color)
                 }
 
-                ctx.begin_path();
-                current_index = index as i32;
-
-                ctx.move_to(
-                    chart_area.width() * x + chart_area.left(),
-                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                );
-
-            } else {
-                ctx.line_to(
-                    chart_area.width() * x + chart_area.left(),
-                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                );
-            }
-
-            match point.color() {
-                DataColor::Inherit => ctx.set_stroke_style(colors[index % colors.len()]),
-                DataColor::Color(color) => ctx.set_stroke_style(color)
-            }
-
+                ctx.fill();
+            });
         });
 
 
-        ctx.stroke();
+        /*self.dataset_sequence.datasets(&mut |point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
 
-        self.dataset_sequence.foreach(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
-            let x = (point.x() - x_min) / (x_max - x_min);
-            let y = (point.y() - y_min) / (y_max - y_min);
-            ctx.begin_path();
-            ctx.circle(
-                chart_area.width() * x + chart_area.left(),
-                chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                5.0
-            );
-
-            match point.color() {
-                DataColor::Inherit => ctx.set_fill_style(colors[index % colors.len()]),
-                DataColor::Color(color) => ctx.set_fill_style(color)
-            }
-
-            ctx.fill();
-        });
+        });*/
 
         ctx.restore();
     }

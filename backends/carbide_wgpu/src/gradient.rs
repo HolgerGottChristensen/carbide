@@ -5,7 +5,7 @@ use carbide_core::widget::{GradientRepeat, GradientType};
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dashes {
-    pub dashes: [f32; 16],
+    pub dashes: [f32; 32],
     pub dash_count: u32,
     pub start_cap: u32,
     pub end_cap: u32,

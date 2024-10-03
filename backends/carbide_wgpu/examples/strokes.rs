@@ -16,8 +16,9 @@ fn main() {
         Window::new(
             "Stroke example",
             Dimension::new(600.0, 600.0),
-            Canvas::new(move |_, context: &mut CanvasContext, env: &mut Environment| {
-                env.request_animation_frame();
+            Canvas::new(move |context: &mut CanvasContext| {
+                let mouse_position = context.env().mouse_position();
+                context.env().request_animation_frame();
                 context.move_to(100.0, 100.0);
                 /*context.line_to(500.0, 100.0);
                 context.line_to(500.0, 500.0);*/
@@ -33,7 +34,7 @@ fn main() {
 
                 context.bezier_curve_to(
                     Position::new(300.0, 100.0),
-                    Position::new(env.mouse_position().x, env.mouse_position().y),
+                    Position::new(mouse_position.x, mouse_position.y),
                     Position::new(500.0, 500.0),
                 );
 

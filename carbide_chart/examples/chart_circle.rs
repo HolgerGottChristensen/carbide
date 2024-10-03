@@ -1,17 +1,18 @@
 use std::f64::consts::PI;
-use std::iter;
-use carbide_chart::{Chart, ScatterController};
-use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::state::{Functor, ValueState};
+use carbide_chart::{Chart, DatasetExt, ScatterController};
+use carbide_core::color::BLUE;
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::state::ValueState;
 use carbide_core::widget::WidgetExt;
 use carbide_fluent::{locale, LocaleExt};
 use carbide_wgpu::{Application, Window};
+
 
 fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let data = circle(100);
+    let data = circle(100).color(BLUE);
 
     application.set_scene(
         Window::new(

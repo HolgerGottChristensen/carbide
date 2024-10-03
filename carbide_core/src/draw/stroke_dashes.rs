@@ -9,9 +9,9 @@ pub struct StrokeDashPattern {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum StrokeDashCap {
-    None,
-    Square,
+    None, // Also known as Butt
     Round,
+    Square,
     TriangleIn,
     TriangleOut,
 }

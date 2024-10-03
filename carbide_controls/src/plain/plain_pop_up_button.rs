@@ -156,7 +156,8 @@ impl<
     }
 
     fn open_popup(&self, event_id: EventId, env: &mut Environment) {
-        let hover_model = LocalState::new(None);
+        let selected = self.selected.value();
+        let hover_model = LocalState::new(self.model.value().iter().position(|x| x == &*selected));
 
         let del = PopupItemDelegate {
             hover_model: hover_model.clone(),

@@ -1,32 +1,40 @@
 use std::fmt::Debug;
-use std::iter::{Copied, Enumerate, Map, once, Once};
-use std::slice::Iter;
 use carbide::draw::Scalar;
+use carbide::environment::Environment;
 use carbide::render::matrix::{One, Zero};
 use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;
+use crate::dataset::dataset_options::DataSetOptions;
 use crate::dataset::datavalue::DataValue;
+use crate::element::Stepped;
 
-pub trait DataSet: Debug + Clone + 'static {
-    type Item<'a>: DataPoint;
-    type Iter<'a>: Iterator<Item=Self::Item<'a>> where Self: 'a;
+pub trait DataSet: Debug + 'static {
+    type X: DataValue;
+    type Y: DataValue;
+    type Z: DataValue;
 
-    fn points<'a>(&'a self) -> Self::Iter<'a>;
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>));
 
-    fn min(&self) -> (<Self::Item<'_> as DataPoint>::X, <Self::Item<'_> as DataPoint>::Y, <Self::Item<'_> as DataPoint>::Z);
-    fn max(&self) -> (<Self::Item<'_> as DataPoint>::X, <Self::Item<'_> as DataPoint>::Y, <Self::Item<'_> as DataPoint>::Z);
+    fn min(&self) -> (Self::X, Self::Y, Self::Z);
+    fn max(&self) -> (Self::X, Self::Y, Self::Z);
 
-    fn color(&self) -> DataColor {
-        DataColor::Inherit
+    fn options(&self, env: &mut Environment) -> DataSetOptions {
+        DataSetOptions {
+            color: DataColor::Inherit,
+            stepped: Stepped::None,
+        }
     }
 }
 
 impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, T: DataPoint<X=X, Y=Y, Z=Z> + PartialOrd + Clone + Debug + 'static> DataSet for Vec<T> {
-    type Item<'a> = &'a T;
-    type Iter<'a> = Iter<'a, T> where T: 'a;
+    type X = X;
+    type Y = Y;
+    type Z = Z;
 
-    fn points<'a>(&'a self) -> Self::Iter<'a> {
-        self.iter()
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)) {
+        for (index, point) in self.iter().enumerate() {
+            f(index, point);
+        }
     }
 
     fn min(&self) -> (X, Y, Z) {
@@ -69,11 +77,14 @@ impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + Partia
 }
 
 impl DataSet for Vec<Scalar> {
-    type Item<'a> = (Scalar, Scalar);
-    type Iter<'a> = Map<Enumerate<Copied<Iter<'a, Scalar>>>, fn((usize, Scalar))->(Scalar, Scalar)> where Scalar: 'a;
+    type X = Scalar;
+    type Y = Scalar;
+    type Z = Scalar;
 
-    fn points<'a>(&'a self) -> Self::Iter<'a> {
-        self.iter().copied().enumerate().map(|(x, y)| (x as Scalar, y))
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)) {
+        for (index, point) in self.iter().enumerate() {
+            f(index, &(index as Scalar, *point));
+        }
     }
 
     fn min(&self) -> (Scalar, Scalar, Scalar) {
@@ -98,28 +109,9 @@ impl DataSet for Vec<Scalar> {
                 max = if PartialOrd::gt(&max, item) { max } else { *item };
             }
 
-            (self.len() as Scalar, max, Scalar::zero())
+            ((self.len() - 1) as Scalar, max, Scalar::zero())
         } else {
-            (self.len() as Scalar, Scalar::one(), Scalar::zero())
+            ((self.len() - 1) as Scalar, Scalar::one(), Scalar::zero())
         }
     }
 }
-
-/*impl<T: DataPoint + Debug + Copy + 'static> DataSet for T  {
-    type Item<'a> = T;
-    type Iter<'a> = Once<T> where T: 'a;
-
-    fn points<'a>(&'a self) -> Self::Iter<'a> {
-        once(*self)
-    }
-
-    fn min(&self) -> (T::X, T::Y, T::Z) {
-        let point = self.points().next().unwrap();
-        (point.x(), point.y(), point.z())
-    }
-
-    fn max(&self) -> (T::X, T::Y, T::Z) {
-        let point = self.points().next().unwrap();
-        (point.x(), point.y(), point.z())
-    }
-}*/

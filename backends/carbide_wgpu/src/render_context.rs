@@ -674,14 +674,12 @@ impl InnerRenderContext for WGPURenderContext {
         if &self.current_stroke_dash != new_stroke_dash {
             if let Some(new_stroke_dash) = new_stroke_dash {
                 assert_ne!(new_stroke_dash.pattern.len(), 0);
-                let repeat = new_stroke_dash.pattern.len() % 2 == 0;
+                let repeat = new_stroke_dash.pattern.len() % 2 == 1;
 
                 let pattern_count = new_stroke_dash.pattern.len();
-                let count = if repeat { pattern_count * 2 } else { pattern_count };
+                let count = (if repeat { pattern_count * 2 } else { pattern_count }).min(32);
 
-                assert!(count <= 16);
-
-                let mut dashes = [0.0f32; 16];
+                let mut dashes = [0.0f32; 32];
                 let mut total_dash_width = 0.0;
 
                 for i in 0..count {
@@ -694,8 +692,8 @@ impl InnerRenderContext for WGPURenderContext {
                 self.push_command(RenderPassCommand::StrokeDashing (Dashes {
                     dashes,
                     dash_count: count as u32,
-                    start_cap: 0,
-                    end_cap: 0,
+                    start_cap: new_stroke_dash.start_cap as u32,
+                    end_cap: new_stroke_dash.end_cap as u32,
                     total_dash_width,
                     dash_offset: offset,
                 }));

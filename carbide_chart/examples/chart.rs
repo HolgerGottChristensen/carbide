@@ -1,15 +1,18 @@
 use std::iter;
 
-use carbide_chart::{Chart, ScatterController};
+use carbide_chart::{Chart, DatasetExt, ScatterController, Stepped};
+use carbide_controls::{ControlsExt, PopUpButton};
 use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::state::ValueState;
-use carbide_core::widget::WidgetExt;
+use carbide_core::state::{LocalState, ValueState};
+use carbide_core::widget::{VStack, WidgetExt};
 use carbide_fluent::{locale, LocaleExt};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
+
+    let stepped = LocalState::new(Stepped::None);
 
     let data1 = iter::repeat_with(|| {
         Position::new(rand::random::<Scalar>() * 100.0, rand::random::<Scalar>())
@@ -39,14 +42,22 @@ fn main() {
         .map(|a| f64::cos(a))
         .collect::<Vec<_>>();
 
+    let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].stepped(stepped.clone());
+    let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
+
     application.set_scene(
         Window::new(
             "Chart example - Carbide",
             Dimension::new(700.0, 700.0),
-            Chart::new(ScatterController::new((data3, data6)))
-                .border()
-                .padding(50.0)
-                .locale(ValueState::new(locale!("da")))
+            VStack::new((
+                //Chart::new(ScatterController::new(data2))
+                Chart::new(ScatterController::new((data7, data8)))
+                    //Chart::new(ScatterController::new((data3, data6)))
+                    .border()
+                    .locale(ValueState::new(locale!("da"))),
+                PopUpButton::new(stepped.clone(), vec![Stepped::None, Stepped::Before, Stepped::After, Stepped::Middle, Stepped::MiddleVertical])
+                    .label("Stepped: ")
+            )).padding(50.0)
         ).close_application_on_window_close());
 
     application.launch();
