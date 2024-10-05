@@ -4,8 +4,8 @@ struct VertexOutput {
     @location(1) color: vec4<f32>,
     @location(2) mode: u32,
     @location(3) gradient_coord: vec2<f32>,
-    @location(4) line_coords: vec4<f32>,
-    @location(5) line_utils: vec4<f32>,
+    @location(4) attributes0: vec4<f32>,
+    @location(5) attributes1: vec4<f32>,
 }
 
 struct Uniforms {
@@ -72,8 +72,8 @@ fn main_vs(
     @location(1) tex_coord: vec2<f32>,
     @location(2) color: vec4<f32>,
     @location(3) mode: u32,
-    @location(4) line_coords: vec4<f32>,
-    @location(5) line_utils: vec4<f32>,
+    @location(4) attributes0: vec4<f32>,
+    @location(5) attributes1: vec4<f32>,
 ) -> VertexOutput {
     var out: VertexOutput;
     out.tex_coord = tex_coord;
@@ -81,8 +81,8 @@ fn main_vs(
     out.gradient_coord = position.xy;
     out.color = color;
     out.mode = mode;
-    out.line_coords = line_coords;
-    out.line_utils = line_utils;
+    out.attributes0 = attributes0;
+    out.attributes1 = attributes1;
     return out;
 }
 
@@ -135,26 +135,32 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
                 col = gradient_color(in.gradient_coord);
             }
 
-            let line_width = in.line_utils.y;
-            let line_offset = in.line_utils.x;
+            let line_start = in.attributes0.xy;
+            let line_end = in.attributes0.zw;
+
+            let min_angle = in.attributes1.x;
+            let max_angle = in.attributes1.y;
+
+            let line_width = in.attributes1.z;
+            let line_offset = in.attributes1.w;
 
             let total_dash_length = dashes.total_dash_width * line_width;
 
             // The direction of the line segment containing this fragment
-            let dir = normalize(in.line_coords.zw - in.line_coords.xy);
+            let dir = normalize(line_end - line_start);
             // The length of the line segment containing this fragment
-            let len = length(in.line_coords.zw - in.line_coords.xy);
+            let len = length(line_end - line_start);
 
-            // Project the fragment onto the line segment, to get the x distance from the first position of the line segment.
-            let distance_x = dot(in.gradient_coord.xy - in.line_coords.xy, dir);
+            // Project the fragment onto the line segment, to get the distance along the line, from the start position of the line.
+            let distance_along_the_line = dot(in.gradient_coord.xy - line_start, dir);
 
             // Clamp the distance and apply the offset of the line segment and the dash offset.
-            let clamped_distance = clamp(distance_x, 0.0, len) + line_offset + dashes.dash_offset * line_width + total_dash_length;
+            let clamped_distance = clamp(distance_along_the_line, 0.0, len) + line_offset + dashes.dash_offset * line_width + total_dash_length;
 
             // Project the fragment onto the line segment, but flipped 90 degrees.
             // This gives us the y distance from the line segment. We take the absolute
             // value, because we might be on either side of the line segment.
-            let distance_y = abs(dot(in.gradient_coord.xy - in.line_coords.xy, vec2<f32>(dir.y, -dir.x)));
+            let distance_y = abs(dot(in.gradient_coord.xy - line_start, vec2<f32>(dir.y, -dir.x)));
 
             // Mod the distance to get the position within the dash range. This is because
             // the dashes are repeating over the dash pattern.
@@ -190,7 +196,8 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
                         // If we are inside a gap and not in a cap, we can discard the fragment
                         if (!in_cap) {
-                            discard;
+                            //discard;
+                            col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
                         }
                     }
 

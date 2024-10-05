@@ -3,6 +3,7 @@ use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
 use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
+use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 
 use crate::render::CarbideTransform;
@@ -118,7 +119,7 @@ impl<'a> RenderContext<'a> {
 
 
 
-    pub fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {
+    pub fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
         if stroke.is_empty() {
             return;
         }
@@ -190,7 +191,7 @@ pub trait InnerRenderContext {
 
     /// Renders the geometry with the current style
     fn geometry(&mut self, geometry: &[Triangle<Position>]);
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]);
+    fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]);
 
 
     fn rect(&mut self, rect: Rect) {
@@ -248,7 +249,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
 
-    fn stroke(&mut self, _stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
+    fn stroke(&mut self, _stroke: &[Triangle<StrokeVertex>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
     fn pop_style(&mut self) {}

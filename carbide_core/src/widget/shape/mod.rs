@@ -3,7 +3,7 @@ use lyon::lyon_tessellation::StrokeAlignment;
 use lyon::math::Box2D;
 use lyon::tessellation::{
     BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
-    StrokeTessellator, StrokeVertex, VertexBuffers,
+    StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers,
 };
 use lyon::tessellation::path::Path;
 
@@ -16,6 +16,7 @@ pub use rounded_rectangle::*;
 
 use crate::color::Color;
 use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, StrokeDashPattern};
+use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::environment::Environment;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
@@ -78,7 +79,7 @@ impl InnerRenderContext for Tris {
         self.0.extend(geometry);
     }
 
-    fn stroke(&mut self, _stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {}
+    fn stroke(&mut self, _stroke: &[Triangle<StrokeVertex>]) {}
 
     fn style(&mut self, _style: DrawStyle) {}
 
@@ -213,7 +214,7 @@ pub fn stroke(path: &dyn Fn(&mut Builder, &Box2D), shape: &mut dyn Shape, rectan
                     &StrokeOptions::default()
                         .with_line_width(line_width)
                         .with_alignment(StrokeAlignment::Positive),
-                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: LyonStrokeVertex| {
                         let point = vertex.position().to_array();
                         Position::new(point[0] as Scalar, point[1] as Scalar)
                     }),

@@ -23,7 +23,7 @@ enum DrawType {
 fn main() {
     let mut application = Application::new();
 
-    let draw_figure = LocalState::new(DrawType::Line);
+    let draw_figure = LocalState::new(DrawType::Star);
     let draw_figure_canvas = draw_figure.clone();
     let draw_figures = vec![DrawType::Line, DrawType::Circle, DrawType::Star, DrawType::BezierMouse, DrawType::LineMouse];
 
@@ -154,7 +154,13 @@ fn main() {
                                     Position::new(dimension.width, dimension.width),
                                 );
                             }
-                            DrawType::LineMouse => {}
+                            DrawType::LineMouse => {
+                                let mouse_position = ctx.mouse_position();
+
+                                ctx.move_to(0.0, 0.0);
+                                ctx.line_to(dimension.width / 4.0 * 3.0, dimension.height / 4.0 * 3.0);
+                                ctx.line_to(mouse_position.x, mouse_position.y);
+                            }
                         }
 
                         ctx.set_line_width(*line_width.value());

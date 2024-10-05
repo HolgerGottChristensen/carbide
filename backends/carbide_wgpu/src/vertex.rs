@@ -11,8 +11,8 @@ pub struct Vertex {
     pub tex_coords: [f32; 2],
     pub rgba: [f32; 4],
     pub mode: u32,
-    pub line_coords: [f32; 4],
-    pub line_utils: [f32; 4],
+    pub attributes0: [f32; 4],
+    pub attributes1: [f32; 4],
 }
 
 impl Vertex {
@@ -77,8 +77,8 @@ impl Vertex {
             tex_coords,
             rgba: color,
             mode,
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
         }
     }
 

@@ -6,6 +6,7 @@ use wgpu::BindGroup;
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH, Dimension};
+use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{InnerTextContext, TextId};
@@ -317,8 +318,8 @@ impl WGPURenderContext {
             tex_coords: [tx as f32, ty as f32],
             rgba: color,
             mode,
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -468,8 +469,8 @@ impl InnerRenderContext for WGPURenderContext {
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
         };
 
 
@@ -513,8 +514,8 @@ impl InnerRenderContext for WGPURenderContext {
             ],
             rgba: [1.0, 1.0, 1.0, 1.0],
             mode: MODE_TEXT,
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = bounding_box1.l_r_b_t();
@@ -651,7 +652,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw(start as u32, self.vertices.len() as u32);
     }
 
-    fn stroke(&mut self, stroke: &[Triangle<(Position, (Position, Position, f32, f32))>]) {
+    fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
         if self.skip_rendering {
             return;
         }
@@ -714,20 +715,24 @@ impl InnerRenderContext for WGPURenderContext {
         self.vertices.extend(
             stroke.iter()
                 .flat_map(|triangle| &triangle.0)
-                .map(|(position, line_position)| {
-
+                .map(|v| {
                     Vertex {
-                        position: [position.x as f32, position.y as f32, 0.0],
+                        position: [v.position.x as f32, v.position.y as f32, 0.0],
                         tex_coords: [0.0, 0.0],
                         rgba: if gradient { Color::random().to_fsa() } else { color },
                         mode,
-                        line_coords: [
-                            line_position.0.x as f32,
-                            line_position.0.y as f32,
-                            line_position.1.x as f32,
-                            line_position.1.y as f32,
+                        attributes0: [
+                            v.start.x as f32,
+                            v.start.y as f32,
+                            v.end.x as f32,
+                            v.end.y as f32,
                         ],
-                        line_utils: [line_position.2, line_position.3, 0.0, 0.0],
+                        attributes1: [
+                            v.middle.x as f32,
+                            v.middle.y as f32,
+                            v.width,
+                            v.offset
+                        ],
                     }
                 })
         );
@@ -801,8 +806,8 @@ impl InnerRenderContext for WGPURenderContext {
                 .pre_multiply()
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
 
         };
 
@@ -858,8 +863,8 @@ impl InnerRenderContext for WGPURenderContext {
                 .pre_multiply()
                 .to_fsa(),
             mode: if post_draw { MODE_IMAGE } else { MODE_TEXT },
-            line_coords: [0.0, 0.0, 0.0, 0.0],
-            line_utils: [0.0, 0.0, 0.0, 0.0],
+            attributes0: [0.0, 0.0, 0.0, 0.0],
+            attributes1: [0.0, 0.0, 0.0, 0.0],
         };
 
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();

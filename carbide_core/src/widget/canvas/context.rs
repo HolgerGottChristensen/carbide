@@ -1,13 +1,15 @@
 use std::fmt::{Debug, Formatter};
+use cgmath::InnerSpace;
 
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
-use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex, VertexBuffers};
+use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
 
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashPattern};
 use crate::draw::Color;
+use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
@@ -69,6 +71,11 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
 
     pub fn dimension(&self) -> Dimension {
         self.dimension
+    }
+
+    pub fn mouse_position(&self) -> Position {
+        let pos = self.render_context.env.mouse_position();
+        pos - self.position
     }
 
     pub fn env(&mut self) -> &mut Environment {
@@ -365,8 +372,8 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
         &self,
         path: Path,
         stroke_options: StrokeOptions,
-    ) -> Vec<Triangle<(Position, (Position, Position, f32, f32))>> {
-        let mut geometry: VertexBuffers<(Position, f32), u16> = VertexBuffers::new();
+    ) -> Vec<Triangle<StrokeVertex>> {
+        let mut geometry: VertexBuffers<StrokeVertex, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
 
         //println!("{:?}", path);
@@ -377,39 +384,83 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                 .tessellate_path(
                     &path,
                     &stroke_options,
-                    &mut BuffersBuilder::new(&mut geometry, |vertex: StrokeVertex| {
-                        /*dbg!(
-                            &vertex.position(),
-                            &vertex.advancement(),
-                            &vertex.source(),
-                            &vertex.normal(),
-                        );*/
+                    &mut BuffersBuilder::new(&mut geometry, |vertex: LyonStrokeVertex| {
+                        //dbg!(&vertex);
                         let point = vertex.position();
+                        let start = vertex.prev_position_on_path().unwrap_or(point);
+                        let middle = vertex.position_on_path();
+                        let end = vertex.next_position_on_path().unwrap_or(point);
 
-                        (Position::new(point.x as Scalar, point.y as Scalar), vertex.line_width())
+                        StrokeVertex {
+                            position: Position::new(point.x as Scalar, point.y as Scalar),
+                            start: Position::new(start.x as Scalar, start.y as Scalar),
+                            middle: Position::new(middle.x as Scalar, middle.y as Scalar),
+                            end: Position::new(end.x as Scalar, end.y as Scalar),
+                            width: vertex.line_width(),
+                            offset: vertex.advancement(),
+                        }
                     }),
                 )
                 .unwrap();
         }
 
-        let point_iter = geometry
+        let triangles = geometry
             .indices
-            .iter()
-            .enumerate()
-            .map(|(e, index)| {
-                let dir = geometry.points[e / 3];
-                let position = geometry.vertices[*index as usize].0;
-                let linewidth = geometry.vertices[*index as usize].1;
-                let direction_from = Position::new(dir.0.x as f64, dir.0.y as f64);
-                let direction_to = Position::new(dir.1.x as f64, dir.1.y as f64);
-                let point_offset = dir.2;
+            .chunks(3)
+            .map(|indices| {
+                let mut vertex0 = geometry.vertices[indices[0] as usize];
+                let mut vertex1 = geometry.vertices[indices[1] as usize];
+                let mut vertex2 = geometry.vertices[indices[2] as usize];
 
-                (position, (direction_from, direction_to, point_offset, linewidth))
-            });
+                let first = vertex0;
 
-        let points: Vec<_> = point_iter.collect();
+                let second = if vertex1.offset != vertex0.offset { vertex1 } else { vertex2 };
 
-        Triangle::from_point_list(points)
+                let (min, max) = if first.offset < second.offset {
+                    (first, second)
+                } else {
+                    (second, first)
+                };
+
+                let v1 = min.end - min.middle;
+                let v2 = min.start - min.middle;
+
+                let a = cgmath::Vector2::new(v1.x, v1.y);
+                let b = cgmath::Vector2::new(v2.x, v2.y);
+
+                let min_angle = a.angle(b);
+
+                let v1 = max.end - max.middle;
+                let v2 = max.start - max.middle;
+
+                let a = cgmath::Vector2::new(v1.x, v1.y);
+                let b = cgmath::Vector2::new(v2.x, v2.y);
+
+                let max_angle = a.angle(b);
+
+                vertex0.start = min.middle;
+                vertex0.end = max.middle;
+                vertex0.middle = Position::new(min_angle.0, max_angle.0);
+                vertex0.offset = min.offset;
+
+                vertex1.start = min.middle;
+                vertex1.end = max.middle;
+                vertex1.middle = Position::new(min_angle.0, max_angle.0);
+                vertex1.offset = min.offset;
+
+                vertex2.start = min.middle;
+                vertex2.end = max.middle;
+                vertex2.middle = Position::new(min_angle.0, max_angle.0);
+                vertex2.offset = min.offset;
+
+                Triangle([
+                    vertex0,
+                    vertex1,
+                    vertex2
+                ])
+            }).collect::<Vec<_>>();
+
+        triangles
     }
 }
 
