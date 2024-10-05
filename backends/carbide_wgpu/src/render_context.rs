@@ -717,19 +717,23 @@ impl InnerRenderContext for WGPURenderContext {
                 .flat_map(|triangle| &triangle.0)
                 .map(|v| {
                     Vertex {
-                        position: [v.position.x as f32, v.position.y as f32, 0.0],
+                        position: [
+                            v.position.x,
+                            v.position.y,
+                            0.0
+                        ],
                         tex_coords: [0.0, 0.0],
                         rgba: if gradient { Color::random().to_fsa() } else { color },
                         mode,
                         attributes0: [
-                            v.start.x as f32,
-                            v.start.y as f32,
-                            v.end.x as f32,
-                            v.end.y as f32,
+                            v.start.x,
+                            v.start.y,
+                            v.end.x,
+                            v.end.y,
                         ],
                         attributes1: [
-                            v.middle.x as f32,
-                            v.middle.y as f32,
+                            v.start_angle.radians,
+                            v.end_angle.radians,
                             v.width,
                             v.offset
                         ],

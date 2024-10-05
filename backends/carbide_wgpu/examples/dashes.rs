@@ -18,14 +18,15 @@ enum DrawType {
     Star,
     BezierMouse,
     LineMouse,
+    U,
 }
 
 fn main() {
     let mut application = Application::new();
 
-    let draw_figure = LocalState::new(DrawType::Star);
+    let draw_figure = LocalState::new(DrawType::LineMouse);
     let draw_figure_canvas = draw_figure.clone();
-    let draw_figures = vec![DrawType::Line, DrawType::Circle, DrawType::Star, DrawType::BezierMouse, DrawType::LineMouse];
+    let draw_figures = vec![DrawType::Line, DrawType::Circle, DrawType::Star, DrawType::BezierMouse, DrawType::LineMouse, DrawType::U];
 
     let line_cap = LocalState::new(LineCap::Butt);
     let line_cap_canvas = line_cap.clone();
@@ -58,6 +59,7 @@ fn main() {
     let dash = LocalState::new(true);
     let dash_canvas = dash.clone();
 
+    //let dash_pattern = LocalState::<Result<Vec<f64>, String>>::new(Ok(vec![1.0, 4.0]));
     let dash_pattern = LocalState::<Result<Vec<f64>, String>>::new(Ok(vec![2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]));
     let dash_pattern_canvas = dash_pattern.clone();
 
@@ -158,8 +160,14 @@ fn main() {
                                 let mouse_position = ctx.mouse_position();
 
                                 ctx.move_to(0.0, 0.0);
-                                ctx.line_to(dimension.width / 4.0 * 3.0, dimension.height / 4.0 * 3.0);
+                                ctx.line_to(dimension.width / 2.0, dimension.height / 2.0);
                                 ctx.line_to(mouse_position.x, mouse_position.y);
+                            }
+                            DrawType::U => {
+                                ctx.move_to(50.0, 50.0);
+                                ctx.line_to(dimension.width - 50.0, 50.0);
+                                ctx.line_to(dimension.width - 50.0, dimension.height - 50.0);
+                                ctx.line_to(50.0, dimension.height - 50.0);
                             }
                         }
 

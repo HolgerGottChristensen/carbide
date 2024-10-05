@@ -1,10 +1,11 @@
 use std::fmt::{Debug, Formatter};
-use cgmath::InnerSpace;
+use cgmath::{InnerSpace, Rad};
 
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
+use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
 
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashPattern};
@@ -373,10 +374,26 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
         path: Path,
         stroke_options: StrokeOptions,
     ) -> Vec<Triangle<StrokeVertex>> {
-        let mut geometry: VertexBuffers<StrokeVertex, u16> = VertexBuffers::new();
+
+        #[derive(Debug, Copy, Clone, PartialEq)]
+        pub struct Vertex {
+            position: Point,
+
+            prev: Option<Point>,
+            current: Point,
+            next: Option<Point>,
+
+            width: f32,
+            offset: f32,
+        }
+
+
+        let mut geometry: VertexBuffers<Vertex, u16> = VertexBuffers::new();
         let mut tessellator = StrokeTessellator::new();
 
         //println!("{:?}", path);
+
+
 
         {
             // Compute the tessellation.
@@ -386,16 +403,12 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                     &stroke_options,
                     &mut BuffersBuilder::new(&mut geometry, |vertex: LyonStrokeVertex| {
                         //dbg!(&vertex);
-                        let point = vertex.position();
-                        let start = vertex.prev_position_on_path().unwrap_or(point);
-                        let middle = vertex.position_on_path();
-                        let end = vertex.next_position_on_path().unwrap_or(point);
 
-                        StrokeVertex {
-                            position: Position::new(point.x as Scalar, point.y as Scalar),
-                            start: Position::new(start.x as Scalar, start.y as Scalar),
-                            middle: Position::new(middle.x as Scalar, middle.y as Scalar),
-                            end: Position::new(end.x as Scalar, end.y as Scalar),
+                        Vertex {
+                            position: vertex.position(),
+                            prev: vertex.prev_position_on_path(),
+                            current: vertex.position_on_path(),
+                            next: vertex.next_position_on_path(),
                             width: vertex.line_width(),
                             offset: vertex.advancement(),
                         }
@@ -422,41 +435,48 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                     (second, first)
                 };
 
-                let v1 = min.end - min.middle;
-                let v2 = min.start - min.middle;
+                let start_angle = if let Some(prev) = min.prev {
+                    let b = min.current - prev;
+                    - b.angle_from_x_axis() + Angle::frac_pi_2()
+                } else {
+                    Angle::radians(100.0)
+                };
 
-                let a = cgmath::Vector2::new(v1.x, v1.y);
-                let b = cgmath::Vector2::new(v2.x, v2.y);
-
-                let min_angle = a.angle(b);
-
-                let v1 = max.end - max.middle;
-                let v2 = max.start - max.middle;
-
-                let a = cgmath::Vector2::new(v1.x, v1.y);
-                let b = cgmath::Vector2::new(v2.x, v2.y);
-
-                let max_angle = a.angle(b);
-
-                vertex0.start = min.middle;
-                vertex0.end = max.middle;
-                vertex0.middle = Position::new(min_angle.0, max_angle.0);
-                vertex0.offset = min.offset;
-
-                vertex1.start = min.middle;
-                vertex1.end = max.middle;
-                vertex1.middle = Position::new(min_angle.0, max_angle.0);
-                vertex1.offset = min.offset;
-
-                vertex2.start = min.middle;
-                vertex2.end = max.middle;
-                vertex2.middle = Position::new(min_angle.0, max_angle.0);
-                vertex2.offset = min.offset;
+                let end_angle = if let Some(next) = max.next {
+                    let b = max.current - next;
+                    - b.angle_from_x_axis() - Angle::frac_pi_2()
+                } else {
+                    Angle::radians(100.0)
+                };
 
                 Triangle([
-                    vertex0,
-                    vertex1,
-                    vertex2
+                    StrokeVertex {
+                        position: vertex0.position,
+                        start: min.current,
+                        end: max.current,
+                        start_angle,
+                        end_angle,
+                        width: vertex0.width,
+                        offset: min.offset,
+                    },
+                    StrokeVertex {
+                        position: vertex1.position,
+                        start: min.current,
+                        end: max.current,
+                        start_angle,
+                        end_angle,
+                        width: vertex1.width,
+                        offset: min.offset,
+                    },
+                    StrokeVertex {
+                        position: vertex2.position,
+                        start: min.current,
+                        end: max.current,
+                        start_angle,
+                        end_angle,
+                        width: vertex2.width,
+                        offset: min.offset,
+                    },
                 ])
             }).collect::<Vec<_>>();
 

@@ -138,76 +138,72 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             let line_start = in.attributes0.xy;
             let line_end = in.attributes0.zw;
 
-            let min_angle = in.attributes1.x;
-            let max_angle = in.attributes1.y;
-
             let line_width = in.attributes1.z;
             let line_offset = in.attributes1.w;
 
-            let total_dash_length = dashes.total_dash_width * line_width;
-
             // The direction of the line segment containing this fragment
             let dir = normalize(line_end - line_start);
+
             // The length of the line segment containing this fragment
             let len = length(line_end - line_start);
 
-            // Project the fragment onto the line segment, to get the distance along the line, from the start position of the line.
-            let distance_along_the_line = dot(in.gradient_coord.xy - line_start, dir);
+            /*let distance_y_start = abs(dot(in.gradient_coord.xy - line_start, vec2<f32>(dir_start.y, -dir_start.x)));
+            let distance_y_end = abs(dot(in.gradient_coord.xy - line_end, vec2<f32>(dir_end.y, -dir_end.x)));
 
-            // Clamp the distance and apply the offset of the line segment and the dash offset.
-            let clamped_distance = clamp(distance_along_the_line, 0.0, len) + line_offset + dashes.dash_offset * line_width + total_dash_length;
-
-            // Project the fragment onto the line segment, but flipped 90 degrees.
-            // This gives us the y distance from the line segment. We take the absolute
-            // value, because we might be on either side of the line segment.
-            let distance_y = abs(dot(in.gradient_coord.xy - line_start, vec2<f32>(dir.y, -dir.x)));
-
-            // Mod the distance to get the position within the dash range. This is because
-            // the dashes are repeating over the dash pattern.
-            let s3 = clamped_distance % total_dash_length;
-
-            if (s3 < 0.0) {
+            if (distance_y_end < line_width / 2.0 && end_angle != 100.0) {
                 col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
             }
 
-            // Stores the start of the dash in the dash pattern.
-            var start = 0.0;
+            if (distance_y_start < line_width / 2.0 && start_angle != 100.0) {
+                col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+            }*/
 
-            // For each dash in the dash pattern
-            for (var i = 0u; i < dashes.dash_count; i++) {
-                // The end of the current dash within the dash pattern
-                let end = start + dashes.dashes[i] * line_width;
+            let dash_value = dash(in.gradient_coord.xy, dir, line_start, len, line_offset, line_width, true);
 
-                // We are somewhere between start and end of the dash (or gap)
-                if (s3 < end) {
+            // If we are in a gap
+            if (dash_value == 3u) {
+                let start_angle = in.attributes1.x;
+                let end_angle = in.attributes1.y;
 
-                    // We are inside a gap
-                    if (i % 2u == 1u) {
-                        var in_cap = false;
-
-                        // We are in an end cap
-                        if (s3 - start < line_width / 2.0) {
-                            in_cap = cap(s3 - start, distance_y, line_width, dashes.end_cap);
-
-                        // We are in a start cap
-                        } else if (end - s3 < line_width / 2.0) {
-                            in_cap = cap(end - s3, distance_y, line_width, dashes.start_cap);
-                        }
-
-                        // If we are inside a gap and not in a cap, we can discard the fragment
-                        if (!in_cap) {
-                            //discard;
-                            col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
-                        }
-                    }
-
-                    // If we are not in a gap, we just break, out of the loop
-                    break;
+                let dir_start = vec2<f32>(sin(start_angle), cos(start_angle));
+                let dir_end = vec2<f32>(sin(end_angle), cos(end_angle));
+                //let dash_start = dash(in.gradient_coord.xy, dir_start, line_start, len, line_offset, line_width);
+                // If we are in a end dash
+                if (end_angle != 100.0 && dash(in.gradient_coord.xy, dir_end, line_end, len, line_offset + len, line_width, false) != 3u) {
+                    //col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+                } else if (start_angle != 100.0 && dash(in.gradient_coord.xy, dir_start, line_start - dir_start * len, len, line_offset - len, line_width, false) != 3u) {
+                    //col = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+                } else {
+                    discard;
+                    //col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+                    //col = col * 0.2;
+                    //col.a = 1.0;
                 }
-
-                // The start of the next dash is the end of the previous
-                start = end;
             }
+
+            /*switch (dash_value) {
+                case 0u: {
+                    col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+                }
+                case 1u: {
+                    col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+                }
+                case 2u: {
+                    col = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+                }
+                case 3u: {
+                    col = vec4<f32>(1.0, 1.0, 0.0, 1.0);
+                }
+                case 4u: {
+                    col = vec4<f32>(1.0, 0.0, 1.0, 1.0);
+                }
+                case 5u: {
+                    col = vec4<f32>(0.0, 1.0, 1.0, 1.0);
+                }
+                default: {
+                    col = vec4<f32>(1.0, 1.0, 1.0, 1.0);
+                }
+            }*/
         }
 
         default: {
@@ -226,6 +222,93 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(hsl_to_rgb(hsl) * a, a);
     }
     return vec4<f32>(hsl_to_rgb(hsl) * col.a, col.a);
+}
+
+// Returns:
+// - 0: Error - negative dist
+// - 1: In an end cap
+// - 2: In a start cap
+// - 3: In a gap
+// - 4: In a dash body
+// - 5: Error - for loop expired
+fn dash(position: vec2<f32>, direction: vec2<f32>, origin: vec2<f32>, length: f32, offset: f32, linewidth: f32, clamp: bool) -> u32 {
+
+    let total_dash_length = dashes.total_dash_width * linewidth;
+
+    // Project the fragment onto the line segment, to get the distance along the line, from the start position of the line.
+    let distance_along_the_line = dot(position - origin, direction);
+
+    // Clamp the distance and apply the offset of the line segment and the dash offset.
+    var clamped_distance_along_the_line: f32;
+
+    if (clamp) {
+        clamped_distance_along_the_line = clamp(distance_along_the_line, 0.0, length) + offset + dashes.dash_offset * linewidth + total_dash_length;
+    } else {
+        if (distance_along_the_line < 0.0) {
+            return 3u;
+        } else if (distance_along_the_line > length) {
+            return 3u;
+        } else {
+            clamped_distance_along_the_line = distance_along_the_line + offset + dashes.dash_offset * linewidth + total_dash_length;
+        }
+    }
+
+    // Project the fragment onto the line segment, but flipped 90 degrees.
+    // This gives us the y distance from the line segment. We take the absolute
+    // value, because we might be on either side of the line segment.
+    let distance_y = abs(dot(position - origin, vec2<f32>(direction.y, -direction.x)));
+
+    // Mod the distance to get the position within the dash range. This is because
+    // the dashes are repeating over the dash pattern.
+    let modulated_clamped_distance_along_the_line = clamped_distance_along_the_line % total_dash_length;
+
+    // Shows an error in dashing in red.
+    if (modulated_clamped_distance_along_the_line < 0.0) {
+        return 0u; // 0 means error
+    }
+
+    // Stores the start of the dash in the dash pattern.
+    var start = 0.0;
+
+    if (distance_y > linewidth / 2.0) {
+        return 3u;
+    }
+
+    // For each dash in the dash pattern
+    for (var i = 0u; i < dashes.dash_count; i++) {
+        // The end of the current dash within the dash pattern
+        let end = start + dashes.dashes[i] * linewidth;
+
+        // We are somewhere between start and end of the dash (or gap)
+        if (modulated_clamped_distance_along_the_line < end) {
+
+            // We are inside a gap
+            if (i % 2u == 1u) {
+                var in_cap = false;
+
+                // We are in an end cap
+                if (modulated_clamped_distance_along_the_line - start < linewidth / 2.0 && cap(modulated_clamped_distance_along_the_line - start, distance_y, linewidth, dashes.end_cap)) {
+                    return 1u;
+                }
+
+                // We are in a start cap
+                if (end - modulated_clamped_distance_along_the_line < linewidth / 2.0 && cap(end - modulated_clamped_distance_along_the_line, distance_y, linewidth, dashes.start_cap)) {
+                    return 2u;
+                }
+
+                // If we are inside a gap and not in a cap
+                return 3u;
+            }
+
+            // If we are not in a gap, we just break, out of the loop
+            return 4u;
+        }
+
+        // The start of the next dash is the end of the previous
+        start = end;
+    }
+
+    return 5u;
 }
 
 fn cap(x: f32, y: f32, w: f32, ty: u32) -> bool {
