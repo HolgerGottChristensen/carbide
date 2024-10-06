@@ -26,18 +26,8 @@ impl<T: StateContract, TState: State<T=T> + Clone + 'static> StateSync for Loggi
 
 impl<T: StateContract, TState: State<T=T> + Clone + 'static> AnyState for LoggingState<T, TState> {
     fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
-        // Get the current value
-        let val = self.0.value().clone();
-
-        // Clone self to get static lifetime
-        let mut setter_self = self.clone();
-
-        // Call set_value_dyn when ValueRefMut is dropped
-        let setter = move |new| {
-            setter_self.set_value_dyn(new);
-        };
-
-        ValueRefMut::TupleState(Some(Box::new(setter)), Some(val))
+        println!("Retrieved value mut");
+        self.0.value_mut()
     }
 
     fn set_value_dyn(&mut self, val: T) {

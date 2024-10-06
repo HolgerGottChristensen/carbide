@@ -16,7 +16,7 @@ use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 #[derive(Clone)]
 pub struct IndexState<T, U, Idx, ST, SIdx>
 where
-    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
     ST: State<T=T> + Clone + 'static,
@@ -33,7 +33,7 @@ where
 
 impl IndexState<Vec<()>, (), usize, Vec<()>, usize> {
     pub fn new<T, U, Idx, ST, SIdx>(indexable: ST, index: SIdx) -> IndexState<T, U, Idx, ST, SIdx> where
-        T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+        T: StateContract + Index<Idx, Output=U>,
         U: StateContract,
         Idx: StateContract,
         ST: State<T=T> + Clone + 'static,
@@ -85,7 +85,7 @@ where T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
 
 impl<T, U, Idx, ST, SIdx> StateSync for IndexState<T, U, Idx, ST, SIdx>
 where
-    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
     ST: State<T=T> + Clone + 'static,
@@ -102,7 +102,7 @@ where
 
 impl<T, U, Idx, ST, SIdx> AnyReadState for IndexState<T, U, Idx, ST, SIdx>
 where
-    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
     ST: State<T=T> + Clone + 'static,
@@ -115,6 +115,7 @@ where
     }
 }
 
+// When the indexable collection implements IndexMut, the IndexState is additionally a mutable state.
 impl<T, U, Idx, ST, SIdx> AnyState for IndexState<T, U, Idx, ST, SIdx>
 where
     T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
@@ -135,7 +136,7 @@ where
 
 impl<T, U, Idx, ST, SIdx> Debug for IndexState<T, U, Idx, ST, SIdx>
 where
-    T: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
     ST: State<T=T> + Clone + 'static,
@@ -152,7 +153,7 @@ where
 impl<T: StateContract, V, U, Idx, ST, SIdx> Functor<T> for IndexState<V, U, Idx, ST, SIdx>
 where
     IndexState<V, U, Idx, ST, SIdx>: IntoReadState<T>,
-    V: StateContract + Index<Idx, Output=U> + IndexMut<Idx, Output=U>,
+    V: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
     ST: State<T=V> + Clone + 'static,
