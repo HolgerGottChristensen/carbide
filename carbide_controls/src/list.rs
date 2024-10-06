@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-use carbide::a;
+use carbide::closure;
 use carbide::draw::Rect;
 use carbide::state::{AnyReadState, AnyState, Map1};
 use carbide::widget::{AnyWidget, MouseArea};
@@ -450,7 +450,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
         let model = self.model.clone();
 
         MouseArea::new(self.inner_delegate.call(item.clone(), index.clone()))
-            .on_click(a!(|_, modifier: ModifierKey| {
+            .on_click(closure!(|_, modifier: ModifierKey| {
                 let mut selection = selection.clone();
                 let identifier = item.value().identifier();
 
@@ -563,7 +563,7 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
         };
 
         let disclosure = MouseArea::new(disclosure_item.clone())
-            .on_click(a!(|_, _| {
+            .on_click(closure!(|_, _| {
                 *$opened = !*$opened;
             }));
 

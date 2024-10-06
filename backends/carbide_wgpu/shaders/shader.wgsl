@@ -115,7 +115,6 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         case 4u: {
             col = vec4<f32>(atlas_pixel.r * atlas_pixel.a, atlas_pixel.g * atlas_pixel.a, atlas_pixel.b * atlas_pixel.a, atlas_pixel.a);
         }
-
         case 5u: {
             col = gradient_color(in.gradient_coord);
         }
@@ -125,8 +124,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         case 7u: {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
-
-        // Stroke dashing mode
+        // Stroke dashing mode - FAST
         case 8u, 9u: {
             // If the mode is even, we use the vertex color, otherwise the gradient color
             if (mode % 2u == 0u) {
@@ -147,16 +145,33 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             // The length of the line segment containing this fragment
             let len = length(line_end - line_start);
 
-            /*let distance_y_start = abs(dot(in.gradient_coord.xy - line_start, vec2<f32>(dir_start.y, -dir_start.x)));
-            let distance_y_end = abs(dot(in.gradient_coord.xy - line_end, vec2<f32>(dir_end.y, -dir_end.x)));
+            let dash_value = dash(in.gradient_coord.xy, dir, line_start, len, line_offset, line_width, true);
 
-            if (distance_y_end < line_width / 2.0 && end_angle != 100.0) {
-                col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
+            // If we are in a gap
+            if (dash_value == 3u) {
+                discard;
+            }
+        }
+        // Stroke dashing mode - PRETTY
+        case 10u, 11u: {
+            // If the mode is even, we use the vertex color, otherwise the gradient color
+            if (mode % 2u == 0u) {
+                col = in.color;
+            } else {
+                col = gradient_color(in.gradient_coord);
             }
 
-            if (distance_y_start < line_width / 2.0 && start_angle != 100.0) {
-                col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
-            }*/
+            let line_start = in.attributes0.xy;
+            let line_end = in.attributes0.zw;
+
+            let line_width = in.attributes1.z;
+            let line_offset = in.attributes1.w;
+
+            // The direction of the line segment containing this fragment
+            let dir = normalize(line_end - line_start);
+
+            // The length of the line segment containing this fragment
+            let len = length(line_end - line_start);
 
             let dash_value = dash(in.gradient_coord.xy, dir, line_start, len, line_offset, line_width, true);
 
@@ -167,45 +182,17 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
                 let dir_start = vec2<f32>(sin(start_angle), cos(start_angle));
                 let dir_end = vec2<f32>(sin(end_angle), cos(end_angle));
-                //let dash_start = dash(in.gradient_coord.xy, dir_start, line_start, len, line_offset, line_width);
-                // If we are in a end dash
+
                 if (end_angle != 100.0 && dash(in.gradient_coord.xy, dir_end, line_end, len, line_offset + len, line_width, false) != 3u) {
-                    //col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
+                    // The dash from the next line overlaps
                 } else if (start_angle != 100.0 && dash(in.gradient_coord.xy, dir_start, line_start - dir_start * len, len, line_offset - len, line_width, false) != 3u) {
-                    //col = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+                    // The dash from the prev line overlaps
                 } else {
+                    // We are overlapping with no dashes.
                     discard;
-                    //col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
-                    //col = col * 0.2;
-                    //col.a = 1.0;
                 }
             }
-
-            /*switch (dash_value) {
-                case 0u: {
-                    col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
-                }
-                case 1u: {
-                    col = vec4<f32>(0.0, 1.0, 0.0, 1.0);
-                }
-                case 2u: {
-                    col = vec4<f32>(0.0, 0.0, 1.0, 1.0);
-                }
-                case 3u: {
-                    col = vec4<f32>(1.0, 1.0, 0.0, 1.0);
-                }
-                case 4u: {
-                    col = vec4<f32>(1.0, 0.0, 1.0, 1.0);
-                }
-                case 5u: {
-                    col = vec4<f32>(0.0, 1.0, 1.0, 1.0);
-                }
-                default: {
-                    col = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-                }
-            }*/
         }
-
         default: {
            col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
         }
@@ -244,6 +231,8 @@ fn dash(position: vec2<f32>, direction: vec2<f32>, origin: vec2<f32>, length: f3
     if (clamp) {
         clamped_distance_along_the_line = clamp(distance_along_the_line, 0.0, length) + offset + dashes.dash_offset * linewidth + total_dash_length;
     } else {
+        //clamped_distance_along_the_line = distance_along_the_line + offset + dashes.dash_offset * linewidth + total_dash_length;
+
         if (distance_along_the_line < 0.0) {
             return 3u;
         } else if (distance_along_the_line > length) {

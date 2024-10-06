@@ -50,8 +50,11 @@ pub const MODE_GRADIENT_ICON: u32 = 6;
 
 pub const MODE_GRADIENT_TEXT: u32 = 7;
 
-pub const MODE_GEOMETRY_DASH: u32 = 8;
-pub const MODE_GRADIENT_GEOMETRY_DASH: u32 = 9;
+pub const MODE_GEOMETRY_DASH_FAST: u32 = 8;
+pub const MODE_GRADIENT_GEOMETRY_DASH_FAST: u32 = 9;
+
+pub const MODE_GEOMETRY_DASH: u32 = 10;
+pub const MODE_GRADIENT_GEOMETRY_DASH: u32 = 11;
 
 
 /// Default dimensions to use for the glyph cache.

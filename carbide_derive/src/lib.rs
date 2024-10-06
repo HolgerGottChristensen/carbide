@@ -72,7 +72,7 @@ fn impl_derive(
 }
 
 #[proc_macro]
-pub fn a(input: TokenStream) -> TokenStream {
+pub fn closure(input: TokenStream) -> TokenStream {
     let ast = carbide_syn::parse_macro_input!(input as carbide_syn::Expr);
     let ast_res = process_a_expr(ast);
     //panic!("\n{:#?}", &ast_res);

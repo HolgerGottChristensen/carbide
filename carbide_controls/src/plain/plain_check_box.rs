@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide::a;
+use carbide::closure;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -125,7 +125,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
                     println!("Focus request");
                     env.request_focus(Refocus::FocusRequest);
                 }
-            })).on_click_outside(a!(|env: &mut Environment, _: ModifierKey| {
+            })).on_click_outside(closure!(|env: &mut Environment, _: ModifierKey| {
                 if *$focus == Focus::Focused {
                     *$focus = Focus::FocusReleased;
                     env.request_focus(Refocus::FocusRequest);

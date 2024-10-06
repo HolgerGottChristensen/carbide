@@ -1,4 +1,4 @@
-use carbide::{Application, Window, a};
+use carbide::{Application, Window, closure};
 use carbide::draw::Dimension;
 use carbide::state::LocalState;
 use carbide::widget::{Text, VStack, WidgetExt};
@@ -13,7 +13,7 @@ fn main() {
 
     let text = Text::new(counter.clone()).font_size(LargeTitle);
 
-    let button = Button::new_primary("Increase counter", a!(|_, _| {
+    let button = Button::new_primary("Increase counter", closure!(|_, _| {
         *$counter += 1;
     }))
         .frame(200.0, 30.0);

@@ -20,7 +20,7 @@ pub use scene::Scene;
 
 pub use draw::color;
 
-pub use carbide_derive::a;
+pub use carbide_derive::closure;
 
 #[macro_export]
 macro_rules! lens {

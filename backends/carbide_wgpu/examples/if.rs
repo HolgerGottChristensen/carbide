@@ -1,6 +1,6 @@
 use carbide_controls::{Button, TextInput};
 use carbide_core as carbide; // Required only in internal examples
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
@@ -27,7 +27,7 @@ fn main() {
         Dimension::new(400.0, 600.0),
         VStack::new((
             widget,
-            Button::new_primary("Click to change the view above", a!(|_, _| {
+            Button::new_primary("Click to change the view above", closure!(|_, _| {
                 *$condition = !*$condition;
             })).frame_fixed_height(45.0),
         ))

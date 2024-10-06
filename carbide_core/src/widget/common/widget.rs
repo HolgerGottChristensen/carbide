@@ -14,7 +14,6 @@ use crate::state::StateSync;
 use crate::update::{Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 
-// TODO Rename to AnyWidget and create a widget that is anywidget and clone
 pub trait AnyWidget: EventHandler + Update + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
 dyn_clone::clone_trait_object!(AnyWidget);

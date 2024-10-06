@@ -36,7 +36,7 @@ pub fn process_a_expr(ast: Expr) -> Expr {
             let body: Expr = parse_quote!({
                 #(
                     let mut #idents = Clone::clone(&#idents);
-                    let mut #idents = carbide::state::State::value_mut(&mut #idents);
+                    let #idents = &mut *carbide::state::State::value_mut(&mut #idents);
                 )*
 
                 #body

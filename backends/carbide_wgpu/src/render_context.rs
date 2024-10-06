@@ -5,7 +5,7 @@ use cgmath::{Matrix4, SquareMatrix};
 use wgpu::BindGroup;
 
 use carbide_core::color::{Color, ColorExt, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH, Dimension};
+use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH, Dimension, StrokeDashMode, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY_DASH_FAST};
 use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
@@ -702,11 +702,14 @@ impl InnerRenderContext for WGPURenderContext {
             self.current_stroke_dash = self.stroke_dash_stack.last().unwrap().clone();
         }
 
-        let mode = match (gradient, self.current_stroke_dash.is_some()) {
-            (false, false) => MODE_GEOMETRY,
-            (false, true) => MODE_GEOMETRY_DASH,
-            (true, false) => MODE_GRADIENT_GEOMETRY,
-            (true, true) => MODE_GRADIENT_GEOMETRY_DASH,
+        let mode = if let Some(stroke_dash) = &self.current_stroke_dash {
+            if stroke_dash.dash_type == StrokeDashMode::Fast {
+                if gradient { MODE_GRADIENT_GEOMETRY_DASH_FAST } else { MODE_GEOMETRY_DASH_FAST }
+            } else {
+                if gradient { MODE_GRADIENT_GEOMETRY_DASH } else { MODE_GEOMETRY_DASH }
+            }
+        } else {
+            if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY }
         };
 
         let mode = if self.masked { mode | 0b100000 } else { mode };

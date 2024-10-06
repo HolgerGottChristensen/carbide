@@ -5,7 +5,7 @@ use std::ops::RangeInclusive;
 
 use chrono::{Datelike, Local, Month, NaiveDate, Weekday};
 
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{color::TRANSPARENT, Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
@@ -166,7 +166,7 @@ impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemD
             Text::new(Map1::read_map(month.clone(), |m| format!("{:?}", m))),
             Text::new(year.clone()),
             Spacer::new(),
-            PlainButton::new(a!(|_,_| {
+            PlainButton::new(closure!(|_,_| {
                         if *$month == Month::January {
                             *$year -= 1;
                         }
@@ -174,7 +174,7 @@ impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemD
                     })).delegate(|_, _, _, _| {
                 Image::new("icons/arrow-left-s-line.png").boxed()
             }),
-            PlainButton::new(a!(|_,_| {
+            PlainButton::new(closure!(|_,_| {
                         if *$month == Month::December {
                             *$year += 1;
                         }

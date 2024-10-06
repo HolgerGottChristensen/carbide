@@ -1,5 +1,5 @@
 use carbide_controls::{Button, List};
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, ReadState, State};
@@ -25,25 +25,25 @@ fn main() {
         .expand_width()
     }
 
-    let add_element = Button::new_primary("Add element", a!(|_, _| {
+    let add_element = Button::new_primary("Add element", closure!(|_, _| {
             let len = ($list_model_state).len();
             list_model_state.push(format!("New element: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_element = Button::new_primary("Remove element", a!(|_, _| {
+    let remove_element = Button::new_primary("Remove element", closure!(|_, _| {
             ($list_model_state).pop();
         }))
         .frame(150.0, 22.0)
         .accent_color(EnvironmentColor::Red);
 
-    let add_to_start = Button::new_primary("Add element to start", a!(|_, _| {
+    let add_to_start = Button::new_primary("Add element to start", closure!(|_, _| {
             let len = ($list_model_state).len();
             list_model_state.insert(0, format!("New element start: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_first = Button::new_primary("Remove first element", a!(|_, _| {
+    let remove_first = Button::new_primary("Remove first element", closure!(|_, _| {
             if ($list_model_state).len() > 0 {
                 list_model_state.remove(0);
             }

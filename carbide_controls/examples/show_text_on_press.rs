@@ -1,5 +1,5 @@
 use carbide_controls::{PASSWORD_CHAR, PlainButton, PlainTextInput};
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadStateExtNew};
@@ -26,7 +26,7 @@ fn main() {
                 .obscure(obscure)
                 .font_size(EnvironmentFontSize::Title)
                 .border(),
-            PlainButton::new(a!(|_,_|{}))
+            PlainButton::new(closure!(|_,_|{}))
                 .pressed(pressed)
         ))
             .spacing(10.0)

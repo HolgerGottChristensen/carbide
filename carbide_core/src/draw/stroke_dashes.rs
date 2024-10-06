@@ -5,6 +5,7 @@ pub struct StrokeDashPattern {
     pub offset: f64,
     pub start_cap: StrokeDashCap,
     pub end_cap: StrokeDashCap,
+    pub dash_type: StrokeDashMode,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -14,4 +15,13 @@ pub enum StrokeDashCap {
     Square,
     TriangleIn,
     TriangleOut,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum StrokeDashMode {
+    /// Fast will only check if the triangle making up the line is in a dash
+    Fast,
+    /// Pretty will check if triangles that are parts of joins contains dashes.
+    /// On thin lines this is not visible.
+    Pretty
 }

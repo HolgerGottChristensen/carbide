@@ -1,6 +1,6 @@
 use carbide_controls::Button;
 use carbide_core as carbide; // Required only in internal examples
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, State};
@@ -19,10 +19,10 @@ fn main() {
         VStack::new((
             Text::new(switch.clone())
                 .font_size(EnvironmentFontSize::Title),
-            Button::new_primary("Change", a!(|_, _| { *$switch = !*$switch; }))
+            Button::new_primary("Change", closure!(|_, _| { *$switch = !*$switch; }))
                 .frame(96.0, 22.0),
         )).spacing(10.0)
-            .on_change(switch.clone(),a!(|old, new| {
+            .on_change(switch.clone(), closure!(|old, new| {
                 println!("old: {:?}, new: {:?}", old, new);
             }))
     ).close_application_on_window_close());

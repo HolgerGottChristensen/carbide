@@ -1,5 +1,5 @@
 use carbide_core as carbide; // Required only in internal examples
-use carbide_core::a;
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::{LocalState, State};
@@ -15,7 +15,7 @@ fn main() {
     let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
 
     let button = MouseArea::new(Rectangle::new().fill(EnvironmentColor::Yellow))
-        .on_click(a!(|_, _| {
+        .on_click(closure!(|_, _| {
             *$counter += 1;
         }))
         .frame(100.0, 30.0);

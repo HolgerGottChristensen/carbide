@@ -8,7 +8,7 @@ use lyon::lyon_algorithms::path::math::point;
 use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
 
-use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashPattern};
+use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
 use crate::draw::Color;
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
@@ -40,6 +40,7 @@ pub struct ContextState {
     dash_offset: Scalar,
     dash_start_cap: StrokeDashCap,
     dash_end_cap: StrokeDashCap,
+    dash_mode: StrokeDashMode,
     miter_limit: f32,
     text_alignment: Alignment,
     clip_count: u32,
@@ -59,6 +60,7 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                 dash_offset: 0.0,
                 dash_start_cap: StrokeDashCap::None,
                 dash_end_cap: StrokeDashCap::None,
+                dash_mode: StrokeDashMode::Pretty,
                 miter_limit: StrokeOptions::DEFAULT_MITER_LIMIT,
                 text_alignment: Alignment::TopLeading,
                 clip_count: 0,
@@ -106,6 +108,10 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
 
     pub fn set_dash_end_cap(&mut self, cap: StrokeDashCap) {
         self.current_state.dash_end_cap = cap;
+    }
+
+    pub fn set_dash_mode(&mut self, mode: StrokeDashMode) {
+        self.current_state.dash_mode = mode;
     }
 
     pub fn set_line_join(&mut self, join: LineJoin) {
@@ -176,6 +182,7 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                 offset: self.current_state.dash_offset,
                 start_cap: self.current_state.dash_start_cap,
                 end_cap: self.current_state.dash_end_cap,
+                dash_type: self.current_state.dash_mode,
             }
         });
 
@@ -340,6 +347,8 @@ impl<'a, 'b> Drop for CanvasContext<'a, 'b> {
     }
 }
 
+const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;
+
 impl<'a, 'b> CanvasContext<'a, 'b> {
     pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
@@ -393,8 +402,6 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
 
         //println!("{:?}", path);
 
-
-
         {
             // Compute the tessellation.
             tessellator
@@ -439,14 +446,14 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
                     let b = min.current - prev;
                     - b.angle_from_x_axis() + Angle::frac_pi_2()
                 } else {
-                    Angle::radians(100.0)
+                    Angle::radians(RADIANS_FOR_MISSING_ANGLE)
                 };
 
                 let end_angle = if let Some(next) = max.next {
                     let b = max.current - next;
                     - b.angle_from_x_axis() - Angle::frac_pi_2()
                 } else {
-                    Angle::radians(100.0)
+                    Angle::radians(RADIANS_FOR_MISSING_ANGLE)
                 };
 
                 Triangle([
