@@ -148,5 +148,3 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Rou
         self.style.clone()
     }
 }
-
-impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for RoundedRectangle<S, F> {}

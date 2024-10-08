@@ -127,5 +127,3 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
         })
     }
 }
-
-impl<W: Widget, C: ReadState<T=Color>> WidgetExt for Border<W, C> {}

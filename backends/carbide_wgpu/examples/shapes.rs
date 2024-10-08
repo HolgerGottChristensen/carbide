@@ -152,18 +152,18 @@ fn main() {
     ));
 
     let stars = HStack::new((
-        Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+        Canvas::new(|context: &mut CanvasContext| {
             draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
             context.set_fill_style(EnvironmentColor::Accent);
             context.fill();
         }).frame(100.0, 100.0),
-        Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+        Canvas::new(|context: &mut CanvasContext| {
             draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
             context.set_line_width(10.0);
             context.set_stroke_style(EnvironmentColor::Accent);
             context.stroke();
         }).frame(100.0, 100.0),
-        Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+        Canvas::new(|context: &mut CanvasContext| {
             draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
             context.set_fill_style(EnvironmentColor::Accent);
             context.set_stroke_style(EnvironmentColor::Red);
@@ -173,7 +173,7 @@ fn main() {
         Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+            .clip_shape(Canvas::new(| context: &mut CanvasContext| {
                 draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.fill();
             }))
@@ -181,7 +181,7 @@ fn main() {
         Image::new(landscape)
             .scaled_to_fill()
             .frame(200.0, 200.0)
-            .clip_shape(Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+            .clip_shape(Canvas::new(|context: &mut CanvasContext| {
                 draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_line_width(10.0);
                 context.stroke();

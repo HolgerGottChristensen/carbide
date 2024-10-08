@@ -1,23 +1,13 @@
 use std::fmt::{Debug, Formatter};
 
-use lyon::algorithms::path::Path;
-use lyon::math::point;
-use lyon::path::Side;
-use lyon::tessellation::{
-    BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions, StrokeTessellator,
-    StrokeVertex, VertexBuffers,
-};
-
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect, Scalar};
-use crate::draw::shape::triangle::Triangle;
-use crate::environment::Environment;
+use crate::draw::{Dimension, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
-use crate::widget::canvas::{CanvasContext};
+use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Clone, Widget)]
@@ -75,38 +65,6 @@ impl<C: Context> Shape for Canvas<C> {
     fn get_shape_style(&self) -> ShapeStyle {
         todo!()
     }
-
-    fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        /*let mut context = CanvasContext::new(self.position, self.dimension);
-
-        let rectangle = Rect::new(self.position(), self.dimension());
-
-        self.context.call(rectangle, &mut context, env);
-
-        let paths = context.to_paths(self.position(), env);
-        let mut triangles = vec![];
-
-        for (path, options) in paths {
-            match options {
-                ShapeStyleWithOptions::Fill(fill_options, _) => {
-                    triangles.extend(context.get_fill_geometry(path, fill_options));
-                }
-                ShapeStyleWithOptions::Stroke(stroke_options, _, _) => {
-                    triangles.extend(context.get_stroke_geometry(path, stroke_options).iter().map(|a| Triangle([
-                        a.0[0].0,
-                        a.0[1].0,
-                        a.0[2].0
-                    ])));
-                }
-                ShapeStyleWithOptions::Clip => {}
-                ShapeStyleWithOptions::UnClip => {}
-            }
-        }
-
-        triangles*/
-
-        todo!()
-    }
 }
 
 impl<C: Context> Render for Canvas<C> {
@@ -122,5 +80,3 @@ impl<C: Context> Debug for Canvas<C> {
         f.debug_struct("Canvas").finish()
     }
 }
-
-impl<C: Context> WidgetExt for Canvas<C> {}

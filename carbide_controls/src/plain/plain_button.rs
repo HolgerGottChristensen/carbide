@@ -207,8 +207,6 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
-impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> WidgetExt for PlainButton<F, A, D, E, H, P> {}
-
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Debug for PlainButton<F, A, D, E, H, P> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainButton")

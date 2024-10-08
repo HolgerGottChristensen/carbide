@@ -500,5 +500,3 @@ impl<W: Widget> Render for Scroll<W> {
         }
     }
 }
-
-impl<W: Widget> WidgetExt for Scroll<W> {}

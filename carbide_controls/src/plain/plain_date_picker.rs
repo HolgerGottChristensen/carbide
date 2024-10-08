@@ -146,8 +146,6 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> Debug for PlainDatePicker<F, E> {
     }
 }
 
-impl<F: State<T=Focus>, E: ReadState<T=bool>> WidgetExt for PlainDatePicker<F, E> {}
-
 impl<F: State<T=Focus>, E: ReadState<T=bool>> KeyboardEventHandler for PlainDatePicker<F, E> {
     fn handle_keyboard_event(&mut self, _event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }

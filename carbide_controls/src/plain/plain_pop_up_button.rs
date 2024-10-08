@@ -280,14 +280,6 @@ impl<
     S: State<T=T>,
     M: ReadState<T=Vec<T>>,
     E: ReadState<T=bool>,
-> WidgetExt for PlainPopUpButton<T, F, S, M, E> {}
-
-impl<
-    T: StateContract + PartialEq,
-    F: State<T=Focus>,
-    S: State<T=T>,
-    M: ReadState<T=Vec<T>>,
-    E: ReadState<T=bool>,
 > KeyboardEventHandler for PlainPopUpButton<T, F, S, M, E> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }

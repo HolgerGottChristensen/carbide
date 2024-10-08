@@ -221,5 +221,3 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> CommonWidget for Image<Id, C> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
-
-impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> WidgetExt for Image<Id, C> {}

@@ -60,6 +60,3 @@ impl<C: Widget, L: ReadState<T=String>> Labelled<C, L> {
 impl<C: Widget, L: ReadState<T=String>> CommonWidget for Labelled<C, L> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<C: Widget, L: ReadState<T=String>> WidgetExt for Labelled<C, L> {}
-

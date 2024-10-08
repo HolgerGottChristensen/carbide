@@ -104,5 +104,3 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
 impl<T: StateContract, S: State<T=T>> CommonWidget for PlainPopUpButtonPopUpItem<T, S> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<T: StateContract, S: State<T=T>> WidgetExt for PlainPopUpButtonPopUpItem<T, S> {}

@@ -77,5 +77,3 @@ impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
         })
     }
 }
-
-impl<C: Widget, S: Shape + Clone> WidgetExt for ClipShape<C, S> {}

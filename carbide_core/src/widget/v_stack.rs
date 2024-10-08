@@ -54,5 +54,3 @@ impl<W: WidgetSequence> Layout for VStack<W> {
 impl<W: WidgetSequence> CommonWidget for VStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
-
-impl<W: WidgetSequence> WidgetExt for VStack<W> {}

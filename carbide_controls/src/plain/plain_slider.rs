@@ -439,19 +439,6 @@ impl<
     }
 }
 
-impl<
-    V: SliderValue,
-    F: State<T=Focus>,
-    St: State<T=V>,
-    S: ReadState<T=V>,
-    E: ReadState<T=V>,
-    P: ReadState<T=Option<V>>,
-    Th: Widget,
-    In: Widget,
-    Bg: Widget,
-    En: ReadState<T=bool>,
-> WidgetExt for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {}
-
 
 // ---------------------------------------------------
 //  Delegates

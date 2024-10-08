@@ -53,6 +53,7 @@ mod static_state;
 mod functor;
 mod flatten;
 mod empty_state;
+mod extensions;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

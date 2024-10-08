@@ -363,8 +363,6 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
-impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalendarHiddenDelegate, T: PlainCalendarTitleDelegate> WidgetExt for PlainCalendar<H, I, D, T> {}
-
 impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalendarHiddenDelegate, T: PlainCalendarTitleDelegate> Debug for PlainCalendar<H, I, D, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainCalendar")

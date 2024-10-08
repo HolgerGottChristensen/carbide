@@ -190,5 +190,3 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         self.dimension = dimension
     }
 }
-
-impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> WidgetExt for IfElse<T, F, S> {}

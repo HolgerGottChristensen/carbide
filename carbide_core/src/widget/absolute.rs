@@ -48,5 +48,3 @@ impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absol
 impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> CommonWidget for Absolute<X, Y, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> WidgetExt for Absolute<X, Y, C> {}

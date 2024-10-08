@@ -179,5 +179,3 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Render for EnvUpdating<C, T
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> CommonWidget for EnvUpdating<C, T, S> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<C: Widget, T: StateContract, S: ReadState<T=T>> WidgetExt for EnvUpdating<C, T, S> {}

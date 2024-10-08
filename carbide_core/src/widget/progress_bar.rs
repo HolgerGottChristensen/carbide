@@ -45,5 +45,3 @@ impl ProgressBar<f64, Empty> {
 impl<P: ReadState<T=f64>, W: Widget> CommonWidget for ProgressBar<P, W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<P: ReadState<T=f64>, W: Widget> WidgetExt for ProgressBar<P, W> {}

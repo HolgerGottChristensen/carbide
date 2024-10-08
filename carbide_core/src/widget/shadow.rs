@@ -85,5 +85,3 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
         })
     }
 }
-
-impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> WidgetExt for Shadow<W, C, S, X, Y> {}

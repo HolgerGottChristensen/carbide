@@ -459,5 +459,3 @@ impl MouseEventHandler for NodeEditor {
 impl CommonWidget for NodeEditor {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
-
-impl WidgetExt for NodeEditor {}

@@ -257,5 +257,3 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
         }
     }
 }
-
-impl<S: State<T=f64>, L: Widget, T: Widget> WidgetExt for VSplit<S, L, T> {}

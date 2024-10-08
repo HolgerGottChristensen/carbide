@@ -73,8 +73,6 @@ impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> 
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> WidgetExt for OnChange<W, T, S, F> {}
-
 impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> Debug for OnChange<W, T, S, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OnChange")

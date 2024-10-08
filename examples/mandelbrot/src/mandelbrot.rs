@@ -208,8 +208,6 @@ impl CommonWidget for Mandelbrot {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
 }
 
-impl WidgetExt for Mandelbrot {}
-
 impl Debug for Mandelbrot {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()

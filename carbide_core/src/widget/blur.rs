@@ -105,5 +105,3 @@ impl Render for Blur {
         }
     }
 }
-
-impl WidgetExt for Blur {}

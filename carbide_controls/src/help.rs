@@ -145,6 +145,3 @@ impl<C: Widget> Render for Help<C> {
 impl<C: Widget> CommonWidget for Help<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<C: Widget> WidgetExt for Help<C> {}
-

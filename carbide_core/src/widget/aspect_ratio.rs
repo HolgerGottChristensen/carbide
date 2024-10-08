@@ -97,5 +97,3 @@ impl<D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget> Layout f
 impl<D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget> CommonWidget for AspectRatio<D, M, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget> WidgetExt for AspectRatio<D, M, C> {}

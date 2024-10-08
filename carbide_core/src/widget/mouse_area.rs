@@ -280,12 +280,3 @@ impl<
             .finish()
     }
 }
-
-impl<
-    I: Action + Clone + 'static,
-    O: Action + Clone + 'static,
-    F: State<T=Focus>,
-    C: Widget,
-    H: State<T=bool>,
-    P: State<T=bool>,
-> WidgetExt for MouseArea<I, O, F, C, H, P> {}

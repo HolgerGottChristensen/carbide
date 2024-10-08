@@ -30,5 +30,3 @@ impl Flexibility<Empty> {
 impl<C: Widget> CommonWidget for Flexibility<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
 }
-
-impl<C: Widget> WidgetExt for Flexibility<C> {}

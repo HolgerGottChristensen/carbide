@@ -81,8 +81,6 @@ impl<A: OnKeyAction, B: OnKeyAction, C: Widget> CommonWidget for OnKey<A, B, C> 
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<A: OnKeyAction, B: OnKeyAction, C: Widget> WidgetExt for OnKey<A, B, C> {}
-
 impl<A: OnKeyAction, B: OnKeyAction, C: Widget> Debug for OnKey<A, B, C> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("OnKey")

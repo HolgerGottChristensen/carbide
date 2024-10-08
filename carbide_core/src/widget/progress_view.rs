@@ -93,5 +93,3 @@ impl<W: Widget> ProgressView<W> {
 impl<W: Widget> CommonWidget for ProgressView<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<W: Widget> WidgetExt for ProgressView<W> {}

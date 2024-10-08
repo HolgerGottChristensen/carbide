@@ -169,11 +169,3 @@ impl<
 > CommonWidget for PlainPopUpButtonPopUp<T, S, M, H, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<
-    T: StateContract + PartialEq,
-    S: State<T=T>,
-    M: ReadState<T=Vec<T>>,
-    H: State<T=Option<usize>>,
-    E: ReadState<T=bool>,
-> WidgetExt for PlainPopUpButtonPopUp<T, S, M, H, E> {}

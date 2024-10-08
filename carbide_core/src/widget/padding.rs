@@ -131,5 +131,3 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
         self.child.position_children(ctx);
     }
 }
-
-impl<W: Widget, E: ReadState<T=EdgeInsets>> WidgetExt for Padding<W, E> {}

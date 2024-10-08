@@ -68,5 +68,3 @@ impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
         })
     }
 }
-
-impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> WidgetExt for Scene3d<C, V> {}

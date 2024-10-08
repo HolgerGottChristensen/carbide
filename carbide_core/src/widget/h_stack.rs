@@ -225,6 +225,3 @@ impl<W: WidgetSequence> Layout for HStack<W> {
 impl<W: WidgetSequence> CommonWidget for HStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
-
-
-impl<W: WidgetSequence> WidgetExt for HStack<W> {}

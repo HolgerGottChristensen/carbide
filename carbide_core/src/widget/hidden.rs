@@ -35,5 +35,3 @@ impl<W: Widget> Render for Hidden<W> {
     // Because we try to hide all children, we just stop the rendering tree.
     fn render(&mut self, _context: &mut RenderContext) {}
 }
-
-impl<W: Widget> WidgetExt for Hidden<W> {}

@@ -1361,15 +1361,6 @@ impl<
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
-impl<
-    F: State<T=Focus>,
-    C: ReadState<T=Color>,
-    O: ReadState<T=Option<char>>,
-    S: ReadState<T=u32>,
-    T: State<T=String>,
-    E: ReadState<T=bool>,
-> WidgetExt for PlainTextInput<F, C, O, S, T, E> {}
-
 
 // ---------------------------------------------------
 //  Key commands

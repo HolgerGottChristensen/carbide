@@ -207,8 +207,6 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget> WidgetExt for Frame<W, H, C> {}
-
 #[derive(Clone, Debug)]
 enum Fixity<T: State<T=f64>> {
     Expand(f64),

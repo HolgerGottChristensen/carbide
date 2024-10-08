@@ -31,5 +31,3 @@ impl Flagged<Empty> {
 impl<C: Widget> CommonWidget for Flagged<C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: self.flags);
 }
-
-impl<C: Widget> WidgetExt for Flagged<C> {}

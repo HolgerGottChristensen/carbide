@@ -398,8 +398,6 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> WidgetExt for List<T, M, W, U, I, G> {}
-
 pub trait Identifiable<I: StateContract + PartialEq> {
     fn identifier(&self) -> I;
 }

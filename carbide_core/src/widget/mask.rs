@@ -75,5 +75,3 @@ impl<M: Widget, W: Widget> Render for Mask<M, W> {
         })
     }
 }
-
-impl<M: Widget, W: Widget> WidgetExt for Mask<M, W> {}

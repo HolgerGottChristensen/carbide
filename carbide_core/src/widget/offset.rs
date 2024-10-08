@@ -52,5 +52,3 @@ impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y
 impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> CommonWidget for Offset<X, Y, C> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
 }
-
-impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> WidgetExt for Offset<X, Y, C> {}

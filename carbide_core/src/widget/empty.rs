@@ -29,8 +29,6 @@ impl CommonWidget for Empty {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
 }
 
-impl WidgetExt for Empty {}
-
 impl Scene for Empty {
     fn request_redraw(&self) {
         // Empty request redraw, because no redrawing is necessary.

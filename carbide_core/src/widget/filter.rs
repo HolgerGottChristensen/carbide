@@ -51,5 +51,3 @@ impl<W: Widget> Render for Filter<W> {
         });
     }
 }
-
-impl<W: Widget> WidgetExt for Filter<W> {}

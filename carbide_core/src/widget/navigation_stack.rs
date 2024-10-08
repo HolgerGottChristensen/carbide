@@ -81,5 +81,3 @@ impl Update for NavigationStack {
 impl CommonWidget for NavigationStack {
     CommonWidgetImpl!(self, id: self.id, child: self.top, position: self.position, dimension: self.dimension);
 }
-
-impl WidgetExt for NavigationStack {}

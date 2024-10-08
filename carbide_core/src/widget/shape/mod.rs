@@ -18,6 +18,7 @@ use crate::color::Color;
 use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, StrokeDashPattern};
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
+use crate::render::triangle_render_context::TriangleRenderContext;
 use crate::environment::Environment;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext, TextId};
@@ -34,9 +35,8 @@ pub trait Shape: AnyWidget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
-    // Todo: add primitives to before and after the shape.
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
-        let mut geom = Tris(vec![]);
+        let mut geom = TriangleRenderContext(vec![]);
         self.render(&mut RenderContext {
                     render: &mut geom,
                     text: &mut NOOPTextContext,
@@ -51,70 +51,6 @@ pub trait Shape: AnyWidget + 'static {
 dyn_clone::clone_trait_object!(Shape);
 
 impl AnyWidget for Box<dyn Shape> {}
-
-
-struct Tris(Vec<Triangle<Position>>);
-impl InnerRenderContext for Tris {
-    fn transform(&mut self, _transform: CarbideTransform) {}
-
-    fn pop_transform(&mut self) {}
-
-    fn color_filter(&mut self, _hue_rotation: f32, _saturation_shift: f32, _luminance_shift: f32, _color_invert: bool) {}
-
-    fn pop_color_filter(&mut self) {}
-
-    fn clip(&mut self, _bounding_box: Rect) {}
-
-    fn pop_clip(&mut self) {}
-
-    fn filter(&mut self, _id: FilterId, _bounding_box: Rect) {}
-
-    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: Rect, _id2: FilterId, _bounding_box2: Rect) {}
-
-    fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
-
-    fn pop_stencil(&mut self) {}
-
-    fn geometry(&mut self, geometry: &[Triangle<Position>]) {
-        self.0.extend(geometry);
-    }
-
-    fn stroke(&mut self, _stroke: &[Triangle<StrokeVertex>]) {}
-
-    fn style(&mut self, _style: DrawStyle) {}
-
-    fn pop_style(&mut self) {}
-
-    fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
-
-    fn pop_stroke_dash_pattern(&mut self) {}
-
-    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
-
-    fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
-
-    fn filter_new(&mut self) {}
-
-    fn filter_new_pop(&mut self, _id: FilterId, _color: Color, _post_draw: bool) {}
-
-    fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color, _post_draw: bool) {}
-
-    fn mask_start(&mut self) {}
-
-    fn mask_in(&mut self) {}
-
-    fn mask_end(&mut self) {}
-
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer {
-        static LAYER: NoopLayer = NoopLayer;
-        Layer {
-            inner: &LAYER,
-            inner2: &LAYER,
-        }
-    }
-
-    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {}
-}
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {
     match shape.get_shape_style() {

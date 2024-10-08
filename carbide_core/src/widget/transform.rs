@@ -237,5 +237,3 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
         })
     }
 }
-
-impl<W: Widget, M: ReadState<T=Matrix4<f32>>> WidgetExt for Transform<W, M> {}

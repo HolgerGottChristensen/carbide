@@ -136,5 +136,3 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Ell
         self.style.clone()
     }
 }
-
-impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> WidgetExt for Ellipse<S, F> {}

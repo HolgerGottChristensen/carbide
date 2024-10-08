@@ -29,5 +29,3 @@ impl Proxy<Empty> {
 impl<W: WidgetSequence> CommonWidget for Proxy<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
 }
-
-impl<W: WidgetSequence> WidgetExt for Proxy<W> {}

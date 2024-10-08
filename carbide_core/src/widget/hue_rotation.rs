@@ -48,5 +48,3 @@ impl<C: Widget, S: ReadState<T=Angle>> Render for HueRotation<C, S> {
         })
     }
 }
-
-impl<C: Widget, S: ReadState<T=Angle>> WidgetExt for HueRotation<C, S> {}

@@ -50,5 +50,3 @@ impl<C: Widget, G: State<T=Rect>> CommonWidget for GeometryReader<C, G> {
 
     CommonWidgetImpl!(self, id: self.id, child: self.child);
 }
-
-impl<C: Widget, G: State<T=Rect>> WidgetExt for GeometryReader<C, G> {}

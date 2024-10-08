@@ -71,5 +71,3 @@ impl<W: Widget> Render for Clip<W> {
         })
     }
 }
-
-impl<W: Widget> WidgetExt for Clip<W> {}

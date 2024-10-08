@@ -326,8 +326,6 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> WidgetExt for Text<T, S, C, FS, FW> {}
-
 pub trait TextWidget: AnyWidget {
     fn text_id(&self) -> TextId;
 }

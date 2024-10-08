@@ -161,8 +161,6 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
     );
 }
 
-impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRadioButtonDelegate, E: ReadState<T=bool>> WidgetExt for PlainRadioButton<T, F, C, D, E> {}
-
 impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRadioButtonDelegate, E: ReadState<T=bool>> Debug for PlainRadioButton<T, F, C, D, E> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PlainRadioButton")

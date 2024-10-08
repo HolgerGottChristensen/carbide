@@ -1320,5 +1320,3 @@ impl<T: ReadState<T=String>> Drop for WGPUWindow<T> {
         });
     }
 }
-
-impl<T: ReadState<T=String>> WidgetExt for WGPUWindow<T> {}

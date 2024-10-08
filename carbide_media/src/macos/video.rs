@@ -469,9 +469,6 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> CommonWidget for Video<Id> {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone> WidgetExt for Video<Id> {}
-
-
 // AVPlayer
 // timeControlStatus - A value that indicates whether playback is in progress, paused indefinitely, or waiting for network conditions to improve.
 // play - Begins playback of the current item.

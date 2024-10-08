@@ -53,5 +53,3 @@ impl<C: DatasetController> Render for Chart<C> {
         self.dataset_controller.draw(&mut canvas, self.padding);
     }
 }
-
-impl<C: DatasetController> WidgetExt for Chart<C> {}

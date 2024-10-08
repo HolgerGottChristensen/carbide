@@ -262,5 +262,3 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
         }
     }
 }
-
-impl<S: State<T=f64>, L: Widget, T: Widget> WidgetExt for HSplit<S, L, T> {}

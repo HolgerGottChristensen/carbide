@@ -143,5 +143,3 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Read
             .finish()
     }
 }
-
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> WidgetExt for ForEach<T, M, U, W, I> {}

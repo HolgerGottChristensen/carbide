@@ -235,5 +235,3 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
 impl<Id: ReadState<T=Option<VideoId>> + Clone> CommonWidget for VideoPlayer<Id> {
     CommonWidgetImpl!(self, id: self.id, child: self.video, position: self.position, dimension: self.dimension, flexibility: 10);
 }
-
-impl<Id: ReadState<T=Option<VideoId>> + Clone> WidgetExt for VideoPlayer<Id> {}

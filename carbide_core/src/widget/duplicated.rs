@@ -83,5 +83,3 @@ impl<T: Widget> CommonWidget for Duplicated<T> {
         self.0.borrow_mut().apply(f, |a, b| a.foreach_direct_rev(b))
     }
 }
-
-impl<T: Widget> WidgetExt for Duplicated<T> {}

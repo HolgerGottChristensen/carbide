@@ -142,5 +142,3 @@ impl<C: Widget> Render for Overlay<C> {
         }
     }
 }
-
-impl<C: Widget> WidgetExt for Overlay<C> {}

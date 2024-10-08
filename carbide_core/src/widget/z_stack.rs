@@ -86,5 +86,3 @@ impl<W: WidgetSequence> Layout for ZStack<W> {
 impl<W: WidgetSequence> CommonWidget for ZStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1, alignment: self.alignment);
 }
-
-impl<W: WidgetSequence> WidgetExt for ZStack<W> {}

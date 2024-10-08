@@ -93,5 +93,3 @@ impl CommonWidget for Spacer {
         self.dimension = dimension
     }
 }
-
-impl WidgetExt for Spacer {}

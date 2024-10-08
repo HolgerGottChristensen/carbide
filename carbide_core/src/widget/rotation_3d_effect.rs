@@ -218,5 +218,3 @@ impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for R
         });
     }
 }
-
-impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> WidgetExt for Rotation3DEffect<R1, R2, C> {}

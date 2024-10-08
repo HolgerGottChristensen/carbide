@@ -46,5 +46,3 @@ impl<C: Widget, S: ReadState<T=f64>> Render for Luminance<C, S> {
         })
     }
 }
-
-impl<C: Widget, S: ReadState<T=f64>> WidgetExt for Luminance<C, S> {}

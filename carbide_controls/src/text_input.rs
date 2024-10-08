@@ -156,5 +156,3 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
 impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>,> CommonWidget for TextInput<F, O, T, E> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 1);
 }
-
-impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>,> WidgetExt for TextInput<F, O, T, E> {}
