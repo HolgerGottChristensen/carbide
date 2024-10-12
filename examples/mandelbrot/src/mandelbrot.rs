@@ -14,7 +14,7 @@ use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::draw::ImageId;
 use carbide::draw::MODE_IMAGE;
-use carbide::event::{CustomEvent, MouseEvent, MouseEventContext, MouseEventHandler};
+use carbide::event::{CoreEvent, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
 use carbide::render::{Render, RenderContext};
 use carbide::render::matrix::{Deg, Matrix4, Vector3};
@@ -142,7 +142,7 @@ impl Render for Mandelbrot {
                     let image = generate_image(info_for_job.width, info_for_job.height, info_for_job.zoom, info_for_job.center);
 
                     sender.send((image, id2)).unwrap();
-                    sink.send(CustomEvent::Async);
+                    sink.send(CoreEvent::Async);
                 });
 
                 self.jobs.push((info, Rc::new(receiver)));

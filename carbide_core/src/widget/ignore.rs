@@ -1,8 +1,10 @@
 use std::fmt::Debug;
-
+use carbide::accessibility::AccessibilityContext;
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler, Event};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler, Event, AccessibilityEventHandler};
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
@@ -12,7 +14,7 @@ use crate::update::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Clone, Debug)]
-pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> where
+pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> where
     T: Widget,
     B1: ReadState<T=bool>,
     B2: ReadState<T=bool>,
@@ -22,6 +24,7 @@ pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> where
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
+    B9: ReadState<T=bool>,
 {
     inner: T,
     state_sync: B1,
@@ -32,10 +35,12 @@ pub struct Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> where
     render_event: B6,
     focus_event: B7,
     update: B8,
+    accessibility_event: B9,
+    accessibility: B10,
 }
 
-impl Ignore<Empty, bool, bool, bool, bool, bool, bool, bool, bool> {
-    pub fn new<T: Widget>(widget: T) -> Ignore<T, bool, bool, bool, bool, bool, bool, bool, bool> {
+impl Ignore<Empty, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> {
+    pub fn new<T: Widget>(widget: T) -> Ignore<T, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool> {
         Ignore {
             inner: widget,
             state_sync: true,
@@ -46,6 +51,8 @@ impl Ignore<Empty, bool, bool, bool, bool, bool, bool, bool, bool> {
             render_event: true,
             focus_event: true,
             update: true,
+            accessibility_event: true,
+            accessibility: true
         }
     }
 }
@@ -59,8 +66,10 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
-    pub fn render<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, B5, V::Output, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
+    pub fn render<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, B5, V::Output, B7, B8, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -71,10 +80,12 @@ impl<T: Widget,
             render_event: value.into_read_state(),
             focus_event: self.focus_event,
             update: self.update,
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
-    pub fn layout<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, V::Output, B6, B7, B8> {
+    pub fn layout<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, V::Output, B6, B7, B8, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -85,10 +96,12 @@ impl<T: Widget,
             render_event: self.render_event,
             focus_event: self.focus_event,
             update: self.update,
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
-    pub fn accept_mouse_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, V::Output, B3, B4, B5, B6, B7, B8> {
+    pub fn accept_mouse_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, V::Output, B3, B4, B5, B6, B7, B8, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -99,10 +112,12 @@ impl<T: Widget,
             render_event: self.render_event,
             focus_event: self.focus_event,
             update: self.update,
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
-    pub fn accept_keyboard_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, V::Output, B4, B5, B6, B7, B8> {
+    pub fn accept_keyboard_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, V::Output, B4, B5, B6, B7, B8, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -113,10 +128,12 @@ impl<T: Widget,
             render_event: self.render_event,
             focus_event: self.focus_event,
             update: self.update,
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
-    pub fn accept_other_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, V::Output, B5, B6, B7, B8> {
+    pub fn accept_other_events<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, V::Output, B5, B6, B7, B8, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -127,10 +144,12 @@ impl<T: Widget,
             render_event: self.render_event,
             focus_event: self.focus_event,
             update: self.update,
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
-    pub fn accept_update<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, B5, B6, B7, V::Output> {
+    pub fn accept_update<V: IntoReadState<bool>>(self, value: V) -> Ignore<T, B1, B2, B3, B4, B5, B6, B7, V::Output, B9, B10> {
         Ignore {
             inner: self.inner,
             state_sync: self.state_sync,
@@ -141,6 +160,8 @@ impl<T: Widget,
             render_event: self.render_event,
             focus_event: self.focus_event,
             update: value.into_read_state(),
+            accessibility_event: self.accessibility_event,
+            accessibility: self.accessibility,
         }
     }
 
@@ -152,6 +173,9 @@ impl<T: Widget,
         self.layout_event.sync(env);
         self.render_event.sync(env);
         self.focus_event.sync(env);
+        self.update.sync(env);
+        self.accessibility_event.sync(env);
+        self.accessibility.sync(env);
     }
 }
 
@@ -164,7 +188,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> CommonWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> CommonWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn id(&self) -> WidgetId {
         self.inner.id()
     }
@@ -236,7 +262,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> WidgetSync for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> WidgetSync for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn sync(&mut self, env: &mut Environment) {
         self.state_sync.sync(env);
         self.mouse_event.sync(env);
@@ -262,7 +290,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> MouseEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> MouseEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.update_states(ctx.env);
         if *self.mouse_event.value() {
@@ -287,7 +317,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> KeyboardEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> KeyboardEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.update_states(ctx.env);
         if *self.keyboard_event.value() {
@@ -312,7 +344,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> WindowEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> WindowEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.update_states(ctx.env);
         self.inner.handle_window_event(event, ctx)
@@ -333,7 +367,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> OtherEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> OtherEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
         self.update_states(ctx.env);
         if *self.other_event.value() {
@@ -358,7 +394,36 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> Update for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> AccessibilityEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
+    fn handle_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        self.update_states(ctx.env);
+        if *self.mouse_event.value() {
+            self.inner.handle_accessibility_event(event, ctx)
+        }
+    }
+
+    fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        self.update_states(ctx.env);
+        if *self.mouse_event.value() {
+            self.inner.process_accessibility_event(event, ctx)
+        }
+    }
+}
+
+impl<T: Widget,
+    B1: ReadState<T=bool>,
+    B2: ReadState<T=bool>,
+    B3: ReadState<T=bool>,
+    B4: ReadState<T=bool>,
+    B5: ReadState<T=bool>,
+    B6: ReadState<T=bool>,
+    B7: ReadState<T=bool>,
+    B8: ReadState<T=bool>,
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Update for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn update(&mut self, ctx: &mut UpdateContext) {
         self.update_states(ctx.env);
         if *self.update.value() {
@@ -383,7 +448,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> Layout for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Layout for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.update_states(ctx.env);
         if *self.layout_event.value() {
@@ -410,7 +477,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> Render for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Render for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn render(&mut self, context: &mut RenderContext) {
         self.update_states(context.env);
         if *self.render_event.value() {
@@ -428,7 +497,9 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn request_focus(&mut self, env: &mut Environment) {
         self.update_states(env);
         if *self.focus_event.value() {
@@ -470,4 +541,26 @@ impl<T: Widget,
     B6: ReadState<T=bool>,
     B7: ReadState<T=bool>,
     B8: ReadState<T=bool>,
-> AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8> {}
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Accessibility for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.update_states(ctx.env);
+        if *self.accessibility.value() {
+            self.inner.process_accessibility(ctx)
+        }
+    }
+}
+
+impl<T: Widget,
+    B1: ReadState<T=bool>,
+    B2: ReadState<T=bool>,
+    B3: ReadState<T=bool>,
+    B4: ReadState<T=bool>,
+    B5: ReadState<T=bool>,
+    B6: ReadState<T=bool>,
+    B7: ReadState<T=bool>,
+    B8: ReadState<T=bool>,
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {}

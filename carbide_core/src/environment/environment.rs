@@ -6,7 +6,7 @@ use std::future::Future;
 use std::option::Option::Some;
 use std::rc::Rc;
 use std::time::Instant;
-
+use dashmap::DashSet;
 use fxhash::{FxBuildHasher, FxHashMap};
 use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
@@ -69,6 +69,10 @@ pub struct Environment {
     animation_widget_in_frame: usize,
 
     request_application_close: bool,
+
+    /// Contains a set of widget IDs that requires accessibility updates
+    accessibility_requires_update: DashSet<WidgetId>,
+    pub full_accessibility_update: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -166,6 +170,8 @@ impl Environment {
             event_sink,
             animation_widget_in_frame: 0,
             request_application_close: false,
+            accessibility_requires_update: Default::default(),
+            full_accessibility_update: true,
         };
 
         res
@@ -349,6 +355,15 @@ impl Environment {
 
     pub fn request_multiple_animation_frames(&mut self, n: usize) {
         self.animation_widget_in_frame = self.animation_widget_in_frame.max(n);
+    }
+
+    /// This method requests that the widget with the id should update the accessibility node
+    pub fn request_accessibility_update(&mut self, widget_id: WidgetId) {
+        self.accessibility_requires_update.insert(widget_id);
+    }
+
+    pub fn accessibility_needs_update(&self, widget_id: WidgetId) -> bool {
+        self.full_accessibility_update || self.accessibility_requires_update.contains(&widget_id)
     }
 
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {

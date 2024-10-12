@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use dashmap::DashMap;
-
 use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
 
 pub use application::Application;

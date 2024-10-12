@@ -1,8 +1,7 @@
-use carbide_controls::{Button, TextInput};
+use carbide_controls::Button;
 use carbide_core as carbide; // Required only in internal examples
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_macro::ui;
@@ -32,7 +31,6 @@ fn main() {
             })).frame_fixed_height(45.0),
         ))
     ).close_application_on_window_close());
-
 
     application.launch();
 }

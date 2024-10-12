@@ -6,7 +6,7 @@ use std::time::Duration;
 use parking_lot::RwLock;
 use carbide_core::asynchronous::spawn;
 use crate::asynchronous::EVENT_SINK;
-use crate::event::CustomEvent;
+use crate::event::CoreEvent;
 
 #[derive(Clone)]
 pub struct Timer<T> where T: Fn() + Clone + Send + 'static {
@@ -79,7 +79,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
                     Err(RecvTimeoutError::Timeout) => {
                         // Trigger the function then start again with the same duration
                         trigger();
-                        event_sink.send(CustomEvent::Async);
+                        event_sink.send(CoreEvent::Async);
                     }
                     Err(RecvTimeoutError::Disconnected) => {
                         // The timer has been stopped, so we shut it down

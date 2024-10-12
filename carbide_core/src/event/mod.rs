@@ -1,4 +1,4 @@
-pub use custom_event::CustomEvent;
+pub use custom_event::CoreEvent;
 pub use custom_event::EventSink;
 pub use custom_event::HasEventSink;
 pub use custom_event::HasRawWindowHandleAndEventSink;
@@ -8,6 +8,7 @@ pub use keyboard_event_handler::*;
 pub use mouse_event_handler::*;
 pub use other_event_handler::*;
 pub use window_event_handler::*;
+pub use accessibility_event_handler::*;
 pub use types::hot_key::*;
 pub use types::key::*;
 pub use types::modifier_key::ModifierKey;
@@ -23,6 +24,7 @@ mod other_event_handler;
 mod types;
 mod event;
 mod window_event_handler;
+mod accessibility_event_handler;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Default)]
 pub struct EventId(u32);

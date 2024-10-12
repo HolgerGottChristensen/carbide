@@ -1,21 +1,26 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use accesskit::{NodeId, TreeUpdate};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
 use winit::event::{ElementState, Event, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::Key;
 use winit::window::{Theme, WindowId};
+use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
+use carbide_core::event::Event::CoreEvent;
 use carbide_core::focus::{FocusContext, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::Scene;
 use carbide_core::text::InnerTextContext;
+use carbide_core::widget::WidgetId;
 use crate::{convert_key, convert_mouse_button, convert_touch_phase};
+use crate::custom_event::CustomEvent;
 
 const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
 const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
@@ -413,17 +418,55 @@ impl NewEventHandler {
     }
 
     pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
-        check_tasks(&mut AsyncContext {
-            text: text_context,
-            image: image_context,
-            env,
-        });
+        match event {
+            CustomEvent::Core(core_event) => {
+                check_tasks(&mut AsyncContext {
+                    text: text_context,
+                    image: image_context,
+                    env,
+                });
 
-        target.process_other_event(&carbide_core::event::Event::Custom(event), &mut OtherEventContext {
-            text: text_context,
-            image: image_context,
-            env,
-        });
+                target.process_other_event(&CoreEvent(core_event), &mut OtherEventContext {
+                    text: text_context,
+                    image: image_context,
+                    env,
+                });
+            }
+            CustomEvent::Accessibility(accesskit_winit::Event { window_id, window_event}) => {
+                match window_event {
+                    accesskit_winit::WindowEvent::InitialTreeRequested => {
+                        env.full_accessibility_update = true;
+
+                        target.process_accessibility(&mut AccessibilityContext {
+                            env,
+                            tree: &mut TreeUpdate {
+                                nodes: vec![],
+                                tree: None,
+                                focus: NodeId(0),
+                            },
+                            parent_id: Default::default(),
+                            children: &mut Default::default(),
+                            hidden: false,
+                        });
+
+                        env.full_accessibility_update = false;
+                    }
+                    accesskit_winit::WindowEvent::ActionRequested(request) => {
+                        target.process_accessibility_event(&AccessibilityEvent {
+                            action: request.action,
+                            target: WidgetId(request.target.0 as u32),
+                            data: request.data,
+                        }, &mut AccessibilityEventContext {
+                            env,
+                            window_id: &window_id.into(),
+                            is_current: &false,
+                        });
+                    }
+                    accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+                }
+            }
+        }
+
         true
     }
 

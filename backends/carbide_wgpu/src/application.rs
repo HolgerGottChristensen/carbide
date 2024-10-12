@@ -15,7 +15,6 @@ use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
-use carbide_core::event::CustomEvent;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
@@ -25,7 +24,7 @@ use carbide_winit::event_loop::EventLoopWindowTarget;
 use carbide_winit::event_loop::EventLoopBuilder;
 use carbide_winit::EventLoop;
 use carbide_winit::window::WindowId as WinitWindowId;
-
+use carbide_winit::custom_event::CustomEvent;
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 

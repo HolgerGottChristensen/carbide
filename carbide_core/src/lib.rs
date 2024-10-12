@@ -45,6 +45,7 @@ macro_rules! set_state {
     }};
 }
 
+pub mod accessibility;
 pub mod animation;
 pub mod asynchronous;
 pub mod cursor;
@@ -63,6 +64,7 @@ pub mod widget;
 pub mod window;
 mod scene;
 pub mod update;
+
 
 /// Reexport of the image crate
 pub mod image {

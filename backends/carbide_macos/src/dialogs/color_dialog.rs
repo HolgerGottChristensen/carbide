@@ -10,7 +10,7 @@ use objc::runtime::{Class, Object, Sel};
 use raw_window_handle::{AppKitWindowHandle, RawWindowHandle};
 
 use carbide_core::draw::Color;
-use carbide_core::event::{CustomEvent, EventSink, HasRawWindowHandleAndEventSink};
+use carbide_core::event::{CoreEvent, EventSink, HasRawWindowHandleAndEventSink};
 
 pub struct ColorPanel {
     id: id,
@@ -78,7 +78,7 @@ struct ColorPickerChannel(Sender<Color>, Box<dyn EventSink>);
 impl ColorPickerChannel {
     fn received(&self, color: Color) {
         self.0.send(color).unwrap();
-        self.1.send(CustomEvent::AsyncStream);
+        self.1.send(CoreEvent::AsyncStream);
     }
 }
 

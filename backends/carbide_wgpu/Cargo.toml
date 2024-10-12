@@ -30,6 +30,9 @@ walkdir = "2.4.0"
 typed-arena = "2.0.2"
 once_cell.workspace = true
 dashmap.workspace = true
+accesskit_winit.workspace = true
+accesskit.workspace = true
+smallvec.workspace = true
 
 
 [target.'cfg(target_os="macos")'.dependencies]

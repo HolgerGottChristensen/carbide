@@ -10,6 +10,7 @@ pub enum DeriveType {
     KeyboardEvent,
     WindowEvent,
     OtherEvent,
+    AccessibilityEvent,
 
     // StateSync
     StateSync,
@@ -25,6 +26,7 @@ pub enum DeriveType {
 
     // Update
     Update,
+    Accessibility,
 }
 
 impl DeriveType {
@@ -34,11 +36,13 @@ impl DeriveType {
         set.insert(DeriveType::KeyboardEvent);
         set.insert(DeriveType::WindowEvent);
         set.insert(DeriveType::OtherEvent);
+        set.insert(DeriveType::AccessibilityEvent);
         set.insert(DeriveType::StateSync);
         set.insert(DeriveType::Render);
         set.insert(DeriveType::Focusable);
         set.insert(DeriveType::Layout);
         set.insert(DeriveType::Update);
+        set.insert(DeriveType::Accessibility);
         set
     }
 
@@ -48,11 +52,13 @@ impl DeriveType {
             "KeyboardEvent" => DeriveType::KeyboardEvent,
             "WindowEvent" => DeriveType::WindowEvent,
             "OtherEvent" => DeriveType::OtherEvent,
+            "AccessibilityEvent" => DeriveType::AccessibilityEvent,
             "StateSync" => DeriveType::StateSync,
             "Render" => DeriveType::Render,
             "Focusable" => DeriveType::Focusable,
             "Layout" => DeriveType::Layout,
             "Update" => DeriveType::Update,
+            "Accessibility" => DeriveType::Accessibility,
             _ => panic!("Could not match with any of the derive types."),
         }
     }
@@ -69,11 +75,13 @@ impl DeriveType {
             DeriveType::KeyboardEvent => keyboard_event_token_stream(ident, generics, wheres),
             DeriveType::WindowEvent => window_event_token_stream(ident, generics, wheres),
             DeriveType::OtherEvent => other_event_token_stream(ident, generics, wheres),
+            DeriveType::AccessibilityEvent => accessibility_event_token_stream(ident, generics, wheres),
             DeriveType::StateSync => state_sync_token_stream(ident, generics, wheres, state_idents),
             DeriveType::Render => render_token_stream(ident, generics, wheres),
             DeriveType::Focusable => focusable_token_stream(ident, generics, wheres),
             DeriveType::Layout => layout_token_stream(ident, generics, wheres),
             DeriveType::Update => update_token_stream(ident, generics, wheres),
+            DeriveType::Accessibility => accessibility_token_stream(ident, generics, wheres),
         }
     }
 }
@@ -119,6 +127,17 @@ fn other_event_token_stream(
     quote! {
         #[automatically_derived]
         impl #generics carbide::event::OtherEventHandler for #ident #generics #wheres {}
+    }
+}
+
+fn accessibility_event_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
+    quote! {
+        #[automatically_derived]
+        impl #generics carbide::event::AccessibilityEventHandler for #ident #generics #wheres {}
     }
 }
 
@@ -180,5 +199,16 @@ fn update_token_stream(
     quote! {
         #[automatically_derived]
         impl #generics carbide::update::Update for #ident #generics #wheres {}
+    }
+}
+
+fn accessibility_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
+    quote! {
+        #[automatically_derived]
+        impl #generics carbide::accessibility::Accessibility for #ident #generics #wheres {}
     }
 }

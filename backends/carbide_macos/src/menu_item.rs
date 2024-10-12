@@ -13,7 +13,7 @@ use objc::runtime::{NO, YES};
 use carbide_core::asynchronous::{AsyncContext, start_stream};
 
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, EventSink, HasEventSink, HotKey};
+use carbide_core::event::{CoreEvent, EventSink, HasEventSink, HotKey};
 use carbide_core::widget::MenuAction;
 
 use crate::id::Id;
@@ -357,7 +357,7 @@ impl CarbideChannel {
 
     fn received(&self) {
         self.0.send(()).unwrap();
-        self.1.send(CustomEvent::AsyncStream);
+        self.1.send(CoreEvent::AsyncStream);
     }
 }
 

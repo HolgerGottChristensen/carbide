@@ -4,20 +4,22 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};
-
+use accesskit::{NodeBuilder, NodeId, Role, Tree, TreeUpdate};
 use cgmath::{Matrix4, Vector3};
 use dashmap::DashMap;
 use futures::executor::block_on;
 use once_cell::sync::Lazy;
 use raw_window_handle::HasRawWindowHandle;
+use smallvec::SmallVec;
 use typed_arena::Arena;
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
 use carbide_core::{draw, Scene};
+use carbide_core::accessibility::{Accessibility, AccessibilityContext};
 use carbide_core::draw::{ColorSpace, Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
 use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{LayerId, Render, RenderContext};
@@ -146,7 +148,9 @@ pub struct WGPUWindow<T: ReadState<T=String>> {
     pub(crate) vertex_buffer: (Buffer, usize),
     pub(crate) second_vertex_buffer: Buffer,
     pub(crate) render_context: WGPURenderContext,
-    inner: Rc<WinitWindow>,
+
+    inner: WinitWindow,
+    accessibility_adapter: accesskit_winit::Adapter,
 
     id: WidgetId,
     title: T,
@@ -174,48 +178,56 @@ impl WGPUWindow<String> {
                 width: dimension.width,
                 height: dimension.height,
             }))
+            .with_visible(false)
             //.with_title(title.clone())
             //.with_window_icon(loaded_icon)
             ;
 
-        let inner = EVENT_LOOP.with(|a| {
-            a.borrow().create_inner_window(builder)
+        let (window, adapter) = EVENT_LOOP.with(|a| {
+            let window = a.borrow().create_inner_window(builder);
+
+            let adapter = accesskit_winit::Adapter::with_event_loop_proxy(&window, a.borrow().proxy());
+
+            (window, adapter)
         });
 
-        inner.set_ime_allowed(true);
+
+
+        window.set_ime_allowed(true);
 
         // Add the window to the list of IDS to make event propagate when received by the window.
         WINDOW_IDS.with(|a| {
-            a.borrow_mut().insert(inner.id(), window_id);
+            a.borrow_mut().insert(window.id(), window_id);
         });
 
         // Position the window in the middle of the screen.
-        if let Some(monitor) = inner.current_monitor() {
+        if let Some(monitor) = window.current_monitor() {
             let size = monitor.size();
 
-            let outer_window_size = inner.outer_size();
+            let outer_window_size = window.outer_size();
 
             let position = PhysicalPosition::new(
                 size.width / 2 - outer_window_size.width / 2,
                 size.height / 2 - outer_window_size.height / 2,
             );
 
-            inner.set_outer_position(position);
+            window.set_outer_position(position);
         }
 
-        println!("DPI: {}", inner.scale_factor());
+        println!("DPI: {}", window.scale_factor());
 
+        window.set_visible(true);
 
-        let size = inner.inner_size();
+        let size = window.inner_size();
 
         let pixel_dimensions = Dimension::new(
-            inner.inner_size().width as f64,
-            inner.inner_size().height as f64,
+            window.inner_size().width as f64,
+            window.inner_size().height as f64,
         );
-        let scale_factor = inner.scale_factor();
+        let scale_factor = window.scale_factor();
 
 
-        let surface = unsafe { INSTANCE.create_surface(&inner) }.unwrap();
+        let surface = unsafe { INSTANCE.create_surface(&window) }.unwrap();
 
         // Configure the surface with format, size and usage
         let surface_caps = surface.get_capabilities(&*ADAPTER);
@@ -225,8 +237,8 @@ impl WGPUWindow<String> {
             &SurfaceConfiguration {
                 usage: TextureUsages::RENDER_ATTACHMENT,
                 format: TextureFormat::Bgra8UnormSrgb,
-                width: inner.inner_size().width,
-                height: inner.inner_size().height,
+                width: window.inner_size().width,
+                height: window.inner_size().height,
                 present_mode: surface_caps.present_modes[0],
                 alpha_mode: wgpu::CompositeAlphaMode::Auto,
                 view_formats: vec![],
@@ -319,7 +331,7 @@ impl WGPUWindow<String> {
             usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
         });
 
-        update_scale_factor(inner.id(), inner.scale_factor());
+        update_scale_factor(window.id(), window.scale_factor());
 
         Box::new(WGPUWindow {
             surface,
@@ -338,7 +350,8 @@ impl WGPUWindow<String> {
             second_vertex_buffer,
 
             render_context: WGPURenderContext::new(),
-            inner: Rc::new(inner),
+            inner: window,
+            accessibility_adapter: adapter,
             id: WidgetId::new(),
             title,
             position: Default::default(),
@@ -378,6 +391,35 @@ impl<T: ReadState<T=String>> MouseEventHandler for WGPUWindow<T> {
                 if *new_ctx.consumed {
                     return;
                 }
+            });
+        });
+
+        ctx.env.set_pixel_dimensions(old_dimension);
+        ctx.env.set_window_handle(old_window_handle);
+    }
+}
+
+impl<T: ReadState<T=String>> AccessibilityEventHandler for WGPUWindow<T> {
+    fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        let old_dimension = ctx.env.pixel_dimensions();
+        let old_window_handle = ctx.env.window_handle();
+        let scale_factor = self.inner.scale_factor();
+        let physical_dimensions = self.inner.inner_size();
+
+        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
+
+        ctx.env.with_scale_factor(scale_factor, |env| {
+            let id: u64 = self.inner.id().into();
+
+            let new_ctx = &mut AccessibilityEventContext {
+                env,
+                is_current: &(*ctx.window_id == id),
+                window_id: ctx.window_id,
+            };
+
+            self.foreach_child_direct(&mut |child| {
+                child.process_accessibility_event(event, new_ctx);
             });
         });
 
@@ -725,6 +767,37 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
 
         // Reset the environment
         ctx.env.set_pixel_dimensions(old_pixel_dimensions);
+    }
+}
+
+impl<T: ReadState<T=String>> Accessibility for WGPUWindow<T> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        let mut tree = TreeUpdate {
+            nodes: vec![],
+            tree: Some(Tree {
+                root: NodeId(self.id().0 as u64),
+                app_name: None,
+                toolkit_name: Some("Carbide".to_string()),
+                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            }),
+            focus: NodeId(self.id().0 as u64),
+        };
+
+        let mut children = SmallVec::<[WidgetId; 8]>::new();
+
+        self.child.process_accessibility(&mut AccessibilityContext {
+            env: ctx.env,
+            tree: &mut tree,
+            parent_id: self.id,
+            children: &mut children,
+            hidden: false,
+        });
+
+        let mut node_builder = NodeBuilder::new(Role::Window);
+
+        node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
+
+        node_builder.set_name(self.title.value().clone());
     }
 }
 

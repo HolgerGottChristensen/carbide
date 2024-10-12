@@ -111,7 +111,7 @@ mod luminance;
 mod mask;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct WidgetId(u32);
+pub struct WidgetId(pub u32);
 
 impl WidgetId {
     /// Generate a new widget ID.

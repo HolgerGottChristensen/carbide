@@ -1,10 +1,12 @@
+use carbide::accessibility::AccessibilityContext;
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use crate::focus::FocusContext;
 use carbide_macro::carbide_default_builder2;
-
+use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::focus::Focusable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
@@ -93,11 +95,31 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Update for EnvUpdating<C, T
     }
 }
 
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Accessibility for EnvUpdating<C, T, S> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.insert_into_env(ctx.env);
+
+        self.child.process_accessibility(ctx);
+
+        self.remove_from_env(ctx.env);
+    }
+}
+
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> OtherEventHandler for EnvUpdating<C, T, S> {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         self.insert_into_env(ctx.env);
 
         self.child.process_other_event(event, ctx);
+
+        self.remove_from_env(ctx.env);
+    }
+}
+
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> AccessibilityEventHandler for EnvUpdating<C, T, S> {
+    fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        self.insert_into_env(ctx.env);
+
+        self.child.process_accessibility_event(event, ctx);
 
         self.remove_from_env(ctx.env);
     }

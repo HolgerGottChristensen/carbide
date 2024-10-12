@@ -1,4 +1,4 @@
-use winit::event_loop::{EventLoop as WinitEventLoop, EventLoopWindowTarget};
+use winit::event_loop::{EventLoop as WinitEventLoop, EventLoopProxy, EventLoopWindowTarget};
 use winit::window::{Window, WindowBuilder};
 
 pub enum EventLoop<T: 'static> {
@@ -16,6 +16,16 @@ impl<T: 'static> EventLoop<T> {
             EventLoop::StaticBorrow(e) => {
                 builder.build(*e).unwrap()
             },
+            EventLoop::None => panic!("Not available")
+        }
+    }
+
+    pub fn proxy(&self) -> EventLoopProxy<T> {
+        match self {
+            EventLoop::Owned(e) => {
+                e.create_proxy()
+            }
+            EventLoop::StaticBorrow(_) => panic!("Not available"),
             EventLoop::None => panic!("Not available")
         }
     }

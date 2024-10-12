@@ -13,7 +13,7 @@ mod task;
 use futures::FutureExt;
 use oneshot::TryRecvError;
 
-use crate::event::{CustomEvent, EventSink, NoopEventSink};
+use crate::event::{CoreEvent, EventSink, NoopEventSink};
 
 thread_local! {
     static ASYNC_QUEUE: RefCell<Vec<Box<dyn Fn(&mut AsyncContext) -> bool>>> = {
@@ -50,7 +50,7 @@ pub fn spawn_task<T: Send + 'static>(
 
     let task_with_oneshot = task.then(|message| async move {
         let _ = sender.send(message);
-        event_sink.send(CustomEvent::Async);
+        event_sink.send(CoreEvent::Async);
         ()
     });
 

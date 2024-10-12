@@ -1,14 +1,15 @@
 use dyn_clone::DynClone;
 use raw_window_handle::HasRawWindowHandle;
+use crate::window::WindowId;
 
 #[derive(Debug, Clone)]
-pub enum CustomEvent {
+pub enum CoreEvent {
     Async,
     AsyncStream,
 }
 
 pub trait EventSink: DynClone + Send {
-    fn send(&self, _: CustomEvent);
+    fn send(&self, _: CoreEvent);
 }
 
 dyn_clone::clone_trait_object!(EventSink);
@@ -17,7 +18,7 @@ dyn_clone::clone_trait_object!(EventSink);
 pub struct NoopEventSink;
 
 impl EventSink for NoopEventSink {
-    fn send(&self, _: CustomEvent) {
+    fn send(&self, _: CoreEvent) {
 
     }
 }

@@ -1,11 +1,13 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-
+use accesskit::{NodeBuilder, Role};
 use dyn_clone::DynClone;
-
+use carbide::accessibility::AccessibilityContext;
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{Event, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEventHandler, Event, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
@@ -14,7 +16,7 @@ use crate::state::StateSync;
 use crate::update::{Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 
-pub trait AnyWidget: EventHandler + Update + Layout + Render + Focusable + DynClone + Debug + 'static {}
+pub trait AnyWidget: EventHandler + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
 dyn_clone::clone_trait_object!(AnyWidget);
 
@@ -143,6 +145,16 @@ impl<T: AnyWidget + ?Sized> OtherEventHandler for Box<T> {
     }
 }
 
+impl<T: AnyWidget + ?Sized> AccessibilityEventHandler for Box<T> {
+    fn handle_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        self.deref_mut().handle_accessibility_event(event, ctx)
+    }
+
+    fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        self.deref_mut().process_accessibility_event(event, ctx)
+    }
+}
+
 impl<T: AnyWidget + ?Sized> WidgetSync for Box<T> {
     fn sync(&mut self, env: &mut Environment) {
         self.deref_mut().sync(env);
@@ -156,6 +168,20 @@ impl<T: AnyWidget + ?Sized> Update for Box<T> {
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.deref_mut().process_update(ctx);
+    }
+}
+
+impl<T: AnyWidget + ?Sized> Accessibility for Box<T> {
+    fn accessibility(&mut self, builder: &mut NodeBuilder, env: &mut Environment) {
+        self.deref_mut().accessibility(builder, env);
+    }
+
+    fn role(&self) -> Option<Role> {
+        self.deref().role()
+    }
+
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.deref_mut().process_accessibility(ctx)
     }
 }
 

@@ -11,7 +11,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide_core::environment::Environment;
-use carbide_core::event::{CustomEvent, HasEventSink, Key, KeyboardEvent, KeyboardEventHandler};
+use carbide_core::event::{CoreEvent, HasEventSink, Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
@@ -362,25 +362,25 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                                     duration.set_value(Some(Duration::from(item_duration)));
                                 }
                                 println!("Duration: {:?}", duration.value());
-                                sink.send(CustomEvent::Async);
+                                sink.send(CoreEvent::Async);
                             }
                         }
                         "playbackBufferEmpty" => {
                             if !*buffering.value() {
                                 buffering.set_value(true);
-                                sink.send(CustomEvent::Async);
+                                sink.send(CoreEvent::Async);
                             }
                         }
                         "playbackLikelyToKeepUp" => {
                             if *buffering.value() {
                                 buffering.set_value(false);
-                                sink.send(CustomEvent::Async);
+                                sink.send(CoreEvent::Async);
                             }
                         }
                         "playbackBufferFull" => {
                             if *buffering.value() {
                                 buffering.set_value(false);
-                                sink.send(CustomEvent::Async);
+                                sink.send(CoreEvent::Async);
                             }
                         }
                         _ => unreachable!()

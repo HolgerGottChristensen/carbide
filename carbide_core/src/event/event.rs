@@ -1,4 +1,4 @@
-use carbide::event::{CustomEvent, MouseEvent, WindowEvent};
+use carbide::event::{CoreEvent, MouseEvent, WindowEvent};
 use crate::event::KeyboardEvent;
 
 #[derive(Clone, Debug)]
@@ -6,7 +6,7 @@ pub enum Event {
     Mouse(MouseEvent),
     Keyboard(KeyboardEvent),
     Window(WindowEvent),
-    Custom(CustomEvent),
+    CoreEvent(CoreEvent),
 }
 
 pub trait IntoEvent {

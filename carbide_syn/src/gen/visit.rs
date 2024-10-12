@@ -3352,6 +3352,7 @@ where
         UnOp::Neg(_binding_0) => {
             skip!(_binding_0);
         }
+        UnOp::Dollar(_) => {}
     }
 }
 #[cfg(feature = "full")]
