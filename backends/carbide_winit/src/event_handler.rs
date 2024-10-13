@@ -60,23 +60,7 @@ impl NewEventHandler {
         EventId::new(self.event_id)
     }
 
-    pub fn event(&mut self, event: Event<CustomEvent>, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
-        env.capture_time();
-        env.update_animation();
-        //env.clear_animation_frame();
-
-        let res = match event {
-            Event::WindowEvent { event, window_id } => self.window_event(event, window_id, target, text_context, image_context, env),
-            Event::UserEvent(event) => self.user_event(event, target, text_context, image_context, env),
-            Event::DeviceEvent { .. } => false,
-            Event::NewEvents(_) => false,
-            Event::Suspended => false,
-            Event::Resumed => true,
-            Event::AboutToWait => false,
-            Event::LoopExiting => false,
-            Event::MemoryWarning => false,
-        };
-
+    pub fn handle_refocus(target: &mut impl Scene, env: &mut Environment) {
         if let Some(request) = env.focus_request.clone() {
             match request {
                 Refocus::FocusRequest => {
@@ -128,8 +112,6 @@ impl NewEventHandler {
             }
             env.focus_request = None;
         }
-
-        res
     }
 
     pub fn window_event(&mut self, event: WindowEvent, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
@@ -264,7 +246,7 @@ impl NewEventHandler {
                 false
             }
 
-            WindowEvent::SmartMagnify { .. } => {
+            WindowEvent::DoubleTapGesture { .. } => {
                 let mut consumed = false;
                 target.process_mouse_event(&MouseEvent::SmartScale(self.mouse_position), &mut MouseEventContext {
                     text: text_context,
@@ -276,7 +258,7 @@ impl NewEventHandler {
                 });
                 true
             },
-            WindowEvent::TouchpadMagnify { phase, delta, .. } => {
+            WindowEvent::PinchGesture { phase, delta, .. } => {
                 let mut consumed = false;
                 target.process_mouse_event(&MouseEvent::Scale(delta, self.mouse_position, convert_touch_phase(phase)), &mut MouseEventContext {
                     text: text_context,
@@ -288,7 +270,7 @@ impl NewEventHandler {
                 });
                 true
             },
-            WindowEvent::TouchpadRotate { phase, delta, .. } => {
+            WindowEvent::RotationGesture { phase, delta, .. } => {
                 let mut consumed = false;
                 target.process_mouse_event(&MouseEvent::Rotation(delta as f64, self.mouse_position, convert_touch_phase(phase)), &mut MouseEventContext {
                     text: text_context,
@@ -300,6 +282,9 @@ impl NewEventHandler {
                 });
                 true
             },
+            WindowEvent::PanGesture { .. } => {
+                false
+            }
         }
     }
 
@@ -433,6 +418,7 @@ impl NewEventHandler {
                 });
             }
             CustomEvent::Accessibility(accesskit_winit::Event { window_id, window_event}) => {
+                println!("Accessibility Event: {:#?}", window_event);
                 match window_event {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
                         env.full_accessibility_update = true;

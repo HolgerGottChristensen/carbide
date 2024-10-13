@@ -4,14 +4,14 @@ use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
 
 pub use application::Application;
 use carbide_core::draw::ImageId;
-pub use wgpu_window::WGPUWindow as Window;
+pub use window::Window;
 pub use render_target::RenderTarget;
 
 use crate::image::BindGroupExtended;
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 use crate::application::{ADAPTER, INSTANCE};
 pub use crate::application::{DEVICE, QUEUE};
-use crate::wgpu_window::BIND_GROUPS;
+use crate::globals::BIND_GROUPS;
 
 mod bind_group_layouts;
 mod bind_groups;
@@ -30,10 +30,11 @@ mod textures;
 mod vertex;
 //pub mod window;
 mod application;
-mod wgpu_window;
 mod render_context;
 mod image_context;
 mod render_target;
+mod window;
+mod globals;
 
 pub fn init_logger() {
     env_logger::init();

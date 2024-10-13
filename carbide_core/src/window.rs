@@ -18,3 +18,7 @@ impl WindowId {
         WindowId(WINDOW_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
     }
 }
+
+pub trait Window {
+
+}

@@ -1,10 +1,12 @@
+use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
 use std::mem::transmute;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Once, OnceLock};
 use futures::executor::block_on;
 use once_cell::sync::Lazy;
 
@@ -15,16 +17,17 @@ use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
+use carbide_core::lifecycle::InitializationContext;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::Empty;
 use carbide_core::window::WindowId;
 use carbide_text::text_context::TextContext;
+use carbide_winit::application::ApplicationHandler;
 use carbide_winit::NewEventHandler;
-use carbide_winit::event_loop::EventLoopWindowTarget;
-use carbide_winit::event_loop::EventLoopBuilder;
-use carbide_winit::EventLoop;
+use carbide_winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use carbide_winit::window::WindowId as WinitWindowId;
 use carbide_winit::custom_event::CustomEvent;
+use carbide_winit::event::{DeviceEvent, DeviceId, StartCause, WindowEvent};
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 
@@ -62,10 +65,7 @@ static DEVICE_QUEUE: Lazy<(Arc<Device>, Arc<Queue>)> = Lazy::new(|| {
 pub static DEVICE: Lazy<Arc<Device>> = Lazy::new(|| DEVICE_QUEUE.0.clone());
 pub static QUEUE: Lazy<Arc<Queue>> = Lazy::new(|| DEVICE_QUEUE.1.clone());
 
-
-thread_local!(pub static EVENT_LOOP: RefCell<EventLoop<CustomEvent>> = RefCell::new(EventLoop::Owned(EventLoopBuilder::<CustomEvent>::with_user_event().build().expect("Expected the event loop creation was successful"))));
-thread_local!(pub static WINDOW_IDS: RefCell<HashMap<WinitWindowId, WindowId>> = RefCell::new(HashMap::new()));
-
+pub static EVENT_LOOP_PROXY: OnceLock<EventLoopProxy<CustomEvent>> = OnceLock::new();
 
 pub struct Application {
     /// This contains the whole widget tree. This includes windows and other widgets.
@@ -73,28 +73,22 @@ pub struct Application {
     event_handler: NewEventHandler,
     environment: Environment,
     text_context: TextContext,
-    //any_focus: bool,
-
-    //windows: HashMap<WindowId, WGPUWindow>,
+    event_loop: EventLoop<CustomEvent>,
 }
 
 impl Application {
     pub fn new() -> Self {
         let window_pixel_dimensions = Dimension::new(400.0, 400.0);
 
-        let proxy = EVENT_LOOP.with(|a| {
-            match &*a.borrow() {
-                EventLoop::Owned(e) => e.create_proxy(),
-                EventLoop::StaticBorrow(_) => unreachable!(),
-                EventLoop::None => unreachable!(),
-            }
-        });
+        let event_loop = EventLoop::<CustomEvent>::with_user_event().build().unwrap();
 
-        set_event_sink(ProxyEventLoop(proxy.clone()));
+        EVENT_LOOP_PROXY.get_or_init(|| event_loop.create_proxy());
+
+        set_event_sink(ProxyEventLoop(event_loop.create_proxy()));
 
         let environment = Environment::new(
             window_pixel_dimensions,
-            Box::new(ProxyEventLoop(proxy)),
+            Box::new(ProxyEventLoop(event_loop.create_proxy())),
         );
 
         Application {
@@ -102,6 +96,7 @@ impl Application {
             event_handler: NewEventHandler::new(),
             environment,
             text_context: TextContext::new(),
+            event_loop,
         }
     }
 
@@ -111,8 +106,8 @@ impl Application {
             .unwrap()
     }
 
-    pub fn set_scene(&mut self, scene: Box<dyn Scene>) {
-        self.root = scene;
+    pub fn set_scene(&mut self, scene: impl Scene) {
+        self.root = Box::new(scene);
     }
 
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
@@ -151,40 +146,23 @@ impl Application {
         self.root.request_redraw();
     }
 
-    pub fn launch(mut self) {
-        let event_loop = EVENT_LOOP.with(|a| {
-            match a.take() {
-                EventLoop::Owned(e) => e,
-                EventLoop::StaticBorrow(_)
-                | EventLoop::None => panic!("Can only launch application once"),
-            }
-        });
+    pub fn launch(mut self) -> Result<(), Box<dyn Error>> {
+        let Application {
+            root,
+            event_handler,
+            environment,
+            text_context,
+            event_loop
+        } = self;
 
-        event_loop.run(
-            move |event, event_loop| {
-                EVENT_LOOP.with(|a| {
-                    // SAFETY: We make the reference static such that we can store it in our thread_local
-                    // We make sure to drop it after the reference is no longer valid, at the end of
-                    // the closure after the event was propagated.
-                    let event_loop: &'static EventLoopWindowTarget<CustomEvent> = unsafe {
-                        transmute(event_loop)
-                    };
-                    *a.borrow_mut() = EventLoop::StaticBorrow(event_loop)
-                });
+        let mut running = RunningApplication {
+            root,
+            event_handler,
+            environment,
+            text_context,
+        };
 
-                if self.event_handler.event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
-                    self.request_redraw()
-                }
-
-                if self.environment.should_close_application() {
-                    event_loop.exit();
-                }
-
-                EVENT_LOOP.with(|a| {
-                    a.take()
-                });
-            },
-        ).expect("TODO: panic message");
+        event_loop.run_app(&mut running).map_err(Into::into)
     }
 }
 
@@ -194,4 +172,48 @@ impl Debug for Application {
             .field("root", &self.root)
             .finish()
     }
+}
+
+pub struct RunningApplication {
+    root: Box<dyn Scene>,
+    event_handler: NewEventHandler,
+    environment: Environment,
+    text_context: TextContext,
+}
+
+impl ApplicationHandler<CustomEvent> for RunningApplication {
+    fn resumed<'a>(&'a mut self, event_loop: &'a ActiveEventLoop) {
+        let mut ctx = InitializationContext::<'a> {
+            env: &mut self.environment,
+            lifecycle_manager: event_loop as &'a dyn Any
+        };
+
+        self.root.process_initialization(&mut ctx);
+    }
+
+    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
+        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
+            self.root.request_redraw();
+            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
+        }
+
+        if self.environment.should_close_application() {
+            event_loop.exit();
+        }
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
+        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
+            self.root.request_redraw();
+            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
+        }
+
+        if self.environment.should_close_application() {
+            event_loop.exit();
+        }
+    }
+
+    fn suspended(&mut self, event_loop: &ActiveEventLoop) {}
+
+    fn exiting(&mut self, event_loop: &ActiveEventLoop) {}
 }

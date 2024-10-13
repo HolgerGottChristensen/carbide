@@ -3,7 +3,7 @@ use carbide_core::draw::{InnerImageContext, Texture, TextureFormat, ImageId};
 use crate::image::BindGroupExtended;
 use crate::application::{DEVICE, QUEUE};
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
-use crate::wgpu_window::{BIND_GROUPS};
+use crate::globals::{BIND_GROUPS};
 
 pub struct WGPUImageContext;
 

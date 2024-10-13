@@ -7,7 +7,7 @@ use wgpu::{
 
 use crate::render_pipeline_layouts::RenderPipelines;
 use crate::vertex::Vertex;
-use crate::wgpu_window::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
+use crate::globals::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) enum MaskType {

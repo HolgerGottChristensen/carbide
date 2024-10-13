@@ -6,10 +6,8 @@ use winit::window::CursorIcon;
 
 use carbide_core::cursor::MouseCursor;
 use carbide_core::event::{Key, MouseButton, TouchPhase};
-pub use custom_event_loop::*;
 pub use event_handler::*;
 
-mod custom_event_loop;
 mod event_handler;
 pub mod custom_event;
 

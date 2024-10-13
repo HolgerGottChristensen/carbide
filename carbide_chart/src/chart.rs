@@ -1,4 +1,4 @@
-use carbide::update::{Update, UpdateContext};
+use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position, Rect};

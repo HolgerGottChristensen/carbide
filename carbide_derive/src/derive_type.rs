@@ -26,6 +26,7 @@ pub enum DeriveType {
 
     // Update
     Update,
+    Initialize,
     Accessibility,
 }
 
@@ -42,6 +43,7 @@ impl DeriveType {
         set.insert(DeriveType::Focusable);
         set.insert(DeriveType::Layout);
         set.insert(DeriveType::Update);
+        set.insert(DeriveType::Initialize);
         set.insert(DeriveType::Accessibility);
         set
     }
@@ -58,6 +60,7 @@ impl DeriveType {
             "Focusable" => DeriveType::Focusable,
             "Layout" => DeriveType::Layout,
             "Update" => DeriveType::Update,
+            "Initialize" => DeriveType::Initialize,
             "Accessibility" => DeriveType::Accessibility,
             _ => panic!("Could not match with any of the derive types."),
         }
@@ -82,6 +85,7 @@ impl DeriveType {
             DeriveType::Layout => layout_token_stream(ident, generics, wheres),
             DeriveType::Update => update_token_stream(ident, generics, wheres),
             DeriveType::Accessibility => accessibility_token_stream(ident, generics, wheres),
+            DeriveType::Initialize => initialize_token_stream(ident, generics, wheres),
         }
     }
 }
@@ -198,7 +202,18 @@ fn update_token_stream(
 ) -> TokenStream {
     quote! {
         #[automatically_derived]
-        impl #generics carbide::update::Update for #ident #generics #wheres {}
+        impl #generics carbide::lifecycle::Update for #ident #generics #wheres {}
+    }
+}
+
+fn initialize_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
+    quote! {
+        #[automatically_derived]
+        impl #generics carbide::lifecycle::Initialize for #ident #generics #wheres {}
     }
 }
 

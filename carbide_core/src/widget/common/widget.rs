@@ -4,6 +4,7 @@ use accesskit::{NodeBuilder, Role};
 use dyn_clone::DynClone;
 use carbide::accessibility::AccessibilityContext;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use carbide::lifecycle::InitializationContext;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
@@ -13,10 +14,10 @@ use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
-use crate::update::{Update, UpdateContext};
+use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 
-pub trait AnyWidget: EventHandler + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {}
+pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
 dyn_clone::clone_trait_object!(AnyWidget);
 
@@ -168,6 +169,16 @@ impl<T: AnyWidget + ?Sized> Update for Box<T> {
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.deref_mut().process_update(ctx);
+    }
+}
+
+impl<T: AnyWidget + ?Sized> Initialize for Box<T> {
+    fn initialize(&mut self, ctx: &mut InitializationContext) {
+        self.deref_mut().initialize(ctx)
+    }
+
+    fn process_initialization(&mut self, ctx: &mut InitializationContext) {
+        self.deref_mut().process_initialization(ctx)
     }
 }
 

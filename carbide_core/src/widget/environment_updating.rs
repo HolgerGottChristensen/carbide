@@ -1,5 +1,6 @@
 use carbide::accessibility::AccessibilityContext;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use carbide::lifecycle::{InitializationContext, Initialize};
 use crate::focus::FocusContext;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
@@ -11,7 +12,7 @@ use crate::focus::Focusable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{ReadState, StateContract};
-use crate::update::{Update, UpdateContext};
+use crate::lifecycle::{Update, UpdateContext};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 
 pub trait EnvKey {
@@ -90,6 +91,16 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> Update for EnvUpdating<C, T
         self.insert_into_env(ctx.env);
 
         self.child.process_update(ctx);
+
+        self.remove_from_env(ctx.env);
+    }
+}
+
+impl<C: Widget, T: StateContract, S: ReadState<T=T>> Initialize for EnvUpdating<C, T, S> {
+    fn process_initialization(&mut self, ctx: &mut InitializationContext) {
+        self.insert_into_env(ctx.env);
+
+        self.child.process_initialization(ctx);
 
         self.remove_from_env(ctx.env);
     }

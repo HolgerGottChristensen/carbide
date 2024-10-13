@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use carbide::environment::WidgetTransferAction;
 use carbide::event::{EventId, KeyboardEventContext, MouseButton, MouseEventContext};
 use carbide::layout::LayoutContext;
-use carbide::update::{Update, UpdateContext};
+use carbide::lifecycle::{Update, UpdateContext};
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};

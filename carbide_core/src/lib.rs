@@ -63,7 +63,7 @@ pub mod utils;
 pub mod widget;
 pub mod window;
 mod scene;
-pub mod update;
+pub mod lifecycle;
 
 
 /// Reexport of the image crate

@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use carbide::accessibility::AccessibilityContext;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use carbide::lifecycle::Initialize;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
@@ -10,7 +11,7 @@ use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, StateSync, ReadState};
-use crate::update::{Update, UpdateContext};
+use crate::lifecycle::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 
 #[derive(Clone, Debug)]
@@ -551,6 +552,19 @@ impl<T: Widget,
         }
     }
 }
+
+impl<T: Widget,
+    B1: ReadState<T=bool>,
+    B2: ReadState<T=bool>,
+    B3: ReadState<T=bool>,
+    B4: ReadState<T=bool>,
+    B5: ReadState<T=bool>,
+    B6: ReadState<T=bool>,
+    B7: ReadState<T=bool>,
+    B8: ReadState<T=bool>,
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> Initialize for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {}
 
 impl<T: Widget,
     B1: ReadState<T=bool>,

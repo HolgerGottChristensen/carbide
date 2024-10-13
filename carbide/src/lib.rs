@@ -1,5 +1,4 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use ctor::ctor;
 pub use carbide_core::*;
 
 #[cfg(feature = "carbide_macro")]

@@ -56,4 +56,5 @@ rand = "0.8.5"
 accesskit = "0.16.3"
 accesskit_winit = "0.22.3"
 smallvec = "1.13.2"
+winit = { version = "0.30.5", features = ["rwh_05"] }
 

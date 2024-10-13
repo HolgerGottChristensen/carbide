@@ -1,668 +1,48 @@
-use std::cell::RefCell;
-use std::clone::Clone;
 use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
-use std::rc::Rc;
-use std::sync::{Arc, RwLock};
-use accesskit::{NodeBuilder, NodeId, Role, Tree, TreeUpdate};
-use cgmath::{Matrix4, Vector3};
-use dashmap::DashMap;
-use futures::executor::block_on;
-use once_cell::sync::Lazy;
-use raw_window_handle::HasRawWindowHandle;
-use smallvec::SmallVec;
+use cgmath::Matrix4;
 use typed_arena::Arena;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Instance, PipelineLayout, Queue, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, ShaderModule, Surface, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Queue, RenderPassDepthStencilAttachment, RenderPipeline, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-
-use carbide_core::{draw, Scene};
-use carbide_core::accessibility::{Accessibility, AccessibilityContext};
-use carbide_core::draw::{ColorSpace, Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use carbide_core::focus::Focusable;
-use carbide_core::layout::{Layout, LayoutContext};
-use carbide_core::render::{LayerId, Render, RenderContext};
-use carbide_core::state::{IntoReadState, ReadState};
+use carbide_core::draw::{Dimension, ImageId, Position, Rect, Scalar};
+use carbide_core::environment::Environment;
+use carbide_core::layout::LayoutContext;
+use carbide_core::lifecycle::{Initialize, UpdateContext};
+use carbide_core::render::{Render, RenderContext};
+use carbide_core::state::ReadState;
 use carbide_core::text::InnerTextContext;
-use carbide_core::update::{Update, UpdateContext};
-use carbide_core::widget::{AnyWidget, CommonWidget, FilterId, GradientRepeat, GradientType, Menu, Overlay, Rectangle, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
-use carbide_core::window::WindowId;
-use carbide_winit::{convert_mouse_cursor, update_scale_factor};
-use carbide_winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize, Size};
-use carbide_winit::window::{Window as WinitWindow, WindowBuilder};
-
-use crate::{image_context, render_pass_ops, RenderPassOps};
-use crate::application::{ADAPTER, DEVICE, EVENT_LOOP, INSTANCE, QUEUE, WINDOW_IDS};
-use crate::bind_group_layouts::{atlas_bind_group_layout, ATLAS_BIND_GROUP_LAYOUT, filter_buffer_bind_group_layout, FILTER_BUFFER_BIND_GROUP_LAYOUT, filter_texture_bind_group_layout, FILTER_TEXTURE_BIND_GROUP_LAYOUT, gradient_buffer_bind_group_layout, GRADIENT_DASHES_BIND_GROUP_LAYOUT, main_bind_group_layout, MAIN_TEXTURE_BIND_GROUP_LAYOUT, uniform_bind_group_layout, UNIFORM_BIND_GROUP_LAYOUT, uniform_bind_group_layout2, UNIFORM_BIND_GROUP_LAYOUT2};
-use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, uniforms_to_bind_group, size_to_uniform_bind_group};
+use carbide_core::widget::{FilterId, Widget};
+use carbide_winit::convert_mouse_cursor;
+use carbide_winit::dpi::PhysicalSize;
+use crate::{render_pass_ops, RenderPassOps, RenderTarget, DEVICE, QUEUE};
+use crate::application::ADAPTER;
+use crate::bind_group_layouts::{FILTER_BUFFER_BIND_GROUP_LAYOUT, GRADIENT_DASHES_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT2};
+use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::filter::Filter;
 use crate::gradient::{Dashes, Gradient};
 use crate::image::BindGroupExtended;
-use crate::pipeline::create_pipelines;
-use crate::render_context::{Uniform, WGPURenderContext};
+use crate::render_context::Uniform;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-use crate::render_pipeline_layouts::{filter_pipeline_layout, main_pipeline_layout, RenderPipelines};
-use crate::render_target::RenderTarget;
-use crate::renderer::atlas_cache_tex_desc;
-use crate::samplers::main_sampler;
+use crate::render_pipeline_layouts::RenderPipelines;
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::create_depth_stencil_texture;
 use crate::vertex::Vertex;
-
-const ZOOM: f32 = 1.0;
-
-pub(crate) static MAIN_SHADER: Lazy<ShaderModule> = Lazy::new(|| {
-    DEVICE.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))
-});
-
-pub(crate) static FILTER_SHADER: Lazy<ShaderModule> = Lazy::new(|| {
-    DEVICE.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"))
-});
-
-pub(crate) static RENDER_PIPELINE_LAYOUT: Lazy<PipelineLayout> = Lazy::new(|| {
-    main_pipeline_layout(
-        &DEVICE,
-        &MAIN_TEXTURE_BIND_GROUP_LAYOUT,
-        &UNIFORM_BIND_GROUP_LAYOUT,
-        &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
-        &ATLAS_BIND_GROUP_LAYOUT,
-    )
-});
-
-pub(crate) static FILTER_RENDER_PIPELINE_LAYOUT: Lazy<PipelineLayout> = Lazy::new(|| {
-    filter_pipeline_layout(
-        &DEVICE,
-        &FILTER_TEXTURE_BIND_GROUP_LAYOUT,
-        &FILTER_BUFFER_BIND_GROUP_LAYOUT,
-        &UNIFORM_BIND_GROUP_LAYOUT,
-    )
-});
-
-pub(crate) static MAIN_SAMPLER: Lazy<Sampler> = Lazy::new(|| {
-    main_sampler(&DEVICE)
-});
-
-pub(crate) static ATLAS_CACHE_TEXTURE: Lazy<Texture> = Lazy::new(|| {
-    let atlas_cache_tex_desc = atlas_cache_tex_desc(1024, 1024);
-    DEVICE.create_texture(&atlas_cache_tex_desc)
-});
-
-pub(crate) static ATLAS_CACHE_BIND_GROUP: Lazy<BindGroup> = Lazy::new(|| {
-    let view = ATLAS_CACHE_TEXTURE.create_view(&Default::default());
-
-    DEVICE.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &ATLAS_BIND_GROUP_LAYOUT,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view),
-            },
-        ],
-        label: None,
-    })
-});
-
-pub(crate) static PIPELINES: Lazy<DashMap<TextureFormat, RenderPipelines>> = Lazy::new(|| {
-    DashMap::new()
-});
-
-thread_local!(pub static BIND_GROUPS: RefCell<HashMap<ImageId, BindGroupExtended>> = {
-    use image_context::create_bind_group;
-    let mut map = HashMap::new();
-
-    let texture = draw::Texture {
-        width: 1,
-        height: 1,
-        bytes_per_row: 4,
-        format: draw::TextureFormat::RGBA8,
-        data: &[0u8, 0u8, 0u8, 255u8],
-    };
-
-    let bind_group = create_bind_group(texture);
-
-    map.insert(ImageId::default(), bind_group);
-    RefCell::new(map)
-});
-
-pub(crate) static FILTER_BIND_GROUPS: Lazy<RwLock<HashMap<FilterId, BindGroup>>> = Lazy::new(|| {
-    RwLock::new(HashMap::new())
-});
-
-pub struct WGPUWindow<T: ReadState<T=String>> {
-    pub(crate) surface: Surface,
-
-    pub(crate) texture_format: TextureFormat,
-
-    pub(crate) depth_texture_view: TextureView,
-    pub(crate) texture_size_bind_group: BindGroup,
-
-    pub(crate) targets: Vec<RenderTarget>,
-
-    pub(crate) uniform_bind_group: BindGroup,
-    pub(crate) gradient_buffer: Buffer,
-    pub(crate) dashes_buffer: Buffer,
-    pub(crate) gradient_dashes_bind_group: BindGroup,
-
-    pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
-    pub(crate) vertex_buffer: (Buffer, usize),
-    pub(crate) second_vertex_buffer: Buffer,
-    pub(crate) render_context: WGPURenderContext,
-
-    inner: WinitWindow,
-    accessibility_adapter: accesskit_winit::Adapter,
-
-    id: WidgetId,
-    title: T,
-    position: Position,
-    dimension: Dimension,
-    child: Box<dyn AnyWidget>,
-    close_application_on_window_close: bool,
-    visible: bool,
-    window_menu: Option<Vec<Menu>>,
-}
-
-impl WGPUWindow<String> {
-    pub fn new<T: IntoReadState<String>, C: Widget>(title: T, dimension: Dimension, child: C) -> Box<WGPUWindow<T::Output>> {
-        let window_id = WindowId::new();
-        let title = title.into_read_state();
-
-
-        let child = ZStack::new((
-            Rectangle::new().fill(EnvironmentColor::SystemBackground),
-            Overlay::new("controls_popup_layer", child).steal_events(),
-        )).boxed();
-
-        let builder = WindowBuilder::new()
-            .with_inner_size(Size::Logical(LogicalSize {
-                width: dimension.width,
-                height: dimension.height,
-            }))
-            .with_visible(false)
-            //.with_title(title.clone())
-            //.with_window_icon(loaded_icon)
-            ;
-
-        let (window, adapter) = EVENT_LOOP.with(|a| {
-            let window = a.borrow().create_inner_window(builder);
-
-            let adapter = accesskit_winit::Adapter::with_event_loop_proxy(&window, a.borrow().proxy());
-
-            (window, adapter)
-        });
-
-
-
-        window.set_ime_allowed(true);
-
-        // Add the window to the list of IDS to make event propagate when received by the window.
-        WINDOW_IDS.with(|a| {
-            a.borrow_mut().insert(window.id(), window_id);
-        });
-
-        // Position the window in the middle of the screen.
-        if let Some(monitor) = window.current_monitor() {
-            let size = monitor.size();
-
-            let outer_window_size = window.outer_size();
-
-            let position = PhysicalPosition::new(
-                size.width / 2 - outer_window_size.width / 2,
-                size.height / 2 - outer_window_size.height / 2,
-            );
-
-            window.set_outer_position(position);
-        }
-
-        println!("DPI: {}", window.scale_factor());
-
-        window.set_visible(true);
-
-        let size = window.inner_size();
-
-        let pixel_dimensions = Dimension::new(
-            window.inner_size().width as f64,
-            window.inner_size().height as f64,
-        );
-        let scale_factor = window.scale_factor();
-
-
-        let surface = unsafe { INSTANCE.create_surface(&window) }.unwrap();
-
-        // Configure the surface with format, size and usage
-        let surface_caps = surface.get_capabilities(&*ADAPTER);
-
-        surface.configure(
-            &DEVICE,
-            &SurfaceConfiguration {
-                usage: TextureUsages::RENDER_ATTACHMENT,
-                format: TextureFormat::Bgra8UnormSrgb,
-                width: window.inner_size().width,
-                height: window.inner_size().height,
-                present_mode: surface_caps.present_modes[0],
-                alpha_mode: wgpu::CompositeAlphaMode::Auto,
-                view_formats: vec![],
-            },
-        );
-
-        let matrix = Self::calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
-
-        let gradient = DrawGradient {
-            colors: vec![],
-            ratios: vec![],
-            gradient_type: GradientType::Linear,
-            gradient_repeat: GradientRepeat::Clamp,
-            start: Default::default(),
-            end: Default::default(),
-            color_space: ColorSpace::Linear,
-        };
-
-        let gradient = Gradient::convert(&gradient);
-        let gradient_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Gradient Buffer"),
-            contents: &*gradient.as_bytes(),
-            usage: BufferUsages::STORAGE,
-        });
-
-        let dashes = Dashes {
-            dashes: [1.0; 32],
-            dash_count: 2,
-            start_cap: 0,
-            end_cap: 0,
-            total_dash_width: 2.0,
-            dash_offset: 0.0,
-        };
-
-        let dashes_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Dashes Buffer"),
-            contents: &*dashes.as_bytes(),
-            usage: BufferUsages::STORAGE,
-        });
-
-        let gradient_dashed_bind_group = gradient_dashes_bind_group(
-            &DEVICE,
-            &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
-            &gradient_buffer,
-            &dashes_buffer
-        );
-
-
-        let uniform_bind_group = uniforms_to_bind_group(
-            &DEVICE,
-            &UNIFORM_BIND_GROUP_LAYOUT,
-            matrix,
-            0.0,
-            0.0,
-            0.0,
-            false
-        );
-
-
-        let texture_size_bind_group = size_to_uniform_bind_group(
-            &DEVICE,
-            &UNIFORM_BIND_GROUP_LAYOUT2,
-            pixel_dimensions.width,
-            pixel_dimensions.height,
-            scale_factor,
-        );
-
-        let preferred_format = surface_caps.formats.iter()
-            .copied()
-            .filter(|f| f.is_srgb())
-            .next()
-            .unwrap_or(surface_caps.formats[0]);
-
-        if !PIPELINES.contains_key(&preferred_format) {
-            PIPELINES.insert(preferred_format, create_pipelines(&DEVICE, preferred_format));
-        }
-
-        let depth_texture = create_depth_stencil_texture(&DEVICE, size.width, size.height);
-        let depth_texture_view = depth_texture.create_view(&Default::default());
-
-        let vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: &[],
-            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-        });
-
-        let second_vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
-            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-        });
-
-        update_scale_factor(window.id(), window.scale_factor());
-
-        Box::new(WGPUWindow {
-            surface,
-            texture_format: preferred_format,
-            depth_texture_view,
-            texture_size_bind_group,
-            targets: vec![
-                RenderTarget::new(size.width, size.height)
-            ],
-            uniform_bind_group,
-            gradient_buffer,
-            dashes_buffer,
-            gradient_dashes_bind_group: gradient_dashed_bind_group,
-            carbide_to_wgpu_matrix: matrix,
-            vertex_buffer: (vertex_buffer, 0),
-            second_vertex_buffer,
-
-            render_context: WGPURenderContext::new(),
-            inner: window,
-            accessibility_adapter: adapter,
-            id: WidgetId::new(),
-            title,
-            position: Default::default(),
-            dimension: Default::default(),
-            child,
-            close_application_on_window_close: false,
-            visible: true,
-            window_menu: None
-        })
-    }
-}
-
-impl<T: ReadState<T=String>> MouseEventHandler for WGPUWindow<T> {
-    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        let old_dimension = ctx.env.pixel_dimensions();
-        let old_window_handle = ctx.env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            let id: u64 = self.inner.id().into();
-
-            let new_ctx = &mut MouseEventContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                is_current: &(*ctx.window_id == id),
-                window_id: ctx.window_id,
-                consumed: ctx.consumed,
-            };
-
-            self.foreach_child_direct(&mut |child| {
-                child.process_mouse_event(event, new_ctx);
-                if *new_ctx.consumed {
-                    return;
-                }
-            });
-        });
-
-        ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_window_handle(old_window_handle);
-    }
-}
-
-impl<T: ReadState<T=String>> AccessibilityEventHandler for WGPUWindow<T> {
-    fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
-        let old_dimension = ctx.env.pixel_dimensions();
-        let old_window_handle = ctx.env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            let id: u64 = self.inner.id().into();
-
-            let new_ctx = &mut AccessibilityEventContext {
-                env,
-                is_current: &(*ctx.window_id == id),
-                window_id: ctx.window_id,
-            };
-
-            self.foreach_child_direct(&mut |child| {
-                child.process_accessibility_event(event, new_ctx);
-            });
-        });
-
-        ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_window_handle(old_window_handle);
-    }
-}
-
-impl<T: ReadState<T=String>> CommonWidget for WGPUWindow<T> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child(f);
-            return;
-        }
-
-        f(&self.child);
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension;
-    }
-}
-
-impl<T: ReadState<T=String>> WidgetSync for WGPUWindow<T> {
-    fn sync(&mut self, _: &mut Environment) {}
-}
-
-impl<T: ReadState<T=String>> Focusable for WGPUWindow<T> {}
-
-impl<T: ReadState<T=String>> KeyboardEventHandler for WGPUWindow<T> {
-    fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        let old_dimension = ctx.env.pixel_dimensions();
-        let old_window_handle = ctx.env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            let id: u64 = self.inner.id().into();
-
-            let new_ctx = &mut KeyboardEventContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                is_current: &(*ctx.window_id == id),
-                window_id: ctx.window_id,
-                prevent_default: ctx.prevent_default,
-            };
-
-            self.foreach_child_direct(&mut |child| {
-                child.process_keyboard_event(event, new_ctx);
-            });
-        });
-
-        ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_window_handle(old_window_handle);
-    }
-}
-
-impl<T: ReadState<T=String>> OtherEventHandler for WGPUWindow<T> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
-        let old_dimension = ctx.env.pixel_dimensions();
-        let old_window_handle = ctx.env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            self.foreach_child_direct(&mut |child| {
-                child.process_other_event(event, &mut OtherEventContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                });
-            });
-        });
-
-        // Set the cursor of the window.
-        self.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
-
-        ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_window_handle(old_window_handle);
-    }
-}
-
-impl<T: ReadState<T=String>> WindowEventHandler for WGPUWindow<T> {
-    fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        match event {
-            WindowEvent::Resize(size) => {
-                self.resize(LogicalSize::new(size.width, size.height).to_physical(self.inner.scale_factor()), ctx.env);
-                self.request_redraw();
-            }
-            WindowEvent::Focus => {
-                #[cfg(target_os = "macos")]
-                {
-                    use carbide_macos::NSMenu;
-                    use carbide_macos::NSMenuItem;
-
-                    // The outer menu is not visible, but only a container for
-                    // other menus.
-
-                    if let Some(menu) = &self.window_menu {
-                        let mut outer_menu = NSMenu::new("");
-
-                        for m in menu {
-                            let item = NSMenuItem::new(m.name(), None)
-                                .set_submenu(NSMenu::from(m, ctx.env));
-
-                            outer_menu = outer_menu.add_item(item);
-                        }
-
-                        outer_menu.set_as_main_menu();
-                    } else {
-                        // Todo: Set default application menu
-                    }
-                }
-            }
-            WindowEvent::CloseRequested => {
-                self.visible = false;
-                if self.close_application_on_window_close {
-                    ctx.env.close_application();
-                } else {
-                    self.inner.set_visible(false);
-                }
-            }
-            _ => ()
+use crate::globals::{ATLAS_CACHE_BIND_GROUP, ATLAS_CACHE_TEXTURE, BIND_GROUPS, FILTER_BIND_GROUPS, PIPELINES};
+use crate::window::initialize::ZOOM;
+use crate::window::initialized_window::InitializedWindow;
+use crate::window::util::calculate_carbide_to_wgpu_matrix;
+use crate::window::Window;
+
+impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
+    fn render(&mut self, ctx: &mut RenderContext) {
+        match self {
+            Window::Initialized(initialized) => initialized.render(ctx),
+            Window::UnInitialized { .. } => {}
+            Window::Failed => {}
         }
     }
-
-    fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        let old_dimension = ctx.env.pixel_dimensions();
-        let old_window_handle = ctx.env.window_handle();
-        let scale_factor = self.inner.scale_factor();
-        let physical_dimensions = self.inner.inner_size();
-
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-        ctx.env.set_window_handle(Some(self.inner.raw_window_handle()));
-
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            let id: u64 = self.inner.id().into();
-
-            let is_current = *ctx.window_id == id;
-
-            if is_current {
-                self.sync(env);
-                self.handle_window_event(event, &mut WindowEventContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    is_current: &is_current,
-                    window_id: ctx.window_id,
-                });
-            }
-
-            self.foreach_child_direct(&mut |child| {
-                child.process_window_event(event, &mut WindowEventContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    is_current: &is_current,
-                    window_id: ctx.window_id,
-                });
-            });
-        });
-
-        ctx.env.set_pixel_dimensions(old_dimension);
-        ctx.env.set_window_handle(old_window_handle);
-    }
 }
 
-impl<T: ReadState<T=String>> Layout for WGPUWindow<T> {
-    fn calculate_size(&mut self, _requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
-        Dimension::new(0.0, 0.0)
-    }
-
-    fn position_children(&mut self, _ctx: &mut LayoutContext) {}
-}
-
-impl<T: ReadState<T=String>> Update for WGPUWindow<T> {
-    fn update(&mut self, _ctx: &mut UpdateContext) {}
-
-    fn process_update(&mut self, _ctx: &mut UpdateContext) {}
-}
-
-impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
+impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
         let old_pixel_dimensions = ctx.env.pixel_dimensions();
 
@@ -748,7 +128,7 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
                     Err(wgpu::SurfaceError::Lost) => {
                         println!("Swap chain lost");
                         self.resize(self.inner.inner_size(), env);
-                        self.request_redraw();
+                        self.inner.request_redraw();
                     }
                     // The system is out of memory, we should probably quit
                     Err(wgpu::SurfaceError::OutOfMemory) => {
@@ -758,7 +138,7 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
                     // All other errors (Outdated, Timeout) should be resolved by the next frame
                     Err(e) => {
                         // We request a redraw the next frame
-                        self.request_redraw();
+                        self.inner.request_redraw();
                         eprintln!("{:?}", e)
                     }
                 }
@@ -767,97 +147,6 @@ impl<T: ReadState<T=String>> Render for WGPUWindow<T> {
 
         // Reset the environment
         ctx.env.set_pixel_dimensions(old_pixel_dimensions);
-    }
-}
-
-impl<T: ReadState<T=String>> Accessibility for WGPUWindow<T> {
-    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        let mut tree = TreeUpdate {
-            nodes: vec![],
-            tree: Some(Tree {
-                root: NodeId(self.id().0 as u64),
-                app_name: None,
-                toolkit_name: Some("Carbide".to_string()),
-                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-            }),
-            focus: NodeId(self.id().0 as u64),
-        };
-
-        let mut children = SmallVec::<[WidgetId; 8]>::new();
-
-        self.child.process_accessibility(&mut AccessibilityContext {
-            env: ctx.env,
-            tree: &mut tree,
-            parent_id: self.id,
-            children: &mut children,
-            hidden: false,
-        });
-
-        let mut node_builder = NodeBuilder::new(Role::Window);
-
-        node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
-
-        node_builder.set_name(self.title.value().clone());
-    }
-}
-
-impl<T: ReadState<T=String>> AnyWidget for WGPUWindow<T> {}
-
-impl<T: ReadState<T=String>> Scene for WGPUWindow<T> {
-    /// Request the window to redraw next frame
-    fn request_redraw(&self) {
-        self.inner.request_redraw();
-    }
-}
-
-impl<T: ReadState<T=String>> WGPUWindow<T> {
-    pub fn menu(mut self, menu: Vec<Menu>) -> Box<Self> {
-        self.window_menu = Some(menu);
-        Box::new(self)
-    }
-
-    pub fn close_application_on_window_close(mut self) -> Box<Self> {
-        self.close_application_on_window_close = true;
-        Box::new(self)
-    }
-
-    fn calculate_carbide_to_wgpu_matrix(
-        dimension: Dimension,
-        scale_factor: Scalar,
-    ) -> Matrix4<f32> {
-        let half_height = dimension.height / 2.0;
-        let scale = (scale_factor / half_height) as f32;
-
-        #[rustfmt::skip]
-        pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 0.5, 0.0,
-            0.0, 0.0, 0.5, 1.0,
-        );
-
-        let pixel_to_points: [[f32; 4]; 4] = [
-            [scale, 0.0, 0.0, 0.0],
-            [0.0, -scale, 0.0, 0.0],
-            [0.0, 0.0, scale, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ];
-
-        let aspect_ratio = (dimension.width / dimension.height) as f32;
-
-        let ortho = cgmath::ortho(
-            -1.0 * aspect_ratio,
-            1.0 * aspect_ratio,
-            -1.0,
-            1.0,
-            1.0,
-            -1.0,
-        );
-        let res = OPENGL_TO_WGPU_MATRIX
-            * ortho
-            * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0))
-            * Matrix4::from(pixel_to_points);
-        res
     }
 
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
@@ -1329,8 +618,7 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
 
         let dimension = Dimension::new(new_size.width as Scalar, new_size.height as Scalar);
 
-        self.carbide_to_wgpu_matrix =
-            Self::calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
+        self.carbide_to_wgpu_matrix = calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
         let uniform_bind_group = uniforms_to_bind_group(
             &DEVICE,
@@ -1367,29 +655,5 @@ impl<T: ReadState<T=String>> WGPUWindow<T> {
             },
         );
 
-    }
-}
-
-impl<T: ReadState<T=String>> Clone for WGPUWindow<T> {
-    fn clone(&self) -> Self {
-        todo!()
-    }
-}
-
-impl<T: ReadState<T=String>> Debug for WGPUWindow<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Window")
-            .field("position", &self.position)
-            .field("dimension", &self.dimension)
-            .field("child", &self.child)
-            .finish()
-    }
-}
-
-impl<T: ReadState<T=String>> Drop for WGPUWindow<T> {
-    fn drop(&mut self) {
-        WINDOW_IDS.with(|a| {
-            a.borrow_mut().remove(&self.inner.id());
-        });
     }
 }

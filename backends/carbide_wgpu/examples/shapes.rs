@@ -204,7 +204,7 @@ fn main() {
         ).close_application_on_window_close()
     );
 
-    application.launch()
+    application.launch();
 }
 
 fn draw_star(
