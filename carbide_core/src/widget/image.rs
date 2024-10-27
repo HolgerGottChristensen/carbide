@@ -1,8 +1,9 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 use std::ops::Deref;
-
+use accesskit::{NodeBuilder, Point, Role, Size};
+use carbide::accessibility::AccessibilityContext;
 use carbide_macro::carbide_default_builder2;
-
+use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, ImageId, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::pre_multiply::PreMultiply;
@@ -15,7 +16,7 @@ use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout)]
+#[carbide_exclude(Render, Layout, Accessibility)]
 pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style> {
     id: WidgetId,
     /// The unique identifier for the image that will be drawn.
@@ -28,6 +29,7 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=S
     dimension: Dimension,
     scale_mode: ScaleMode,
     resizeable: bool,
+    decorative: bool,
 }
 
 impl Image<Option<ImageId>, Style> {
@@ -43,6 +45,7 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
+            decorative: false,
         }
     }
 
@@ -57,6 +60,7 @@ impl Image<Option<ImageId>, Style> {
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
             resizeable: false,
+            decorative: false
         }
     }
 }
@@ -67,6 +71,11 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
     /// bottom right is blank.
     pub fn source_rectangle(mut self, rect: Rect) -> Self {
         self.src_rect = Some(rect);
+        self
+    }
+
+    pub fn decorative(mut self) -> Self {
+        self.decorative = true;
         self
     }
 
@@ -103,13 +112,13 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
             dimension: self.dimension,
             scale_mode: self.scale_mode,
             resizeable: self.resizeable,
+            decorative: self.decorative,
         }
     }
 }
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<Id, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-
         if let Some(image_id) = &*self.image_id.value() {
             if !ctx.image.texture_exist(image_id) {
                 let path = if image_id.is_relative() {
@@ -215,6 +224,49 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
         } else {
             //println!("Missing else")
         }
+    }
+}
+
+
+
+impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for Image<Id, C> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.sync(ctx.env);
+
+        let mut builder = NodeBuilder::new(Role::Label);
+
+        builder.set_bounds(accesskit::Rect::from_origin_size(
+            Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
+            Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+        ));
+
+        if ctx.hidden {
+            builder.set_hidden();
+        }
+
+        if let Some(label) = ctx.inherited_label {
+            builder.set_name(label);
+        } else if !self.decorative {
+            if let Some(id) = self.image_id.value().as_ref() {
+                if let Some(file_name) = id.file_stem() {
+                    builder.set_name(file_name);
+                }
+            }
+        }
+
+        if let Some(hint) = ctx.inherited_hint {
+            builder.set_description(hint);
+        }
+
+        if let Some(value) = ctx.inherited_value {
+            builder.set_value(value);
+        }
+
+        builder.set_author_id(format!("{:?}", self.id()));
+
+        ctx.nodes.push(self.id(), builder.build());
+
+        ctx.children.push(self.id());
     }
 }
 

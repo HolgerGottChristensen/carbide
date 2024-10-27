@@ -22,6 +22,10 @@ impl ImageId {
     pub fn is_relative(&self) -> bool {
         self.0.is_relative()
     }
+
+    pub fn file_stem(&self) -> Option<String> {
+        Some(self.0.file_stem().unwrap_or(self.0.as_os_str()).to_str()?.to_string())
+    }
 }
 
 impl Default for ImageId {

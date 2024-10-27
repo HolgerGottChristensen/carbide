@@ -1,4 +1,5 @@
 use carbide_controls::{Button, ControlsExt};
+use carbide_core::accessibility::AccessibilityExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtNew, State};
@@ -24,19 +25,28 @@ fn main() {
             Button::new("Subtract 1", closure!(|_| { *$counter_state -= 1; }))
                 .frame(90.0, 22.0),
 
-            /*Button::new(Image::new("images/landscape.png").scaled_to_fill(), a!(|_,_| {}))
-                .frame(90.0, 22.0),*/
-
             Button::new("Disabled", closure!(|_|{}))
                 .enabled(false)
                 .frame(90.0, 22.0),
 
             HStack::new((
-                Button::new_primary(Image::new_icon("icons/chat-1-line.png"), closure!(|_| {}))
+                Button::new_primary(
+                    Image::new_icon("icons/chat-1-line.png")
+                        .accessibility_label("Add 1"),
+                    closure!(|_| {})
+                )
                     .frame(32.0, 32.0),
-                Button::new(Image::new_icon("icons/chat-1-line.png"), closure!(|_| {}))
+                Button::new(
+                    Image::new_icon("icons/chat-1-line.png")
+                        .accessibility_label("Subtract 1"),
+                    closure!(|_| {})
+                )
                     .frame(32.0, 32.0),
-                Button::new(Image::new_icon("icons/chat-1-line.png"), closure!(|_| {}))
+                Button::new(
+                    Image::new_icon("icons/chat-1-line.png")
+                        .accessibility_label("Disabled"),
+                    closure!(|_| {})
+                )
                     .enabled(false)
                     .frame(32.0, 32.0),
             )).spacing(10.0)

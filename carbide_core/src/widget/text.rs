@@ -218,11 +218,6 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
         self.text_decoration = decoration;
         self
     }
-
-    /*pub fn with_optional_weight(mut self, weight: FontWeight) -> Self {
-        self.font_weight = weight;
-        self
-    }*/
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Layout for Text<T, S, C, FS, FW> {
@@ -232,51 +227,11 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
         self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
 
-        // if let None = self.internal_text {
-        //     let text = self.text.value().deref().clone();
-        //     let style = self.get_style();
-        //     //dbg!(&style);
-        //     self.internal_text = Some(InternalText::new(
-        //         text,
-        //         style,
-        //         self.wrap_mode,
-        //         self.text_span_generator.borrow(),
-        //         env,
-        //     ))
-        // }
-        //
-        // let style = self.get_style();
-        // if let Some(internal) = &mut self.internal_text {
-        //     let text = self.text.value().deref().clone();
-        //     if internal.string_that_generated_this() != &text
-        //         || internal.style_that_generated_this() != &style
-        //     {
-        //         *internal = InternalText::new(
-        //             text,
-        //             style,
-        //             self.wrap_mode,
-        //             self.text_span_generator.borrow(),
-        //             env,
-        //         );
-        //     }
-        //     self.dimension = internal.calculate_size(requested_size, env);
-        // }
-
         self.dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
         ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0/ctx.env.scale_factor()), ctx.env)
-
-
-        //env.text_context.calculate_position(self.text_id, self.position.tolerance(1.0/env.scale_factor()));
-
-        // if let Some(internal) = &mut self.internal_text {
-        //     internal.position(self.position.tolerance(1.0/env.scale_factor()));
-        //     //internal.position(self.position);
-        //
-        //     internal.ensure_glyphs_added_to_atlas(env);
-        // }
     }
 }
 
