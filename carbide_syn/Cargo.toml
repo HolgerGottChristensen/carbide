@@ -1,12 +1,13 @@
 [package]
 name = "carbide_syn"
 # version = "2.0.38" # don't forget to update html_root_url and syn.json
-version = { workspace = true }
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = ["David Tolnay <dtolnay@gmail.com>"]
 categories = ["development-tools::procedural-macro-helpers", "parser-implementations"]
 description = "Parser for Rust source code"
 documentation = "https://docs.rs/syn"
-edition = "2021"
 include = [
     "/benches/**",
     "/Cargo.toml",
@@ -18,7 +19,6 @@ include = [
 ]
 keywords = ["macros", "syn"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/dtolnay/syn"
 rust-version = "1.56"
 
 [features]
@@ -52,3 +52,6 @@ rustversion = "1"
 tar = "0.4.16"
 termcolor = "1"
 walkdir = "2.3.2"
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(doc_cfg)'] }

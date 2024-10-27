@@ -47,8 +47,6 @@ pub struct Environment {
     pixel_dimensions: Dimension,
 
     /// The pixel density, or scale factor.
-    /// On windows this is the settable factor in desktop settings.
-    /// On retina displays for macos this is 2 and otherwise 1.
     scale_factor: Option<f64>,
 
     /// The start time of the current frame. This is used to sync the animated states.
@@ -355,15 +353,6 @@ impl Environment {
 
     pub fn request_multiple_animation_frames(&mut self, n: usize) {
         self.animation_widget_in_frame = self.animation_widget_in_frame.max(n);
-    }
-
-    /// This method requests that the widget with the id should update the accessibility node
-    pub fn request_accessibility_update(&mut self, widget_id: WidgetId) {
-        self.accessibility_requires_update.insert(widget_id);
-    }
-
-    pub fn accessibility_needs_update(&self, widget_id: WidgetId) -> bool {
-        self.full_accessibility_update || self.accessibility_requires_update.contains(&widget_id)
     }
 
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {

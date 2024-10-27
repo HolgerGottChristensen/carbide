@@ -1,6 +1,8 @@
 [package]
 name = "carbide_controls"
-version = { workspace = true }
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
@@ -9,8 +11,6 @@ description = "A set of control widgets for the carbide core crate"
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
 categories = ["gui"]
-edition = "2021"
-repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
@@ -22,6 +22,7 @@ unicode-segmentation = "1.7.1"
 serde = "1.0.118"
 dyn-clone = "1.0.3"
 chrono.workspace = true
+smallvec.workspace = true
 
 [dev-dependencies]
 env_logger = "0.7"

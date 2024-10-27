@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use carbide_controls::Button;
 use carbide_core::closure;
-use carbide_core as carbide;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtTransition, State};
 use carbide_core::widget::*;
@@ -24,11 +23,11 @@ fn main() {
                 .frame(60.0, 60.0)
                 .offset(transition, 0.0),
             HStack::new((
-                Button::new_primary("Left", closure!(|_, _| {
+                Button::new_primary("Left", closure!(|_| {
                     *$offset = -120.0;
                 }))
                     .frame(96.0, 22.0),
-                Button::new_primary("Right", closure!(|_, _| {
+                Button::new_primary("Right", closure!(|_| {
                     *$offset = 120.0;
                 }))
                     .frame(96.0, 22.0),

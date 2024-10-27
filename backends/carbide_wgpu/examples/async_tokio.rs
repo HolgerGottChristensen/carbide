@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use tokio::time::{Duration, sleep};
 
-use carbide_core as carbide; // Required only in internal examples
 use carbide_core::task;
 use carbide_core::asynchronous::Task;
 use carbide_core::color::{GREEN, RED};
@@ -94,7 +93,7 @@ fn main() {
             VStack::new((
                 Text::new(text).padding(20.0),
                 Image::new(image_id)
-                    .on_click(move |_, _| {
+                    .on_click(move |_| {
                         task.clone().start()
                     }),
                 Text::new("Click the image"),

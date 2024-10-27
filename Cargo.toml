@@ -34,11 +34,12 @@ members = [
     "carbide_3d",
     "carbide_chart",
     "examples/scene_viewer",
-
 ]
 
 [workspace.package]
 version = "0.72.0"
+edition = "2021"
+repository = "https://github.com/HolgerGottChristensen/carbide.git"
 
 [workspace.dependencies]
 dyn-clone = "1.0.5"
@@ -53,8 +54,9 @@ bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 include_dir = "0.7.4"
 rand = "0.8.5"
-accesskit = "0.16.3"
-accesskit_winit = "0.22.3"
+accesskit = { path = "../Repositories/accesskit/common" }
+accesskit_winit = { path = "../Repositories/accesskit/platforms/winit" }
 smallvec = "1.13.2"
 winit = { version = "0.30.5", features = ["rwh_05"] }
+proc-macro-crate = "3.2.0"
 

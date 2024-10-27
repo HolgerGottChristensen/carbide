@@ -10,6 +10,11 @@ pub trait Focusable: CommonWidget + WidgetSync {
         env.request_focus(Refocus::FocusRequest);
     }
 
+    fn request_blur(&mut self, env: &mut Environment) {
+        self.set_focus(Focus::FocusReleased);
+        env.request_focus(Refocus::FocusRequest);
+    }
+
     fn has_focus(&self) -> bool {
         self.get_focus() == Focus::Focused
     }

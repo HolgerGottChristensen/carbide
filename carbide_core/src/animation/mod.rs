@@ -10,7 +10,7 @@ pub mod animation_curve;
 #[macro_export]
 macro_rules! animate {
     // The case where we dont give a custom interpolation function we rely on the value implementing animate
-    ($env:ident, $state:ident $(:= $from:expr)? => $to:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
+    ($env:expr, $state:ident $(:= $from:expr)? => $to:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
             use carbide::state::State;
             use carbide::state::ReadState;
@@ -33,7 +33,7 @@ macro_rules! animate {
         }
     };
     // If we have the interpolation, we dont require the value to be animate, but instead use the provided function.
-    ($env:ident, $state:ident $(:= $from:expr)? => $to:expr, interpolation: $interpolation:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
+    ($env:expr, $state:ident $(:= $from:expr)? => $to:expr, interpolation: $interpolation:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
             use carbide::state::State;
             use carbide::state::ReadState;

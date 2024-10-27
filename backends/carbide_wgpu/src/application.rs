@@ -19,7 +19,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::text::InnerTextContext;
-use carbide_core::widget::Empty;
+use carbide_core::widget::{Empty, WidgetId};
 use carbide_core::window::WindowId;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
@@ -68,6 +68,7 @@ pub static QUEUE: Lazy<Arc<Queue>> = Lazy::new(|| DEVICE_QUEUE.1.clone());
 pub static EVENT_LOOP_PROXY: OnceLock<EventLoopProxy<CustomEvent>> = OnceLock::new();
 
 pub struct Application {
+    id: WidgetId,
     /// This contains the whole widget tree. This includes windows and other widgets.
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
@@ -92,6 +93,7 @@ impl Application {
         );
 
         Application {
+            id: WidgetId::new(),
             root: Box::new(Empty::new()),
             event_handler: NewEventHandler::new(),
             environment,
@@ -146,8 +148,9 @@ impl Application {
         self.root.request_redraw();
     }
 
-    pub fn launch(mut self) -> Result<(), Box<dyn Error>> {
+    pub fn launch(mut self) {
         let Application {
+            id,
             root,
             event_handler,
             environment,
@@ -156,13 +159,14 @@ impl Application {
         } = self;
 
         let mut running = RunningApplication {
+            id,
             root,
             event_handler,
             environment,
             text_context,
         };
 
-        event_loop.run_app(&mut running).map_err(Into::into)
+        event_loop.run_app(&mut running).unwrap();
     }
 }
 
@@ -175,6 +179,7 @@ impl Debug for Application {
 }
 
 pub struct RunningApplication {
+    id: WidgetId,
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
     environment: Environment,
@@ -192,7 +197,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
-        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
+        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, self.id) {
             self.root.request_redraw();
             NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
         }
@@ -203,7 +208,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
-        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment) {
+        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, self.id) {
             self.root.request_redraw();
             NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
         }

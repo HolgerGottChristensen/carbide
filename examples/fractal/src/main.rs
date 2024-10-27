@@ -106,14 +106,14 @@ impl FractalClock {
 
 
 impl Context for FractalClock {
-    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment) {
-        env.request_animation_frame();
+    fn call(&mut self, context: &mut CanvasContext) {
+        context.env().request_animation_frame();
 
         let angles = Angles::current();
 
         let center = Position::new(
-            area.dimension.width / 2.0,
-            area.dimension.height / 2.0,
+            context.dimension().width / 2.0,
+            context.dimension().height / 2.0,
         );
 
         context.set_stroke_style(self.color);

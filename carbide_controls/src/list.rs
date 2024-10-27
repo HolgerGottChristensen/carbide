@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use carbide::closure;
 use carbide::draw::Rect;
 use carbide::state::{AnyReadState, AnyState, Map1};
-use carbide::widget::{AnyWidget, MouseArea};
+use carbide::widget::{AnyWidget, MouseArea, MouseAreaActionContext};
 use carbide::widget::canvas::CanvasContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -448,7 +448,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
         let model = self.model.clone();
 
         MouseArea::new(self.inner_delegate.call(item.clone(), index.clone()))
-            .on_click(closure!(|_, modifier: ModifierKey| {
+            .on_click(closure!(|ctx: MouseAreaActionContext| {
                 let mut selection = selection.clone();
                 let identifier = item.value().identifier();
 
@@ -464,7 +464,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
                         // is the same as already selected, deselect the value. Otherwise select the
                         // item clicked.
                         if let Some(val) = val {
-                            if val == identifier && modifier == MULTI_SELECTION_MODIFIER {
+                            if val == identifier && ctx.modifier_key == MULTI_SELECTION_MODIFIER {
                                 *id.value_mut() = None;
                             } else {
                                 *id.value_mut() = Some(identifier);
@@ -474,7 +474,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
                         }
                     }
                     ListSelection::Multi(selections) => {
-                        match modifier {
+                        match ctx.modifier_key {
                             // If we are holding down GUI (on mac) or CTRL (on windows), add the item
                             // to the set if it does not already contain it. Otherwise remove it from
                             // the set.
@@ -561,7 +561,7 @@ impl<T: StateContract, W: Widget, U: Delegate<T, W>> Delegate<T, Box<dyn AnyWidg
         };
 
         let disclosure = MouseArea::new(disclosure_item.clone())
-            .on_click(closure!(|_, _| {
+            .on_click(closure!(|ctx: MouseAreaActionContext| {
                 *$opened = !*$opened;
             }));
 

@@ -1,4 +1,6 @@
 use carbide::draw::Alignment;
+use carbide::environment::Environment;
+use carbide::event::ModifierKey;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState, WidgetTransferAction};
@@ -171,9 +173,9 @@ impl DatePicker {
                     .stroke(EnvironmentColor::OpaqueSeparator)
                     .stroke_style(1.0)
             )
-            .on_click(|_, _| {})
-            .on_click_outside(|env, _| {
-                env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
+            .on_click(|ctx: MouseAreaActionContext| {})
+            .on_click_outside(|ctx: MouseAreaActionContext| {
+                ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
             })
             .geometry(geometry)
             .absolute(x, y)

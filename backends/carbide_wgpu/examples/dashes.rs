@@ -12,7 +12,6 @@ use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};
 use carbide_wgpu::{Application, Window};
 
-use carbide_core as carbide; // Required only in internal examples
 
 #[derive(Clone, Debug, PartialEq)]
 enum DrawType {

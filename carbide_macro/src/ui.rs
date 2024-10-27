@@ -1,9 +1,11 @@
-use proc_macro2::Ident;
+use proc_macro2::{Ident, TokenStream};
 use carbide_syn::{Error, Expr, ExprMatch, parse_quote, PatIdent, ExprIf};
 use carbide_syn::fold::{Fold, fold_block, fold_expr};
 use carbide_syn::spanned::Spanned;
+use crate::util::get_crate_name;
 
 pub fn ui(expr: Expr) -> Expr {
+    let crate_name = get_crate_name();
 
     match expr {
         Expr::ForLoop(_) | Expr::If(_) | Expr::Match(_) => (),
@@ -12,33 +14,35 @@ pub fn ui(expr: Expr) -> Expr {
 
 
     Folder {
+        crate_name,
         allow_widget_expr: true
     }.fold_expr(expr)
 }
 
 struct Folder {
+    crate_name: TokenStream,
     allow_widget_expr: bool,
 }
 
 impl Fold for Folder {
     fn fold_expr(&mut self, i: Expr) -> Expr {
         match i {
-            Expr::Match(m) if self.allow_widget_expr => Self::handle_match_widget_expr(m),
-            Expr::If(m) if self.allow_widget_expr => Self::handle_if_widget_expr(m),
+            Expr::Match(m) if self.allow_widget_expr => Self::handle_match_widget_expr(m, self.crate_name.clone()),
+            Expr::If(m) if self.allow_widget_expr => Self::handle_if_widget_expr(m, self.crate_name.clone()),
             _ => fold_expr(self, i)
         }
     }
 }
 
 impl Folder {
-    fn handle_match_widget_expr(m: ExprMatch) -> Expr {
+    fn handle_match_widget_expr(m: ExprMatch, crate_name: TokenStream) -> Expr {
         let ExprMatch {
             expr,
             arms,
             ..
         } = m;
 
-        let expr = fold_expr(&mut Folder { allow_widget_expr: false }, *expr);
+        let expr = fold_expr(&mut Folder { crate_name: crate_name.clone(), allow_widget_expr: false }, *expr);
 
         let mut bindings = arms.iter().cloned().map(|a| {
             let mut folder = PatFolder(vec![]);
@@ -50,7 +54,7 @@ impl Folder {
         let mut patterns_rev = patterns.clone();
 
         let mut bodies = arms.iter().cloned().map(|a| {
-            fold_expr(&mut Folder { allow_widget_expr: true }, *a.body)
+            fold_expr(&mut Folder { crate_name: crate_name.clone(), allow_widget_expr: true }, *a.body)
         }).collect::<Vec<_>>();
 
         patterns_rev.reverse();
@@ -64,7 +68,7 @@ impl Folder {
                     // This is expected to be optimized out by the compiler,
                     // because it is wrapped in a if false.
                     #[allow(unused_variables)]
-                    match &*carbide::state::ReadState::value(&(#expr).clone()) {
+                    match &*#crate_name::state::ReadState::value(&(#expr).clone()) {
                         #(
                             #patterns => unreachable!(),
                         )*
@@ -73,13 +77,13 @@ impl Folder {
             }
 
             // Might want to make an Unreachable Widget, since we check above that the match is exhaustive.
-            let acc = carbide::widget::Empty::new();
+            let acc = #crate_name::widget::Empty::new();
 
             #(
-                let acc = carbide::widget::IfElse::new(carbide::state::Map1::read_map((#expr).clone(), |a| {matches!(a, #patterns_rev)} ))
+                let acc = #crate_name::widget::IfElse::new(#crate_name::state::Map1::read_map((#expr).clone(), |a| {matches!(a, #patterns_rev)} ))
                     .when_true({
                         #(
-                            let #bindings = carbide::state::FieldState::new((#expr).clone(), |a| {
+                            let #bindings = #crate_name::state::FieldState::new((#expr).clone(), |a| {
                                 match a {
                                     #patterns_rev => {
                                         #bindings
@@ -104,7 +108,7 @@ impl Folder {
         })
     }
 
-    fn handle_if_widget_expr(m: ExprIf) -> Expr {
+    fn handle_if_widget_expr(m: ExprIf, crate_name: TokenStream) -> Expr {
         let ExprIf {
             cond,
             then_branch,
@@ -115,7 +119,7 @@ impl Folder {
         let when_false = if let Some((_, e)) = else_branch {
             match *e {
                 Expr::If(i) => {
-                    let expr = Self::handle_if_widget_expr(i);
+                    let expr = Self::handle_if_widget_expr(i, crate_name.clone());
 
                     parse_quote!(
                         #expr
@@ -128,16 +132,16 @@ impl Folder {
             }
         } else {
             parse_quote!({
-                carbide::widget::Empty::new()
+                #crate_name::widget::Empty::new()
             })
         };
 
-        let condition = fold_expr(&mut Folder { allow_widget_expr: false }, *cond);
+        let condition = fold_expr(&mut Folder { crate_name: crate_name.clone(), allow_widget_expr: false }, *cond);
 
-        let when_true = fold_block(&mut Folder { allow_widget_expr: true }, then_branch);
+        let when_true = fold_block(&mut Folder { crate_name: crate_name.clone(), allow_widget_expr: true }, then_branch);
 
         parse_quote!({
-            carbide::widget::IfElse::new(Clone::clone(& #condition))
+            #crate_name::widget::IfElse::new(Clone::clone(& #condition))
                 .when_true(#when_true)
                 .when_false(#when_false)
         })

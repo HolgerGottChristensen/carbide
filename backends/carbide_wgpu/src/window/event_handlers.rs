@@ -57,12 +57,8 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
                 ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 ctx.env.with_scale_factor(scale_factor, |env| {
-                    let id: u64 = initialized.inner.id().into();
-
                     let new_ctx = &mut AccessibilityEventContext {
                         env,
-                        is_current: &(*ctx.window_id == id),
-                        window_id: ctx.window_id,
                     };
 
                     initialized.child.process_accessibility_event(event, new_ctx);
@@ -203,6 +199,9 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                                 } else {
                                     initialized.inner.set_visible(false);
                                 }
+                            }
+                            WindowEvent::ThemeChanged(theme) => {
+                                println!("Theme: {:?}", theme);
                             }
                             _ => ()
                         }

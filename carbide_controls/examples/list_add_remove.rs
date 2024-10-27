@@ -6,8 +6,6 @@ use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
-use carbide_core as carbide; // Required only in internal examples
-
 fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
@@ -25,25 +23,25 @@ fn main() {
         .expand_width()
     }
 
-    let add_element = Button::new_primary("Add element", closure!(|_, _| {
+    let add_element = Button::new_primary("Add element", closure!(|_| {
             let len = ($list_model_state).len();
             list_model_state.push(format!("New element: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_element = Button::new_primary("Remove element", closure!(|_, _| {
+    let remove_element = Button::new_primary("Remove element", closure!(|_| {
             ($list_model_state).pop();
         }))
         .frame(150.0, 22.0)
         .accent_color(EnvironmentColor::Red);
 
-    let add_to_start = Button::new_primary("Add element to start", closure!(|_, _| {
+    let add_to_start = Button::new_primary("Add element to start", closure!(|_| {
             let len = ($list_model_state).len();
             list_model_state.insert(0, format!("New element start: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_first = Button::new_primary("Remove first element", closure!(|_, _| {
+    let remove_first = Button::new_primary("Remove first element", closure!(|_| {
             if ($list_model_state).len() > 0 {
                 list_model_state.remove(0);
             }

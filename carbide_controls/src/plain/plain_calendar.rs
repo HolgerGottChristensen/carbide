@@ -4,7 +4,9 @@ use std::iter;
 use std::ops::RangeInclusive;
 
 use chrono::{Datelike, Local, Month, NaiveDate, Weekday};
-
+use carbide::environment::Environment;
+use carbide::event::ModifierKey;
+use carbide::widget::MouseAreaActionContext;
 use carbide_core::closure;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{color::TRANSPARENT, Dimension, Position};
@@ -166,20 +168,20 @@ impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemD
             Text::new(Map1::read_map(month.clone(), |m| format!("{:?}", m))),
             Text::new(year.clone()),
             Spacer::new(),
-            PlainButton::new(closure!(|_,_| {
-                        if *$month == Month::January {
-                            *$year -= 1;
-                        }
-                        *$month = month.pred();
-                    })).delegate(|_, _, _, _| {
+            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+                if *$month == Month::January {
+                    *$year -= 1;
+                }
+                *$month = month.pred();
+            })).delegate(|_, _, _, _| {
                 Image::new("icons/arrow-left-s-line.png").boxed()
             }),
-            PlainButton::new(closure!(|_,_| {
-                        if *$month == Month::December {
-                            *$year += 1;
-                        }
-                        *$month = month.succ();
-                    })).delegate(|_, _, _, _| {
+            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+                if *$month == Month::December {
+                    *$year += 1;
+                }
+                *$month = month.succ();
+            })).delegate(|_, _, _, _| {
                 Image::new("icons/arrow-right-s-line.png").boxed()
             }),
         )).boxed()
@@ -299,7 +301,7 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
                 let pressed_for_delegate = pressed.clone();
                 let date_for_delegate = date.clone();
 
-                PlainButton::new(move |_, _| {
+                PlainButton::new(move |ctx: MouseAreaActionContext| {
                     let date = date.value().clone();
 
                     match s2.clone() {

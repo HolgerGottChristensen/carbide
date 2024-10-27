@@ -1,18 +1,20 @@
-use std::fmt::{Debug, Formatter};
+use crate::{enabled_state, EnabledState};
+use carbide::accessibility::AccessibilityContext;
 use carbide::color::ColorExt;
 use carbide::environment::IntoColorReadState;
-use carbide_core::{CommonWidgetImpl};
+use carbide::focus::Focusable;
+use carbide::widget::{Action, MouseAreaActionContext};
+use carbide_core::accessibility::Accessibility;
 use carbide_core::color::ORANGE;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor};
-use carbide_core::event::ModifierKey;
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::WidgetFlag;
-use carbide_core::focus::Focus;
-use carbide_core::focus::Refocus;
+use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map4, ReadState, ReadStateExtNew, State};
-use carbide_core::widget::{Action, CommonWidget, MouseArea, Rectangle, Text, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
-use crate::{enabled_state, EnabledState};
+use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, MouseAreaAction, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::CommonWidgetImpl;
+use std::fmt::{Debug, Formatter};
 
 pub trait PlainButtonDelegate: Clone + 'static {
     type Output: Widget;
@@ -27,9 +29,10 @@ impl<K, C: Widget> PlainButtonDelegate for K where K: Fn(Box<dyn AnyReadState<T=
 }
 
 type DefaultPlainButtonDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>, Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
-type DefaultPlainButtonAction = fn(&mut Environment, ModifierKey);
+type DefaultPlainButtonAction = fn(MouseAreaActionContext);
 
 #[derive(Clone, Widget)]
+#[carbide_exclude(Accessibility)]
 pub struct PlainButton<F, A, D, E, H, P> where
     F: State<T=Focus>,
     A: Action + Clone + 'static,
@@ -41,7 +44,14 @@ pub struct PlainButton<F, A, D, E, H, P> where
     id: WidgetId,
     #[state] focus: F,
     #[state] enabled: E,
-    child: Box<dyn AnyWidget>,
+    child: MouseArea<
+        ButtonAction<A, F, E>,
+        ButtonOutsideAction<A, F, E>,
+        <F as IntoState<Focus>>::Output,
+        D::Output,
+        <H as IntoState<bool>>::Output,
+        <P as IntoState<bool>>::Output
+    >,
     position: Position,
     dimension: Dimension,
     delegate: D,
@@ -128,8 +138,8 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
     }
 
     fn new_internal<
-        F2: State<T=Focus> + Clone,
-        A2: Action + Clone + 'static,
+        F2: State<T=Focus>,
+        A2: Action,
         D2: PlainButtonDelegate,
         E2: ReadState<T=bool>,
         H2: State<T=bool>,
@@ -147,39 +157,16 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
         let delegate_widget = delegate.call(focus.as_dyn_read(), hovered.as_dyn_read(), pressed.as_dyn_read(), enabled.as_dyn_read());
 
         let area = MouseArea::new(delegate_widget)
-            .on_click({
-                let focus = focus.clone();
-                let action = action.clone();
-                let enabled = enabled.clone();
-
-                move |env: &mut Environment, modifier: ModifierKey| {
-                    let mut focus = focus.clone();
-                    let action = action.clone();
-                    let mut enabled = enabled.clone();
-                    enabled.sync(env);
-                    focus.sync(env);
-                    enabled.sync(env);
-
-                    {
-                        if *enabled.value() {
-                            if *focus.value() != Focus::Focused {
-                                focus.set_value(Focus::FocusRequested);
-                                env.request_focus(Refocus::FocusRequest);
-                            }
-                            (action)(env, modifier);
-                        }
-
-
-                    }
-                }
+            .custom_on_click(ButtonAction {
+                action: action.clone(),
+                focus: focus.clone(),
+                enabled: enabled.clone(),
             })
-            .on_click_outside(capture!([focus, enabled], |env: &mut Environment| {
-                focus.sync(env);
-                if *focus.value() == Focus::Focused {
-                    focus.set_value(Focus::FocusReleased);
-                    env.request_focus(Refocus::FocusRequest);
-                }
-            }))
+            .custom_on_click_outside(ButtonOutsideAction {
+                action: action.clone(),
+                focus: focus.clone(),
+                enabled: enabled.clone(),
+            })
             .focused(focus.clone())
             .pressed(pressed.clone())
             .hovered(hovered.clone())
@@ -189,7 +176,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
         PlainButton {
             id: WidgetId::new(),
             focus,
-            child: area.boxed(),
+            child: area,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             delegate,
@@ -200,11 +187,29 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
             pressed,
         }
     }
-
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> CommonWidget for PlainButton<F, A, D, E, H, P> {
     CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
+}
+
+impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Accessibility for PlainButton<F, A, D, E, H, P> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.enabled.sync(ctx.env);
+        let enabled = *self.enabled.value();
+
+        self.child.process_accessibility(&mut AccessibilityContext {
+            env: ctx.env,
+            nodes: ctx.nodes,
+            parent_id: ctx.parent_id,
+            children: ctx.children,
+            hidden: ctx.hidden,
+            inherited_label: ctx.inherited_label,
+            inherited_hint: ctx.inherited_hint,
+            inherited_value: ctx.inherited_value,
+            inherited_enabled: Some(enabled),
+        })
+    }
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Debug for PlainButton<F, A, D, E, H, P> {
@@ -216,5 +221,54 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
             .field("focus", &self.focus)
             .field("child", &self.child)
             .finish()
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ButtonAction<A, F, E> where
+    A: Action,
+    F: State<T=Focus>,
+    E: ReadState<T=bool>,
+{
+    action: A,
+    focus: F,
+    enabled: E,
+}
+
+impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonAction<A, F, E> {
+    fn call(&mut self, ctx: MouseAreaActionContext) {
+        self.enabled.sync(ctx.env);
+        self.focus.sync(ctx.env);
+
+        {
+            if *self.enabled.value() {
+                if *self.focus.value() != Focus::Focused {
+                    self.focus.set_value(Focus::FocusRequested);
+                    ctx.env.request_focus(Refocus::FocusRequest);
+                }
+                (self.action)(ctx);
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ButtonOutsideAction<A, F, E> where
+    A: Action,
+    F: State<T=Focus>,
+    E: ReadState<T=bool>,
+{
+    action: A,
+    focus: F,
+    enabled: E,
+}
+
+impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonOutsideAction<A, F, E> {
+    fn call(&mut self, ctx: MouseAreaActionContext) {
+        self.focus.sync(ctx.env);
+        if *self.focus.value() == Focus::Focused {
+            self.focus.set_value(Focus::FocusReleased);
+            ctx.env.request_focus(Refocus::FocusRequest);
+        }
     }
 }

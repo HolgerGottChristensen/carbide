@@ -114,7 +114,7 @@ fn main() {
                 .frame_fixed_width(6.0),
         )
         .with_alignment(Alignment::Leading)
-            .on_click(closure!(|_, _| {
+            .on_click(closure!(|_| {
                 current_hn_item.clone().set_value(None);
                 let id = article.value().id;
 
@@ -176,7 +176,7 @@ fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNI
     let url = lens!(selected.url);
 
     let link = ui!(match url {
-        Some(url) => Text::new(url.clone()).on_click(closure!(|_, _| {
+        Some(url) => Text::new(url.clone()).on_click(closure!(|_| {
             open::that(url.value().clone());
         })).background(Rectangle::new().fill(EnvironmentColor::Accent)).boxed(),
         None => Text::new("No URL for the article").boxed()

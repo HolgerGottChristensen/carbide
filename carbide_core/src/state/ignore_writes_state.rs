@@ -5,11 +5,17 @@ use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, RM
 use crate::state::{StateSync, ReadState, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
-pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(TState, PhantomData<T>);
+pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + 'static>(TState, PhantomData<T>);
 
 impl IgnoreWritesState<(), ()> {
     pub fn new<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(inner: TState) -> IgnoreWritesState<T, TState> {
         IgnoreWritesState(inner, PhantomData::default())
+    }
+}
+
+impl<T: StateContract, TState: ReadState<T=T> + 'static> IgnoreWritesState<T, TState> {
+    pub fn inner(self) -> TState {
+        self.0
     }
 }
 

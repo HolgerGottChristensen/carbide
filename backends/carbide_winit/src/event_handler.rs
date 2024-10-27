@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use accesskit::{NodeId, TreeUpdate};
+use accesskit::{NodeBuilder, NodeId, Role, Tree, TreeUpdate};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
+use smallvec::SmallVec;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
 use winit::event::{ElementState, Event, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::Key;
@@ -114,7 +115,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn window_event(&mut self, event: WindowEvent, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn window_event(&mut self, event: WindowEvent, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, id: WidgetId) -> bool {
         match event {
             WindowEvent::Moved(position) => {
                 let logical_position = position.to_logical(scale_factor(window_id));
@@ -153,6 +154,22 @@ impl NewEventHandler {
             WindowEvent::MouseWheel { delta, .. } => self.mouse_wheel(delta, window_id, target, text_context, image_context, env),
             WindowEvent::MouseInput { state, button, .. } => self.mouse_input(button, state, window_id, target, text_context, image_context, env),
             WindowEvent::RedrawRequested => {
+                target.process_accessibility(&mut AccessibilityContext {
+                    env,
+                    nodes: &mut TreeUpdate {
+                        nodes: vec![],
+                        tree: None,
+                        focus: NodeId(id.0 as u64),
+                    },
+                    parent_id: None,
+                    children: &mut Default::default(),
+                    hidden: false,
+                    inherited_label: None,
+                    inherited_hint: None,
+                    inherited_value: None,
+                    inherited_enabled: None,
+                });
+
                 target.render(&mut RenderContext {
                     render: &mut NoopRenderContext,
                     text: text_context,
@@ -402,7 +419,7 @@ impl NewEventHandler {
         true
     }
 
-    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, id: WidgetId) -> bool {
         match event {
             CustomEvent::Core(core_event) => {
                 check_tasks(&mut AsyncContext {
@@ -425,14 +442,18 @@ impl NewEventHandler {
 
                         target.process_accessibility(&mut AccessibilityContext {
                             env,
-                            tree: &mut TreeUpdate {
+                            nodes: &mut TreeUpdate {
                                 nodes: vec![],
                                 tree: None,
-                                focus: NodeId(0),
+                                focus: NodeId(id.0 as u64),
                             },
-                            parent_id: Default::default(),
+                            parent_id: None,
                             children: &mut Default::default(),
                             hidden: false,
+                            inherited_label: None,
+                            inherited_hint: None,
+                            inherited_value: None,
+                            inherited_enabled: None,
                         });
 
                         env.full_accessibility_update = false;
@@ -444,8 +465,6 @@ impl NewEventHandler {
                             data: request.data,
                         }, &mut AccessibilityEventContext {
                             env,
-                            window_id: &window_id.into(),
-                            is_current: &false,
                         });
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}

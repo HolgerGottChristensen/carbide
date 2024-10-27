@@ -255,3 +255,78 @@ macro_rules! CommonWidgetImpl {
     ($self:ident,) => {};
     ($self:ident) => {};
 }
+
+#[macro_export]
+macro_rules! ModifierWidgetImpl {
+    ($self:ident, child: $child:expr) => {
+        fn id(&$self) -> carbide::widget::WidgetId {
+            ($child).id()
+        }
+
+        fn flag(&$self) -> carbide::flags::WidgetFlag {
+            $child.flag()
+        }
+
+        fn position(&$self) -> carbide::draw::Position {
+            $child.position()
+        }
+
+        fn set_position(&mut $self, position: carbide::draw::Position) {
+            $child.set_position(position);
+        }
+
+        fn get_focus(&$self) -> carbide::focus::Focus {
+            $child.get_focus()
+        }
+
+        fn set_focus(&mut $self, focus: carbide::focus::Focus) {
+            $child.set_focus(focus);
+        }
+
+        fn alignment(&$self) -> carbide::draw::Alignment {
+            $child.alignment()
+        }
+
+        fn flexibility(&$self) -> u32 {
+            $child.flexibility()
+        }
+
+        fn dimension(&$self) -> carbide::draw::Dimension {
+            $child.dimension()
+        }
+
+        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
+            $child.set_dimension(dimension);
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
+            $child.foreach(f);
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
+            $child.foreach_mut(f);
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
+            $child.foreach_rev(f);
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
+            $child.foreach_direct(f);
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
+            use carbide::widget::WidgetSequence;
+            $child.foreach_direct_rev(f);
+        }
+    }
+}

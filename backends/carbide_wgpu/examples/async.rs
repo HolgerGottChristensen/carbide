@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use carbide_core as carbide; // Required only in internal examples
 use carbide_core::asynchronous::sleep;
 use carbide_core::color::WHITE;
 use carbide_core::draw::{Color, Dimension};

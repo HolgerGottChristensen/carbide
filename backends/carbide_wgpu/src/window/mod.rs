@@ -5,6 +5,7 @@ mod util;
 mod event_handlers;
 mod render;
 mod initialized_window;
+mod accessibility;
 
 use std::fmt::{Debug, Formatter};
 use cgmath::Matrix4;

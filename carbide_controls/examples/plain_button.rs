@@ -1,7 +1,7 @@
-use carbide_controls::{capture, PlainButton};
+use carbide_controls::{PlainButton};
+use carbide_core::closure;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment};
-use carbide_core::state::{LocalState, State, ReadStateExtNew, ReadState};
+use carbide_core::state::{LocalState, State, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -14,13 +14,11 @@ fn main() {
     let counter_text = counter_state
         .map(|count: &i32| format!("Count: {}", count));
 
-    let button = PlainButton::new(capture!([counter_state], |env: &mut Environment| {
-        let mut temp = counter_state.clone();
-        let current = *temp.value();
-        temp.set_value(current + 1);
+    let button = PlainButton::new(closure!(|_| {
+        *$counter_state = *$counter_state + 1;
     })).frame(120.0, 50.0);
 
-    let button_disabled = PlainButton::new(|env: &mut Environment, _:_| {}).enabled(false).frame(120.0, 50.0);
+    let button_disabled = PlainButton::new(|_| {}).enabled(false).frame(120.0, 50.0);
 
     application.set_scene(Window::new(
         "Plain Button Example - Carbide",

@@ -81,7 +81,7 @@ impl<L: Widget + WidgetExt, P: ReadState<T=bool>> PlainButtonDelegate for Button
         );
 
         ZStack::new((
-            RoundedRectangle::new(CornerRadii::all(4.0))
+            RoundedRectangle::new(CornerRadii::all(5.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
@@ -91,7 +91,7 @@ impl<L: Widget + WidgetExt, P: ReadState<T=bool>> PlainButtonDelegate for Button
                 .clip_shape(RoundedRectangle::new(3.0))
                 .padding(1.0),
         )).background(
-            RoundedRectangle::new(CornerRadii::all(4.0))
+            RoundedRectangle::new(CornerRadii::all(5.0))
                 .stroke(outline_color)
                 .stroke_style(1.0)
                 .padding(-1.0)

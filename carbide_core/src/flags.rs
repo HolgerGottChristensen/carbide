@@ -10,5 +10,6 @@ bitflags! {
         const FOCUSABLE = 0b00000100;
         const IGNORE = 0b00001000;
         const USEMAXCROSSAXIS = 0b00010000;
+        const MODIFIER = 0b00100000;
     }
 }

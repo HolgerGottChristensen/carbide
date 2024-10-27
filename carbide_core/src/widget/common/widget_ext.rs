@@ -11,7 +11,7 @@ use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
-use crate::widget::{Absolute, Action, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform};
+use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action};
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
 use crate::widget::Widget;
@@ -165,11 +165,11 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     }
 
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
-    fn on_click<A: Action + Clone>(self, action: A) -> MouseArea<A, fn(&mut Environment, ModifierKey), Focus, Self, bool, bool> {
+    fn on_click<A: Action>(self, action: A) -> MouseArea<A, fn(MouseAreaActionContext), Focus, Self, bool, bool> {
         MouseArea::new(self).on_click(action)
     }
 
-    fn hovered<T: IntoState<bool>>(self, hovered: T) -> MouseArea<fn(&mut Environment, ModifierKey), fn(&mut Environment, ModifierKey), Focus, Self, T::Output, bool> {
+    fn hovered<T: IntoState<bool>>(self, hovered: T) -> MouseArea<fn(MouseAreaActionContext), fn(MouseAreaActionContext), Focus, Self, T::Output, bool> {
         MouseArea::new(self).hovered(hovered)
     }
 

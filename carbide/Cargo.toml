@@ -1,13 +1,13 @@
 [package]
 name = "carbide"
-version = { workspace = true }
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
-edition = "2021"
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 categories = ["gui"]
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
-repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 description = "A crate that includes the other carbide crates and where features can be selected"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

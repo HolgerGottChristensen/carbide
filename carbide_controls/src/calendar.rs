@@ -1,7 +1,9 @@
 use chrono::{Local, Month, NaiveDate, Weekday};
 use chrono::Datelike;
 use carbide::color::ColorExt;
-
+use carbide::environment::Environment;
+use carbide::event::ModifierKey;
+use carbide::widget::{MouseArea, MouseAreaActionContext};
 use carbide_core::closure;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::Dimension;
@@ -106,7 +108,7 @@ impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
             Text::new(Map1::read_map(month.clone(), |m| format!("{:?}", m))),
             Text::new(year.clone()),
             Spacer::new(),
-            PlainButton::new(closure!(|_,_| {
+            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::January {
                     *$year -= 1;
                 }
@@ -114,7 +116,7 @@ impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
             })).delegate(move |_, _, _, _| {
                 Image::new_icon("icons/arrow-left-s-line.png").resizeable().foreground_color(color1.clone()).frame(30.0, 30.0).boxed()
             }).hovered(hover1),
-            PlainButton::new(closure!(|_,_| {
+            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::December {
                     *$year += 1;
                 }

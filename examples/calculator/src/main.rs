@@ -100,7 +100,7 @@ fn main() {
     application.launch();
 }
 
-fn calculator_button(label: impl Widget, action: impl Action + Clone + 'static) -> impl Widget + WidgetExt {
+fn calculator_button(label: impl Widget, action: impl MouseAreaAction + Clone + 'static) -> impl Widget + WidgetExt {
     let pressed_state = LocalState::new(false);
     let hovered_state = LocalState::new(false);
 

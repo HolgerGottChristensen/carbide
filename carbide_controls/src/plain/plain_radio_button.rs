@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
-
+use carbide::closure;
+use carbide::widget::MouseAreaActionContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -103,30 +104,26 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
 
         let delegate_widget = delegate.call(focus.as_dyn_read(), selected.clone(), enabled.as_dyn_read());
 
+        let enabled = enabled.ignore_writes();
+
         let button = MouseArea::new(delegate_widget)
-            .on_click(capture!(
-                [state, focus, enabled],
-                |env: &mut Environment| {
-                    if !*enabled.value() {
-                        return;
-                    }
-
-                    state.set_value(local_reference2.clone());
-
-                    if *focus.value() != Focus::Focused {
-                        focus.set_value(Focus::FocusRequested);
-                        env.request_focus(Refocus::FocusRequest);
-                    }
+            .on_click(closure!(|ctx: MouseAreaActionContext| {
+                if !*$enabled {
+                    return;
                 }
-            )).on_click_outside(capture!(
-                [focus],
-                |env: &mut Environment| {
-                    if *focus.value() == Focus::Focused {
-                        focus.set_value(Focus::FocusReleased);
-                        env.request_focus(Refocus::FocusRequest);
-                    }
+
+                *$state = local_reference2.clone();
+
+                if *$focus != Focus::Focused {
+                    focus.set_value(Focus::FocusRequested);
+                    ctx.env.request_focus(Refocus::FocusRequest);
                 }
-            ))
+            })).on_click_outside(closure!(|ctx: MouseAreaActionContext| {
+                if *$focus == Focus::Focused {
+                    focus.set_value(Focus::FocusReleased);
+                    ctx.env.request_focus(Refocus::FocusRequest);
+                }
+            }))
             .focused(focus.clone());
 
         let button = Box::new(button);
@@ -136,7 +133,7 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
         PlainRadioButton {
             id: WidgetId::new(),
             focus,
-            enabled,
+            enabled: enabled.inner(),
             child,
             position: Default::default(),
             dimension: Default::default(),

@@ -1,7 +1,9 @@
 use std::fmt::Debug;
-
+use accesskit::{NodeBuilder, NodeId, Point, Rect, Role, Size};
+use smallvec::SmallVec;
+use carbide::accessibility::AccessibilityContext;
 use carbide_macro::carbide_default_builder2;
-
+use crate::accessibility::Accessibility;
 use crate::draw::{Dimension, Position};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
@@ -18,7 +20,7 @@ use crate::widget::types::Wrap;
 /// If some horizontal dimension is given, the text will automatically wrap to the width and align
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout)]
+#[carbide_exclude(Render, Layout, Accessibility)]
 pub struct Text<T, S, C, FS, FW> where T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight> {
     id: WidgetId,
     text_id: TextId,
@@ -287,6 +289,43 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         context.style(default_color.convert(self.position, self.dimension), |context| {
             context.text(self.text_id);
         });
+    }
+}
+
+impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Accessibility for Text<T, S, C, FS, FW> {
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.sync(ctx.env);
+
+        let mut builder = NodeBuilder::new(Role::Label);
+
+        builder.set_bounds(Rect::from_origin_size(
+            Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
+            Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+        ));
+
+        if ctx.hidden {
+            builder.set_hidden();
+        }
+
+        if let Some(label) = ctx.inherited_label {
+            builder.set_name(label);
+        } else {
+            builder.set_name(&*self.text.value().clone());
+        }
+
+        if let Some(hint) = ctx.inherited_hint {
+            builder.set_description(hint);
+        }
+
+        if let Some(value) = ctx.inherited_value {
+            builder.set_value(value);
+        }
+
+        builder.set_author_id(format!("{:?}", self.id()));
+
+        ctx.nodes.push(self.id(), builder.build());
+
+        ctx.children.push(self.id());
     }
 }
 

@@ -1,17 +1,17 @@
 [package]
 name = "carbide_wgpu"
-version = { workspace = true }
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
-keywords = ["ui", "widgets", "gui", "interface", "graphics"]
+keywords = ["ui", "gui", "interface", "graphics", "wgpu"]
 description = "A crate to assist with rendering carbide UIs via wgpu."
 license = "MIT OR Apache-2.0"
 readme = "../../README.md"
-repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
-edition = "2021"
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }

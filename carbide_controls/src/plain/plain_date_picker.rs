@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-
+use carbide::event::ModifierKey;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor, WidgetTransferAction};
@@ -263,9 +263,9 @@ fn default_popup_delegate(
     PlainCalendar::new(selection)
         .padding(10.0)
         .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
-        .on_click(|_, _| {})
-        .on_click_outside(|env, _| {
-            env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
+        .on_click(|ctx: MouseAreaActionContext| {})
+        .on_click_outside(|ctx: MouseAreaActionContext| {
+            ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
         })
         .boxed()
 }

@@ -1,4 +1,3 @@
-use carbide_core as carbide; // Required only in internal examples
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
@@ -15,7 +14,7 @@ fn main() {
     let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
 
     let button = MouseArea::new(Rectangle::new().fill(EnvironmentColor::Yellow))
-        .on_click(closure!(|_, _| {
+        .on_click(closure!(|_| {
             *$counter += 1;
         }))
         .frame(100.0, 30.0);
@@ -23,7 +22,7 @@ fn main() {
     application.set_scene(
         Window::new("Hello multiple windows", Dimension::new(300.0, 200.0), ZStack::new((
             text,
-            *Window::new("Hello from window 2", Dimension::new(300.0, 100.0), button),
+            Window::new("Hello from window 2", Dimension::new(300.0, 100.0), button),
             //*Window::new("Hello from window 3", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Green)),
             //*Window::new("Hello from window 4", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Yellow)),
         )))

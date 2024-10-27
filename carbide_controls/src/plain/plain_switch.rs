@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
-
+use carbide::closure;
+use carbide::widget::MouseAreaActionContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -106,27 +107,25 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
 
         let delegate_widget = delegate.call(focus.as_dyn(), checked.as_dyn(), enabled.as_dyn_read());
 
-        let button = Box::new(MouseArea::new(delegate_widget)
-            .on_click(capture!([checked, focus, enabled], |env: &mut Environment| {
-                enabled.sync(env);
-                focus.sync(env);
-                checked.sync(env);
+        let enabled = enabled.ignore_writes();
 
-                if !*enabled.value() {
+        let button = Box::new(MouseArea::new(delegate_widget)
+            .on_click(closure!(|ctx: MouseAreaActionContext| {
+                if !*$enabled {
                     return;
                 }
-                let current = !*checked.value();
-                checked.set_value(current);
 
-                if *focus.value() != Focus::Focused {
+                *$checked = !*$checked;
+
+                if *$focus != Focus::Focused {
                     focus.set_value(Focus::FocusRequested);
-                    env.request_focus(Refocus::FocusRequest);
+                    ctx.env.request_focus(Refocus::FocusRequest);
                 }
             }))
-            .on_click_outside(capture!([focus], |env: &mut Environment| {
-                if *focus.value() == Focus::Focused {
+            .on_click_outside(closure!(|ctx: MouseAreaActionContext| {
+                if *$focus == Focus::Focused {
                     focus.set_value(Focus::FocusReleased);
-                    env.request_focus(Refocus::FocusRequest);
+                    ctx.env.request_focus(Refocus::FocusRequest);
                 }
             }))
             .focused(focus.clone()));
@@ -141,7 +140,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
             dimension: Dimension::new(0.0, 0.0),
             delegate,
             checked,
-            enabled,
+            enabled: enabled.inner(),
         }
     }
 

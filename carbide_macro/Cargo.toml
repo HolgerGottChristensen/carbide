@@ -1,12 +1,12 @@
 [package]
 name = "carbide_macro"
-version = { workspace = true }
-edition = "2021"
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
 description = "A crate providing procedural macros for the carbide library"
 license = "MIT OR Apache-2.0"
 keywords = ["carbide", "gui", "derive", "procedural", "macro"]
-repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 
@@ -18,3 +18,4 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "1", features = ["extra-traits", "full", "visit-mut"] }
 carbide_syn = { path = "../carbide_syn", features = ["extra-traits", "full", "fold"] }
+proc-macro-crate.workspace = true

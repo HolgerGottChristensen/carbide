@@ -1,13 +1,11 @@
 use std::time::Duration;
 
-use carbide_controls::Button;
-use carbide_controls::capture;
+use carbide_controls::{capture, Button};
 use carbide_core as carbide; // Required only in internal examples
-use carbide_core::animate;
+use carbide_core::{animate, closure};
 use carbide_core::animation::{bounce_out, ease_in_out, elastic_in_out, linear};
 use carbide_core::color::{BLUE, Color, GREEN, RED};
 use carbide_core::draw::Dimension;
-use carbide_core::environment::Environment;
 use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -28,16 +26,16 @@ fn main() {
                 .frame(60.0, 60.0)
                 .offset(offset_x.clone(), 0.0),
             HStack::new((
-                Button::new_primary("Rgba to blue", capture!({color}, |env: &mut Environment| {
-                    animate!(env, color => BLUE, duration: Duration::new(2, 0))
+                Button::new_primary("Rgba to blue", capture!({color}, |ctx: MouseAreaActionContext| {
+                    animate!(ctx.env, color => BLUE, duration: Duration::new(2, 0))
                 }))
                     .frame(96.0, 22.0),
-                Button::new_primary("Hsla to green", capture!({color}, |env: &mut Environment| {
-                    animate!(env, color => GREEN, interpolation: Color::hsla_blend)
+                Button::new_primary("Hsla to green", capture!({color}, |ctx: MouseAreaActionContext| {
+                    animate!(ctx.env, color => GREEN, interpolation: Color::hsla_blend)
                 }))
                     .frame(98.0, 22.0),
-                Button::new_primary("Hsla to red", capture!({color}, |env: &mut Environment| {
-                    animate!(env, color => RED, interpolation: Color::hsla_blend, duration: Duration::new(4, 0))
+                Button::new_primary("Hsla to red", capture!({color}, |ctx: MouseAreaActionContext| {
+                    animate!(ctx.env, color => RED, interpolation: Color::hsla_blend, duration: Duration::new(4, 0))
                 }))
                     .frame(96.0, 22.0),
             )).spacing(10.0),
@@ -54,15 +52,15 @@ fn main() {
 
 fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: impl State<T=f64>) -> Box<dyn AnyWidget> {
     HStack::new((
-        Button::new_primary(format!("{} left", name), capture!({ offset }, |env: &mut Environment| {
+        Button::new_primary(format!("{} left", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() > &119.0 {
-                    animate!(env, offset := 120.0 => -120.0, curve: curve)
+                    animate!(ctx.env, offset := 120.0 => -120.0, curve: curve)
                 }
             }))
             .frame(150.0, 22.0),
-        Button::new_primary(format!("{} right", name), capture!({ offset }, |env: &mut Environment| {
+        Button::new_primary(format!("{} right", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() < &-119.0 {
-                    animate!(env, offset := -120.0 => 120.0, curve: curve)
+                    animate!(ctx.env, offset := -120.0 => 120.0, curve: curve)
                 }
             }))
             .frame(150.0, 22.0),

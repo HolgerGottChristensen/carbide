@@ -1,6 +1,8 @@
 [package]
 name = "carbide_media"
-version = { workspace = true }
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
 authors = [
     "Holger Gott Christensen <holger.gott@icloud.com>",
 ]
@@ -9,8 +11,6 @@ description = "A set of media widgets for the carbide core crate"
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
 categories = ["gui"]
-edition = "2021"
-repository = "https://github.com/HolgerGottChristensen/carbide.git"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]

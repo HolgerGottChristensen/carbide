@@ -116,21 +116,21 @@ pub fn start_stream<T: Send + 'static>(
 macro_rules! task {
     ($state:ident := $body:block) => {{
         let $state = $state.clone();
-        carbide::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
+        $crate::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
             $state.clone().set_value(result);
         });
     }};
     ($state:ident := $body:block $(, $state1:ident := $body1:block)*) => {{
         let $state = $state.clone();
-        carbide::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
+        $crate::asynchronous::spawn_task(async move { $body }, move |result, ctx| {
             $state.clone().set_value(result);
             task!($($state1 :=  $body1),*);
         });
     }};
     ($body:block, move |$result:ident, $env_param:ident| $cont:block) => {{
-        carbide::asynchronous::spawn_task(
+        $crate::asynchronous::spawn_task(
             async move { $body },
-            move |$result, $env_param: &mut carbide::asynchronous::AsyncContext| $cont,
+            move |$result, $env_param: &mut $crate::asynchronous::AsyncContext| $cont,
         )
     }};
 }
