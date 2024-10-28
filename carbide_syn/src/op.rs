@@ -1,3 +1,6 @@
+use crate::token;
+use crate::token::Token;
+
 ast_enum! {
     /// A binary operator: `+`, `+=`, `&`.
     #[cfg_attr(doc_cfg, doc(cfg(any(feature = "full", feature = "derive"))))]
@@ -75,6 +78,8 @@ ast_enum! {
         Neg(Token![-]),
         /// The `$` operator for carbide
         Dollar(Token![$]),
+        /// The `#` operator for carbide
+        Fence(Token![#]),
     }
 }
 
@@ -172,6 +177,8 @@ pub(crate) mod parsing {
                 input.parse().map(UnOp::Neg)
             } else if lookahead.peek(Token![$]) {
                 input.parse().map(UnOp::Dollar)
+            } else if lookahead.peek(Token![#]) {
+                input.parse().map(UnOp::Fence)
             } else {
                 Err(lookahead.error())
             }
@@ -229,6 +236,7 @@ mod printing {
                 UnOp::Not(t) => t.to_tokens(tokens),
                 UnOp::Neg(t) => t.to_tokens(tokens),
                 UnOp::Dollar(t) => t.to_tokens(tokens),
+                UnOp::Fence(t) => t.to_tokens(tokens),
             }
         }
     }

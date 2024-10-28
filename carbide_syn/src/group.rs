@@ -88,6 +88,7 @@ fn parse_delimited<'a>(
             let content = crate::parse::new_parse_buffer(scope, nested, unexpected);
             Ok(((span, content), rest))
         } else {
+            panic!("{}", std::backtrace::Backtrace::capture());
             let message = match delimiter {
                 Delimiter::Parenthesis => "expected parentheses",
                 Delimiter::Brace => "expected curly braces",

@@ -14,13 +14,19 @@ use crate::utils::get_crate_name;
 pub fn process_a_expr(ast: Expr) -> Expr {
     let crate_name = get_crate_name();
 
-    let mut collector = UnaryDollarIdentCollector(vec![]);
+    let mut collector = UnaryCarbideIdentCollector {
+        read_state: vec![],
+        state: vec![],
+    };
     //panic!("{:#?}", ast);
 
     let res = collector.fold_expr(ast);
 
-    let deduplicated: HashSet<Ident, RandomState> = HashSet::from_iter(collector.0.into_iter());
-    let idents = deduplicated.into_iter().collect::<Vec<_>>();
+    let deduplicated_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.state.into_iter());
+    let deduplicated_read_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.read_state.into_iter());
+
+    let state_idents = deduplicated_state.into_iter().collect::<Vec<_>>();
+    let read_state_idents = deduplicated_read_state.into_iter().collect::<Vec<_>>();
 
     //panic!("{:?}", idents);
 
@@ -47,8 +53,12 @@ pub fn process_a_expr(ast: Expr) -> Expr {
 
             let body: Expr = parse_quote!({
                 #(
-                    let mut #idents = Clone::clone(&#idents);
-                    let #idents = &mut *#crate_name::state::State::value_mut(&mut #idents);
+                    let mut #read_state_idents = Clone::clone(&#read_state_idents);
+                    let #read_state_idents = &*#crate_name::state::ReadState::value(&#read_state_idents);
+                )*
+                #(
+                    let mut #state_idents = Clone::clone(&#state_idents);
+                    let #state_idents = &mut *#crate_name::state::State::value_mut(&mut #state_idents);
                 )*
 
                 #body
@@ -70,7 +80,10 @@ pub fn process_a_expr(ast: Expr) -> Expr {
 
             parse_quote!({
                 #(
-                    let mut #idents = Clone::clone(&#idents);
+                    let mut #read_state_idents = Clone::clone(&#read_state_idents);
+                )*
+                #(
+                    let mut #state_idents = Clone::clone(&#state_idents);
                 )*
 
                 #closure
@@ -81,15 +94,27 @@ pub fn process_a_expr(ast: Expr) -> Expr {
 }
 
 
-pub(crate) struct UnaryDollarIdentCollector(Vec<Ident>);
+pub(crate) struct UnaryCarbideIdentCollector {
+    read_state: Vec<Ident>,
+    state: Vec<Ident>,
+}
 
-impl Fold for UnaryDollarIdentCollector {
+impl Fold for UnaryCarbideIdentCollector {
     fn fold_expr(&mut self, i: Expr) -> Expr {
         match i {
             Expr::Unary(ExprUnary { attrs: _, op: UnOp::Dollar(_), expr }) => {
                 match *expr {
                     Expr::Path(path) if path.path.get_ident().is_some() => {
-                        self.0.push(path.path.get_ident().unwrap().clone());
+                        self.state.push(path.path.get_ident().unwrap().clone());
+                        Expr::Path(path)
+                    }
+                    e => Expr::Verbatim(Error::new(e.span(), "The dollar operator must be followed by a state identifier").into_compile_error()),
+                }
+            }
+            Expr::Unary(ExprUnary { attrs: _, op: UnOp::Fence(_), expr }) => {
+                match *expr {
+                    Expr::Path(path) if path.path.get_ident().is_some() => {
+                        self.read_state.push(path.path.get_ident().unwrap().clone());
                         Expr::Path(path)
                     }
                     e => Expr::Verbatim(Error::new(e.span(), "The dollar operator must be followed by a state identifier").into_compile_error()),

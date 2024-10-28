@@ -794,6 +794,7 @@ define_punctuation! {
     ":"           pub struct Colon/1      /// various separators
     ","           pub struct Comma/1      /// various separators
     "$"           pub struct Dollar/1     /// macros
+    "§"           pub struct Section/1    /// macros
     "."           pub struct Dot/1        /// field access, tuple index
     ".."          pub struct DotDot/2     /// range, struct expressions, patterns, range patterns
     "..."         pub struct DotDotDot/3  /// variadic functions, range patterns

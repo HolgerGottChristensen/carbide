@@ -28,10 +28,10 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
     fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=CheckBoxValue>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget> {
         let background_color = Map2::read_map(checked.clone(), enabled.clone(), |value, enabled| {
             match *value {
-                CheckBoxValue::True | CheckBoxValue::Indeterminate if *enabled => EnvironmentColor::Accent,
+                CheckBoxValue::True | CheckBoxValue::Mixed if *enabled => EnvironmentColor::Accent,
                 CheckBoxValue::False if *enabled => EnvironmentColor::SecondarySystemBackground,
 
-                CheckBoxValue::True | CheckBoxValue::Indeterminate | CheckBoxValue::False => EnvironmentColor::QuaternarySystemFill,
+                CheckBoxValue::True | CheckBoxValue::Mixed | CheckBoxValue::False => EnvironmentColor::QuaternarySystemFill,
             }
         });
 
@@ -50,7 +50,7 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
             Map1::read_map(checked.clone(), |value| *value == CheckBoxValue::True);
 
         let checked_intermediate =
-            Map1::read_map(checked.clone(), |value| *value == CheckBoxValue::Indeterminate);
+            Map1::read_map(checked.clone(), |value| *value == CheckBoxValue::Mixed);
 
         let border_color = Map2::read_map(
             focus.clone(),

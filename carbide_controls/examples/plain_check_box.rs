@@ -7,7 +7,7 @@ use carbide_wgpu::{Application, Window};
 fn main() {
     let checkbox_state1 = LocalState::new(CheckBoxValue::False);
     let checkbox_state2 = LocalState::new(false);
-    let checkbox_state3 = LocalState::new(CheckBoxValue::Indeterminate);
+    let checkbox_state3 = LocalState::new(CheckBoxValue::Mixed);
     let checkbox_state4 = LocalState::new(CheckBoxValue::True);
 
     let mut application = Application::new()

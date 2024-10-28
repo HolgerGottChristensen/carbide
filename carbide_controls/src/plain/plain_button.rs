@@ -240,14 +240,12 @@ impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> Mouse
         self.enabled.sync(ctx.env);
         self.focus.sync(ctx.env);
 
-        {
-            if *self.enabled.value() {
-                if *self.focus.value() != Focus::Focused {
-                    self.focus.set_value(Focus::FocusRequested);
-                    ctx.env.request_focus(Refocus::FocusRequest);
-                }
-                (self.action)(ctx);
+        if *self.enabled.value() {
+            if *self.focus.value() != Focus::Focused {
+                self.focus.set_value(Focus::FocusRequested);
+                ctx.env.request_focus(Refocus::FocusRequest);
             }
+            (self.action)(ctx);
         }
     }
 }

@@ -2885,6 +2885,11 @@ impl Debug for UnOp {
                 formatter.field(v0);
                 formatter.finish()
             }
+            UnOp::Fence(v0) => {
+                let mut formatter = formatter.debug_tuple("Section");
+                formatter.field(v0);
+                formatter.finish()
+            }
         }
     }
 }

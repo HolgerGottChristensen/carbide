@@ -3352,7 +3352,12 @@ where
         UnOp::Neg(_binding_0) => {
             skip!(_binding_0);
         }
-        UnOp::Dollar(_) => {}
+        UnOp::Dollar(_binding_0) => {
+            skip!(_binding_0);
+        }
+        UnOp::Fence(_binding_0) => {
+            skip!(_binding_0);
+        }
     }
 }
 #[cfg(feature = "full")]

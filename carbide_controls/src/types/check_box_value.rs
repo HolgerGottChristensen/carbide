@@ -11,7 +11,7 @@ use carbide_core::state::{AnyReadState, AnyState, ConvertInto, ConvertIntoRead, 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CheckBoxValue {
     True,
-    Indeterminate,
+    Mixed,
     False,
 }
 
@@ -50,7 +50,7 @@ impl ConvertInto<CheckBoxValue> for bool {
         }, |new, mut val| {
             match new {
                  CheckBoxValue::True => *val = true,
-                 CheckBoxValue::Indeterminate | CheckBoxValue::False => *val = false,
+                 CheckBoxValue::Mixed | CheckBoxValue::False => *val = false,
              }
         })
     }

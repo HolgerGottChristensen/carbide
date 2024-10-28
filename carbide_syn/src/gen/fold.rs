@@ -2980,6 +2980,7 @@ where
         UnOp::Not(_binding_0) => UnOp::Not(_binding_0),
         UnOp::Neg(_binding_0) => UnOp::Neg(_binding_0),
         UnOp::Dollar(_binding_0) => UnOp::Dollar(_binding_0),
+        UnOp::Fence(_binding_0) => UnOp::Fence(_binding_0)
     }
 }
 #[cfg(feature = "full")]

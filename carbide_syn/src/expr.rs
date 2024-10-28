@@ -963,6 +963,7 @@ pub(crate) mod parsing {
     use crate::parse::{Parse, ParseStream, Result};
     use crate::path;
     use std::cmp::Ordering;
+    use proc_macro2::Delimiter;
 
     mod kw {
         crate::custom_keyword!(builtin);
@@ -1345,7 +1346,7 @@ pub(crate) mod parsing {
                     break;
                 }
                 attrs.push(attr);
-            } else if input.peek(Token![#]) {
+            } else if input.peek(Token![#]) && input.cursor().group(Delimiter::Brace).is_some() {
                 attrs.push(input.call(attr::parsing::single_parse_outer)?);
             } else {
                 break;
@@ -1386,7 +1387,7 @@ pub(crate) mod parsing {
                     expr,
                 }))
             }
-        } else if input.peek(Token![*]) || input.peek(Token![!]) || input.peek(Token![-]) || input.peek(Token![$]) {
+        } else if input.peek(Token![*]) || input.peek(Token![!]) || input.peek(Token![-]) || input.peek(Token![$]) || input.peek(Token![#]) {
             expr_unary(input, attrs, allow_struct).map(Expr::Unary)
         } else {
             trailer_expr(begin, attrs, input, allow_struct)
