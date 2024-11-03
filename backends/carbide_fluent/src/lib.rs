@@ -9,7 +9,7 @@ use icu::locid::{Locale};
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
 
-use carbide_core::{impl_read_state, locate_folder};
+use carbide_core::{impl_state_value, locate_folder};
 pub use localized_string::*;
 pub use localized_datetime::*;
 pub use localized_number::*;

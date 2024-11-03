@@ -1,6 +1,6 @@
 use carbide_macro::carbide_default_builder2;
 
-use crate::{CommonWidgetImpl, impl_read_state};
+use crate::{CommonWidgetImpl, impl_state_value};
 use crate::draw::{Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
@@ -12,7 +12,7 @@ pub enum ContentMode {
     Fill,
 }
 
-impl_read_state!(ContentMode);
+impl_state_value!(ContentMode);
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]

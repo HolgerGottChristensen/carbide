@@ -4,7 +4,7 @@ use fluent::FluentArgs;
 use fluent::types::{FluentDateTime, FluentDateTimeOptions, FluentNumber};
 use icu::locid::Locale;
 use carbide_core::environment::Environment;
-use carbide_core::impl_read_state;
+use carbide_core::impl_state_value;
 use carbide_core::state::{AnyReadState, IntoReadState, StateSync, ReadState, ValueRef, ValueState};
 use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};

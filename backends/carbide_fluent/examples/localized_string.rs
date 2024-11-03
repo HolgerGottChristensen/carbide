@@ -3,7 +3,7 @@ use icu::locid::locale;
 use carbide_controls::{ControlsExt, PopUpButton, Slider, TextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::impl_read_state;
+use carbide_core::impl_state_value;
 use carbide_core::state::{LocalState, LoggingState, StateExtNew};
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{Arg, Localizable, LocalizedArg, LocalizedString};

@@ -1,6 +1,6 @@
 use bitflags::Flags;
 use carbide::draw::ImageId;
-use carbide::impl_read_state;
+use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 use crate::material::material_flags::MaterialFlags;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
@@ -54,7 +54,7 @@ impl NormalTexture {
     }
 }
 
-impl_read_state!(NormalTexture);
+impl_state_value!(NormalTexture);
 
 impl ConvertIntoRead<NormalTexture> for ImageId {
     type Output<G: AnyReadState<T=ImageId> + Clone> = RMap1<fn(&ImageId)->NormalTexture, ImageId, NormalTexture, G>;

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use carbide_core::state::{IntoReadState, ReadState};
 use chrono::{DateTime, FixedOffset, TimeZone};
 use fluent::types::{FluentDateTimeOptions, FluentNumberOptions};
-use carbide_core::impl_read_state;
+use carbide_core::impl_state_value;
 
 pub trait Args: Debug + Clone + 'static {
     fn push<T: IntoReadState<G>, G: Arg>(self, key: &'static str, value: T) -> impl Args;
@@ -96,4 +96,4 @@ pub struct LocalizedArgList<S: ReadState<T=V>, V: Arg, R: Args> {
     rest: R,
 }
 
-impl_read_state!(LocalizedArg);
+impl_state_value!(LocalizedArg);

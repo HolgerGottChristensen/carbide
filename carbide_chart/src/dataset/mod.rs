@@ -7,7 +7,7 @@ mod dataset_ext;
 mod options_dataset;
 
 use carbide::draw::Color;
-use carbide::impl_read_state;
+use carbide::impl_state_value;
 pub use datapoint::*;
 pub use dataset::*;
 pub use datavalue::*;
@@ -27,4 +27,4 @@ impl From<Color> for DataColor {
     }
 }
 
-impl_read_state!(DataColor);
+impl_state_value!(DataColor);

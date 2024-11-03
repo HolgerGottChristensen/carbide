@@ -2,7 +2,7 @@ use bitflags::Flags;
 use carbide::color::WHITE;
 use carbide::draw::{Color, ImageId};
 use carbide::environment::EnvironmentColor;
-use carbide::impl_read_state;
+use carbide::impl_state_value;
 use carbide::render::matrix::Vector4;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 use crate::material::material_flags::MaterialFlags;
@@ -107,7 +107,7 @@ impl AlbedoComponent {
     }
 }
 
-impl_read_state!(AlbedoComponent);
+impl_state_value!(AlbedoComponent);
 
 impl ConvertIntoRead<AlbedoComponent> for Color {
     type Output<G: AnyReadState<T=Color> + Clone> = RMap1<fn(&Color)->AlbedoComponent, Color, AlbedoComponent, G>;

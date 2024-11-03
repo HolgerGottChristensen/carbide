@@ -1,4 +1,4 @@
-use carbide::impl_read_state;
+use carbide::impl_state_value;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Stepped {
@@ -14,4 +14,4 @@ pub enum Stepped {
     None,
 }
 
-impl_read_state!(Stepped);
+impl_state_value!(Stepped);

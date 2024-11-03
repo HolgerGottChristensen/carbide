@@ -120,7 +120,7 @@ impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result
 }
 
 #[macro_export]
-macro_rules! impl_read_state {
+macro_rules! impl_state_value {
     ($($typ: ty),*) => {
         $(
         impl carbide_core::state::StateSync for $typ {
@@ -147,7 +147,7 @@ macro_rules! impl_read_state {
     };
 }
 
-impl_read_state!(
+impl_state_value!(
     i8, u8, i16, u16,
     i32, u32, i64, u64,
     i128, u128, f32, f64,
