@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use accesskit::{NodeBuilder, NodeId, Role, Tree, TreeUpdate};
+use accesskit::{NodeId, Role, Tree, TreeUpdate};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use smallvec::SmallVec;

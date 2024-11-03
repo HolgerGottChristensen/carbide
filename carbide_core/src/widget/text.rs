@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use accesskit::{NodeBuilder, NodeId, Point, Rect, Role, Size};
+use accesskit::{Node, NodeId, Point, Rect, Role, Size};
 use smallvec::SmallVec;
 use carbide::accessibility::AccessibilityContext;
 use carbide_macro::carbide_default_builder2;
@@ -251,7 +251,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
 
-        let mut builder = NodeBuilder::new(Role::Label);
+        let mut builder = Node::new(Role::Label);
 
         builder.set_bounds(Rect::from_origin_size(
             Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
@@ -263,9 +263,9 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         }
 
         if let Some(label) = ctx.inherited_label {
-            builder.set_name(label);
+            builder.set_label(label);
         } else {
-            builder.set_name(&*self.text.value().clone());
+            builder.set_label(&*self.text.value().clone());
         }
 
         if let Some(hint) = ctx.inherited_hint {
@@ -278,7 +278,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 
         builder.set_author_id(format!("{:?}", self.id()));
 
-        ctx.nodes.push(self.id(), builder.build());
+        ctx.nodes.push(self.id(), builder);
 
         ctx.children.push(self.id());
     }

@@ -1,6 +1,10 @@
 use std::fmt::{Debug, Formatter};
+use smallvec::SmallVec;
+use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Node, Point, Rect, Role, Size, Toggled};
 use carbide::closure;
-use carbide::widget::MouseAreaActionContext;
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
+use carbide::focus::Focusable;
+use carbide::widget::{MouseAreaAction, MouseAreaActionContext, WidgetSync};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -9,7 +13,7 @@ use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, Rectangle, Text, Widget, WidgetExt, WidgetId, ZStack};
 
-use crate::{enabled_state, EnabledState};
+use crate::{enabled_state, CheckBoxValue, EnabledState, UnfocusAction};
 
 pub trait PlainSwitchDelegate: Clone + 'static {
     fn call(&self, focus: impl ReadState<T=Focus>, checked: impl ReadState<T=bool>, enabled: impl ReadState<T=bool>) -> Box<dyn AnyWidget>;
@@ -29,6 +33,7 @@ type DefaultPlainSwitchDelegate = fn(Box<dyn AnyReadState<T=Focus>>, Box<dyn Any
 ///
 /// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Widget)]
+#[carbide_exclude(Accessibility, AccessibilityEvent)]
 pub struct PlainSwitch<F, C, D, E> where
     F: State<T=Focus>,
     C: State<T=bool>,
@@ -38,12 +43,13 @@ pub struct PlainSwitch<F, C, D, E> where
     id: WidgetId,
     position: Position,
     dimension: Dimension,
+    child: Box<dyn AnyWidget>,
+
     #[state] focus: F,
     #[state] enabled: E,
-
-    child: Box<dyn AnyWidget>,
-    delegate: D,
     #[state] checked: C,
+
+    delegate: D,
 }
 
 impl PlainSwitch<Focus, bool, DefaultPlainSwitchDelegate, bool> {
@@ -104,33 +110,19 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
         delegate: D2,
         enabled: E2,
     ) -> PlainSwitch<F2, C2, D2, E2> {
-
         let delegate_widget = delegate.call(focus.as_dyn(), checked.as_dyn(), enabled.as_dyn_read());
 
         let enabled = enabled.ignore_writes();
 
-        let button = Box::new(MouseArea::new(delegate_widget)
-            .on_click(closure!(|ctx: MouseAreaActionContext| {
-                if !*$enabled {
-                    return;
-                }
-
-                *$checked = !*$checked;
-
-                if *$focus != Focus::Focused {
-                    focus.set_value(Focus::FocusRequested);
-                    ctx.env.request_focus(Refocus::FocusRequest);
-                }
-            }))
-            .on_click_outside(closure!(|ctx: MouseAreaActionContext| {
-                if *$focus == Focus::Focused {
-                    focus.set_value(Focus::FocusReleased);
-                    ctx.env.request_focus(Refocus::FocusRequest);
-                }
-            }))
-            .focused(focus.clone()));
-
-        let child = button;
+        let child = MouseArea::new(delegate_widget)
+            .custom_on_click(SwitchAction {
+                checked: checked.clone(),
+                focus: focus.clone(),
+                enabled: enabled.clone(),
+            })
+            .custom_on_click_outside(UnfocusAction(focus.clone()))
+            .focused(focus.clone())
+            .boxed();
 
         PlainSwitch {
             id: WidgetId::new(),
@@ -144,6 +136,83 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
         }
     }
 
+}
+
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> Accessibility for PlainSwitch<F, C, D, E> {
+    fn role(&self) -> Option<Role> {
+        Some(Role::Switch)
+    }
+
+    fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
+        self.sync(ctx.env);
+
+        let mut children = SmallVec::<[WidgetId; 8]>::new();
+
+        let mut nodes = SmallVec::<[AccessibilityNode; 1]>::new();
+
+        let mut child_ctx = AccessibilityContext {
+            env: ctx.env,
+            nodes: &mut nodes,
+            parent_id: Some(self.id()),
+            children: &mut children,
+            hidden: ctx.hidden,
+            inherited_label: None,
+            inherited_hint: None,
+            inherited_value: None,
+            inherited_enabled: None,
+        };
+
+        // Process the accessibility of the children
+        self.foreach_child_direct(&mut |child | {
+            child.process_accessibility(&mut child_ctx);
+        });
+
+        let mut node = self.accessibility_create_node(ctx).unwrap();
+
+        if node.label().is_none() {
+            let labels = nodes.iter().filter_map(|x| x.label()).collect::<Vec<_>>();
+            node.set_label(labels.join(", "));
+        }
+
+        if node.value().is_none() {
+            if *self.checked.value() {
+                node.set_toggled(Toggled::True)
+            } else {
+                node.set_toggled(Toggled::False)
+            }
+        }
+
+        if !*self.enabled.value() {
+            node.set_disabled();
+        }
+
+        node.add_action(AccessibilityAction::Click);
+
+        ctx.nodes.push(self.id(), node);
+
+        ctx.children.push(self.id());
+    }
+}
+
+impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> AccessibilityEventHandler for PlainSwitch<F, C, D, E> {
+    fn handle_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
+        match event.action {
+            AccessibilityAction::Click => {
+                SwitchAction {
+                    checked: self.checked.clone(),
+                    focus: self.focus.clone(),
+                    enabled: self.enabled.clone(),
+                }.trigger(ctx.env);
+            }
+            AccessibilityAction::Focus => {
+                self.request_focus(ctx.env)
+            }
+            AccessibilityAction::Blur => {
+                self.request_blur(ctx.env)
+            }
+            _ => ()
+        }
+    }
 }
 
 impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate, E: ReadState<T=bool>> CommonWidget for PlainSwitch<F, C, D, E> {
@@ -160,4 +229,43 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
             .field("checked", &self.checked)
             .finish()
     }
+}
+
+#[derive(Debug, Clone)]
+struct SwitchAction<C, F, E> where
+    C: State<T=bool>,
+    F: State<T=Focus>,
+    E: ReadState<T=bool>,
+{
+    checked: C,
+    focus: F,
+    enabled: E,
+}
+
+impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> SwitchAction<C, F, E> {
+    fn trigger(&mut self, env: &mut Environment) {
+        self.enabled.sync(env);
+
+        if !*self.enabled.value() {
+            return;
+        }
+
+        self.focus.sync(env);
+        self.checked.sync(env);
+
+        if *self.checked.value() {
+            *self.checked.value_mut() = false;
+        } else {
+            *self.checked.value_mut() = true;
+        }
+
+        if *self.focus.value() != Focus::Focused {
+            *self.focus.value_mut() = Focus::FocusRequested;
+            env.request_focus(Refocus::FocusRequest);
+        }
+    }
+}
+
+impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for SwitchAction<C, F, E> {
+    fn call(&mut self, ctx: MouseAreaActionContext) { self.trigger(ctx.env) }
 }

@@ -14,6 +14,9 @@ pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
 pub use calendar::*;
+use carbide::focus::{Focus, Refocus};
+use carbide::state::{ReadState, State};
+use carbide::widget::{MouseAreaAction, MouseAreaActionContext};
 pub use date_picker::*;
 
 extern crate carbide_core as carbide;
@@ -68,4 +71,17 @@ pub fn enabled_state() -> EnabledState {
         // Look up enabled in the environment, or default to true of nothing is specified
         env.bool("enabled").unwrap_or(true)
     })
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct UnfocusAction<F>(F) where F: State<T=Focus>;
+
+impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
+    fn call(&mut self, ctx: MouseAreaActionContext) {
+        self.0.sync(ctx.env);
+        if *self.0.value() == Focus::Focused {
+            self.0.set_value(Focus::FocusReleased);
+            ctx.env.request_focus(Refocus::FocusRequest);
+        }
+    }
 }

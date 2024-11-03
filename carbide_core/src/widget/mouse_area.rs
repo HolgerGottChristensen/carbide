@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use accesskit::{NodeBuilder, Point, Rect, Role, Size};
+use accesskit::{Node, Point, Rect, Role, Size};
 use dyn_clone::DynClone;
 use smallvec::SmallVec;
 use carbide::accessibility;
@@ -361,7 +361,7 @@ impl<
             child.process_accessibility(&mut child_ctx);
         });
 
-        let mut builder = NodeBuilder::new(Role::Button);
+        let mut builder = Node::new(Role::Button);
 
         builder.set_bounds(Rect::from_origin_size(
             Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
@@ -381,11 +381,11 @@ impl<
         }
 
         if let Some(label) = ctx.inherited_label {
-            builder.set_name(label);
+            builder.set_label(label);
         } else {
-            let labels = nodes.iter().filter_map(|x| x.name()).collect::<Vec<_>>();
+            let labels = nodes.iter().filter_map(|x| x.label()).collect::<Vec<_>>();
 
-            builder.set_name(labels.join(", "));
+            builder.set_label(labels.join(", "));
         }
 
         if let Some(hint) = ctx.inherited_hint {
@@ -406,7 +406,7 @@ impl<
 
         builder.set_author_id(format!("{:?}", self.id()));
 
-        ctx.nodes.push(self.id(), builder.build());
+        ctx.nodes.push(self.id(), builder);
 
         ctx.children.push(self.id());
     }

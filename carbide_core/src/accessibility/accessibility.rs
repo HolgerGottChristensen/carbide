@@ -1,15 +1,63 @@
 use crate::environment::Environment;
 use crate::focus::{Focus, Focusable};
 use crate::widget::{CommonWidget, WidgetId, WidgetSync};
-use accesskit::{Action, NodeBuilder, NodeId, Point, Rect, Role, Size, TreeUpdate};
+use accesskit::{Action, Node, NodeId, Point, Rect, Role, Size, TreeUpdate};
 use smallvec::SmallVec;
 use carbide::accessibility::AccessibilityNode;
+use crate::accessibility::AccessibilityAction;
 
 pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
     fn role(&self) -> Option<Role> { None }
 
     #[allow(unused_variables)]
-    fn accessibility(&mut self, builder: &mut NodeBuilder, env: &mut Environment) {}
+    fn accessibility(&mut self, node: &mut Node, env: &mut Environment) {}
+
+    fn accessibility_create_node(&mut self, ctx: &mut AccessibilityContext) -> Option<Node> {
+        if let Some(role) = self.role() {
+            let mut node = Node::new(role);
+
+            node.set_author_id(format!("{:?}", self.id()));
+
+            node.set_bounds(Rect::from_origin_size(
+                Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
+                Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+            ));
+
+            if ctx.hidden {
+                node.set_hidden();
+            }
+
+            if self.is_focusable() && self.get_focus() != Focus::Focused {
+                node.add_action(AccessibilityAction::Focus);
+            }
+
+            if self.is_focusable() && self.get_focus() == Focus::Focused {
+                node.add_action(AccessibilityAction::Blur);
+            }
+
+            if let Some(label) = ctx.inherited_label {
+                node.set_label(label);
+            }
+
+            if let Some(hint) = ctx.inherited_hint {
+                node.set_description(hint);
+            }
+
+            if let Some(hint) = ctx.inherited_value {
+                node.set_value(hint);
+            }
+
+            if let Some(enabled) = ctx.inherited_enabled {
+                if !enabled {
+                    node.set_disabled();
+                }
+            }
+
+            Some(node)
+        } else {
+            None
+        }
+    }
 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
@@ -20,7 +68,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 
         // Check if this widget specifies a role, meaning it will
         // participate in the accessibility tree.
-        if let Some(role) = self.role() {
+        if let Some(mut node) = self.accessibility_create_node(ctx) {
             let mut children = SmallVec::<[WidgetId; 8]>::new();
 
             let mut child_ctx = AccessibilityContext {
@@ -40,54 +88,17 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
                 child.process_accessibility(&mut child_ctx);
             });
 
-            let mut builder = NodeBuilder::new(role);
+            self.accessibility(&mut node, ctx.env);
 
-            builder.set_bounds(Rect::from_origin_size(
-                Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
-                Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
-            ));
-
-            if ctx.hidden {
-                builder.set_hidden();
-            }
-
-            if self.is_focusable() {
-                builder.add_action(Action::Focus);
-            }
-
-            if self.get_focus() == Focus::Focused {
-                builder.add_action(Action::Blur);
-            }
-
-            if let Some(label) = ctx.inherited_label {
-                builder.set_name(label);
-            }
-
-            if let Some(hint) = ctx.inherited_hint {
-                builder.set_description(hint);
-            }
-
-            if let Some(hint) = ctx.inherited_value {
-                builder.set_value(hint);
-            }
-
-            if let Some(enabled) = ctx.inherited_enabled {
-                if !enabled {
-                    builder.set_disabled();
-                }
-            }
-
-            self.accessibility(&mut builder, ctx.env);
-
-            builder.set_children(
+            node.set_children(
                 children.into_iter()
                     .map(|a| NodeId(a.0 as u64))
                     .collect::<Vec<_>>()
             );
 
-            builder.set_author_id(format!("{:?}", self.id()));
+            node.set_author_id(format!("{:?}", self.id()));
 
-            ctx.nodes.push(self.id(), builder.build());
+            ctx.nodes.push(self.id(), node);
 
             ctx.children.push(self.id());
         } else {

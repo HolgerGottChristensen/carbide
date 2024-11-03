@@ -1,4 +1,4 @@
-use accesskit::{NodeBuilder, NodeId, Role, Tree, TreeUpdate};
+use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
 use smallvec::SmallVec;
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
 use carbide_core::state::ReadState;
@@ -40,13 +40,13 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                             })
                         });
 
-                        let mut node_builder = NodeBuilder::new(Role::Window);
+                        let mut node_builder = Node::new(Role::Window);
 
                         node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
 
-                        node_builder.set_name(initialized.title.value().clone());
+                        node_builder.set_label(initialized.title.value().clone());
 
-                        tree_update.nodes.push((NodeId(id.0 as u64), node_builder.build()));
+                        tree_update.nodes.push((NodeId(id.0 as u64), node_builder));
 
                         //println!("{:#?}", tree_update);
 
@@ -69,13 +69,13 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                         })
                     });
 
-                    let mut node_builder = NodeBuilder::new(Role::Window);
+                    let mut node_builder = Node::new(Role::Window);
 
                     node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
 
-                    node_builder.set_name("Test window name");
+                    node_builder.set_label("Test window name");
 
-                    ctx.nodes.push(self.id(), node_builder.build());
+                    ctx.nodes.push(self.id(), node_builder);
                 }
 
                 ctx.children.push(self.id());

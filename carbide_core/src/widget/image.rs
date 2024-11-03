@@ -1,6 +1,6 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 use std::ops::Deref;
-use accesskit::{NodeBuilder, Point, Role, Size};
+use accesskit::{Node, Point, Role, Size};
 use carbide::accessibility::AccessibilityContext;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
@@ -233,7 +233,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
 
-        let mut builder = NodeBuilder::new(Role::Label);
+        let mut builder = Node::new(Role::Label);
 
         builder.set_bounds(accesskit::Rect::from_origin_size(
             Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
@@ -245,11 +245,11 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for 
         }
 
         if let Some(label) = ctx.inherited_label {
-            builder.set_name(label);
+            builder.set_label(label);
         } else if !self.decorative {
             if let Some(id) = self.image_id.value().as_ref() {
                 if let Some(file_name) = id.file_stem() {
-                    builder.set_name(file_name);
+                    builder.set_label(file_name);
                 }
             }
         }
@@ -264,7 +264,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for 
 
         builder.set_author_id(format!("{:?}", self.id()));
 
-        ctx.nodes.push(self.id(), builder.build());
+        ctx.nodes.push(self.id(), builder);
 
         ctx.children.push(self.id());
     }

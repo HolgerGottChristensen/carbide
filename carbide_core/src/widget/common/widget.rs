@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use dyn_clone::DynClone;
 use carbide::accessibility::AccessibilityContext;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
@@ -15,7 +15,7 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
 use crate::lifecycle::{Initialize, Update, UpdateContext};
-use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, IntoWidget, WidgetExt, WidgetId, WidgetSync};
 
 pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {}
 
@@ -183,7 +183,7 @@ impl<T: AnyWidget + ?Sized> Initialize for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> Accessibility for Box<T> {
-    fn accessibility(&mut self, builder: &mut NodeBuilder, env: &mut Environment) {
+    fn accessibility(&mut self, builder: &mut Node, env: &mut Environment) {
         self.deref_mut().accessibility(builder, env);
     }
 
