@@ -12,22 +12,20 @@ fn main() {
 
     let mut application = Application::new();
 
-    let env = application.environment();
-
     let widgets = VStack::new(vec![
-        animation_ball(linear, env),
-        animation_ball(fast_linear_to_slow_ease_in, env),
-        animation_ball(ease_in, env),
-        animation_ball(ease_out, env),
-        animation_ball(ease_in_out, env),
-        animation_ball(fast_out_slow_in, env),
-        animation_ball(slow_middle, env),
-        animation_ball(elastic_in, env),
-        animation_ball(elastic_out, env),
-        animation_ball(elastic_in_out, env),
-        animation_ball(bounce_in, env),
-        animation_ball(bounce_out, env),
-        animation_ball(bounce_in_out, env),
+        animation_ball(linear),
+        animation_ball(fast_linear_to_slow_ease_in),
+        animation_ball(ease_in),
+        animation_ball(ease_out),
+        animation_ball(ease_in_out),
+        animation_ball(fast_out_slow_in),
+        animation_ball(slow_middle),
+        animation_ball(elastic_in),
+        animation_ball(elastic_out),
+        animation_ball(elastic_in_out),
+        animation_ball(bounce_in),
+        animation_ball(bounce_out),
+        animation_ball(bounce_in_out),
     ])
         .spacing(10.0)
         .padding(30.0);
@@ -41,15 +39,15 @@ fn main() {
     application.launch()
 }
 
-fn animation_position_state(curve: fn(f64) -> f64, env: &Environment) -> impl ReadState<T=f64> {
-    AnimatedState::custom(curve, Some(env))
+fn animation_position_state(curve: fn(f64) -> f64) -> impl ReadState<T=f64> {
+    AnimatedState::custom(curve)
         .duration(Duration::new(2, 0))
         .repeat_alternate()
         .range(-150.0, 150.0)
 }
 
-fn animation_ball(curve: fn(f64) -> f64, env: &Environment) -> impl Widget {
-    let state = animation_position_state(curve, env);
+fn animation_ball(curve: fn(f64) -> f64) -> impl Widget {
+    let state = animation_position_state(curve);
 
     Circle::new()
         .fill(EnvironmentColor::Accent)

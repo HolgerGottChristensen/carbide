@@ -85,7 +85,7 @@ fn main() {
 
                         if *$moving {
                             *$dash_offset += *$moving_speed / *$line_width;
-                            ctx.env().request_animation_frame();
+                            ctx.request_animation_frame();
                         }
 
                         let dimension = ctx.dimension();

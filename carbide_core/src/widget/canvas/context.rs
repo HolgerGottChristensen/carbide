@@ -7,7 +7,7 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
-
+use crate::animation::AnimationManager;
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
 use crate::draw::Color;
 use crate::draw::shape::stroke_vertex::StrokeVertex;
@@ -69,6 +69,12 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             position,
             dimension,
             path_builder: SVGPathBuilder::new(),
+        }
+    }
+
+    pub fn request_animation_frame(&mut self) {
+        if let Some(manager) = self.render_context.env_stack.get_mut::<AnimationManager>() {
+            manager.request_animation_frame();
         }
     }
 

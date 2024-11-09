@@ -53,7 +53,7 @@ fn main() {
     ];
 
     fn delegate(item: impl State<T=MouseCursor>, _: impl ReadState<T=usize>) -> impl Widget {
-        Button::new_primary(format!("{:?}", *item.value()), closure!(|_,_|{}))
+        Button::new_primary(format!("{:?}", *item.value()), closure!(|_|{}))
             .cursor(item.value().clone())
             .frame(100.0, 22.0)
     }

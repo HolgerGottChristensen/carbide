@@ -130,14 +130,6 @@ impl Application {
         self.text_context.add_font(path.as_ref().to_path_buf());
     }
 
-    pub fn environment(&self) -> &Environment {
-        &self.environment
-    }
-
-    pub fn environment_mut(&mut self) -> &mut Environment {
-        &mut self.environment
-    }
-
     /// Request the window to redraw next frame
     fn request_redraw(&self) {
         self.root.request_redraw();
