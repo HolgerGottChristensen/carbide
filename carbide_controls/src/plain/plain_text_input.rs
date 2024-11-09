@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide::animation::AnimationManager;
 use carbide::cursor::MouseCursor;
 use carbide::draw::Alignment;
 
@@ -1274,7 +1275,9 @@ impl<
         //println!("Position children called");
         if let Some(speed) = self.current_offset_speed {
             self.update_offset_with_speed_to_make_cursor_visible(speed, ctx.text);
-            ctx.env.request_animation_frame();
+            if let Some(manager) = ctx.env_stack.get_mut::<AnimationManager>() {
+                manager.request_animation_frame();
+            }
         } else {
             self.update_offset_to_make_cursor_visible(ctx.text);
         }

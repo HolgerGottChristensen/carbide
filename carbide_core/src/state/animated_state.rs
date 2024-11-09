@@ -5,7 +5,7 @@ use std::rc::Rc;
 use std::time::{Duration, Instant};
 
 use crate::state::{AnyReadState, StateSync, RMap1};
-use crate::animation::Animatable;
+use crate::animation::{Animatable, AnimationManager};
 use crate::animation::animation_curve::linear;
 use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyState, InnerState, Map1};
@@ -114,8 +114,11 @@ impl AnimatedState {
 
 impl StateSync for AnimatedState {
     fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
-        //env.request_animation_frame();
-        todo!();
+
+        if let Some(manager) = env.get_mut::<AnimationManager>() {
+            manager.request_animation_frame();
+        }
+
         false
     }
 }

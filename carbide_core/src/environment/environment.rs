@@ -20,12 +20,6 @@ use crate::state::{InnerState, StateContract};
 use crate::widget::{AnyWidget, EnvKey, FilterId, ImageFilter, WidgetId};
 
 pub struct Environment {
-    /// This stack should be used to scope the environment. This contains information such as
-    /// current foreground color, text colors and more. This means a parent can choose some
-    /// styling that is applied to all of its children, unless some child overrides that style.
-    // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
-    stack: Vec<(&'static str, Box<dyn Any>)>,
-
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
     overlay_map: FxHashMap<&'static str, Rc<RefCell<Option<Box<dyn AnyWidget>>>>>,
@@ -60,8 +54,6 @@ pub struct Environment {
 
     event_sink: Box<dyn EventSink>,
 
-    animation_widget_in_frame: usize,
-
     request_application_close: bool,
 }
 
@@ -79,7 +71,6 @@ impl Environment {
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         let res = Environment {
-            stack: vec![],
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
@@ -91,7 +82,6 @@ impl Environment {
             mouse_position: Default::default(),
             animations: Some(vec![]),
             event_sink,
-            animation_widget_in_frame: 0,
             request_application_close: false,
         };
 
@@ -142,7 +132,6 @@ impl Environment {
             .as_ref()
             .map(|a| a.len() > 0)
             .unwrap_or(false)
-            || self.animation_widget_in_frame > 0
     }
 
     pub fn capture_time(&mut self) {
@@ -250,24 +239,6 @@ impl Environment {
 
     pub fn transfer_widget(&mut self, id: Option<String>, widget_transfer: WidgetTransferAction) {
         self.widget_transfer.insert(id, widget_transfer);
-    }
-
-    pub fn clear_animation_frame(&mut self) {
-        if self.animation_widget_in_frame > 0 {
-            self.animation_widget_in_frame -= 1;
-        }
-    }
-
-    pub fn number_of_animation_frames(&self) -> usize {
-        self.animation_widget_in_frame
-    }
-
-    pub fn request_animation_frame(&mut self) {
-        self.animation_widget_in_frame = self.animation_widget_in_frame.max(1);
-    }
-
-    pub fn request_multiple_animation_frames(&mut self, n: usize) {
-        self.animation_widget_in_frame = self.animation_widget_in_frame.max(n);
     }
 
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {

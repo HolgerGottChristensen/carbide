@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
-
+use carbide::animation::AnimationManager;
 use crate::animation::{Animatable, ease_in_out};
 use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
@@ -97,12 +97,13 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync 
     fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         let res = self.inner.sync(env);
 
-        /*if self.transition.borrow().is_some() {
-            env.request_animation_frame();
-        } else if &*self.value.borrow() != &*self.inner.value() {
-            env.request_animation_frame();
-        }*/
-        todo!();
+        if let Some(manager) = env.get_mut::<AnimationManager>() {
+            if self.transition.borrow().is_some() {
+                manager.request_animation_frame();
+            } else if &*self.value.borrow() != &*self.inner.value() {
+                manager.request_animation_frame();
+            }
+        }
 
         res
     }

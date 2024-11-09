@@ -32,17 +32,21 @@ pub trait Keyable: Debug + Clone + 'static {
 }
 
 pub struct TypeMap<'a> {
-    data: HashMap<TypeId, &'a dyn Any, BuildTypeIdHasher>
+    data: HashMap<TypeId, &'a dyn Any, BuildTypeIdHasher>,
+    data_mut: HashMap<TypeId, &'a mut dyn Any, BuildTypeIdHasher>,
 }
 
 impl<'a> TypeMap<'a> {
     pub fn new() -> Self {
         TypeMap {
             data: HashMap::with_hasher(BuildTypeIdHasher::default()),
+            data_mut: HashMap::with_hasher(BuildTypeIdHasher::default()),
         }
     }
+}
 
-    pub fn get<K: Key>(&self) -> Option<&'a K::Value> {
+impl<'a> TypeMap<'a> {
+    pub fn get<K: Key>(&self) -> Option<&K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data.get(&id), |value| {
@@ -77,6 +81,42 @@ impl<'a> TypeMap<'a> {
             transmuted.data.insert(id, old);
         } else {
             transmuted.data.remove(&id);
+        }
+    }
+}
+
+impl<'a> TypeMap<'a> {
+    pub fn get_mut<K: Key>(&mut self) -> Option<&mut K::Value> {
+        let id = TypeId::of::<K>();
+
+        Option::map(self.data_mut.get_mut(&id), |value| {
+            value.downcast_mut()
+        }).flatten()
+    }
+
+    #[allow(unsafe_code)]
+    pub fn with_mut<'b, K: Key>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
+        let id = TypeId::of::<K>();
+
+        // If any existing value existed in the data with the key, remove and store it.
+        let old = self.data_mut.remove(&id);
+
+        // SAFETY: The transmuted map has a shorter lifetime. The map is
+        // only used and accessed in the scope of the closure. We insert the
+        // reference only for the duration of the closure, and ensure it is
+        // removed again, before returning from the function, ensuring the
+        // reference to the value v does is not in the map after the closure,
+        // and thus making sure it does not escape.
+        let transmuted: &'b mut TypeMap<'b> = unsafe { transmute(self) };
+
+        transmuted.data_mut.insert(id, v);
+
+        f(transmuted);
+
+        if let Some(old) = old {
+            transmuted.data_mut.insert(id, old);
+        } else {
+            transmuted.data_mut.remove(&id);
         }
     }
 }

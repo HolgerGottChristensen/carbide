@@ -2,10 +2,12 @@ pub use animatable::Animatable;
 pub use animation::Animation;
 
 pub use crate::animation::animation_curve::*;
+pub use animation_manager::AnimationManager;
 
 mod animatable;
 mod animation;
 pub mod animation_curve;
+mod animation_manager;
 
 #[macro_export]
 macro_rules! animate {

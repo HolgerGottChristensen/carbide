@@ -37,6 +37,12 @@ pub fn scale_factor(window_id: WindowId) -> Scalar {
     *SCALE_FACTORS.get(&window_id).unwrap()
 }
 
+pub enum RequestRedraw {
+    False,
+    True,
+    IfAnimationsRequested,
+}
+
 pub struct NewEventHandler {
     pressed_buttons: HashMap<MouseButton, (MouseEvent, Instant)>,
     modifiers: ModifierKey,
@@ -120,7 +126,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: WindowEvent, window_id: WindowId, target: &'b mut impl Scene, text_context: &'a mut impl InnerTextContext, image_context: &'a mut impl InnerImageContext, env: &'a mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> bool {
+    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: WindowEvent, window_id: WindowId, target: &'b mut impl Scene, text_context: &'a mut impl InnerTextContext, image_context: &'a mut impl InnerImageContext, env: &'a mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> RequestRedraw {
         match event {
             WindowEvent::Moved(position) => {
                 let logical_position = position.to_logical(scale_factor(window_id));
@@ -134,7 +140,7 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                true
+                RequestRedraw::True
             }
             WindowEvent::Resized(new) => {
                 let LogicalSize { width, height } = new.to_logical::<f64>(scale_factor(window_id));
@@ -148,13 +154,13 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                true
+                RequestRedraw::True
             },
             WindowEvent::Focused(focus) => self.focus(focus, window_id, target, text_context, image_context, env, env_stack),
             WindowEvent::KeyboardInput { event: winit::event::KeyEvent { logical_key, state, .. }, .. } => self.keyboard(logical_key, state, window_id, target, text_context, image_context, env, env_stack),
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = ModifierKey::from_bits_retain(modifiers.state().bits());
-                false
+                RequestRedraw::False
             }
             WindowEvent::Ime(ime) => self.ime(ime, window_id, target, text_context, image_context, env, env_stack),
             WindowEvent::CursorMoved { position, .. } => self.cursor_moved(position, window_id, target, text_context, image_context, env, env_stack),
@@ -190,12 +196,7 @@ impl NewEventHandler {
                 env.set_cursor(MouseCursor::Default);
 
                 // Check if there are any animations or requested animation frames
-                let redraw = env.has_animations();
-
-                // Clear a single animation frame
-                env.clear_animation_frame();
-
-                redraw
+                RequestRedraw::IfAnimationsRequested
             }
             WindowEvent::CloseRequested => {
                 target.process_window_event(&carbide_core::event::WindowEvent::CloseRequested, &mut WindowEventContext {
@@ -207,17 +208,17 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                false
+                RequestRedraw::False
             },
-            WindowEvent::ActivationTokenDone { .. } => false,
-            WindowEvent::Destroyed => false,
-            WindowEvent::DroppedFile(_) => false,
-            WindowEvent::HoveredFile(_) => false,
-            WindowEvent::HoveredFileCancelled => false,
-            WindowEvent::Occluded(_) => false,
-            WindowEvent::AxisMotion { .. } => false,
-            WindowEvent::Touch(_) => false,
-            WindowEvent::TouchpadPressure { .. } => false,
+            WindowEvent::ActivationTokenDone { .. } => RequestRedraw::False,
+            WindowEvent::Destroyed => RequestRedraw::False,
+            WindowEvent::DroppedFile(_) => RequestRedraw::False,
+            WindowEvent::HoveredFile(_) => RequestRedraw::False,
+            WindowEvent::HoveredFileCancelled => RequestRedraw::False,
+            WindowEvent::Occluded(_) => RequestRedraw::False,
+            WindowEvent::AxisMotion { .. } => RequestRedraw::False,
+            WindowEvent::Touch(_) => RequestRedraw::False,
+            WindowEvent::TouchpadPressure { .. } => RequestRedraw::False,
 
             WindowEvent::CursorEntered { .. } => {
                 let mut consumed = false;
@@ -230,7 +231,7 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                     env_stack,
                 });
-                true
+                RequestRedraw::True
             },
             WindowEvent::CursorLeft { .. } => {
                 let mut consumed = false;
@@ -243,7 +244,7 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                     env_stack,
                 });
-                true
+                RequestRedraw::True
             },
             WindowEvent::ThemeChanged(theme) => {
                 println!("Theme changed!");
@@ -257,7 +258,7 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                true
+                RequestRedraw::True
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 println!("ScaleFactorChanged!");
@@ -273,7 +274,7 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                false
+                RequestRedraw::False
             }
 
             WindowEvent::DoubleTapGesture { .. } => {
@@ -287,7 +288,7 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                     env_stack,
                 });
-                true
+                RequestRedraw::True
             },
             WindowEvent::PinchGesture { phase, delta, .. } => {
                 let mut consumed = false;
@@ -300,7 +301,7 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                     env_stack,
                 });
-                true
+                RequestRedraw::True
             },
             WindowEvent::RotationGesture { phase, delta, .. } => {
                 let mut consumed = false;
@@ -313,15 +314,15 @@ impl NewEventHandler {
                     consumed: &mut consumed,
                     env_stack,
                 });
-                true
+                RequestRedraw::True
             },
             WindowEvent::PanGesture { .. } => {
-                false
+                RequestRedraw::False
             }
         }
     }
 
-    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         match state {
             ElementState::Pressed => {
                 let id = self.next_id();
@@ -353,7 +354,7 @@ impl NewEventHandler {
                     event
                 } else {
                     println!("Mouse button release without mouse press??");
-                    return false;
+                    return RequestRedraw::False;
                 };
 
                 // Add the event that the user released the mouse button at the specified location holding the current modifiers.
@@ -436,10 +437,10 @@ impl NewEventHandler {
             }
         }
 
-        true
+        RequestRedraw::True
     }
 
-    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> bool {
+    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> RequestRedraw {
         match event {
             CustomEvent::Core(core_event) => {
                 check_tasks(&mut AsyncContext {
@@ -491,10 +492,10 @@ impl NewEventHandler {
             }
         }
 
-        true
+        RequestRedraw::True
     }
 
-    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         let (x, y) = match delta {
             MouseScrollDelta::PixelDelta(delta) => {
                 let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor(window_id));
@@ -529,10 +530,10 @@ impl NewEventHandler {
             env_stack,
         });
 
-        true
+        RequestRedraw::True
     }
 
-    pub fn focus(&mut self, focus: bool, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn focus(&mut self, focus: bool, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         if focus {
             target.process_window_event(&carbide_core::event::WindowEvent::Focus, &mut WindowEventContext {
                 text: text_context,
@@ -553,10 +554,10 @@ impl NewEventHandler {
             });
         }
 
-        true
+        RequestRedraw::True
     }
 
-    pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         let key = convert_key(&logical_key);
         let mut prevent_default = false;
         match state {
@@ -597,12 +598,12 @@ impl NewEventHandler {
         };
 
 
-        true
+        RequestRedraw::True
     }
 
-    pub fn ime(&mut self, ime: Ime, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn ime(&mut self, ime: Ime, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         match ime {
-            Ime::Enabled => false,
+            Ime::Enabled => RequestRedraw::False,
             Ime::Preedit(s, cursor) => {
                 target.process_keyboard_event(&KeyboardEvent::Ime(
                     carbide_core::event::Ime::PreEdit(s.to_string(), cursor.clone())
@@ -615,7 +616,7 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                     prevent_default: &mut false,
                 });
-                true
+                RequestRedraw::True
             },
             Ime::Commit(s) => {
                 target.process_keyboard_event(&KeyboardEvent::Ime(
@@ -629,20 +630,20 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                     prevent_default: &mut false,
                 });
-                true
+                RequestRedraw::True
             },
-            Ime::Disabled => false,
+            Ime::Disabled => RequestRedraw::False,
         }
     }
 
-    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
+    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         let last_mouse_xy = self.mouse_position;
 
         let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor(window_id));
         self.mouse_position = Position::new(x, y);
 
         if last_mouse_xy == self.mouse_position {
-            return false;
+            return RequestRedraw::False;
         }
 
         env.set_mouse_position(self.mouse_position);
@@ -703,6 +704,6 @@ impl NewEventHandler {
             }
         }
 
-        true
+        RequestRedraw::True
     }
 }

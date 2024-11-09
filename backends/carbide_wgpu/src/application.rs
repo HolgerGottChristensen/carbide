@@ -14,6 +14,7 @@ use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
 
 use carbide_core::{locate_folder, Scene};
+use carbide_core::animation::AnimationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentStack};
@@ -23,7 +24,7 @@ use carbide_core::widget::{Empty, WidgetId};
 use carbide_core::window::WindowId;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
-use carbide_winit::NewEventHandler;
+use carbide_winit::{NewEventHandler, RequestRedraw};
 use carbide_winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use carbide_winit::window::WindowId as WinitWindowId;
 use carbide_winit::custom_event::CustomEvent;
@@ -168,6 +169,7 @@ impl Application {
             environment,
             environment_stack: type_map,
             text_context,
+            animation_manager: AnimationManager::new(),
         };
 
         event_loop.run_app(&mut running).unwrap();
@@ -189,6 +191,7 @@ pub struct RunningApplication {
     environment: Environment,
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
+    animation_manager: AnimationManager,
 }
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
@@ -203,24 +206,57 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
-        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, &mut self.environment_stack, self.id) {
-            self.root.request_redraw();
-            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, &mut self.environment_stack);
-        }
+        let mut request = RequestRedraw::False;
+        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
+            request = self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
 
-        if self.environment.should_close_application() {
-            event_loop.exit();
+            if matches!(request, RequestRedraw::True) {
+                NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, env_stack);
+            }
+
+            if self.environment.should_close_application() {
+                event_loop.exit();
+            }
+        });
+
+        match request {
+            RequestRedraw::False => {}
+            RequestRedraw::True => {
+                self.root.request_redraw();
+            }
+            RequestRedraw::IfAnimationsRequested => {
+                if self.animation_manager.take_frame() {
+                    self.root.request_redraw();
+                }
+            }
         }
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
-        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, &mut self.environment_stack, self.id) {
-            self.root.request_redraw();
-            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, &mut self.environment_stack);
-        }
+        let mut request = RequestRedraw::False;
 
-        if self.environment.should_close_application() {
-            event_loop.exit();
+        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
+            request = self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+
+            if matches!(request, RequestRedraw::True) {
+                NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, env_stack);
+            }
+
+            if self.environment.should_close_application() {
+                event_loop.exit();
+            }
+        });
+
+        match request {
+            RequestRedraw::False => {}
+            RequestRedraw::True => {
+                self.root.request_redraw();
+            }
+            RequestRedraw::IfAnimationsRequested => {
+                if self.animation_manager.take_frame() {
+                    self.root.request_redraw();
+                }
+            }
         }
     }
 
