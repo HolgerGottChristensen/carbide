@@ -3,23 +3,24 @@ use carbide::widget::theme_manager::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{Environment, EnvironmentColor, Keyable};
+use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, Key, Keyable};
 use crate::event::{KeyboardEventContext, ModifierKey};
-use crate::event::Key;
+use crate::event::Key as KeyboardKey;
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
-use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew};
+use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3};
+use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
 use crate::widget::Widget;
 
-type AccentColor<C, T, S> = EnvUpdating<C, T, S>;
-type ForegroundColor<C, T, S> = EnvUpdating<C, T, S>;
 
+pub(crate) type AccentColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
+pub(crate) type ForegroundColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
 
 pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
@@ -157,14 +158,12 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Border::new(self)
     }
 
-    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, Color, C::Output> {
-        //EnvUpdating::new(EnvironmentColor::Label, color.into_read_state(), self)
-        todo!()
+    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, impl Key<Value=Color>, C::Output> {
+        EnvUpdatingNew2::<Self, EnvironmentColorLabel, C::Output>::new(color.into_read_state(), self)
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, Color, C::Output> {
-        //EnvUpdating::new(EnvironmentColor::Accent, color.into_read_state(), self)
-        todo!()
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, impl Key<Value=Color>, C::Output> {
+        EnvUpdatingNew2::<Self, EnvironmentColorAccent, C::Output>::new(color.into_read_state(), self)
     }
 
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
@@ -180,12 +179,12 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Box::new(self)
     }
 
-    fn on_key_pressed<A2: OnKeyAction>(self, action: A2) -> OnKey<A2, fn(&Key, ModifierKey, &mut KeyboardEventContext), Self> {
+    fn on_key_pressed<A2: OnKeyAction>(self, action: A2) -> OnKey<A2, fn(&KeyboardKey, ModifierKey, &mut KeyboardEventContext), Self> {
         OnKey::new(self)
             .on_key_pressed(action)
     }
 
-    fn on_key_released<A2: OnKeyAction>(self, action: A2) -> OnKey<fn(&Key, ModifierKey, &mut KeyboardEventContext), A2, Self> {
+    fn on_key_released<A2: OnKeyAction>(self, action: A2) -> OnKey<fn(&KeyboardKey, ModifierKey, &mut KeyboardEventContext), A2, Self> {
         OnKey::new(self)
             .on_key_released(action)
     }
@@ -208,11 +207,11 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Luminance::new(self, shift)
     }
 
-    fn theme(self, theme: Theme) -> EnvUpdatingNew<ThemeManager<Self>, impl crate::environment::Key> {
-        EnvUpdatingNew::<ThemeManager<Self>, Theme>::new(theme, ThemeManager::new(self))
+    fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl Key<Value = Theme>, impl ReadState<T=Theme>> {
+        EnvUpdatingNew2::<ThemeManager<Self>, Theme, T::Output>::new(theme.into_read_state(), ThemeManager::new(self))
     }
 
-    /*fn environment<K: Keyable>(self, key: K, value: K::Output) -> EnvUpdatingNew<Self, impl crate::environment::Key> {
-        EnvUpdatingNew::<ThemeManager<Self>, Theme>::new(theme, ThemeManager::new(self))
-    }*/
+    fn environment<K: Keyable, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> {
+        EnvUpdatingNew3::<Self, K, V::Output>::new(key, value.into_read_state(), self)
+    }
 }

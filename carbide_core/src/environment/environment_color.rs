@@ -312,7 +312,7 @@ impl Key for EnvironmentColorGray6 {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct EnvironmentColorLabel;
+pub(crate) struct EnvironmentColorLabel;
 impl Key for EnvironmentColorLabel {
     type Value = Color;
 }
@@ -414,7 +414,7 @@ impl Key for EnvironmentColorLightText {
 }
 
 #[derive(Copy, Clone, Debug)]
-struct EnvironmentColorAccent;
+pub(crate) struct EnvironmentColorAccent;
 impl Key for EnvironmentColorAccent {
     type Value = Color;
 }

@@ -8,7 +8,7 @@ pub trait Key: Any + Debug + Clone + 'static {
     type Value: Any + Debug + Clone + 'static;
 }
 
-pub trait Keyable {
+pub trait Keyable: Debug + Clone + 'static {
     type Output: Any + Debug + Clone + 'static;
 
     fn get(&self, stack: &TypeMap) -> Self::Output;

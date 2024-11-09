@@ -1,4 +1,5 @@
 use crate::environment::Key;
+use crate::impl_state_value;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Theme {
@@ -15,3 +16,5 @@ impl Default for Theme {
         Theme::Dark
     }
 }
+
+impl_state_value!(Theme);

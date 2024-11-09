@@ -18,6 +18,8 @@ pub use self::duplicated::*;
 pub use self::empty::*;
 pub use self::environment_updating::*;
 pub use self::environment_updating_new::*;
+pub use self::environment_updating_new2::*;
+pub use self::environment_updating_new3::*;
 pub use self::filter::*;
 pub use self::flag::*;
 pub use self::flexibility::*;
@@ -112,6 +114,8 @@ mod luminance;
 mod mask;
 mod environment_updating_new;
 mod theme_manager;
+mod environment_updating_new2;
+mod environment_updating_new3;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(pub u32);
