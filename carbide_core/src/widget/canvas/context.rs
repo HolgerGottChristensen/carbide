@@ -20,8 +20,8 @@ use crate::state::ReadStateExtNew;
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::Wrap;
 
-pub struct CanvasContext<'a, 'b> {
-    render_context: &'a mut RenderContext<'b>,
+pub struct CanvasContext<'a, 'b, 'c: 'b> {
+    render_context: &'a mut RenderContext<'b, 'c>,
     current_state: ContextState,
     state_stack: Vec<ContextState>,
     position: Position,
@@ -46,8 +46,8 @@ pub struct ContextState {
     clip_count: u32,
 }
 
-impl<'a, 'b> CanvasContext<'a, 'b> {
-    pub fn new(position: Position, dimension: Dimension, render_context: &'a mut RenderContext<'b>) -> CanvasContext<'a, 'b> {
+impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
+    pub fn new(position: Position, dimension: Dimension, render_context: &'a mut RenderContext<'b, 'c>) -> CanvasContext<'a, 'b, 'c> {
         CanvasContext {
             render_context,
             current_state: ContextState {
@@ -337,7 +337,7 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Drop for CanvasContext<'a, 'b> {
+impl<'a, 'b, 'c: 'b> Drop for CanvasContext<'a, 'b, 'c> {
     fn drop(&mut self) {
         if self.current_state.clip_count > 0 {
             for _ in 0..self.current_state.clip_count {
@@ -349,7 +349,7 @@ impl<'a, 'b> Drop for CanvasContext<'a, 'b> {
 
 const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;
 
-impl<'a, 'b> CanvasContext<'a, 'b> {
+impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = FillTessellator::new();
@@ -491,7 +491,7 @@ impl<'a, 'b> CanvasContext<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Debug for CanvasContext<'a, 'b> {
+impl<'a, 'b, 'c: 'b> Debug for CanvasContext<'a, 'b, 'c> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CanvasContext")
             .field("current_state", &self.current_state)

@@ -19,7 +19,7 @@ use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, 
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::triangle_render_context::TriangleRenderContext;
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentNew, TypeMap};
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext, TextId};
 use crate::widget::{AnyWidget, FilterId};
@@ -42,6 +42,7 @@ pub trait Shape: AnyWidget + 'static {
                     text: &mut NOOPTextContext,
                     image: &mut NOOPImageContext,
             env,
+            env_new: &mut TypeMap::new(),
         });
 
         geom.0

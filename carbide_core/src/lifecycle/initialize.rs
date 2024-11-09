@@ -1,7 +1,6 @@
-use std::any::Any;
 use carbide::environment::Environment;
 use carbide::widget::{CommonWidget, WidgetSync};
-use crate::window::Window;
+use std::any::Any;
 
 pub trait Initialize: CommonWidget + WidgetSync {
     #[allow(unused_variables)]

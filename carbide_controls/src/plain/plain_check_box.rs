@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::types::*;
 use crate::{enabled_state, EnabledState, UnfocusAction};
 use carbide_core::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
@@ -11,7 +12,11 @@ use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, MouseAreaAction, 
 use carbide_core::CommonWidgetImpl;
 use smallvec::SmallVec;
 use std::fmt::{Debug, Formatter};
+use std::ops::Deref;
+use carbide::lifecycle::{InitializationContext, Initialize};
+use carbide::render::{Render, RenderContext};
 use carbide::widget::IntoWidget;
+use crate::toggle_style::ToggleStyleKey;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
     type Output: IntoWidget;
@@ -27,7 +32,7 @@ impl<K, W: Widget> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<
 }
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Accessibility, AccessibilityEvent)]
+#[carbide_exclude(Accessibility, AccessibilityEvent, Initialize, Render)]
 pub struct PlainCheckBox<F, C, D, E> where
     F: State<T=Focus>,
     C: State<T=CheckBoxValue>,
@@ -130,6 +135,23 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
     }
 }
 
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>,> Initialize for PlainCheckBox<F, C, D, E> {
+    fn initialize(&mut self, ctx: &mut InitializationContext) {
+        println!("Initialzed checkbox");
+
+        ctx.env.push_type::<&str>("test");
+        ctx.env.push_type::<u32>(42);
+
+        for value in &ctx.env.type_stack {
+            println!("{:?}", value.deref().type_id());
+        }
+
+        ctx.env.pop_type();
+        ctx.env.pop_type();
+    }
+}
+
+
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> AccessibilityEventHandler for PlainCheckBox<F, C, D, E> {
     fn handle_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         match event.action {
@@ -206,6 +228,16 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
         ctx.nodes.push(self.id(), node);
 
         ctx.children.push(self.id());
+    }
+}
+
+impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Render for PlainCheckBox<F, C, D, E> {
+    fn render(&mut self, context: &mut RenderContext) {
+        self.sync(context.env);
+
+        println!("{:?}", context.env_new.get::<ToggleStyleKey>());
+
+        self.child.render(context);
     }
 }
 

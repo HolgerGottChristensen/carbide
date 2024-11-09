@@ -1,6 +1,5 @@
 use crate::draw::InnerImageContext;
-use crate::environment::Environment;
-use crate::state::StateSync;
+use crate::environment::{Environment, EnvironmentNew};
 use crate::text::InnerTextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 

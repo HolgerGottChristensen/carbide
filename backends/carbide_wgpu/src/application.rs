@@ -16,7 +16,7 @@ use wgpu::{Adapter, Device, Instance, Queue};
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentNew, TypeMap};
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{Empty, WidgetId};
@@ -73,6 +73,7 @@ pub struct Application {
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
     environment: Environment,
+    type_map: TypeMap<'static>,
     text_context: TextContext,
     event_loop: EventLoop<CustomEvent>,
 }
@@ -97,6 +98,7 @@ impl Application {
             root: Box::new(Empty::new()),
             event_handler: NewEventHandler::new(),
             environment,
+            type_map: TypeMap::new(),
             text_context: TextContext::new(),
             event_loop,
         }
@@ -154,6 +156,7 @@ impl Application {
             root,
             event_handler,
             environment,
+            type_map,
             text_context,
             event_loop
         } = self;
@@ -163,6 +166,7 @@ impl Application {
             root,
             event_handler,
             environment,
+            type_map,
             text_context,
         };
 
@@ -183,6 +187,7 @@ pub struct RunningApplication {
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
     environment: Environment,
+    type_map: TypeMap<'static>,
     text_context: TextContext,
 }
 
@@ -208,7 +213,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
-        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, self.id) {
+        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment,  &mut self.type_map, self.id) {
             self.root.request_redraw();
             NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
         }

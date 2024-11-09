@@ -12,7 +12,7 @@ use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentNew, TypeMap};
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
 use carbide_core::event::Event::CoreEvent;
 use carbide_core::focus::{FocusContext, Refocus};
@@ -115,7 +115,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn window_event(&mut self, event: WindowEvent, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, id: WidgetId) -> bool {
+    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: WindowEvent, window_id: WindowId, target: &'b mut impl Scene, text_context: &'a mut impl InnerTextContext, image_context: &'a mut impl InnerImageContext, env: &'a mut Environment, env_new: &'a mut TypeMap<'c>, id: WidgetId) -> bool {
         match event {
             WindowEvent::Moved(position) => {
                 let logical_position = position.to_logical(scale_factor(window_id));
@@ -175,6 +175,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_new,
                 });
 
                 // Set cursor to default for next frame

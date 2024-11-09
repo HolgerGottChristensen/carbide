@@ -1,5 +1,6 @@
 use carbide::color::Color;
 use carbide::draw::Dimension;
+use carbide::environment::TypeMap;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
 use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
@@ -10,17 +11,18 @@ use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
 use crate::widget::FilterId;
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentNew};
 use crate::render::layer::{Layer, LayerId, NoopLayer};
 
-pub struct RenderContext<'a> {
+pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
+    pub env_new: &'a mut TypeMap<'b>,
 }
 
-impl<'a> RenderContext<'a> {
+impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
     // TODO: Change BasicLayouter to something more suitable
     pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: CarbideTransform, f: F) -> R {

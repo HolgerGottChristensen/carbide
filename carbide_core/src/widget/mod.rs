@@ -17,6 +17,7 @@ pub use self::clip_shape::*;
 pub use self::duplicated::*;
 pub use self::empty::*;
 pub use self::environment_updating::*;
+pub use self::environment_updating_new::*;
 pub use self::filter::*;
 pub use self::flag::*;
 pub use self::flexibility::*;
@@ -109,6 +110,7 @@ mod hue_rotation;
 mod saturation;
 mod luminance;
 mod mask;
+mod environment_updating_new;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(pub u32);

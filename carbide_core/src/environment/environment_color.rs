@@ -1,5 +1,6 @@
+use carbide::environment::TypeMap;
 use crate::draw::Color;
-use crate::environment::Environment;
+use crate::environment::{Environment, Key, Keyable};
 use crate::render::Style;
 use crate::state::*;
 use crate::widget::EnvKey;
@@ -62,6 +63,17 @@ pub enum EnvironmentColor {
     UltraThinDark,
 
     Custom(&'static str),
+}
+
+impl Keyable for EnvironmentColor {
+    type Output = Color;
+
+    fn get(&self, map: &TypeMap) -> Self::Output {
+        match self {
+            EnvironmentColor::Accent => map.get::<EnvironmentColorAccent>().cloned().unwrap(),
+            _ => todo!()
+        }
+    }
 }
 
 impl EnvKey for EnvironmentColor {
@@ -167,4 +179,11 @@ impl<T> IntoColorReadState for T where T: IntoReadState<Color> {
     fn color(self) -> Self::Output {
         self.into_read_state()
     }
+}
+
+
+#[derive(Copy, Clone, Debug)]
+struct EnvironmentColorAccent;
+impl Key for EnvironmentColorAccent {
+    type Value = Color;
 }

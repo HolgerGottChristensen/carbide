@@ -32,7 +32,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 title,
                 position,
                 dimension,
-                child,
+                mut child,
                 close_application_on_window_close,
             } => {
                 let attributes = WindowAttributes::default()
@@ -185,6 +185,8 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 });
 
                 update_scale_factor(window.id(), window.scale_factor());
+
+                child.initialize(ctx);
 
                 Window::Initialized(InitializedWindow {
                     id,

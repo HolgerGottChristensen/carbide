@@ -89,6 +89,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                env_new: ctx.env_new,
             });
 
             let render_passes = self.render_context.finish();

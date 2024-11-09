@@ -42,8 +42,7 @@ pub struct PlainButton<F, A, D, E, H, P> where
     P: State<T=bool>,
 {
     id: WidgetId,
-    #[state] focus: F,
-    #[state] enabled: E,
+
     child: MouseArea<
         ButtonAction<A, F, E>,
         ButtonOutsideAction<A, F, E>,
@@ -56,8 +55,12 @@ pub struct PlainButton<F, A, D, E, H, P> where
     dimension: Dimension,
     delegate: D,
     action: A,
+
+    #[state] focus: F,
+    #[state] enabled: E,
     #[state] hovered: H,
     #[state] pressed: P,
+
     cursor: MouseCursor,
 }
 

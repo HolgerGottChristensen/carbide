@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Formatter;
@@ -25,6 +25,7 @@ pub struct Environment {
     /// styling that is applied to all of its children, unless some child overrides that style.
     // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
     stack: Vec<(&'static str, Box<dyn Any>)>,
+    pub type_stack: Vec<Box<dyn Any>>,
 
     root_alignment: Alignment,
 
@@ -153,6 +154,7 @@ impl Environment {
 
         let res = Environment {
             stack: env_stack,
+            type_stack: vec![],
             root_alignment: Alignment::Center,
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
@@ -367,6 +369,24 @@ impl Environment {
 
     pub fn remove_filter(&mut self, id: FilterId) {
         self.filter_map.remove(&id);
+    }
+
+    pub fn push_type<T: Any>(&mut self, value: T) {
+        self.type_stack.push(Box::new(value));
+    }
+
+    pub fn pop_type(&mut self) {
+        self.type_stack.pop();
+    }
+
+    pub fn get_type<T: Any>(&self) -> Option<&T> {
+        for value in self.type_stack.iter().rev() {
+            if value.is::<T>() {
+                return value.downcast_ref();
+            }
+        }
+
+        None
     }
 
     pub fn push(&mut self, key: &'static str, value: Box<dyn Any>) {

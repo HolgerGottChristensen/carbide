@@ -1,4 +1,4 @@
-use carbide_controls::{CheckBoxValue, PlainCheckBox};
+use carbide_controls::{CheckBoxValue, CheckboxStyle, ControlsExt, PlainCheckBox, SwitchStyle};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -18,11 +18,13 @@ fn main() {
         Dimension::new(400.0, 600.0),
         VStack::new((
             PlainCheckBox::new(checkbox_state1).border(),
-            PlainCheckBox::new(checkbox_state2).border(),
+            PlainCheckBox::new(checkbox_state2).border()
+                .toggle_style(CheckboxStyle),
             PlainCheckBox::new(checkbox_state3).border(),
             PlainCheckBox::new(checkbox_state4).border(),
         ))
             .spacing(10.0)
+            .toggle_style(SwitchStyle)
             .padding(EdgeInsets::all(40.0)),
     ).close_application_on_window_close());
 
