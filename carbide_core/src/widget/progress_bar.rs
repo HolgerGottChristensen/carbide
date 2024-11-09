@@ -13,8 +13,7 @@ pub struct ProgressBar<P, W> where P: ReadState<T=f64>, W: Widget {
     child: W,
     position: Position,
     dimension: Dimension,
-    #[state]
-    progress: P,
+    #[state] progress: P,
 }
 
 impl ProgressBar<f64, Empty> {

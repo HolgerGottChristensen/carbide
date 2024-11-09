@@ -31,7 +31,6 @@ impl HSplit<f64, Empty, Empty> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> HSplit<S, L, T> {
-
     fn new_internal<S2: State<T=f64>, L2: Widget, T2: Widget>(
         leading: L2,
         trailing: T2,
@@ -161,14 +160,21 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for HSplit<S, L, T
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        let (requested_leading_width, requested_trailing_width) = match &self.split {
-            SplitType::Start(offset) => (offset.value().clone(), requested_size.width - offset.value().clone()),
+        let (requested_leading_width, requested_trailing_width) = match &mut self.split {
+            SplitType::Start(offset) => {
+                offset.sync(ctx.env_stack);
+                (offset.value().clone(), requested_size.width - offset.value().clone())
+            },
             SplitType::Percent(percent) => {
+                percent.sync(ctx.env_stack);
                 let leading = requested_size.width * percent.value().clone();
                 let trailing = requested_size.width * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
-            SplitType::End(offset) => (requested_size.width - offset.value().clone(), offset.value().clone()),
+            SplitType::End(offset) => {
+                offset.sync(ctx.env_stack);
+                (requested_size.width - offset.value().clone(), offset.value().clone())
+            },
         };
 
         let leading_size = Dimension::new(requested_leading_width, requested_size.height);

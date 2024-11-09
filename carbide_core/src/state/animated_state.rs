@@ -1,15 +1,12 @@
-use std::cell::RefCell;
 use std::fmt::Debug;
-use std::ops::DerefMut;
-use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use crate::state::{AnyReadState, StateSync, RMap1};
-use crate::animation::{Animatable, AnimationManager};
 use crate::animation::animation_curve::linear;
-use crate::environment::{Environment, EnvironmentStack};
-use crate::state::{AnyState, InnerState, Map1};
-use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
+use crate::animation::{Animatable, AnimationManager};
+use crate::environment::EnvironmentStack;
+use crate::state::util::value_cell::ValueRef;
+use crate::state::{AnyReadState, RMap1, StateSync};
+use crate::state::Map1;
 
 #[derive(Clone, Debug)]
 pub enum RepeatMode {
@@ -20,7 +17,7 @@ pub enum RepeatMode {
 
 #[derive(Clone, Debug)]
 pub struct AnimatedState {
-    percent: InnerState<f64>,
+    percent: f64,
     start_time: Instant,
     duration: Duration,
     repeat_mode: RepeatMode,
@@ -35,13 +32,14 @@ impl AnimatedState {
     }
 
     pub fn custom(curve: fn(f64) -> f64) -> AnimatedState {
+        let now = Instant::now();
         AnimatedState {
-            percent: InnerState::new(ValueCell::new(0.0)),
-            start_time: Instant::now(),
+            percent: 0.0,
+            start_time: now,
             duration: Duration::new(1, 0),
             repeat_mode: RepeatMode::None,
             repeat_count: None,
-            frame_time: Instant::now(),
+            frame_time: now,
             animation_curve: curve,
         }
     }
@@ -76,7 +74,7 @@ impl AnimatedState {
         })
     }
 
-    pub fn calc_percentage(&self) {
+    pub fn calc_percentage(&mut self) {
         let duration = self.frame_time - self.start_time;
 
         let percentage = match self.repeat_mode {
@@ -98,18 +96,16 @@ impl AnimatedState {
             }
         };
 
-        if let Ok(mut borrow) = self.percent.try_borrow_mut() {
-            *borrow.deref_mut() = (self.animation_curve)(percentage);
-        }
+        self.percent = (self.animation_curve)(percentage);
     }
 }
 
 impl StateSync for AnimatedState {
     fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
-
         if let Some(manager) = env.get_mut::<AnimationManager>() {
             manager.request_animation_frame();
             self.frame_time = manager.frame_time();
+            self.calc_percentage();
         }
 
         false
@@ -119,25 +115,6 @@ impl StateSync for AnimatedState {
 impl AnyReadState for AnimatedState {
     type T = f64;
     fn value_dyn(&self) -> ValueRef<f64> {
-        self.calc_percentage();
-        self.percent.borrow()
+        ValueRef::Borrow(&self.percent)
     }
 }
-
-impl AnyState for AnimatedState {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<f64> {
-        self.calc_percentage();
-        self.percent.borrow_mut()
-    }
-
-    fn set_value_dyn(&mut self, value: f64) {
-        self.calc_percentage();
-        *self.percent.borrow_mut() = value;
-    }
-}
-
-/*impl Into<TState<f64>> for Box<AnimatedState> {
-    fn into(self) -> TState<f64> {
-        WidgetState::new(self)
-    }
-}*/

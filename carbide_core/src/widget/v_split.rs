@@ -156,14 +156,21 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T
 
 impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        let (requested_top_height, requested_bottom_height) = match &self.split {
-            SplitType::Start(offset) => (offset.value().clone(), requested_size.height - offset.value().clone()),
+        let (requested_top_height, requested_bottom_height) = match &mut self.split {
+            SplitType::Start(offset) => {
+                offset.sync(ctx.env_stack);
+                (offset.value().clone(), requested_size.height - offset.value().clone())
+            },
             SplitType::Percent(percent) => {
+                percent.sync(ctx.env_stack);
                 let leading = requested_size.height * percent.value().clone();
                 let trailing = requested_size.height * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
-            SplitType::End(offset) => (requested_size.height - offset.value().clone(), offset.value().clone()),
+            SplitType::End(offset) => {
+                offset.sync(ctx.env_stack);
+                (requested_size.height - offset.value().clone(), offset.value().clone())
+            },
         };
 
         let top_size = Dimension::new(requested_size.width, requested_top_height);

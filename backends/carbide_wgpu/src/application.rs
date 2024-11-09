@@ -1,36 +1,31 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::error::Error;
-use std::ffi::OsStr;
-use std::fmt::{Debug, Formatter};
-use std::mem::transmute;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Once, OnceLock};
 use futures::executor::block_on;
 use once_cell::sync::Lazy;
+use std::any::Any;
+use std::ffi::OsStr;
+use std::fmt::{Debug, Formatter};
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
 
-use carbide_core::{locate_folder};
+use crate::image_context::WGPUImageContext;
+use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::Scene;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{Empty, WidgetId};
+use carbide_core::locate_folder;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
-use carbide_winit::{NewEventHandler, RequestRedraw};
+use carbide_winit::custom_event::CustomEvent;
+use carbide_winit::event::WindowEvent;
 use carbide_winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use carbide_winit::window::WindowId as WinitWindowId;
-use carbide_winit::custom_event::CustomEvent;
-use carbide_winit::event::{DeviceEvent, DeviceId, StartCause, WindowEvent};
-use crate::image_context::WGPUImageContext;
-use crate::proxy_event_loop::ProxyEventLoop;
+use carbide_winit::{NewEventHandler, RequestRedraw};
 
 pub(crate) static INSTANCE: Lazy<Arc<Instance>> = Lazy::new(|| {
     Arc::new(Instance::new(wgpu::InstanceDescriptor {

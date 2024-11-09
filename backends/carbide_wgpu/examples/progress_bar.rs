@@ -7,7 +7,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let progress = AnimatedState::linear(None)
+    let progress = AnimatedState::linear()
         .repeat()
         .duration(Duration::from_secs(5))
         .range(0.0, 1.0);
