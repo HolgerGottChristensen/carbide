@@ -3,6 +3,8 @@ use crate::accessibility::Accessibility;
 use crate::environment::Key;
 use crate::render::Render;
 use std::time::Instant;
+use carbide::animation::Animation;
+use carbide::state::StateContract;
 
 #[derive(Debug)]
 pub struct AnimationManager {
@@ -48,6 +50,15 @@ impl AnimationManager {
     pub fn update_frame_time(&mut self) {
         self.frame_time = Instant::now();
         self.out_of_band_animations.0.retain(|update_animation| !update_animation(&self.frame_time));
+    }
+
+    pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
+        let poll = move |time: &Instant| {
+            let mut animation = animation.clone();
+            animation.update(time)
+        };
+
+        self.out_of_band_animations.0.push(Box::new(poll));
     }
 }
 

@@ -14,49 +14,54 @@ macro_rules! animate {
     // The case where we dont give a custom interpolation function we rely on the value implementing animate
     ($env:expr, $state:ident $(:= $from:expr)? => $to:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
-            use carbide::state::State;
-            use carbide::state::ReadState;
+            if let Some(manager) = $env.get_mut::<$crate::animation::AnimationManager>() {
+                use $crate::state::State;
+                use $crate::state::ReadState;
 
-            let start = $state.value().clone();
-            let animation = carbide::animation::Animation::new(
-                $state.clone(),
-                start,
-                $to,
-            )$(
-                .from($from)
-            )?
-            $(
-                .curve($curve)
-            )?
-            $(
-                .duration($duration)
-            )?;
-            $env.insert_animation(animation);
+                let start = $state.value().clone();
+                let animation = carbide::animation::Animation::new(
+                    $state.clone(),
+                    start,
+                    $to,
+                )$(
+                    .from($from)
+                )?
+                $(
+                    .curve($curve)
+                )?
+                $(
+                    .duration($duration)
+                )?;
+                manager.insert_animation(animation);
+            }
         }
     };
     // If we have the interpolation, we dont require the value to be animate, but instead use the provided function.
     ($env:expr, $state:ident $(:= $from:expr)? => $to:expr, interpolation: $interpolation:expr $(, curve: $curve:expr)? $(, duration: $duration:expr)?) => {
         {
-            use carbide::state::State;
-            use carbide::state::ReadState;
+            if let Some(manager) = $env.get_mut::<$crate::animation::AnimationManager>() {
+                use $crate::state::State;
+                use $crate::state::ReadState;
 
 
-            let start = $state.value().clone();
-            let animation = carbide::animation::Animation::new_custom(
-                $state.clone(),
-                start,
-                $to,
-                $interpolation,
-            )$(
-                .from($from)
-            )?
-            $(
-                .curve($curve)
-            )?
-            $(
-                .duration($duration)
-            )?;
-            $env.insert_animation(animation);
+                let start = $state.value().clone();
+                let animation = carbide::animation::Animation::new_custom(
+                    $state.clone(),
+                    start,
+                    $to,
+                    $interpolation,
+                )$(
+                    .from($from)
+                )?
+                $(
+                    .curve($curve)
+                )?
+                $(
+                    .duration($duration)
+                )?;
+
+                manager.insert_animation(animation);
+            }
         }
     };
 }
