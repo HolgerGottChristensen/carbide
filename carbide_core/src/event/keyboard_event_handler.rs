@@ -1,6 +1,6 @@
 use carbide::state::StateSync;
 use crate::draw::InnerImageContext;
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::event::{Key, ModifierKey};
 use crate::focus::Focusable;
 use crate::text::InnerTextContext;
@@ -39,7 +39,7 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
         }*/
 
         if *ctx.is_current {
-            self.sync(ctx.env);
+            self.sync(ctx.env_stack);
             self.handle_keyboard_event(event, ctx);
         }
 
@@ -50,16 +50,17 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
 }
 
 
-pub struct KeyboardEventContext<'a> {
+pub struct KeyboardEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
     pub is_current: &'a bool,
     pub window_id: &'a u64,
     pub prevent_default: &'a mut bool,
 }
 
-impl KeyboardEventContext<'_> {
+impl KeyboardEventContext<'_, '_> {
     pub fn prevent_default(&mut self) {
         *self.prevent_default = true;
     }

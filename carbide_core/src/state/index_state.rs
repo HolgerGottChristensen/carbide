@@ -4,7 +4,7 @@ use std::ops::{Deref, Index, IndexMut};
 
 use carbide_core::state::{AnyState, StateSync};
 
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, ReadState, RMap1, StateContract};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
@@ -91,7 +91,7 @@ where
     ST: State<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         let mut should_update = false;
         should_update |= self.index_state.sync(env);
         should_update |= self.indexable_state.sync(env);

@@ -1,6 +1,6 @@
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 
 pub trait WidgetSync {
     #[allow(unused_variables)]
-    fn sync(&mut self, env: &mut Environment) {}
+    fn sync(&mut self, env: &mut EnvironmentStack) {}
 }

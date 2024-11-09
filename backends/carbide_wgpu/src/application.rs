@@ -16,7 +16,7 @@ use wgpu::{Adapter, Device, Instance, Queue};
 use carbide_core::{locate_folder, Scene};
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentNew, TypeMap};
+use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{Empty, WidgetId};
@@ -73,7 +73,7 @@ pub struct Application {
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
     environment: Environment,
-    type_map: TypeMap<'static>,
+    environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     event_loop: EventLoop<CustomEvent>,
 }
@@ -98,7 +98,7 @@ impl Application {
             root: Box::new(Empty::new()),
             event_handler: NewEventHandler::new(),
             environment,
-            type_map: TypeMap::new(),
+            environment_stack: EnvironmentStack::new(),
             text_context: TextContext::new(),
             event_loop,
         }
@@ -156,7 +156,7 @@ impl Application {
             root,
             event_handler,
             environment,
-            type_map,
+            environment_stack: type_map,
             text_context,
             event_loop
         } = self;
@@ -166,7 +166,7 @@ impl Application {
             root,
             event_handler,
             environment,
-            type_map,
+            environment_stack: type_map,
             text_context,
         };
 
@@ -187,14 +187,15 @@ pub struct RunningApplication {
     root: Box<dyn Scene>,
     event_handler: NewEventHandler,
     environment: Environment,
-    type_map: TypeMap<'static>,
+    environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
 }
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
     fn resumed<'a>(&'a mut self, event_loop: &'a ActiveEventLoop) {
-        let mut ctx = InitializationContext::<'a> {
+        let mut ctx = InitializationContext::<'a, '_> {
             env: &mut self.environment,
+            env_stack: &mut self.environment_stack,
             lifecycle_manager: event_loop as &'a dyn Any
         };
 
@@ -202,9 +203,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
-        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, self.id) {
+        if self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, &mut self.environment_stack, self.id) {
             self.root.request_redraw();
-            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
+            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, &mut self.environment_stack);
         }
 
         if self.environment.should_close_application() {
@@ -213,9 +214,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
-        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment,  &mut self.type_map, self.id) {
+        if self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, &mut self.environment_stack, self.id) {
             self.root.request_redraw();
-            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment);
+            NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, &mut self.environment_stack);
         }
 
         if self.environment.should_close_application() {

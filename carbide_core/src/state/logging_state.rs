@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, State, StateContract, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]
@@ -19,7 +19,7 @@ impl<T: StateContract, TState: State<T=T> + Clone + 'static> AnyReadState for Lo
 }
 
 impl<T: StateContract, TState: State<T=T> + Clone + 'static> StateSync for LoggingState<T, TState> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.0.sync(env)
     }
 }

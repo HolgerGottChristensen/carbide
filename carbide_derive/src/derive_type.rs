@@ -154,7 +154,7 @@ fn state_sync_token_stream(
     quote! {
         #[automatically_derived]
         impl #generics carbide::widget::WidgetSync for #ident #generics #wheres {
-            fn sync(&mut self, env: &mut carbide::environment::Environment) {
+            fn sync(&mut self, env: &mut carbide::environment::EnvironmentStack) {
                 use carbide::state::StateSync;
                 #(self.#state_idents.sync(env);)*
             }

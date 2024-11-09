@@ -222,7 +222,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Layout for Text<T, S, C, FS, FW> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
         self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
@@ -237,7 +237,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Render for Text<T, S, C, FS, FW> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
 
         let default_color = self.color.value();
 
@@ -249,7 +249,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>> Accessibility for Text<T, S, C, FS, FW> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let mut builder = Node::new(Role::Label);
 

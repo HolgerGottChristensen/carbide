@@ -14,6 +14,7 @@ pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
 pub use calendar::*;
+use carbide::environment::EnvironmentStack;
 use carbide::focus::{Focus, Refocus};
 use carbide::state::{ReadState, State};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext};
@@ -65,12 +66,13 @@ mod calendar;
 mod date_picker;
 mod toggle_style;
 
-type EnabledState = EnvMap1<fn(&Environment, &i32) -> bool, i32, bool, i32>;
+type EnabledState = EnvMap1<fn(&EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 
 pub fn enabled_state() -> EnabledState {
     Map1::read_map_env(0, |env, _| {
         // Look up enabled in the environment, or default to true of nothing is specified
-        env.bool("enabled").unwrap_or(true)
+        //env.bool("enabled").unwrap_or(true)
+        todo!()
     })
 }
 
@@ -79,7 +81,7 @@ pub(crate) struct UnfocusAction<F>(F) where F: State<T=Focus>;
 
 impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.0.sync(ctx.env);
+        self.0.sync(ctx.env_stack);
         if *self.0.value() == Focus::Focused {
             self.0.set_value(Focus::FocusReleased);
             ctx.env.request_focus(Refocus::FocusRequest);

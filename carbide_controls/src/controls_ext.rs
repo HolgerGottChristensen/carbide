@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use carbide::environment::{EnvironmentNew, Key};
+use carbide::environment::{Key};
 use carbide::widget::EnvUpdatingNew;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;

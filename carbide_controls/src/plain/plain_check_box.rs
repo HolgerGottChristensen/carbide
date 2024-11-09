@@ -13,6 +13,7 @@ use carbide_core::CommonWidgetImpl;
 use smallvec::SmallVec;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
+use carbide::environment::EnvironmentStack;
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::render::{Render, RenderContext};
 use carbide::widget::IntoWidget;
@@ -150,7 +151,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
                     checked: self.checked.clone(),
                     focus: self.focus.clone(),
                     enabled: self.enabled.clone(),
-                }.trigger(ctx.env);
+                }.trigger(ctx.env, ctx.env_stack);
             }
             AccessibilityAction::Focus => {
                 self.request_focus(ctx.env)
@@ -169,7 +170,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
     }
 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
@@ -177,6 +178,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 
         let mut child_ctx = AccessibilityContext {
             env: ctx.env,
+            env_stack: ctx.env_stack,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
             children: &mut children,
@@ -223,9 +225,9 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Render for PlainCheckBox<F, C, D, E> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
 
-        println!("{:?}", context.env_new.get::<ToggleStyleKey>());
+        println!("{:?}", context.env_stack.get::<ToggleStyleKey>());
 
         self.child.render(context);
     }
@@ -260,15 +262,15 @@ struct CheckboxAction<C, F, E> where
 }
 
 impl<C: State<T=CheckBoxValue>, F: State<T=Focus>, E: ReadState<T=bool>> CheckboxAction<C, F, E> {
-    fn trigger(&mut self, env: &mut Environment) {
-        self.enabled.sync(env);
+    fn trigger(&mut self, env: &mut Environment, env_stack: &mut EnvironmentStack) {
+        self.enabled.sync(env_stack);
 
         if !*self.enabled.value() {
             return;
         }
 
-        self.focus.sync(env);
-        self.checked.sync(env);
+        self.focus.sync(env_stack);
+        self.checked.sync(env_stack);
 
         if *self.checked.value() == CheckBoxValue::True {
             *self.checked.value_mut() = CheckBoxValue::False;
@@ -284,5 +286,5 @@ impl<C: State<T=CheckBoxValue>, F: State<T=Focus>, E: ReadState<T=bool>> Checkbo
 }
 
 impl<C: State<T=CheckBoxValue>, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for CheckboxAction<C, F, E> {
-    fn call(&mut self, ctx: MouseAreaActionContext) { self.trigger(ctx.env) }
+    fn call(&mut self, ctx: MouseAreaActionContext) { self.trigger(ctx.env, ctx.env_stack) }
 }

@@ -4,6 +4,7 @@ use dyn_clone::DynClone;
 use smallvec::SmallVec;
 use carbide::accessibility;
 use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
+use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
@@ -215,6 +216,7 @@ impl<
                     self.is_pressed.set_value(false);
                     self.click.call(MouseAreaActionContext {
                         env: ctx.env,
+                        env_stack: ctx.env_stack,
                         modifier_key: ModifierKey::empty()
                     });
                 } else {
@@ -264,12 +266,14 @@ impl<
                     //self.request_focus(ctx.env);
                     self.click.call(MouseAreaActionContext {
                         env: ctx.env,
+                        env_stack: ctx.env_stack,
                         modifier_key: *modifier
                     });
                 } else {
                     //self.set_focus(Focus::Unfocused);
                     self.click_outside.call(MouseAreaActionContext {
                         env: ctx.env,
+                        env_stack: ctx.env_stack,
                         modifier_key: *modifier
                     });
                 }
@@ -315,6 +319,7 @@ impl<
             AccessibilityAction::Click => {
                 self.click.call(MouseAreaActionContext {
                     env: ctx.env,
+                    env_stack: ctx.env_stack,
                     modifier_key: ModifierKey::empty()
                 });
             }
@@ -338,7 +343,7 @@ impl<
     P: State<T=bool>,
 > Accessibility for MouseArea<I, O, F, C, H, P> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
@@ -346,6 +351,7 @@ impl<
 
         let mut child_ctx = AccessibilityContext {
             env: ctx.env,
+            env_stack: ctx.env_stack,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
             children: &mut children,
@@ -436,7 +442,7 @@ pub trait MouseAreaAction: Clone + 'static {
     fn call(&mut self, ctx: MouseAreaActionContext);
 }
 
-impl<I> MouseAreaAction for I where I: for<'a> Fn(MouseAreaActionContext<'a>) + Clone + 'static {
+impl<I> MouseAreaAction for I where I: Fn(MouseAreaActionContext<'_, '_>) + Clone + 'static {
     fn call(&mut self, ctx: MouseAreaActionContext) {
         self(ctx);
     }
@@ -446,10 +452,11 @@ impl<I> MouseAreaAction for I where I: for<'a> Fn(MouseAreaActionContext<'a>) + 
 // their parameters inferred by rust.
 pub trait Action: Fn(MouseAreaActionContext) + Clone + 'static {}
 
-impl<I> Action for I where I: for<'a> Fn(MouseAreaActionContext<'a>) + Clone + 'static {}
+impl<I> Action for I where I: Fn(MouseAreaActionContext<'_, '_>) + Clone + 'static {}
 
 /// The context given when handling on click actions.
-pub struct MouseAreaActionContext<'a> {
+pub struct MouseAreaActionContext<'a, 'b: 'a> {
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
     pub modifier_key: ModifierKey
 }

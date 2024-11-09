@@ -41,7 +41,7 @@ pub struct PbrMaterial {
 }
 
 impl StateSync for PbrMaterial {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.albedo.sync(env)
     }
 }

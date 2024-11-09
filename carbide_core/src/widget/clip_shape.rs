@@ -1,3 +1,4 @@
+use carbide::environment::EnvironmentStack;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -36,7 +37,7 @@ impl ClipShape<Empty, Empty> {
 }
 
 impl<C: Widget, S: Shape + Clone> WidgetSync for ClipShape<C, S> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.child.sync(env);
         self.shape.sync(env);
     }

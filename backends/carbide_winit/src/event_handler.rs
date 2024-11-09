@@ -12,7 +12,7 @@ use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
-use carbide_core::environment::{Environment, EnvironmentNew, TypeMap};
+use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
 use carbide_core::event::Event::CoreEvent;
 use carbide_core::focus::{FocusContext, Refocus};
@@ -61,13 +61,14 @@ impl NewEventHandler {
         EventId::new(self.event_id)
     }
 
-    pub fn handle_refocus(target: &mut impl Scene, env: &mut Environment) {
+    pub fn handle_refocus(target: &mut impl Scene, env: &mut Environment, env_stack: &mut EnvironmentStack) {
         if let Some(request) = env.focus_request.clone() {
             match request {
                 Refocus::FocusRequest => {
                     //println!("Process focus request");
                     target.process_focus_request(&mut FocusContext {
                         env,
+                        env_stack,
                         focus_count: &mut 0,
                         available: &mut false,
                     });
@@ -78,6 +79,7 @@ impl NewEventHandler {
                     //println!("Focus next");
                     target.process_focus_next(&mut FocusContext {
                         env,
+                        env_stack,
                         focus_count: &mut count,
                         available: &mut false,
                     });
@@ -86,6 +88,7 @@ impl NewEventHandler {
                         //println!("Focus next back to first");
                         target.process_focus_next(&mut FocusContext {
                             env,
+                            env_stack,
                             focus_count: &mut 0,
                             available: &mut true,
                         });
@@ -97,6 +100,7 @@ impl NewEventHandler {
                     //println!("Focus prev");
                     target.process_focus_previous(&mut FocusContext {
                         env,
+                        env_stack,
                         focus_count: &mut count,
                         available: &mut false,
                     });
@@ -105,6 +109,7 @@ impl NewEventHandler {
                         //println!("Focus prev forward to last");
                         target.process_focus_previous(&mut FocusContext {
                             env,
+                            env_stack,
                             focus_count: &mut 0,
                             available: &mut true,
                         });
@@ -115,7 +120,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: WindowEvent, window_id: WindowId, target: &'b mut impl Scene, text_context: &'a mut impl InnerTextContext, image_context: &'a mut impl InnerImageContext, env: &'a mut Environment, env_new: &'a mut TypeMap<'c>, id: WidgetId) -> bool {
+    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: WindowEvent, window_id: WindowId, target: &'b mut impl Scene, text_context: &'a mut impl InnerTextContext, image_context: &'a mut impl InnerImageContext, env: &'a mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> bool {
         match event {
             WindowEvent::Moved(position) => {
                 let logical_position = position.to_logical(scale_factor(window_id));
@@ -124,6 +129,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                 });
@@ -137,25 +143,27 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                 });
 
                 true
             },
-            WindowEvent::Focused(focus) => self.focus(focus, window_id, target, text_context, image_context, env),
-            WindowEvent::KeyboardInput { event: winit::event::KeyEvent { logical_key, state, .. }, .. } => self.keyboard(logical_key, state, window_id, target, text_context, image_context, env),
+            WindowEvent::Focused(focus) => self.focus(focus, window_id, target, text_context, image_context, env, env_stack),
+            WindowEvent::KeyboardInput { event: winit::event::KeyEvent { logical_key, state, .. }, .. } => self.keyboard(logical_key, state, window_id, target, text_context, image_context, env, env_stack),
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = ModifierKey::from_bits_retain(modifiers.state().bits());
                 false
             }
-            WindowEvent::Ime(ime) => self.ime(ime, window_id, target, text_context, image_context, env),
-            WindowEvent::CursorMoved { position, .. } => self.cursor_moved(position, window_id, target, text_context, image_context, env),
-            WindowEvent::MouseWheel { delta, .. } => self.mouse_wheel(delta, window_id, target, text_context, image_context, env),
-            WindowEvent::MouseInput { state, button, .. } => self.mouse_input(button, state, window_id, target, text_context, image_context, env),
+            WindowEvent::Ime(ime) => self.ime(ime, window_id, target, text_context, image_context, env, env_stack),
+            WindowEvent::CursorMoved { position, .. } => self.cursor_moved(position, window_id, target, text_context, image_context, env, env_stack),
+            WindowEvent::MouseWheel { delta, .. } => self.mouse_wheel(delta, window_id, target, text_context, image_context, env, env_stack),
+            WindowEvent::MouseInput { state, button, .. } => self.mouse_input(button, state, window_id, target, text_context, image_context, env, env_stack),
             WindowEvent::RedrawRequested => {
                 target.process_accessibility(&mut AccessibilityContext {
                     env,
+                    env_stack,
                     nodes: &mut TreeUpdate {
                         nodes: vec![],
                         tree: None,
@@ -175,7 +183,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
-                    env_new,
+                    env_stack,
                 });
 
                 // Set cursor to default for next frame
@@ -194,6 +202,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                 });
@@ -219,6 +228,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
                 true
             },
@@ -231,6 +241,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
                 true
             },
@@ -242,6 +253,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                 });
@@ -257,6 +269,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                 });
@@ -273,6 +286,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
                 true
             },
@@ -285,6 +299,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
                 true
             },
@@ -297,6 +312,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
                 true
             },
@@ -306,7 +322,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         match state {
             ElementState::Pressed => {
                 let id = self.next_id();
@@ -327,6 +343,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
 
                 self.pressed_buttons.insert(button, (event, now));
@@ -357,6 +374,7 @@ impl NewEventHandler {
                     is_current: &false,
                     window_id: &window_id.into(),
                     consumed: &mut consumed,
+                    env_stack,
                 });
 
                 // A click should be emitted if within a threshold distance of the press.
@@ -395,6 +413,7 @@ impl NewEventHandler {
                             is_current: &false,
                             window_id: &window_id.into(),
                             consumed: &mut consumed,
+                            env_stack,
                         });
                         self.last_click = Some((Instant::now(), event));
                     } else {
@@ -408,6 +427,7 @@ impl NewEventHandler {
                             is_current: &false,
                             window_id: &window_id.into(),
                             consumed: &mut consumed,
+                            env_stack,
                         });
                         self.last_click = Some((Instant::now(), event));
                     }
@@ -420,7 +440,7 @@ impl NewEventHandler {
         true
     }
 
-    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, id: WidgetId) -> bool {
+    pub fn user_event(&mut self, event: CustomEvent, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack, id: WidgetId) -> bool {
         match event {
             CustomEvent::Core(core_event) => {
                 check_tasks(&mut AsyncContext {
@@ -433,6 +453,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                 });
             }
             CustomEvent::Accessibility(accesskit_winit::Event { window_id, window_event}) => {
@@ -441,6 +462,7 @@ impl NewEventHandler {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
                         target.process_accessibility(&mut AccessibilityContext {
                             env,
+                            env_stack,
                             nodes: &mut TreeUpdate {
                                 nodes: vec![],
                                 tree: None,
@@ -462,6 +484,7 @@ impl NewEventHandler {
                             data: request.data,
                         }, &mut AccessibilityEventContext {
                             env,
+                            env_stack,
                         });
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
@@ -472,7 +495,7 @@ impl NewEventHandler {
         true
     }
 
-    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         let (x, y) = match delta {
             MouseScrollDelta::PixelDelta(delta) => {
                 let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor(window_id));
@@ -504,17 +527,19 @@ impl NewEventHandler {
             is_current: &false,
             window_id: &window_id.into(),
             consumed: &mut false,
+            env_stack,
         });
 
         true
     }
 
-    pub fn focus(&mut self, focus: bool, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn focus(&mut self, focus: bool, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         if focus {
             target.process_window_event(&carbide_core::event::WindowEvent::Focus, &mut WindowEventContext {
                 text: text_context,
                 image: image_context,
                 env,
+                env_stack,
                 is_current: &false,
                 window_id: &window_id.into(),
             });
@@ -523,6 +548,7 @@ impl NewEventHandler {
                 text: text_context,
                 image: image_context,
                 env,
+                env_stack,
                 is_current: &false,
                 window_id: &window_id.into(),
             });
@@ -531,7 +557,7 @@ impl NewEventHandler {
         true
     }
 
-    pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         let key = convert_key(&logical_key);
         let mut prevent_default = false;
         match state {
@@ -540,6 +566,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                     prevent_default: &mut prevent_default,
@@ -562,6 +589,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                     prevent_default: &mut prevent_default,
@@ -573,7 +601,7 @@ impl NewEventHandler {
         true
     }
 
-    pub fn ime(&mut self, ime: Ime, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn ime(&mut self, ime: Ime, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         match ime {
             Ime::Enabled => false,
             Ime::Preedit(s, cursor) => {
@@ -583,6 +611,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                     prevent_default: &mut false,
@@ -596,6 +625,7 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    env_stack,
                     is_current: &false,
                     window_id: &window_id.into(),
                     prevent_default: &mut false,
@@ -606,7 +636,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> bool {
+    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, target: &mut impl Scene, text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> bool {
         let last_mouse_xy = self.mouse_position;
 
         let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor(window_id));
@@ -635,6 +665,7 @@ impl NewEventHandler {
             is_current: &false,
             window_id: &window_id.into(),
             consumed: &mut consumed,
+            env_stack,
         });
 
         // Check for drag events.
@@ -665,6 +696,7 @@ impl NewEventHandler {
                             is_current: &false,
                             window_id: &window_id.into(),
                             consumed: &mut consumed,
+                            env_stack,
                         });
                     }
                     _ => {}

@@ -124,7 +124,7 @@ impl<R1: ReadState<T = Angle> + Clone, R2: ReadState<T = Angle> + Clone, C: Widg
 
 impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for Rotation3DEffect<R1, R2, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
         let fov = self.fov as f32;
         let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);

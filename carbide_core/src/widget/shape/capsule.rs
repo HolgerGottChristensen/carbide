@@ -104,7 +104,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Cap
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
 
         let rect = rect(
             self.x() as f32,

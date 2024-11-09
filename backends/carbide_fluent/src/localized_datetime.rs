@@ -69,7 +69,7 @@ impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadSt
 }
 
 impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle>> StateSync for LocalizedDateTime<S, D, T, Tz> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.datetime.sync(env);
         self.date_style.sync(env);
         self.time_style.sync(env);

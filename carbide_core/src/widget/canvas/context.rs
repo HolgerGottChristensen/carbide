@@ -128,13 +128,13 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
     pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
         let mut read_state = style.into_read_state();
-        read_state.sync(self.render_context.env);
+        read_state.sync(self.render_context.env_stack);
         self.current_state.fill_color = read_state.value().clone();
     }
 
     pub fn set_stroke_style<C: IntoReadState<Style>>(&mut self, style: C) {
         let mut read_state = style.into_read_state();
-        read_state.sync(self.render_context.env);
+        read_state.sync(self.render_context.env_stack);
         self.current_state.stroke_color = read_state.value().clone();
     }
 

@@ -1,6 +1,5 @@
 use carbide::color::Color;
 use carbide::draw::Dimension;
-use carbide::environment::TypeMap;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
 use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
@@ -11,7 +10,7 @@ use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
 use crate::widget::FilterId;
-use crate::environment::{Environment, EnvironmentNew};
+use crate::environment::{Environment, EnvironmentStack};
 use crate::render::layer::{Layer, LayerId, NoopLayer};
 
 pub struct RenderContext<'a, 'b: 'a> {
@@ -19,7 +18,7 @@ pub struct RenderContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
-    pub env_new: &'a mut TypeMap<'b>,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
 }
 
 impl<'a, 'b: 'a> RenderContext<'a, 'b> {

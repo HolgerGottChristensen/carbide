@@ -64,7 +64,7 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> D
 }
 
 impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> StateSync for DirectionalLight<D, C, I> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.direction.sync(env) | self.color.sync(env) | self.intensity.sync(env)
     }
 }

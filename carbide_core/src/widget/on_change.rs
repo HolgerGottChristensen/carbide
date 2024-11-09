@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-
+use carbide::environment::EnvironmentStack;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -53,7 +53,7 @@ impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> 
 }
 
 impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> WidgetSync for OnChange<W, T, S, F> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.state.sync(env);
 
         if let Some(val) = &mut self.prev {

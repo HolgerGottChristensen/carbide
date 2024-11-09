@@ -27,13 +27,13 @@ impl<C: Widget, K: Key> EnvUpdatingNew<C, K> {
 
 impl<C: Widget, K: Key> Render for EnvUpdatingNew<C, K> {
     fn render(&mut self, context: &mut RenderContext) {
-        context.env_new.with::<K>(&self.value, |ctx| {
+        context.env_stack.with::<K>(&self.value, |ctx| {
             self.child.render(&mut RenderContext {
                 render: context.render,
                 text: context.text,
                 image: context.image,
                 env: context.env,
-                env_new: ctx,
+                env_stack: ctx,
             })
         })
     }

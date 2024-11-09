@@ -34,8 +34,8 @@ impl Absolute<f64, f64, Empty> {
 
 impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absolute<X, Y, C> {
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        self.x.sync(ctx.env);
-        self.y.sync(ctx.env);
+        self.x.sync(ctx.env_stack);
+        self.y.sync(ctx.env_stack);
 
         let position = Position::new(*self.x.value(), *self.y.value());
         let dimension = Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height());

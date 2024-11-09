@@ -1,6 +1,5 @@
-use carbide::environment::TypeMap;
 use crate::draw::Color;
-use crate::environment::{Environment, Key, Keyable};
+use crate::environment::{Environment, EnvironmentStack, Key, Keyable};
 use crate::render::Style;
 use crate::state::*;
 use crate::widget::EnvKey;
@@ -68,9 +67,9 @@ pub enum EnvironmentColor {
 impl Keyable for EnvironmentColor {
     type Output = Color;
 
-    fn get(&self, map: &TypeMap) -> Self::Output {
+    fn get(&self, stack: &EnvironmentStack) -> Self::Output {
         match self {
-            EnvironmentColor::Accent => map.get::<EnvironmentColorAccent>().cloned().unwrap(),
+            EnvironmentColor::Accent => stack.get::<EnvironmentColorAccent>().cloned().unwrap(),
             _ => todo!()
         }
     }
@@ -149,21 +148,23 @@ impl Default for EnvironmentColor {
 // ---------------------------------------------------
 
 impl ConvertIntoRead<Color> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&EnvironmentStack, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            env.color(*value).unwrap()
+            //env.color(*value).unwrap()
+            todo!()
         })
     }
 }
 
 impl ConvertIntoRead<Style> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&EnvironmentStack, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            Style::Color(env.color(*value).unwrap())
+            //Style::Color(env.color(*value).unwrap())
+            todo!()
         })
     }
 }

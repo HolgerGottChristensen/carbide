@@ -29,6 +29,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                         ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
                             initialized.child.process_accessibility(&mut AccessibilityContext {
                                 env,
+                                env_stack: ctx.env_stack,
                                 nodes: &mut tree_update,
                                 parent_id: Some(id),
                                 children: &mut children,
@@ -58,6 +59,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                     ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
                         initialized.child.process_accessibility(&mut AccessibilityContext {
                             env,
+                            env_stack: ctx.env_stack,
                             nodes: ctx.nodes,
                             parent_id: Some(initialized.id),
                             children: &mut children,

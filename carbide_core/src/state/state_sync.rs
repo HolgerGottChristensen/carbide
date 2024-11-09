@@ -1,4 +1,4 @@
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 
 pub trait StateSync {
     /// This will get called automatically if the field storing this is marked #\[state\] and is
@@ -6,7 +6,7 @@ pub trait StateSync {
     /// parent widget receives its event. If the sync resulted in a state updating, the method
     /// will return true.
     #[allow(unused_variables)]
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         false
     }
 }

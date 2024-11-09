@@ -9,7 +9,7 @@ pub enum Material {
 }
 
 impl StateSync for Material {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         match self {
             Material::PBR(p) => p.sync(env)
         }

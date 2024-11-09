@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use smallvec::SmallVec;
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Node, Point, Rect, Role, Size, Toggled};
 use carbide::closure;
+use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
 use carbide::focus::Focusable;
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, WidgetSync};
@@ -144,7 +145,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
     }
 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
@@ -152,6 +153,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
 
         let mut child_ctx = AccessibilityContext {
             env: ctx.env,
+            env_stack: ctx.env_stack,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
             children: &mut children,
@@ -202,7 +204,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
                     checked: self.checked.clone(),
                     focus: self.focus.clone(),
                     enabled: self.enabled.clone(),
-                }.trigger(ctx.env);
+                }.trigger(ctx.env, ctx.env_stack);
             }
             AccessibilityAction::Focus => {
                 self.request_focus(ctx.env)
@@ -243,15 +245,15 @@ struct SwitchAction<C, F, E> where
 }
 
 impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> SwitchAction<C, F, E> {
-    fn trigger(&mut self, env: &mut Environment) {
-        self.enabled.sync(env);
+    fn trigger(&mut self, env: &mut Environment, env_stack: &mut EnvironmentStack) {
+        self.enabled.sync(env_stack);
 
         if !*self.enabled.value() {
             return;
         }
 
-        self.focus.sync(env);
-        self.checked.sync(env);
+        self.focus.sync(env_stack);
+        self.checked.sync(env_stack);
 
         if *self.checked.value() {
             *self.checked.value_mut() = false;
@@ -267,5 +269,5 @@ impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> SwitchAction<C, 
 }
 
 impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for SwitchAction<C, F, E> {
-    fn call(&mut self, ctx: MouseAreaActionContext) { self.trigger(ctx.env) }
+    fn call(&mut self, ctx: MouseAreaActionContext) { self.trigger(ctx.env, ctx.env_stack) }
 }

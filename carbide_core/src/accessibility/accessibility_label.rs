@@ -21,12 +21,13 @@ impl AccessibilityLabel<Empty, String> {
 
 impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityLabel<C, S> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let label = &*self.label.value();
 
         let mut child_ctx = AccessibilityContext {
             env: ctx.env,
+            env_stack: ctx.env_stack,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,
             children: ctx.children,

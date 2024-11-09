@@ -11,7 +11,7 @@ pub trait Key: Any + Debug + Clone + 'static {
 pub trait Keyable {
     type Output: Any + Debug + Clone + 'static;
 
-    fn get(&self, map: &TypeMap) -> Self::Output;
+    fn get(&self, stack: &TypeMap) -> Self::Output;
 }
 
 pub struct TypeMap<'a> {
@@ -84,7 +84,7 @@ impl Hasher for TypeIdHasher {
 }
 
 mod tests {
-    use crate::environment::type_map::{Key, TypeMap};
+    use crate::environment::environment_stack::{Key, TypeMap};
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey;

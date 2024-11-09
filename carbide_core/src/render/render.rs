@@ -9,7 +9,7 @@ pub trait Render: CommonWidget + WidgetSync {
             context.env.set_cursor(cursor);
         }
 
-        self.sync(context.env);
+        self.sync(context.env_stack);
         self.foreach_child_mut(&mut |child| {
             child.render(context);
         });

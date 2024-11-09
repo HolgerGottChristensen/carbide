@@ -157,7 +157,7 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
 
 impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
         let bounding_box = Rect::new(self.position, self.dimension);
         let matrix = *self.matrix.value();
 

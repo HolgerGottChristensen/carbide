@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
-
+use carbide::environment::EnvironmentStack;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -103,7 +103,7 @@ impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
         U: Delegate<T, W>,
         I: ReadState<T=usize>
 {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.model.sync(env);
         self.index_offset.sync(env);
 

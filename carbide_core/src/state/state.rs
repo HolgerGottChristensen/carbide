@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 
 
 use carbide_core::environment::Environment;
-
+use crate::environment::EnvironmentStack;
 use crate::state::*;
 use crate::state::ReadState;
 use crate::state::util::value_cell::ValueRefMut;
@@ -50,7 +50,7 @@ pub trait AnyState: AnyReadState {
 //  Implementations
 // ---------------------------------------------------
 impl<T: StateContract> StateSync for Box<dyn AnyState<T=T>> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.deref_mut().sync(env)
     }
 }

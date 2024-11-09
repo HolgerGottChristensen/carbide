@@ -1,4 +1,4 @@
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, AnyState, InnerState, StateSync, ReadState, State, StateContract, ValueCell, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
@@ -17,7 +17,7 @@ impl<T: StateContract, S: ReadState<T=T>> CachedReadState<T, S> {
 }
 
 impl<T: StateContract, S: ReadState<T=T>> StateSync for CachedReadState<T, S> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         let updated = self.state.sync(env);
 
         let borrowed = &mut *self.inner_value.borrow_mut();
@@ -94,7 +94,7 @@ impl<T: StateContract, S: State<T=T>> CachedState<T, S> {
 }
 
 impl<T: StateContract, S: State<T=T>> StateSync for CachedState<T, S> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         let updated = self.state.sync(env);
 
         let borrowed = &mut *self.inner_value.borrow_mut();

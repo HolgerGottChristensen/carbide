@@ -3,8 +3,7 @@ use carbide_core::state::AnyReadState;
 pub use environment::Environment;
 pub use environment_color::*;
 pub use environment_font_size::EnvironmentFontSize;
-pub use environment_new::*;
-pub use type_map::*;
+pub use environment_stack::{Key, Keyable, TypeMap as EnvironmentStack};
 pub(crate) use environment_variable::EnvironmentVariable;
 
 use crate::widget::AnyWidget;
@@ -14,8 +13,7 @@ mod environment_color;
 mod environment_font_size;
 mod environment_variable;
 pub mod environment_state_key;
-mod type_map;
-mod environment_new;
+mod environment_stack;
 
 #[derive(Debug, Clone)]
 pub enum WidgetTransferAction {

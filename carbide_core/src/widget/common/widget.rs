@@ -3,6 +3,7 @@ use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
 use dyn_clone::DynClone;
 use carbide::accessibility::AccessibilityContext;
+use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::lifecycle::InitializationContext;
 use crate::accessibility::Accessibility;
@@ -157,7 +158,7 @@ impl<T: AnyWidget + ?Sized> AccessibilityEventHandler for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> WidgetSync for Box<T> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.deref_mut().sync(env);
     }
 }

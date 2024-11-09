@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
 use crate::state::{StateSync, ReadState, ValueRef, ValueRefMut};
 
@@ -27,7 +27,7 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyReadState fo
 }
 
 impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> StateSync for IgnoreWritesState<T, TState> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.0.sync(env)
     }
 }

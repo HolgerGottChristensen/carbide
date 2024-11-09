@@ -1,5 +1,5 @@
 use crate::draw::InnerImageContext;
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::event::Event;
 use crate::focus::Focusable;
 use crate::state::StateSync;
@@ -16,7 +16,7 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         //if ctx.env.is_event_current() {
-            self.sync(ctx.env);
+            self.sync(ctx.env_stack);
             self.handle_other_event(event, ctx);
         //}
 
@@ -26,8 +26,9 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
     }
 }
 
-pub struct OtherEventContext<'a> {
+pub struct OtherEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
 }

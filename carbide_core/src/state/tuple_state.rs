@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::environment::Environment;
+use crate::environment::EnvironmentStack;
 use crate::state::{
     StateSync, ReadState, State, Functor, IntoReadState, Fn2,
     StateContract, ValueRef, ValueRefMut, AnyReadState, AnyState, InnerState, ValueCell,
@@ -25,7 +25,7 @@ macro_rules! tuple_state {
             }
 
             #[allow(unused_parens)]
-            pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+            pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $env_map_name {
                     $(
                         $name,
@@ -114,7 +114,7 @@ macro_rules! tuple_state {
             $($type: StateContract),*,
             TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
-            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+            MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static
         {
             $(
                 $name: $type2,
@@ -175,7 +175,7 @@ macro_rules! tuple_state {
             $($type: StateContract),*,
             TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
-            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+            MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static
         > Functor<V> for $env_map_name<MAP, $($type),*, TO, $($type2),*> where $env_map_name<MAP, $($type),*, TO, $($type2),*>: IntoReadState<V> {
             // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063
             type Output<G: StateContract, F: Fn2<V, G>> = RMap1<F, V, G, <$env_map_name<MAP, $($type),*, TO, $($type2),*> as IntoReadState<V>>::Output>;
@@ -193,7 +193,7 @@ macro_rules! tuple_state {
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
             MAP: Fn($(&$type),*) -> TO + Clone + 'static
         > StateSync for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
-            fn sync(&mut self, env: &mut Environment) -> bool {
+            fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
                 let mut updated = false;
 
                 $(
@@ -213,7 +213,7 @@ macro_rules! tuple_state {
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
             REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > StateSync for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
-            fn sync(&mut self, env: &mut Environment) -> bool {
+            fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
                 let mut updated = false;
 
                 $(
@@ -233,7 +233,7 @@ macro_rules! tuple_state {
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
             REPLACE: Fn(&TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > StateSync for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
-            fn sync(&mut self, env: &mut Environment) -> bool {
+            fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
                 let mut updated = false;
 
                 $(
@@ -250,9 +250,9 @@ macro_rules! tuple_state {
             $($type: StateContract),*,
             TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
-            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+            MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static
         > StateSync for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
-            fn sync(&mut self, env: &mut Environment) -> bool {
+            fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
                 $(
                     self.$name.sync(env);
                 )*
@@ -312,7 +312,7 @@ macro_rules! tuple_state {
             $($type: StateContract),*,
             TO: StateContract + Default,
             $($type2: AnyReadState<T=$type> + Clone + 'static),*,
-            MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static
+            MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static
         > AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
             fn value_dyn(&self) -> ValueRef<TO> {
@@ -393,7 +393,7 @@ macro_rules! tuple_state {
         }
 
         #[allow(unused_parens)]
-        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&Environment, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
+        impl<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&EnvironmentStack, $(&$type),*) -> TO + Clone + 'static> core::fmt::Debug for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_struct(stringify!($env_map_name))
                     $(

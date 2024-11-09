@@ -28,6 +28,7 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
                         consumed: ctx.consumed,
+                        env_stack: ctx.env_stack,
                     };
 
                     initialized.child.process_mouse_event(event, new_ctx);
@@ -54,6 +55,7 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
                 ctx.env.with_scale_factor(scale_factor, |env| {
                     let new_ctx = &mut AccessibilityEventContext {
                         env,
+                        env_stack: ctx.env_stack,
                     };
 
                     initialized.child.process_accessibility_event(event, new_ctx);
@@ -84,6 +86,7 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
                         text: ctx.text,
                         image: ctx.image,
                         env,
+                        env_stack: ctx.env_stack,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
                         prevent_default: ctx.prevent_default,
@@ -115,6 +118,7 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                         text: ctx.text,
                         image: ctx.image,
                         env,
+                        env_stack: ctx.env_stack,
                     });
                 });
 
@@ -197,6 +201,7 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                         text: ctx.text,
                         image: ctx.image,
                         env,
+                        env_stack: ctx.env_stack,
                         is_current: &is_current,
                         window_id: ctx.window_id,
                     });

@@ -192,10 +192,10 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<Id, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
 
         if let Some(color) = &mut self.color {
-            color.sync(context.env);
+            color.sync(context.env_stack);
         }
 
         if let Some(id) = self.image_id.value().deref() {
@@ -231,7 +231,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for Image<Id, C> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         let mut builder = Node::new(Role::Label);
 

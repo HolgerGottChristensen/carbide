@@ -1,13 +1,14 @@
 use carbide::environment::Environment;
 use carbide::widget::{CommonWidget, WidgetSync};
 use std::any::Any;
+use crate::environment::EnvironmentStack;
 
 pub trait Initialize: CommonWidget + WidgetSync {
     #[allow(unused_variables)]
     fn initialize(&mut self, ctx: &mut InitializationContext) {}
 
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
         self.initialize(ctx);
 
         self.foreach_child_direct(&mut |child| {
@@ -17,7 +18,8 @@ pub trait Initialize: CommonWidget + WidgetSync {
 }
 
 
-pub struct InitializationContext<'a> {
+pub struct InitializationContext<'a, 'b: 'a> {
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
     pub lifecycle_manager: &'a dyn Any,
 }

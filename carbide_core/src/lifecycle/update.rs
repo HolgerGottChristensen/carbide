@@ -1,5 +1,5 @@
 use crate::draw::InnerImageContext;
-use crate::environment::{Environment, EnvironmentNew};
+use crate::environment::{Environment, EnvironmentStack};
 use crate::text::InnerTextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
@@ -8,7 +8,7 @@ pub trait Update: CommonWidget + WidgetSync {
     fn update(&mut self, ctx: &mut UpdateContext) {}
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
         self.update(ctx);
 
         self.foreach_child_direct(&mut |child| {
@@ -18,8 +18,9 @@ pub trait Update: CommonWidget + WidgetSync {
 }
 
 
-pub struct UpdateContext<'a> {
+pub struct UpdateContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
 }

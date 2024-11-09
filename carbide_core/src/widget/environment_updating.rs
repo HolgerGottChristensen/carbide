@@ -53,12 +53,14 @@ impl<C: Widget, T: StateContract, S: ReadState<T=T>> EnvUpdating<C, T, S> {
 impl<C: Widget, T: StateContract, S: ReadState<T=T>> EnvUpdating<C, T, S> {
 
     fn remove_from_env(&self, env: &mut Environment) {
-        env.pop();
+        //env.pop();
+        todo!()
     }
 
     fn insert_into_env(&mut self, env: &mut Environment) {
-        self.value.sync(env);
-        env.push(self.key, Box::new(self.value.value().clone()));
+        /*self.value.sync(env);
+        env.push(self.key, Box::new(self.value.value().clone()));*/
+        todo!()
     }
 }
 

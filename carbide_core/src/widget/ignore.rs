@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use carbide::accessibility::AccessibilityContext;
+use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::lifecycle::Initialize;
 use crate::accessibility::Accessibility;
@@ -166,7 +167,7 @@ impl<T: Widget,
         }
     }
 
-    fn update_states(&mut self, env: &mut Environment) {
+    fn update_states(&mut self, env: &mut EnvironmentStack) {
         self.state_sync.sync(env);
         self.mouse_event.sync(env);
         self.keyboard_event.sync(env);
@@ -266,7 +267,7 @@ impl<T: Widget,
     B9: ReadState<T=bool>,
     B10: ReadState<T=bool>,
 > WidgetSync for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.state_sync.sync(env);
         self.mouse_event.sync(env);
         self.keyboard_event.sync(env);
@@ -295,14 +296,14 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > MouseEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.mouse_event.value() {
             self.inner.handle_mouse_event(event, ctx)
         }
     }
 
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.mouse_event.value() {
             self.inner.process_mouse_event(event, ctx)
         }
@@ -322,14 +323,14 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > KeyboardEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.keyboard_event.value() {
             self.inner.handle_keyboard_event(event, ctx)
         }
     }
 
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.keyboard_event.value() {
             self.inner.process_keyboard_event(event, ctx)
         }
@@ -349,12 +350,12 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > WindowEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         self.inner.handle_window_event(event, ctx)
     }
 
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         self.inner.process_window_event(event, ctx)
     }
 }
@@ -372,14 +373,14 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > OtherEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.other_event.value() {
             self.inner.handle_other_event(_event, ctx)
         }
     }
 
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.other_event.value() {
             self.inner.process_other_event(event, ctx)
         }
@@ -399,14 +400,14 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > AccessibilityEventHandler for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn handle_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.mouse_event.value() {
             self.inner.handle_accessibility_event(event, ctx)
         }
     }
 
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.mouse_event.value() {
             self.inner.process_accessibility_event(event, ctx)
         }
@@ -426,14 +427,14 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > Update for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn update(&mut self, ctx: &mut UpdateContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.update.value() {
             self.inner.update(ctx)
         }
     }
 
     fn process_update(&mut self, ctx: &mut UpdateContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.update.value() {
             self.inner.process_update(ctx)
         }
@@ -453,7 +454,7 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > Layout for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.layout_event.value() {
             self.inner.calculate_size(requested_size, ctx)
         } else {
@@ -462,7 +463,7 @@ impl<T: Widget,
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.layout_event.value() {
             self.inner.position_children(ctx)
         }
@@ -482,7 +483,7 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > Render for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.update_states(context.env);
+        self.update_states(context.env_stack);
         if *self.render_event.value() {
             self.inner.render(context)
         }
@@ -502,21 +503,21 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn request_focus(&mut self, env: &mut Environment) {
-        self.update_states(env);
+        //self.update_states(env);
         if *self.focus_event.value() {
             self.inner.request_focus(env)
         }
     }
 
     fn process_focus_request(&mut self, ctx: &mut FocusContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.focus_event.value() {
             self.inner.process_focus_request(ctx)
         }
     }
 
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.focus_event.value() {
             self.inner.process_focus_next(ctx)
         }
@@ -526,7 +527,7 @@ impl<T: Widget,
         &mut self,
         ctx: &mut FocusContext,
     ) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.focus_event.value() {
             self.inner.process_focus_previous(ctx)
         }
@@ -546,7 +547,7 @@ impl<T: Widget,
     B10: ReadState<T=bool>,
 > Accessibility for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.update_states(ctx.env);
+        self.update_states(ctx.env_stack);
         if *self.accessibility.value() {
             self.inner.process_accessibility(ctx)
         }

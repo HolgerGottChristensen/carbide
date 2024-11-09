@@ -8,7 +8,7 @@ use carbide::text::FontWeight;
 use carbide_core::environment::Environment;
 
 use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
-use crate::environment::{EnvironmentColor, EnvironmentFontSize};
+use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentStack};
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::*;
@@ -40,7 +40,7 @@ pub trait AnyReadState: DynClone + StateSync + Debug + 'static {
 // ---------------------------------------------------
 
 impl<T: StateContract> StateSync for Box<dyn AnyReadState<T=T>> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.deref_mut().sync(env)
     }
 }
@@ -91,7 +91,7 @@ mod private {
 
 
 impl<G: StateSync> StateSync for Box<G> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         self.deref_mut().sync(env)
     }
 }
@@ -124,7 +124,7 @@ macro_rules! impl_state_value {
     ($($typ: ty),*) => {
         $(
         impl carbide_core::state::StateSync for $typ {
-            fn sync(&mut self, _env: &mut carbide_core::environment::Environment) -> bool {
+            fn sync(&mut self, _env: &mut carbide_core::environment::EnvironmentStack) -> bool {
                 true
             }
         }

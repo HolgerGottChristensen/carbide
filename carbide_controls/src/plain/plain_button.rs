@@ -198,11 +198,12 @@ impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDeleg
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Accessibility for PlainButton<F, A, D, E, H, P> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.enabled.sync(ctx.env);
+        self.enabled.sync(ctx.env_stack);
         let enabled = *self.enabled.value();
 
         self.child.process_accessibility(&mut AccessibilityContext {
             env: ctx.env,
+            env_stack: ctx.env_stack,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,
             children: ctx.children,
@@ -240,8 +241,8 @@ struct ButtonAction<A, F, E> where
 
 impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonAction<A, F, E> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.enabled.sync(ctx.env);
-        self.focus.sync(ctx.env);
+        self.enabled.sync(ctx.env_stack);
+        self.focus.sync(ctx.env_stack);
 
         if *self.enabled.value() {
             if *self.focus.value() != Focus::Focused {
@@ -266,7 +267,7 @@ struct ButtonOutsideAction<A, F, E> where
 
 impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonOutsideAction<A, F, E> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.focus.sync(ctx.env);
+        self.focus.sync(ctx.env_stack);
         if *self.focus.value() == Focus::Focused {
             self.focus.set_value(Focus::FocusReleased);
             ctx.env.request_focus(Refocus::FocusRequest);

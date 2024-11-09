@@ -1,3 +1,4 @@
+use carbide::environment::EnvironmentStack;
 use crate::environment::Environment;
 use crate::focus::focus::Focus;
 use crate::focus::Refocus;
@@ -20,7 +21,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
     }
 
     fn process_focus_request(&mut self, ctx: &mut FocusContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         if self.is_focusable() {
             if self.get_focus() == Focus::FocusRequested {
@@ -37,7 +38,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
     }
 
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         if self.is_focusable() {
             if *ctx.available {
@@ -60,7 +61,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
     }
 
     fn process_focus_previous(&mut self, ctx: &mut FocusContext) {
-        self.sync(ctx.env);
+        self.sync(ctx.env_stack);
 
         if self.is_focusable() {
             if *ctx.available {
@@ -83,8 +84,9 @@ pub trait Focusable: CommonWidget + WidgetSync {
     }
 }
 
-pub struct FocusContext<'a> {
+pub struct FocusContext<'a, 'b: 'a> {
     pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
     pub focus_count: &'a mut u32,
     pub available: &'a mut bool,
 }

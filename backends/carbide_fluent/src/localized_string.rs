@@ -39,7 +39,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> LocalizedString<K, S, V> {
 
 
 impl<K: Localizable, S: ReadState<T=K>, V: Args> StateSync for LocalizedString<K, S, V> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         if let Some(locale) = env.value::<&'static str, Locale>(LOCALE_IDENT) {
             //println!("Synced locale: {}", locale);
             self.locale = locale.clone();

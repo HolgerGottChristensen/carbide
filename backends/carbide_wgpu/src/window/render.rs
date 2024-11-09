@@ -61,6 +61,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                env_stack: ctx.env_stack,
             });
 
             // Calculate size
@@ -68,6 +69,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                env_stack: ctx.env_stack,
             });
 
             // Position children
@@ -77,6 +79,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                env_stack: ctx.env_stack,
             });
 
             // Render the children
@@ -89,7 +92,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 text: ctx.text,
                 image: ctx.image,
                 env,
-                env_new: ctx.env_new,
+                env_stack: ctx.env_stack,
             });
 
             let render_passes = self.render_context.finish();
@@ -113,7 +116,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
             if self.visible {
                 {
-                    self.title.sync(env);
+                    self.title.sync(ctx.env_stack);
 
                     let current = &*self.title.value();
                     if &self.inner.title() != current {

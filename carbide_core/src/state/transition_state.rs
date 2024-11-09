@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::animation::{Animatable, ease_in_out};
-use crate::environment::Environment;
+use crate::environment::{Environment, EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
 
 #[derive(Clone)]
@@ -94,14 +94,15 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Transition
 }
 
 impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync for TransitionState<T, S> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
         let res = self.inner.sync(env);
 
-        if self.transition.borrow().is_some() {
+        /*if self.transition.borrow().is_some() {
             env.request_animation_frame();
         } else if &*self.value.borrow() != &*self.inner.value() {
             env.request_animation_frame();
-        }
+        }*/
+        todo!();
 
         res
     }

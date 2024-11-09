@@ -1,3 +1,4 @@
+use carbide::environment::EnvironmentStack;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -36,7 +37,7 @@ impl Mask<Empty, Empty> {
 }
 
 impl<M: Widget, W: Widget> WidgetSync for Mask<M, W> {
-    fn sync(&mut self, env: &mut Environment) {
+    fn sync(&mut self, env: &mut EnvironmentStack) {
         self.child.sync(env);
         self.mask.sync(env);
     }
