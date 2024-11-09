@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::Scene;
+use crate::scene::Scene;
 use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]

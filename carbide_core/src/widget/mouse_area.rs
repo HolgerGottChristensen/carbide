@@ -6,6 +6,7 @@ use carbide::accessibility;
 use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use carbide::scene::SceneManager;
 use carbide::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::{Accessibility, AccessibilityAction};
@@ -369,9 +370,13 @@ impl<
 
         let mut builder = Node::new(Role::Button);
 
+        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
         builder.set_bounds(Rect::from_origin_size(
-            Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
-            Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+            Point::new(self.x() * scale_factor, self.y() * scale_factor),
+            Size::new(self.width() * scale_factor, self.height() * scale_factor),
         ));
 
         if ctx.hidden {

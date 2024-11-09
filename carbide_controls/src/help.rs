@@ -67,9 +67,10 @@ impl<C: Widget> Layout for Help<C> {
         let dimension = self.child.calculate_size(requested_size, ctx);
         self.set_dimension(dimension);
 
-        self.help.calculate_size(Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height()), ctx);
+        //self.help.calculate_size(Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height()), ctx);
 
-        dimension
+        //dimension
+        todo!()
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
@@ -93,9 +94,9 @@ impl<C: Widget> Layout for Help<C> {
                     y = self.y() + PADDING + self.height();
                 }
 
-                if y > ctx.env.current_window_height() - self.help.height() {
+                /*if y > ctx.env.current_window_height() - self.help.height() {
                     y = self.y() - PADDING - self.help.height();
-                }
+                }*/
 
                 x = self.x() + (self.width()) / 2.0 - self.help.width() / 2.0;
             }
@@ -123,8 +124,8 @@ impl<C: Widget> Layout for Help<C> {
             }
         }
 
-        x = x.max(0.0).min(ctx.env.current_window_width() - self.help.width());
-        y = y.max(0.0).min(ctx.env.current_window_height() - self.help.height());
+        //x = x.max(0.0).min(ctx.env.current_window_width() - self.help.width());
+        //y = y.max(0.0).min(ctx.env.current_window_height() - self.help.height());
 
         self.help.set_position(Position::new(x, y));
         self.help.position_children(ctx);

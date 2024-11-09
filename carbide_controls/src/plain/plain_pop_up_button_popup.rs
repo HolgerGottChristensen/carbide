@@ -1,4 +1,5 @@
 use carbide::event::EventId;
+use carbide::scene::SceneManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::WidgetTransferAction;
@@ -76,8 +77,13 @@ impl<
         let dimension = *self.parent_dimension.value();
 
         self.set_position(alignment.position(position, dimension, self.dimension));
+
+        let scene_dimensions = ctx.env_stack.get_mut::<SceneManager>()
+            .map(|a| a.dimensions())
+            .unwrap_or(Dimension::new(600.0, 600.0));
+
         self.position = self.position
-            .min(&Position::new(ctx.env.current_window_width() - self.width(), ctx.env.current_window_height() - self.height()))
+            .min(&Position::new(scene_dimensions.width - self.width(), scene_dimensions.height - self.height()))
             .max(&Position::new(0.0, 0.0));
 
         let position = self.position();

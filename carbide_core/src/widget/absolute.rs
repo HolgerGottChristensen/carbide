@@ -1,3 +1,4 @@
+use carbide::scene::SceneManager;
 use carbide_core::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
@@ -38,7 +39,7 @@ impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absol
         self.y.sync(ctx.env_stack);
 
         let position = Position::new(*self.x.value(), *self.y.value());
-        let dimension = Dimension::new(ctx.env.current_window_width(), ctx.env.current_window_height());
+        let dimension = ctx.env_stack.get_mut::<SceneManager>().map(|a| a.dimensions()).unwrap();
 
         self.child.set_position(Alignment::TopLeading.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);

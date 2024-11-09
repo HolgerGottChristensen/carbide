@@ -308,7 +308,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         };
 
         self.render_context.text.update(text_id, text, &text_style);
-        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env);
+        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env_stack);
 
         let position = match self.current_state.text_alignment {
             Alignment::TopLeading => Position::new(x, y),
@@ -326,7 +326,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             Alignment::Custom(px, py) => Position::new(x - size.width * px, y - size.height * py),
         };
 
-        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env);
+        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env_stack);
 
         let style = self.current_state.fill_color.convert(position + self.position, size);
         self.render_context.style(style, |render_context| {

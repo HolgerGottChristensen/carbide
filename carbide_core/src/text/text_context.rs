@@ -4,6 +4,7 @@ use image::DynamicImage;
 use carbide::environment::Environment;
 use carbide::text::TextStyle;
 use crate::draw::{Dimension, Position};
+use crate::environment::EnvironmentStack;
 use crate::render::InnerRenderContext;
 
 // pub struct TextContext<'a>(&'a mut dyn InnerTextContext);
@@ -31,9 +32,9 @@ use crate::render::InnerRenderContext;
 // }
 
 pub trait InnerTextContext {
-    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension;
+    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut EnvironmentStack) -> Dimension;
 
-    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment);
+    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut EnvironmentStack);
 
     fn hash(&self, id: TextId) -> Option<u64>;
 
@@ -58,11 +59,11 @@ pub trait InnerTextContext {
 pub struct NOOPTextContext;
 
 impl InnerTextContext for NOOPTextContext {
-    fn calculate_size(&mut self, _id: TextId, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, _id: TextId, _requested_size: Dimension, _env: &mut EnvironmentStack) -> Dimension {
         unimplemented!()
     }
 
-    fn calculate_position(&mut self, _id: TextId, _requested_offset: Position, _env: &mut Environment) {
+    fn calculate_position(&mut self, _id: TextId, _requested_offset: Position, _env: &mut EnvironmentStack) {
         unimplemented!()
     }
 

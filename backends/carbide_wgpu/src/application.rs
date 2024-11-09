@@ -13,15 +13,15 @@ use once_cell::sync::Lazy;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
 
-use carbide_core::{locate_folder, Scene};
+use carbide_core::{locate_folder};
 use carbide_core::animation::AnimationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::lifecycle::InitializationContext;
+use carbide_core::scene::Scene;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{Empty, WidgetId};
-use carbide_core::window::WindowId;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::{NewEventHandler, RequestRedraw};
@@ -81,8 +81,6 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Self {
-        let window_pixel_dimensions = Dimension::new(400.0, 400.0);
-
         let event_loop = EventLoop::<CustomEvent>::with_user_event().build().unwrap();
 
         EVENT_LOOP_PROXY.get_or_init(|| event_loop.create_proxy());
@@ -90,7 +88,6 @@ impl Application {
         set_event_sink(ProxyEventLoop(event_loop.create_proxy()));
 
         let environment = Environment::new(
-            window_pixel_dimensions,
             Box::new(ProxyEventLoop(event_loop.create_proxy())),
         );
 
@@ -207,6 +204,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
         let mut request = RequestRedraw::False;
+
+        self.animation_manager.update_frame_time();
+
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             request = self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
 
@@ -234,6 +234,8 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
         let mut request = RequestRedraw::False;
+
+        self.animation_manager.update_frame_time();
 
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             request = self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);

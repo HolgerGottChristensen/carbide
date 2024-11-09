@@ -4,9 +4,9 @@ use carbide_core::draw::Dimension;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::lifecycle::{Update, UpdateContext};
+use carbide_core::scene::Scene;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetSync};
-use carbide_core::Scene;
 
 impl<T: ReadState<T=String>, C: Widget> WidgetSync for Window<T, C> {}
 

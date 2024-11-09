@@ -1,3 +1,4 @@
+use std::time::Instant;
 use crate::accessibility::{Accessibility, AccessibilityContext};
 use crate::color::rgba_bytes;
 use crate::draw::theme::Theme;
@@ -16,12 +17,14 @@ use carbide::ModifierWidgetImpl;
 #[derive(Debug, Clone)]
 pub struct AnimationManager {
     frame_count: u32,
+    frame_time: Instant
 }
 
 impl AnimationManager {
     pub fn new() -> AnimationManager {
         AnimationManager {
-            frame_count: 0
+            frame_count: 0,
+            frame_time: Instant::now(),
         }
     }
 
@@ -44,6 +47,14 @@ impl AnimationManager {
         } else {
             false
         }
+    }
+
+    pub fn frame_time(&self) -> Instant {
+        self.frame_time
+    }
+
+    pub fn update_frame_time(&mut self) {
+        self.frame_time = Instant::now();
     }
 }
 

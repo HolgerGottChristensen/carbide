@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use accesskit::{Node, NodeId, Point, Rect, Role, Size};
 use smallvec::SmallVec;
 use carbide::accessibility::AccessibilityContext;
+use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
 use crate::draw::{Dimension, Position};
@@ -225,13 +226,17 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         self.sync(ctx.env_stack);
 
         ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
-        self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
+        self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env_stack);
 
         self.dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0/ctx.env.scale_factor()), ctx.env)
+        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
+        ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0 / scale_factor), ctx.env_stack)
     }
 }
 
@@ -251,11 +256,15 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env_stack);
 
+        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
         let mut builder = Node::new(Role::Label);
 
         builder.set_bounds(Rect::from_origin_size(
-            Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
-            Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+            Point::new(self.x() * scale_factor, self.y() * scale_factor),
+            Size::new(self.width() * scale_factor, self.height() * scale_factor),
         ));
 
         if ctx.hidden {

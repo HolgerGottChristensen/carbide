@@ -1,6 +1,6 @@
 use dyn_clone::DynClone;
 use raw_window_handle::HasRawWindowHandle;
-use crate::window::WindowId;
+use crate::scene::SceneId;
 
 #[derive(Debug, Clone)]
 pub enum CoreEvent {

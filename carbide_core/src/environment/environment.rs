@@ -31,15 +31,6 @@ pub struct Environment {
     /// the focus change is not instant, but updates after each run event.
     pub focus_request: Option<Refocus>,
 
-    /// The size of the drawing area in actual pixels.
-    pixel_dimensions: Dimension,
-
-    /// The pixel density, or scale factor.
-    scale_factor: Option<f64>,
-
-    /// The start time of the current frame. This is used to sync the animated states.
-    frame_start_time: Rc<RefCell<Instant>>,
-
     /// A map that contains an image filter used for the Filter widget.
     filter_map: FxHashMap<FilterId, ImageFilter>,
 
@@ -61,7 +52,6 @@ impl std::fmt::Debug for Environment {
 
 impl Environment {
     pub fn new(
-        pixel_dimensions: Dimension,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
         let filters = HashMap::with_hasher(FxBuildHasher::default());
@@ -70,9 +60,6 @@ impl Environment {
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
-            pixel_dimensions,
-            scale_factor: None,
-            frame_start_time: Rc::new(RefCell::new(Instant::now())),
             filter_map: filters,
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
@@ -115,10 +102,10 @@ impl Environment {
         let mut temp = None;
         std::mem::swap(&mut temp, &mut self.animations);
 
-        let instant = &*self.frame_start_time.borrow();
+        let instant = Instant::now();
 
         temp.as_mut()
-            .map(|t| t.retain(|update_animation| !update_animation(instant)));
+            .map(|t| t.retain(|update_animation| !update_animation(&instant)));
 
         std::mem::swap(&mut temp, &mut self.animations);
     }
@@ -128,44 +115,6 @@ impl Environment {
             .as_ref()
             .map(|a| a.len() > 0)
             .unwrap_or(false)
-    }
-
-    pub fn capture_time(&mut self) {
-        *self.frame_start_time.borrow_mut() = Instant::now();
-    }
-
-    pub fn captured_time(&self) -> Rc<RefCell<Instant>> {
-        self.frame_start_time.clone()
-    }
-
-    pub fn pixel_dimensions(&self) -> Dimension {
-        self.pixel_dimensions
-    }
-
-    /// This is the dimensions in pixels
-    pub fn set_pixel_dimensions(&mut self, dimension: Dimension) {
-        self.pixel_dimensions = dimension;
-    }
-
-    pub fn with_scale_factor<R, F: FnOnce(&mut Environment)->R>(&mut self, factor: f64, f: F) -> R {
-        let old = self.scale_factor;
-        self.scale_factor = Some(factor);
-        let res = f(self);
-        self.scale_factor = old;
-
-        res
-    }
-
-    /// Get the width in carbide points. (Actual pixels / dpi)
-    pub fn current_window_width(&self) -> f64 { self.pixel_dimensions.width / self.scale_factor.unwrap() }
-
-    /// Get the height in carbide points. (Actual pixels / dpi)
-    pub fn current_window_height(&self) -> f64 {
-        self.pixel_dimensions.height / self.scale_factor.unwrap()
-    }
-
-    pub fn scale_factor(&self) -> f64 {
-        self.scale_factor.unwrap()
     }
 
     pub fn cursor(&self) -> MouseCursor {

@@ -2,6 +2,7 @@
 use std::ops::Deref;
 use accesskit::{Node, Point, Role, Size};
 use carbide::accessibility::AccessibilityContext;
+use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;
@@ -235,9 +236,13 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for 
 
         let mut builder = Node::new(Role::Label);
 
+        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
         builder.set_bounds(accesskit::Rect::from_origin_size(
-            Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
-            Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+            Point::new(self.x() * scale_factor, self.y() * scale_factor),
+            Size::new(self.width() * scale_factor, self.height() * scale_factor),
         ));
 
         if ctx.hidden {

@@ -17,7 +17,7 @@ use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId
 use carbide_core::event::Event::CoreEvent;
 use carbide_core::focus::{FocusContext, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
-use carbide_core::Scene;
+use carbide_core::scene::Scene;
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::WidgetId;
 use crate::{convert_key, convert_mouse_button, convert_touch_phase};

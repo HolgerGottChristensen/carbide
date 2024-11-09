@@ -25,45 +25,45 @@ pub struct AnimatedState {
     duration: Duration,
     repeat_mode: RepeatMode,
     repeat_count: Option<u32>,
-    frame_time: Option<Rc<RefCell<Instant>>>,
+    frame_time: Instant,
     animation_curve: fn(f64) -> f64,
 }
 
 impl AnimatedState {
-    pub fn linear(env: Option<&Environment>) -> Box<Self> {
-        Self::custom(linear, env)
+    pub fn linear() -> AnimatedState {
+        Self::custom(linear)
     }
 
-    pub fn custom(curve: fn(f64) -> f64, env: Option<&Environment>) -> Box<Self> {
-        Box::new(AnimatedState {
+    pub fn custom(curve: fn(f64) -> f64) -> AnimatedState {
+        AnimatedState {
             percent: InnerState::new(ValueCell::new(0.0)),
             start_time: Instant::now(),
             duration: Duration::new(1, 0),
             repeat_mode: RepeatMode::None,
             repeat_count: None,
-            frame_time: env.map(|e| e.captured_time()),
+            frame_time: Instant::now(),
             animation_curve: curve,
-        })
+        }
     }
 
-    pub fn duration(mut self, duration: Duration) -> Box<Self> {
+    pub fn duration(mut self, duration: Duration) -> AnimatedState {
         self.duration = duration;
-        Box::new(self)
+        self
     }
 
-    pub fn repeat_alternate(mut self) -> Box<Self> {
+    pub fn repeat_alternate(mut self) -> AnimatedState {
         self.repeat_mode = RepeatMode::Alternate;
-        Box::new(self)
+        self
     }
 
-    pub fn repeat(mut self) -> Box<Self> {
+    pub fn repeat(mut self) -> AnimatedState {
         self.repeat_mode = RepeatMode::FromBeginning;
-        Box::new(self)
+        self
     }
 
-    pub fn count(mut self, count: u32) -> Box<Self> {
+    pub fn count(mut self, count: u32) -> AnimatedState {
         self.repeat_count = Some(count);
-        Box::new(self)
+        self
     }
 
     pub fn range<T: Animatable<T> + Copy + 'static + Debug>(
@@ -77,15 +77,7 @@ impl AnimatedState {
     }
 
     pub fn calc_percentage(&self) {
-        let now = Instant::now();
-
-        let current_time = self
-            .frame_time
-            .as_ref()
-            .map(|time| time.borrow().clone())
-            .unwrap_or(now);
-
-        let duration = current_time - self.start_time;
+        let duration = self.frame_time - self.start_time;
 
         let percentage = match self.repeat_mode {
             RepeatMode::None => {
@@ -117,6 +109,7 @@ impl StateSync for AnimatedState {
 
         if let Some(manager) = env.get_mut::<AnimationManager>() {
             manager.request_animation_frame();
+            self.frame_time = manager.frame_time();
         }
 
         false

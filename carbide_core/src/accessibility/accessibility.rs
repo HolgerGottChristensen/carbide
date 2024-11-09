@@ -5,6 +5,7 @@ use accesskit::{Action, Node, NodeId, Point, Rect, Role, Size, TreeUpdate};
 use smallvec::SmallVec;
 use carbide::accessibility::AccessibilityNode;
 use crate::accessibility::AccessibilityAction;
+use crate::scene::SceneManager;
 
 pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
     fn role(&self) -> Option<Role> { None }
@@ -18,9 +19,13 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 
             node.set_author_id(format!("{:?}", self.id()));
 
+            let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+                .map(|a| a.scale_factor())
+                .unwrap_or(1.0);
+
             node.set_bounds(Rect::from_origin_size(
-                Point::new(self.x() * ctx.env.scale_factor(), self.y() * ctx.env.scale_factor()),
-                Size::new(self.width() * ctx.env.scale_factor(), self.height() * ctx.env.scale_factor()),
+                Point::new(self.x() * scale_factor, self.y() * scale_factor),
+                Size::new(self.width() * scale_factor, self.height() * scale_factor),
             ));
 
             if ctx.hidden {

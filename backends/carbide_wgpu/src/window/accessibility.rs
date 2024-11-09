@@ -13,70 +13,62 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
             Window::Initialized(initialized) => {
                 let id = initialized.id;
                 if ctx.parent_id.is_none() {
-                    initialized.accessibility_adapter.update_if_active(|| {
-                        let mut tree_update = TreeUpdate {
-                            nodes: vec![],
-                            tree: Some(Tree {
-                                root: NodeId(id.0 as u64),
-                                app_name: None,
-                                toolkit_name: Some("Carbide".to_string()),
-                                toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
-                            }),
-                            focus: NodeId(id.0 as u64),
-                        };
+                    initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                        initialized.accessibility_adapter.update_if_active(|| {
+                            let mut tree_update = TreeUpdate {
+                                nodes: vec![],
+                                tree: Some(Tree {
+                                    root: NodeId(id.0 as u64),
+                                    app_name: None,
+                                    toolkit_name: Some("Carbide".to_string()),
+                                    toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
+                                }),
+                                focus: NodeId(id.0 as u64),
+                            };
 
-                        let mut children = SmallVec::<[WidgetId; 8]>::new();
+                            let mut children = SmallVec::<[WidgetId; 8]>::new();
 
-                        let theme_for_frame = initialized.theme;
-
-                        ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
-                            ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
-                                initialized.child.process_accessibility(&mut AccessibilityContext {
-                                    env,
-                                    env_stack,
-                                    nodes: &mut tree_update,
-                                    parent_id: Some(id),
-                                    children: &mut children,
-                                    hidden: false,
-                                    inherited_label: None,
-                                    inherited_hint: None,
-                                    inherited_value: None,
-                                    inherited_enabled: None,
-                                })
-                            })
-                        });
-
-                        let mut node_builder = Node::new(Role::Window);
-
-                        node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
-
-                        node_builder.set_label(initialized.title.value().clone());
-
-                        tree_update.nodes.push((NodeId(id.0 as u64), node_builder));
-
-                        //println!("{:#?}", tree_update);
-
-                        tree_update
-                    })
-                } else {
-                    let mut children = SmallVec::<[WidgetId; 8]>::new();
-
-                    let theme_for_frame = initialized.theme;
-
-                    ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
-                        ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
                             initialized.child.process_accessibility(&mut AccessibilityContext {
-                                env,
+                                env: ctx.env,
                                 env_stack,
-                                nodes: ctx.nodes,
-                                parent_id: Some(initialized.id),
+                                nodes: &mut tree_update,
+                                parent_id: Some(id),
                                 children: &mut children,
                                 hidden: false,
                                 inherited_label: None,
                                 inherited_hint: None,
                                 inherited_value: None,
                                 inherited_enabled: None,
-                            })
+                            });
+
+                            let mut node_builder = Node::new(Role::Window);
+
+                            node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
+
+                            node_builder.set_label(initialized.title.value().clone());
+
+                            tree_update.nodes.push((NodeId(id.0 as u64), node_builder));
+
+                            //println!("{:#?}", tree_update);
+
+                            tree_update
+                        })
+                    });
+                } else {
+                    let mut children = SmallVec::<[WidgetId; 8]>::new();
+
+                    initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                        initialized.child.process_accessibility(&mut AccessibilityContext {
+                            env: ctx.env,
+                            env_stack,
+                            nodes: ctx.nodes,
+                            parent_id: Some(initialized.id),
+                            children: &mut children,
+                            hidden: false,
+                            inherited_label: None,
+                            inherited_hint: None,
+                            inherited_value: None,
+                            inherited_enabled: None,
                         })
                     });
 

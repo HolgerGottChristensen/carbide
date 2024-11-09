@@ -28,12 +28,12 @@ impl ProgressView<Empty> {
     }
 
     fn new_internal(size: f64) -> ProgressView<impl Widget> {
-        let animation = AnimatedState::linear(None)
+        let animation = AnimatedState::linear()
             .repeat()
             .duration(Duration::new(2, 0))
             .range(0.0, 360.0);
 
-        let animation2 = AnimatedState::linear(None)
+        let animation2 = AnimatedState::linear()
             .repeat()
             .duration(Duration::new(1, 0))
             .range(0.0, 360.0);

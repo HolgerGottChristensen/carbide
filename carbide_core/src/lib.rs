@@ -16,7 +16,6 @@ extern crate self as carbide;
 pub use futures::TryFutureExt;
 
 pub use carbide_core::asynchronous::SpawnTask;
-pub use scene::Scene;
 
 pub use draw::color;
 
@@ -61,8 +60,7 @@ pub mod state;
 pub mod text;
 pub mod utils;
 pub mod widget;
-pub mod window;
-mod scene;
+pub mod scene;
 pub mod lifecycle;
 
 /// Reexport of the image crate

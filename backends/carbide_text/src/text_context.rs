@@ -6,14 +6,14 @@ use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
 use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::text::{FontStyle, InnerTextContext, TextId};
 use carbide_core::text::TextStyle;
 use carbide_core::widget::Wrap;
 use unicode_segmentation::UnicodeSegmentation;
-
+use carbide_core::scene::SceneManager;
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::metadata::Metadata;
 
@@ -73,7 +73,7 @@ impl TextContext {
 }
 
 impl InnerTextContext for TextContext {
-    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut EnvironmentStack) -> Dimension {
         let (ref mut buffer, _) = self.map.get_mut(&id).unwrap();
 
         buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
@@ -81,12 +81,16 @@ impl InnerTextContext for TextContext {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
 
+        let scale_factor = env.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
         for run in buffer.layout_runs() {
             width = width.max(run.line_w);
             height = height.max(run.line_top + buffer.metrics().line_height);
 
             for glyph in run.glyphs.iter() {
-                let physical_glyph = glyph.physical((0., 0.), env.scale_factor() as f32);
+                let physical_glyph = glyph.physical((0., 0.), scale_factor as f32);
 
                 self.atlas.enqueue(AtlasId::Glyph(physical_glyph.cache_key), || {
                     let image = swash_image(&mut self.font_system, &mut self.scale_context, physical_glyph.cache_key);
@@ -112,9 +116,13 @@ impl InnerTextContext for TextContext {
         Dimension::new(width as f64, height as f64)
     }
 
-    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
+    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut EnvironmentStack) {
+        let scale_factor = env.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
         self.map.get_mut(&id).unwrap().1.position = requested_offset.rounded();
-        self.map.get_mut(&id).unwrap().1.scale_factor = env.scale_factor();
+        self.map.get_mut(&id).unwrap().1.scale_factor = scale_factor;
     }
 
     fn hash(&self, _id: TextId) -> Option<u64> {

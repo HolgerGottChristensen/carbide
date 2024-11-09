@@ -45,117 +45,106 @@ impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
-        let old_pixel_dimensions = ctx.env.pixel_dimensions();
-
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
-        ctx.env.capture_time();
+        self.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+            // Update children
+            initialized.child.process_update(&mut UpdateContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: ctx.env,
+                env_stack,
+            });
 
-        ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
+            // Calculate size
+            initialized.child.calculate_size(dimensions, &mut LayoutContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: ctx.env,
+                env_stack,
+            });
 
-        let theme_for_frame = self.theme;
+            // Position children
+            let alignment = Alignment::Center;
+            initialized.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, initialized.child.dimension()));
+            initialized.child.position_children(&mut LayoutContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: ctx.env,
+                env_stack,
+            });
 
-        ctx.env.with_scale_factor(scale_factor, |env| {
-            ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
-                // Update children
-                self.child.process_update(&mut UpdateContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    env_stack,
-                });
+            // Render the children
+            initialized.render_context.start(Rect::new(Position::origin(), dimensions));
 
-                // Calculate size
-                self.child.calculate_size(dimensions, &mut LayoutContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    env_stack,
-                });
+            ctx.text.prepare_render();
 
-                // Position children
-                let alignment = Alignment::Center;
-                self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
-                self.child.position_children(&mut LayoutContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    env_stack,
-                });
+            initialized.child.render(&mut RenderContext {
+                render: &mut initialized.render_context,
+                text: ctx.text,
+                image: ctx.image,
+                env: ctx.env,
+                env_stack,
+            });
 
-                // Render the children
-                self.render_context.start(Rect::new(Position::origin(), dimensions));
+            if initialized.visible {
+                {
+                    initialized.title.sync(env_stack);
 
-                ctx.text.prepare_render();
-
-                self.child.render(&mut RenderContext {
-                    render: &mut self.render_context,
-                    text: ctx.text,
-                    image: ctx.image,
-                    env,
-                    env_stack,
-                });
-
-                let render_passes = self.render_context.finish();
-
-                let target_count = self.render_context.target_count();
-                if self.targets.len() < target_count {
-                    for _ in self.targets.len()..target_count {
-                        self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
+                    let current = &*initialized.title.value();
+                    if &initialized.inner.title() != current {
+                        initialized.inner.set_title(current);
                     }
                 }
 
-                //println!("\nContext: {:#?}", render_passes);
-                //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
-                //println!("Targets: {:#?}", &self.targets.len());
-
-                let mut uniform_bind_groups = vec![];
-
-                Self::ensure_vertices_in_buffer(&DEVICE, &QUEUE, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
-                Self::ensure_uniforms_in_buffer(&DEVICE, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &UNIFORM_BIND_GROUP_LAYOUT, &mut uniform_bind_groups);
-
-
-                if self.visible {
-                    {
-                        self.title.sync(env_stack);
-
-                        let current = &*self.title.value();
-                        if &self.inner.title() != current {
-                            self.inner.set_title(current);
-                        }
-                    }
-
-                    self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
-
-                    match self.render_inner(render_passes, uniform_bind_groups, ctx.text, env) {
-                        Ok(_) => {}
-                        // Recreate the swap_chain if lost
-                        Err(wgpu::SurfaceError::Lost) => {
-                            println!("Swap chain lost");
-                            self.resize(self.inner.inner_size(), env);
-                            self.inner.request_redraw();
-                        }
-                        // The system is out of memory, we should probably quit
-                        Err(wgpu::SurfaceError::OutOfMemory) => {
-                            println!("Swap chain out of memory");
-                            env.close_application();
-                        }
-                        // All other errors (Outdated, Timeout) should be resolved by the next frame
-                        Err(e) => {
-                            // We request a redraw the next frame
-                            self.inner.request_redraw();
-                            eprintln!("{:?}", e)
-                        }
-                    }
-                }
-            })
+                initialized.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
+            }
         });
 
-        // Reset the environment
-        ctx.env.set_pixel_dimensions(old_pixel_dimensions);
+        let render_passes = self.render_context.finish();
+
+        let target_count = self.render_context.target_count();
+        if self.targets.len() < target_count {
+            for _ in self.targets.len()..target_count {
+                self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
+            }
+        }
+
+        //println!("\nContext: {:#?}", render_passes);
+        //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
+        //println!("Targets: {:#?}", &self.targets.len());
+
+        let mut uniform_bind_groups = vec![];
+
+        Self::ensure_vertices_in_buffer(&DEVICE, &QUEUE, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+        Self::ensure_uniforms_in_buffer(&DEVICE, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &UNIFORM_BIND_GROUP_LAYOUT, &mut uniform_bind_groups);
+
+
+        if self.visible {
+            match self.render_inner(render_passes, uniform_bind_groups, ctx.text, ctx.env, scale_factor) {
+                Ok(_) => {}
+                // Recreate the swap_chain if lost
+                Err(wgpu::SurfaceError::Lost) => {
+                    println!("Swap chain lost");
+                    self.resize(self.inner.inner_size());
+                    self.inner.request_redraw();
+                }
+                // The system is out of memory, we should probably quit
+                Err(wgpu::SurfaceError::OutOfMemory) => {
+                    println!("Swap chain out of memory");
+                    ctx.env.close_application();
+                }
+                // All other errors (Outdated, Timeout) should be resolved by the next frame
+                Err(e) => {
+                    // We request a redraw the next frame
+                    self.inner.request_redraw();
+                    eprintln!("{:?}", e)
+                }
+            }
+        }
     }
 
     fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
@@ -548,7 +537,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment) -> Result<(), wgpu::SurfaceError> {
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment, scale_factor: Scalar) -> Result<(), wgpu::SurfaceError> {
         BIND_GROUPS.with(|bind_groups|  {
             let bind_groups = &*bind_groups.borrow();
 
@@ -581,7 +570,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 &GRADIENT_DASHES_BIND_GROUP_LAYOUT,
                 &*FILTER_BIND_GROUPS.read().unwrap(),
                 size,
-                env.scale_factor(),
+                scale_factor,
                 &ATLAS_CACHE_BIND_GROUP
             );
 
@@ -598,7 +587,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         })
     }
 
-    pub fn resize(&mut self, new_size: PhysicalSize<u32>, _: &mut Environment) {
+    pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
 
         let size = new_size;
         //env.set_pixel_dimensions(size.width as f64);

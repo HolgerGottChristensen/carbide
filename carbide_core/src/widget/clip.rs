@@ -1,3 +1,4 @@
+use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -45,7 +46,7 @@ impl<W: Widget> CommonWidget for Clip<W> {
 }
 
 impl<W: Widget> Render for Clip<W> {
-    fn render(&mut self, context: &mut RenderContext) {
+    fn render(&mut self, ctx: &mut RenderContext) {
         // If the clip is completely out of frame
         if self.position.x + self.dimension.width < 0.0 {
             return;
@@ -53,18 +54,21 @@ impl<W: Widget> Render for Clip<W> {
         if self.position.y + self.dimension.height < 0.0 {
             return;
         }
-        if self.position.x >= context.env.current_window_width() {
-            return;
-        }
-        if self.position.y >= context.env.current_window_height() {
-            return;
+
+        if let Some(scene_dimensions) = ctx.env_stack.get_mut::<SceneManager>().map(|a| a.dimensions()) {
+            if self.position.x >= scene_dimensions.width {
+                return;
+            }
+            if self.position.y >= scene_dimensions.height {
+                return;
+            }
         }
 
         if self.dimension.width < 1.0 || self.dimension.height < 1.0 {
             return;
         }
 
-        context.clip(Rect::new(self.position, self.dimension), |this| {
+        ctx.clip(Rect::new(self.position, self.dimension), |this| {
             self.foreach_child_mut(&mut |child| {
                 child.render(this);
             });

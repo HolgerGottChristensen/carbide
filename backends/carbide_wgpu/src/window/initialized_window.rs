@@ -1,7 +1,9 @@
 use cgmath::Matrix4;
 use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
-use carbide_core::draw::{Dimension, Position};
+use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::draw::theme::Theme;
+use carbide_core::environment::EnvironmentStack;
+use carbide_core::scene::SceneManager;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{Widget, WidgetId};
 use crate::render_context::WGPURenderContext;
@@ -31,4 +33,22 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) visible: bool,
     pub(crate) close_application_on_window_close: bool,
     pub(crate) theme: Theme,
+}
+
+impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
+    pub fn with_env_stack(&mut self, env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack, &mut Self)) {
+        let theme_for_frame = self.theme;
+        let physical_dimensions = self.inner.inner_size();
+
+        let mut scene_manager = SceneManager::new(
+            self.inner.scale_factor(),
+            Dimension::new(physical_dimensions.width as Scalar, physical_dimensions.height as Scalar)
+        );
+
+        env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
+            env_stack.with_mut::<SceneManager>(&mut scene_manager, |env_stack| {
+                f(env_stack, self)
+            })
+        })
+    }
 }
