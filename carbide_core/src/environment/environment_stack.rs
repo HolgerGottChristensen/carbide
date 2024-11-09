@@ -12,6 +12,23 @@ pub trait Keyable {
     type Output: Any + Debug + Clone + 'static;
 
     fn get(&self, stack: &TypeMap) -> Self::Output;
+    fn with(&self, value: &Self::Output, stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap));
+
+    fn with_all(values: &[(Self, Self::Output)], stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap)) where Self: Sized {
+        match values {
+            [(slef, first), rest @ ..] => {
+                slef.with(first, stack, |inner| {
+                    Self::with_all(rest, inner, f)
+                })
+            },
+            [(slef, first)] => {
+                slef.with(first, stack, f)
+            }
+            [] => {
+                f(stack)
+            }
+        }
+    }
 }
 
 pub struct TypeMap<'a> {

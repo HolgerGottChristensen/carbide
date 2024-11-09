@@ -111,6 +111,7 @@ mod saturation;
 mod luminance;
 mod mask;
 mod environment_updating_new;
+mod theme_manager;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(pub u32);

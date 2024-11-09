@@ -117,6 +117,8 @@ pub struct AccessibilityContext<'a, 'b: 'a> {
     pub nodes: &'a mut dyn AccessibilityUpdate,
     pub parent_id: Option<WidgetId>,
     pub children: &'a mut SmallVec<[WidgetId; 8]>,
+
+    // TODO: The below could possibly all be in env stack
     pub hidden: bool,
     pub inherited_label: Option<&'a str>,
     pub inherited_hint: Option<&'a str>,

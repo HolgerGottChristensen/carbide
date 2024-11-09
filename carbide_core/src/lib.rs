@@ -65,7 +65,6 @@ pub mod window;
 mod scene;
 pub mod lifecycle;
 
-
 /// Reexport of the image crate
 pub mod image {
     pub use image::*;

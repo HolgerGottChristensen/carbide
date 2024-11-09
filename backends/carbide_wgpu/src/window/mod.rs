@@ -7,19 +7,13 @@ mod render;
 mod initialized_window;
 mod accessibility;
 
-use std::fmt::{Debug, Formatter};
-use cgmath::Matrix4;
-use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
+use crate::window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{IntoReadState, ReadState};
-use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Overlay, Rectangle, Widget, WidgetId, ZStack};
-use carbide_winit::custom_event::CustomEvent;
-use carbide_winit::event_loop::EventLoopProxy;
-use crate::render_context::WGPURenderContext;
-use crate::RenderTarget;
-use carbide_winit::window::Window as WinitWindow;
-use crate::window::initialized_window::InitializedWindow;
+use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use std::fmt::{Debug, Formatter};
+use carbide_core::draw::theme::Theme;
 
 pub enum Window<T: ReadState<T=String>, C: Widget> {
     UnInitialized {
@@ -35,16 +29,16 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
 }
 
 impl Window<String, Empty> {
-    pub fn new<T: IntoReadState<String>, C: IntoWidget>(title: T, dimension: Dimension, child: C) -> Window<T::Output, Box<dyn AnyWidget>> {
+    pub fn new<T: IntoReadState<String>, C: IntoWidget>(title: T, dimension: Dimension, child: C) -> Window<T::Output, impl Widget> {
         Window::UnInitialized {
             id: WidgetId::new(),
             title: title.into_read_state(),
             position: Default::default(),
             dimension,
-            child: Box::new(ZStack::new((
+            child: ZStack::new((
                 Rectangle::new().fill(EnvironmentColor::SystemBackground),
                 Overlay::new("controls_popup_layer", child.into_widget()).steal_events(),
-            ))),
+            )).theme(Theme::Dark),
             close_application_on_window_close: false,
         }
     }

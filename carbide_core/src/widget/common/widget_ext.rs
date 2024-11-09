@@ -1,9 +1,9 @@
 use cgmath::Matrix4;
-
+use carbide::widget::theme_manager::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{Environment, EnvironmentColor, Keyable};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::event::Key;
 use crate::flags::WidgetFlag;
@@ -11,7 +11,8 @@ use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
-use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action};
+use crate::draw::theme::{Theme};
+use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, EnvUpdating, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew};
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
 use crate::widget::Widget;
@@ -157,11 +158,13 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     }
 
     fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, Color, C::Output> {
-        EnvUpdating::new(EnvironmentColor::Label, color.into_read_state(), self)
+        //EnvUpdating::new(EnvironmentColor::Label, color.into_read_state(), self)
+        todo!()
     }
 
     fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, Color, C::Output> {
-        EnvUpdating::new(EnvironmentColor::Accent, color.into_read_state(), self)
+        //EnvUpdating::new(EnvironmentColor::Accent, color.into_read_state(), self)
+        todo!()
     }
 
     /// Example: .on_click(move |env: &mut Environment, modifier: ModifierKey| {})
@@ -204,4 +207,12 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     fn luminance<R: IntoReadState<f64>>(self, shift: R) -> Luminance<Self, R::Output> {
         Luminance::new(self, shift)
     }
+
+    fn theme(self, theme: Theme) -> EnvUpdatingNew<ThemeManager<Self>, impl crate::environment::Key> {
+        EnvUpdatingNew::<ThemeManager<Self>, Theme>::new(theme, ThemeManager::new(self))
+    }
+
+    /*fn environment<K: Keyable>(self, key: K, value: K::Output) -> EnvUpdatingNew<Self, impl crate::environment::Key> {
+        EnvUpdatingNew::<ThemeManager<Self>, Theme>::new(theme, ThemeManager::new(self))
+    }*/
 }

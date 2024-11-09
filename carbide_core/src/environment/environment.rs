@@ -123,28 +123,11 @@ impl Environment {
             },
         ];
 
-        let env_stack = theme::dark_mode_color_theme()
-            .into_iter()
-            .chain(font_sizes_large.into_iter())
-            .map(|r| {
-                match r {
-                    EnvironmentVariable::EnvironmentColor { key, value } => {
-                        (key.key(), Box::new(value) as Box<dyn Any>)
-                    }
-                    EnvironmentVariable::EnvironmentFontSize { key, value } => {
-                        (key.key(), Box::new(value) as Box<dyn Any>)
-                    }
-                    EnvironmentVariable::Any { key, value } => {
-                        (key, value)
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
 
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         let res = Environment {
-            stack: env_stack,
+            stack: vec![],
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
@@ -347,38 +330,6 @@ impl Environment {
 
     pub fn remove_filter(&mut self, id: FilterId) {
         self.filter_map.remove(&id);
-    }
-
-    pub fn push(&mut self, key: &'static str, value: Box<dyn Any>) {
-        self.stack.push((key, value));
-    }
-
-    pub fn pop(&mut self) {
-        self.stack.pop();
-    }
-
-    pub fn color(&self, color: EnvironmentColor) -> Option<Color> {
-        self.value::<EnvironmentColor, Color>(color).cloned()
-    }
-
-    pub fn font_size(&self, font_size: EnvironmentFontSize) -> Option<u32> {
-        self.value::<EnvironmentFontSize, u32>(font_size).cloned()
-    }
-
-    pub fn bool<K: EnvKey>(&self, key: K) -> Option<bool> {
-        self.value::<K, bool>(key).cloned()
-    }
-
-    pub fn value<K: EnvKey, T: 'static>(&self, key: K) -> Option<&T> {
-        let key = key.key();
-
-        for (other_key, value) in self.stack.iter().rev() {
-            if key == *other_key && value.is::<T>() {
-                return value.downcast_ref();
-            }
-        }
-
-        None
     }
 }
 
