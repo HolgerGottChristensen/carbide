@@ -4,6 +4,7 @@ use typed_arena::Arena;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Queue, RenderPassDepthStencilAttachment, RenderPipeline, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
+use carbide_core::draw::theme::Theme;
 use carbide_core::environment::Environment;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::{Initialize, UpdateContext};
@@ -55,98 +56,102 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
 
+        let theme_for_frame = self.theme;
+
         ctx.env.with_scale_factor(scale_factor, |env| {
-            // Update children
-            self.child.process_update(&mut UpdateContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                env_stack: ctx.env_stack,
-            });
+            ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
+                // Update children
+                self.child.process_update(&mut UpdateContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    env_stack,
+                });
 
-            // Calculate size
-            self.child.calculate_size(dimensions, &mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                env_stack: ctx.env_stack,
-            });
+                // Calculate size
+                self.child.calculate_size(dimensions, &mut LayoutContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    env_stack,
+                });
 
-            // Position children
-            let alignment = Alignment::Center;
-            self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                env_stack: ctx.env_stack,
-            });
+                // Position children
+                let alignment = Alignment::Center;
+                self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
+                self.child.position_children(&mut LayoutContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    env_stack,
+                });
 
-            // Render the children
-            self.render_context.start(Rect::new(Position::origin(), dimensions));
+                // Render the children
+                self.render_context.start(Rect::new(Position::origin(), dimensions));
 
-            ctx.text.prepare_render();
+                ctx.text.prepare_render();
 
-            self.child.render(&mut RenderContext {
-                render: &mut self.render_context,
-                text: ctx.text,
-                image: ctx.image,
-                env,
-                env_stack: ctx.env_stack,
-            });
+                self.child.render(&mut RenderContext {
+                    render: &mut self.render_context,
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                    env_stack,
+                });
 
-            let render_passes = self.render_context.finish();
+                let render_passes = self.render_context.finish();
 
-            let target_count = self.render_context.target_count();
-            if self.targets.len() < target_count {
-                for _ in self.targets.len()..target_count {
-                    self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
-                }
-            }
-
-            //println!("\nContext: {:#?}", render_passes);
-            //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
-            //println!("Targets: {:#?}", &self.targets.len());
-
-            let mut uniform_bind_groups = vec![];
-
-            Self::ensure_vertices_in_buffer(&DEVICE, &QUEUE, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
-            Self::ensure_uniforms_in_buffer(&DEVICE, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &UNIFORM_BIND_GROUP_LAYOUT, &mut uniform_bind_groups);
-
-
-            if self.visible {
-                {
-                    self.title.sync(ctx.env_stack);
-
-                    let current = &*self.title.value();
-                    if &self.inner.title() != current {
-                        self.inner.set_title(current);
+                let target_count = self.render_context.target_count();
+                if self.targets.len() < target_count {
+                    for _ in self.targets.len()..target_count {
+                        self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height));
                     }
                 }
 
-                self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+                //println!("\nContext: {:#?}", render_passes);
+                //println!("Vertices: {:#?}", &self.render_context.vertices()[0..10]);
+                //println!("Targets: {:#?}", &self.targets.len());
 
-                match self.render_inner(render_passes, uniform_bind_groups, ctx.text, env) {
-                    Ok(_) => {}
-                    // Recreate the swap_chain if lost
-                    Err(wgpu::SurfaceError::Lost) => {
-                        println!("Swap chain lost");
-                        self.resize(self.inner.inner_size(), env);
-                        self.inner.request_redraw();
+                let mut uniform_bind_groups = vec![];
+
+                Self::ensure_vertices_in_buffer(&DEVICE, &QUEUE, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+                Self::ensure_uniforms_in_buffer(&DEVICE, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &UNIFORM_BIND_GROUP_LAYOUT, &mut uniform_bind_groups);
+
+
+                if self.visible {
+                    {
+                        self.title.sync(env_stack);
+
+                        let current = &*self.title.value();
+                        if &self.inner.title() != current {
+                            self.inner.set_title(current);
+                        }
                     }
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => {
-                        println!("Swap chain out of memory");
-                        env.close_application();
-                    }
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => {
-                        // We request a redraw the next frame
-                        self.inner.request_redraw();
-                        eprintln!("{:?}", e)
+
+                    self.inner.set_cursor_icon(convert_mouse_cursor(env.cursor()));
+
+                    match self.render_inner(render_passes, uniform_bind_groups, ctx.text, env) {
+                        Ok(_) => {}
+                        // Recreate the swap_chain if lost
+                        Err(wgpu::SurfaceError::Lost) => {
+                            println!("Swap chain lost");
+                            self.resize(self.inner.inner_size(), env);
+                            self.inner.request_redraw();
+                        }
+                        // The system is out of memory, we should probably quit
+                        Err(wgpu::SurfaceError::OutOfMemory) => {
+                            println!("Swap chain out of memory");
+                            env.close_application();
+                        }
+                        // All other errors (Outdated, Timeout) should be resolved by the next frame
+                        Err(e) => {
+                            // We request a redraw the next frame
+                            self.inner.request_redraw();
+                            eprintln!("{:?}", e)
+                        }
                     }
                 }
-            }
+            })
         });
 
         // Reset the environment

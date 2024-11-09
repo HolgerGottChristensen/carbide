@@ -11,7 +11,7 @@ use crate::window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{IntoReadState, ReadState};
-use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Overlay, Rectangle, ThemeManager, Widget, WidgetExt, WidgetId, ZStack};
 use std::fmt::{Debug, Formatter};
 use carbide_core::draw::theme::Theme;
 
@@ -35,10 +35,10 @@ impl Window<String, Empty> {
             title: title.into_read_state(),
             position: Default::default(),
             dimension,
-            child: ZStack::new((
+            child: ThemeManager::new(ZStack::new((
                 Rectangle::new().fill(EnvironmentColor::SystemBackground),
                 Overlay::new("controls_popup_layer", child.into_widget()).steal_events(),
-            )).theme(Theme::Dark),
+            ))),
             close_application_on_window_close: false,
         }
     }

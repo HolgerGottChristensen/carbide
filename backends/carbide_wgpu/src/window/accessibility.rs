@@ -1,6 +1,7 @@
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
 use smallvec::SmallVec;
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
+use carbide_core::draw::theme::Theme;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use crate::Window;
@@ -26,18 +27,22 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
 
                         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
+                        let theme_for_frame = initialized.theme;
+
                         ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
-                            initialized.child.process_accessibility(&mut AccessibilityContext {
-                                env,
-                                env_stack: ctx.env_stack,
-                                nodes: &mut tree_update,
-                                parent_id: Some(id),
-                                children: &mut children,
-                                hidden: false,
-                                inherited_label: None,
-                                inherited_hint: None,
-                                inherited_value: None,
-                                inherited_enabled: None,
+                            ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
+                                initialized.child.process_accessibility(&mut AccessibilityContext {
+                                    env,
+                                    env_stack,
+                                    nodes: &mut tree_update,
+                                    parent_id: Some(id),
+                                    children: &mut children,
+                                    hidden: false,
+                                    inherited_label: None,
+                                    inherited_hint: None,
+                                    inherited_value: None,
+                                    inherited_enabled: None,
+                                })
                             })
                         });
 
@@ -56,18 +61,22 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                 } else {
                     let mut children = SmallVec::<[WidgetId; 8]>::new();
 
+                    let theme_for_frame = initialized.theme;
+
                     ctx.env.with_scale_factor(initialized.inner.scale_factor(), |env| {
-                        initialized.child.process_accessibility(&mut AccessibilityContext {
-                            env,
-                            env_stack: ctx.env_stack,
-                            nodes: ctx.nodes,
-                            parent_id: Some(initialized.id),
-                            children: &mut children,
-                            hidden: false,
-                            inherited_label: None,
-                            inherited_hint: None,
-                            inherited_value: None,
-                            inherited_enabled: None,
+                        ctx.env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
+                            initialized.child.process_accessibility(&mut AccessibilityContext {
+                                env,
+                                env_stack,
+                                nodes: ctx.nodes,
+                                parent_id: Some(initialized.id),
+                                children: &mut children,
+                                hidden: false,
+                                inherited_label: None,
+                                inherited_hint: None,
+                                inherited_value: None,
+                                inherited_enabled: None,
+                            })
                         })
                     });
 

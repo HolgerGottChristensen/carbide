@@ -7,7 +7,7 @@ use carbide_core::widget::{CommonWidget, GradientRepeat, GradientType, Widget, W
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use carbide_winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use carbide_winit::update_scale_factor;
-use carbide_winit::window::WindowAttributes;
+use carbide_winit::window::{Theme, WindowAttributes};
 use crate::application::{ADAPTER, EVENT_LOOP_PROXY, INSTANCE};
 use crate::bind_group_layouts::{GRADIENT_DASHES_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT2};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
@@ -188,6 +188,11 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 child.initialize(ctx);
 
+                let theme = match window.theme().unwrap_or(Theme::Dark) {
+                    Theme::Light => carbide_core::draw::theme::Theme::Light,
+                    Theme::Dark => carbide_core::draw::theme::Theme::Dark,
+                };
+
                 Window::Initialized(InitializedWindow {
                     id,
                     surface,
@@ -213,6 +218,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     dimension,
                     child,
                     close_application_on_window_close,
+                    theme,
                 })
             }
             x => x,

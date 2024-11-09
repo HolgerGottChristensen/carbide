@@ -246,10 +246,9 @@ impl NewEventHandler {
                 true
             },
             WindowEvent::ThemeChanged(theme) => {
-                target.process_window_event(&carbide_core::event::WindowEvent::ThemeChanged(match theme {
-                    Theme::Light => carbide_core::event::Theme::Light,
-                    Theme::Dark => carbide_core::event::Theme::Dark,
-                }), &mut WindowEventContext {
+                println!("Theme changed!");
+
+                target.process_window_event(&carbide_core::event::WindowEvent::ThemeChanged, &mut WindowEventContext {
                     text: text_context,
                     image: image_context,
                     env,
@@ -258,7 +257,7 @@ impl NewEventHandler {
                     window_id: &window_id.into(),
                 });
 
-                false
+                true
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 println!("ScaleFactorChanged!");

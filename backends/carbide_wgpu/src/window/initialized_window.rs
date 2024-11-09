@@ -1,6 +1,7 @@
 use cgmath::Matrix4;
 use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
 use carbide_core::draw::{Dimension, Position};
+use carbide_core::draw::theme::Theme;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{Widget, WidgetId};
 use crate::render_context::WGPURenderContext;
@@ -29,4 +30,5 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,
     pub(crate) close_application_on_window_close: bool,
+    pub(crate) theme: Theme,
 }

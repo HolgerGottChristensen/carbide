@@ -40,7 +40,7 @@ pub enum WindowEvent {
     Redraw,
     CloseRequested,
     ScaleFactorChanged(Scalar),
-    ThemeChanged(Theme)
+    ThemeChanged
 }
 
 #[derive(Clone, Debug)]
