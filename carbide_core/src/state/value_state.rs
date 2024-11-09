@@ -8,8 +8,6 @@ use crate::render::Style;
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
 use crate::state::{ValueRef, ValueRefMut};
 
-// TODO: This should not be needed after the transition to new states.
-
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When
 /// cloning this state the value is cloned and when the clone changes the original will not

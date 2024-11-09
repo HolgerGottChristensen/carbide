@@ -17,7 +17,7 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentVaria
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
 use crate::state::{InnerState, StateContract};
-use crate::widget::{AnyWidget, EnvKey, FilterId, ImageFilter, WidgetId};
+use crate::widget::{AnyWidget, FilterId, ImageFilter, WidgetId};
 
 pub struct Environment {
     /// A map from String to a widget.

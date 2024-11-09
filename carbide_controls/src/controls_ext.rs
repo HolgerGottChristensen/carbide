@@ -1,11 +1,10 @@
 use std::fmt::Debug;
-use carbide::draw::theme::Theme;
 use carbide::environment::{Key};
 use carbide::state::ReadState;
 use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
-use carbide_core::widget::{AnyWidget, EdgeInsets, EnvUpdating, HStack, Rectangle, Text, WidgetExt};
+use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
 use crate::{EnabledKey, Help, Labelled};
 use crate::toggle_style::{ToggleStyle, ToggleStyleKey};
