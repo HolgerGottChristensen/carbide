@@ -8,8 +8,6 @@ fn main() {
 
     let geometry = LocalState::new(Rect::default());
 
-
-
     application.set_scene(
         Window::new(
             "GeometryReader example",

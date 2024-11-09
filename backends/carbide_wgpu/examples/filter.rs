@@ -11,7 +11,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let position_x = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let position_x = AnimatedState::custom(ease_in_out)
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(-180.0, 180.0);

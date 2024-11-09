@@ -9,7 +9,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let shift = AnimatedState::custom(linear, None)
+    let shift = AnimatedState::custom(linear)
         .repeat_alternate()
         .duration(Duration::new(5, 0))
         .range(-1.0, 1.0);

@@ -13,7 +13,7 @@ fn main() {
     let widget = Rectangle::new().frame(100.0, 100.0);
 
     let state =
-        AnimatedState::linear(None)
+        AnimatedState::linear()
             .repeat_alternate()
             .duration(Duration::new(1, 0))
             .range(0.0, 100.0)

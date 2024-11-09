@@ -1,40 +1,78 @@
+use std::marker::PhantomData;
+use carbide::environment::Key;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::WidgetTransferAction;
+use crate::environment::{EnvironmentStack, WidgetTransferAction};
 use crate::lifecycle::{Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 
+#[derive(Debug)]
+pub struct NavigationManager {
+    stack: Vec<StackItem>
+}
+
+#[derive(Clone, Debug)]
+enum StackItem {
+    Current,
+    Other(Box<dyn AnyWidget>)
+}
+
+#[derive(Copy, Clone, Debug)]
+struct NavigationKey;
+impl Key for NavigationKey {
+    type Value = NavigationManager;
+}
+
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Update)]
-pub struct NavigationStack {
+pub struct NavigationStack<K> where K: Key {
     id: WidgetId,
     position: Position,
     dimension: Dimension,
-    stack: Vec<Box<dyn AnyWidget>>,
-    top: Box<dyn AnyWidget>,
-    transfer_id: Option<String>,
+
+    key: PhantomData<K>,
+
+    stack: Vec<StackItem>,
+    current: Box<dyn AnyWidget>,
 }
 
-impl NavigationStack {
-    pub fn new(initial: Box<dyn AnyWidget>) -> NavigationStack {
+impl<K: Key> NavigationStack<K> {
+    pub fn new(initial: impl Widget) -> NavigationStack<K> {
         NavigationStack {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
+            key: Default::default(),
             stack: vec![],
-            top: initial,
-            transfer_id: None,
+            current: initial.boxed(),
         }
     }
 
-    pub fn transfer_id(mut self, transfer_id: impl Into<String>) -> Self {
-        self.transfer_id = Some(transfer_id.into());
-        self
+    fn with(&mut self, env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack, &mut Box<dyn Widget>)) {
+        let manager = NavigationManager {
+            stack: &mut self.stack,
+        };
+
+        env_stack.with::<K>(&manager, f);
+
+        // Fix up the stack
+        println!("Stack: {:#?}", self.stack)
     }
 }
 
-impl Update for NavigationStack {
-    fn update(&mut self, ctx: &mut UpdateContext) {
+impl<K: Key> Update for NavigationStack<K> {
+    fn process_update(&mut self, ctx: &mut UpdateContext) {
+        self.with(ctx.env_stack, |env_stack, child| {
+            child.process_update(&mut UpdateContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: ctx.env,
+                env_stack,
+            })
+        })
+    }
+
+    /*fn update(&mut self, ctx: &mut UpdateContext) {
         // Take out the transferred widget with the key if it exists
         if let Some(action) = ctx.env.transferred_widget(&self.transfer_id) {
             match action {
@@ -75,9 +113,9 @@ impl Update for NavigationStack {
                 }
             }
         }
-    }
+    }*/
 }
 
-impl CommonWidget for NavigationStack {
-    CommonWidgetImpl!(self, id: self.id, child: self.top, position: self.position, dimension: self.dimension);
+impl<K: Key> CommonWidget for NavigationStack<K> {
+    CommonWidgetImpl!(self, id: self.id, child: self.current, position: self.position, dimension: self.dimension);
 }
