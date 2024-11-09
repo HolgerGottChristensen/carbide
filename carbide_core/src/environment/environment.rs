@@ -25,9 +25,6 @@ pub struct Environment {
     /// styling that is applied to all of its children, unless some child overrides that style.
     // TODO: Consider switching to a map, so we dont need to search through the vec for better performance
     stack: Vec<(&'static str, Box<dyn Any>)>,
-    pub type_stack: Vec<Box<dyn Any>>,
-
-    root_alignment: Alignment,
 
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
@@ -61,17 +58,11 @@ pub struct Environment {
 
     animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
 
-    raw_window_handle: Option<RawWindowHandle>,
-
     event_sink: Box<dyn EventSink>,
 
     animation_widget_in_frame: usize,
 
     request_application_close: bool,
-
-    /// Contains a set of widget IDs that requires accessibility updates
-    accessibility_requires_update: DashSet<WidgetId>,
-    pub full_accessibility_update: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -154,8 +145,6 @@ impl Environment {
 
         let res = Environment {
             stack: env_stack,
-            type_stack: vec![],
-            root_alignment: Alignment::Center,
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
@@ -166,12 +155,9 @@ impl Environment {
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             animations: Some(vec![]),
-            raw_window_handle: None,
             event_sink,
             animation_widget_in_frame: 0,
             request_application_close: false,
-            accessibility_requires_update: Default::default(),
-            full_accessibility_update: true,
         };
 
         res
@@ -191,14 +177,6 @@ impl Environment {
 
     pub fn should_close_application(&self) -> bool {
         self.request_application_close
-    }
-
-    pub fn root_alignment(&self) -> Alignment {
-        self.root_alignment
-    }
-
-    pub fn set_root_alignment(&mut self, alignment: Alignment) {
-        self.root_alignment = alignment;
     }
 
     pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
@@ -371,24 +349,6 @@ impl Environment {
         self.filter_map.remove(&id);
     }
 
-    pub fn push_type<T: Any>(&mut self, value: T) {
-        self.type_stack.push(Box::new(value));
-    }
-
-    pub fn pop_type(&mut self) {
-        self.type_stack.pop();
-    }
-
-    pub fn get_type<T: Any>(&self) -> Option<&T> {
-        for value in self.type_stack.iter().rev() {
-            if value.is::<T>() {
-                return value.downcast_ref();
-            }
-        }
-
-        None
-    }
-
     pub fn push(&mut self, key: &'static str, value: Box<dyn Any>) {
         self.stack.push((key, value));
     }
@@ -419,21 +379,6 @@ impl Environment {
         }
 
         None
-    }
-
-    pub fn window_handle(&self) -> Option<RawWindowHandle> {
-        self.raw_window_handle
-    }
-
-    pub fn set_window_handle(&mut self, window_handle: Option<RawWindowHandle>) {
-        self.raw_window_handle = window_handle;
-    }
-}
-
-#[allow(unsafe_code)]
-unsafe impl HasRawWindowHandle for Environment {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        self.raw_window_handle.expect("This can only be called after launch of the application and within handler methods")
     }
 }
 

@@ -44,7 +44,7 @@ impl<'a> TypeMap<'a> {
         // If any existing value existed in the data with the key, remove and store it.
         let old = self.data.remove(&id);
 
-        // SOUNDNESS: The transmuted map has a shorter lifetime. The map is
+        // SAFETY: The transmuted map has a shorter lifetime. The map is
         // only used and accessed in the scope of the closure. We insert the
         // reference only for the duration of the closure, and ensure it is
         // removed again, before returning from the function, ensuring the

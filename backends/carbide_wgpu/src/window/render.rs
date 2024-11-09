@@ -3,7 +3,7 @@ use cgmath::Matrix4;
 use typed_arena::Arena;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Queue, RenderPassDepthStencilAttachment, RenderPipeline, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use carbide_core::draw::{Dimension, ImageId, Position, Rect, Scalar};
+use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::{Initialize, UpdateContext};
@@ -71,7 +71,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             });
 
             // Position children
-            let alignment = env.root_alignment();
+            let alignment = Alignment::Center;
             self.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, self.child.dimension()));
             self.child.position_children(&mut LayoutContext {
                 text: ctx.text,

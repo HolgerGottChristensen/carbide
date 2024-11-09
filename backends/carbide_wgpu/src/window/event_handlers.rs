@@ -13,12 +13,10 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
         match self {
             Window::Initialized(initialized) => {
                 let old_dimension = ctx.env.pixel_dimensions();
-                let old_window_handle = ctx.env.window_handle();
                 let scale_factor = initialized.inner.scale_factor();
                 let physical_dimensions = initialized.inner.inner_size();
 
                 ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-                ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 ctx.env.with_scale_factor(scale_factor, |env| {
                     let id: u64 = initialized.inner.id().into();
@@ -36,7 +34,6 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
                 });
 
                 ctx.env.set_pixel_dimensions(old_dimension);
-                ctx.env.set_window_handle(old_window_handle);
             }
             Window::UnInitialized { .. } => {}
             Window::Failed => {}
@@ -49,12 +46,10 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
         match self {
             Window::Initialized(initialized) => {
                 let old_dimension = ctx.env.pixel_dimensions();
-                let old_window_handle = ctx.env.window_handle();
                 let scale_factor = initialized.inner.scale_factor();
                 let physical_dimensions = initialized.inner.inner_size();
 
                 ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-                ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 ctx.env.with_scale_factor(scale_factor, |env| {
                     let new_ctx = &mut AccessibilityEventContext {
@@ -65,7 +60,6 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
                 });
 
                 ctx.env.set_pixel_dimensions(old_dimension);
-                ctx.env.set_window_handle(old_window_handle);
             }
             Window::UnInitialized { .. } => {}
             Window::Failed => {}
@@ -78,12 +72,10 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
         match self {
             Window::Initialized(initialized) => {
                 let old_dimension = ctx.env.pixel_dimensions();
-                let old_window_handle = ctx.env.window_handle();
                 let scale_factor = initialized.inner.scale_factor();
                 let physical_dimensions = initialized.inner.inner_size();
 
                 ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-                ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 ctx.env.with_scale_factor(scale_factor, |env| {
                     let id: u64 = initialized.inner.id().into();
@@ -101,7 +93,6 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
                 });
 
                 ctx.env.set_pixel_dimensions(old_dimension);
-                ctx.env.set_window_handle(old_window_handle);
             }
             Window::UnInitialized { .. } => {}
             Window::Failed => {}
@@ -114,12 +105,10 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
         match self {
             Window::Initialized(initialized) => {
                 let old_dimension = ctx.env.pixel_dimensions();
-                let old_window_handle = ctx.env.window_handle();
                 let scale_factor = initialized.inner.scale_factor();
                 let physical_dimensions = initialized.inner.inner_size();
 
                 ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-                ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 ctx.env.with_scale_factor(scale_factor, |env| {
                     initialized.child.process_other_event(event, &mut OtherEventContext {
@@ -133,7 +122,6 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                 initialized.inner.set_cursor(convert_mouse_cursor(ctx.env.cursor()));
 
                 ctx.env.set_pixel_dimensions(old_dimension);
-                ctx.env.set_window_handle(old_window_handle);
             }
             Window::UnInitialized { .. } => {}
             Window::Failed => {}
@@ -147,12 +135,10 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
         match self {
             Window::Initialized(initialized) => {
                 let old_dimension = ctx.env.pixel_dimensions();
-                let old_window_handle = ctx.env.window_handle();
                 let scale_factor = initialized.inner.scale_factor();
                 let physical_dimensions = initialized.inner.inner_size();
 
                 ctx.env.set_pixel_dimensions(Dimension::new(physical_dimensions.width as f64, physical_dimensions.height as f64));
-                ctx.env.set_window_handle(Some(initialized.inner.raw_window_handle()));
 
                 let window_id = ctx.window_id;
 
@@ -217,7 +203,6 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                 });
 
                 ctx.env.set_pixel_dimensions(old_dimension);
-                ctx.env.set_window_handle(old_window_handle);
             }
             Window::UnInitialized { .. } => {}
             Window::Failed => {}

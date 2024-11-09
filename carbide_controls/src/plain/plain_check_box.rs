@@ -138,16 +138,6 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>,> Initialize for PlainCheckBox<F, C, D, E> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
         println!("Initialzed checkbox");
-
-        ctx.env.push_type::<&str>("test");
-        ctx.env.push_type::<u32>(42);
-
-        for value in &ctx.env.type_stack {
-            println!("{:?}", value.deref().type_id());
-        }
-
-        ctx.env.pop_type();
-        ctx.env.pop_type();
     }
 }
 

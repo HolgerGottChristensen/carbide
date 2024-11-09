@@ -439,8 +439,6 @@ impl NewEventHandler {
                 println!("Accessibility Event: {:#?}", window_event);
                 match window_event {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
-                        env.full_accessibility_update = true;
-
                         target.process_accessibility(&mut AccessibilityContext {
                             env,
                             nodes: &mut TreeUpdate {
@@ -456,8 +454,6 @@ impl NewEventHandler {
                             inherited_value: None,
                             inherited_enabled: None,
                         });
-
-                        env.full_accessibility_update = false;
                     }
                     accesskit_winit::WindowEvent::ActionRequested(request) => {
                         target.process_accessibility_event(&AccessibilityEvent {
