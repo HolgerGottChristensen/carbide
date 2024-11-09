@@ -1,22 +1,18 @@
-use std::any::{Any, TypeId};
+use fxhash::{FxBuildHasher, FxHashMap};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Formatter;
-use std::future::Future;
 use std::option::Option::Some;
 use std::rc::Rc;
 use std::time::Instant;
-use dashmap::DashSet;
-use fxhash::{FxBuildHasher, FxHashMap};
-use raw_window_handle::{HasRawWindowHandle, RawWindowHandle};
 
 use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::{Alignment, Color, Dimension, Position, theme};
-use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentVariable, WidgetTransferAction};
+use crate::draw::{Dimension, Position};
+use crate::environment::WidgetTransferAction;
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
-use crate::state::{InnerState, StateContract};
+use crate::state::StateContract;
 use crate::widget::{AnyWidget, FilterId, ImageFilter, WidgetId};
 
 pub struct Environment {

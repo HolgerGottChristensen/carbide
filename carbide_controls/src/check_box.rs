@@ -46,7 +46,14 @@ impl<L: ReadState<T=String>> PlainCheckBoxDelegate for CheckBoxDelegate<L> {
         });
 
         let mark_color2 = mark_color.clone();
-        let label_color = mark_color.clone();
+
+        let label_color = Map1::read_map(enabled.clone(), |enabled| {
+            if *enabled {
+                EnvironmentColor::Label
+            } else {
+                EnvironmentColor::SecondaryLabel
+            }
+        });
 
         let checked_true =
             Map1::read_map(checked.clone(), |value| *value == CheckBoxValue::True);
