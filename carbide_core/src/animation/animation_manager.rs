@@ -1,23 +1,14 @@
-use std::time::Instant;
-use crate::accessibility::{Accessibility, AccessibilityContext};
-use crate::color::rgba_bytes;
-use crate::draw::theme::Theme;
-use crate::draw::Color;
-use crate::draw::Dimension;
-use crate::environment::{EnvironmentColor, EnvironmentFontSize, Key, Keyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::focus::{FocusContext, Focusable};
-use crate::layout::{Layout, LayoutContext};
-use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
+use std::fmt::{Debug, Formatter};
+use crate::accessibility::Accessibility;
+use crate::environment::Key;
 use crate::render::Render;
-use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget};
-use carbide::ModifierWidgetImpl;
+use std::time::Instant;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct AnimationManager {
     frame_count: u32,
-    frame_time: Instant
+    frame_time: Instant,
+    out_of_band_animations: OutOfBandAnimation
 }
 
 impl AnimationManager {
@@ -25,6 +16,7 @@ impl AnimationManager {
         AnimationManager {
             frame_count: 0,
             frame_time: Instant::now(),
+            out_of_band_animations: OutOfBandAnimation(vec![]),
         }
     }
 
@@ -45,7 +37,7 @@ impl AnimationManager {
             self.frame_count -= 1;
             true
         } else {
-            false
+            self.out_of_band_animations.0.len() > 0
         }
     }
 
@@ -55,9 +47,19 @@ impl AnimationManager {
 
     pub fn update_frame_time(&mut self) {
         self.frame_time = Instant::now();
+        self.out_of_band_animations.0.retain(|update_animation| !update_animation(&self.frame_time));
     }
 }
 
 impl Key for AnimationManager {
     type Value = AnimationManager;
+}
+
+struct OutOfBandAnimation(Vec<Box<dyn Fn(&Instant) -> bool>>);
+
+impl Debug for OutOfBandAnimation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("OutOfBandAnimation")
+            .finish_non_exhaustive()
+    }
 }

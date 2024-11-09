@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::environment::{Key};
 use carbide::state::ReadState;
-use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2};
+use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2, Widget};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
@@ -30,7 +30,7 @@ pub trait ControlsExt: WidgetExt {
         EnvUpdatingNew2::<Self, EnabledKey, E::Output>::new(enabled.into_read_state(), self)
     }
 
-    fn toggle_style(self, value: impl ToggleStyle) -> EnvUpdatingNew<Self, impl Key> {
+    fn toggle_style(self, value: impl ToggleStyle) -> impl Widget {
         EnvUpdatingNew::<Self, ToggleStyleKey>::new(Box::new(value) as Box<dyn ToggleStyle>, self)
     }
 }

@@ -37,8 +37,6 @@ pub struct Environment {
     cursor: MouseCursor,
     mouse_position: Position,
 
-    animations: Option<Vec<Box<dyn Fn(&Instant) -> bool>>>,
-
     event_sink: Box<dyn EventSink>,
 
     request_application_close: bool,
@@ -63,7 +61,6 @@ impl Environment {
             filter_map: filters,
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
-            animations: Some(vec![]),
             event_sink,
             request_application_close: false,
         };
@@ -85,36 +82,6 @@ impl Environment {
 
     pub fn should_close_application(&self) -> bool {
         self.request_application_close
-    }
-
-    pub fn insert_animation<A: StateContract>(&mut self, animation: Animation<A>) {
-        let poll = move |time: &Instant| {
-            let mut animation = animation.clone();
-            animation.update(time)
-        };
-        self.animations
-            .as_mut()
-            .expect("No animation queue was present.")
-            .push(Box::new(poll));
-    }
-
-    pub fn update_animation(&mut self) {
-        let mut temp = None;
-        std::mem::swap(&mut temp, &mut self.animations);
-
-        let instant = Instant::now();
-
-        temp.as_mut()
-            .map(|t| t.retain(|update_animation| !update_animation(&instant)));
-
-        std::mem::swap(&mut temp, &mut self.animations);
-    }
-
-    pub fn has_animations(&self) -> bool {
-        self.animations
-            .as_ref()
-            .map(|a| a.len() > 0)
-            .unwrap_or(false)
     }
 
     pub fn cursor(&self) -> MouseCursor {

@@ -17,15 +17,25 @@ use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, Widget)]
+#[derive(Debug, Widget)]
 #[carbide_derive(StateSync)]
-pub struct EnvUpdatingNew<C, K> where C: Widget, K: Key {
+pub struct EnvUpdatingNew<C, K> where C: Widget, K: Key, K::Value: Clone {
     child: C,
     key: PhantomData<K>,
     value: K::Value,
 }
 
-impl<C: Widget, K: Key> EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Clone for EnvUpdatingNew<C, K> where K::Value: Clone {
+    fn clone(&self) -> Self {
+        EnvUpdatingNew {
+            child: self.child.clone(),
+            key: Default::default(),
+            value: self.value.clone(),
+        }
+    }
+}
+
+impl<C: Widget, K: Key> EnvUpdatingNew<C, K> where K::Value: Clone {
     pub fn new(value: K::Value, child: C) -> EnvUpdatingNew<C, K> {
         EnvUpdatingNew {
             child,
@@ -35,7 +45,7 @@ impl<C: Widget, K: Key> EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Layout for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Layout for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let mut response = requested_size;
 
@@ -68,7 +78,7 @@ impl<C: Widget, K: Key> Layout for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Update for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Update for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_update(&mut UpdateContext {
@@ -81,7 +91,7 @@ impl<C: Widget, K: Key> Update for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Initialize for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Initialize for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_initialization(&mut InitializationContext {
@@ -93,7 +103,7 @@ impl<C: Widget, K: Key> Initialize for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> OtherEventHandler for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> OtherEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_other_event(event, &mut OtherEventContext {
@@ -106,7 +116,7 @@ impl<C: Widget, K: Key> OtherEventHandler for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> WindowEventHandler for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> WindowEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_window_event(event, &mut WindowEventContext {
@@ -121,7 +131,7 @@ impl<C: Widget, K: Key> WindowEventHandler for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> AccessibilityEventHandler for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> AccessibilityEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_accessibility_event(event, &mut AccessibilityEventContext {
@@ -132,7 +142,7 @@ impl<C: Widget, K: Key> AccessibilityEventHandler for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> KeyboardEventHandler for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> KeyboardEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
@@ -148,7 +158,7 @@ impl<C: Widget, K: Key> KeyboardEventHandler for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> MouseEventHandler for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> MouseEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_mouse_event(event, &mut MouseEventContext {
@@ -164,7 +174,7 @@ impl<C: Widget, K: Key> MouseEventHandler for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Focusable for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Focusable for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_focus_next(&mut FocusContext {
@@ -199,7 +209,7 @@ impl<C: Widget, K: Key> Focusable for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Accessibility for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Accessibility for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_accessibility(&mut AccessibilityContext {
@@ -218,7 +228,7 @@ impl<C: Widget, K: Key> Accessibility for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> Render for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> Render for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn render(&mut self, ctx: &mut RenderContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.render(&mut RenderContext {
@@ -232,6 +242,6 @@ impl<C: Widget, K: Key> Render for EnvUpdatingNew<C, K> {
     }
 }
 
-impl<C: Widget, K: Key> CommonWidget for EnvUpdatingNew<C, K> {
+impl<C: Widget, K: Key> CommonWidget for EnvUpdatingNew<C, K> where K::Value: Clone {
     ModifierWidgetImpl!(self, child: self.child);
 }

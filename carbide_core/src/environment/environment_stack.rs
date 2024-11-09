@@ -4,12 +4,12 @@ use std::fmt::{Debug, Formatter};
 use std::hash::{BuildHasherDefault, Hasher};
 use std::mem::transmute;
 
-pub trait Key: Any + Debug + Clone + 'static {
-    type Value: Any + Debug + Clone + 'static;
+pub trait Key: Any + Debug + 'static {
+    type Value: Any + Debug + 'static;
 }
 
-pub trait Keyable: Debug + Clone + 'static {
-    type Output: Any + Debug + Clone + 'static;
+pub trait Keyable: Debug + 'static {
+    type Output: Any + Debug + 'static;
 
     fn get(&self, stack: &TypeMap) -> Self::Output;
     fn with(&self, value: &Self::Output, stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap));

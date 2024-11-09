@@ -211,7 +211,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         EnvUpdatingNew2::<ThemeManager<Self>, Theme, T::Output>::new(theme.into_read_state(), ThemeManager::new(self))
     }
 
-    fn environment<K: Keyable, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> {
+    fn environment<K: Keyable + Clone, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> where K::Output: Clone {
         EnvUpdatingNew3::<Self, K, V::Output>::new(key, value.into_read_state(), self)
     }
 }
