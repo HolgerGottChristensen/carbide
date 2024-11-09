@@ -11,7 +11,7 @@ use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext}
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
-use crate::ModifierWidgetImpl;
+use carbide::ModifierWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]

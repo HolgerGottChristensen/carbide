@@ -76,54 +76,6 @@ impl Environment {
         pixel_dimensions: Dimension,
         event_sink: Box<dyn EventSink>,
     ) -> Self {
-        let font_sizes_large = vec![
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::LargeTitle,
-                value: 30,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Title,
-                value: 24,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Title2,
-                value: 20,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Title3,
-                value: 18,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Headline,
-                value: 16,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Body,
-                value: 13,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Callout,
-                value: 12,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Subhead,
-                value: 11,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Footnote,
-                value: 9,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Caption,
-                value: 8,
-            },
-            EnvironmentVariable::EnvironmentFontSize {
-                key: EnvironmentFontSize::Caption2,
-                value: 7,
-            },
-        ];
-
-
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         let res = Environment {

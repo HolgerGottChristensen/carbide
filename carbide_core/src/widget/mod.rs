@@ -52,7 +52,6 @@ pub use self::scroll::*;
 pub use self::shadow::*;
 pub use self::spacer::*;
 pub use self::text::*;
-pub use self::theme_manager::*;
 pub use self::transform::*;
 pub use self::v_grid::*;
 pub use self::v_split::*;
@@ -114,9 +113,9 @@ mod saturation;
 mod luminance;
 mod mask;
 mod environment_updating_new;
-mod theme_manager;
 mod environment_updating_new2;
 mod environment_updating_new3;
+pub mod managers;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(pub u32);

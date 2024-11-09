@@ -1,5 +1,5 @@
 use cgmath::Matrix4;
-use carbide::widget::theme_manager::ThemeManager;
+use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
 use crate::draw::Dimension;

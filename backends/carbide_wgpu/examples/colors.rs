@@ -1,6 +1,6 @@
-use carbide_core::color::{BLACK, WHITE};
+use carbide_core::color::{ColorExt, BLACK, WHITE};
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::state::{AnyState, ReadState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -55,14 +55,14 @@ fn main() {
         "Color preview example",
         Dimension::new(800.0, 700.0),
         ZStack::new((
-            Rectangle::new().fill(BLACK),
+            Rectangle::new().fill(EnvironmentColor::Label.color().invert()),
             HStack::new(ForEach::new(vec![colors1, colors2, colors3], |item, index| {
                 VStack::new(ForEach::new(item, |item: Box<dyn AnyState<T=EnvironmentColor>>, index| {
                     HStack::new((
                         Text::new(format!("{:?}", *item.value())),
                         Rectangle::new()
                             .fill(item)
-                            .stroke(WHITE)
+                            .stroke(EnvironmentColor::Label)
                             .stroke_style(1.0)
                             .frame(100.0, 30.0)
                     ))

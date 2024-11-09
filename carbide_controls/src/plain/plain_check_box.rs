@@ -33,7 +33,7 @@ impl<K, W: Widget> PlainCheckBoxDelegate for K where K: Fn(Box<dyn AnyReadState<
 }
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Accessibility, AccessibilityEvent, Initialize, Render)]
+#[carbide_exclude(Accessibility, AccessibilityEvent, Initialize)]
 pub struct PlainCheckBox<F, C, D, E> where
     F: State<T=Focus>,
     C: State<T=CheckBoxValue>,
@@ -138,7 +138,7 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
 
 impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>,> Initialize for PlainCheckBox<F, C, D, E> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        println!("Initialzed checkbox");
+        //println!("Initialzed checkbox");
     }
 }
 
@@ -220,16 +220,6 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
         ctx.nodes.push(self.id(), node);
 
         ctx.children.push(self.id());
-    }
-}
-
-impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheckBoxDelegate, E: ReadState<T=bool>> Render for PlainCheckBox<F, C, D, E> {
-    fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env_stack);
-
-        println!("{:?}", context.env_stack.get::<ToggleStyleKey>());
-
-        self.child.render(context);
     }
 }
 
