@@ -1,5 +1,6 @@
 use carbide::event::EventId;
 use carbide::scene::SceneManager;
+use carbide::widget::OverlayManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::{
@@ -8,7 +9,7 @@ use carbide_core::event::{
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::state::{ReadState, State, StateContract, LocalState};
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
-
+use crate::ControlsOverlayKey;
 use crate::plain::plain_pop_up_button::PopupButtonKeyCommand;
 
 #[derive(Debug, Clone, Widget)]
@@ -101,24 +102,28 @@ impl<
 > KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
-            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
-            //self.popup_open.set_value(false);
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                manager.clear()
+            });
             return;
         }
 
         ctx.prevent_default();
 
         if event == PopupButtonKeyCommand::Close {
-            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
-            //self.popup_open.set_value(false);
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                manager.clear()
+            })
         } else if event == PopupButtonKeyCommand::Select {
             let value: Option<usize> = self.hover_model.value().clone();
             if let Some(h) = value {
                 let value = self.model.value()[h].clone();
                 self.selected.set_value(value);
             }
-            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
-            //self.popup_open.set_value(false);
+
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                manager.clear()
+            })
         } else if event == PopupButtonKeyCommand::Next {
             let value: Option<usize> = self.hover_model.value().clone();
             if let Some(h) = value {
@@ -148,7 +153,9 @@ impl<
 > MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
-            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                manager.clear()
+            });
             //self.popup_open.set_value(false);
             return;
         }
@@ -156,8 +163,9 @@ impl<
         match event {
             MouseEvent::Release { button: MouseButton::Left, position, ..} => {
                 if !self.is_inside(*position) {
-                    //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
-                    //self.popup_open.set_value(false);
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                        manager.clear()
+                    })
                 }
             }
             _ => (),

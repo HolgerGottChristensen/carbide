@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::environment::EnvironmentStack;
 use carbide::event::{EventId, KeyboardEventContext, MouseButton, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide::lifecycle::{Update, UpdateContext};
@@ -15,7 +16,7 @@ use carbide_core::focus::{Focus, Refocus};
 use carbide_core::layout::{Layout};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
 use carbide_core::widget::*;
-
+use crate::ControlsOverlayKey;
 use crate::plain::plain_pop_up_button_popup::PlainPopUpButtonPopUp;
 use crate::plain::plain_pop_up_button_popup_item::PlainPopUpButtonPopUpItem;
 
@@ -154,7 +155,7 @@ impl<
         )
     }
 
-    fn open_popup(&self, event_id: EventId, env: &mut Environment) {
+    fn open_popup(&self, event_id: EventId, env: &mut EnvironmentStack) {
         let selected = self.selected.value();
         let hover_model = LocalState::new(self.model.value().iter().position(|x| x == &*selected));
 
@@ -182,7 +183,9 @@ impl<
             event_id
         ).boxed();
 
-        //env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(popup));
+        OverlayManager::get::<ControlsOverlayKey>(env, |manager| {
+            manager.insert(popup)
+        })
     }
 
     fn new_internal<T2: StateContract + PartialEq, F2: State<T=Focus>, S2: State<T=T2>, M2: ReadState<T=Vec<T2>>, E2: ReadState<T=bool>>(
@@ -284,7 +287,7 @@ impl<
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         if event == PopupButtonKeyCommand::Open {
-            self.open_popup(EventId::default(), ctx.env);
+            self.open_popup(EventId::default(), ctx.env_stack);
             //ctx.env.request_animation_frame();
         }
     }
@@ -311,7 +314,7 @@ impl<
                         self.set_focus(Focus::FocusRequested);
                         ctx.env.request_focus(Refocus::FocusRequest);
                     }
-                    self.open_popup(*id, ctx.env);
+                    self.open_popup(*id, ctx.env_stack);
                     //ctx.env.request_animation_frame();
                 } else {
                     if self.get_focus() == Focus::Focused {

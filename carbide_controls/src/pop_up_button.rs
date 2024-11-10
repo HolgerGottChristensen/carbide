@@ -148,7 +148,7 @@ impl PopUpButton {
         _enabled: Box<dyn AnyReadState<T=bool>>,
     ) -> Box<dyn AnyWidget> {
         VStack::new(ForEach::new(model.ignore_writes(), delegate))
-            .spacing(1.0)
+            .spacing(0.0)
             .padding(1.0)
             .background(Rectangle::new().fill(EnvironmentColor::OpaqueSeparator))
             .boxed()

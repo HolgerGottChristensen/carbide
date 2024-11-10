@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use carbide::event::EventId;
 use carbide::state::AnyState;
+use carbide::widget::OverlayManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::{
@@ -9,6 +10,7 @@ use carbide_core::event::{
 };
 use carbide_core::state::{ReadState, State, StateContract};
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::ControlsOverlayKey;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent)]
@@ -65,7 +67,9 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
                     }
 
                     self.selected.set_value(self.item.value().clone());
-                    //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                        manager.clear()
+                    })
                 }
             }
             MouseEvent::Move { to, .. } => {
