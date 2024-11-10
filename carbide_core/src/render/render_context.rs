@@ -165,9 +165,9 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.text(text, self.text);
     }
 
-    pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
+    pub fn layer<R, F: FnOnce(Layer, &mut Environment, &mut EnvironmentStack) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
         let layer = self.render.layer(layer_id, bounding_box.dimension);
-        let res = f(layer, self.env);
+        let res = f(layer, self.env, self.env_stack);
         self.render.render_layer(layer_id, bounding_box);
 
         res

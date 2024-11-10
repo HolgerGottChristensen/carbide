@@ -38,7 +38,7 @@ fn main() {
 
     let mut application = Application::new();
 
-    let animated_color = AnimatedState::linear(None).duration(Duration::from_secs_f64(40.0)).repeat().range(0.0, 2.0*PI).map(|h| Color::Hsla(*h, 1.0, 0.5, 1.0));
+    let animated_color = AnimatedState::linear().duration(Duration::from_secs_f64(40.0)).repeat().range(0.0, 2.0*PI).map(|h| Color::Hsla(*h, 1.0, 0.5, 1.0));
 
     let material = PbrMaterial::new()
         .color(animated_color.clone());
@@ -70,7 +70,7 @@ fn main() {
     let y = Object::new(create_cube(Vector3::new(0.0, 0.05, 0.0), 0.03), material_green);
     let z = Object::new(create_cube(Vector3::new(0.0, 0.0, 0.05), 0.03), material_blue);
 
-    let animated = AnimatedState::custom(ease_in_out, None).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(0.0f32, 0.25f32);
+    let animated = AnimatedState::custom(ease_in_out).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(0.0f32, 0.25f32);
     //let animated = AnimatedState::linear(None).duration(Duration::from_secs_f64(3.0)).repeat().range(0.0f32, 1.0f32);
     let rotation = Map1::read_map(animated, |t| Matrix4::<f32>::from(Euler::new(Deg(0.0), Deg(*t * 360.0), Deg(0.0))));
     let view = Matrix4::look_at_lh(Point3::new(1.0, 0.0, 1.0), Point3::new(0.0, 0.0, 0.0), Vector3::unit_y());
@@ -96,7 +96,7 @@ fn main() {
         .intensity(5.0);*/
 
 
-    let animated = AnimatedState::custom(ease_in_out, None).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(-0.15f32, 0.15f32);
+    let animated = AnimatedState::custom(ease_in_out).duration(Duration::from_secs_f64(3.0)).repeat_alternate().range(-0.15f32, 0.15f32);
     let rotation = Map1::read_map(animated, |t| Matrix3::<f32>::from(Euler::new(Deg(-20.0), Deg(*t * 360.0), Deg(0.0))));
 
     let direction = Map1::read_map(rotation, |rotation| {

@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use carbide::color::WHITE;
 use carbide::draw::Color;
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentStack};
 use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
 use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew, StateSync};
 use crate::material::albedo_component::AlbedoComponent;

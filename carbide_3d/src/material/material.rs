@@ -1,4 +1,4 @@
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentStack};
 use carbide::state::StateSync;
 use carbide::widget::WidgetSync;
 use crate::material::pbr_material::PbrMaterial;

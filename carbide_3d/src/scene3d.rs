@@ -1,3 +1,4 @@
+use carbide::animation::AnimationManager;
 use carbide::draw::Rect;
 use carbide::render::{LayerId, RenderContext};
 use carbide::render::matrix::Matrix4;
@@ -51,9 +52,12 @@ impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> CommonWidget for Scene3d<C
 }
 
 impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
-    fn render(&mut self, context: &mut RenderContext) {
-        context.env.request_animation_frame();
-        context.layer(self.target, Rect::new(self.position, self.dimension), |layer, env| {
+    fn render(&mut self, ctx: &mut RenderContext) {
+        AnimationManager::get(ctx.env_stack, |manager| {
+            manager.request_animation_frame();
+        });
+
+        ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env, env_stack| {
             self.context.start();
 
             self.nodes.foreach_mut(&mut |node| {
@@ -61,6 +65,7 @@ impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
                     render: &mut *self.context,
                     image: &mut *self.image_context,
                     env,
+                    env_stack,
                 });
             });
 

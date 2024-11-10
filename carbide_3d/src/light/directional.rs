@@ -1,5 +1,5 @@
 use carbide::color::{Color, WHITE};
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentStack};
 use carbide::render::matrix::{Deg, Euler, InnerSpace, Matrix4, SquareMatrix, Vector3, Vector4, Zero};
 use carbide::state::{IntoReadState, StateSync, ReadState};
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
@@ -71,7 +71,7 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> S
 
 impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> Render3d for DirectionalLight<D, C, I> {
     fn render(&mut self, context: &mut RenderContext3d) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
         //let new_direction = (Matrix4::from(Euler::new(Deg(0.0), Deg(0.0), Deg(1.0))) * Vector4::new(self.direction.x, self.direction.y, self.direction.z, 1.0));
 
         //self.direction = Vector3::new(new_direction.x, new_direction.y, new_direction.z);
