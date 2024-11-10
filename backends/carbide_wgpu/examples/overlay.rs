@@ -36,7 +36,7 @@ fn main() {
         "Overlay example - Carbide",
         Dimension::new(400.0, 300.0),
         widget.overlay::<OverlayKey>().steal_events()
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

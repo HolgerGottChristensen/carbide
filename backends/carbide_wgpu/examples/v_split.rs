@@ -14,14 +14,14 @@ fn main() {
 
 
     application.set_scene(Window::new(
-        "VSplit example",
+        "VSplit example - Carbide",
         Dimension::new(600.0, 400.0),
         HStack::new((
             v_split(height1.clone()).relative_to_start(height1),
             v_split(percent.clone()).percent(percent),
             v_split(height2.clone()).relative_to_end(height2),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

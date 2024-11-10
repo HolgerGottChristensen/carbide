@@ -64,7 +64,7 @@ fn main() {
         "NavigationStack - Carbide",
         Dimension::new(300.0, 300.0),
         item(0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

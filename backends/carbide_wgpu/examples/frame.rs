@@ -8,7 +8,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Frame example",
+            "Frame example - Carbide",
             Dimension::new(300.0, 300.0),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)

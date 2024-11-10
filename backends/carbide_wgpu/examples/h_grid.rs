@@ -19,7 +19,7 @@ fn main() {
             }), vec![
                 HGridRow::Adaptive(80.0)
             ]).padding(10.0),
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

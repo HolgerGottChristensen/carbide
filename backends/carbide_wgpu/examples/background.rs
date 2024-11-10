@@ -11,7 +11,7 @@ fn main() {
         Text::new("Hello world!")
             .padding(5.0)
             .background(RoundedRectangle::new(3.0))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

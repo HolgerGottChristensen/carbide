@@ -42,7 +42,6 @@ fn main() {
         hello().await
     });
 
-
     let random_color = WHITE.map(|_| Style::Color(Color::random()));
 
     let widgets = VStack::new((
@@ -66,7 +65,7 @@ fn main() {
             "Async example",
             Dimension::new(400.0, 600.0),
             widgets
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

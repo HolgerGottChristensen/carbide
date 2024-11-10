@@ -10,7 +10,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "GeometryReader example",
+            "GeometryReader example - Carbide",
             Dimension::new(600.0, 600.0),
             GeometryReader::new(
                 geometry.clone(),
@@ -21,7 +21,7 @@ fn main() {
                     }))
                 )),
             ).padding(30.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

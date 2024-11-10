@@ -32,14 +32,14 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Shadow example",
+            "Shadow example - Carbide",
             Dimension::new(600.0, 600.0),
             VStack::new((
                 Text::new("Hello world!").font_size(42),
                 Image::new_icon("images/rust.png")
             )).foreground_color(Color::new_rgba(170, 170, 170, 255))
                 .shadow(sigma.clone(), color.clone(), offset_x, offset_y)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

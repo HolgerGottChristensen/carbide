@@ -52,7 +52,7 @@ fn main() {
     ];
 
     application.set_scene(Window::new(
-        "Color preview example",
+        "EnvironmentColor example - Carbide",
         Dimension::new(800.0, 700.0),
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Label.color().invert()),
@@ -69,7 +69,7 @@ fn main() {
                 })).cross_axis_alignment(CrossAxisAlignment::End)
             })).cross_axis_alignment(CrossAxisAlignment::Start)
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

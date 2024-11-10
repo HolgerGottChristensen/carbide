@@ -37,8 +37,7 @@ mod window;
 mod globals;
 
 pub fn init_logger() {
-    env_logger::init();
-}
+    }
 
 enum RenderPassOps {
     Start,

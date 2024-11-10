@@ -7,14 +7,14 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Border example",
+        "Border example - Carbide",
         Dimension::new(400.0, 600.0),
         Image::new("images/landscape.png")
             .clip()
             .frame(200.0, 200.0)
             .border()
             .border_width(10),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

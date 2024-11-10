@@ -20,7 +20,7 @@ Jerky chicken pork loin, landjaeger rump frankfurter kielbasa leberkas chislic b
     ];
 
     application.set_scene(Window::new(
-        "Text gradient example",
+        "Text gradient example - Carbide",
         Dimension::new(400.0, 600.0),
         Text::new(text)
             .color(Gradient::linear(colors1, Alignment::Leading, Alignment::Trailing))
@@ -30,7 +30,7 @@ Jerky chicken pork loin, landjaeger rump frankfurter kielbasa leberkas chislic b
             .border_width(1)
             .color(EnvironmentColor::Green)
             .padding(40.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

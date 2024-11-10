@@ -10,13 +10,13 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let rotation = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let rotation = AnimatedState::custom(ease_in_out)
         .duration(Duration::new(5, 0))
         .repeat_alternate()
         .range(0.0, 360.0);
 
     application.set_scene(Window::new(
-        "Rotation example",
+        "Rotation example - Carbide",
         Dimension::new(400.0, 600.0),
         Image::new("images/landscape.png")
             .scaled_to_fill()
@@ -24,7 +24,7 @@ fn main() {
             .rotation_effect(rotation)
             .frame(200.0, 200.0)
             .border(),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

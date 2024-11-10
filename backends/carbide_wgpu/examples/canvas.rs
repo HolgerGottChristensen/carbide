@@ -7,20 +7,19 @@ use carbide_core::widget::canvas::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
 
     let mut application = Application::new();
 
     application.set_scene(
         Window::new(
-            "Canvas example",
+            "Canvas example - Carbide",
             Dimension::new(600.0, 600.0),
-            Canvas::new(|_, context: &mut CanvasContext, _: &mut Environment| {
+            Canvas::new(|context: &mut CanvasContext| {
                 draw_star(Position::new(50.0, 50.0), 5, 45.0, 20.0, context);
                 context.set_fill_style(EnvironmentColor::Accent);
                 context.fill();
             }).frame(100.0, 100.0),
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

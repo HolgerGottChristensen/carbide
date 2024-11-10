@@ -17,7 +17,7 @@ fn main() {
                     println!("Released: {:?}", key);
                 })
                 .padding(10.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

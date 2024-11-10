@@ -8,7 +8,6 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
 
     let mut application = Application::new();
 
@@ -31,10 +30,10 @@ fn main() {
         .padding(30.0);
 
     application.set_scene(Window::new(
-        "Ball animation example",
+        "Ball animation example - Carbide",
         Dimension::new(400.0, 600.0),
         widgets,
-    ).close_application_on_window_close());
+    ));
 
     application.launch()
 }

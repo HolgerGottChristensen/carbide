@@ -201,7 +201,7 @@ fn main() {
                 capsules,
                 stars,
             )),
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch();

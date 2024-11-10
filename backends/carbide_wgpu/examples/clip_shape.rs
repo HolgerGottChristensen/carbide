@@ -7,11 +7,11 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "ClipShape example",
+            "ClipShape example - Carbide",
             Dimension::new(600.0, 600.0),
             Image::new("images/landscape.png")
                 .clip_shape(Circle::new())
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

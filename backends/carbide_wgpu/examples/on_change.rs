@@ -13,7 +13,7 @@ fn main() {
     let switch = LocalState::new(false);
 
     application.set_scene(Window::new(
-        "On change - Carbide",
+        "OnChange - Carbide",
         Dimension::new(400.0, 300.0),
         VStack::new((
             Text::new(switch.clone())
@@ -24,7 +24,7 @@ fn main() {
             .on_change(switch.clone(), closure!(|old, new| {
                 println!("old: {:?}, new: {:?}", old, new);
             }))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

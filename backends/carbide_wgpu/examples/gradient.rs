@@ -23,7 +23,7 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Gradients example",
+        "Gradients example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
             HStack::new((
@@ -223,7 +223,7 @@ fn main() {
                     .frame(80.0, 80.0),
             )),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

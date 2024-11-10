@@ -7,7 +7,7 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Scroll example",
+        "Scroll example - Carbide",
         Dimension::new(400.0, 600.0),
         Scroll::new(
             Image::new("images/landscape.png")
@@ -18,7 +18,7 @@ fn main() {
         )
             .clip()
             .frame(250.0, 250.0),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

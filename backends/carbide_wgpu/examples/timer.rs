@@ -39,18 +39,18 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Timer example",
+            "Timer example - Carbide",
             Dimension::new(400.0, 600.0),
             VStack::new((
                 Text::new("Click this to restart the timer")
-                    .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+                    .on_click(move |_| {
                         let timer = timer.clone();
                         timer.restart();
                     }),
                 Text::new(counter_state)
                     .font_size(EnvironmentFontSize::LargeTitle),
                 Text::new("Click this to toggle the timer")
-                    .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+                    .on_click(move |_| {
                         let timer = timer2.clone();
                         if timer.is_running() {
                             timer.stop();
@@ -65,7 +65,7 @@ fn main() {
                     .frame_fixed_width(250.0)
                     .fit_height(),
             ))
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

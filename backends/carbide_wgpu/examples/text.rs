@@ -26,7 +26,7 @@ fn main() {
     //let text = "O😀";
 
     application.set_scene(Window::new(
-        "Text example",
+        "Text example - Carbide",
         Dimension::new(400.0, 600.0),
         Text::new(text)
             .font_size(EnvironmentFontSize::Body)
@@ -35,7 +35,7 @@ fn main() {
             .border_width(1)
             .color(EnvironmentColor::Green)
             .padding(40.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

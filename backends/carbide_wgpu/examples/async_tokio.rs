@@ -17,7 +17,6 @@ use carbide_wgpu::{Application, Window};
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
 fn main() {
-    env_logger::init();
 
     let mut application = Application::new()
         .with_asset_fonts();
@@ -82,13 +81,13 @@ fn main() {
 
     task.clone().start();
 
-    let color = AnimatedState::linear(None)
+    let color = AnimatedState::linear()
         .repeat_alternate()
         .range(RED, GREEN);
 
     application.set_scene(
         Window::new(
-            "Async using tokio example",
+            "Tokio async - Carbide",
             Dimension::new(400.0, 600.0),
             VStack::new((
                 Text::new(text).padding(20.0),
@@ -102,7 +101,7 @@ fn main() {
                     .frame(block_width, 50.0),
             ))
                 .accent_color(EnvironmentColor::Red)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch();

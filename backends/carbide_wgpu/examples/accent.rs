@@ -21,7 +21,7 @@ fn main() {
                     .frame(100.0, 30.0)
                     .accent_color(EnvironmentColor::Red)
             )).accent_color(GREEN)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

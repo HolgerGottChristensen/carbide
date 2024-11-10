@@ -8,14 +8,14 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "AspectRatio example",
+            "AspectRatio example - Carbide",
             Dimension::new(200.0, 200.0),
             ZStack::new((
                 Rectangle::new().fill(EnvironmentColor::Red),
                 Rectangle::new()
                     .aspect_ratio(Dimension::new(16.0, 9.0))
             )).padding(40.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

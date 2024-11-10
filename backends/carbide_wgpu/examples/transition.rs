@@ -33,7 +33,7 @@ fn main() {
                     .frame(96.0, 22.0),
             )).spacing(10.0),
         )).spacing(10.0)
-    ).close_application_on_window_close());
+    ));
 
 
     application.launch();

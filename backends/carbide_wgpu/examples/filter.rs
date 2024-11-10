@@ -17,7 +17,7 @@ fn main() {
         .range(-180.0, 180.0);
 
     application.set_scene(Window::new(
-        "Filter example",
+        "Filter example - Carbide",
         Dimension::new(600.0, 450.0),
         ZStack::new((
             Image::new("images/landscape.png")
@@ -33,7 +33,7 @@ fn main() {
                 .frame(200.0, 200.0)
                 .offset(position_x, 0.0),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

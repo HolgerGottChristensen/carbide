@@ -7,13 +7,13 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Progress view example",
+        "Progress view example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
             ProgressView::new(),
             ProgressView::new().size(50.0)
         )).spacing(10.0),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

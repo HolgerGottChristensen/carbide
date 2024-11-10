@@ -7,10 +7,10 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Image example",
+        "Image example - Carbide",
         Dimension::new(800.0, 600.0),
         Image::new("images/landscape.png"),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

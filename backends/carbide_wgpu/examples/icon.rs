@@ -7,7 +7,7 @@ fn main() {
     let mut application = Application::new();
 
     application.set_scene(Window::new(
-        "Icon example",
+        "Icon example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
             Image::new_icon("images/rust.png")
@@ -16,7 +16,7 @@ fn main() {
                 .fill(EnvironmentColor::Accent)
                 .frame(50.0, 50.0),
         )).accent_color(EnvironmentColor::Green),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

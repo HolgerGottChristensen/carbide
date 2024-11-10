@@ -37,7 +37,7 @@ fn main() {
                         .theme(Theme::Light),
                 ))
             ))
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

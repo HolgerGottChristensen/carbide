@@ -1,16 +1,15 @@
-use std::f64::consts::PI;
-use std::num::{ParseFloatError, ParseIntError};
-use std::str::FromStr;
-use std::time::Instant;
 use carbide_controls::{CheckBox, PopUpButton, Slider, TextInput};
 use carbide_core::closure;
-use carbide_core::color::{BLUE, GREEN, RED, TRANSPARENT, WHITE};
-use carbide_core::draw::{Alignment, Dimension, Position, StrokeDashCap, StrokeDashMode};
-use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{LocalState, Map1, ReadState, State, StateSync};
-use carbide_core::widget::*;
+use carbide_core::color::{TRANSPARENT, WHITE};
+use carbide_core::draw::{Dimension, Position, StrokeDashCap, StrokeDashMode};
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};
+use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use std::f64::consts::PI;
+use std::num::ParseFloatError;
+use std::str::FromStr;
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -174,7 +173,7 @@ fn main() {
                     )).padding(10.0)
                 )).frame_fixed_width(300.0)
             )).spacing(2.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

@@ -10,7 +10,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let rotation = AnimatedState::custom(bounce_out, None)
+    let rotation = AnimatedState::custom(bounce_out)
         .repeat()
         .duration(Duration::new(5, 0))
         .range(0.0, 360.0);
@@ -43,7 +43,7 @@ fn main() {
                 ], Alignment::Leading, Alignment::Trailing).color_space(ColorSpace::HSL))
                 .frame(320.0, 30.0),
         )).hue_rotation(rotation)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -7,7 +7,6 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
 
     let mut application = Application::new()
         .with_asset_fonts();
@@ -59,13 +58,13 @@ fn main() {
     }
 
     application.set_scene(Window::new(
-        "Mouse cursors example".to_string(),
+        "Cursors example - Carbide",
         Dimension::new(400.0, 600.0),
         HStack::new((
             VStack::new(ForEach::new(cursors1, delegate)),
             VStack::new(ForEach::new(cursors2, delegate)),
         )).cross_axis_alignment(CrossAxisAlignment::Start)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

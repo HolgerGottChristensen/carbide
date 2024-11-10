@@ -12,7 +12,7 @@ fn main() {
     ];
 
     application.set_scene(Window::new(
-        "Icon gradient example",
+        "Icon with gradient example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
             Image::new_icon("images/rust.png")
@@ -21,7 +21,7 @@ fn main() {
                 .fill(Gradient::conic(colors1, Alignment::Center, Alignment::BottomTrailing))
                 .frame(50.0, 50.0),
         )),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

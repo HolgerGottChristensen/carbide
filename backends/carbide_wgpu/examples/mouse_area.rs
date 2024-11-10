@@ -20,7 +20,7 @@ fn main() {
                 .on_click(closure!(|_| {
                     println!("{}", $state);
                 }))
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

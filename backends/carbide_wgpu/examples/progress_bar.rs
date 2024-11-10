@@ -16,12 +16,12 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Progress bar example",
+        "Progress bar example - Carbide",
         Dimension::new(400.0, 400.0),
         ProgressBar::new(progress)
             .padding(20.0)
             .accent_color(EnvironmentColor::Yellow),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

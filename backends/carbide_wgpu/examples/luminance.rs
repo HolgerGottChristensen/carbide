@@ -15,7 +15,7 @@ fn main() {
         .range(-1.0, 1.0);
 
     application.set_scene(Window::new(
-        "Luminance example",
+        "Luminance example - Carbide",
         Dimension::new(800.0, 600.0),
         VStack::new((
             Image::new("images/landscape.png"),
@@ -42,7 +42,7 @@ fn main() {
                 ], Alignment::Leading, Alignment::Trailing))
                 .frame(300.0, 30.0)
         )).luminance(shift)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -18,7 +18,7 @@ fn main() {
             Dimension::new(600.0, 600.0),
             Canvas::new(move |context: &mut CanvasContext| {
                 let mouse_position = context.env().mouse_position();
-                context.env().request_animation_frame();
+                context.request_animation_frame();
                 context.move_to(100.0, 100.0);
                 /*context.line_to(500.0, 100.0);
                 context.line_to(500.0, 500.0);*/
@@ -49,7 +49,7 @@ fn main() {
                 context.set_line_cap(LineCap::Butt);
                 context.stroke();
             })
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

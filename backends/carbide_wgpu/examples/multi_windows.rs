@@ -19,14 +19,10 @@ fn main() {
         }))
         .frame(100.0, 30.0);
 
-    application.set_scene(
-        Window::new("Hello multiple windows", Dimension::new(300.0, 200.0), ZStack::new((
-            text,
-            Window::new("Hello from window 2", Dimension::new(300.0, 100.0), button),
-            //*Window::new("Hello from window 3", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Green)),
-            //*Window::new("Hello from window 4", Dimension::new(300.0, 100.0), Rectangle::new().fill(EnvironmentColor::Yellow)),
-        )))
-    );
+    application.set_scenes((
+        Window::new("Multiple windows example 1 - Carbide", Dimension::new(300.0, 200.0), text),
+        Window::new("Multiple windows example 2 - Carbide", Dimension::new(300.0, 100.0), button),
+    ));
 
     application.launch()
 }

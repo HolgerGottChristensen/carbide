@@ -9,13 +9,13 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let shift = AnimatedState::custom(linear, None)
+    let shift = AnimatedState::custom(linear)
         .repeat_alternate()
         .duration(Duration::new(5, 0))
         .range(-1.0, 1.0);
 
     application.set_scene(Window::new(
-        "Saturation example",
+        "Saturation example - Carbide",
         Dimension::new(800.0, 600.0),
         VStack::new((
             Image::new("images/landscape.png"),
@@ -42,7 +42,7 @@ fn main() {
                 ], Alignment::Leading, Alignment::Trailing))
                 .frame(300.0, 30.0)
         )).saturation(shift)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

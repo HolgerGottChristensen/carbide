@@ -30,7 +30,7 @@ fn main() {
                 *$condition = !*$condition;
             })).frame_fixed_height(45.0),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -76,10 +76,10 @@ fn main() {
     ));
 
     application.set_scene(Window::new(
-        "Materials example",
+        "Materials example - Carbide",
         Dimension::new(600.0, 450.0),
         materials
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

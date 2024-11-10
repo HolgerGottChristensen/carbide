@@ -44,7 +44,7 @@ fn main() {
             animation_buttons(bounce_out, "Bounce out", offset_x.clone()),
             animation_buttons(ease_in_out, "Ease in-out", offset_x.clone()),
         )).spacing(10.0)
-    ).close_application_on_window_close());
+    ));
 
 
     application.launch();

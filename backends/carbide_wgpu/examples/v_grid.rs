@@ -19,7 +19,7 @@ fn main() {
             }), vec![
                 VGridColumn::Adaptive(80.0)
             ]).spacing(Dimension::new(1.0, 1.0)).padding(10.0),
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

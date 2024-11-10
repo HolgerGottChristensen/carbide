@@ -15,10 +15,10 @@ fn main() {
     }
 
     application.set_scene(Window::new(
-        "Proxy example",
+        "Proxy example - Carbide",
         Dimension::new(600.0, 450.0),
         VStack::new(ForEach::new(1..5, delegate)).spacing(10.0),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

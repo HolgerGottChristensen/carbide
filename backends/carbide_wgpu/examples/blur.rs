@@ -22,7 +22,7 @@ fn main() {
         .range(180.0, -180.0);
 
     application.set_scene(Window::new(
-        "Blur example",
+        "Blur example - Carbide",
         Dimension::new(600.0, 450.0),
         ZStack::new((
             Image::new("images/landscape.png")
@@ -47,7 +47,7 @@ fn main() {
                 .frame(100.0, 100.0)
                 .offset(position_neg_x, 0.0),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

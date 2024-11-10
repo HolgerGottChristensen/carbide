@@ -8,14 +8,14 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Offset example",
+            "Offset example - Carbide",
             Dimension::new(200.0, 200.0),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0)
                 .offset(50.0, 50.0)
                 .border()
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

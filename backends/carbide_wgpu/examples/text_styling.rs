@@ -15,7 +15,7 @@ fn main() {
             Text::new("Hello world!").bold(),
             Text::new("Hello world!").italic(),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

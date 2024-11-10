@@ -6,7 +6,6 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    env_logger::init();
 
     let mut application = Application::new();
 

@@ -82,7 +82,7 @@ fn main() {
                 )).spacing(10.0)
                     .border(),
             )).spacing(20.0).padding(50.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

@@ -8,7 +8,7 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Sub images example",
+        "Sub images example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
             HStack::new((
@@ -32,7 +32,7 @@ fn main() {
                     .foreground_color(Blue),
             )),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

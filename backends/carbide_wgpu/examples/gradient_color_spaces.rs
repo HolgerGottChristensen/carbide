@@ -7,7 +7,7 @@ fn main() {
         .with_asset_fonts();
 
     application.set_scene(Window::new(
-        "Gradient with different color spaces example - Carbide",
+        "Gradient colorspace example - Carbide",
         Dimension::new(1000.0, 600.0),
         HStack::new((
             VStack::new((
@@ -277,7 +277,7 @@ fn main() {
                 )),
             )).spacing(20.0)
         )).spacing(20.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }
