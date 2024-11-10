@@ -9,7 +9,7 @@ use crate::draw::shape::triangle::Triangle;
 use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
-use crate::widget::FilterId;
+use crate::widget::{FilterId, ImageFilter};
 use crate::environment::{Environment, EnvironmentStack};
 use crate::render::layer::{Layer, LayerId, NoopLayer};
 
@@ -60,33 +60,33 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, bounding_box: Rect, f: F) -> R {
+    pub fn filter<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter: &ImageFilter, bounding_box: Rect, f: F) -> R {
         let res = f(self);
-        self.render.filter(id, bounding_box);
+        self.render.filter(filter, bounding_box);
         res
     }
 
-    pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect, f: F) -> R {
+    pub fn filter2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect, f: F) -> R {
         let res = f(self);
-        self.render.filter2d(id1, bounding_box1, id2, bounding_box2);
+        self.render.filter2d(filter1, bounding_box1, filter2, bounding_box2);
         res
     }
 
-    pub fn filter_new<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, f: F) -> R {
+    pub fn filter_new<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter: &ImageFilter, f: F) -> R {
         self.render.filter_new();
         let res = f(self);
-        self.render.filter_new_pop(id, WHITE, false);
+        self.render.filter_new_pop(filter, WHITE, false);
         res
     }
 
-    pub fn filter_new2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, id2: FilterId, f: F) -> R {
+    pub fn filter_new2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter: &ImageFilter, filter2: &ImageFilter, f: F) -> R {
         self.render.filter_new();
         let res = f(self);
-        self.render.filter_new_pop2d(id, id2, WHITE, false);
+        self.render.filter_new_pop2d(filter, filter2, WHITE, false);
         res
     }
 
-    pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: FilterId, id2: FilterId, color: Color, f: F) -> R {
+    pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: &ImageFilter, id2: &ImageFilter, color: Color, f: F) -> R {
         self.render.filter_new();
         let res = f(self);
         self.render.filter_new_pop2d(id, id2, color, true);
@@ -117,8 +117,6 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
         self.render.geometry(geometry);
     }
-
-
 
     pub fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
         if stroke.is_empty() {
@@ -184,8 +182,8 @@ pub trait InnerRenderContext {
     fn clip(&mut self, bounding_box: Rect);
     fn pop_clip(&mut self);
 
-    fn filter(&mut self, id: FilterId, bounding_box: Rect);
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect);
+    fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect);
+    fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect);
 
     fn stencil(&mut self, geometry: &[Triangle<Position>]);
     fn pop_stencil(&mut self);
@@ -214,8 +212,8 @@ pub trait InnerRenderContext {
     fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext);
 
     fn filter_new(&mut self);
-    fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool);
-    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color, post_draw: bool);
+    fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool);
+    fn filter_new_pop2d(&mut self, filter: &ImageFilter, filter2: &ImageFilter, color: Color, post_draw: bool);
 
     fn mask_start(&mut self);
     fn mask_in(&mut self);

@@ -1,3 +1,4 @@
+use carbide::widget::ImageFilter;
 use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect, StrokeDashPattern};
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
@@ -20,9 +21,9 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, _id: FilterId, _bounding_box: Rect) {}
+    fn filter(&mut self, _id: &ImageFilter, _bounding_box: Rect) {}
 
-    fn filter2d(&mut self, _id1: FilterId, _bounding_box1: Rect, _id2: FilterId, _bounding_box2: Rect) {}
+    fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
     fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
 
@@ -44,9 +45,9 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter_new(&mut self) {}
 
-    fn filter_new_pop(&mut self, _id: FilterId, _color: Color, _post_draw: bool) {}
+    fn filter_new_pop(&mut self, _id: &ImageFilter, _color: Color, _post_draw: bool) {}
 
-    fn filter_new_pop2d(&mut self, _id: FilterId, _id2: FilterId, _color: Color, _post_draw: bool) {}
+    fn filter_new_pop2d(&mut self, _id: &ImageFilter, _id2: &ImageFilter, _color: Color, _post_draw: bool) {}
 
     fn mask_start(&mut self) {}
     fn mask_in(&mut self) {}

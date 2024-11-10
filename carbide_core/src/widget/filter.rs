@@ -13,7 +13,6 @@ pub struct Filter<W> where W: Widget {
     position: Position,
     dimension: Dimension,
     filter: ImageFilter,
-    filter_id: Option<FilterId>,
 }
 
 impl Filter<Empty> {
@@ -25,7 +24,6 @@ impl Filter<Empty> {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             filter,
-            filter_id: None,
         }
     }
 }
@@ -36,16 +34,8 @@ impl<W: Widget> CommonWidget for Filter<W> {
 
 impl<W: Widget> Render for Filter<W> {
     fn render(&mut self, context: &mut RenderContext) {
-        let filter_id = if let Some(filter_id) = self.filter_id {
-            filter_id
-        } else {
-            let id = context.env.insert_filter(self.filter.clone());
-            self.filter_id = Some(id);
-            id
-        };
-
-        context.filter(filter_id, Rect::new(self.position, self.dimension), |this| {
-            self.foreach_child_mut(&mut |child| {
+        context.filter(&self.filter, Rect::new(self.position, self.dimension), |this| {
+            self.child.foreach_mut(&mut |child| {
                 child.render(this);
             });
         });

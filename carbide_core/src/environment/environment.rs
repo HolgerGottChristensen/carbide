@@ -1,24 +1,19 @@
 use fxhash::{FxBuildHasher, FxHashMap};
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::option::Option::Some;
-use std::rc::Rc;
 
 use crate::cursor::MouseCursor;
 use crate::draw::Position;
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
-use crate::widget::{AnyWidget, FilterId, ImageFilter, WidgetId};
+use crate::widget::{FilterId, ImageFilter};
 
 pub struct Environment {
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
     /// the focus change is not instant, but updates after each run event.
     pub focus_request: Option<Refocus>,
-
-    /// A map that contains an image filter used for the Filter widget.
-    filter_map: FxHashMap<FilterId, ImageFilter>,
 
     cursor: MouseCursor,
     mouse_position: Position,
@@ -38,11 +33,8 @@ impl Environment {
     pub fn new(
         event_sink: Box<dyn EventSink>,
     ) -> Self {
-        let filters = HashMap::with_hasher(FxBuildHasher::default());
-
         let res = Environment {
             focus_request: None,
-            filter_map: filters,
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             event_sink,
@@ -86,20 +78,6 @@ impl Environment {
 
     pub fn reset_focus_requests(&mut self) {
         self.focus_request = None;
-    }
-
-    pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {
-        &self.filter_map
-    }
-
-    pub fn insert_filter(&mut self, filter: ImageFilter) -> FilterId {
-        let filter_id = FilterId::next();
-        self.filter_map.insert(filter_id, filter);
-        filter_id
-    }
-
-    pub fn remove_filter(&mut self, id: FilterId) {
-        self.filter_map.remove(&id);
     }
 }
 

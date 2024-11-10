@@ -10,22 +10,22 @@ use carbide_wgpu::{Application, Window};
 fn main() {
     let mut application = Application::new();
 
-    let sigma = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let sigma = AnimatedState::custom(ease_in_out)
         .duration(Duration::from_secs_f64(2.1))
         .repeat_alternate()
         .range(1.0, 10.0);
 
-    let color = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let color = AnimatedState::custom(ease_in_out)
         .duration(Duration::from_secs_f64(0.6))
         .repeat_alternate()
         .range(RED, LIGHT_BLUE);
 
-    let offset_x = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let offset_x = AnimatedState::custom(ease_in_out)
         .duration(Duration::from_secs_f64(1.0))
         .repeat_alternate()
         .range(-20, 20);
 
-    let offset_y = AnimatedState::custom(ease_in_out, Some(application.environment()))
+    let offset_y = AnimatedState::custom(ease_in_out)
         .duration(Duration::from_secs_f64(1.7))
         .repeat_alternate()
         .range(-20, 20);

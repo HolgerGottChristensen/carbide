@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
 use cgmath::{Matrix4, SquareMatrix};
@@ -10,7 +10,7 @@ use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{InnerTextContext, TextId};
-use carbide_core::widget::FilterId;
+use carbide_core::widget::{FilterId, ImageFilter};
 
 use crate::gradient::{Dashes, Gradient};
 use crate::render_context::TargetState::{Free, Used};
@@ -33,6 +33,7 @@ pub struct WGPURenderContext {
 
     uniforms: Vec<Uniform>,
     gradients: Vec<Gradient>,
+    filters: HashMap<FilterId, ImageFilter>,
     vertices: Vec<Vertex>,
 
     render_pass: Vec<RenderPass>,
@@ -40,6 +41,7 @@ pub struct WGPURenderContext {
     current_bind_group: Option<WGPUBindGroup>,
     current_gradient: Option<Gradient>,
     current_stroke_dash: Option<StrokeDashPattern>,
+    current_frame_filters: HashSet<FilterId>,
 
     finished: bool,
     targets: TargetStates,
@@ -146,6 +148,8 @@ impl WGPURenderContext {
             current_target: 0,
             current_stroke_dash: None,
             layers: Default::default(),
+            filters: HashMap::new(),
+            current_frame_filters: HashSet::new(),
         }
     }
 
@@ -204,6 +208,9 @@ impl WGPURenderContext {
     pub fn uniforms(&self) -> &Vec<Uniform> {
         &self.uniforms
     }
+    pub fn filters(&self) -> &HashMap<FilterId, ImageFilter> {
+        &self.filters
+    }
 
     pub fn gradients(&self) -> &Vec<Gradient> {
         &self.gradients
@@ -243,6 +250,9 @@ impl WGPURenderContext {
             });
         }*/
         self.finished = true;
+
+        self.filters.retain(|a, _| self.current_frame_filters.contains(a));
+        self.current_frame_filters.clear();
 
         let mut swap = vec![];
         std::mem::swap(&mut swap, &mut self.render_pass);
@@ -456,10 +466,13 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn filter(&mut self, id: FilterId, bounding_box: Rect) {
+    fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect) {
         if self.skip_rendering {
             return;
         }
+
+        self.filters.entry(filter.id).or_insert_with(|| filter.clone());
+        self.current_frame_filters.insert(filter.id);
 
         let create_vertex = |x, y| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -491,7 +504,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.render_pass.push(RenderPass::Filter {
             vertex_range: vertices_start..self.vertices.len() as u32,
-            filter_id: id,
+            filter_id: filter.id,
             source_id: new_target,
             target_id: self.current_target,
             mask_id: None,
@@ -501,10 +514,15 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn filter2d(&mut self, id1: FilterId, bounding_box1: Rect, id2: FilterId, bounding_box2: Rect) {
+    fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect) {
         if self.skip_rendering {
             return;
         }
+
+        self.filters.entry(filter1.id).or_insert_with(|| filter1.clone());
+        self.current_frame_filters.insert(filter1.id);
+        self.filters.entry(filter2.id).or_insert_with(|| filter2.clone());
+        self.current_frame_filters.insert(filter2.id);
 
         let create_vertex = |x, y| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -555,7 +573,7 @@ impl InnerRenderContext for WGPURenderContext {
         let range = vertices_start1..vertices_start2;
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range,
-            filter_id: id1,
+            filter_id: filter1.id,
             source_id: 0,
             target_id: 1,
             mask_id: None,
@@ -565,7 +583,7 @@ impl InnerRenderContext for WGPURenderContext {
         let range = vertices_start2..self.vertices.len() as u32;
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range,
-            filter_id: id2,
+            filter_id: filter2.id,
             source_id: 1,
             target_id: 0,
             mask_id: None,
@@ -802,7 +820,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.current_target = new_target;
     }
 
-    fn filter_new_pop(&mut self, id: FilterId, color: Color, post_draw: bool) {
+    fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool) {
         let (target, old_target) = self.filter_target_stack.pop().unwrap();
 
         let create_vertex = |x, y, tx, ty| Vertex {
@@ -818,6 +836,8 @@ impl InnerRenderContext for WGPURenderContext {
 
         };
 
+        self.filters.entry(filter.id).or_insert_with(|| filter.clone());
+        self.current_frame_filters.insert(filter.id);
 
         let (l, r, b, t) = self.window_bounding_box.l_r_b_t();
 
@@ -836,7 +856,7 @@ impl InnerRenderContext for WGPURenderContext {
         let range = vertices_start..self.vertices.len() as u32;
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
-            filter_id: id,
+            filter_id: filter.id,
             source_id: target,
             target_id: old_target,
             mask_id: None,
@@ -854,13 +874,18 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(target);
     }
 
-    fn filter_new_pop2d(&mut self, id: FilterId, id2: FilterId, color: Color, post_draw: bool) {
+    fn filter_new_pop2d(&mut self, filter: &ImageFilter, filter2: &ImageFilter, color: Color, post_draw: bool) {
         let (target, old_target) = self.filter_target_stack.pop().unwrap();
         let (new_target, needs_clear) = self.targets.get();
 
         if needs_clear {
             self.render_pass.push(RenderPass::Clear { target_index: new_target });
         }
+
+        self.filters.entry(filter.id).or_insert_with(|| filter.clone());
+        self.current_frame_filters.insert(filter.id);
+        self.filters.entry(filter2.id).or_insert_with(|| filter2.clone());
+        self.current_frame_filters.insert(filter2.id);
 
         let create_vertex = |x, y, tx, ty| Vertex {
             position: [x as f32, y as f32, 0.0],
@@ -893,7 +918,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
-            filter_id: id,
+            filter_id: filter.id,
             source_id: target,
             target_id: new_target,
             mask_id: None,
@@ -902,7 +927,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.render_pass.push(RenderPass::Filter {
             vertex_range: range.clone(),
-            filter_id: id2,
+            filter_id: filter2.id,
             source_id: new_target,
             target_id: old_target,
             mask_id: None,

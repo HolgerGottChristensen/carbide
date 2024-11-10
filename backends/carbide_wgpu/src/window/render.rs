@@ -158,10 +158,12 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         });
     }
 
-    fn update_filter_bind_groups(device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, env: &mut Environment, size: PhysicalSize<u32>) {
-        filter_bind_groups.retain(|id, _| env.filters().contains_key(id));
+    fn update_filter_bind_groups(&self, device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, env: &mut Environment, size: PhysicalSize<u32>) {
+        let filters = self.render_context.filters();
 
-        for (filter_id, filter) in env.filters() {
+        filter_bind_groups.retain(|id, _| filters.contains_key(id));
+
+        for (filter_id, filter) in filters {
             if !filter_bind_groups.contains_key(filter_id) {
                 let mut filter: Filter = filter.clone().into();
                 filter.texture_size = [size.width as f32, size.height as f32];
@@ -552,7 +554,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             Self::update_atlas_cache(&DEVICE, &mut encoder, ctx);
 
             // Update filter bind groups
-            Self::update_filter_bind_groups(&DEVICE,  &mut *FILTER_BIND_GROUPS.write().unwrap(), env, size);
+            self.update_filter_bind_groups(&DEVICE,  &mut *FILTER_BIND_GROUPS.write().unwrap(), env, size);
 
             // Ensure the images are added as bind groups
             //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);

@@ -7,8 +7,9 @@ use crate::utils::gaussian;
 /// Filter struct containing a matrix of filter weights that can be applied to change the rendering
 /// of a sub tree. For more information on image filters look at:
 /// https://en.wikipedia.org/wiki/Kernel_(image_processing)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ImageFilter {
+    pub id: FilterId,
     pub filter: Vec<ImageFilterValue>,
 }
 
@@ -88,7 +89,7 @@ impl Display for ImageFilter {
 pub struct FilterId(u32);
 
 impl FilterId {
-    pub fn next() -> FilterId {
+    pub fn new() -> FilterId {
         static FILTER_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
         FilterId(FILTER_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
     }
@@ -98,6 +99,7 @@ impl ImageFilter {
     /// Applying this filter will sharpen the image
     pub fn sharpen() -> ImageFilter {
         ImageFilter {
+            id: FilterId::new(),
             filter: vec![
                 ImageFilterValue::new(-1, 0, -1.0),
                 ImageFilterValue::new(1, 0, -1.0),
@@ -121,7 +123,10 @@ impl ImageFilter {
             ))
         }
 
-        let mut filter = ImageFilter { filter: entries };
+        let mut filter = ImageFilter {
+            id: FilterId::new(),
+            filter: entries
+        };
 
         filter.normalize();
         filter
@@ -141,6 +146,7 @@ impl ImageFilter {
         }
 
         let mut filter = ImageFilter {
+            id: FilterId::new(),
             filter: res,
         };
         filter.normalize();
@@ -162,6 +168,7 @@ impl ImageFilter {
         }
 
         ImageFilter {
+            id: FilterId::new(),
             filter: res,
         }
     }
@@ -172,12 +179,16 @@ impl ImageFilter {
         let mut entries = ImageFilter::sobel_x().filter;
         entries.extend(ImageFilter::sobel_y().filter);
 
-        ImageFilter { filter: entries }
+        ImageFilter {
+            id: FilterId::new(),
+            filter: entries
+        }
     }
 
     /// The x component of the sobel filter
     pub fn sobel_x() -> ImageFilter {
         ImageFilter {
+            id: FilterId::new(),
             filter: vec![
                 ImageFilterValue::new(-1, -1, 1.0),
                 ImageFilterValue::new(-1, 0, 2.0),
@@ -192,6 +203,7 @@ impl ImageFilter {
     /// The y component of the sobel filter
     pub fn sobel_y() -> ImageFilter {
         ImageFilter {
+            id: FilterId::new(),
             filter: vec![
                 ImageFilterValue::new(-1, -1, 1.0),
                 ImageFilterValue::new(0, -1, 2.0),
@@ -210,12 +222,16 @@ impl ImageFilter {
         let mut entries = ImageFilter::prewit_x().filter;
         entries.extend(ImageFilter::prewit_y().filter);
 
-        ImageFilter { filter: entries }
+        ImageFilter {
+            id: FilterId::new(),
+            filter: entries
+        }
     }
 
     /// The x component of the prewit filter
     pub fn prewit_x() -> ImageFilter {
         ImageFilter {
+            id: FilterId::new(),
             filter: vec![
                 ImageFilterValue::new(-1, -1, 1.0),
                 ImageFilterValue::new(-1, 0, 1.0),
@@ -230,6 +246,7 @@ impl ImageFilter {
     /// The y component of the prewit filter
     pub fn prewit_y() -> ImageFilter {
         ImageFilter {
+            id: FilterId::new(),
             filter: vec![
                 ImageFilterValue::new(-1, -1, 1.0),
                 ImageFilterValue::new(0, -1, 1.0),
@@ -252,6 +269,7 @@ impl ImageFilter {
         for val in self.filter.iter_mut() {
             val.weight /= acc;
         }
+        self.id = FilterId::new();
     }
 
     /// Flip the x and y axis of the filter. This is also the same as changing a convolution to a
@@ -262,6 +280,7 @@ impl ImageFilter {
             val.offset_x = val.offset_y;
             val.offset_y = temp;
         }
+        self.id = FilterId::new();
     }
 
     /// Convenience function to flip filter and return the resulting filter using [Self::flip()]
@@ -275,6 +294,8 @@ impl ImageFilter {
             f.offset_x += x;
             f.offset_y += y;
         }
+
+        self.id = FilterId::new();
 
         self
     }
@@ -305,7 +326,7 @@ impl ImageFilter {
 }
 
 /// A single filter value containing the position in the matrix and a weight.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ImageFilterValue {
     pub offset_x: i32,
     pub offset_y: i32,
