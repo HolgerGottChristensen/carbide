@@ -1,8 +1,7 @@
 use std::fmt::{Debug, Formatter};
-use carbide::event::ModifierKey;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor, WidgetTransferAction};
+use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext
 };
@@ -59,7 +58,7 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> PlainDatePicker<F, E> {
     fn open_popup(&self, env: &mut Environment) {
         let widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
 
-        env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(widget));
+        //env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(widget));
     }
 
     pub fn delegate(self, delegate: DelegateGenerator) -> PlainDatePicker<F, E> {
@@ -265,7 +264,7 @@ fn default_popup_delegate(
         .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
         .on_click(|ctx: MouseAreaActionContext| {})
         .on_click_outside(|ctx: MouseAreaActionContext| {
-            ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
+            //ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
         })
         .boxed()
 }

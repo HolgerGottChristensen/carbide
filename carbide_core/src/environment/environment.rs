@@ -4,27 +4,17 @@ use std::collections::HashMap;
 use std::fmt::Formatter;
 use std::option::Option::Some;
 use std::rc::Rc;
-use std::time::Instant;
 
-use crate::animation::Animation;
 use crate::cursor::MouseCursor;
-use crate::draw::{Dimension, Position};
-use crate::environment::WidgetTransferAction;
+use crate::draw::Position;
 use crate::event::{EventSink, HasEventSink};
 use crate::focus::Refocus;
-use crate::state::StateContract;
 use crate::widget::{AnyWidget, FilterId, ImageFilter, WidgetId};
 
 pub struct Environment {
     /// A map from String to a widget.
     /// This key should correspond to the targeted overlay_layer
     overlay_map: FxHashMap<&'static str, Rc<RefCell<Option<Box<dyn AnyWidget>>>>>,
-
-    /// A transfer place for widgets. It is a map with key Option<String>. If None it means the
-    /// action should be picked up by the closest parent consumer. If Some it will look at the Id
-    /// and only consume if the id matches. The consumer should first take out the None key if
-    /// exists, and afterwards take out the special keyed value.
-    widget_transfer: FxHashMap<Option<String>, WidgetTransferAction>,
 
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
@@ -56,7 +46,6 @@ impl Environment {
 
         let res = Environment {
             overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
-            widget_transfer: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             filter_map: filters,
             cursor: MouseCursor::Default,
@@ -143,14 +132,6 @@ impl Environment {
                 println!("Cannot add an overlay without a layer");
             }
         }
-    }
-
-    pub fn transferred_widget(&mut self, id: &Option<String>) -> Option<WidgetTransferAction> {
-        self.widget_transfer.remove(id)
-    }
-
-    pub fn transfer_widget(&mut self, id: Option<String>, widget_transfer: WidgetTransferAction) {
-        self.widget_transfer.insert(id, widget_transfer);
     }
 
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {

@@ -11,14 +11,3 @@ mod environment;
 mod environment_color;
 mod environment_font_size;
 mod environment_stack;
-
-#[derive(Debug, Clone)]
-pub enum WidgetTransferAction {
-    Push(Box<dyn AnyWidget>),
-    Pop,
-    Replace(Box<dyn AnyWidget>),
-    PushVec(Vec<Box<dyn AnyWidget>>),
-    PopN(usize),
-    PopAll,
-    ReplaceAll(Box<dyn AnyWidget>),
-}

@@ -1,9 +1,7 @@
 use carbide::draw::Alignment;
-use carbide::environment::Environment;
-use carbide::event::ModifierKey;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::environment::{EnvironmentColor, IntoColorReadState, WidgetTransferAction};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadStateExtNew};
 use carbide_core::widget::*;

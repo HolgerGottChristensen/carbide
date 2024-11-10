@@ -2,7 +2,6 @@ use carbide::event::EventId;
 use carbide::scene::SceneManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::WidgetTransferAction;
 use carbide_core::event::{
     KeyboardEvent, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext
 };
@@ -102,7 +101,7 @@ impl<
 > KeyboardEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
-            ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
             //self.popup_open.set_value(false);
             return;
         }
@@ -110,7 +109,7 @@ impl<
         ctx.prevent_default();
 
         if event == PopupButtonKeyCommand::Close {
-            ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
             //self.popup_open.set_value(false);
         } else if event == PopupButtonKeyCommand::Select {
             let value: Option<usize> = self.hover_model.value().clone();
@@ -118,7 +117,7 @@ impl<
                 let value = self.model.value()[h].clone();
                 self.selected.set_value(value);
             }
-            ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
             //self.popup_open.set_value(false);
         } else if event == PopupButtonKeyCommand::Next {
             let value: Option<usize> = self.hover_model.value().clone();
@@ -149,7 +148,7 @@ impl<
 > MouseEventHandler for PlainPopUpButtonPopUp<T, S, M, H, E> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*self.enabled.value() {
-            ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+            //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
             //self.popup_open.set_value(false);
             return;
         }
@@ -157,7 +156,7 @@ impl<
         match event {
             MouseEvent::Release { button: MouseButton::Left, position, ..} => {
                 if !self.is_inside(*position) {
-                    ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+                    //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
                     //self.popup_open.set_value(false);
                 }
             }

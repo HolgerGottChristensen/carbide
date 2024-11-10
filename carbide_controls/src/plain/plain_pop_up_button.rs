@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use carbide::environment::WidgetTransferAction;
 use carbide::event::{EventId, KeyboardEventContext, MouseButton, MouseEventContext};
 use carbide::layout::LayoutContext;
 use carbide::lifecycle::{Update, UpdateContext};
@@ -183,7 +182,7 @@ impl<
             event_id
         ).boxed();
 
-        env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(popup));
+        //env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(popup));
     }
 
     fn new_internal<T2: StateContract + PartialEq, F2: State<T=Focus>, S2: State<T=T2>, M2: ReadState<T=Vec<T2>>, E2: ReadState<T=bool>>(

@@ -2,7 +2,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::WidgetTransferAction;
 use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
@@ -45,7 +44,7 @@ impl<C: Widget> Overlay<C> {
 
 impl<C: Widget> Update for Overlay<C> {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
-        if let Some(action) = ctx.env.transferred_widget(&Some(self.overlay_id.to_string())) {
+        /*if let Some(action) = ctx.env.transferred_widget(&Some(self.overlay_id.to_string())) {
             match action {
                 WidgetTransferAction::Push(widget) => {
                     self.overlay = Some(widget);
@@ -55,7 +54,7 @@ impl<C: Widget> Update for Overlay<C> {
                 }
                 _ => (),
             }
-        }
+        }*/
 
         if let Some(overlay) = &mut self.overlay {
             overlay.process_update(ctx);

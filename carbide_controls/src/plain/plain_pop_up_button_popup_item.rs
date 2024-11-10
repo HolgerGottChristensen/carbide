@@ -4,7 +4,6 @@ use carbide::event::EventId;
 use carbide::state::AnyState;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::WidgetTransferAction;
 use carbide_core::event::{
     MouseButton, MouseEvent, MouseEventContext, MouseEventHandler
 };
@@ -66,7 +65,7 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
                     }
 
                     self.selected.set_value(self.item.value().clone());
-                    ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
+                    //ctx.env.transfer_widget(self.overlay_id.clone(), WidgetTransferAction::Pop);
                 }
             }
             MouseEvent::Move { to, .. } => {
