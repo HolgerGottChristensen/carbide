@@ -189,7 +189,7 @@ impl Default for EnvironmentColor {
 // ---------------------------------------------------
 
 impl ConvertIntoRead<Color> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&EnvironmentStack, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut EnvironmentStack, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
@@ -199,7 +199,7 @@ impl ConvertIntoRead<Color> for EnvironmentColor {
 }
 
 impl ConvertIntoRead<Style> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&EnvironmentStack, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut EnvironmentStack, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {

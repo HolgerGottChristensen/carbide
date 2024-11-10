@@ -1,4 +1,5 @@
 use carbide::draw::Alignment;
+use carbide::scene::SceneManager;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
@@ -6,7 +7,7 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadStateExtNew};
 use carbide_core::widget::*;
 
-use crate::{Calendar, PlainDatePicker};
+use crate::{Calendar, ControlsOverlayKey, PlainDatePicker};
 use crate::plain_calendar::DateSelection;
 
 pub struct DatePicker;
@@ -145,27 +146,37 @@ impl DatePicker {
         let geometry = LocalState::new(Rect::default());
 
         let x = Map3::read_map_env(parent_position.clone(), parent_dimension.clone(), geometry.clone(), |env, position, dimension, geometry| {
-            //(position.x + dimension.width / 2.0 - geometry.dimension.width / 2.0).min(env.current_window_width() - geometry.dimension.width).max(0.0)
-            todo!()
+            let mut scene_dimensions = Dimension::default();
+
+            SceneManager::get(env, |manager| {
+                scene_dimensions = manager.dimensions();
+            });
+
+            (position.x + dimension.width / 2.0 - geometry.dimension.width / 2.0).min(scene_dimensions.width - geometry.dimension.width).max(0.0)
         });
 
         let y = Map3::read_map_env(parent_position, parent_dimension, geometry.clone(), |env, position, dimension, geometry| {
-            /*// The bottom of the calendar popup is below the bottom of the window when placed below the input.
-            let oob_below = position.y + dimension.height + 1.0 + geometry.dimension.height > env.current_window_height();
+            let mut scene_dimensions = Dimension::default();
+
+            SceneManager::get(env, |manager| {
+                scene_dimensions = manager.dimensions();
+            });
+
+            // The bottom of the calendar popup is below the bottom of the window when placed below the input.
+            let oob_below = position.y + dimension.height + 1.0 + geometry.dimension.height > scene_dimensions.height;
             // The top of the calendar popup is above the top of the window when placed below the input.
             let oob_above = position.y - 1.0 - geometry.dimension.height < 0.0;
 
             if oob_below && oob_above {
-                (position.y + dimension.height + 1.0).min(env.current_window_height() - geometry.dimension.height).max(0.0)
+                (position.y + dimension.height + 1.0).min(scene_dimensions.height - geometry.dimension.height).max(0.0)
             } else if !oob_below {
                 (position.y + dimension.height + 1.0).max(0.0)
             } else {
-                (position.y - 1.0 - geometry.dimension.height).min(env.current_window_height() - geometry.dimension.height)
-            }*/
-            todo!()
+                (position.y - 1.0 - geometry.dimension.height).min(scene_dimensions.height - geometry.dimension.height)
+            }
         });
 
-        /*Calendar::new(selection)
+        Calendar::new(selection)
             .padding(10.0)
             .background(
                 RoundedRectangle::new(5.0)
@@ -175,12 +186,12 @@ impl DatePicker {
             )
             .on_click(|ctx: MouseAreaActionContext| {})
             .on_click_outside(|ctx: MouseAreaActionContext| {
-                ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
+                OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                    manager.clear();
+                })
             })
             .geometry(geometry)
             .absolute(x, y)
-            .boxed()*/
-
-        todo!()
+            .boxed()
     }
 }

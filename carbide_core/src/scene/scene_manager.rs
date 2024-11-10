@@ -1,6 +1,7 @@
 use carbide::draw::Dimension;
 use carbide::environment::Key;
 use crate::draw::Scalar;
+use crate::environment::EnvironmentStack;
 
 #[derive(Debug, Clone)]
 pub struct SceneManager {
@@ -32,6 +33,12 @@ impl SceneManager {
 
     pub fn close(&mut self) {
         self.close = true;
+    }
+
+    pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut SceneManager)) {
+        if let Some(manager) = env_stack.get_mut::<SceneManager>() {
+            f(manager)
+        }
     }
 }
 

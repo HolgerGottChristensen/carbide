@@ -26,7 +26,7 @@ fn main() {
                 .obscure(obscure)
                 .font_size(EnvironmentFontSize::Title)
                 .border(),
-            PlainButton::new(closure!(|_,_|{}))
+            PlainButton::new(closure!(|_|{}))
                 .pressed(pressed)
         ))
             .spacing(10.0)

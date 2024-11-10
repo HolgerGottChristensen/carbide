@@ -12,7 +12,7 @@ use carbide_core::lifecycle::{Update, UpdateContext};
 use carbide_core::widget::*;
 
 use crate::plain_calendar::DateSelection;
-use crate::PlainCalendar;
+use crate::{ControlsOverlayKey, PlainCalendar};
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, Update)]
@@ -55,12 +55,6 @@ impl PlainDatePicker<Focus, bool> {
 
 
 impl<F: State<T=Focus>, E: ReadState<T=bool>> PlainDatePicker<F, E> {
-    fn open_popup(&self, env: &mut Environment) {
-        let widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
-
-        //env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Push(widget));
-    }
-
     pub fn delegate(self, delegate: DelegateGenerator) -> PlainDatePicker<F, E> {
         Self::new_internal(
             self.selected,
@@ -171,8 +165,12 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
                         self.set_focus(Focus::FocusRequested);
                         ctx.env.request_focus(Refocus::FocusRequest);
                     }
-                    self.open_popup(ctx.env);
-                    //ctx.env.request_animation_frame();
+
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                        let widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
+
+                        manager.insert(widget)
+                    });
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
@@ -264,7 +262,9 @@ fn default_popup_delegate(
         .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
         .on_click(|ctx: MouseAreaActionContext| {})
         .on_click_outside(|ctx: MouseAreaActionContext| {
-            //ctx.env.transfer_widget(Some("controls_popup_layer".to_string()), WidgetTransferAction::Pop);
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                manager.clear()
+            })
         })
         .boxed()
 }

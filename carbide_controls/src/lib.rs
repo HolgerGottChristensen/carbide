@@ -66,7 +66,7 @@ mod calendar;
 mod date_picker;
 mod toggle_style;
 
-type EnabledState = EnvMap1<fn(&EnvironmentStack, &i32) -> bool, i32, bool, i32>;
+type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct EnabledKey;
@@ -95,12 +95,12 @@ impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct ControlOverlayKey;
+pub(crate) struct ControlsOverlayKey;
 
-impl Key for ControlOverlayKey {
+impl Key for ControlsOverlayKey {
     type Value = OverlayManager;
 }
 
 pub fn controls_overlay<C: Widget>(c: C) -> impl Widget {
-    c.overlay::<ControlOverlayKey>().steal_events()
+    c.overlay::<ControlsOverlayKey>().steal_events()
 }

@@ -11,14 +11,14 @@ use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum OverlayAction {
     None,
     Clear,
     Insert(Box<dyn AnyWidget>)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct OverlayManager {
     overlay: OverlayAction
 }

@@ -12,10 +12,6 @@ use crate::focus::Refocus;
 use crate::widget::{AnyWidget, FilterId, ImageFilter, WidgetId};
 
 pub struct Environment {
-    /// A map from String to a widget.
-    /// This key should correspond to the targeted overlay_layer
-    overlay_map: FxHashMap<&'static str, Rc<RefCell<Option<Box<dyn AnyWidget>>>>>,
-
     /// This field holds the requests for refocus. If Some we need to check the refocus
     /// reason and apply that focus change after the event is done. This also means that
     /// the focus change is not instant, but updates after each run event.
@@ -45,7 +41,6 @@ impl Environment {
         let filters = HashMap::with_hasher(FxBuildHasher::default());
 
         let res = Environment {
-            overlay_map: HashMap::with_hasher(FxBuildHasher::default()),
             focus_request: None,
             filter_map: filters,
             cursor: MouseCursor::Default,
@@ -91,47 +86,6 @@ impl Environment {
 
     pub fn reset_focus_requests(&mut self) {
         self.focus_request = None;
-    }
-
-    pub fn with_overlay_layer<R, F: FnOnce(&mut Environment)->R>(&mut self, id: &'static str, layer: Rc<RefCell<Option<Box<dyn AnyWidget>>>>, f: F) -> R {
-        let old = self.overlay_map.insert(id, layer);
-
-        let res = f(self);
-
-        if let Some(old) = old {
-            self.overlay_map.insert(id, old);
-        } else {
-            self.overlay_map.remove(id);
-        }
-
-        res
-    }
-
-    pub fn add_overlay(&mut self, id: &'static str, widget: Box<dyn AnyWidget>) {
-        if let Some(layer) = self.overlay_map.get_mut(&id) {
-            *layer.borrow_mut() = Some(widget);
-        } else {
-            println!("Cannot add an overlay without a layer");
-        }
-    }
-
-    pub fn contains_overlay(&self, id: &'static str, widget_id: WidgetId) -> bool {
-        if let Some(layer) = self.overlay_map.get(&id) {
-            layer.borrow().as_ref().map_or(false, |m| m.id() == widget_id)
-        } else {
-            println!("Cannot add an overlay without a layer");
-            false
-        }
-    }
-
-    pub fn remove_overlay(&mut self, id: &'static str, widget_id: WidgetId) {
-        if self.contains_overlay(id, widget_id) {
-            if let Some(layer) = self.overlay_map.get_mut(&id) {
-                *layer.borrow_mut() = None;
-            } else {
-                println!("Cannot add an overlay without a layer");
-            }
-        }
     }
 
     pub fn filters(&self) -> &FxHashMap<FilterId, ImageFilter> {

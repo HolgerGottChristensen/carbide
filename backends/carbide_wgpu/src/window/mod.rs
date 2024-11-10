@@ -35,7 +35,7 @@ impl Window<String, Empty> {
         let child = child.into_widget();
 
         #[cfg(feature = "controls")]
-        let child = carbide_controls::controls_overlay(child).steal_events();
+        let child = carbide_controls::controls_overlay(child);
 
         let child = ZStack::new((
             Rectangle::new().fill(EnvironmentColor::SystemBackground),
