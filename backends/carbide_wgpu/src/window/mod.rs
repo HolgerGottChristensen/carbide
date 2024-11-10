@@ -23,7 +23,6 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
         position: Position,
         dimension: Dimension,
         child: C,
-        close_application_on_window_close: bool,
     },
     Initialized(InitializedWindow<T, C>),
     Failed
@@ -54,20 +53,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
-            close_application_on_window_close: false,
         }
-    }
-}
-
-impl<T: ReadState<T=String>, C: Widget> Window<T, C> {
-    pub fn close_application_on_window_close(mut self) -> Self {
-        match &mut self {
-            Window::UnInitialized { close_application_on_window_close, .. } => *close_application_on_window_close = true,
-            Window::Initialized(initialized) => initialized.close_application_on_window_close = true,
-            Window::Failed => {}
-        }
-
-        self
     }
 }
 

@@ -5,20 +5,21 @@ use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-
+use smallvec::SmallVec;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
 
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
+use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
-use carbide_core::scene::Scene;
+use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::InnerTextContext;
-use carbide_core::widget::{Empty, WidgetId};
+use carbide_core::widget::{CommonWidget, Empty, WidgetId};
 use carbide_core::locate_folder;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
@@ -64,10 +65,13 @@ pub static QUEUE: Lazy<Arc<Queue>> = Lazy::new(|| DEVICE_QUEUE.1.clone());
 
 pub static EVENT_LOOP_PROXY: OnceLock<EventLoopProxy<CustomEvent>> = OnceLock::new();
 
+pub type Scenes = SmallVec<[Box<dyn AnyScene>; 4]>;
+
 pub struct Application {
     id: WidgetId,
     /// This contains the whole widget tree. This includes windows and other widgets.
-    root: Box<dyn Scene>,
+    scenes: Scenes,
+
     event_handler: NewEventHandler,
     environment: Environment,
     environment_stack: EnvironmentStack<'static>,
@@ -89,7 +93,7 @@ impl Application {
 
         Application {
             id: WidgetId::new(),
-            root: Box::new(Empty::new()),
+            scenes: Default::default(),
             event_handler: NewEventHandler::new(),
             environment,
             environment_stack: EnvironmentStack::new(),
@@ -105,7 +109,13 @@ impl Application {
     }
 
     pub fn set_scene(&mut self, scene: impl Scene) {
-        self.root = Box::new(scene);
+        self.scenes.push(Box::new(scene))
+    }
+
+    pub fn set_scenes(&mut self, scenes: impl SceneSequence) {
+        for scene in scenes.to_vec() {
+            self.scenes.push(scene);
+        }
     }
 
     /// Locates the default asset folder and tries to load fonts from a subfolder called /fonts.
@@ -131,15 +141,10 @@ impl Application {
         self.text_context.add_font(path.as_ref().to_path_buf());
     }
 
-    /// Request the window to redraw next frame
-    fn request_redraw(&self) {
-        self.root.request_redraw();
-    }
-
     pub fn launch(mut self) {
         let Application {
             id,
-            root,
+            scenes,
             event_handler,
             environment,
             environment_stack: type_map,
@@ -149,7 +154,7 @@ impl Application {
 
         let mut running = RunningApplication {
             id,
-            root,
+            scenes,
             event_handler,
             environment,
             environment_stack: type_map,
@@ -165,20 +170,60 @@ impl Application {
 impl Debug for Application {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Application")
-            .field("root", &self.root)
+            .field("root", &self.scenes)
             .finish()
     }
 }
 
 pub struct RunningApplication {
     id: WidgetId,
-    root: Box<dyn Scene>,
+    scenes: Scenes,
     event_handler: NewEventHandler,
     environment: Environment,
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     animation_manager: AnimationManager,
     focus_manager: FocusManager,
+}
+
+impl RunningApplication {
+    /// Request the window to redraw next frame
+    fn request_redraw(&self) {
+        for scene in &self.scenes {
+            if scene.request_redraw() {
+                return;
+            }
+        }
+
+        println!("Redraw was requested, but no root scenes have the ability to request redraw.");
+    }
+
+    fn handle_post_event(&mut self, event_loop: &ActiveEventLoop, request: &mut RequestRedraw, application_manager: &mut ApplicationManager) {
+        if application_manager.close_requested() {
+            event_loop.exit();
+        }
+
+        for scene in application_manager.scenes_to_close() {
+            self.scenes.retain(|a| a.id() != *scene);
+        }
+
+        if self.scenes.len() == 0 {
+            event_loop.exit();
+        }
+
+        match request {
+            RequestRedraw::False => {}
+            RequestRedraw::True => {
+                NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
+                self.request_redraw();
+            }
+            RequestRedraw::IfAnimationsRequested => {
+                if self.animation_manager.take_frame() {
+                    self.request_redraw();
+                }
+            }
+        }
+    }
 }
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
@@ -189,7 +234,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             lifecycle_manager: event_loop as &'a dyn Any
         };
 
-        self.root.process_initialization(&mut ctx);
+        for scene in &mut self.scenes {
+            scene.process_initialization(&mut ctx);
+        }
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
@@ -197,28 +244,19 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.animation_manager.update_frame_time();
 
-        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                request = self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+        let mut application_manager = ApplicationManager::new();
 
-                if self.environment.should_close_application() {
-                    event_loop.exit();
-                }
+        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
+            env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
+                env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                    for scene in &mut self.scenes {
+                        request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                    }
+                })
             })
         });
 
-        match request {
-            RequestRedraw::False => {}
-            RequestRedraw::True => {
-                NewEventHandler::handle_refocus(&mut self.root, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
-                self.root.request_redraw();
-            }
-            RequestRedraw::IfAnimationsRequested => {
-                if self.animation_manager.take_frame() {
-                    self.root.request_redraw();
-                }
-            }
-        }
+        self.handle_post_event(event_loop, &mut request, &mut application_manager);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
@@ -226,28 +264,19 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.animation_manager.update_frame_time();
 
-        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                request = self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+        let mut application_manager = ApplicationManager::new();
 
-                if self.environment.should_close_application() {
-                    event_loop.exit();
-                }
+        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
+            env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
+                env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                    for scene in &mut self.scenes {
+                        request += self.event_handler.window_event(&event, window_id, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                    }
+                })
             })
         });
 
-        match request {
-            RequestRedraw::False => {}
-            RequestRedraw::True => {
-                NewEventHandler::handle_refocus(&mut self.root, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
-                self.root.request_redraw();
-            }
-            RequestRedraw::IfAnimationsRequested => {
-                if self.animation_manager.take_frame() {
-                    self.root.request_redraw();
-                }
-            }
-        }
+        self.handle_post_event(event_loop, &mut request, &mut application_manager);
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {}

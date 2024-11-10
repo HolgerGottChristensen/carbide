@@ -35,6 +35,10 @@ impl SceneManager {
         self.close = true;
     }
 
+    pub fn close_requested(&self) -> bool {
+        self.close
+    }
+
     pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut SceneManager)) {
         if let Some(manager) = env_stack.get_mut::<SceneManager>() {
             f(manager)

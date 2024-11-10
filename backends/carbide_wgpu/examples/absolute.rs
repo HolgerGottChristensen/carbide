@@ -15,7 +15,7 @@ fn main() {
                 .frame(100.0, 100.0)
                 .absolute(10.0, 10.0)
                 .border()
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

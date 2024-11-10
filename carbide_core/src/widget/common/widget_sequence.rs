@@ -18,7 +18,7 @@ impl WidgetSequence for () {
     fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 }
 
-impl<W: Widget + 'static> WidgetSequence for Vec<W> {
+impl<W: Widget> WidgetSequence for Vec<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
@@ -75,15 +75,6 @@ impl<W: Widget + 'static> WidgetSequence for Vec<W> {
             f(element);
         }
     }
-}
-
-macro_rules! reverse {
-    ([] $($reversed:tt)*) => {
-        ($($reversed),*)  // base case
-    };
-    ([$first:tt $($rest:tt)*] $($reversed:tt)*) => {
-        reverse!([$($rest)*] $first $($reversed)*)  // recursion
-    };
 }
 
 macro_rules! tuple_sequence_impl {

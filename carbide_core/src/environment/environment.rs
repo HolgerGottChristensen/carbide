@@ -5,13 +5,10 @@ use crate::draw::Position;
 use crate::event::{EventSink, HasEventSink};
 
 pub struct Environment {
-
     cursor: MouseCursor,
     mouse_position: Position,
 
     event_sink: Box<dyn EventSink>,
-
-    request_application_close: bool,
 }
 
 impl std::fmt::Debug for Environment {
@@ -28,7 +25,6 @@ impl Environment {
             cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             event_sink,
-            request_application_close: false,
         };
 
         res
@@ -41,15 +37,7 @@ impl Environment {
     pub fn set_mouse_position(&mut self, position: Position) {
         self.mouse_position = position;
     }
-
-    pub fn close_application(&mut self) {
-        self.request_application_close = true;
-    }
-
-    pub fn should_close_application(&self) -> bool {
-        self.request_application_close
-    }
-
+    
     pub fn cursor(&self) -> MouseCursor {
         self.cursor
     }

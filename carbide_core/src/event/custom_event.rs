@@ -2,7 +2,7 @@ use dyn_clone::DynClone;
 use raw_window_handle::HasRawWindowHandle;
 use crate::scene::SceneId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum CoreEvent {
     Async,
     AsyncStream,

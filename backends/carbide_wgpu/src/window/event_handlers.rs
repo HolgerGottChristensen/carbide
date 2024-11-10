@@ -1,3 +1,4 @@
+use carbide_core::application::ApplicationManager;
 use carbide_core::draw::Dimension;
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::state::ReadState;
@@ -139,12 +140,11 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                             }*/
                         }
                         WindowEvent::CloseRequested => {
-                            initialized.visible = false;
-                            if initialized.close_application_on_window_close {
-                                ctx.env.close_application();
-                            } else {
-                                initialized.inner.set_visible(false);
-                            }
+                            println!("Close requested for scene, by winit");
+                            ApplicationManager::get(ctx.env_stack, |manager| {
+                                manager.close_scene(initialized.id);
+                            });
+
                         }
                         WindowEvent::ThemeChanged => {
                             let theme = match initialized.inner.theme().unwrap_or(Theme::Dark) {

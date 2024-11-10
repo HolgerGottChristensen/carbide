@@ -4,7 +4,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::lifecycle::{Update, UpdateContext};
-use carbide_core::scene::Scene;
+use carbide_core::scene::AnyScene;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetSync};
 
@@ -30,15 +30,26 @@ impl<T: ReadState<T=String>, C: Widget> AnyWidget for Window<T, C> {}
 
 impl<T: ReadState<T=String>, C: Widget> WidgetExt for Window<T, C> {}
 
-impl<T: ReadState<T=String>, C: Widget> Scene for Window<T, C> {
+impl<T: ReadState<T=String>, C: Widget> AnyScene for Window<T, C> {
     /// Request the window to redraw next frame
-    fn request_redraw(&self) {
+    fn request_redraw(&self) -> bool {
         match self {
-            Window::UnInitialized { .. } => {}
+            Window::UnInitialized { .. } => false,
             Window::Initialized(initialized) => {
                 initialized.inner.request_redraw();
+                true
             }
-            Window::Failed => {}
+            Window::Failed => false,
+        }
+    }
+
+    fn has_application_focus(&self) -> bool {
+        match self {
+            Window::UnInitialized { .. } => false,
+            Window::Initialized(initialized) => {
+                initialized.inner.has_focus()
+            }
+            Window::Failed => false,
         }
     }
 }

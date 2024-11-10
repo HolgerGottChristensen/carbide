@@ -28,8 +28,8 @@ pub struct AccessibilityEventContext<'a, 'b: 'a> {
 }
 
 #[derive(Clone, Debug)]
-pub struct AccessibilityEvent {
+pub struct AccessibilityEvent<'a> {
     pub action: AccessibilityAction,
     pub target: WidgetId,
-    pub data: Option<ActionData>
+    pub data: &'a Option<ActionData>
 }

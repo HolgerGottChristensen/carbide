@@ -1,16 +1,17 @@
 use cgmath::Matrix4;
 use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
+use carbide_core::application::ApplicationManager;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::EnvironmentStack;
-use carbide_core::scene::SceneManager;
+use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{Widget, WidgetId};
 use crate::render_context::WGPURenderContext;
 use crate::RenderTarget;
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
-    pub(crate) id: WidgetId,
+    pub(crate) id: SceneId,
     pub(crate) title: T,
     pub(crate) position: Position,
     pub(crate) dimension: Dimension,
@@ -31,7 +32,6 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) inner: carbide_winit::window::Window,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,
-    pub(crate) close_application_on_window_close: bool,
     pub(crate) theme: Theme,
 }
 
@@ -49,6 +49,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             env_stack.with_mut::<SceneManager>(&mut scene_manager, |env_stack| {
                 f(env_stack, self)
             })
-        })
+        });
+
+        if scene_manager.close_requested() {
+            println!("Close requested for scene.");
+            ApplicationManager::get(env_stack, |manager| {
+                manager.close_scene(self.id);
+            });
+        }
     }
 }

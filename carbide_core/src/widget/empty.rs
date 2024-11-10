@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::scene::Scene;
+use crate::scene::AnyScene;
 use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
@@ -29,9 +29,13 @@ impl CommonWidget for Empty {
     CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
 }
 
-impl Scene for Empty {
-    fn request_redraw(&self) {
-        // Empty request redraw, because no redrawing is necessary.
+impl AnyScene for Empty {
+    fn request_redraw(&self) -> bool {
+        false
+    }
+
+    fn has_application_focus(&self) -> bool {
+        false
     }
 }
 

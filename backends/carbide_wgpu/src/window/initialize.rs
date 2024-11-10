@@ -33,7 +33,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 position,
                 dimension,
                 mut child,
-                close_application_on_window_close,
             } => {
                 let attributes = WindowAttributes::default()
                     .with_inner_size(Size::Logical(LogicalSize {
@@ -217,7 +216,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     position,
                     dimension,
                     child,
-                    close_application_on_window_close,
                     theme,
                 })
             }

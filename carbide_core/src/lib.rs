@@ -35,13 +35,13 @@ macro_rules! lens {
     }*/
 }
 
-#[macro_export]
-macro_rules! set_state {
-    ($env:ident, self.$i:ident := $bl:block) => {{
-        let res = $bl;
-        self.$i.set_value(res);
-        self.sync($env);
-    }};
+macro_rules! reverse {
+    ([] $($reversed:tt)*) => {
+        ($($reversed),*)  // base case
+    };
+    ([$first:tt $($rest:tt)*] $($reversed:tt)*) => {
+        reverse!([$($rest)*] $first $($reversed)*)  // recursion
+    };
 }
 
 pub mod accessibility;
@@ -62,6 +62,7 @@ pub mod utils;
 pub mod widget;
 pub mod scene;
 pub mod lifecycle;
+pub mod application;
 
 /// Reexport of the image crate
 pub mod image {

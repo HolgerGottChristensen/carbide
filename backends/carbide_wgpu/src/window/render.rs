@@ -3,6 +3,7 @@ use cgmath::Matrix4;
 use typed_arena::Arena;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Queue, RenderPassDepthStencilAttachment, RenderPipeline, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use carbide_core::application::ApplicationManager;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::Environment;
@@ -135,7 +136,9 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 // The system is out of memory, we should probably quit
                 Err(wgpu::SurfaceError::OutOfMemory) => {
                     println!("Swap chain out of memory");
-                    ctx.env.close_application();
+                    ApplicationManager::get(ctx.env_stack, |manager| {
+                        manager.close();
+                    });
                 }
                 // All other errors (Outdated, Timeout) should be resolved by the next frame
                 Err(e) => {

@@ -1,19 +1,41 @@
+use std::fmt::Debug;
 use std::ops::Deref;
 
 use dyn_clone::DynClone;
-
+use carbide::widget::{Widget, WidgetExt};
 use carbide_core::widget::AnyWidget;
 
-pub trait Scene: AnyWidget + DynClone + 'static {
-    fn request_redraw(&self);
+pub trait AnyScene: AnyWidget + DynClone + 'static {
+    fn request_redraw(&self) -> bool;
+
+    fn has_application_focus(&self) -> bool;
 }
 
-impl AnyWidget for Box<dyn Scene> {}
+impl AnyWidget for Box<dyn AnyScene> {}
 
-impl Scene for Box<dyn Scene> {
-    fn request_redraw(&self) {
+impl AnyScene for Box<dyn AnyScene> {
+    fn request_redraw(&self) -> bool {
         self.deref().request_redraw()
+    }
+
+    fn has_application_focus(&self) -> bool {
+        self.deref().has_application_focus()
     }
 }
 
-dyn_clone::clone_trait_object!(Scene);
+dyn_clone::clone_trait_object!(AnyScene);
+
+
+pub trait Scene: AnyScene + Clone + private::Sealed {}
+
+impl<T> Scene for T where T: AnyScene + Clone {}
+
+mod private {
+    use crate::scene::AnyScene;
+
+    // This disallows implementing Scene manually, and requires something to implement
+    // AnyScene to implement Scene.
+    pub trait Sealed {}
+
+    impl<T> Sealed for T where T: AnyScene {}
+}
