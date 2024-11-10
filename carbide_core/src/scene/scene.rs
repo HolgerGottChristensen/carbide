@@ -9,6 +9,8 @@ pub trait AnyScene: AnyWidget + DynClone + 'static {
     fn request_redraw(&self) -> bool;
 
     fn has_application_focus(&self) -> bool;
+
+    fn is_daemon(&self) -> bool;
 }
 
 impl AnyWidget for Box<dyn AnyScene> {}
@@ -20,6 +22,10 @@ impl AnyScene for Box<dyn AnyScene> {
 
     fn has_application_focus(&self) -> bool {
         self.deref().has_application_focus()
+    }
+
+    fn is_daemon(&self) -> bool {
+        self.deref().is_daemon()
     }
 }
 

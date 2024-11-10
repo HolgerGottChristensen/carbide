@@ -203,11 +203,22 @@ impl RunningApplication {
             event_loop.exit();
         }
 
+        let mut ctx = InitializationContext {
+            env: &mut self.environment,
+            env_stack: &mut self.environment_stack,
+            lifecycle_manager: event_loop as &dyn Any
+        };
+
+        for mut scene in application_manager.scenes_to_add().drain(..) {
+            scene.process_initialization(&mut ctx);
+            self.scenes.push(scene);
+        }
+
         for scene in application_manager.scenes_to_close() {
             self.scenes.retain(|a| a.id() != *scene);
         }
 
-        if self.scenes.len() == 0 {
+        if self.scenes.iter().filter(|a| !a.is_daemon()).count() == 0 {
             event_loop.exit();
         }
 
@@ -269,9 +280,8 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
                 env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                    for scene in &mut self.scenes {
-                        request += self.event_handler.window_event(&event, window_id, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
-                    }
+                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+
                 })
             })
         });

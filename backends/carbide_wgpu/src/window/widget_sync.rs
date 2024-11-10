@@ -7,6 +7,7 @@ use carbide_core::lifecycle::{Update, UpdateContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetSync};
+use carbide_winit::platform::macos::WindowExtMacOS;
 
 impl<T: ReadState<T=String>, C: Widget> WidgetSync for Window<T, C> {}
 
@@ -50,6 +51,16 @@ impl<T: ReadState<T=String>, C: Widget> AnyScene for Window<T, C> {
                 initialized.inner.has_focus()
             }
             Window::Failed => false,
+        }
+    }
+
+    fn is_daemon(&self) -> bool {
+        match self {
+            Window::UnInitialized { .. } => true,
+            Window::Initialized(initialized) => {
+                false
+            }
+            Window::Failed => true
         }
     }
 }

@@ -37,6 +37,10 @@ impl AnyScene for Empty {
     fn has_application_focus(&self) -> bool {
         false
     }
+
+    fn is_daemon(&self) -> bool {
+        true
+    }
 }
 
 impl Shape for Empty {
