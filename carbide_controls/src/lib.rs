@@ -17,7 +17,7 @@ pub use calendar::*;
 use carbide::environment::{EnvironmentStack, Key};
 use carbide::focus::{Focus, Refocus};
 use carbide::state::{ReadState, State};
-use carbide::widget::{MouseAreaAction, MouseAreaActionContext};
+use carbide::widget::{Empty, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Widget};
 pub use date_picker::*;
 pub use toggle_style::{SwitchStyle, CheckboxStyle};
 
@@ -92,4 +92,15 @@ impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
             ctx.env.request_focus(Refocus::FocusRequest);
         }
     }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct ControlOverlayKey;
+
+impl Key for ControlOverlayKey {
+    type Value = OverlayManager;
+}
+
+pub fn controls_overlay<C: Widget>(c: C) -> impl Widget {
+    c.overlay::<ControlOverlayKey>().steal_events()
 }

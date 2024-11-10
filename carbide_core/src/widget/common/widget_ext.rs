@@ -12,7 +12,7 @@ use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
-use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3};
+use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3, Overlay, OverlayManager};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
@@ -213,5 +213,9 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
 
     fn environment<K: Keyable + Clone, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> where K::Output: Clone {
         EnvUpdatingNew3::<Self, K, V::Output>::new(key, value.into_read_state(), self)
+    }
+
+    fn overlay<K: Key<Value=OverlayManager> + Clone>(self) -> Overlay<K, Self> {
+        Overlay::<K, Self>::new(self)
     }
 }

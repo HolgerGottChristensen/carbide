@@ -13,9 +13,13 @@ readme = "../../README.md"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 
+[features]
+controls = ["carbide_controls"]
+
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
 carbide_winit = { path = "../carbide_winit" }
+carbide_controls = { path = "../../carbide_controls", optional = true }
 carbide_text = { path = "../carbide_text" }
 cgmath.workspace = true
 env_logger = "0.7"

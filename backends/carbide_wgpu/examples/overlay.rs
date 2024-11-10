@@ -1,4 +1,5 @@
-use carbide_core::draw::Dimension;
+use carbide_core::color::ColorExt;
+use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::*;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -6,39 +7,42 @@ use carbide_wgpu::{Application, Window};
 fn main() {
     let mut application = Application::new();
 
-    let widget = Overlay::new("overlay", VStack::new((
-        Text::new("Click the rectangle to add element to overlay"),
-        ZStack::new((
-            Rectangle::new()
-                .fill(EnvironmentColor::Green)
-                .frame(200.0, 200.0),
-            Rectangle::new()
-                .fill(EnvironmentColor::Red)
-                .frame(100.0, 100.0),
-        )).on_click(move |env: &mut Environment, _| {
-            println!("Open overlay");
-            env.transfer_widget(Some("overlay".to_string()), WidgetTransferAction::Push(
-                ZStack::new((
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Blue)
-                        .frame(150.0, 150.0),
-                    Text::new("Overlay"),
-                )).on_click(|_, _| {
-                    println!("Overlay clicked!")
-                }).on_click_outside(move |env: &mut Environment, _| {
-                    env.transfer_widget(Some("overlay".to_string()), WidgetTransferAction::Pop)
-                }).boxed()
-            ))
-        }),
-        Text::new("Click outside to remove the overlay"),
-    ))).steal_events();
+    let overlay = ZStack::new((
+        Rectangle::new()
+            .frame(200.0, 200.0),
+        Text::new("Overlay"),
+    )).on_click(|_| {
+        println!("Overlay clicked!")
+    }).on_click_outside(move |ctx| {
+        OverlayManager::get::<OverlayKey>(ctx.env_stack, |manager| {
+            manager.clear();
+        })
+    });
 
+    let widget = VStack::new((
+        Text::new("Click the rectangle to add an element to the overlay"),
+        Rectangle::new()
+            .fill(EnvironmentColor::Red)
+            .frame(150.0, 50.0)
+            .on_click(move |ctx| {
+                OverlayManager::get::<OverlayKey>(ctx.env_stack, |manager| {
+                    manager.insert(overlay.clone().accent_color(Color::random().with_lightness(0.3)));
+                })
+            }),
+        Text::new("Click outside the overlay to remove it"),
+    )).spacing(30.0);
 
     application.set_scene(Window::new(
         "Overlay example - Carbide",
-        Dimension::new(600.0, 450.0),
-        widget
+        Dimension::new(400.0, 300.0),
+        widget.overlay::<OverlayKey>().steal_events()
     ).close_application_on_window_close());
 
     application.launch();
+}
+
+#[derive(Copy, Clone, Debug)]
+struct OverlayKey;
+impl Key for OverlayKey {
+    type Value = OverlayManager;
 }

@@ -31,15 +31,29 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
 
 impl Window<String, Empty> {
     pub fn new<T: IntoReadState<String>, C: IntoWidget>(title: T, dimension: Dimension, child: C) -> Window<T::Output, impl Widget> {
+
+        let child = child.into_widget();
+
+        #[cfg(feature = "controls")]
+        let child = carbide_controls::controls_overlay(child).steal_events();
+
+        let child = ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::SystemBackground),
+            child
+        ));
+
+        let child = NavigationStack::new_root(child);
+
+        let child = ThemeManager::new(child);
+
+        let child = FontSizeManager::new(child);
+
         Window::UnInitialized {
             id: WidgetId::new(),
             title: title.into_read_state(),
             position: Default::default(),
             dimension,
-            child: FontSizeManager::new(ThemeManager::new(NavigationStack::new_root(ZStack::new((
-                Rectangle::new().fill(EnvironmentColor::SystemBackground),
-                Overlay::new("controls_popup_layer", child.into_widget()).steal_events(),
-            ))))),
+            child,
             close_application_on_window_close: false,
         }
     }
