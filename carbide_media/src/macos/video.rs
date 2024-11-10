@@ -6,7 +6,9 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSInteger, NSString, NSUInteger};
 use objc::{msg_send, class, sel, sel_impl};
 use objc::runtime::BOOL;
+use carbide::animation::AnimationManager;
 use carbide::layout::LayoutContext;
+use carbide::scene::SceneManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
@@ -126,7 +128,14 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
 
         let information = self.video_id.as_ref().and_then(|id| {
             let (width, height) = ctx.image.texture_dimensions(id)?;
-            Some(Dimension::new(width as Scalar, height as Scalar) / ctx.env.scale_factor())
+
+            let mut scale_factor = 1.0;
+
+            SceneManager::get(ctx.env_stack, |manager| {
+                scale_factor = manager.scale_factor();
+            });
+
+            Some(Dimension::new(width as Scalar, height as Scalar) / scale_factor)
         }).unwrap_or(Dimension::new(100.0, 100.0));
 
         if !self.resizeable {
@@ -269,7 +278,9 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
             unsafe {
                 let rate: f32 = msg_send![player.player, rate];
                 if rate != 0.0 {
-                    ctx.env.request_animation_frame();
+                    AnimationManager::get(ctx.env_stack, |manager| {
+                        manager.request_animation_frame();
+                    })
                 }
 
                 let current_time: CMTime = msg_send![player.player, currentTime];

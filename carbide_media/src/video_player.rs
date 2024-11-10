@@ -71,7 +71,7 @@ impl VideoPlayer<Option<VideoId>> {
 
         let play_button = Image::new("icons/play-fill.png")
             .scaled_to_fit()
-            .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+            .on_click(move |_| {
                 let mut playing = playing_play.clone();
                 playing.set_value(true);
             })
@@ -79,7 +79,7 @@ impl VideoPlayer<Option<VideoId>> {
 
         let pause_button = Image::new("icons/pause-fill.png")
             .scaled_to_fit()
-            .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+            .on_click(move |_| {
                 let mut playing = playing_pause.clone();
                 playing.set_value(false);
             })
@@ -87,7 +87,7 @@ impl VideoPlayer<Option<VideoId>> {
 
         let forward_button = Image::new("icons/forward-10-fill.png")
             .scaled_to_fit()
-            .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+            .on_click(move |_| {
                 let mut current_time = current_time_forward.clone();
                 let current = *current_time.value();
                 current_time.set_value(current + Duration::new(10, 0));
@@ -96,7 +96,7 @@ impl VideoPlayer<Option<VideoId>> {
 
         let replay_button = Image::new("icons/replay-10-fill.png")
             .scaled_to_fit()
-            .on_click(move |env: &mut Environment, modifier: ModifierKey| {
+            .on_click(move |_| {
                 let mut current_time = current_time_replay.clone();
                 let current = *current_time.value();
                 if current >= Duration::new(10, 0) {
@@ -169,7 +169,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if *ctx.is_current {
             if !*ctx.consumed {
-                self.sync(ctx.env);
+                self.sync(ctx.env_stack);
                 self.handle_mouse_event(event, ctx);
             }
         }
@@ -223,7 +223,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
+        self.sync(context.env_stack);
         self.video.render(context);
 
         if self.video_overlay_visible || *self.buffering.value() {
