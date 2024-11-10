@@ -3,12 +3,12 @@ use chrono::{DateTime, FixedOffset};
 use fluent::FluentArgs;
 use fluent::types::{FluentDateTime, FluentDateTimeOptions, FluentNumber, FluentNumberOptions};
 use icu::locid::Locale;
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::impl_state_value;
 use carbide_core::state::{AnyReadState, IntoReadState, StateSync, ReadState, ValueRef, ValueState};
 use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};
-use crate::locale_ext::LOCALE_IDENT;
+use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
 
 pub type Number = fluent::types::FluentNumber;
@@ -342,7 +342,7 @@ impl<
         self.maximum_significant_digits.sync(env);
         self.rounding_mode.sync(env);
 
-        if let Some(locale) = env.value::<&'static str, Locale>(LOCALE_IDENT) {
+        if let Some(locale) = env.get::<LocaleKey>() {
             self.locale = locale.clone();
             true
         } else {

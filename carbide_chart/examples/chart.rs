@@ -58,7 +58,7 @@ fn main() {
                 PopUpButton::new(stepped.clone(), vec![Stepped::None, Stepped::Before, Stepped::After, Stepped::Middle, Stepped::MiddleVertical])
                     .label("Stepped: ")
             )).padding(50.0)
-        ).close_application_on_window_close());
+        ));
 
     application.launch();
 }

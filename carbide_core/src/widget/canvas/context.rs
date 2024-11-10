@@ -7,6 +7,7 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
+use carbide::environment::EnvironmentStack;
 use crate::animation::AnimationManager;
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
 use crate::draw::Color;
@@ -89,6 +90,9 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
     pub fn env(&mut self) -> &mut Environment {
         self.render_context.env
+    }
+    pub fn env_stack(&mut self) -> &mut EnvironmentStack<'c> {
+        self.render_context.env_stack
     }
 
     pub fn set_line_width(&mut self, width: f64) {

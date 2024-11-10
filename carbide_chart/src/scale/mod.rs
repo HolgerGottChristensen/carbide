@@ -6,6 +6,7 @@ use std::fmt::Debug;
 use std::ops::Range;
 use carbide::color::{GREEN, RED, WHITE, YELLOW};
 use carbide::draw::{Alignment, Rect};
+use carbide::environment::EnvironmentStack;
 use carbide::state::{ReadState, StateSync};
 use carbide::widget::EdgeInsets;
 use carbide_core::draw::{Dimension, Position, Scalar};
@@ -48,7 +49,7 @@ pub trait Scale: Clone + Debug + 'static {
                         ctx.move_to(area.left() + x * area.width(), area.top() + tick_offset);
                         ctx.line_to(area.left() + x * area.width(), area.bottom());
 
-                        let value = &format_tick(*tick, ctx.env());
+                        let value = &format_tick(*tick, ctx.env_stack());
 
                         ctx.fill_text(value, area.left() + x * area.width(), area.top() + tick_offset);
                     }
@@ -60,7 +61,7 @@ pub trait Scale: Clone + Debug + 'static {
                         ctx.move_to(area.left() - tick_offset, area.bottom() + y * area.height());
                         ctx.line_to(area.right(), area.bottom() + y * area.height());
 
-                        let value = &format_tick(*tick, ctx.env());
+                        let value = &format_tick(*tick, ctx.env_stack());
 
                         ctx.fill_text(value, area.left() - tick_offset, area.bottom() + y * area.height());
                     }
@@ -123,7 +124,7 @@ pub enum Axis {
 }
 
 #[cfg(feature = "carbide_fluent")]
-fn format_tick(x: Scalar, env: &mut Environment) -> String {
+fn format_tick(x: Scalar, env: &mut EnvironmentStack) -> String {
     use carbide_fluent::LocalizedNumber;
 
     let mut number = LocalizedNumber::new(x);

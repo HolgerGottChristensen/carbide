@@ -16,7 +16,7 @@ fn main() {
         //Video::new("https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_5MB.mp4")
             //.clip_shape(*Circle::new()),
             .border()
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

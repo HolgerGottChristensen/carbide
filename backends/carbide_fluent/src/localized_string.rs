@@ -2,12 +2,12 @@ use std::fmt::Debug;
 use fluent::FluentArgs;
 use fluent::types::{FluentDateTime, FluentNumber};
 use icu::locid::Locale;
-use carbide_core::environment::Environment;
+use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::impl_state_value;
 use carbide_core::state::{AnyReadState, StateSync, ReadState, ValueRef};
 use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};
-use crate::locale_ext::LOCALE_IDENT;
+use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> LocalizedString<K, S, V> {
 
 impl<K: Localizable, S: ReadState<T=K>, V: Args> StateSync for LocalizedString<K, S, V> {
     fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
-        if let Some(locale) = env.value::<&'static str, Locale>(LOCALE_IDENT) {
+        if let Some(locale) = env.get::<LocaleKey>() {
             //println!("Synced locale: {}", locale);
             self.locale = locale.clone();
             true

@@ -1,6 +1,6 @@
 use std::io::Read;
 use carbide::draw::Scalar;
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentStack};
 use carbide::state::{IntoReadState, ReadState};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions};
 use crate::element::Stepped;
@@ -57,7 +57,7 @@ impl<T: DataSet + 'static, C: ReadState<T=DataColor>, S: ReadState<T=Stepped>> D
         self.inner.max()
     }
 
-    fn options(&self, env: &mut Environment) -> DataSetOptions {
+    fn options(&self, env: &mut EnvironmentStack) -> DataSetOptions {
         let options = self.inner.options(env);
 
         DataSetOptions {

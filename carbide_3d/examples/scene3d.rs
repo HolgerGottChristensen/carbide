@@ -119,12 +119,12 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Cube example",
+            "Cube example - Carbide",
             Dimension::new(600.0, 600.0),
             Scene3d::new((center, x, y, z, object, object2, light), camera)
             //Scene3d::new((object, light), camera)
             //Scene3d::new((object, object2, light), camera)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

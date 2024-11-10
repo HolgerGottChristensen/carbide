@@ -1,17 +1,21 @@
 use icu::locid::{Locale, locale};
-use carbide_core::environment::{Environment};
+use carbide_core::environment::{Environment, EnvironmentStack, Key};
 use carbide_core::state::{EnvMap1, IntoReadState, Map1, ReadState};
-use carbide_core::widget::{EnvUpdating, WidgetExt};
-use carbide_core::state::ReadStateExtNew;
+use carbide_core::widget::{EnvUpdatingNew2, WidgetExt};
 
-type Localed<C, T, S> = EnvUpdating<C, T, S>;
-type LocaleState = EnvMap1<fn(&Environment, &i32) -> Locale, i32, Locale, i32>;
+type WithLocale<C, K, V> = EnvUpdatingNew2<C, K, V>;
+type LocaleState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> Locale, i32, Locale, i32>;
 
-pub const LOCALE_IDENT: &'static str = "current_locale";
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct LocaleKey;
+impl Key for LocaleKey {
+    type Value = Locale;
+}
+
 
 pub trait LocaleExt: WidgetExt {
-    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> Localed<Self, Locale, L::Output> {
-        EnvUpdating::new(LOCALE_IDENT, locale.into_read_state(), self)
+    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> WithLocale<Self, impl Key<Value=Locale>, impl ReadState<T=Locale>> {
+        EnvUpdatingNew2::<Self, LocaleKey, L::Output>::new(locale.into_read_state(), self)
     }
 }
 
@@ -21,6 +25,6 @@ impl<T> LocaleExt for T where T: WidgetExt {}
 pub fn locale_state() -> LocaleState {
     Map1::read_map_env(0, |env, _| {
         // Look up enabled in the environment, or default to true of nothing is specified
-        env.value::<&'static str, Locale>(LOCALE_IDENT).cloned().unwrap_or(locale!("en"))
+        env.get::<LocaleKey>().cloned().unwrap_or_else(|| locale!("en"))
     })
 }

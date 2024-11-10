@@ -16,7 +16,7 @@ fn main() {
         //Video::new("https://d2nvs31859zcd8.cloudfront.net/6e350bf6efa46d049e84_tangotek_43279002651_1703437657/chunked/index-dvr.m3u8")
         //Video::new("https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_5MB.mp4")
             //.clip_shape(*Circle::new()),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

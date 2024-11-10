@@ -21,6 +21,7 @@ mod point_light;
 mod uniforms;
 mod image_context_3d;
 
+// TODO: Call this in the application new.
 pub fn init() {
     register_render_context3d_initializer("carbide_wgpu_3d", render_context_3d_initializer);
     register_image_context3d_initializer("carbide_wgpu_3d", image_context_3d_initializer);
