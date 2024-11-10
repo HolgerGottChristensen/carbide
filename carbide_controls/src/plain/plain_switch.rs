@@ -4,7 +4,7 @@ use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityCo
 use carbide::closure;
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
-use carbide::focus::Focusable;
+use carbide::focus::{FocusManager, Focusable};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, WidgetSync};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -207,10 +207,10 @@ impl<F: State<T=Focus> + Clone, C: State<T=bool> + Clone, D: PlainSwitchDelegate
                 }.trigger(ctx.env, ctx.env_stack);
             }
             AccessibilityAction::Focus => {
-                self.request_focus(ctx.env)
+                self.request_focus(ctx.env_stack)
             }
             AccessibilityAction::Blur => {
-                self.request_blur(ctx.env)
+                self.request_blur(ctx.env_stack)
             }
             _ => ()
         }
@@ -263,7 +263,9 @@ impl<C: State<T=bool>, F: State<T=Focus>, E: ReadState<T=bool>> SwitchAction<C, 
 
         if *self.focus.value() != Focus::Focused {
             *self.focus.value_mut() = Focus::FocusRequested;
-            env.request_focus(Refocus::FocusRequest);
+            FocusManager::get(env_stack, |manager| {
+                manager.request_focus(Refocus::FocusRequest)
+            });
         }
     }
 }

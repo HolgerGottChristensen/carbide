@@ -14,6 +14,7 @@ use smallvec::SmallVec;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use carbide::environment::EnvironmentStack;
+use carbide::focus::FocusManager;
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::render::{Render, RenderContext};
 use carbide::widget::IntoWidget;
@@ -154,10 +155,10 @@ impl<F: State<T=Focus> + Clone, C: State<T=CheckBoxValue> + Clone, D: PlainCheck
                 }.trigger(ctx.env, ctx.env_stack);
             }
             AccessibilityAction::Focus => {
-                self.request_focus(ctx.env)
+                self.request_focus(ctx.env_stack)
             }
             AccessibilityAction::Blur => {
-                self.request_blur(ctx.env)
+                self.request_blur(ctx.env_stack)
             }
             _ => ()
         }
@@ -270,7 +271,9 @@ impl<C: State<T=CheckBoxValue>, F: State<T=Focus>, E: ReadState<T=bool>> Checkbo
 
         if *self.focus.value() != Focus::Focused {
             *self.focus.value_mut() = Focus::FocusRequested;
-            env.request_focus(Refocus::FocusRequest);
+            FocusManager::get(env_stack, |manager| {
+                manager.request_focus(Refocus::FocusRequest)
+            });
         }
     }
 }

@@ -502,7 +502,7 @@ impl<T: Widget,
     B9: ReadState<T=bool>,
     B10: ReadState<T=bool>,
 > Focusable for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
-    fn request_focus(&mut self, env: &mut Environment) {
+    fn request_focus(&mut self, env: &mut EnvironmentStack) {
         //self.update_states(env);
         if *self.focus_event.value() {
             self.inner.request_focus(env)

@@ -13,23 +13,22 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId}
 
 #[derive(Debug)]
 pub enum OverlayAction {
-    None,
     Clear,
     Insert(Box<dyn AnyWidget>)
 }
 
 #[derive(Debug)]
 pub struct OverlayManager {
-    overlay: OverlayAction
+    overlay: Option<OverlayAction>
 }
 
 impl OverlayManager {
     pub fn clear(&mut self) {
-        self.overlay = OverlayAction::Clear;
+        self.overlay = Some(OverlayAction::Clear);
     }
 
     pub fn insert(&mut self, overlay: impl Widget) {
-        self.overlay = OverlayAction::Insert(overlay.boxed());
+        self.overlay = Some(OverlayAction::Insert(overlay.boxed()));
     }
 
     pub fn get<K: Key<Value=OverlayManager>>(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut OverlayManager)) {
@@ -75,20 +74,21 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
 
     fn with(&mut self, env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack, &mut Self)) {
         let mut manager = OverlayManager {
-            overlay: OverlayAction::None,
+            overlay: None,
         };
 
         env_stack.with_mut::<K>(&mut manager, |env_stack| {
             f(env_stack, self)
         });
 
-        match manager.overlay {
-            OverlayAction::None => {}
-            OverlayAction::Clear => {
-                self.overlay = None;
-            }
-            OverlayAction::Insert(new) => {
-                self.overlay = Some(new);
+        if let Some(overlay) = manager.overlay {
+            match overlay {
+                OverlayAction::Clear => {
+                    self.overlay = None;
+                }
+                OverlayAction::Insert(new) => {
+                    self.overlay = Some(new);
+                }
             }
         }
     }

@@ -15,7 +15,7 @@ use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
 use carbide_core::event::Event::CoreEvent;
-use carbide_core::focus::{FocusContext, Refocus};
+use carbide_core::focus::{FocusContext, FocusManager, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::Scene;
 use carbide_core::text::InnerTextContext;
@@ -67,9 +67,9 @@ impl NewEventHandler {
         EventId::new(self.event_id)
     }
 
-    pub fn handle_refocus(target: &mut impl Scene, env: &mut Environment, env_stack: &mut EnvironmentStack) {
-        if let Some(request) = env.focus_request.clone() {
-            match request {
+    pub fn handle_refocus(target: &mut impl Scene, focus_manager: &mut FocusManager, env: &mut Environment, env_stack: &mut EnvironmentStack) {
+        if let Some(focus) = focus_manager.requested_focus() {
+            match focus {
                 Refocus::FocusRequest => {
                     //println!("Process focus request");
                     target.process_focus_request(&mut FocusContext {
@@ -122,7 +122,6 @@ impl NewEventHandler {
                     }
                 }
             }
-            env.focus_request = None;
         }
     }
 
@@ -576,10 +575,14 @@ impl NewEventHandler {
                     if key == carbide_core::event::Key::Tab {
                         if self.modifiers.shift_key() {
                             //self.set_focus(Focus::FocusReleased);
-                            env.request_focus(Refocus::FocusPrevious);
+                            FocusManager::get(env_stack, |manager| {
+                                manager.request_focus(Refocus::FocusPrevious)
+                            });
                         } else if self.modifiers.is_empty() {
                             //self.set_focus(Focus::FocusReleased);
-                            env.request_focus(Refocus::FocusNext);
+                            FocusManager::get(env_stack, |manager| {
+                                manager.request_focus(Refocus::FocusNext)
+                            });
                         }
                     }
                 }

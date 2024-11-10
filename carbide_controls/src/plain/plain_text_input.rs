@@ -1158,7 +1158,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn text_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         if self.get_focus() == Focus::Unfocused {
-            self.request_focus(ctx.env);
+            self.request_focus(ctx.env_stack);
         }
 
         let x = position.x - self.position.x - *self.text_offset.value();

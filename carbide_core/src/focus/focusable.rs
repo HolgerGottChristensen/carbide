@@ -1,19 +1,23 @@
 use carbide::environment::EnvironmentStack;
 use crate::environment::Environment;
 use crate::focus::focus::Focus;
-use crate::focus::Refocus;
+use crate::focus::{FocusManager, Refocus};
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait Focusable: CommonWidget + WidgetSync {
-    fn request_focus(&mut self, env: &mut Environment) {
+    fn request_focus(&mut self, env: &mut EnvironmentStack) {
         self.set_focus(Focus::FocusRequested);
-        env.request_focus(Refocus::FocusRequest);
+        FocusManager::get(env, |manager| {
+            manager.request_focus(Refocus::FocusRequest)
+        });
     }
 
-    fn request_blur(&mut self, env: &mut Environment) {
+    fn request_blur(&mut self, env: &mut EnvironmentStack) {
         self.set_focus(Focus::FocusReleased);
-        env.request_focus(Refocus::FocusRequest);
+        FocusManager::get(env, |manager| {
+            manager.request_focus(Refocus::FocusRequest)
+        });
     }
 
     fn has_focus(&self) -> bool {

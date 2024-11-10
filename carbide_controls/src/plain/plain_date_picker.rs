@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use carbide::focus::FocusManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -163,7 +164,9 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
 
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
 
                     OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
@@ -174,7 +177,9 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
                 }
             }

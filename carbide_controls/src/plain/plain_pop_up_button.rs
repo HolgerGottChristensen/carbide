@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use carbide::environment::EnvironmentStack;
 use carbide::event::{EventId, KeyboardEventContext, MouseButton, MouseEventContext};
+use carbide::focus::FocusManager;
 use carbide::layout::LayoutContext;
 use carbide::lifecycle::{Update, UpdateContext};
 
@@ -312,14 +313,18 @@ impl<
 
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
                     self.open_popup(*id, ctx.env_stack);
                     //ctx.env.request_animation_frame();
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
                 }
             }

@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use carbide::focus::FocusManager;
 use carbide_core::event::{KeyboardEventContext, MouseEventContext};
 use carbide_core::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;
@@ -304,7 +305,9 @@ impl<
                 if self.thumb.is_inside(*position) || self.background.is_inside(*position) {
                     if *self.focus.value() != Focus::Focused {
                         self.focus.set_value(Focus::FocusRequested);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
 
                     self.dragging = true;
@@ -316,7 +319,9 @@ impl<
                 } else {
                     if *self.focus.value() == Focus::Focused {
                         self.focus.set_value(Focus::FocusReleased);
-                        ctx.env.request_focus(Refocus::FocusRequest);
+                        FocusManager::get(ctx.env_stack, |manager| {
+                            manager.request_focus(Refocus::FocusRequest)
+                        });
                     }
                 }
             }

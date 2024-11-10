@@ -14,6 +14,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::environment::{Environment, EnvironmentStack};
+use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::Scene;
 use carbide_core::text::InnerTextContext;
@@ -154,6 +155,7 @@ impl Application {
             environment_stack: type_map,
             text_context,
             animation_manager: AnimationManager::new(),
+            focus_manager: FocusManager::new(),
         };
 
         event_loop.run_app(&mut running).unwrap();
@@ -176,6 +178,7 @@ pub struct RunningApplication {
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     animation_manager: AnimationManager,
+    focus_manager: FocusManager,
 }
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
@@ -195,20 +198,19 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
         self.animation_manager.update_frame_time();
 
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            request = self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+            env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                request = self.event_handler.user_event(event, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
 
-            if matches!(request, RequestRedraw::True) {
-                NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, env_stack);
-            }
-
-            if self.environment.should_close_application() {
-                event_loop.exit();
-            }
+                if self.environment.should_close_application() {
+                    event_loop.exit();
+                }
+            })
         });
 
         match request {
             RequestRedraw::False => {}
             RequestRedraw::True => {
+                NewEventHandler::handle_refocus(&mut self.root, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
                 self.root.request_redraw();
             }
             RequestRedraw::IfAnimationsRequested => {
@@ -225,20 +227,19 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
         self.animation_manager.update_frame_time();
 
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            request = self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+            env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                request = self.event_handler.window_event(event, window_id, &mut self.root, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
 
-            if matches!(request, RequestRedraw::True) {
-                NewEventHandler::handle_refocus(&mut self.root, &mut self.environment, env_stack);
-            }
-
-            if self.environment.should_close_application() {
-                event_loop.exit();
-            }
+                if self.environment.should_close_application() {
+                    event_loop.exit();
+                }
+            })
         });
 
         match request {
             RequestRedraw::False => {}
             RequestRedraw::True => {
+                NewEventHandler::handle_refocus(&mut self.root, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
                 self.root.request_redraw();
             }
             RequestRedraw::IfAnimationsRequested => {

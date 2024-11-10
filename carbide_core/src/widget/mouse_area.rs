@@ -325,10 +325,10 @@ impl<
                 });
             }
             AccessibilityAction::Focus => {
-                self.request_focus(ctx.env)
+                self.request_focus(ctx.env_stack)
             }
             AccessibilityAction::Blur => {
-                self.request_blur(ctx.env)
+                self.request_blur(ctx.env_stack)
             }
             _ => ()
         }

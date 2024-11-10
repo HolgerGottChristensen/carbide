@@ -15,7 +15,7 @@ pub use help::*;
 pub use labelled::*;
 pub use calendar::*;
 use carbide::environment::{EnvironmentStack, Key};
-use carbide::focus::{Focus, Refocus};
+use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{ReadState, State};
 use carbide::widget::{Empty, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Widget};
 pub use date_picker::*;
@@ -89,7 +89,9 @@ impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
         self.0.sync(ctx.env_stack);
         if *self.0.value() == Focus::Focused {
             self.0.set_value(Focus::FocusReleased);
-            ctx.env.request_focus(Refocus::FocusRequest);
+            FocusManager::get(ctx.env_stack, |manager| {
+                manager.request_focus(Refocus::FocusRequest)
+            });
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::{enabled_state, EnabledState};
 use carbide::accessibility::AccessibilityContext;
 use carbide::color::ColorExt;
 use carbide::environment::IntoColorReadState;
-use carbide::focus::Focusable;
+use carbide::focus::{FocusManager, Focusable};
 use carbide::widget::{Action, MouseAreaActionContext};
 use carbide_core::accessibility::Accessibility;
 use carbide_core::color::ORANGE;
@@ -247,7 +247,10 @@ impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> Mouse
         if *self.enabled.value() {
             if *self.focus.value() != Focus::Focused {
                 self.focus.set_value(Focus::FocusRequested);
-                ctx.env.request_focus(Refocus::FocusRequest);
+
+                FocusManager::get(ctx.env_stack, |manager| {
+                    manager.request_focus(Refocus::FocusRequest)
+                });
             }
             (self.action)(ctx);
         }
@@ -270,7 +273,10 @@ impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> Mouse
         self.focus.sync(ctx.env_stack);
         if *self.focus.value() == Focus::Focused {
             self.focus.set_value(Focus::FocusReleased);
-            ctx.env.request_focus(Refocus::FocusRequest);
+
+            FocusManager::get(ctx.env_stack, |manager| {
+                manager.request_focus(Refocus::FocusRequest)
+            });
         }
     }
 }

@@ -9,7 +9,7 @@ fn main() {
     application.set_scene(
         Window::new(
             "Frame example",
-            Dimension::new(600.0, 600.0),
+            Dimension::new(300.0, 300.0),
             Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0)

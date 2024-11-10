@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use carbide::closure;
+use carbide::focus::FocusManager;
 use carbide::widget::MouseAreaActionContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -116,12 +117,16 @@ impl<T: StateContract + PartialEq, F: State<T=Focus>, C: State<T=T>, D: PlainRad
 
                 if *$focus != Focus::Focused {
                     focus.set_value(Focus::FocusRequested);
-                    ctx.env.request_focus(Refocus::FocusRequest);
+                    FocusManager::get(ctx.env_stack, |manager| {
+                        manager.request_focus(Refocus::FocusRequest)
+                    });
                 }
             })).on_click_outside(closure!(|ctx: MouseAreaActionContext| {
                 if *$focus == Focus::Focused {
                     focus.set_value(Focus::FocusReleased);
-                    ctx.env.request_focus(Refocus::FocusRequest);
+                    FocusManager::get(ctx.env_stack, |manager| {
+                        manager.request_focus(Refocus::FocusRequest)
+                    });
                 }
             }))
             .focused(focus.clone());
