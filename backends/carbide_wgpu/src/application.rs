@@ -14,7 +14,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::environment::{Environment, EnvironmentStack};
+use carbide_core::environment::{Environment, EnvironmentStack, Key};
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
@@ -66,6 +66,12 @@ pub static QUEUE: Lazy<Arc<Queue>> = Lazy::new(|| DEVICE_QUEUE.1.clone());
 pub static EVENT_LOOP_PROXY: OnceLock<EventLoopProxy<CustomEvent>> = OnceLock::new();
 
 pub type Scenes = SmallVec<[Box<dyn AnyScene>; 4]>;
+
+#[derive(Debug)]
+pub(crate) struct ActiveEventLoopKey;
+impl Key for ActiveEventLoopKey {
+    type Value = ActiveEventLoop;
+}
 
 pub struct Application {
     id: WidgetId,
@@ -203,16 +209,16 @@ impl RunningApplication {
             event_loop.exit();
         }
 
-        let mut ctx = InitializationContext {
-            env: &mut self.environment,
-            env_stack: &mut self.environment_stack,
-            lifecycle_manager: event_loop as &dyn Any
-        };
+        self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
+            let mut ctx = InitializationContext {
+                env_stack,
+            };
 
-        for mut scene in application_manager.scenes_to_add().drain(..) {
-            scene.process_initialization(&mut ctx);
-            self.scenes.push(scene);
-        }
+            for mut scene in application_manager.scenes_to_add().drain(..) {
+                scene.process_initialization(&mut ctx);
+                self.scenes.push(scene);
+            }
+        });
 
         for scene in application_manager.scenes_to_close() {
             self.scenes.retain(|a| a.id() != *scene);
@@ -238,16 +244,14 @@ impl RunningApplication {
 }
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
-    fn resumed<'a>(&'a mut self, event_loop: &'a ActiveEventLoop) {
-        let mut ctx = InitializationContext::<'a, '_> {
-            env: &mut self.environment,
-            env_stack: &mut self.environment_stack,
-            lifecycle_manager: event_loop as &'a dyn Any
-        };
-
-        for scene in &mut self.scenes {
-            scene.process_initialization(&mut ctx);
-        }
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
+            for scene in &mut self.scenes {
+                scene.process_initialization(&mut InitializationContext {
+                    env_stack,
+                });
+            }
+        })
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
@@ -259,10 +263,12 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
-                env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                    for scene in &mut self.scenes {
-                        request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
-                    }
+                env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
+                    env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                        for scene in &mut self.scenes {
+                            request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                        }
+                    })
                 })
             })
         });
@@ -279,9 +285,10 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
-                env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
-
+                env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
+                    env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
+                        request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                    })
                 })
             })
         });

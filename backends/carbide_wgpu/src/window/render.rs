@@ -46,6 +46,11 @@ impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
+
+        for scene in &mut self.scenes {
+            scene.render(ctx);
+        }
+
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
@@ -587,6 +592,9 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
             // submit will accept anything that implements IntoIter
             QUEUE.submit(std::iter::once(encoder.finish()));
+
+            self.inner.pre_present_notify();
+
             output.present();
             Ok(())
         })

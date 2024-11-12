@@ -91,8 +91,6 @@ impl<C: Widget> Initialize for FontSizeManager<C> {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_initialization(&mut InitializationContext {
-                lifecycle_manager: ctx.lifecycle_manager,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

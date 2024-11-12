@@ -4,9 +4,11 @@ use carbide_core::application::ApplicationManager;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::EnvironmentStack;
+use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
-use carbide_core::widget::{Widget, WidgetId};
+use carbide_core::widget::{CommonWidget, Widget, WidgetId};
+use crate::application::Scenes;
 use crate::render_context::WGPURenderContext;
 use crate::RenderTarget;
 
@@ -33,9 +35,32 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,
     pub(crate) theme: Theme,
+    pub(crate) scenes: Scenes,
 }
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
+    pub fn close(&self, env_stack: &mut EnvironmentStack) {
+        let mut closed = false;
+
+        SceneManager::get(env_stack, |manager| {
+            println!("Close sub scene");
+            manager.close_sub_scene(self.id);
+            closed = true;
+        });
+
+        if !closed {
+            ApplicationManager::get(env_stack, |manager| {
+                println!("Close scene");
+                manager.close_scene(self.id);
+                closed = true;
+            });
+        }
+
+        if !closed {
+            println!("tried to close window, but neither the application manager or the scene manager was available.")
+        }
+    }
+
     pub fn with_env_stack(&mut self, env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack, &mut Self)) {
         let theme_for_frame = self.theme;
         let physical_dimensions = self.inner.inner_size();
@@ -52,10 +77,21 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         });
 
         if scene_manager.close_requested() {
-            println!("Close requested for scene.");
-            ApplicationManager::get(env_stack, |manager| {
-                manager.close_scene(self.id);
-            });
+            println!("Here");
+            self.close(env_stack);
+        } else {
+            let mut ctx = InitializationContext {
+                env_stack,
+            };
+
+            for mut scene in scene_manager.scenes_to_add().drain(..) {
+                scene.process_initialization(&mut ctx);
+                self.scenes.push(scene);
+            }
+
+            for id in scene_manager.sub_scenes_to_close() {
+                self.scenes.retain(|scene| scene.id() != *id);
+            }
         }
     }
 }

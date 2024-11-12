@@ -183,9 +183,7 @@ impl<K: Key<Value=NavigationManager> + Clone> Initialize for NavigationStack<K> 
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         self.with(ctx.env_stack, |env_stack, child| {
             child.process_initialization(&mut InitializationContext {
-                env: ctx.env,
                 env_stack,
-                lifecycle_manager: ctx.lifecycle_manager,
             })
         })
     }

@@ -94,8 +94,6 @@ impl<C: Widget, K: Keyable + Clone, V: ReadState<T=K::Output>> Initialize for En
 
         self.key.with(&*self.value.value(), ctx.env_stack, |inner| {
             self.child.process_initialization(&mut InitializationContext {
-                lifecycle_manager: ctx.lifecycle_manager,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

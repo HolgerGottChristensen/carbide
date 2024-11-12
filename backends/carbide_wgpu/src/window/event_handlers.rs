@@ -25,6 +25,10 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
                         env_stack,
                     };
 
+                    for scene in &mut initialized.scenes {
+                        scene.process_mouse_event(event, new_ctx);
+                    }
+
                     initialized.child.process_mouse_event(event, new_ctx);
                 });
             }
@@ -43,6 +47,10 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
                         env: ctx.env,
                         env_stack,
                     };
+
+                    for scene in &mut initialized.scenes {
+                        scene.process_accessibility_event(event, new_ctx);
+                    }
 
                     initialized.child.process_accessibility_event(event, new_ctx);
                 })
@@ -70,6 +78,10 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
                         prevent_default: ctx.prevent_default,
                     };
 
+                    for scene in &mut initialized.scenes {
+                        scene.process_keyboard_event(event, new_ctx);
+                    }
+
                     initialized.child.process_keyboard_event(event, new_ctx);
                 })
             }
@@ -84,12 +96,18 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
         match self {
             Window::Initialized(initialized) => {
                 initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
-                    initialized.child.process_other_event(event, &mut OtherEventContext {
+                    let new_ctx = &mut OtherEventContext {
                         text: ctx.text,
                         image: ctx.image,
                         env: ctx.env,
                         env_stack,
-                    });
+                    };
+
+                    for scene in &mut initialized.scenes {
+                        scene.process_other_event(event, new_ctx);
+                    }
+
+                    initialized.child.process_other_event(event, new_ctx);
                 })
             }
             Window::UnInitialized { .. } => {}
@@ -140,11 +158,7 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                             }*/
                         }
                         WindowEvent::CloseRequested => {
-                            println!("Close requested for scene, by winit");
-                            ApplicationManager::get(ctx.env_stack, |manager| {
-                                manager.close_scene(initialized.id);
-                            });
-
+                            initialized.close(ctx.env_stack);
                         }
                         WindowEvent::ThemeChanged => {
                             let theme = match initialized.inner.theme().unwrap_or(Theme::Dark) {
@@ -160,14 +174,20 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                 }
 
                 initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
-                    initialized.child.process_window_event(event, &mut WindowEventContext {
+                    let new_ctx = &mut WindowEventContext {
                         text: ctx.text,
                         image: ctx.image,
                         env: ctx.env,
                         env_stack,
                         is_current: &is_current,
                         window_id: ctx.window_id,
-                    });
+                    };
+
+                    for scene in &mut initialized.scenes {
+                        scene.process_window_event(event, new_ctx);
+                    }
+
+                    initialized.child.process_window_event(event, new_ctx);
                 })
             }
             Window::UnInitialized { .. } => {}

@@ -104,8 +104,6 @@ impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Initialize for EnvUpdatingNew2
 
         ctx.env_stack.with::<K>(&*self.value.value(), |inner| {
             self.child.process_initialization(&mut InitializationContext {
-                lifecycle_manager: ctx.lifecycle_manager,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

@@ -95,8 +95,6 @@ impl<C: Widget, K: Key> Initialize for EnvUpdatingNew<C, K> where K::Value: Clon
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         ctx.env_stack.with::<K>(&self.value, |inner| {
             self.child.process_initialization(&mut InitializationContext {
-                lifecycle_manager: ctx.lifecycle_manager,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

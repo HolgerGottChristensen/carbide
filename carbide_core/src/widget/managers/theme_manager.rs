@@ -213,8 +213,6 @@ impl<C: Widget> Initialize for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_initialization(&mut InitializationContext {
-                lifecycle_manager: ctx.lifecycle_manager,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

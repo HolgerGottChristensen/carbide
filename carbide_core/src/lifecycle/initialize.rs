@@ -17,9 +17,6 @@ pub trait Initialize: CommonWidget + WidgetSync {
     }
 }
 
-
 pub struct InitializationContext<'a, 'b: 'a> {
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
-    pub lifecycle_manager: &'a dyn Any,
 }

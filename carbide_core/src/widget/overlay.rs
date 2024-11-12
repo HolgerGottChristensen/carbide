@@ -98,9 +98,7 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> Initialize for Overlay<K, 
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         self.with(ctx.env_stack, |env_stack, inner| {
             let inner_ctx = &mut InitializationContext {
-                env: ctx.env,
                 env_stack,
-                lifecycle_manager: ctx.lifecycle_manager,
             };
 
             if let Some(overlay) = &mut inner.overlay {

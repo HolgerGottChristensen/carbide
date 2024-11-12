@@ -1,6 +1,7 @@
 use carbide_core::application::ApplicationManager;
 use carbide_core::closure;
 use carbide_core::draw::{Color, Dimension};
+use carbide_core::scene::SceneManager;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{MouseArea, Rectangle, Text, VStack, Widget, WidgetExt};
 use carbide_wgpu::{Application, Window};
@@ -21,7 +22,15 @@ fn main() {
                             manager.add_scene(window())
                         })
                     }))
-                    .frame(100.0, 30.0)
+                    .frame(100.0, 30.0),
+                Text::new("Click below to open a new sub window"),
+                MouseArea::new(Rectangle::new().fill(Color::random()))
+                    .on_click(closure!(|ctx| {
+                        SceneManager::get(ctx.env_stack, |manager| {
+                            manager.add_sub_scene(window())
+                        })
+                    }))
+                    .frame(100.0, 30.0),
             ))
         )
     }

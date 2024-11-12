@@ -8,7 +8,7 @@ use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use carbide_winit::event_loop::{ActiveEventLoop, EventLoopProxy};
 use carbide_winit::update_scale_factor;
 use carbide_winit::window::{Theme, WindowAttributes};
-use crate::application::{ADAPTER, EVENT_LOOP_PROXY, INSTANCE};
+use crate::application::{ActiveEventLoopKey, ADAPTER, EVENT_LOOP_PROXY, INSTANCE};
 use crate::bind_group_layouts::{GRADIENT_DASHES_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT2};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::{RenderTarget, DEVICE};
@@ -41,7 +41,9 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     }))
                     .with_visible(false);
 
-                let (window, adapter) = if let Some(eventloop) = ctx.lifecycle_manager.downcast_ref::<ActiveEventLoop>() {
+
+
+                let (window, adapter) = if let Some(eventloop) = ctx.env_stack.get::<ActiveEventLoopKey>() {
                     let window = eventloop.create_window(attributes).unwrap();
                     let adapter = accesskit_winit::Adapter::with_event_loop_proxy(&window, EVENT_LOOP_PROXY.get().unwrap().clone());
 
@@ -217,6 +219,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     dimension,
                     child,
                     theme,
+                    scenes: Default::default(),
                 })
             }
             x => x,
