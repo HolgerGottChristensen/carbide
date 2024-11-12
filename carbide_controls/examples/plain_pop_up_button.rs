@@ -44,7 +44,7 @@ fn main() {
         "Plain Pop up Button Example - Carbide",
         Dimension::new(400.0, 600.0),
         PlainPopUpButton::new(selected, model).frame(120.0, 40.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

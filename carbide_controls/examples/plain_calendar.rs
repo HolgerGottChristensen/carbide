@@ -17,7 +17,7 @@ fn main() {
         "Plain Calendar Example - Carbide",
         Dimension::new(400.0, 600.0),
         PlainCalendar::new(selection),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -28,7 +28,7 @@ fn main() {
             button,
             button_disabled,
         )).spacing(20.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

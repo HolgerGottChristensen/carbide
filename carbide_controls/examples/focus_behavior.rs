@@ -90,7 +90,7 @@ fn main() {
                 .padding(50.0),
         ))
             .spacing(20.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -95,7 +95,7 @@ fn main() {
                 .spacing(1.0),
         ))
             .spacing(1.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -27,7 +27,7 @@ fn main() {
         ))
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

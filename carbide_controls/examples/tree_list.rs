@@ -68,7 +68,7 @@ fn main() {
             .border_width(1)
             .color(EnvironmentColor::OpaqueSeparator)
             .padding(40.0),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

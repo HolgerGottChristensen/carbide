@@ -41,7 +41,7 @@ fn main() {
             .cross_axis_alignment(CrossAxisAlignment::Start)
             .accent_color(EnvironmentColor::Orange)
             .padding(EdgeInsets::all(40.0)),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

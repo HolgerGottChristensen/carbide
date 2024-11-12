@@ -29,7 +29,7 @@ fn main() {
         List::new(list_model_state, delegate)
             .clip()
             .padding(50.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

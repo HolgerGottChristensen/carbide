@@ -11,8 +11,8 @@ impl BadgeBackground {
     pub fn new() -> impl Widget {
         let hexagon = HexagonParameters::new();
 
-        Canvas::new(move |rect: Rect, context: &mut CanvasContext, _: &mut Environment| {
-            let mut width = rect.width().min(rect.height());
+        Canvas::new(move |context: &mut CanvasContext| {
+            let mut width = context.width().min(context.height());
             let height = width;
 
             let x_scale = 0.832;

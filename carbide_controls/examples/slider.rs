@@ -44,9 +44,8 @@ fn main() {
             Slider::new(progress3, 20.0, 100.0)
                 .enabled(false)
                 .padding(20.0),
-
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

@@ -50,7 +50,7 @@ fn main() {
             PopUpButton::new(selected2, model).enabled(false),
         )).spacing(20.0)
             .frame_fixed_width(300.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

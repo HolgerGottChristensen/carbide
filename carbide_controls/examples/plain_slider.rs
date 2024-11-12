@@ -46,7 +46,7 @@ fn main() {
                 .color(EnvironmentColor::Yellow)
                 .padding(20.0),
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

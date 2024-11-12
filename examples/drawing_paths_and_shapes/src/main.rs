@@ -18,7 +18,7 @@ fn main() {
         "Drawing paths and shapes",
         Dimension::new(300.0, 500.0),
         Badge::new()
-    ).close_application_on_window_close());
+    ));
 
     application.launch()
 }

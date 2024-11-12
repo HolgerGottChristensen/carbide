@@ -50,21 +50,21 @@ fn main() {
 
     let node_editor = NodeEditor::new(&state);
 
-    let add_wall_button = Button::new_primary("Add Wall", closure!(|_, _| {
+    let add_wall_button = Button::new_primary("Add Wall", closure!(|_| {
         *$editing_mode = EditingMode::CreateWallP1 {
             mouse_position: Position::new(0.0, 0.0),
             state: CreateWallState::Invalid,
         };
     })).frame(70.0, 26.0);
 
-    let selection_button = Button::new_primary("Selection", closure!(|_, _| {
+    let selection_button = Button::new_primary("Selection", closure!(|_| {
         *$editing_mode = EditingMode::Selection {
             selected: SelectedState::None,
             hovered: SelectedState::None,
         };
     })).frame(70.0, 26.0);
 
-    let editing_button = Button::new_primary("Editing", closure!(|_, _| {
+    let editing_button = Button::new_primary("Editing", closure!(|_| {
         *$editing_mode = EditingMode::Editing;
     }))
         .frame(70.0, 26.0);

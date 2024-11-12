@@ -8,8 +8,8 @@ pub struct BadgeSymbol;
 
 impl BadgeSymbol {
     pub fn new(rotation: impl IntoReadState<f64>) -> impl Widget {
-        Canvas::new(|rect: Rect, context: &mut CanvasContext, env: &mut Environment| {
-            let width = f64::min(rect.width(), rect.height());
+        Canvas::new(|context: &mut CanvasContext| {
+            let width = f64::min(context.width(), context.height());
             let height = width * 0.75;
             let spacing = width * 0.030;
             let middle = width * 0.5;

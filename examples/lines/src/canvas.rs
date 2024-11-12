@@ -12,8 +12,8 @@ use crate::line::Line;
 pub struct GraphCanvas(pub LocalState<Graph>);
 
 impl Context for GraphCanvas {
-    fn call(&mut self, area: Rect, context: &mut CanvasContext, env: &mut Environment) {
-        self.0.sync(env);
+    fn call(&mut self, context: &mut CanvasContext) {
+        self.0.sync(context.env_stack());
         let mut graph = self.0.value_mut();
         context.set_line_width(1.0);
 
@@ -23,7 +23,7 @@ impl Context for GraphCanvas {
 
         draw_nodes(context, &mut graph);
 
-        draw_guides(&area, context, &mut graph);
+        draw_guides(&Rect::new(Position::new(0.0, 0.0), context.dimension()), context, &mut graph);
 
         match graph.editing_mode {
             EditingMode::Editing => {}
@@ -208,7 +208,7 @@ fn line_between(context: &mut CanvasContext, line: &Line, offset: Position) {
 }
 
 fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph>) {
-    let mut point_context = CanvasContext::new();
+    let mut point_context = CanvasContext::new(rect.position, rect.dimension, context.render_context());
     point_context.begin_path();
     point_context.set_fill_style(EnvironmentColor::Green);
 
@@ -251,5 +251,5 @@ fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut Val
 
     point_context.fill();
 
-    context.append(point_context);
+    context.append(point_context); // Create a merge function.
 }

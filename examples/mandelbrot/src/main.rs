@@ -18,7 +18,7 @@ fn main() {
             Mandelbrot::new()
                 //.border()
                 //.padding(200.0)
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()

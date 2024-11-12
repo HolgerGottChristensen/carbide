@@ -28,7 +28,7 @@ fn main() {
         ))
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

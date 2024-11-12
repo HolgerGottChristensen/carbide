@@ -48,7 +48,7 @@ fn main() {
                         ui!(match item {
                             Tile::Empty => {
                                 Rectangle::new().fill(EnvironmentColor::Gray)
-                                    .on_click(move |_, _| {
+                                    .on_click(move |_| {
                                         game_for_delegate.clone().value_mut().place(BoardPosition {x: *index.value(), y: *idx.value()});
                                     })
                             },
@@ -70,7 +70,7 @@ fn main() {
             )
         ))
             .padding(10.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch()
 

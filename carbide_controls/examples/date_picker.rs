@@ -21,7 +21,7 @@ fn main() {
         Dimension::new(400.0, 600.0),
         DatePicker::new(selection)
             .frame(180.0, 40.0),
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

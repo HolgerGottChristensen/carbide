@@ -21,7 +21,7 @@ fn main() {
                 scale: 0.9,
                 opacity: 0.6,
             }).frame(100.0, 100.0),
-        ).close_application_on_window_close()
+        )
     );
 
     application.launch()
@@ -107,7 +107,7 @@ impl FractalClock {
 
 impl Context for FractalClock {
     fn call(&mut self, context: &mut CanvasContext) {
-        context.env().request_animation_frame();
+        context.request_animation_frame();
 
         let angles = Angles::current();
 

@@ -79,8 +79,20 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         }
     }
 
+    pub fn render_context(&mut self) -> &mut RenderContext<'b, 'c> {
+        self.render_context
+    }
+
     pub fn dimension(&self) -> Dimension {
         self.dimension
+    }
+
+    pub fn width(&self) -> Scalar {
+        self.dimension.width
+    }
+
+    pub fn height(&self) -> Scalar {
+        self.dimension.height
     }
 
     pub fn mouse_position(&self) -> Position {

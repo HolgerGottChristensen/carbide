@@ -33,7 +33,6 @@ members = [
     "carbide",
     "carbide_3d",
     "carbide_chart",
-    "examples/scene_viewer",
 ]
 
 [workspace.package]

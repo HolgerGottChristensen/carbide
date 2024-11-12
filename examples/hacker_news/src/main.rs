@@ -164,7 +164,7 @@ fn main() {
         "Hacker-news example",
         Dimension::new(900.0, 500.0),
         widget,
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

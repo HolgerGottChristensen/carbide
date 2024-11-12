@@ -62,7 +62,7 @@ fn main() {
             HStack::new((add_to_start, remove_first)).spacing(10.0),
         ))
             .spacing(10.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

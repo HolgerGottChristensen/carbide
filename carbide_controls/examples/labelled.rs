@@ -36,7 +36,7 @@ fn main() {
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::End)
             .padding(EdgeInsets::all(40.0)),
-        ).close_application_on_window_close());
+        ));
 
     application.launch();
 }

@@ -32,7 +32,7 @@ fn main() {
             .cross_axis_alignment(CrossAxisAlignment::Start)
             //.enabled(false)
             .padding(EdgeInsets::all(40.0))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

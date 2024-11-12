@@ -16,8 +16,7 @@ fn main() {
 
     let button = Button::new_primary("Increase counter", closure!(|_| {
         *$counter += 1;
-    }))
-        .frame(200.0, 30.0);
+    })).frame(200.0, 30.0);
 
     application.set_scene(Window::new(
         "My first counter",
@@ -26,7 +25,7 @@ fn main() {
             text,
             button
         ))
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

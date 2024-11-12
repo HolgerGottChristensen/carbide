@@ -44,7 +44,7 @@ fn main() {
             .selectable(selected_item)
             .clip()
             .padding(50.0)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }
