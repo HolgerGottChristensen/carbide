@@ -1,12 +1,9 @@
-use carbide_core::application::ApplicationManager;
-use carbide_core::draw::Dimension;
+use crate::window::Window;
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget};
-use carbide_winit::convert_mouse_cursor;
 use carbide_winit::dpi::LogicalSize;
 use carbide_winit::window::Theme;
-use crate::window::Window;
 
 impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {

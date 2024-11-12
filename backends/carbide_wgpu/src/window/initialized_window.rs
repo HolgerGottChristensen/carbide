@@ -44,14 +44,14 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         SceneManager::get(env_stack, |manager| {
             println!("Close sub scene");
-            manager.close_sub_scene(self.id);
+            manager.dismiss_sub_scene(self.id);
             closed = true;
         });
 
         if !closed {
             ApplicationManager::get(env_stack, |manager| {
                 println!("Close scene");
-                manager.close_scene(self.id);
+                manager.dismiss_scene(self.id);
                 closed = true;
             });
         }
@@ -76,7 +76,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             })
         });
 
-        if scene_manager.close_requested() {
+        if scene_manager.dismiss_requested() {
             println!("Here");
             self.close(env_stack);
         } else {
@@ -89,7 +89,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 self.scenes.push(scene);
             }
 
-            for id in scene_manager.sub_scenes_to_close() {
+            for id in scene_manager.sub_scenes_to_dismiss() {
                 self.scenes.retain(|scene| scene.id() != *id);
             }
         }

@@ -220,7 +220,7 @@ impl RunningApplication {
             }
         });
 
-        for scene in application_manager.scenes_to_close() {
+        for scene in application_manager.scenes_to_dismiss() {
             self.scenes.retain(|a| a.id() != *scene);
         }
 

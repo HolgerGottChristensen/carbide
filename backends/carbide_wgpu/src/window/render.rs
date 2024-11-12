@@ -46,17 +46,22 @@ impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
-
-        for scene in &mut self.scenes {
-            scene.render(ctx);
-        }
-
         let scale_factor = self.inner.scale_factor();
         let physical_dimensions = self.inner.inner_size();
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
         self.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+            for scene in &mut initialized.scenes {
+                scene.render(&mut RenderContext {
+                    render: ctx.render,
+                    text: ctx.text,
+                    image: ctx.image,
+                    env: ctx.env,
+                    env_stack,
+                });
+            }
+
             // Update children
             initialized.child.process_update(&mut UpdateContext {
                 text: ctx.text,

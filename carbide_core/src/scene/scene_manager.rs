@@ -9,7 +9,7 @@ use crate::environment::EnvironmentStack;
 pub struct SceneManager {
     scale_factor: Scalar,
     physical_dimensions: Dimension,
-    close: bool,
+    dismiss: bool,
     add_scenes: SmallVec<[Box<dyn AnyScene>; 1]>,
     close_scenes: SmallVec<[SceneId; 1]>,
 }
@@ -19,7 +19,7 @@ impl SceneManager {
         SceneManager {
             scale_factor,
             physical_dimensions,
-            close: false,
+            dismiss: false,
             add_scenes: Default::default(),
             close_scenes: Default::default(),
         }
@@ -45,20 +45,20 @@ impl SceneManager {
         &mut self.add_scenes
     }
 
-    pub fn close_sub_scene(&mut self, id: SceneId) {
+    pub fn dismiss_sub_scene(&mut self, id: SceneId) {
         self.close_scenes.push(id);
     }
 
-    pub fn sub_scenes_to_close(&mut self) -> &[SceneId] {
+    pub fn sub_scenes_to_dismiss(&mut self) -> &[SceneId] {
         &self.close_scenes
     }
 
-    pub fn close(&mut self) {
-        self.close = true;
+    pub fn dismiss(&mut self) {
+        self.dismiss = true;
     }
 
-    pub fn close_requested(&self) -> bool {
-        self.close
+    pub fn dismiss_requested(&self) -> bool {
+        self.dismiss
     }
 
     pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut SceneManager)) {
