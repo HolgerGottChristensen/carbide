@@ -1,4 +1,4 @@
-use crate::toggle::toggle_style::ToggleStyle;
+use carbide::accessibility::Role;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::UnfocusAction;
@@ -8,6 +8,7 @@ use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, Map1, Map2, ReadState, State};
 use carbide::widget::canvas::{Canvas, CanvasContext};
 use carbide::widget::{AnyWidget, CornerRadii, HStack, IfElse, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
+use crate::toggle::ToggleStyle;
 
 #[derive(Debug, Clone)]
 pub struct CheckboxStyle;
@@ -122,5 +123,9 @@ impl CheckboxStyle {
 impl ToggleStyle for CheckboxStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, value: Box<dyn AnyState<T=ToggleValue>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>) -> Box<dyn AnyWidget> {
         CheckboxStyle::create(focus, value, enabled, label).boxed()
+    }
+
+    fn toggle_role(&self) -> Role {
+        Role::CheckBox
     }
 }

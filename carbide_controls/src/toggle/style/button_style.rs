@@ -1,4 +1,4 @@
-use crate::toggle::toggle_style::ToggleStyle;
+use carbide::accessibility::Role;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::UnfocusAction;
@@ -9,6 +9,7 @@ use carbide::focus::Focus;
 use carbide::render::Style;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, Map5, ReadState, State};
 use carbide::widget::{AnyWidget, CornerRadii, EdgeInsets, Gradient, GradientPosition, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
+use crate::toggle::ToggleStyle;
 
 #[derive(Debug, Clone)]
 pub struct ButtonStyle;
@@ -93,5 +94,9 @@ impl ButtonStyle {
 impl ToggleStyle for ButtonStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, value: Box<dyn AnyState<T=ToggleValue>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>) -> Box<dyn AnyWidget> {
         ButtonStyle::create(focus, value, enabled, label).boxed()
+    }
+
+    fn toggle_role(&self) -> Role {
+        Role::Button
     }
 }

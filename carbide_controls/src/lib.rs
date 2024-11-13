@@ -18,7 +18,6 @@ use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{ReadState, State};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, OverlayManager, Widget};
 pub use date_picker::*;
-pub use toggle::*;
 
 extern crate carbide_core as carbide;
 
@@ -63,7 +62,7 @@ mod help;
 mod labelled;
 mod calendar;
 mod date_picker;
-mod toggle;
+pub mod toggle;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

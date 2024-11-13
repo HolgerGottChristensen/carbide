@@ -16,7 +16,7 @@ pub struct ToggleAction<C, F, E> where
 }
 
 impl<C: State<T=ToggleValue>, F: State<T=Focus>, E: ReadState<T=bool>> ToggleAction<C, F, E> {
-    fn trigger(&mut self, env_stack: &mut EnvironmentStack) {
+    pub(crate) fn trigger(&mut self, env_stack: &mut EnvironmentStack) {
         self.enabled.sync(env_stack);
 
         if !*self.enabled.value() {

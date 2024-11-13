@@ -1,5 +1,5 @@
-use carbide_controls::style::{ButtonStyle, CheckboxStyle, SwitchStyle};
-use carbide_controls::{ControlsExt, Toggle, ToggleValue};
+use carbide_controls::toggle::{ButtonStyle, CheckboxStyle, SwitchStyle, Toggle, ToggleValue};
+use carbide_controls::ControlsExt;
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
