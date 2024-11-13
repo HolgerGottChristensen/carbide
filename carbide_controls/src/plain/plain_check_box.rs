@@ -1,6 +1,10 @@
-use std::any::Any;
 use crate::types::*;
 use crate::{enabled_state, EnabledState, UnfocusAction};
+use carbide::environment::EnvironmentStack;
+use carbide::focus::FocusManager;
+use carbide::lifecycle::{InitializationContext, Initialize};
+use carbide::render::Render;
+use carbide::widget::IntoWidget;
 use carbide_core::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -12,13 +16,6 @@ use carbide_core::widget::{AnyWidget, CommonWidget, MouseArea, MouseAreaAction, 
 use carbide_core::CommonWidgetImpl;
 use smallvec::SmallVec;
 use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
-use carbide::environment::EnvironmentStack;
-use carbide::focus::FocusManager;
-use carbide::lifecycle::{InitializationContext, Initialize};
-use carbide::render::{Render, RenderContext};
-use carbide::widget::IntoWidget;
-use crate::toggle_style::ToggleStyleKey;
 
 pub trait PlainCheckBoxDelegate: Clone + 'static {
     type Output: IntoWidget;

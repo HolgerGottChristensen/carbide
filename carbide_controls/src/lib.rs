@@ -1,5 +1,4 @@
 pub use button::*;
-use carbide_core::environment::Environment;
 use carbide_core::state::{EnvMap1, Map1};
 pub use check_box::*;
 pub use list::*;
@@ -17,9 +16,9 @@ pub use calendar::*;
 use carbide::environment::{EnvironmentStack, Key};
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{ReadState, State};
-use carbide::widget::{Empty, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Widget};
+use carbide::widget::{MouseAreaAction, MouseAreaActionContext, OverlayManager, Widget};
 pub use date_picker::*;
-pub use toggle_style::{SwitchStyle, CheckboxStyle};
+pub use toggle::*;
 
 extern crate carbide_core as carbide;
 
@@ -64,7 +63,7 @@ mod help;
 mod labelled;
 mod calendar;
 mod date_picker;
-mod toggle_style;
+mod toggle;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 
@@ -77,7 +76,8 @@ impl Key for EnabledKey {
 pub fn enabled_state() -> EnabledState {
     Map1::read_map_env(0, |env, _| {
         // Look up enabled in the environment, or default to true of nothing is specified
-        env.get::<EnabledKey>().cloned().unwrap_or(true)
+        let val = env.get::<EnabledKey>().cloned().unwrap_or(true);
+        val
     })
 }
 

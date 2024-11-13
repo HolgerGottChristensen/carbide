@@ -168,7 +168,6 @@ impl Application {
             animation_manager: AnimationManager::new(),
             focus_manager: FocusManager::new(),
         };
-
         event_loop.run_app(&mut running).unwrap();
     }
 }

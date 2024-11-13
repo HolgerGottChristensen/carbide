@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Formatter};
+use std::ops::DerefMut;
 use accesskit::{Node, Point, Rect, Role, Size};
 use dyn_clone::DynClone;
 use smallvec::SmallVec;

@@ -7,7 +7,7 @@ use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
 use crate::{EnabledKey, Help, Labelled};
-use crate::toggle_style::{ToggleStyle, ToggleStyleKey};
+use crate::toggle::{ToggleStyle, ToggleStyleKey};
 
 type Enabled<C, K, V> = EnvUpdatingNew2<C, K, V>;
 
