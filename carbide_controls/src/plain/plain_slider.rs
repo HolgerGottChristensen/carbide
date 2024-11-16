@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use carbide::focus::FocusManager;
+use carbide::widget::AnyWidget;
 use carbide_core::event::{KeyboardEventContext, MouseEventContext};
 use carbide_core::layout::LayoutContext;
 use carbide_core::CommonWidgetImpl;

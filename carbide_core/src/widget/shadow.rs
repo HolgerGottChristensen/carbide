@@ -1,3 +1,4 @@
+use carbide::widget::AnyWidget;
 use crate::color::BLACK;
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};

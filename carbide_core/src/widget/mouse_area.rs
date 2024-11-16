@@ -8,7 +8,7 @@ use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::scene::SceneManager;
-use carbide::widget::WidgetSync;
+use carbide::widget::{AnyWidget, WidgetSync};
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::{Accessibility, AccessibilityAction};
 use crate::CommonWidgetImpl;

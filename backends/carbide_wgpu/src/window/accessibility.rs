@@ -18,12 +18,12 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                             let mut tree_update = TreeUpdate {
                                 nodes: vec![],
                                 tree: Some(Tree {
-                                    root: NodeId(id.0 as u64),
+                                    root: NodeId(id.as_u32() as u64),
                                     app_name: None,
                                     toolkit_name: Some("Carbide".to_string()),
                                     toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
                                 }),
-                                focus: NodeId(id.0 as u64),
+                                focus: NodeId(id.as_u32() as u64),
                             };
 
                             let mut children = SmallVec::<[WidgetId; 8]>::new();
@@ -43,11 +43,11 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
 
                             let mut node_builder = Node::new(Role::Window);
 
-                            node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
+                            node_builder.set_children(children.into_iter().map(|id| NodeId(id.as_u32() as u64)).collect::<Vec<_>>());
 
                             node_builder.set_label(initialized.title.value().clone());
 
-                            tree_update.nodes.push((NodeId(id.0 as u64), node_builder));
+                            tree_update.nodes.push((NodeId(id.as_u32() as u64), node_builder));
 
                             //println!("{:#?}", tree_update);
 
@@ -74,7 +74,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
 
                     let mut node_builder = Node::new(Role::Window);
 
-                    node_builder.set_children(children.into_iter().map(|id| NodeId(id.0 as u64)).collect::<Vec<_>>());
+                    node_builder.set_children(children.into_iter().map(|id| NodeId(id.as_u32() as u64)).collect::<Vec<_>>());
 
                     node_builder.set_label("Test window name");
 

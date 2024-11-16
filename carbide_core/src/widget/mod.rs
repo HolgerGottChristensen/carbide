@@ -1,3 +1,4 @@
+use std::hash::{BuildHasherDefault, DefaultHasher, Hash, Hasher};
 use std::sync::atomic::{AtomicU32, Ordering};
 
 pub use carbide_derive::Widget;
@@ -113,20 +114,60 @@ mod environment_updating_new2;
 mod environment_updating_new3;
 pub mod managers;
 
-#[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct WidgetId(pub u32);
+#[derive(Clone, Debug, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub struct WidgetId(u32, u64);
 
 impl WidgetId {
     /// Generate a new widget ID.
     pub fn new() -> Self {
         static WIDGET_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
-        WidgetId(WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed))
+
+        let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        let mut hasher = DefaultHasher::new();
+        hasher.write_u32(id);
+        WidgetId(id, hasher.finish())
+    }
+
+    pub fn as_u32(&self) -> u32 {
+        self.0
+    }
+
+    pub fn from_u32(id: u32) -> WidgetId {
+        let mut hasher = DefaultHasher::new();
+        hasher.write_u32(id);
+        WidgetId(id, hasher.finish())
+    }
+}
+
+impl Hash for WidgetId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.1.hash(state)
     }
 }
 
 impl Default for WidgetId {
     fn default() -> Self {
         WidgetId::new()
+    }
+}
+
+pub type BuildWidgetIdHasher = BuildHasherDefault<WidgetIdHasher>;
+
+#[derive(Default, Clone, Copy, Debug)]
+pub struct WidgetIdHasher(u64);
+
+impl Hasher for WidgetIdHasher {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+
+    fn write(&mut self, _: &[u8]) {
+        unreachable!("The hasher is only used with TypeId and it uses write_u64")
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.0 = i;
     }
 }
 

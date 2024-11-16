@@ -16,6 +16,7 @@ use crate::widget::{CommonWidget, Widget};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use carbide::widget::AnyWidget;
 
 #[derive(Debug, Widget)]
 #[carbide_derive(StateSync)]

@@ -23,6 +23,7 @@ serde = "1.0.118"
 dyn-clone = "1.0.3"
 chrono.workspace = true
 smallvec.workspace = true
+indexmap = "2.6.0"
 
 [dev-dependencies]
 env_logger = "0.7"

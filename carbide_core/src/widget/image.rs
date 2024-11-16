@@ -3,6 +3,7 @@ use std::ops::Deref;
 use accesskit::{Node, Point, Role, Size};
 use carbide::accessibility::AccessibilityContext;
 use carbide::scene::SceneManager;
+use carbide::widget::AnyWidget;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;

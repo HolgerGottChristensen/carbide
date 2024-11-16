@@ -5,7 +5,7 @@ use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
 use carbide::event::{ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::state::{LocalState, ReadState, State};
-use carbide::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 
 use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
 

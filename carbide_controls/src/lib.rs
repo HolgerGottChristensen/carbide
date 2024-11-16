@@ -1,12 +1,10 @@
 pub use button::*;
 use carbide_core::state::{EnvMap1, Map1};
-pub use check_box::*;
 pub use list::*;
 pub use plain::*;
 pub use pop_up_button::*;
 pub use radio_button::*;
 pub use slider::*;
-pub use switch::*;
 pub use text_input::*;
 pub use types::CheckBoxValue;
 pub use controls_ext::*;
@@ -48,13 +46,11 @@ macro_rules! capture {
 
 
 mod button;
-mod check_box;
 mod list;
 mod plain;
 mod pop_up_button;
 mod radio_button;
 mod slider;
-mod switch;
 mod text_input;
 mod types;
 mod controls_ext;
@@ -63,6 +59,8 @@ mod labelled;
 mod calendar;
 mod date_picker;
 pub mod toggle;
+pub mod picker;
+mod identifiable;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

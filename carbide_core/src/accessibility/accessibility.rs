@@ -98,7 +98,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 
             node.set_children(
                 children.into_iter()
-                    .map(|a| NodeId(a.0 as u64))
+                    .map(|a| NodeId(a.as_u32() as u64))
                     .collect::<Vec<_>>()
             );
 
@@ -137,7 +137,7 @@ pub trait AccessibilityUpdate {
 
 impl AccessibilityUpdate for TreeUpdate {
     fn push(&mut self, id: WidgetId, node: AccessibilityNode) {
-        self.nodes.push((NodeId(id.0 as u64), node));
+        self.nodes.push((NodeId(id.as_u32() as u64), node));
     }
 }
 

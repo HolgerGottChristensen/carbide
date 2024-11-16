@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use crate::toggle::toggle_value::ToggleValue;
-use crate::{enabled_state, CheckBoxValue, EnabledState, PlainCheckBox, PlainCheckBoxDelegate};
+use crate::{enabled_state, CheckBoxValue, EnabledState};
 use carbide::draw::{Dimension, Position};
 use carbide::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
