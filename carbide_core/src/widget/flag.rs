@@ -1,34 +1,51 @@
-use carbide::widget::AnyWidget;
+use carbide::state::ReadState;
 use carbide_core::widget::CommonWidget;
-use carbide_macro::carbide_default_builder2;
 
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId};
+use crate::state::IntoReadState;
+use crate::widget::{Empty, IntoWidget, Widget, WidgetExt, WidgetId};
+use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
-pub struct Flagged<C> where C: Widget {
-    id: WidgetId,
+pub struct Flagged<C, F> where C: Widget, F: ReadState<T=WidgetFlag> {
     child: C,
-    position: Position,
-    dimension: Dimension,
-    flags: WidgetFlag,
+    flags: F,
 }
 
-impl Flagged<Empty> {
-    #[carbide_default_builder2]
-    pub fn new<C: Widget>(child: C, flags: WidgetFlag) -> Flagged<C> {
+impl Flagged<Empty, WidgetFlag> {
+    pub fn new<C: IntoWidget, F: IntoReadState<WidgetFlag>>(child: C, flags: F) -> Flagged<C::Output, F::Output> {
         Flagged {
-            id: WidgetId::new(),
-            child,
-            position: Position::new(0.0, 0.0),
-            dimension: Dimension::new(100.0, 100.0),
-            flags,
+            child: child.into_widget(),
+            flags: flags.into_read_state(),
         }
     }
 }
 
-impl<C: Widget> CommonWidget for Flagged<C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: self.flags);
+impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
+    fn id(&self) -> WidgetId {
+        self.child.id()
+    }
+
+    CommonWidgetImpl!(self, child: self.child);
+
+    fn position(&self) -> Position {
+        self.child.position()
+    }
+
+    fn set_position(&mut self, position: Position) {
+        self.child.set_position(position)
+    }
+
+    fn dimension(&self) -> Dimension {
+        self.child.dimension()
+    }
+
+    fn set_dimension(&mut self, dimension: Dimension) {
+        self.child.set_dimension(dimension)
+    }
+
+    fn flag(&self) -> WidgetFlag {
+        *self.flags.value()
+    }
 }

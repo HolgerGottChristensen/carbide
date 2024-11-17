@@ -38,9 +38,9 @@ fn main() {
             .spacing(10.0)
             .cross_axis_alignment(CrossAxisAlignment::Start)
             .padding(EdgeInsets::all(40.0))
+            .toggle_style(SwitchStyle)
             .toggle_style(ButtonStyle)
             .toggle_style(CheckboxStyle)
-            .toggle_style(SwitchStyle)
     ));
 
     application.launch();

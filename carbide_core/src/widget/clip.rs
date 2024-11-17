@@ -2,7 +2,7 @@ use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, Position, Rect};
+use crate::draw::{Alignment, Dimension, Position, Rect};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::widget::*;
@@ -17,6 +17,7 @@ where
     child: W,
     position: Position,
     dimension: Dimension,
+    alignment: Alignment,
 }
 
 impl Clip<Empty> {
@@ -27,7 +28,15 @@ impl Clip<Empty> {
             child,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
+            alignment: Alignment::Center,
         }
+    }
+}
+
+impl<W: Widget> Clip<W> {
+    pub fn alignment(mut self, alignment: Alignment) -> Clip<W> {
+        self.alignment = alignment;
+        self
     }
 }
 
@@ -42,7 +51,7 @@ impl<W: Widget> Layout for Clip<W> {
 }
 
 impl<W: Widget> CommonWidget for Clip<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 }
 
 impl<W: Widget> Render for Clip<W> {

@@ -1,8 +1,10 @@
 mod inline_style;
 mod segmented_style;
+mod menu_style;
 
 pub use inline_style::*;
 pub use segmented_style::*;
+pub use menu_style::*;
 
 use crate::identifiable::{AnyIdentifiableWidget, Identifiable, IdentifiableWidget, IdentifiableWidgetSequence, SelectableSequence};
 use carbide::environment::Key;

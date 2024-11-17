@@ -1,16 +1,16 @@
-use smallvec::SmallVec;
-use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use crate::toggle::toggle_value::ToggleValue;
-use crate::{enabled_state, CheckBoxValue, EnabledState};
+use crate::toggle::{AutomaticStyle, SwitchStyle, ToggleAction, ToggleStyle, ToggleStyleKey};
+use crate::{enabled_state, EnabledState};
+use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide::draw::{Dimension, Position};
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
 use carbide::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 use carbide::CommonWidgetImpl;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
-use crate::toggle::{SwitchStyle, ToggleAction, ToggleStyle, ToggleStyleKey};
+use smallvec::SmallVec;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Initialize, Accessibility, AccessibilityEvent)]
@@ -57,8 +57,8 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
             self.child = style.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
             self.role = style.toggle_role();
         } else {
-            self.child = SwitchStyle.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
-            self.role = SwitchStyle.toggle_role();
+            self.child = AutomaticStyle.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
+            self.role = AutomaticStyle.toggle_role();
         }
     }
 }

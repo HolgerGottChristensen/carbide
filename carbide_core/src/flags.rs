@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-
+use crate::impl_state_value;
 
 bitflags! {
     #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -13,3 +13,5 @@ bitflags! {
         const MODIFIER = 0b00100000;
     }
 }
+
+impl_state_value!(WidgetFlag);

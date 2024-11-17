@@ -1,16 +1,15 @@
 use crate::identifiable::SelectableForEach;
-use crate::picker::style::{PickerStyle, SelectableSequence};
-use crate::UnfocusAction;
-use carbide::color::{Color, TRANSPARENT};
-use carbide::environment::{EnvironmentColor, EnvironmentStack, IntoColorReadState};
-use carbide::focus::{Focus, FocusManager, Refocus};
-use carbide::state::{AnyReadState, AnyState, EnvMap1, IntoState, LocalState, Map1, Map2, RMap1, RMap2, ReadState, State};
-use carbide::widget::{AnyWidget, Background, Circle, CrossAxisAlignment, EdgeInsets, Ellipse, Empty, Frame, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Padding, Text, VStack, Widget, WidgetExt, ZStack};
-use std::fmt::Debug;
-use carbide::render::Style;
 use crate::picker::picker_action::PickerAction;
 use crate::picker::picker_selection::PickerSelectionType;
+use crate::picker::style::{PickerStyle, SelectableSequence};
 use crate::toggle::{CheckboxStyle, ToggleValue};
+use crate::UnfocusAction;
+use carbide::color::{Color, TRANSPARENT};
+use carbide::environment::{EnvironmentColor, IntoColorReadState};
+use carbide::focus::Focus;
+use carbide::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, Map2};
+use carbide::widget::{AnyWidget, Circle, CrossAxisAlignment, Ellipse, HStack, IfElse, MouseArea, Text, VStack, Widget, WidgetExt, ZStack};
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
 pub struct InlineStyle;

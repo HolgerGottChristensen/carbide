@@ -345,7 +345,7 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
             position: Default::default(),
             dimension: Default::default(),
             child: VStack::new((
-                title_delegate.call(month.clone(), year.clone(), selection.clone()).custom_flags(WidgetFlag::USEMAXCROSSAXIS),
+                title_delegate.call(month.clone(), year.clone(), selection.clone()).flags(WidgetFlag::USEMAXCROSSAXIS),
                 grid
             )).spacing(0.0).boxed(),
             month,

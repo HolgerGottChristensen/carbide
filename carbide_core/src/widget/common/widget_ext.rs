@@ -39,7 +39,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn custom_flags(self, flags: WidgetFlag) -> Flagged<Self> {
+    fn flags<F: IntoReadState<WidgetFlag>>(self, flags: F) -> Flagged<Self, F::Output> {
         Flagged::new(self, flags)
     }
 

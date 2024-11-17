@@ -1,4 +1,4 @@
-use carbide_controls::picker::{InlineStyle, Picker, SegmentedStyle};
+use carbide_controls::picker::{InlineStyle, MenuStyle, Picker, SegmentedStyle};
 use carbide_controls::ControlsExt;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, StateValue};
@@ -23,12 +23,13 @@ fn main() {
     application.set_scene(Window::new(
         "Picker example - Carbide",
         Dimension::new(400.0, 600.0),
-        Picker::new("Flavor", state3, (
+        Picker::new("Flavor", state, (
             Text::new("Chocolate").tag(Flavor::Chocolate),
             Text::new("Vanilla").tag(Flavor::Vanilla),
             Text::new("Strawberry").tag(Flavor::Strawberry),
         ))
-            .padding(10.0)
+            .padding(40.0)
+            .picker_style(MenuStyle)
             .picker_style(SegmentedStyle)
             .picker_style(InlineStyle)
             //.enabled(false)
