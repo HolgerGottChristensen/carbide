@@ -2,12 +2,13 @@ use carbide::accessibility::Role;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::UnfocusAction;
-use carbide::color::TRANSPARENT;
+use carbide::color::{Color, TRANSPARENT};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
-use carbide::state::{AnyReadState, AnyState, Map1, Map2, ReadState, State};
+use carbide::render::Style;
+use carbide::state::{AnyReadState, AnyState, EnvMap1, Map1, Map2, RMap1, RMap2, ReadState, State};
 use carbide::widget::canvas::{Canvas, CanvasContext};
-use carbide::widget::{AnyWidget, CornerRadii, HStack, IfElse, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
+use carbide::widget::{AnyWidget, Background, CornerRadii, EdgeInsets, Empty, Frame, HStack, IfElse, MouseArea, Padding, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
 use crate::toggle::ToggleStyle;
 
 #[derive(Debug, Clone)]
@@ -25,23 +26,20 @@ impl CheckboxStyle {
     }
 
     fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget {
-        /*let background_color = Map1::read_map(value.clone(), |value| {
-            match value {
-                ToggleValue::True => EnvironmentColor::Green,
-                ToggleValue::Mixed => EnvironmentColor::Blue,
-                ToggleValue::False => EnvironmentColor::Red,
+        let check_box = Self::check_box(focus, value, enabled.clone());
+
+        let label_color = Map1::read_map(enabled.clone(), |enabled| {
+            if *enabled {
+                EnvironmentColor::Label
+            } else {
+                EnvironmentColor::SecondaryLabel
             }
         });
 
-        let val = Map2::read_map(value.clone(), focus.clone(), |checked, focus| {
-            format!("{:?}, {:?}", *checked, focus)
-        });
+        HStack::new((check_box, Text::new(label).color(label_color))).spacing(5.0)
+    }
 
-        ZStack::new((
-            Rectangle::new().fill(background_color),
-            Text::new(val),
-        ))*/
-
+    pub fn check_box(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>) -> impl Widget {
         let background_color = Map2::read_map(value.clone(), enabled.clone(), |value, enabled| {
             match *value {
                 ToggleValue::True | ToggleValue::Mixed if *enabled => EnvironmentColor::Accent,
@@ -59,14 +57,6 @@ impl CheckboxStyle {
         });
 
         let mark_color2 = mark_color.clone();
-
-        let label_color = Map1::read_map(enabled.clone(), |enabled| {
-            if *enabled {
-                EnvironmentColor::Label
-            } else {
-                EnvironmentColor::SecondaryLabel
-            }
-        });
 
         let checked_true =
             Map1::read_map(value.clone(), |value| *value == ToggleValue::True);
@@ -115,8 +105,7 @@ impl CheckboxStyle {
                     .padding(-1.0)
             )
             .frame(14.0, 14.0);
-
-        HStack::new((check_box, Text::new(label).color(label_color))).spacing(5.0)
+        check_box
     }
 }
 
