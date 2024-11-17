@@ -51,6 +51,7 @@ mod functor;
 mod flatten;
 mod empty_state;
 mod extensions;
+pub use carbide_derive::StateValue;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

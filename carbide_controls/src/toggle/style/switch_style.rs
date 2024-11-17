@@ -76,7 +76,7 @@ impl SwitchStyle {
 
         let knob_color = Map2::read_map(enabled.clone(), EnvironmentColor::TertiaryLabel.color(), |enabled, color| {
             if *enabled {
-                Color::new_rgba(202, 202, 204, 255)
+                Color::new_rgba(222, 222, 224, 255)
             } else {
                 *color
             }

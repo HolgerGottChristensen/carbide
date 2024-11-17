@@ -74,7 +74,7 @@ impl TextContext {
 
 impl InnerTextContext for TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut EnvironmentStack) -> Dimension {
-        let (ref mut buffer, _) = self.map.get_mut(&id).unwrap();
+        let (ref mut buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
 
@@ -173,7 +173,7 @@ impl InnerTextContext for TextContext {
     }
 
     fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
-        let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap();
+        let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         // Inspect the output runs
         for run in buffer.layout_runs() {

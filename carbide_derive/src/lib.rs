@@ -7,54 +7,23 @@ extern crate carbide_syn;
 
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use a::process_a_expr;
+use closure::process_a_expr;
 
-mod common;
 mod derive_type;
-mod style;
 mod utils;
 mod widget;
-mod state;
-mod a;
-
-// The implementation for the `WidgetCommon` trait derivation (aka `carbide_core::widget::Common`).
-#[proc_macro_derive(WidgetCommon, attributes(carbide, common_builder))]
-pub fn widget_common(input: TokenStream) -> TokenStream {
-    impl_derive(input, common::impl_widget_common)
-}
-
-// The implementation for the `WidgetCommon_` trait derivation (aka `carbide_core::widget::Common`).
-//
-// Note that this is identical to the `WidgetCommon` trait, but only for use within the carbide
-// crate itself.
-#[proc_macro_derive(WidgetCommon_, attributes(carbide, common_builder))]
-pub fn widget_common_(input: TokenStream) -> TokenStream {
-    impl_derive(input, common::impl_widget_common_)
-}
-
-// The implementation for the `WidgetStyle` trait derivation (aka `carbide_core::widget::Style`).
-#[proc_macro_derive(WidgetStyle, attributes(carbide, default))]
-pub fn widget_style(input: TokenStream) -> TokenStream {
-    impl_derive(input, style::impl_widget_style)
-}
-
-// The implementation for the `WidgetStyle_` trait derivation (aka `carbide_core::widget::Style`).
-//
-// Note that this is identical to the `WidgetStyle_` trait, but only for use within the carbide
-// crate itself.
-#[proc_macro_derive(WidgetStyle_, attributes(carbide, default))]
-pub fn widget_style_(input: TokenStream) -> TokenStream {
-    impl_derive(input, style::impl_widget_style_)
-}
+mod closure;
+mod state_value;
 
 #[proc_macro_derive(Widget, attributes(state, carbide_derive, carbide_exclude))]
 pub fn derive_widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
 }
 
-#[proc_macro_derive(State, attributes())]
-pub fn derive_state(input: TokenStream) -> TokenStream {
-    impl_derive(input, state::impl_state)
+
+#[proc_macro_derive(StateValue, attributes())]
+pub fn derive_state_value(input: TokenStream) -> TokenStream {
+    impl_derive(input, state_value::impl_state_value)
 }
 
 // Use the given function to generate a TokenStream for the derive implementation.

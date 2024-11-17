@@ -1,17 +1,15 @@
-use std::marker::PhantomData;
-use crate::picker::picker_selection::PickerSelection;
-use carbide::draw::{Dimension, Position};
-use carbide::flags::WidgetFlag;
-use carbide::focus::Focus;
-use carbide::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId, WidgetSequence};
-use carbide::CommonWidgetImpl;
-use carbide::lifecycle::{InitializationContext, Initialize};
-use crate::{enabled_state, EnabledState};
 use crate::identifiable::IdentifiableWidgetSequence;
+use crate::picker::picker_selection::PickerSelection;
+use crate::picker::picker_sequence::PickerSequence;
+use crate::picker::style::PickerStyleKey;
 use crate::picker::PickerStyle;
-use crate::picker::style::{PickerStyleKey, TestSelectableWidgetSequence};
-use crate::toggle::ToggleStyleKey;
+use crate::{enabled_state, EnabledState};
+use carbide::draw::{Dimension, Position};
+use carbide::focus::Focus;
+use carbide::lifecycle::{InitializationContext, Initialize};
+use carbide::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
+use carbide::widget::{AnyWidget, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId, WidgetSequence};
+use carbide::CommonWidgetImpl;
 
 #[derive(Clone, Widget, Debug)]
 //#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Update)]
@@ -67,17 +65,15 @@ impl<
 > Initialize for Picker<T, F, M, E, L> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
         if let Some(style) = ctx.env_stack.get::<PickerStyleKey>() {
-            let selected = TestSelectableWidgetSequence {
+            let selected = PickerSequence {
                 selected: self.selected.clone(),
                 inner: self.model.clone(),
             };
-            style.as_ref().test(32);
+
             self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(selected));
         }
     }
 }
-
-fn h(t: &dyn PickerStyle) -> u32 { t.test(32) }
 
 impl<
     T: StateContract + PartialEq,
@@ -102,5 +98,5 @@ impl<
         self.dimension.set_value(dimension);
     }
 
-    CommonWidgetImpl!(self, id: self.id, child: self.child, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, focus: self.focus);
 }
