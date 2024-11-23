@@ -19,6 +19,15 @@ impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(Box<T>) -> O + Cl
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Content<O: Widget>(pub IndexMap<WidgetId, O, BuildWidgetIdHasher>, pub usize);
+
+impl<O: Widget> Default for Content<O> {
+    fn default() -> Self {
+        Content(Default::default(), 0)
+    }
+}
+
 #[derive(Widget)]
 #[carbide_exclude(StateSync)]
 pub struct ForEachWidget<W, O, D, T>
@@ -32,7 +41,7 @@ where
 
     sequence: W,
     delegate: D,
-    content: (IndexMap<WidgetId, O, BuildWidgetIdHasher>, usize),
+    pub content: Content<O>,
     phantom_data: PhantomData<T>,
 }
 
@@ -54,7 +63,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
             id: WidgetId::new(),
             sequence,
             delegate,
-            content: (Default::default(), 0),
+            content: Default::default(),
             phantom_data: Default::default(),
         }
     }

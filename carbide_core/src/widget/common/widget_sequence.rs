@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 use indexmap::IndexMap;
+use carbide::widget::foreach_widget::Content;
 use crate::widget::{AnyWidget, BuildWidgetIdHasher, Widget, WidgetId};
 
 pub trait Sequence<T=dyn AnyWidget>: Clone + Debug + 'static where T: ?Sized {
@@ -78,7 +79,7 @@ impl<W: Widget> Sequence for Vec<W> {
     }
 }
 
-impl<W: Widget> Sequence for (IndexMap<WidgetId, W, BuildWidgetIdHasher>, usize) {
+impl<W: Widget> Sequence for Content<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for (_, element) in self.0.iter().take(self.1) {
             if element.is_ignore() {

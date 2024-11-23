@@ -35,6 +35,7 @@ macro_rules! lens {
     }*/
 }
 
+#[macro_export]
 macro_rules! reverse {
     ([] $($reversed:tt)*) => {
         ($($reversed),*)  // base case
