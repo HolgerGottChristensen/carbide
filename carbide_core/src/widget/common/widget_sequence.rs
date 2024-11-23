@@ -1,6 +1,7 @@
 use std::fmt::Debug;
-
-use crate::widget::{AnyWidget, Widget};
+use std::hash::Hash;
+use indexmap::IndexMap;
+use crate::widget::{AnyWidget, BuildWidgetIdHasher, Widget, WidgetId};
 
 pub trait WidgetSequence: Clone + Debug + 'static {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget));
@@ -72,6 +73,65 @@ impl<W: Widget> WidgetSequence for Vec<W> {
 
     fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         for element in &mut self.iter_mut().rev() {
+            f(element);
+        }
+    }
+}
+
+impl<W: Widget> WidgetSequence for (IndexMap<WidgetId, W, BuildWidgetIdHasher>, usize) {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+        for (_, element) in self.0.iter().take(self.1) {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                element.foreach_child(f);
+                continue;
+            }
+
+            f(element);
+        }
+    }
+
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        for (_, element) in self.0.iter_mut().take(self.1) {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                element.foreach_child_mut(f);
+                continue;
+            }
+
+            f(element);
+        }
+    }
+
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        for (_, element) in self.0.iter_mut().take(self.1).rev() {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                element.foreach_child_rev(f);
+                continue;
+            }
+
+            f(element);
+        }
+    }
+
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        for (_, element) in self.0.iter_mut().take(self.1) {
+            f(element);
+        }
+    }
+
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        for (_, element) in self.0.iter_mut().take(self.1).rev() {
             f(element);
         }
     }

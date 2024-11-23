@@ -30,7 +30,7 @@ fn main() {
         Dimension::new(400.0, 600.0),
         Text::new(text)
             .font_size(EnvironmentFontSize::Body)
-            .wrap_mode(Wrap::Whitespace)
+            .wrap(Wrap::Whitespace)
             .border()
             .border_width(1)
             .color(EnvironmentColor::Green)

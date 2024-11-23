@@ -33,6 +33,7 @@ dyn-clone.workspace = true
 parking_lot = "0.12.1"
 smallvec.workspace = true
 dashmap.workspace = true
+indexmap.workspace = true
 
 lyon.workspace = true
 accesskit.workspace = true

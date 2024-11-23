@@ -13,7 +13,6 @@ use carbide::widget::{AnyWidget, CommonWidget, Rectangle, Widget, WidgetExt, Wid
 use carbide::CommonWidgetImpl;
 
 #[derive(Clone, Widget, Debug)]
-//#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Update)]
 #[carbide_exclude(Initialize)]
 pub struct Picker<T, F, M, E, L>
 where
@@ -24,8 +23,8 @@ where
     M: IdentifiableWidgetSequence<T>
 {
     id: WidgetId,
-    position: LocalState<Position>,
-    dimension: LocalState<Dimension>,
+    position: Position,
+    dimension: Dimension,
 
     child: Box<dyn AnyWidget>,
     model: M,
@@ -45,8 +44,8 @@ impl<
 
         Picker {
             id: WidgetId::new(),
-            position: LocalState::new(Position::new(0.0, 0.0)),
-            dimension: LocalState::new(Dimension::new(0.0, 0.0)),
+            position: Default::default(),
+            dimension: Default::default(),
             child: Rectangle::new().boxed(),
             model,
             focus,
@@ -84,21 +83,5 @@ impl<
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
 > CommonWidget for Picker<T, F, M, E, L> {
-    fn position(&self) -> Position {
-        *self.position.value()
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position.set_value(position);
-    }
-
-    fn dimension(&self) -> Dimension {
-        *self.dimension.value()
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension.set_value(dimension);
-    }
-
-    CommonWidgetImpl!(self, id: self.id, child: self.child, focus: self.focus);
+    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, focus: self.focus);
 }

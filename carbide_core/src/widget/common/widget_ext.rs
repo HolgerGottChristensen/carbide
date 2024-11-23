@@ -1,4 +1,5 @@
 use cgmath::Matrix4;
+use carbide::widget::Wrap;
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
@@ -12,7 +13,7 @@ use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
-use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3, Overlay, OverlayManager};
+use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3, Overlay, OverlayManager, TextWrapKey};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
@@ -21,6 +22,8 @@ use crate::widget::Widget;
 
 pub(crate) type AccentColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
 pub(crate) type ForegroundColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
+pub(crate) type Wrapped<C, K, V> = EnvUpdatingNew2<C, K, V>;
+
 
 pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
@@ -39,7 +42,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Change the flags of a given widget. This can for example be used to make any widget take
     /// Flags::USEMAXCROSSAXIS to make it use the max cross axis instead of expanding infinitely
     /// within a VStack or HStack.
-    fn flags<F: IntoReadState<WidgetFlag>>(self, flags: F) -> Flagged<Self, F::Output> {
+    fn flagged<F: IntoReadState<WidgetFlag>>(self, flags: F) -> Flagged<Self, F::Output> {
         Flagged::new(self, flags)
     }
 
@@ -124,6 +127,10 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
 
     fn mask<M: Widget>(self, mask: M) -> Mask<M, Self> {
         Mask::new(mask, self)
+    }
+
+    fn text_wrap<E: IntoReadState<Wrap>>(self, wrap: E) -> Wrapped<Self, impl Key<Value=Wrap>, impl ReadState<T=Wrap>> {
+        EnvUpdatingNew2::<Self, TextWrapKey, E::Output>::new(wrap.into_read_state(), self)
     }
 
     fn corner_radius(self, radius: impl Into<CornerRadii>) -> ClipShape<Self, RoundedRectangle<Style, Style>> {

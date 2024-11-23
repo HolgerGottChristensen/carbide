@@ -9,7 +9,9 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, StateSync, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSequence, WidgetSync};
+use crate::widget::foreach_widget::ForEachWidget;
+use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
@@ -78,6 +80,10 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
             index_offset: 0,
             phantom: PhantomData::default()
         }
+    }
+
+    pub fn widget<W: WidgetSequence, O: Widget, D: ForEachChildDelegate<O>>(of: W, delegate: D) -> ForEachWidget<W, O, D> {
+        ForEachWidget::new(of, delegate)
     }
 
     /*pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {

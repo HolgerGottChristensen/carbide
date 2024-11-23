@@ -25,7 +25,7 @@ Jerky chicken pork loin, landjaeger rump frankfurter kielbasa leberkas chislic b
         Text::new(text)
             .color(Gradient::linear(colors1, Alignment::Leading, Alignment::Trailing))
             .font_size(EnvironmentFontSize::Body)
-            .wrap_mode(Wrap::Whitespace)
+            .wrap(Wrap::Whitespace)
             .border()
             .border_width(1)
             .color(EnvironmentColor::Green)

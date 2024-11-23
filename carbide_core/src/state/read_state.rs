@@ -155,7 +155,7 @@ impl_state_value!(
     Style, String, (), Color, &'static str, Focus,
     EnvironmentColor, EnvironmentFontSize, Gradient,
     EdgeInsets, Position, Dimension, Rect, Angle,
-    FontStyle, FontWeight, ImageId
+    ImageId
 );
 /*
 impl IntoReadStateHelper<i32, i32, u32> for i32 {

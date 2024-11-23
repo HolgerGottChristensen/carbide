@@ -229,7 +229,7 @@ impl<
         let text_widget = Box::new(Text::new(display_text.clone())
             .font_size(font_size.clone())
             .color(text_color.clone())
-            .wrap_mode(Wrap::None));
+            .wrap(Wrap::None));
 
         let last = usize::MAX;
 

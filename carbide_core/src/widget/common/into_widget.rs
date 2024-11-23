@@ -2,7 +2,7 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::render::Style;
 use crate::state::IntoReadState;
 use crate::text::{FontStyle, FontWeight};
-use crate::widget::{Text, Widget};
+use crate::widget::{Text, Widget, Wrap, WrapState};
 
 // ---------------------------------------------------
 //  Definitions
@@ -27,7 +27,7 @@ impl<T> IntoWidget for T where T: Widget {
 }
 
 impl IntoWidget for String {
-    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output, FontStyle, FontWeight>;
+    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output, FontStyle, FontWeight, WrapState>;
 
     fn into_widget(self) -> Self::Output {
         Text::new(self)
@@ -37,7 +37,7 @@ impl IntoWidget for String {
 }
 
 impl IntoWidget for &'static str {
-    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output, FontStyle, FontWeight>;
+    type Output = Text<String, <EnvironmentFontSize as IntoReadState<u32>>::Output, <EnvironmentColor as IntoReadState<Style>>::Output, FontStyle, FontWeight, WrapState>;
 
     fn into_widget(self) -> Self::Output {
         Text::new(self.to_string())

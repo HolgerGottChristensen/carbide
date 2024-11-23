@@ -30,7 +30,7 @@ fn v_split(size: impl State<T=f64>) -> VSplit<f64, impl Widget, impl Widget> {
     VSplit::new(
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Green),
-            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
+            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap(Wrap::None),
         )),
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Accent),

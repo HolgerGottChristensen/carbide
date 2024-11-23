@@ -1,6 +1,7 @@
 mod inline_style;
 mod segmented_style;
 mod menu_style;
+mod menu;
 
 pub use inline_style::*;
 pub use segmented_style::*;

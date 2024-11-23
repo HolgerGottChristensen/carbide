@@ -58,4 +58,4 @@ accesskit_winit = { path = "../Repositories/accesskit/platforms/winit" }
 smallvec = "1.13.2"
 winit = { version = "0.30.5", features = ["rwh_05"] }
 proc-macro-crate = "3.2.0"
-
+indexmap = "2.6.0"

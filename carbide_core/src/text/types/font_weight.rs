@@ -1,4 +1,6 @@
-#[derive(Copy, Clone, Debug, PartialEq)]
+use carbide_derive::StateValue;
+
+#[derive(Copy, Clone, Debug, PartialEq, StateValue)]
 pub enum FontWeight {
     Thin,
     W100,

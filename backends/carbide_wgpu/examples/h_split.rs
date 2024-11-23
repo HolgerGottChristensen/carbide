@@ -30,7 +30,7 @@ fn h_split(size: impl State<T=f64>) -> HSplit<f64, impl Widget, impl Widget> {
     HSplit::new(
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Green),
-            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap_mode(Wrap::None),
+            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap(Wrap::None),
         )),
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Accent),

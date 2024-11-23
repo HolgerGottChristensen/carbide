@@ -120,7 +120,7 @@ impl DatePicker {
                 .stroke_style(1.0),
             HStack::new((
                 Text::new(text)
-                    .wrap_mode(Wrap::None)
+                    .wrap(Wrap::None)
                     .foreground_color(label_color),
                 Spacer::new(),
             )).clip()
