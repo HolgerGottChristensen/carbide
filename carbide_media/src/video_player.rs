@@ -22,7 +22,7 @@ const SKIP_ICON_SIZE: f64 = 32.0;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render, MouseEvent, KeyboardEvent)]
 pub struct VideoPlayer<Id> where Id: ReadState<T=Option<VideoId>> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -233,5 +233,5 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
 }
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> CommonWidget for VideoPlayer<Id> {
-    CommonWidgetImpl!(self, id: self.id, child: self.video, position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, child: self.video, position: self.position, dimension: self.dimension, flexibility: 10);
 }

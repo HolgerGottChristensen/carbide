@@ -12,7 +12,7 @@ use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent)]
 pub struct NodeEditor {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -457,5 +457,5 @@ impl MouseEventHandler for NodeEditor {
 }
 
 impl CommonWidget for NodeEditor {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }

@@ -8,7 +8,7 @@ use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Spacer {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     max_size: Option<Scalar>,
@@ -54,10 +54,6 @@ impl Layout for Spacer {
 }
 
 impl CommonWidget for Spacer {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn flag(&self) -> WidgetFlag {
         if let Some(_) = self.max_size {
             WidgetFlag::EMPTY

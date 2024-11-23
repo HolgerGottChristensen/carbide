@@ -1,4 +1,4 @@
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, Identifiable, WidgetId};
 use crate::accessibility::{AccessibilityContext, Accessibility};
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Empty, IntoWidget, Widget, CommonWidget, WidgetSync};
@@ -26,6 +26,12 @@ impl<C: Widget, S: Widget> Accessibility for AccessibilityRepresentation<C, S> {
 
         // Process the accessibility of the children
         self.representation.process_accessibility(ctx);
+    }
+}
+
+impl<C: Widget, S: Widget> Identifiable<WidgetId> for AccessibilityRepresentation<C, S> {
+    fn id(&self) -> WidgetId {
+        self.child.id()
     }
 }
 

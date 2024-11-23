@@ -93,7 +93,7 @@ impl Key for NavigationRootKey {
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Initialize, Update, MouseEvent, KeyboardEvent, OtherEvent, WindowEvent, AccessibilityEvent)]
 pub struct NavigationStack<K> where K: Key<Value=NavigationManager> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -274,5 +274,5 @@ impl<K: Key<Value=NavigationManager> + Clone> AccessibilityEventHandler for Navi
 }
 
 impl<K: Key<Value=NavigationManager> + Clone> CommonWidget for NavigationStack<K> {
-    CommonWidgetImpl!(self, id: self.id, child: self.current, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.current, position: self.position, dimension: self.dimension);
 }

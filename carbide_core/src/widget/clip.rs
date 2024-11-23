@@ -13,7 +13,7 @@ pub struct Clip<W>
 where
     W: Widget
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -51,7 +51,7 @@ impl<W: Widget> Layout for Clip<W> {
 }
 
 impl<W: Widget> CommonWidget for Clip<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 }
 
 impl<W: Widget> Render for Clip<W> {

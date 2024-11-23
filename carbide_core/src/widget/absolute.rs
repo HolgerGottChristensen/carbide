@@ -12,7 +12,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Absolute<X, Y, C> where X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -48,5 +48,5 @@ impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absol
 }
 
 impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> CommonWidget for Absolute<X, Y, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

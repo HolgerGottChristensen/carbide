@@ -18,7 +18,7 @@ impl_state_value!(ContentMode);
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct AspectRatio<D, M, C> where D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -96,5 +96,5 @@ impl<D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget> Layout f
 }
 
 impl<D: ReadState<T=Dimension>, M: ReadState<T=ContentMode>, C: Widget> CommonWidget for AspectRatio<D, M, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

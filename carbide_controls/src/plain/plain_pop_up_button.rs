@@ -32,7 +32,7 @@ where
     E: ReadState<T=bool>,
 {
     // Default fields
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: LocalState<Position>,
     dimension: LocalState<Dimension>,
     #[state] focus: F,
@@ -259,7 +259,7 @@ impl<
         self.dimension.set_value(dimension);
     }
 
-    CommonWidgetImpl!(self, id: self.id, child: self.child, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, child: self.child, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 

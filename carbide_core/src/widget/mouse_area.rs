@@ -19,7 +19,7 @@ use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseB
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty};
+use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty, Identifiable};
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, Accessibility, AccessibilityEvent)]
@@ -31,7 +31,7 @@ pub struct MouseArea<I, O, F, C, H, P> where
     H: State<T=bool>,
     P: State<T=bool>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     #[state] focus: F,
     child: C,
     position: Position,
@@ -293,7 +293,7 @@ impl<
     H: State<T=bool>,
     P: State<T=bool>,
 > CommonWidget for MouseArea<I, O, F, C, H, P> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus, position: self.position, dimension: self.dimension);
 
     fn cursor(&self) -> Option<MouseCursor> {
         if *self.is_hovered.value() {

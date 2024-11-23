@@ -10,7 +10,7 @@ use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 }
@@ -27,7 +27,7 @@ impl Empty {
 }
 
 impl CommonWidget for Empty {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
 }
 
 impl AnyScene for Empty {

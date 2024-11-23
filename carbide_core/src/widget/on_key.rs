@@ -16,7 +16,7 @@ type DefaultAction = fn(&Key, ModifierKey, &mut KeyboardEventContext);
 #[derive(Clone, Widget)]
 #[carbide_exclude(KeyboardEvent)]
 pub struct OnKey<A, B, C> where A: OnKeyAction, B: OnKeyAction, C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -78,7 +78,7 @@ impl<A: OnKeyAction, B: OnKeyAction, C: Widget> KeyboardEventHandler for OnKey<A
 }
 
 impl<A: OnKeyAction, B: OnKeyAction, C: Widget> CommonWidget for OnKey<A, B, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<A: OnKeyAction, B: OnKeyAction, C: Widget> Debug for OnKey<A, B, C> {

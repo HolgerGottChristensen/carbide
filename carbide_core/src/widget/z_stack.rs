@@ -12,7 +12,7 @@ use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, Sequen
 #[carbide_exclude(Layout)]
 pub struct ZStack<W> where W: Sequence
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
@@ -85,5 +85,5 @@ impl<W: Sequence> Layout for ZStack<W> {
 }
 
 impl<W: Sequence> CommonWidget for ZStack<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1, alignment: self.alignment);
+    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1, alignment: self.alignment);
 }

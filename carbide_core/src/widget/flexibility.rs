@@ -8,7 +8,7 @@ use crate::widget::{Widget, WidgetExt, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flexibility<C> where C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -29,5 +29,5 @@ impl Flexibility<Empty> {
 }
 
 impl<C: Widget> CommonWidget for Flexibility<C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: self.flexibility);
 }

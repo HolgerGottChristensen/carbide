@@ -21,7 +21,7 @@ use crate::widget::types::StrokeStyle;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Ellipse<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
-    pub id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -89,7 +89,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Ellipse<S2,
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Ellipse<S, F> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ellipse<S, F> {

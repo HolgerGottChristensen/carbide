@@ -13,7 +13,7 @@ use crate::scale::LinearScale;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Update)]
 pub struct Chart<C> where C: DatasetController {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     dataset_controller: C,
@@ -37,7 +37,7 @@ impl<C: DatasetController> Chart<C> {
 }
 
 impl<C: DatasetController> CommonWidget for Chart<C> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<C: DatasetController> Update for Chart<C> {

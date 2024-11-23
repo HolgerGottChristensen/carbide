@@ -17,7 +17,7 @@ use crate::render3d::Render3d;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Scene3d<C, V> where C: Node3dSequence, V: ReadState<T=Matrix4<f32>> {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -49,7 +49,7 @@ impl Scene3d<(), Matrix4<f32>> {
 }
 
 impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> CommonWidget for Scene3d<C, V> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {

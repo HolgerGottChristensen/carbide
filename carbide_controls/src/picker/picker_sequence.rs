@@ -1,16 +1,16 @@
 use std::hash::Hash;
-use crate::identifiable::{IdentifiableWidgetSequence, SelectableSequence};
+use crate::identifiable::{AnyIdentifiableWidget};
 use crate::picker::picker_selection::PickerSelection;
 use carbide::state::{AnyState, Map2, ReadStateExtNew, StateContract, StateExtNew};
-use carbide::widget::{AnyWidget, WidgetId};
+use carbide::widget::{AnyWidget, Sequence, WidgetId};
 
 #[derive(Clone, Debug)]
-pub struct PickerSequence<T, W> where T: StateContract + PartialEq + Eq + Hash, W: IdentifiableWidgetSequence<T> {
+pub struct PickerSequence<T, W> where T: StateContract + PartialEq + Eq + Hash, W: Sequence<dyn AnyIdentifiableWidget<T>> {
     pub selected: PickerSelection<T>,
     pub inner: W,
 }
 
-impl<T: StateContract + PartialEq + Eq + Hash, W: IdentifiableWidgetSequence<T>> SelectableSequence for PickerSequence<T, W> {
+/*impl<T: StateContract + PartialEq + Eq + Hash, W: Sequence<dyn AnyIdentifiableWidget<T>>> SelectableSequence for PickerSequence<T, W> {
     fn has_changed(&self, existing: &mut dyn Iterator<Item=WidgetId>) -> bool {
         self.inner.has_changed(existing)
     }
@@ -67,4 +67,4 @@ impl<T: StateContract + PartialEq + Eq + Hash, W: IdentifiableWidgetSequence<T>>
             }
         });
     }
-}
+}*/

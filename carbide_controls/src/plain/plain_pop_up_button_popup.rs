@@ -21,7 +21,7 @@ pub struct PlainPopUpButtonPopUp<T, S, M, H, E> where
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
@@ -180,5 +180,5 @@ impl<
     H: State<T=Option<usize>>,
     E: ReadState<T=bool>,
 > CommonWidget for PlainPopUpButtonPopUp<T, S, M, H, E> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

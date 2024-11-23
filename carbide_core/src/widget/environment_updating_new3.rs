@@ -12,11 +12,11 @@ use crate::lifecycle::{InitializationContext, UpdateContext};
 use crate::lifecycle::{Initialize, Update};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget};
+use crate::widget::{CommonWidget, Widget, WidgetId};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, Identifiable};
 use crate::state::ReadState;
 
 #[derive(Debug, Clone, Widget)]
@@ -257,6 +257,12 @@ impl<C: Widget, K: Keyable + Clone, V: ReadState<T=K::Output>> Render for EnvUpd
                 env_stack: inner,
             })
         })
+    }
+}
+
+impl<C: Widget, K: Keyable + Clone, V: ReadState<T=K::Output>> Identifiable<WidgetId> for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
+    fn id(&self) -> WidgetId {
+        self.child.id()
     }
 }
 

@@ -171,7 +171,7 @@ use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetI
 #[carbide_exclude(Layout)]
 pub struct HStack<W> where W: Sequence
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
@@ -225,5 +225,5 @@ impl<W: Sequence> Layout for HStack<W> {
 }
 
 impl<W: Sequence> CommonWidget for HStack<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }

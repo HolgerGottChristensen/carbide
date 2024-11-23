@@ -12,7 +12,7 @@ pub struct GeometryReader<C, G> where
     C: Widget,
     G: State<T=Rect>
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     #[state] geometry: G,
 }
@@ -48,5 +48,5 @@ impl<C: Widget, G: State<T=Rect>> CommonWidget for GeometryReader<C, G> {
         self.geometry.value_mut().dimension = dimension;
     }
 
-    CommonWidgetImpl!(self, id: self.id, child: self.child);
+    CommonWidgetImpl!(self, child: self.child);
 }

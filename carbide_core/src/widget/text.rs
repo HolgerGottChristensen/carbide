@@ -11,7 +11,7 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{wrap_state, AnyWidget, CommonWidget, Justify, Widget, WidgetExt, WidgetId, WidgetSync, WrapState};
+use crate::widget::{wrap_state, AnyWidget, CommonWidget, Identifiable, Justify, Widget, WidgetExt, WidgetId, WidgetSync, WrapState};
 use crate::widget::types::Wrap;
 
 /// Displays some given text centered within a rectangular area.
@@ -31,7 +31,7 @@ where
     FW: ReadState<T=FontWeight>,
     W: ReadState<T=Wrap>
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     text_id: TextId,
     position: Position,
     dimension: Dimension,
@@ -286,10 +286,6 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> CommonWidget for Text<T, S, C, FS, FW, W> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
 
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}

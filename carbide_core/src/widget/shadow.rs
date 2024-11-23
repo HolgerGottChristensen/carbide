@@ -9,7 +9,7 @@ use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widg
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Shadow<W, C, S, X, Y> where W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32> {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: W,
@@ -67,7 +67,7 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
 }
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> CommonWidget for Shadow<W, C, S, X, Y> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Render for Shadow<W, C, S, X, Y> {

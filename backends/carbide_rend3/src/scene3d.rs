@@ -349,7 +349,7 @@ impl MouseEventHandler for Mandelbrot {
 }*/
 
 impl CommonWidget for Scene3d {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl WidgetExt for Scene3d {}

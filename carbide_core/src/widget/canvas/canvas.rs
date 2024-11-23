@@ -16,7 +16,7 @@ pub struct Canvas<C>
 where
     C: Context
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -50,7 +50,7 @@ impl Canvas<DefaultCanvasContext> {
 }
 
 impl<C: Context> CommonWidget for Canvas<C> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<C: Context> Shape for Canvas<C> {

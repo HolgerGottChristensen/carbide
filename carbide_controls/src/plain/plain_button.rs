@@ -41,7 +41,7 @@ pub struct PlainButton<F, A, D, E, H, P> where
     H: State<T=bool>,
     P: State<T=bool>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
 
     child: MouseArea<
         ButtonAction<A, F, E>,
@@ -193,7 +193,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, D: PlainButtonDelegate, E: 
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> CommonWidget for PlainButton<F, A, D, E, H, P> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }
 
 impl<F: State<T=Focus> + Clone, A: Action + Clone + 'static, D: PlainButtonDelegate, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>> Accessibility for PlainButton<F, A, D, E, H, P> {

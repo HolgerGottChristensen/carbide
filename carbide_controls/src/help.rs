@@ -19,7 +19,7 @@ const PADDING: Scalar = 8.0;
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent, Render, Layout)]
 pub struct Help<C> where C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -144,5 +144,5 @@ impl<C: Widget> Render for Help<C> {
 
 
 impl<C: Widget> CommonWidget for Help<C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

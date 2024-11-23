@@ -36,7 +36,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                     match n {
                         // Path token
                         Meta::Path(path) => {
-                            if is_attribute_path_state(path) {
+                            if is_attribute_path(path, "state") {
                                 contains_state = true
                             }
                         }
@@ -57,9 +57,40 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
     }).collect::<Vec<_>>());
 
+    let mut id_idents: Vec<Ident> = fields.map_or(vec![], |n| n.iter().filter_map(|field| {
+        let mut contains_state = false;
+
+        for attr in &field.attrs {
+            match Attribute::parse_meta(&attr) {
+                Ok(n) => {
+                    match n {
+                        // Path token
+                        Meta::Path(path) => {
+                            if is_attribute_path(path, "id") {
+                                contains_state = true
+                            }
+                        }
+                        // We do not have any list attributes for our macro yet
+                        Meta::List(_) => {}
+                        // We do not have any nameValue attributes for our macro yet
+                        Meta::NameValue(_) => {}
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+
+        if contains_state {
+            field.ident.clone()
+        } else {
+            None
+        }
+    }).collect::<Vec<_>>());
+
+
     let streams = struct_attributes
         .iter()
-        .map(|x| x.to_token_stream(struct_ident, generics, &wheres, &state_idents))
+        .map(|x| x.to_token_stream(struct_ident, generics, &wheres, &state_idents, &id_idents))
         .collect::<Vec<_>>();
 
     quote! {
@@ -157,12 +188,13 @@ fn path_to_string(path: Path) -> String {
     string
 }
 
-fn is_attribute_path_state(path: Path) -> bool {
-    let is_state = path.segments.len() == 1
+fn is_attribute_path(path: Path, equal_to: &str) -> bool {
+    let is = path.segments.len() == 1
         && match path.segments.first() {
             None => false,
-            Some(segment) => segment.ident.to_string() == "state",
+            Some(segment) => segment.ident.to_string() == equal_to,
         };
 
-    is_state
+    is
 }
+

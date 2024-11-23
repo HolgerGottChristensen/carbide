@@ -15,7 +15,7 @@ mod widget;
 mod closure;
 mod state_value;
 
-#[proc_macro_derive(Widget, attributes(state, carbide_derive, carbide_exclude))]
+#[proc_macro_derive(Widget, attributes(state, id, carbide_derive, carbide_exclude))]
 pub fn derive_widget(input: TokenStream) -> TokenStream {
     impl_derive(input, widget::impl_widget)
 }

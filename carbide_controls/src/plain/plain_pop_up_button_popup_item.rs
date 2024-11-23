@@ -18,7 +18,7 @@ pub struct PlainPopUpButtonPopUpItem<T, S> where
     T: StateContract,
     S: State<T=T>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
@@ -105,5 +105,5 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
 }
 
 impl<T: StateContract, S: State<T=T>> CommonWidget for PlainPopUpButtonPopUpItem<T, S> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

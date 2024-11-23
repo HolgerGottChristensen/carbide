@@ -17,7 +17,7 @@ where
     M: Widget,
     W: Widget,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     mask: M,
     position: Position,
@@ -65,7 +65,7 @@ impl<M: Widget, W: Widget> Layout for Mask<M, W> {
 }
 
 impl<M: Widget, W: Widget> CommonWidget for Mask<M, W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<M: Widget, W: Widget> Render for Mask<M, W> {

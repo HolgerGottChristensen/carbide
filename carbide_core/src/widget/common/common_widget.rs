@@ -1,12 +1,12 @@
 use carbide::draw::Alignment;
+use carbide::widget::Identifiable;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::widget::{AnyWidget, WidgetId};
 
-pub trait CommonWidget {
-    fn id(&self) -> WidgetId;
+pub trait CommonWidget: Identifiable<WidgetId> {
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::EMPTY
     }
@@ -136,14 +136,6 @@ pub trait CommonWidget {
 
 #[macro_export]
 macro_rules! CommonWidgetImpl {
-    ($self:ident, id: $id_expr:expr $(, $($rest:tt)*)?) => {
-        fn id(&$self) -> carbide::widget::WidgetId {
-            $id_expr
-        }
-
-        $(CommonWidgetImpl!($self, $($rest)*);)?
-    };
-
     ($self:ident, child: () $(, $($rest:tt)*)?) => {
         fn foreach_child<'a>(&'a $self, _f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {}
         fn foreach_child_mut<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
@@ -259,10 +251,6 @@ macro_rules! CommonWidgetImpl {
 #[macro_export]
 macro_rules! ModifierWidgetImpl {
     ($self:ident, child: $child:expr) => {
-        fn id(&$self) -> $crate::widget::WidgetId {
-            ($child).id()
-        }
-
         fn flag(&$self) -> $crate::flags::WidgetFlag {
             $child.flag()
         }

@@ -10,7 +10,7 @@ use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterVa
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Blur {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -64,7 +64,7 @@ impl Blur {
 }
 
 impl CommonWidget for Blur {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl Render for Blur {

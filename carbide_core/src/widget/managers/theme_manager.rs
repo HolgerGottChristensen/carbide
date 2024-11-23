@@ -12,7 +12,7 @@ use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
 use carbide::ModifierWidgetImpl;
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, Identifiable, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]
@@ -426,6 +426,12 @@ impl<C: Widget> Render for ThemeManager<C> {
                 env_stack: inner,
             })
         })
+    }
+}
+
+impl<C: Widget> Identifiable<WidgetId> for ThemeManager<C> {
+    fn id(&self) -> WidgetId {
+        self.child.id()
     }
 }
 

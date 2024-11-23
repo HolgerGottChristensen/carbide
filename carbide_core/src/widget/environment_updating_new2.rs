@@ -16,7 +16,7 @@ use crate::widget::{CommonWidget, Widget};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, EnvUpdatingNew, Identifiable, WidgetId};
 use crate::state::ReadState;
 
 #[derive(Debug, Widget)]
@@ -267,6 +267,12 @@ impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Render for EnvUpdatingNew2<C, 
                 env_stack: inner,
             })
         })
+    }
+}
+
+impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Identifiable<WidgetId> for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+    fn id(&self) -> WidgetId {
+        self.child.id()
     }
 }
 

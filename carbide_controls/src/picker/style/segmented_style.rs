@@ -1,7 +1,6 @@
-use crate::identifiable::SelectableForEach;
 use crate::picker::picker_action::PickerAction;
 use crate::picker::picker_selection::PickerSelectionType;
-use crate::picker::style::{PickerStyle, SelectableSequence};
+use crate::picker::style::{PickerStyle};
 use crate::UnfocusAction;
 use carbide::color::TRANSPARENT;
 use carbide::environment::EnvironmentColor::{OpaqueSeparator, SecondarySystemBackground};
@@ -81,7 +80,7 @@ impl SegmentedStyle {
     }
 }
 
-impl PickerStyle for SegmentedStyle {
+/*impl PickerStyle for SegmentedStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn SelectableSequence>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         let radio_group = HStack::new(
             SelectableForEach::new(model, move |widget: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>| {
@@ -102,4 +101,4 @@ impl PickerStyle for SegmentedStyle {
 
         labelled.boxed()
     }
-}
+}*/

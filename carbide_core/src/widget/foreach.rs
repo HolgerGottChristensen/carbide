@@ -1,7 +1,8 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use dyn_clone::DynClone;
 use carbide::environment::EnvironmentStack;
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, Identifiable};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -42,7 +43,7 @@ where
     U: Delegate<T, W>,
     I: ReadState<T=usize>
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -82,7 +83,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         }
     }
 
-    pub fn widget<W: Sequence, O: Widget, D: ForEachChildDelegate<O>>(of: W, delegate: D) -> ForEachWidget<W, O, D> {
+    pub fn widget<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: ForEachChildDelegate<T, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, T> {
         ForEachWidget::new(of, delegate)
     }
 
@@ -140,7 +141,7 @@ impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> CommonWidget for ForEach<T, M, U, W, I> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
+    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
 }
 
 impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> Debug for ForEach<T, M, U, W, I> {

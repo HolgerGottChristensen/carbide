@@ -1,4 +1,5 @@
 use carbide::state::ReadState;
+use carbide::widget::Identifiable;
 use carbide_core::widget::CommonWidget;
 
 use crate::draw::{Dimension, Position};
@@ -22,11 +23,13 @@ impl Flagged<Empty, WidgetFlag> {
     }
 }
 
-impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
+impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable<WidgetId> for Flagged<C, F> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }
+}
 
+impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
     CommonWidgetImpl!(self, child: self.child);
 
     fn position(&self) -> Position {

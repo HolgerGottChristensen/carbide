@@ -19,7 +19,7 @@ where
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: C,
@@ -96,7 +96,7 @@ impl<
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
 > CommonWidget for MenuStyleBaseComponent<C, F, E, O, W> {
-    CommonWidgetImpl!(self, id: self.id, position: self.position, dimension: self.dimension, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus);
+    CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus);
 }
 
 impl<

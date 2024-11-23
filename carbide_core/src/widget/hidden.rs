@@ -10,7 +10,7 @@ use crate::widget::{Empty, Widget, WidgetExt, WidgetId, CommonWidget};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Hidden<W> where W: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -29,7 +29,7 @@ impl Hidden<Empty> {
 }
 
 impl<W: Widget> CommonWidget for Hidden<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<W: Widget> Render for Hidden<W> {

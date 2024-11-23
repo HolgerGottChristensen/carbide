@@ -10,7 +10,7 @@ use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitTyp
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent)]
 pub struct VSplit<S, L, T> where S: State<T=f64>, L: Widget, T: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     leading: L,
@@ -220,9 +220,6 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         self.leading.foreach(f);
         self.trailing.foreach(f);

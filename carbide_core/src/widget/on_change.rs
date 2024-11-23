@@ -22,7 +22,7 @@ pub struct OnChange<W, T, S, F> where
     S: ReadState<T=T>,
     F: Changed<T>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -71,7 +71,7 @@ impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> 
 }
 
 impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> CommonWidget for OnChange<W, T, S, F> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<W: Widget, T: StateContract + PartialEq, S: ReadState<T=T>, F: Changed<T>> Debug for OnChange<W, T, S, F> {

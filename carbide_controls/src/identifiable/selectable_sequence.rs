@@ -4,7 +4,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use std::ops::Deref;
 
-pub trait SelectableSequence: DynClone + Debug + 'static {
+/*pub trait SelectableSequence: DynClone + Debug + 'static {
     fn has_changed(&self, existing: &mut dyn Iterator<Item=WidgetId>) -> bool;
     fn update(&self, f: &mut dyn FnMut(&dyn AnyWidget, Box<dyn AnyState<T=bool>>));
 }
@@ -19,4 +19,4 @@ impl SelectableSequence for Box<dyn SelectableSequence> {
     fn update(&self, f: &mut dyn FnMut(&dyn AnyWidget, Box<dyn AnyState<T=bool>>)) {
         self.deref().update(f)
     }
-}
+}*/

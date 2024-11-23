@@ -17,7 +17,7 @@ where
     C: Widget,
     S: Shape + Clone
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     shape: S,
     position: Position,
@@ -65,7 +65,7 @@ impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
 }
 
 impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {

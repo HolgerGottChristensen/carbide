@@ -48,7 +48,7 @@ pub struct ImageRenderJobInfo {
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, Render)]
 pub struct Mandelbrot {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     jobs: Vec<(ImageRenderJobInfo, Rc<Receiver<(DynamicImage, ImageId)>>)>,
@@ -205,7 +205,7 @@ impl MouseEventHandler for Mandelbrot {
 }
 
 impl CommonWidget for Mandelbrot {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl Debug for Mandelbrot {

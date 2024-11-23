@@ -24,7 +24,7 @@ pub struct IfElse<T, F, S> where
     F: Widget,
     S: ReadState<T=bool>
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] predicate: S,
@@ -72,10 +72,6 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> IfElse<T, F, 
 }
 
 impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget for IfElse<T, F, S> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::PROXY
     }

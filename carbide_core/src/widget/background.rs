@@ -26,7 +26,7 @@ pub struct Background<F, B> where
     F: Widget,
     B: Widget
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: F,
     background: B,
     position: Position,
@@ -84,5 +84,5 @@ impl<F: Widget, B: Widget> Render for Background<F, B> {
 }
 
 impl<F: Widget, B: Widget> CommonWidget for Background<F, B> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, alignment: self.alignment);
 }

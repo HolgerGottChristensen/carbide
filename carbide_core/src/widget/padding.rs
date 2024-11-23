@@ -9,7 +9,7 @@ use crate::widget::types::EdgeInsets;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Padding<W, E> where W: Widget, E: ReadState<T=EdgeInsets> {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -30,10 +30,6 @@ impl Padding<Empty, EdgeInsets> {
 }
 
 impl<W: Widget, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;

@@ -14,7 +14,7 @@ where
     C: Widget,
     S: ReadState<T=Angle>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     #[state] rotation: S,
     position: Position,
@@ -35,7 +35,7 @@ impl HueRotation<Empty, Angle> {
 }
 
 impl<C: Widget, S: ReadState<T=Angle>> CommonWidget for HueRotation<C, S> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<C: Widget, S: ReadState<T=Angle>> Render for HueRotation<C, S> {

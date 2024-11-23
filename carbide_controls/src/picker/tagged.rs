@@ -1,6 +1,6 @@
-use crate::identifiable::{AnyIdentifiableWidget, Identifiable};
+use crate::identifiable::{AnyIdentifiableWidget};
 use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew, StateContract};
-use carbide::widget::{CommonWidget, Empty, IntoWidget, Widget};
+use carbide::widget::{CommonWidget, Empty, Identifiable, IntoWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
 use std::fmt::Debug;
 
@@ -19,16 +19,12 @@ impl Tagged<u32, u32, Empty> {
     }
 }
 
-impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> CommonWidget for Tagged<T, S, C> {
-    ModifierWidgetImpl!(self, child: self.child);
+impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable<WidgetId> for Tagged<T, S, C> {
+    fn id(&self) -> WidgetId {
+        self.child.id()
+    }
 }
 
-impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable<T> for Tagged<T, S, C> {
-    fn identifier(&self) -> Box<dyn AnyReadState<T=T>> {
-        self.tag.as_dyn_read()
-    }
-
-    fn foreach_identifiable_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
-        unreachable!("This should never be reached, since Tagged is not a proxy widget.")
-    }
+impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> CommonWidget for Tagged<T, S, C> {
+    ModifierWidgetImpl!(self, child: self.child);
 }

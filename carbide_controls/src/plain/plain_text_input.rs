@@ -58,7 +58,7 @@ pub struct PlainTextInput<F, C, O, S, T, E> where
     E: ReadState<T=bool>,
 {
     // Standard fields
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] focus: F,
@@ -1361,7 +1361,7 @@ impl<
         }
     }
 
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 

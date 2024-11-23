@@ -1,14 +1,14 @@
-use crate::identifiable::SelectableForEach;
+use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget};
 use crate::picker::picker_action::PickerAction;
 use crate::picker::picker_selection::PickerSelectionType;
-use crate::picker::style::{PickerStyle, SelectableSequence};
+use crate::picker::style::{PickerStyle};
 use crate::toggle::{CheckboxStyle, ToggleValue};
 use crate::{ControlsOverlayKey, UnfocusAction};
 use carbide::color::{Color, ColorExt, TRANSPARENT};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, EnvMap1, IntoState, LocalState, Map1, Map2, Map3, RMap1, RMap3, ReadState, ReadStateExtNew};
-use carbide::widget::{AnyWidget, AspectRatio, Circle, CommonWidget, ContentMode, CornerRadii, CrossAxisAlignment, EdgeInsets, Ellipse, Gradient, GradientPosition, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Padding, Rectangle, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
+use carbide::widget::{AnyWidget, AspectRatio, Circle, CommonWidget, ContentMode, CornerRadii, CrossAxisAlignment, EdgeInsets, Ellipse, Gradient, GradientPosition, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Padding, Rectangle, RoundedRectangle, Sequence, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
 use std::fmt::Debug;
 use carbide::draw::{Alignment, Dimension};
 use carbide::flags::WidgetFlag;
@@ -19,8 +19,8 @@ use crate::picker::style::menu::MenuStyleBaseComponent;
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
 
-impl MenuStyle {
-    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn SelectableSequence>, picker_selection_type: PickerSelectionType) -> impl Widget {
+/*impl MenuStyle {
+    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn Sequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
         let mark = Self::mark(&enabled);
 
         let content = Self::content(enabled.clone(), model);
@@ -125,7 +125,7 @@ impl MenuStyle {
         mark
     }
 
-    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn SelectableSequence>) -> impl Widget {
+    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn Sequence<dyn AnySelectableWidget>>) -> impl Widget {
         let label_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
@@ -135,7 +135,7 @@ impl MenuStyle {
         });
 
         let content = HStack::new(
-            SelectableForEach::new(model, |input: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>| {
+            /*SelectableForEach::new(model, |input: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>| {
                 input.flagged(Map1::read_map(selected, |selected| {
                     if *selected {
                         WidgetFlag::empty()
@@ -143,7 +143,8 @@ impl MenuStyle {
                         WidgetFlag::IGNORE
                     }
                 }))
-            })
+            })*/
+            todo!()
         )
             .foreground_color(label_color)
             .text_wrap(Wrap::None);
@@ -189,10 +190,11 @@ impl MenuStyle {
 }
 
 impl PickerStyle for MenuStyle {
-    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn SelectableSequence>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
+    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn Sequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         MenuStyle.generate(focus, enabled, label, model, picker_selection_type).boxed()
     }
 }
+ */
 
 #[derive(Clone, Debug)]
 struct MenuAction {

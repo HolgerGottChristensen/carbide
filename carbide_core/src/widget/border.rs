@@ -15,7 +15,7 @@ pub struct Border<W, C> where
     W: Widget,
     C: ReadState<T=Color>
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -88,7 +88,7 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
 }
 
 impl<W: Widget, C: ReadState<T=Color>> CommonWidget for Border<W, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {

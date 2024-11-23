@@ -2,7 +2,31 @@ use carbide::state::StateContract;
 use carbide::widget::{WidgetId, Sequence};
 use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
 
-pub trait IdentifiableWidgetSequence<T>: Sequence
+impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> Sequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+        todo!()
+    }
+
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()
+    }
+
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()
+    }
+
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()
+    }
+
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()
+    }
+}
+
+
+
+/*pub trait IdentifiableWidgetSequence<T>: Sequence
 where T: StateContract + PartialEq {
     fn has_changed(&self, existing: &mut dyn Iterator<Item=WidgetId>) -> bool;
     fn update(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>));
@@ -52,7 +76,7 @@ impl<S: IdentifiableWidget<T>, T: StateContract + PartialEq> IdentifiableWidgetS
             f(element);
         }
     }
-}
+}*/
 
 macro_rules! tuple_identifiable_impl {
     ($($generic:ident),*) => {
@@ -104,14 +128,14 @@ macro_rules! tuple_identifiable_impl {
 }
 
 //tuple_identifiable_impl!(W1);
-tuple_identifiable_impl!(W1, W2);
-tuple_identifiable_impl!(W1, W2, W3);
-tuple_identifiable_impl!(W1, W2, W3, W4);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
-tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);
+//tuple_identifiable_impl!(W1, W2);
+//tuple_identifiable_impl!(W1, W2, W3);
+//tuple_identifiable_impl!(W1, W2, W3, W4);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
+//tuple_identifiable_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);

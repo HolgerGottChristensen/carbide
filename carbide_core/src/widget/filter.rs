@@ -8,7 +8,7 @@ use crate::widget::*;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Filter<W> where W: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -29,7 +29,7 @@ impl Filter<Empty> {
 }
 
 impl<W: Widget> CommonWidget for Filter<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<W: Widget> Render for Filter<W> {

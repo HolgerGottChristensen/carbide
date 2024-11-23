@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-
+use carbide::widget::Identifiable;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Alignment, Dimension, Position};
@@ -15,7 +15,7 @@ pub struct Frame<W, H, C> where
     H: State<T=f64>,
     C: Widget
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     #[state] width: Fixity<W>,
@@ -86,10 +86,6 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
 }
 
 impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;

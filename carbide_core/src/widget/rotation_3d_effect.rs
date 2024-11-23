@@ -10,7 +10,7 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId,
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Rotation3DEffect<R1, R2, C> where R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -54,10 +54,6 @@ impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Rotation3DEf
 }
 
 impl<R1: ReadState<T = Angle> + Clone, R2: ReadState<T = Angle> + Clone, C: Widget> CommonWidget for Rotation3DEffect<R1, R2, C> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;

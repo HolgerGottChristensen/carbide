@@ -10,7 +10,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, Sequence};
 #[derive(Debug, Clone, Widget)]
 pub struct Proxy<W> where W: Sequence
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
@@ -29,5 +29,5 @@ impl Proxy<Empty> {
 }
 
 impl<W: Sequence> CommonWidget for Proxy<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
+    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
 }

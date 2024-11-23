@@ -19,7 +19,7 @@ pub enum VGridColumn {
 #[carbide_exclude(Layout)]
 pub struct VGrid<W> where W: Sequence
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
@@ -192,5 +192,5 @@ impl<W: Sequence> Layout for VGrid<W> {
 }
 
 impl<W: Sequence> CommonWidget for VGrid<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }

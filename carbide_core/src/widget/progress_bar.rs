@@ -10,7 +10,7 @@ use crate::widget::{Capsule, CommonWidget, Empty, HSplit, Spacer, Widget, Widget
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar<P, W> where P: ReadState<T=f64>, W: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -43,5 +43,5 @@ impl ProgressBar<f64, Empty> {
 }
 
 impl<P: ReadState<T=f64>, W: Widget> CommonWidget for ProgressBar<P, W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

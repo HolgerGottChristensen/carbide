@@ -7,7 +7,7 @@ use carbide::environment::EnvironmentStack;
 use carbide::flags::WidgetFlag;
 use carbide::state::{AnyState, State};
 use carbide::widget::{AnyWidget, BuildWidgetIdHasher, CommonWidget, Widget, WidgetId, WidgetSync};
-use crate::identifiable::SelectableSequence;
+/*use crate::identifiable::SelectableSequence;
 
 pub trait Delegate<I: Widget, S: State<T=bool>, O: Widget>: Clone + 'static {
     fn call(&self, item: I, selected: S) -> O;
@@ -27,7 +27,7 @@ where
     O: Widget,
     S: SelectableSequence + Clone,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     delegate: D,
     sequence: S,
     children: IndexMap<WidgetId, O, BuildWidgetIdHasher>,
@@ -60,7 +60,7 @@ impl<D: Delegate<Box<dyn AnyWidget>, Box<dyn AnyState<T=bool>>, O>, O: Widget, S
 }
 
 impl<D: Delegate<Box<dyn AnyWidget>, Box<dyn AnyState<T=bool>>, O>, O: Widget, S: SelectableSequence + Clone> CommonWidget for SelectableForEach<S, D, O> {
-    CommonWidgetImpl!(self, id: self.id, flag: WidgetFlag::PROXY);
+    CommonWidgetImpl!(self, flag: WidgetFlag::PROXY);
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for (_, child) in self.children.iter() {
@@ -140,4 +140,4 @@ impl<D: Delegate<Box<dyn AnyWidget>, Box<dyn AnyState<T=bool>>, O>, O: Widget, S
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
-}
+}*/

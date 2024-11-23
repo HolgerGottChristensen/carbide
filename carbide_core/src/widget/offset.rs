@@ -10,7 +10,7 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Offset<X, Y, C> where X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     position: Position,
     dimension: Dimension,
@@ -51,5 +51,5 @@ impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y
 }
 
 impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> CommonWidget for Offset<X, Y, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

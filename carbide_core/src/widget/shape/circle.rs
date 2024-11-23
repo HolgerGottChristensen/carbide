@@ -20,7 +20,7 @@ use crate::widget::types::StrokeStyle;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Circle<S, F> where S: ReadState<T=Style>, F: ReadState<T=Style> {
-    pub id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] stroke_color: S,
@@ -87,7 +87,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Circle<S2, 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Circle<S, F> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Circle<S, F> {

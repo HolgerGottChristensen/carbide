@@ -14,7 +14,7 @@ where
     C: Widget,
     S: ReadState<T=f64>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: C,
     #[state] shift: S,
     position: Position,
@@ -35,7 +35,7 @@ impl Saturation<Empty, f64> {
 }
 
 impl<C: Widget, S: ReadState<T=f64>> CommonWidget for Saturation<C, S> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
 impl<C: Widget, S: ReadState<T=f64>> Render for Saturation<C, S> {

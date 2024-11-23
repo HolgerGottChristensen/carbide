@@ -19,7 +19,7 @@ use crate::widget::types::StrokeStyle;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct RoundedRectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     corner_radii: CornerRadii,
@@ -91,7 +91,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> RoundedRect
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for RoundedRectangle<S, F> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for RoundedRectangle<S, F> {

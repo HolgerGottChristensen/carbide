@@ -19,7 +19,7 @@ use crate::widget::types::StrokeStyle;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Rectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state]
@@ -93,7 +93,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Rectangle<S
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget for Rectangle<S, F> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Rectangle<S, F> {

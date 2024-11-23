@@ -41,7 +41,7 @@ impl OverlayManager {
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent, Initialize, Update, WindowEvent, AccessibilityEvent)]
 pub struct Overlay<K, C> where C: Widget, K: Key<Value=OverlayManager> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: C,
@@ -282,5 +282,5 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> Render for Overlay<K, C> {
 }
 
 impl<K: Key<Value=OverlayManager> + Clone, C: Widget>CommonWidget for Overlay<K, C> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }

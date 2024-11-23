@@ -10,7 +10,7 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId,
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
 pub struct Transform<W, M> where W: Widget, M: ReadState<T=Matrix4<f32>> {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -87,10 +87,6 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
 }
 
 impl<W: Widget, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         if self.child.is_ignore() {
             return;

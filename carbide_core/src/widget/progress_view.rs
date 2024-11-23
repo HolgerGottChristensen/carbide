@@ -15,7 +15,7 @@ use crate::widget::canvas::LineCap;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView<W> where W: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -91,5 +91,5 @@ impl<W: Widget> ProgressView<W> {
 }
 
 impl<W: Widget> CommonWidget for ProgressView<W> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

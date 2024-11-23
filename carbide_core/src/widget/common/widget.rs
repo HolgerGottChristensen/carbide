@@ -6,6 +6,7 @@ use carbide::accessibility::AccessibilityContext;
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::lifecycle::InitializationContext;
+use carbide::widget::Identifiable;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
@@ -14,7 +15,7 @@ use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::state::StateSync;
+use crate::state::{StateContract, StateSync};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{CommonWidget, IntoWidget, WidgetExt, WidgetId, WidgetSync};
 
@@ -45,11 +46,13 @@ impl AnyWidget for Box<dyn AnyWidget> {}
 
 impl WidgetExt for Box<dyn AnyWidget> {}
 
-impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
-    fn id(&self) -> WidgetId {
+impl<T: AnyWidget + ?Sized + Identifiable<I>, I: PartialEq + StateContract> Identifiable<I> for Box<T> {
+    fn id(&self) -> I {
         self.deref().id()
     }
+}
 
+impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
     fn flag(&self) -> WidgetFlag {
         self.deref().flag()
     }
@@ -68,6 +71,14 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
 
     fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
         self.deref_mut().foreach_child_rev(f)
+    }
+
+    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.deref_mut().foreach_child_direct(f)
+    }
+
+    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+        self.deref_mut().foreach_child_direct_rev(f)
     }
 
     fn position(&self) -> Position {
@@ -96,14 +107,6 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.deref_mut().set_dimension(dimension)
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.deref_mut().foreach_child_direct(f)
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        self.deref_mut().foreach_child_direct_rev(f)
     }
 }
 

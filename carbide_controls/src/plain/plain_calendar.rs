@@ -110,7 +110,7 @@ where
     D: PlainCalendarHiddenDelegate,
     T: PlainCalendarTitleDelegate,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: Box<dyn AnyWidget>,
@@ -362,7 +362,7 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
 }
 
 impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalendarHiddenDelegate, T: PlainCalendarTitleDelegate> CommonWidget for PlainCalendar<H, I, D, T> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
 impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalendarHiddenDelegate, T: PlainCalendarTitleDelegate> Debug for PlainCalendar<H, I, D, T> {

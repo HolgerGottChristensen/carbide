@@ -1,9 +1,11 @@
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::state::ReadState;
-use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
+use carbide_core::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId};
 use crate::window::Window;
 
-impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
+
+
+impl<T: ReadState<T=String>, C: Widget> Identifiable<WidgetId> for Window<T, C> {
     fn id(&self) -> WidgetId {
         match self {
             Window::UnInitialized { id, .. } => *id,
@@ -11,7 +13,9 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
             Window::Failed => panic!("Failed")
         }
     }
+}
 
+impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         let child = match &self {
             Window::UnInitialized { child, .. } => child,

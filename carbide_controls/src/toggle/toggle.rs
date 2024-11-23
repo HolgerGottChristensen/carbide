@@ -8,7 +8,7 @@ use carbide::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Widget, WidgetExt, WidgetId, WidgetSync};
 use carbide::CommonWidgetImpl;
 use smallvec::SmallVec;
 
@@ -20,7 +20,7 @@ pub struct Toggle<F, V, E, L> where
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     child: Box<dyn AnyWidget>,
@@ -144,5 +144,5 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
 }
 
 impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadState<T=String>> CommonWidget for Toggle<F, V, E, L> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
 }

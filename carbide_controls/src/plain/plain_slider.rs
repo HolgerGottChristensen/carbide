@@ -33,7 +33,7 @@ pub struct PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> where
     Bg: Widget,
     En: ReadState<T=bool>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     #[state] focus: F,
@@ -423,7 +423,7 @@ impl<
     Bg: Widget,
     En: ReadState<T=bool>,
 > CommonWidget for PlainSlider<V, F, St, S, E, P, Th, In, Bg, En> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 1, focus: self.focus);
 }
 
 impl<

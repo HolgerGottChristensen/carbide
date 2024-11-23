@@ -19,7 +19,7 @@ pub struct TextInput<F, O, T, E> where
     T: State<T=Result<String, String>>,
     E: ReadState<T=bool>,
 {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -154,5 +154,5 @@ impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, 
 }
 
 impl<F: State<T=Focus>, O: ReadState<T=Option<char>>, T: State<T=Result<String, String>>, E: ReadState<T=bool>,> CommonWidget for TextInput<F, O, T, E> {
-    CommonWidgetImpl!(self, id: self.id, child: self.child, position: self.position, dimension: self.dimension, flexibility: 1);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 1);
 }

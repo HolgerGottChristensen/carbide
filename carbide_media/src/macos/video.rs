@@ -28,7 +28,7 @@ pub type VideoId = ImageId;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Video<Id> where Id: ReadState<T=Option<ImageId>> + Clone {
-    id: WidgetId,
+    #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
@@ -477,7 +477,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
 }
 
 impl<Id: ReadState<T=Option<ImageId>> + Clone> CommonWidget for Video<Id> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
 // AVPlayer

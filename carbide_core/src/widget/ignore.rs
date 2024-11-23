@@ -3,6 +3,7 @@ use carbide::accessibility::AccessibilityContext;
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
 use carbide::lifecycle::Initialize;
+use carbide::widget::Identifiable;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
@@ -192,11 +193,24 @@ impl<T: Widget,
     B8: ReadState<T=bool>,
     B9: ReadState<T=bool>,
     B10: ReadState<T=bool>,
-> CommonWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
+> Identifiable<WidgetId> for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn id(&self) -> WidgetId {
         self.inner.id()
     }
+}
 
+impl<T: Widget,
+    B1: ReadState<T=bool>,
+    B2: ReadState<T=bool>,
+    B3: ReadState<T=bool>,
+    B4: ReadState<T=bool>,
+    B5: ReadState<T=bool>,
+    B6: ReadState<T=bool>,
+    B7: ReadState<T=bool>,
+    B8: ReadState<T=bool>,
+    B9: ReadState<T=bool>,
+    B10: ReadState<T=bool>,
+> CommonWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
     fn flag(&self) -> WidgetFlag {
         self.inner.flag()
     }

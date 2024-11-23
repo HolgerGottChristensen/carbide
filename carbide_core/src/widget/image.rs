@@ -13,14 +13,14 @@ use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, Style, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget, WidgetSync};
+use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget, WidgetSync, Identifiable};
 use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, Accessibility)]
 pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style> {
-    id: WidgetId,
+    #[id] id: WidgetId,
     /// The unique identifier for the image that will be drawn.
     #[state] image_id: Id,
     /// The rectangle area of the original source image that should be used.
@@ -277,5 +277,5 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Accessibility for 
 }
 
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> CommonWidget for Image<Id, C> {
-    CommonWidgetImpl!(self, id: self.id, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
+    CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }

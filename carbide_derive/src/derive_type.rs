@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
 use syn::{Generics, WhereClause};
 
 #[derive(Hash, Eq, PartialEq, Debug)]
@@ -14,6 +14,7 @@ pub enum DeriveType {
 
     // StateSync
     StateSync,
+    Id,
 
     // Render
     Render,
@@ -45,6 +46,7 @@ impl DeriveType {
         set.insert(DeriveType::Update);
         set.insert(DeriveType::Initialize);
         set.insert(DeriveType::Accessibility);
+        set.insert(DeriveType::Id);
         set
     }
 
@@ -72,6 +74,7 @@ impl DeriveType {
         generics: &Generics,
         wheres: &Option<WhereClause>,
         state_idents: &Vec<Ident>,
+        id_idents: &Vec<Ident>,
     ) -> TokenStream {
         match self {
             DeriveType::MouseEvent => mouse_event_token_stream(ident, generics, wheres),
@@ -80,6 +83,7 @@ impl DeriveType {
             DeriveType::OtherEvent => other_event_token_stream(ident, generics, wheres),
             DeriveType::AccessibilityEvent => accessibility_event_token_stream(ident, generics, wheres),
             DeriveType::StateSync => state_sync_token_stream(ident, generics, wheres, state_idents),
+            DeriveType::Id => id_token_stream(ident, generics, wheres, id_idents),
             DeriveType::Render => render_token_stream(ident, generics, wheres),
             DeriveType::Focusable => focusable_token_stream(ident, generics, wheres),
             DeriveType::Layout => layout_token_stream(ident, generics, wheres),
@@ -159,6 +163,26 @@ fn state_sync_token_stream(
                 #(self.#state_idents.sync(env);)*
             }
         }
+    }
+}
+
+fn id_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+    id_idents: &Vec<Ident>,
+) -> TokenStream {
+    if let Some(id) = id_idents.first() {
+        quote! {
+            #[automatically_derived]
+            impl #generics carbide::widget::Identifiable<carbide::widget::WidgetId> for #ident #generics #wheres {
+                fn id(&self) -> carbide::widget::WidgetId {
+                    self.#id
+                }
+            }
+        }
+    } else {
+        quote! {}
     }
 }
 

@@ -13,7 +13,7 @@ use crate::widget::types::ScrollDirection;
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
 pub struct Scroll<W> where W: Widget {
-    id: WidgetId,
+    #[id] id: WidgetId,
     child: W,
     position: Position,
     dimension: Dimension,
@@ -396,10 +396,6 @@ impl<W: Widget> Layout for Scroll<W> {
 }
 
 impl<W: Widget> CommonWidget for Scroll<W> {
-    fn id(&self) -> WidgetId {
-        self.id
-    }
-
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::EMPTY
     }
