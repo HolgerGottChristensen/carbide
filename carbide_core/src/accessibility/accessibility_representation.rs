@@ -29,7 +29,7 @@ impl<C: Widget, S: Widget> Accessibility for AccessibilityRepresentation<C, S> {
     }
 }
 
-impl<C: Widget, S: Widget> Identifiable<WidgetId> for AccessibilityRepresentation<C, S> {
+impl<C: Widget, S: Widget> Identifiable for AccessibilityRepresentation<C, S> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

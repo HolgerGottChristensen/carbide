@@ -50,7 +50,7 @@ where
     #[state] model: M,
     delegate: U,
 
-    children: Vec<W>,
+    pub children: Vec<W>,
     #[state] index_offset: I,
     phantom: PhantomData<T>,
 }
@@ -83,7 +83,11 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         }
     }
 
-    pub fn widget<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: ForEachChildDelegate<T, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, T> {
+    pub fn widget<W: Sequence, O: Widget, D: ForEachChildDelegate<dyn AnyWidget, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, dyn AnyWidget> {
+        ForEachWidget::new(of, delegate)
+    }
+
+    pub fn widget_custom<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: ForEachChildDelegate<T, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, T> {
         ForEachWidget::new(of, delegate)
     }
 

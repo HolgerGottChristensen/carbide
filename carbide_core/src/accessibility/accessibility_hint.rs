@@ -44,7 +44,7 @@ impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityHint<C, S
     }
 }
 
-impl<C: Widget, S: ReadState<T=String>> Identifiable<WidgetId> for AccessibilityHint<C, S> {
+impl<C: Widget, S: ReadState<T=String>> Identifiable for AccessibilityHint<C, S> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

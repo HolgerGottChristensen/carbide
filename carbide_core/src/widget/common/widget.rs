@@ -46,8 +46,8 @@ impl AnyWidget for Box<dyn AnyWidget> {}
 
 impl WidgetExt for Box<dyn AnyWidget> {}
 
-impl<T: AnyWidget + ?Sized + Identifiable<I>, I: PartialEq + StateContract> Identifiable<I> for Box<T> {
-    fn id(&self) -> I {
+impl<T: AnyWidget + ?Sized + Identifiable> Identifiable for Box<T> {
+    fn id(&self) -> WidgetId {
         self.deref().id()
     }
 }

@@ -1,17 +1,13 @@
-use std::cell::RefCell;
-use carbide::environment::EnvironmentStack;
-use carbide::widget::AnyWidget;
-use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
-use std::marker::PhantomData;
-use std::ops::Deref;
-use dyn_clone::{clone_box, DynClone};
-use indexmap::IndexMap;
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
 use crate::state::StateSync;
-use crate::widget::{BuildWidgetIdHasher, CommonWidget, Widget, WidgetExt, WidgetId, Sequence, WidgetSync, Identifiable};
+use crate::widget::{BuildWidgetIdHasher, CommonWidget, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
+use carbide::environment::EnvironmentStack;
+use dyn_clone::{clone_box, DynClone};
+use indexmap::IndexMap;
+use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {
     fn call(&self, child: Box<T>) -> O;
@@ -27,7 +23,7 @@ impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(Box<T>) -> O + Cl
 #[carbide_exclude(StateSync)]
 pub struct ForEachWidget<W, O, D, T>
 where
-    T: ?Sized + Identifiable<WidgetId> + DynClone + 'static,
+    T: ?Sized + Identifiable + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: Widget,
     D: Delegate<T, O>
@@ -40,7 +36,7 @@ where
     phantom_data: PhantomData<T>,
 }
 
-impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Clone for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Clone for ForEachWidget<W, O, D, T> {
     fn clone(&self) -> Self {
         ForEachWidget {
             id: WidgetId::new(),
@@ -52,7 +48,7 @@ impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O:
     }
 }
 
-impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
     pub(crate) fn new(sequence: W, delegate: D) -> Self {
         ForEachWidget {
             id: WidgetId::new(),
@@ -65,10 +61,14 @@ impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O:
 }
 
 
-impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
     fn sync(&mut self, env: &mut EnvironmentStack) {
         // Set the initial index to 0
         let mut index = 0;
+
+        self.sequence.foreach_direct(&mut |child| {
+            child.sync(env);
+        });
 
         // For each child of the widget
         self.sequence.foreach(&mut |child| {
@@ -103,7 +103,7 @@ impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O:
     }
 }
 
-impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> CommonWidget for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> CommonWidget for ForEachWidget<W, O, D, T> {
     CommonWidgetImpl!(self, flag: WidgetFlag::PROXY, child: self.content);
 
     fn position(&self) -> Position {
@@ -123,7 +123,7 @@ impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O:
     }
 }
 
-impl<T: ?Sized + Identifiable<WidgetId> + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEachChild")
             .field("content", &self.content)

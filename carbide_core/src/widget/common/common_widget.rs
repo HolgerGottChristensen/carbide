@@ -6,7 +6,7 @@ use crate::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::widget::{AnyWidget, WidgetId};
 
-pub trait CommonWidget: Identifiable<WidgetId> {
+pub trait CommonWidget: Identifiable {
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::EMPTY
     }

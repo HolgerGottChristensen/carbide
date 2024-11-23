@@ -429,7 +429,7 @@ impl<C: Widget> Render for ThemeManager<C> {
     }
 }
 
-impl<C: Widget> Identifiable<WidgetId> for ThemeManager<C> {
+impl<C: Widget> Identifiable for ThemeManager<C> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

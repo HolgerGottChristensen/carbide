@@ -1,26 +1,63 @@
 use carbide::state::StateContract;
-use carbide::widget::{WidgetId, Sequence};
+use carbide::widget::{WidgetId, Sequence, AnyWidget};
 use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
 
 impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> Sequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
-        todo!()
+        for element in self {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                AnyIdentifiableWidget::foreach_child(element, f);
+                continue;
+            }
+
+            f(element);
+        }
     }
 
     fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
-        todo!()
+        for element in self {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                AnyIdentifiableWidget::foreach_child_mut(element, f);
+                continue;
+            }
+
+            f(element);
+        }
     }
 
     fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
-        todo!()
+        for element in &mut self.iter_mut().rev() {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                AnyIdentifiableWidget::foreach_child_rev(element, f);
+                continue;
+            }
+
+            f(element);
+        }
     }
 
     fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
-        todo!()
+        for element in &mut self.iter_mut() {
+            f(element);
+        }
     }
 
     fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
-        todo!()
+        for element in &mut self.iter_mut().rev() {
+            f(element);
+        }
     }
 }
 
@@ -94,7 +131,7 @@ macro_rules! tuple_identifiable_impl {
                         }
                     } else {
                         if let Some(id) = existing.next() {
-                            if id != $generic.id() {
+                            if id != $generic.identifier() {
                                 // The element is different.
                                 return true;
                             }

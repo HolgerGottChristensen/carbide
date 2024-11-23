@@ -58,7 +58,7 @@ mod calendar;
 mod date_picker;
 pub mod toggle;
 pub mod picker;
-mod identifiable;
+pub mod identifiable;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

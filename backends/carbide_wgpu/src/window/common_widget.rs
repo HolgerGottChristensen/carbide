@@ -5,7 +5,7 @@ use crate::window::Window;
 
 
 
-impl<T: ReadState<T=String>, C: Widget> Identifiable<WidgetId> for Window<T, C> {
+impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
     fn id(&self) -> WidgetId {
         match self {
             Window::UnInitialized { id, .. } => *id,

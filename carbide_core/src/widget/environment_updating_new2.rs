@@ -270,7 +270,7 @@ impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Render for EnvUpdatingNew2<C, 
     }
 }
 
-impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Identifiable<WidgetId> for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: Key, V: ReadState<T=K::Value>> Identifiable for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

@@ -23,7 +23,7 @@ impl Flagged<Empty, WidgetFlag> {
     }
 }
 
-impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable<WidgetId> for Flagged<C, F> {
+impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable for Flagged<C, F> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

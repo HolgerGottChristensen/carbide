@@ -237,7 +237,7 @@ impl<C: Widget> Render for FontSizeManager<C> {
     }
 }
 
-impl<C: Widget> Identifiable<WidgetId> for FontSizeManager<C> {
+impl<C: Widget> Identifiable for FontSizeManager<C> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }
