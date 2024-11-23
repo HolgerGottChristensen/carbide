@@ -3,7 +3,7 @@ use smallvec::{SmallVec, smallvec};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, Sequence};
 
 #[derive(Debug, Clone)]
 pub enum HGridRow {
@@ -17,7 +17,8 @@ pub enum HGridRow {
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct HGrid<W> where W: WidgetSequence {
+pub struct HGrid<W> where W: Sequence
+{
     id: WidgetId,
     children: W,
     position: Position,
@@ -27,7 +28,7 @@ pub struct HGrid<W> where W: WidgetSequence {
     calculated_heights: Vec<f64>,
 }
 
-impl<W: WidgetSequence> HGrid<W> {
+impl<W: Sequence> HGrid<W> {
     pub fn new(children: W, columns: Vec<HGridRow>) -> HGrid<W> {
         HGrid {
             id: WidgetId::new(),
@@ -46,7 +47,7 @@ impl<W: WidgetSequence> HGrid<W> {
     }
 }
 
-impl<W: WidgetSequence> Layout for HGrid<W> {
+impl<W: Sequence> Layout for HGrid<W> {
 
     // https://www.objc.io/blog/2020/11/23/grid-layout/
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
@@ -188,6 +189,6 @@ impl<W: WidgetSequence> Layout for HGrid<W> {
     }
 }
 
-impl<W: WidgetSequence> CommonWidget for HGrid<W> {
+impl<W: Sequence> CommonWidget for HGrid<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }

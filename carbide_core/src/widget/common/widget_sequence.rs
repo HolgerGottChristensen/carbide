@@ -3,23 +3,23 @@ use std::hash::Hash;
 use indexmap::IndexMap;
 use crate::widget::{AnyWidget, BuildWidgetIdHasher, Widget, WidgetId};
 
-pub trait WidgetSequence: Clone + Debug + 'static {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget));
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget));
+pub trait Sequence<T=dyn AnyWidget>: Clone + Debug + 'static where T: ?Sized {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T));
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
 }
 
-impl WidgetSequence for () {
-    fn foreach<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
-    fn foreach_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
-    fn foreach_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
-    fn foreach_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
-    fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+impl<T> Sequence<T> for () {
+    fn foreach<'a>(&'a self, _f: &mut dyn FnMut(&'a T)) {}
+    fn foreach_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
+    fn foreach_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
+    fn foreach_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
+    fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
 }
 
-impl<W: Widget> WidgetSequence for Vec<W> {
+impl<W: Widget> Sequence for Vec<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
@@ -78,7 +78,7 @@ impl<W: Widget> WidgetSequence for Vec<W> {
     }
 }
 
-impl<W: Widget> WidgetSequence for (IndexMap<WidgetId, W, BuildWidgetIdHasher>, usize) {
+impl<W: Widget> Sequence for (IndexMap<WidgetId, W, BuildWidgetIdHasher>, usize) {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for (_, element) in self.0.iter().take(self.1) {
             if element.is_ignore() {
@@ -141,7 +141,7 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<$($generic: Widget),*> WidgetSequence for ($($generic),*) {
+        impl<$($generic: Widget),*> Sequence for ($($generic),*) {
             fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(

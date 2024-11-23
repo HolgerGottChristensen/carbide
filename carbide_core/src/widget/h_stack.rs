@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{calculate_size_hstack, Layout, LayoutContext, position_children_hstack};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, Sequence};
 
 /// # HStack
 /// The horizontal stack in Carbide is one of the main layout components.
@@ -169,7 +169,8 @@ use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetI
 /// The default is *Center*, but *Start* and *End* also exist.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct HStack<W> where W: WidgetSequence {
+pub struct HStack<W> where W: Sequence
+{
     id: WidgetId,
     children: W,
     position: Position,
@@ -178,7 +179,7 @@ pub struct HStack<W> where W: WidgetSequence {
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl<W: WidgetSequence> HStack<W> {
+impl<W: Sequence> HStack<W> {
 
     #[carbide_default_builder2]
     pub fn new(children: W) -> Self {
@@ -209,7 +210,7 @@ gen_optionals!(
     spacing: f64,
 );*/
 
-impl<W: WidgetSequence> Layout for HStack<W> {
+impl<W: Sequence> Layout for HStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let spacing = self.spacing;
         calculate_size_hstack(self, spacing, requested_size, ctx);
@@ -223,6 +224,6 @@ impl<W: WidgetSequence> Layout for HStack<W> {
     }
 }
 
-impl<W: WidgetSequence> CommonWidget for HStack<W> {
+impl<W: Sequence> CommonWidget for HStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }

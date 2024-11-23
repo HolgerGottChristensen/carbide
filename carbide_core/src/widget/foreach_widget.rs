@@ -9,7 +9,7 @@ use indexmap::IndexMap;
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
 use crate::state::StateSync;
-use crate::widget::{BuildWidgetIdHasher, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence, WidgetSync};
+use crate::widget::{BuildWidgetIdHasher, CommonWidget, Widget, WidgetExt, WidgetId, Sequence, WidgetSync};
 use crate::CommonWidgetImpl;
 
 pub trait Delegate<O: Widget>: Clone + 'static {
@@ -26,7 +26,7 @@ impl<K, O: Widget> Delegate<O> for K where K: Fn(Box<dyn AnyWidget>) -> O + Clon
 #[carbide_exclude(StateSync)]
 pub struct ForEachWidget<W, O, D>
 where
-    W: WidgetSequence,
+    W: Sequence,
     O: Widget,
     D: Delegate<O>
 {
@@ -37,7 +37,7 @@ where
     content: (IndexMap<WidgetId, O, BuildWidgetIdHasher>, usize),
 }
 
-impl<W: WidgetSequence, O: Widget, D: Delegate<O>> ForEachWidget<W, O, D> {
+impl<W: Sequence, O: Widget, D: Delegate<O>> ForEachWidget<W, O, D> {
     pub(crate) fn new(sequence: W, delegate: D) -> Self {
         ForEachWidget {
             id: WidgetId::new(),
@@ -49,7 +49,7 @@ impl<W: WidgetSequence, O: Widget, D: Delegate<O>> ForEachWidget<W, O, D> {
 }
 
 
-impl<W: WidgetSequence, O: Widget, D: Delegate<O>> WidgetSync for ForEachWidget<W, O, D> {
+impl<W: Sequence, O: Widget, D: Delegate<O>> WidgetSync for ForEachWidget<W, O, D> {
     fn sync(&mut self, env: &mut EnvironmentStack) {
         // Set the initial index to 0
         let mut index = 0;
@@ -87,7 +87,7 @@ impl<W: WidgetSequence, O: Widget, D: Delegate<O>> WidgetSync for ForEachWidget<
     }
 }
 
-impl<W: WidgetSequence, O: Widget, D: Delegate<O>> CommonWidget for ForEachWidget<W, O, D> {
+impl<W: Sequence, O: Widget, D: Delegate<O>> CommonWidget for ForEachWidget<W, O, D> {
     CommonWidgetImpl!(self, id: self.id, flag: WidgetFlag::PROXY, child: self.content);
 
     fn position(&self) -> Position {
@@ -107,7 +107,7 @@ impl<W: WidgetSequence, O: Widget, D: Delegate<O>> CommonWidget for ForEachWidge
     }
 }
 
-impl<W: WidgetSequence, O: Widget, D: Delegate<O>> Debug for ForEachWidget<W, O, D> {
+impl<W: Sequence, O: Widget, D: Delegate<O>> Debug for ForEachWidget<W, O, D> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEachChild")
             .field("content", &self.content)

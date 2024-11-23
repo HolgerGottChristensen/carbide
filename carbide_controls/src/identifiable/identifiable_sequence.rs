@@ -1,8 +1,9 @@
 use carbide::state::StateContract;
-use carbide::widget::{WidgetId, WidgetSequence};
+use carbide::widget::{WidgetId, Sequence};
 use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
 
-pub trait IdentifiableWidgetSequence<T>: WidgetSequence where T: StateContract + PartialEq {
+pub trait IdentifiableWidgetSequence<T>: Sequence
+where T: StateContract + PartialEq {
     fn has_changed(&self, existing: &mut dyn Iterator<Item=WidgetId>) -> bool;
     fn update(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>));
 }

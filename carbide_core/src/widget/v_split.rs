@@ -5,7 +5,7 @@ use crate::draw::{Dimension, Position};
 use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoState, State};
-use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Empty, SplitType, Widget, WidgetExt, WidgetId, Sequence};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, MouseEvent)]

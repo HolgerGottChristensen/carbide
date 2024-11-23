@@ -4,11 +4,12 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, Sequence};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
-pub struct Proxy<W> where W: WidgetSequence {
+pub struct Proxy<W> where W: Sequence
+{
     id: WidgetId,
     children: W,
     position: Position,
@@ -17,7 +18,7 @@ pub struct Proxy<W> where W: WidgetSequence {
 
 impl Proxy<Empty> {
     #[carbide_default_builder2]
-    pub fn new<W: WidgetSequence>(children: W) -> Proxy<W> {
+    pub fn new<W: Sequence>(children: W) -> Proxy<W> {
         Proxy {
             id: WidgetId::new(),
             children,
@@ -27,6 +28,6 @@ impl Proxy<Empty> {
     }
 }
 
-impl<W: WidgetSequence> CommonWidget for Proxy<W> {
+impl<W: Sequence> CommonWidget for Proxy<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
 }

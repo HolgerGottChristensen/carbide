@@ -5,12 +5,13 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Alignment};
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, Sequence};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct ZStack<W> where W: WidgetSequence {
+pub struct ZStack<W> where W: Sequence
+{
     id: WidgetId,
     children: W,
     position: Position,
@@ -18,7 +19,7 @@ pub struct ZStack<W> where W: WidgetSequence {
     alignment: Alignment,
 }
 
-impl<W: WidgetSequence> ZStack<W> {
+impl<W: Sequence> ZStack<W> {
 
     #[carbide_default_builder2]
     pub fn new(children: W) -> Self {
@@ -37,7 +38,7 @@ impl<W: WidgetSequence> ZStack<W> {
     }
 }
 
-impl<W: WidgetSequence> Layout for ZStack<W> {
+impl<W: Sequence> Layout for ZStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let mut children_flexibility: SmallVec<[(u32, &mut dyn AnyWidget); 5]> = smallvec![];
 
@@ -83,6 +84,6 @@ impl<W: WidgetSequence> Layout for ZStack<W> {
     }
 }
 
-impl<W: WidgetSequence> CommonWidget for ZStack<W> {
+impl<W: Sequence> CommonWidget for ZStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1, alignment: self.alignment);
 }

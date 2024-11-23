@@ -9,7 +9,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, StateSync, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSequence, WidgetSync};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, Sequence, WidgetSync};
 use crate::widget::foreach_widget::ForEachWidget;
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 
@@ -82,7 +82,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         }
     }
 
-    pub fn widget<W: WidgetSequence, O: Widget, D: ForEachChildDelegate<O>>(of: W, delegate: D) -> ForEachWidget<W, O, D> {
+    pub fn widget<W: Sequence, O: Widget, D: ForEachChildDelegate<O>>(of: W, delegate: D) -> ForEachWidget<W, O, D> {
         ForEachWidget::new(of, delegate)
     }
 

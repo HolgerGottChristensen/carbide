@@ -9,7 +9,7 @@ use carbide::draw::{Dimension, Position};
 use carbide::focus::Focus;
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId, WidgetSequence};
+use carbide::widget::{AnyWidget, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId, Sequence};
 use carbide::CommonWidgetImpl;
 
 #[derive(Clone, Widget, Debug)]

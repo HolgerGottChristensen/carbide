@@ -2,11 +2,12 @@ use carbide::widget::AnyWidget;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{calculate_size_vstack, Layout, LayoutContext, position_children_vstack};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, WidgetSequence};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, Sequence};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct VStack<W> where W: WidgetSequence {
+pub struct VStack<W> where W: Sequence
+{
     id: WidgetId,
     children: W,
     position: Position,
@@ -15,7 +16,7 @@ pub struct VStack<W> where W: WidgetSequence {
     cross_axis_alignment: CrossAxisAlignment,
 }
 
-impl<W: WidgetSequence> VStack<W> {
+impl<W: Sequence> VStack<W> {
     pub fn new(children: W) -> VStack<W> {
         VStack {
             id: WidgetId::new(),
@@ -38,7 +39,7 @@ impl<W: WidgetSequence> VStack<W> {
     }
 }
 
-impl<W: WidgetSequence> Layout for VStack<W> {
+impl<W: Sequence> Layout for VStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let spacing = self.spacing;
         calculate_size_vstack(self, spacing, requested_size, ctx);
@@ -52,6 +53,6 @@ impl<W: WidgetSequence> Layout for VStack<W> {
     }
 }
 
-impl<W: WidgetSequence> CommonWidget for VStack<W> {
+impl<W: Sequence> CommonWidget for VStack<W> {
     CommonWidgetImpl!(self, id: self.id, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
 }
