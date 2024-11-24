@@ -27,7 +27,7 @@ impl MenuStyle {
     fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
         let mark = Self::mark(&enabled);
 
-        let content = Self::content(enabled.clone(), model.clone());
+        let content = Self::content(enabled.clone(), model.clone(), picker_selection_type);
 
         let content_and_mark = HStack::new((
             content
@@ -162,7 +162,7 @@ impl MenuStyle {
         mark
     }
 
-    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>) -> impl Widget {
+    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
         let label_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
@@ -172,8 +172,15 @@ impl MenuStyle {
         });
 
         let content = HStack::new(
-            ForEach::custom_widget(model, |input: &dyn AnySelectableWidget| {
-                clone_box(input.as_widget()).flagged(Map1::read_map(clone_box(input.selection()), |selected| {
+            ForEach::custom_widget(model, move |input: &dyn AnySelectableWidget| {
+                if picker_selection_type == PickerSelectionType::Multi {
+                    HStack::new((
+                        clone_box(input.as_widget()),
+                        Text::new(", ")
+                    )).spacing(0.0).boxed()
+                } else {
+                    clone_box(input.as_widget()).boxed()
+                }.flagged(Map1::read_map(clone_box(input.selection()), |selected| {
                     if *selected {
                         WidgetFlag::empty()
                     } else {
@@ -181,7 +188,7 @@ impl MenuStyle {
                     }
                 }))
             })
-        )
+        ).spacing(0.0)
             .foreground_color(label_color)
             .text_wrap(Wrap::None);
         content

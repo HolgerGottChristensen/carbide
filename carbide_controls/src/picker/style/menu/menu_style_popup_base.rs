@@ -74,7 +74,9 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             if id != WidgetId::default() {
                 self.model.foreach(&mut |selectable| {
                     if selectable.as_widget().id() == id {
-                        clone_box(selectable.selection()).set_value_dyn(true);
+                        let mut state = clone_box(selectable.selection());
+                        let prev = *state.value();
+                        state.set_value_dyn(!prev);
                     }
                 })
             }

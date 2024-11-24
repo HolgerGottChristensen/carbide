@@ -59,8 +59,9 @@ impl MouseEventHandler for MenuStyleItemBase {
                     if *press_id == self.event_id && *duration < Duration::from_secs_f64(0.5) && !self.has_dragged {
                         return;
                     }
+                    let prev = *self.selected.value();
+                    *self.selected.value_mut() = !prev;
 
-                    self.selected.set_value(true);
                     OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
                         manager.clear()
                     })
