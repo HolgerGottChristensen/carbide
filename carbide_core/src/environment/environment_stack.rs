@@ -2,6 +2,7 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::hash::{BuildHasherDefault, Hasher};
+use std::marker::PhantomData;
 use std::mem::transmute;
 
 pub trait Key: Any + Debug + 'static {
@@ -71,13 +72,16 @@ impl dyn AnyDebug {
 pub struct TypeMap<'a> {
     data: HashMap<TypeId, &'a dyn AnyDebug, BuildTypeIdHasher>,
     data_mut: HashMap<TypeId, &'a mut dyn AnyDebug, BuildTypeIdHasher>,
+    _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
 }
+
 
 impl<'a> TypeMap<'a> {
     pub fn new() -> Self {
         TypeMap {
             data: HashMap::with_hasher(BuildTypeIdHasher::default()),
             data_mut: HashMap::with_hasher(BuildTypeIdHasher::default()),
+            _marker: Default::default(),
         }
     }
 }
