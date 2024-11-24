@@ -1,26 +1,24 @@
-use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget};
-use crate::picker::picker_action::PickerAction;
+use crate::identifiable::AnySelectableWidget;
 use crate::picker::picker_selection::PickerSelectionType;
-use crate::picker::style::{PickerStyle};
-use crate::toggle::{CheckboxStyle, ToggleValue};
-use crate::{ControlsOverlayKey, UnfocusAction};
-use carbide_core::color::{Color, ColorExt, TRANSPARENT};
-use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
-use carbide_core::focus::Focus;
-use carbide_core::state::{AnyReadState, AnyState, EnvMap1, IntoState, LocalState, Map1, Map2, Map3, RMap1, RMap3, ReadState, ReadStateExtNew};
-use carbide_core::widget::{AnySequence, AnyWidget, AspectRatio, Circle, CommonWidget, ContentMode, CornerRadii, CrossAxisAlignment, EdgeInsets, Ellipse, ForEach, Gradient, GradientPosition, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Padding, Rectangle, RoundedRectangle, Sequence, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
-use std::fmt::Debug;
-use carbide::draw::Rect;
-use carbide::{closure, lens};
-use carbide::event::EventId;
-use carbide::state::StateExtNew;
-use carbide::widget::{Background, Frame, WidgetId};
-use carbide_core::utils::clone_box;
-use carbide_core::draw::{Alignment, Dimension};
-use carbide_core::flags::WidgetFlag;
-use carbide_core::render::Style;
-use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
 use crate::picker::style::menu::{MenuStyleBase, MenuStyleItemBase, MenuStylePopupBase};
+use crate::picker::style::PickerStyle;
+use crate::ControlsOverlayKey;
+use carbide_core::color::{ColorExt, TRANSPARENT};
+use carbide_core::draw::Rect;
+use carbide_core::draw::{Alignment, Dimension};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
+use carbide_core::event::EventId;
+use carbide_core::flags::WidgetFlag;
+use carbide_core::focus::Focus;
+use carbide_core::lens;
+use carbide_core::render::Style;
+use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew};
+use carbide_core::state::{StateExtNew, ValueState};
+use carbide_core::utils::clone_box;
+use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
+use carbide_core::widget::WidgetId;
+use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, Gradient, GradientPosition, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
@@ -71,18 +69,30 @@ impl MenuStyle {
 
         let geometry = widget.geometry(rect.clone());
 
+        let hovered = LocalState::new(WidgetId::default());
+
         let clickable = MenuStyleBase::new(
             geometry,
             focus,
-            enabled,
+            enabled.clone(),
             move |event_id| {
                 MenuStylePopupBase {
                     id: WidgetId::new(),
                     position: lens!(rect.position).as_dyn_read(),
                     dimension: lens!(rect.dimension).as_dyn_read(),
-                    child: VStack::new(ForEach::custom_widget(model.clone(), move |item: &dyn AnySelectableWidget| {
-                        Self::popup_item(item, event_id)
-                    })).spacing(1.0).padding(1.0).background(Rectangle::new().fill(EnvironmentColor::OpaqueSeparator)).boxed(),
+
+                    hovered: hovered.as_dyn(),
+                    model: model.clone(),
+                    enabled: enabled.clone(),
+                    child: VStack::new(ForEach::custom_widget(model.clone(), {
+                        let hovered = hovered.clone();
+                        move |item: &dyn AnySelectableWidget| {
+                            Self::popup_item(item, event_id, hovered.as_dyn())
+                        }
+                    })).spacing(0.0)
+                        .padding(2.0)
+                        .background(RoundedRectangle::new(4.0).fill(EnvironmentColor::SecondarySystemBackground).stroke(EnvironmentColor::OpaqueSeparator).stroke_style(1.0))
+                        .boxed(),
                 }.boxed()
             }
         );
@@ -93,10 +103,16 @@ impl MenuStyle {
         )).spacing(8.0)
     }
 
-    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId) -> impl Widget {
+    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget {
         let selection = clone_box(item.selection());
 
-        let hovered = LocalState::new(*selection.value()).as_dyn();
+        let hovered = Map2::map(hovered, ValueState::new(item.id()), |hovered, id| {
+            hovered == id
+        }, |new, mut hovered, id| {
+            if new {
+                *hovered = *id;
+            }
+        });
 
         let background_color = Map1::read_map(hovered.clone(), |hovered| {
             if *hovered {
@@ -107,12 +123,15 @@ impl MenuStyle {
         });
 
         let visual = HStack::new((
-            clone_box(item.as_widget()).frame_fixed_height(22.0).fit_width().padding(EdgeInsets::single(0.0, 0.0, 5.0, 0.0)),
+            clone_box(item.as_widget())
+                .frame_fixed_height(22.0)
+                .fit_width()
+                .padding(EdgeInsets::single(0.0, 0.0, 4.0, 0.0)),
             Spacer::new()
-        )).background(Rectangle::new().fill(background_color))
+        )).background(RoundedRectangle::new(4.0).fill(background_color))
             .boxed();
 
-        MenuStyleItemBase::new(visual, selection, hovered, event_id)
+        MenuStyleItemBase::new(visual, selection, hovered.as_dyn(), event_id)
     }
 
     fn mark(enabled: &Box<dyn AnyReadState<T=bool>>) -> impl Widget {

@@ -160,7 +160,7 @@ impl<T: AnyWidget + ?Sized> AccessibilityEventHandler for Box<T> {
     }
 }
 
-impl<T: AnyWidget + ?Sized> WidgetSync for Box<T> {
+impl<T: WidgetSync + ?Sized> WidgetSync for Box<T> {
     fn sync(&mut self, env: &mut EnvironmentStack) {
         self.deref_mut().sync(env);
     }

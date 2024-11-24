@@ -3,7 +3,7 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use dyn_clone::{clone_trait_object, DynClone};
 use indexmap::IndexMap;
-use crate::widget::{AnyWidget, BuildWidgetIdHasher, Content, Widget, WidgetId};
+use crate::widget::{AnyWidget, BuildWidgetIdHasher, Content, Widget, WidgetId, WidgetSync};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T));
