@@ -9,7 +9,7 @@ use crate::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
@@ -30,6 +30,7 @@ impl Delegate<(), Empty> for EmptyDelegate {
         Empty::new()
     }
 }
+
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(StateSync)]
@@ -81,11 +82,11 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         }
     }
 
-    pub fn widget<Sequence: Sequence, Output: Widget, Delegate: ForEachChildDelegate<dyn AnyWidget, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, dyn AnyWidget> {
+    pub fn widget<Sequence: ForEachSequence, Output: Widget, Delegate: ForEachChildDelegate<dyn AnyWidget, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, dyn AnyWidget> {
         ForEachWidget::new(of, with)
     }
 
-    pub fn custom_widget<Item: ?Sized + Identifiable + WidgetSync + DynClone + 'static, Sequence: Sequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
+    pub fn custom_widget<Item: ?Sized + Identifiable + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
         ForEachWidget::new(of, with)
     }
 

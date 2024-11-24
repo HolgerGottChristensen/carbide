@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::ops::{Add, Div, Mul};
 
 use crate::draw::dimension::Dimension;

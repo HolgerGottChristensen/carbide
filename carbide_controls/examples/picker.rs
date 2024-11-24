@@ -29,8 +29,8 @@ fn main() {
             Text::new("Strawberry").tag(Flavor::Strawberry),
         ))
             .padding(40.0)
-            .picker_style(InlineStyle)
             .picker_style(MenuStyle)
+            .picker_style(InlineStyle)
             .picker_style(SegmentedStyle)
             //.accent_color(EnvironmentColor::Orange)
             //.enabled(false)

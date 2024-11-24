@@ -4,18 +4,23 @@ use crate::picker::picker_selection::PickerSelectionType;
 use crate::picker::style::{PickerStyle};
 use crate::toggle::{CheckboxStyle, ToggleValue};
 use crate::{ControlsOverlayKey, UnfocusAction};
-use carbide::color::{Color, ColorExt, TRANSPARENT};
-use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::focus::Focus;
-use carbide::state::{AnyReadState, AnyState, EnvMap1, IntoState, LocalState, Map1, Map2, Map3, RMap1, RMap3, ReadState, ReadStateExtNew};
-use carbide::widget::{AnySequence, AnyWidget, AspectRatio, Circle, CommonWidget, ContentMode, CornerRadii, CrossAxisAlignment, EdgeInsets, Ellipse, ForEach, Gradient, GradientPosition, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Padding, Rectangle, RoundedRectangle, Sequence, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
+use carbide_core::color::{Color, ColorExt, TRANSPARENT};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
+use carbide_core::focus::Focus;
+use carbide_core::state::{AnyReadState, AnyState, EnvMap1, IntoState, LocalState, Map1, Map2, Map3, RMap1, RMap3, ReadState, ReadStateExtNew};
+use carbide_core::widget::{AnySequence, AnyWidget, AspectRatio, Circle, CommonWidget, ContentMode, CornerRadii, CrossAxisAlignment, EdgeInsets, Ellipse, ForEach, Gradient, GradientPosition, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Overlay, OverlayManager, Padding, Rectangle, RoundedRectangle, Sequence, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
 use std::fmt::Debug;
-use dyn_clone::clone_box;
-use carbide::draw::{Alignment, Dimension};
-use carbide::flags::WidgetFlag;
-use carbide::render::Style;
-use carbide::widget::canvas::{Canvas, CanvasContext, LineCap};
-use crate::picker::style::menu::MenuStyleBaseComponent;
+use carbide::draw::Rect;
+use carbide::{closure, lens};
+use carbide::event::EventId;
+use carbide::state::StateExtNew;
+use carbide::widget::{Background, Frame, WidgetId};
+use carbide_core::utils::clone_box;
+use carbide_core::draw::{Alignment, Dimension};
+use carbide_core::flags::WidgetFlag;
+use carbide_core::render::Style;
+use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
+use crate::picker::style::menu::{MenuStyleBase, MenuStyleItemBase, MenuStylePopupBase};
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
@@ -24,7 +29,7 @@ impl MenuStyle {
     fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
         let mark = Self::mark(&enabled);
 
-        let content = Self::content(enabled.clone(), model);
+        let content = Self::content(enabled.clone(), model.clone());
 
         let content_and_mark = HStack::new((
             content
@@ -62,33 +67,23 @@ impl MenuStyle {
             )
             .frame_fixed_height(22.0);
 
-        /*let clickable = MouseArea::new(widget)
-            .custom_on_click(MenuAction {
-                popup: Rectangle::new()
-                    .on_click(|ctx| {})
-                    .on_click_outside(|ctx| {
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                        manager.clear();
-                        println!("Clicked outside")
-                    })
-                }).padding(50.0).boxed(),
-                enabled: enabled.as_dyn_read(),
-            }).custom_on_click_outside(UnfocusAction(focus.clone()))
-            .focused(focus);*/
+        let rect = LocalState::new(Rect::default());
 
-        let clickable = MenuStyleBaseComponent::new(
-            widget,
+        let geometry = widget.geometry(rect.clone());
+
+        let clickable = MenuStyleBase::new(
+            geometry,
             focus,
             enabled,
-            |_| {
-                Rectangle::new()
-                    .on_click(|ctx| {})
-                    .on_click_outside(|ctx| {
-                        OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                            manager.clear();
-                            println!("Clicked outside")
-                        })
-                    }).padding(50.0).boxed()
+            move |event_id| {
+                MenuStylePopupBase {
+                    id: WidgetId::new(),
+                    position: lens!(rect.position).as_dyn_read(),
+                    dimension: lens!(rect.dimension).as_dyn_read(),
+                    child: VStack::new(ForEach::custom_widget(model.clone(), move |item: &dyn AnySelectableWidget| {
+                        Self::popup_item(item, event_id)
+                    })).spacing(1.0).padding(1.0).background(Rectangle::new().fill(EnvironmentColor::OpaqueSeparator)).boxed(),
+                }.boxed()
             }
         );
 
@@ -96,6 +91,28 @@ impl MenuStyle {
             Text::new(label).custom_flexibility(15),
             clickable
         )).spacing(8.0)
+    }
+
+    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId) -> impl Widget {
+        let selection = clone_box(item.selection());
+
+        let hovered = LocalState::new(*selection.value()).as_dyn();
+
+        let background_color = Map1::read_map(hovered.clone(), |hovered| {
+            if *hovered {
+                EnvironmentColor::Accent
+            } else {
+                EnvironmentColor::SecondarySystemBackground
+            }
+        });
+
+        let visual = HStack::new((
+            clone_box(item.as_widget()).frame_fixed_height(22.0).fit_width().padding(EdgeInsets::single(0.0, 0.0, 5.0, 0.0)),
+            Spacer::new()
+        )).background(Rectangle::new().fill(background_color))
+            .boxed();
+
+        MenuStyleItemBase::new(visual, selection, hovered, event_id)
     }
 
     fn mark(enabled: &Box<dyn AnyReadState<T=bool>>) -> impl Widget {

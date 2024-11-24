@@ -11,7 +11,7 @@ use crate::ControlsOverlayKey;
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent)]
-pub struct MenuStyleBaseComponent<C, F, E, O, W>
+pub struct MenuStyleBase<C, F, E, O, W>
 where
     C: Widget,
     F: State<T=Focus>,
@@ -28,14 +28,14 @@ where
     open: O
 }
 
-impl MenuStyleBaseComponent<Empty, Focus, bool, fn(EventId)->Empty, Empty> {
+impl MenuStyleBase<Empty, Focus, bool, fn(EventId) ->Empty, Empty> {
     pub fn new<C: IntoWidget, F: IntoState<Focus>, E: IntoReadState<bool>, O: Fn(EventId) -> W + Clone + 'static, W: Widget>(
         child: C,
         focus: F,
         enabled: E,
         open: O
-    ) -> MenuStyleBaseComponent<C::Output, F::Output, E::Output, O, W> {
-        MenuStyleBaseComponent {
+    ) -> MenuStyleBase<C::Output, F::Output, E::Output, O, W> {
+        MenuStyleBase {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
@@ -95,7 +95,7 @@ impl<
     E: ReadState<T=bool>,
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
-> CommonWidget for MenuStyleBaseComponent<C, F, E, O, W> {
+> CommonWidget for MenuStyleBase<C, F, E, O, W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus);
 }
 
@@ -105,7 +105,7 @@ impl<
     E: ReadState<T=bool>,
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
-> KeyboardEventHandler for MenuStyleBaseComponent<C, F, E, O, W> {
+> KeyboardEventHandler for MenuStyleBase<C, F, E, O, W> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
@@ -124,7 +124,7 @@ impl<
     E: ReadState<T=bool>,
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
-> MouseEventHandler for MenuStyleBaseComponent<C, F, E, O, W> {
+> MouseEventHandler for MenuStyleBase<C, F, E, O, W> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*ctx.is_current { return }
@@ -143,7 +143,7 @@ impl<
                     }
 
                     OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                        let popup = (self.open)(EventId::default());
+                        let popup = (self.open)(*id);
                         manager.insert(popup);
                     });
                 } else {
@@ -166,7 +166,7 @@ impl<
     E: ReadState<T=bool>,
     O: Fn(EventId) -> W + Clone + 'static,
     W: Widget
-> Debug for MenuStyleBaseComponent<C, F, E, O, W> {
+> Debug for MenuStyleBase<C, F, E, O, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MenuStyleBaseComponent")
             .field("id", &self.id)

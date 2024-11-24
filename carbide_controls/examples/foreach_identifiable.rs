@@ -3,7 +3,7 @@ use carbide_controls::ControlsExt;
 use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use dyn_clone::clone_box;
+use carbide_core::utils::clone_box;
 
 fn main() {
     let mut application = Application::new()

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use carbide::event::EventId;
-use carbide::state::AnyState;
+use carbide::state::{AnyState, LocalState};
 use carbide::widget::OverlayManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
@@ -14,47 +14,41 @@ use crate::ControlsOverlayKey;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(MouseEvent)]
-pub struct PlainPopUpButtonPopUpItem<T, S> where
-    T: StateContract,
-    S: State<T=T>,
-{
+pub struct MenuStyleItemBase {
     #[id] id: WidgetId,
-    child: Box<dyn AnyWidget>,
     position: Position,
     dimension: Dimension,
-
-    selected: S,
-    item: Box<dyn AnyState<T=T>>,
+    child: Box<dyn AnyWidget>,
+    selected: Box<dyn AnyState<T=bool>>,
     hovered: Box<dyn AnyState<T=bool>>,
-    overlay_id: Option<String>,
 
     /// The ID of the event causing this to open.
     event_id: EventId,
     has_dragged: bool,
 }
 
-impl<T: StateContract, S: State<T=T>> PlainPopUpButtonPopUpItem<T, S> {
-    pub fn new(child: Box<dyn AnyWidget>, selected: S, item: Box<dyn AnyState<T=T>>, hovered: Box<dyn AnyState<T=bool>>, overlay_id: Option<String>, event_id: EventId) -> PlainPopUpButtonPopUpItem<T, S> {
-        PlainPopUpButtonPopUpItem {
+impl MenuStyleItemBase {
+    pub fn new(child: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>, hovered: Box<dyn AnyState<T=bool>>, event_id: EventId) -> MenuStyleItemBase {
+        MenuStyleItemBase {
             id: WidgetId::new(),
             child,
             position: Default::default(),
             dimension: Default::default(),
-            overlay_id,
             selected,
             event_id,
-            item,
             has_dragged: false,
             hovered,
         }
     }
 }
 
-impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopUpItem<T, S> {
+impl MouseEventHandler for MenuStyleItemBase {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         match event {
-            MouseEvent::Drag { button: MouseButton::Left, .. } => {
-                self.has_dragged = true;
+            MouseEvent::Drag { button: MouseButton::Left, total_delta_xy,.. } => {
+                if total_delta_xy.dist(&Position::default()) > 3.0 {
+                    self.has_dragged = true;
+                }
             }
             MouseEvent::Release { button: MouseButton::Left, position, press_id, duration, .. } => {
                 if self.is_inside(*position) {
@@ -66,7 +60,7 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
                         return;
                     }
 
-                    self.selected.set_value(self.item.value().clone());
+                    self.selected.set_value(true);
                     OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
                         manager.clear()
                     })
@@ -89,6 +83,6 @@ impl<T: StateContract, S: State<T=T>> MouseEventHandler for PlainPopUpButtonPopU
     }
 }
 
-impl<T: StateContract, S: State<T=T>> CommonWidget for PlainPopUpButtonPopUpItem<T, S> {
+impl CommonWidget for MenuStyleItemBase {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }

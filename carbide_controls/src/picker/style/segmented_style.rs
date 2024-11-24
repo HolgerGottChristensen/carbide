@@ -9,7 +9,7 @@ use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map4};
 use carbide::widget::{AnySequence, AnyWidget, EdgeInsets, ForEach, HStack, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
-use dyn_clone::clone_box;
+use carbide_core::utils::clone_box;
 use crate::identifiable::AnySelectableWidget;
 
 #[derive(Debug, Clone)]

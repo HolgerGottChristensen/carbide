@@ -5,6 +5,8 @@
 use std;
 use std::f64::consts::{E, PI};
 
+pub use dyn_clone::clone_box;
+
 /// Clamp a value between some range.
 pub fn clamp<T: PartialOrd>(n: T, start: T, end: T) -> T {
     if start <= end {
