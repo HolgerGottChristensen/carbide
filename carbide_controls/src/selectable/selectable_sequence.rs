@@ -1,17 +1,20 @@
-use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
+use std::ops::{Deref, DerefMut};
+use dyn_clone::DynClone;
+use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget, SelectableWidget};
 use carbide::reverse;
 use carbide::state::StateContract;
-use carbide::widget::{AnySequence, Content};
+use carbide::widget::{AnySequence, AnyWidget, Content, Identifiable, Sequence, Widget, WidgetSync};
+use carbide::widget::foreach_widget::{Delegate, ForEachWidget};
 
-impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {
         for element in self {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child(element, f);
+                AnySelectableWidget::foreach_child(element, f);
                 continue;
             }
 
@@ -19,14 +22,14 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for element in self {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_mut(element, f);
+                AnySelectableWidget::foreach_child_mut(element, f);
                 continue;
             }
 
@@ -34,14 +37,14 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for element in &mut self.iter_mut().rev() {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_rev(element, f);
+                AnySelectableWidget::foreach_child_rev(element, f);
                 continue;
             }
 
@@ -49,28 +52,28 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for element in &mut self.iter_mut() {
             f(element);
         }
     }
 
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for element in &mut self.iter_mut().rev() {
             f(element);
         }
     }
 }
 
-impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn AnyIdentifiableWidget<T>> for Content<W> {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+impl<W: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Content<W> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {
         for (_, element) in self.0.iter().take(self.1) {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child(element, f);
+                AnySelectableWidget::foreach_child(element, f);
                 continue;
             }
 
@@ -78,14 +81,14 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_mut(element, f);
+                AnySelectableWidget::foreach_child_mut(element, f);
                 continue;
             }
 
@@ -93,14 +96,14 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for (_, element) in self.0.iter_mut().take(self.1).rev() {
             if element.is_ignore() {
                 continue;
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_rev(element, f);
+                AnySelectableWidget::foreach_child_rev(element, f);
                 continue;
             }
 
@@ -108,13 +111,13 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             f(element);
         }
     }
 
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
         for (_, element) in self.0.iter_mut().take(self.1).rev() {
             f(element);
         }
@@ -125,54 +128,54 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<T: StateContract + PartialEq, $($generic: IdentifiableWidget<T>),*> AnySequence<dyn AnyIdentifiableWidget<T>> for ($($generic),*) {
-            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+        impl<$($generic: SelectableWidget),*> AnySequence<dyn AnySelectableWidget> for ($($generic),*) {
+            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
 
                     } else if $generic.is_proxy() {
-                        AnyIdentifiableWidget::foreach_child($generic, f);
+                        AnySelectableWidget::foreach_child($generic, f);
                     } else {
                         f($generic);
                     }
                 )*
             }
 
-            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
 
                     } else if $generic.is_proxy() {
-                        AnyIdentifiableWidget::foreach_child_mut($generic, f);
+                        AnySelectableWidget::foreach_child_mut($generic, f);
                     } else {
                         f($generic);
                     }
                 )*
             }
 
-            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     if $generic.is_ignore() {
 
                     } else if $generic.is_proxy() {
-                        AnyIdentifiableWidget::foreach_child_rev($generic, f);
+                        AnySelectableWidget::foreach_child_rev($generic, f);
                     } else {
                         f($generic);
                     }
                 )*
             }
 
-            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
                 let ($($generic),*) = self;
                 $(
                     f($generic);
                 )*
             }
 
-            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     f($generic);
@@ -180,6 +183,35 @@ macro_rules! tuple_sequence_impl {
             }
         }
     };
+}
+
+#[allow(non_snake_case)]
+#[allow(unused_parens)]
+impl<
+    T: ?Sized + Identifiable + WidgetSync + DynClone + 'static,
+    W: Sequence<T>,
+    O: SelectableWidget,
+    D: Delegate<T, O>
+> AnySequence<dyn AnySelectableWidget> for ForEachWidget<W, O, D, T> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {
+        AnySelectableWidget::foreach_child(self, f);
+    }
+
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
+        AnySelectableWidget::foreach_child_mut(self, f);
+    }
+
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
+        AnySelectableWidget::foreach_child_rev(self, f);
+    }
+
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
+        f(self);
+    }
+
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {
+        f(self);
+    }
 }
 
 //tuple_sequence_impl!(W1);

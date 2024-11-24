@@ -1,10 +1,11 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::ops::{Deref, DerefMut};
+use dyn_clone::{clone_trait_object, DynClone};
 use indexmap::IndexMap;
-use carbide::widget::foreach_widget::Content;
-use crate::widget::{AnyWidget, BuildWidgetIdHasher, Widget, WidgetId};
+use crate::widget::{AnyWidget, BuildWidgetIdHasher, Content, Widget, WidgetId};
 
-pub trait Sequence<T=dyn AnyWidget>: Clone + Debug + 'static where T: ?Sized {
+pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T));
     fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
     fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
@@ -12,7 +13,45 @@ pub trait Sequence<T=dyn AnyWidget>: Clone + Debug + 'static where T: ?Sized {
     fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
 }
 
-impl<T> Sequence<T> for () {
+clone_trait_object!(<T: ?Sized> AnySequence<T>);
+
+pub trait Sequence<T=dyn AnyWidget>: AnySequence<T> + Clone where T: ?Sized {}
+
+impl<T: ?Sized, W> Sequence<T> for W where W: AnySequence<T> + Clone {}
+
+mod private {
+    use crate::widget::AnySequence;
+
+    // This disallows implementing Widget manually, and requires something to implement
+    // AnyWidget to implement Widget.
+    pub trait Sealed {}
+
+    impl<T> Sealed for T where T: AnySequence {}
+}
+
+impl<T: ?Sized + 'static> AnySequence<T> for Box<dyn AnySequence<T>> {
+    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {
+        self.deref().foreach(f)
+    }
+
+    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        self.deref_mut().foreach_mut(f)
+    }
+
+    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        self.deref_mut().foreach_rev(f)
+    }
+
+    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        self.deref_mut().foreach_direct(f)
+    }
+
+    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T)) {
+        self.deref_mut().foreach_direct_rev(f)
+    }
+}
+
+impl<T: ?Sized> AnySequence<T> for () {
     fn foreach<'a>(&'a self, _f: &mut dyn FnMut(&'a T)) {}
     fn foreach_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
     fn foreach_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
@@ -20,7 +59,7 @@ impl<T> Sequence<T> for () {
     fn foreach_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut T)) {}
 }
 
-impl<W: Widget> Sequence for Vec<W> {
+impl<W: Widget> AnySequence for Vec<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
@@ -79,7 +118,7 @@ impl<W: Widget> Sequence for Vec<W> {
     }
 }
 
-impl<W: Widget> Sequence for Content<W> {
+impl<W: Widget> AnySequence for Content<W> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
         for (_, element) in self.0.iter().take(self.1) {
             if element.is_ignore() {
@@ -142,7 +181,7 @@ macro_rules! tuple_sequence_impl {
     ($($generic:ident),*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
-        impl<$($generic: Widget),*> Sequence for ($($generic),*) {
+        impl<$($generic: Widget),*> AnySequence for ($($generic),*) {
             fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(

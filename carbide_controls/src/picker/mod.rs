@@ -2,7 +2,7 @@ mod style;
 mod picker;
 mod picker_selection;
 mod tagged;
-mod picker_sequence;
+mod picker_item;
 mod picker_action;
 
 pub use picker::*;

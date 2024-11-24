@@ -1,7 +1,7 @@
 use crate::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
 use crate::state::StateSync;
-use crate::widget::{BuildWidgetIdHasher, CommonWidget, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{BuildWidgetIdHasher, CommonWidget, Content, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 use carbide::environment::EnvironmentStack;
 use dyn_clone::{clone_box, DynClone};
@@ -10,21 +10,12 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {
-    fn call(&self, child: Box<T>) -> O;
+    fn call(&self, child: &T) -> O;
 }
 
-impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(Box<T>) -> O + Clone + 'static {
-    fn call(&self, child: Box<T>) -> O {
+impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(&T) -> O + Clone + 'static {
+    fn call(&self, child: &T) -> O {
         self(child)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Content<O: Widget>(pub IndexMap<WidgetId, O, BuildWidgetIdHasher>, pub usize);
-
-impl<O: Widget> Default for Content<O> {
-    fn default() -> Self {
-        Content(Default::default(), 0)
     }
 }
 
@@ -100,7 +91,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
                 }
             } else {
                 // Calculate the resulting widget, using the delegate
-                let result = self.delegate.call(clone_box(child));
+                let result = self.delegate.call(child);
                 // Insert the result at the index
                 self.content.0.insert_before(index, id, result);
                 // Increment the index

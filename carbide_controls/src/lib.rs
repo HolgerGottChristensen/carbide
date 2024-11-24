@@ -5,7 +5,6 @@ pub use plain::*;
 pub use pop_up_button::*;
 pub use slider::*;
 pub use text_input::*;
-pub use types::CheckBoxValue;
 pub use controls_ext::*;
 pub use help::*;
 pub use labelled::*;
@@ -59,6 +58,7 @@ mod date_picker;
 pub mod toggle;
 pub mod picker;
 pub mod identifiable;
+mod selectable;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

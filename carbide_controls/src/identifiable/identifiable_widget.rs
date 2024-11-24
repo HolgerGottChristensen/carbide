@@ -2,7 +2,7 @@ use carbide::state::{AnyReadState, ReadState, State, StateContract};
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
-use carbide::widget::{AnyWidget, Delegate, ForEach, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
 
 pub trait AnyIdentifiableWidget<T>: AnyWidget

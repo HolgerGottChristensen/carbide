@@ -5,7 +5,6 @@ use carbide_core::state::{LocalState, StateValue};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::collections::HashSet;
-use carbide_core::environment::EnvironmentColor;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, StateValue)]
 enum Flavor {
@@ -30,9 +29,9 @@ fn main() {
             Text::new("Strawberry").tag(Flavor::Strawberry),
         ))
             .padding(40.0)
+            .picker_style(InlineStyle)
             .picker_style(MenuStyle)
             .picker_style(SegmentedStyle)
-            .picker_style(InlineStyle)
             //.accent_color(EnvironmentColor::Orange)
             //.enabled(false)
     ));

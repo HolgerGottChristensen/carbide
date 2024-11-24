@@ -7,8 +7,10 @@ use carbide::environment::EnvironmentColor::{OpaqueSeparator, SecondarySystemBac
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map4};
-use carbide::widget::{AnyWidget, EdgeInsets, HStack, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
+use carbide::widget::{AnySequence, AnyWidget, EdgeInsets, ForEach, HStack, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
+use dyn_clone::clone_box;
+use crate::identifiable::AnySelectableWidget;
 
 #[derive(Debug, Clone)]
 pub struct SegmentedStyle;
@@ -80,12 +82,15 @@ impl SegmentedStyle {
     }
 }
 
-/*impl PickerStyle for SegmentedStyle {
-    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn SelectableSequence>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
+impl PickerStyle for SegmentedStyle {
+    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         let radio_group = HStack::new(
-            SelectableForEach::new(model, move |widget: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>| {
-                SegmentedStyle::delegate(widget, selected, enabled.clone())
-            })
+            ForEach::custom_widget(
+                model,
+                move |w: &dyn AnySelectableWidget| {
+                    SegmentedStyle::delegate(clone_box(w.as_widget()), clone_box(w.selection()), enabled.clone())
+                }
+            )
         ).spacing(0.0)
             .frame_fixed_height(22.0)
             .background(RoundedRectangle::new(5.0)
@@ -101,4 +106,4 @@ impl SegmentedStyle {
 
         labelled.boxed()
     }
-}*/
+}

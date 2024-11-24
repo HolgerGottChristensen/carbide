@@ -7,9 +7,11 @@ use carbide::color::{Color, TRANSPARENT};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, Map2};
-use carbide::widget::{AnyWidget, Circle, CrossAxisAlignment, Ellipse, HStack, IfElse, MouseArea, Sequence, Text, VStack, Widget, WidgetExt, ZStack};
+use carbide::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Sequence, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
+use dyn_clone::clone_box;
 use crate::identifiable::AnySelectableWidget;
+use crate::picker::SegmentedStyle;
 
 #[derive(Debug, Clone)]
 pub struct InlineStyle;
@@ -109,12 +111,15 @@ impl InlineStyle {
     }
 }
 
-/*impl PickerStyle for InlineStyle {
-    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn Sequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
+impl PickerStyle for InlineStyle {
+    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         let radio_group = VStack::new(
-            SelectableForEach::new(model, move |widget: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>| {
-                InlineStyle::delegate(widget, selected, enabled.clone(), picker_selection_type)
-            })
+            ForEach::custom_widget(
+                model,
+                move |w: &dyn AnySelectableWidget| {
+                    InlineStyle::delegate(clone_box(w.as_widget()), clone_box(w.selection()), enabled.clone(), picker_selection_type)
+                }
+            )
         ).spacing(8.0).cross_axis_alignment(CrossAxisAlignment::Start);
 
         let labelled = HStack::new((
@@ -125,4 +130,4 @@ impl InlineStyle {
 
         labelled.boxed()
     }
-}*/
+}

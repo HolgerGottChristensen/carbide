@@ -7,11 +7,11 @@ pub use inline_style::*;
 pub use segmented_style::*;
 pub use menu_style::*;
 
-use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
+use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
 use carbide::environment::Key;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, ReadStateExtNew, State, StateContract, StateExtNew};
-use carbide::widget::{AnyWidget, Sequence, Widget, WidgetExt};
+use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use crate::picker::picker_selection::PickerSelectionType;
@@ -29,7 +29,7 @@ pub trait PickerStyle: Debug + DynClone {
         focus: Box<dyn AnyState<T=Focus>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         label: Box<dyn AnyReadState<T=String>>,
-        //model: Box<dyn Sequence<dyn AnySelectableWidget>>,
+        model: Box<dyn AnySequence<dyn AnySelectableWidget>>,
         selection_type: PickerSelectionType,
     ) -> Box<dyn AnyWidget>;
 }

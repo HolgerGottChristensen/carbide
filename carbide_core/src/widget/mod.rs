@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::hash::{BuildHasherDefault, DefaultHasher, Hash, Hasher};
 use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -115,7 +116,7 @@ mod environment_updating_new3;
 pub mod managers;
 pub mod foreach_widget;
 
-#[derive(Clone, Debug, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32, u64);
 
 impl WidgetId {
@@ -150,6 +151,12 @@ impl Hash for WidgetId {
 impl Default for WidgetId {
     fn default() -> Self {
         WidgetId::new()
+    }
+}
+
+impl Debug for WidgetId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
     }
 }
 

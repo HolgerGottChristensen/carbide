@@ -1,18 +1,16 @@
+use carbide_macro::carbide_default_builder2;
+use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
-use dyn_clone::DynClone;
-use carbide::environment::EnvironmentStack;
-use carbide::widget::{AnyWidget, Identifiable};
-use carbide_macro::carbide_default_builder2;
 
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
+use crate::environment::EnvironmentStack;
 use crate::flags::WidgetFlag;
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, StateSync, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, Sequence, WidgetSync};
-use crate::widget::foreach_widget::ForEachWidget;
+use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
+use crate::widget::foreach_widget::ForEachWidget;
+use crate::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::CommonWidgetImpl;
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
@@ -83,12 +81,12 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         }
     }
 
-    pub fn widget<W: Sequence, O: Widget, D: ForEachChildDelegate<dyn AnyWidget, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, dyn AnyWidget> {
-        ForEachWidget::new(of, delegate)
+    pub fn widget<Sequence: Sequence, Output: Widget, Delegate: ForEachChildDelegate<dyn AnyWidget, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, dyn AnyWidget> {
+        ForEachWidget::new(of, with)
     }
 
-    pub fn widget_custom<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: ForEachChildDelegate<T, O>>(of: W, delegate: D) -> ForEachWidget<W, O, D, T> {
-        ForEachWidget::new(of, delegate)
+    pub fn custom_widget<Item: ?Sized + Identifiable + WidgetSync + DynClone + 'static, Sequence: Sequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
+        ForEachWidget::new(of, with)
     }
 
     /*pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {

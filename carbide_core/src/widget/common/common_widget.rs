@@ -149,31 +149,31 @@ macro_rules! CommonWidgetImpl {
     ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
         #[allow(unused_imports)]
         fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::Sequence;
+            use carbide::widget::AnySequence;
             $child.foreach(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::Sequence;
+            use carbide::widget::AnySequence;
             $child.foreach_mut(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::Sequence;
+            use carbide::widget::AnySequence;
             $child.foreach_rev(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::Sequence;
+            use carbide::widget::AnySequence;
             $child.foreach_direct(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::Sequence;
+            use carbide::widget::AnySequence;
             $child.foreach_direct_rev(f);
         }
 
@@ -289,31 +289,31 @@ macro_rules! ModifierWidgetImpl {
 
         #[allow(unused_imports)]
         fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::Sequence;
+            use $crate::widget::AnySequence;
             $child.foreach(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::Sequence;
+            use $crate::widget::AnySequence;
             $child.foreach_mut(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::Sequence;
+            use $crate::widget::AnySequence;
             $child.foreach_rev(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::Sequence;
+            use $crate::widget::AnySequence;
             $child.foreach_direct(f);
         }
 
         #[allow(unused_imports)]
         fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::Sequence;
+            use $crate::widget::AnySequence;
             $child.foreach_direct_rev(f);
         }
     }
