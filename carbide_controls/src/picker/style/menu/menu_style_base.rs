@@ -1,11 +1,13 @@
 use crate::picker::style::menu::key_command::PopupButtonKeyCommand;
 use carbide::event::{EventId, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::focus::{Focus, FocusManager, Refocus};
-use carbide::state::{IntoReadState, IntoState, ReadState, State};
+use carbide::state::{IntoReadState, IntoState, ReadState, State, StateSync};
 use carbide::widget::{CommonWidget, Empty, IntoWidget, OverlayManager, Widget, WidgetId};
 use carbide::{CommonWidgetImpl, ModifierWidgetImpl};
 use std::fmt::{Debug, Formatter};
-use carbide::draw::{Dimension, Position};
+use carbide::color::RED;
+use carbide::draw::{Color, Dimension, Position};
+use carbide::environment::{EnvironmentColor, EnvironmentStack, IntoColorReadState};
 use carbide::flags::WidgetFlag;
 use crate::ControlsOverlayKey;
 
@@ -16,7 +18,7 @@ where
     C: Widget,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
-    O: Fn(EventId) -> W + Clone + 'static,
+    O: Fn(EventId, Color) -> W + Clone + 'static,
     W: Widget
 {
     #[id] id: WidgetId,
@@ -28,8 +30,8 @@ where
     open: O
 }
 
-impl MenuStyleBase<Empty, Focus, bool, fn(EventId) ->Empty, Empty> {
-    pub fn new<C: IntoWidget, F: IntoState<Focus>, E: IntoReadState<bool>, O: Fn(EventId) -> W + Clone + 'static, W: Widget>(
+impl MenuStyleBase<Empty, Focus, bool, fn(EventId, Color) ->Empty, Empty> {
+    pub fn new<C: IntoWidget, F: IntoState<Focus>, E: IntoReadState<bool>, O: Fn(EventId, Color) -> W + Clone + 'static, W: Widget>(
         child: C,
         focus: F,
         enabled: E,
@@ -93,7 +95,7 @@ impl<
     C: Widget,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
-    O: Fn(EventId) -> W + Clone + 'static,
+    O: Fn(EventId, Color) -> W + Clone + 'static,
     W: Widget
 > CommonWidget for MenuStyleBase<C, F, E, O, W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus);
@@ -103,15 +105,18 @@ impl<
     C: Widget,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
-    O: Fn(EventId) -> W + Clone + 'static,
+    O: Fn(EventId, Color) -> W + Clone + 'static,
     W: Widget
 > KeyboardEventHandler for MenuStyleBase<C, F, E, O, W> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
 
         if event == PopupButtonKeyCommand::Open {
+            let mut accent = EnvironmentColor::Accent.color();
+            accent.sync(ctx.env_stack);
+
             OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                let popup = (self.open)(EventId::default());
+                let popup = (self.open)(EventId::default(), *accent.value());
                 manager.insert(popup);
             });
         }
@@ -122,7 +127,7 @@ impl<
     C: Widget,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
-    O: Fn(EventId) -> W + Clone + 'static,
+    O: Fn(EventId, Color) -> W + Clone + 'static,
     W: Widget
 > MouseEventHandler for MenuStyleBase<C, F, E, O, W> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
@@ -142,8 +147,11 @@ impl<
                         });
                     }
 
+                    let mut accent = EnvironmentColor::Accent.color();
+                    accent.sync(ctx.env_stack);
+
                     OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                        let popup = (self.open)(*id);
+                        let popup = (self.open)(*id, *accent.value());
                         manager.insert(popup);
                     });
                 } else {
@@ -164,7 +172,7 @@ impl<
     C: Widget,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
-    O: Fn(EventId) -> W + Clone + 'static,
+    O: Fn(EventId, Color) -> W + Clone + 'static,
     W: Widget
 > Debug for MenuStyleBase<C, F, E, O, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
