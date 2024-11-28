@@ -6,7 +6,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
-use crate::{EnabledKey, Help, Labelled};
+use crate::{EnabledKey, Help};
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
 
@@ -21,10 +21,6 @@ pub trait ControlsExt: WidgetExt {
                 .background(Rectangle::new().fill(EnvironmentColor::Accent))
                 .boxed()
         )
-    }
-
-    fn label<L: IntoReadState<String>>(self, label: L) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L::Output> {
-        Labelled::new(label, self)
     }
 
     fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self, impl Key<Value=bool>, impl ReadState<T=bool>> {
