@@ -1,11 +1,26 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
-use dyn_clone::{clone_trait_object, DynClone};
+use dyn_clone::{clone_box, clone_trait_object, DynClone};
 use indexmap::IndexMap;
+use carbide::state::AnyReadState;
+use crate::state::{Map1, ReadStateExtNew};
 use crate::widget::{AnyWidget, BuildWidgetIdHasher, Content, Widget, WidgetId, WidgetSync};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
+    fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {
+        let s = clone_box(self);
+
+        Map1::read_map(0, move |_| {
+            let mut count = 0;
+            s.foreach(&mut |a| {
+                count += 1;
+            });
+
+            count
+        }).as_dyn_read()
+    }
+
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T));
     fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));
     fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut T));

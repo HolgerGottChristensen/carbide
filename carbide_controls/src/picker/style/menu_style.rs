@@ -14,7 +14,6 @@ use carbide_core::lens;
 use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew};
 use carbide_core::state::{StateExtNew, ValueState};
-use carbide_core::utils::clone_box;
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
 use carbide_core::widget::WidgetId;
 use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, Gradient, GradientPosition, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
@@ -112,7 +111,7 @@ impl MenuStyle {
     }
 
     fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget {
-        let selection = clone_box(item.selection());
+        let selection = item.selection().boxed();
 
         let hovered = Map2::map(hovered, ValueState::new(item.id()), |hovered, id| {
             hovered == id
@@ -131,7 +130,8 @@ impl MenuStyle {
         });
 
         let visual = HStack::new((
-            clone_box(item.as_widget())
+            item.as_widget()
+                .boxed()
                 .frame_fixed_height(22.0)
                 .fit_width()
                 .padding(EdgeInsets::single(0.0, 0.0, 4.0, 0.0)),
@@ -182,15 +182,16 @@ impl MenuStyle {
         let content = HStack::new(
             ForEach::custom_widget(model, move |input: &dyn AnySelectableWidget| {
                 if picker_selection_type == PickerSelectionType::Multi {
-                    clone_box(input.as_widget())
+                    input.as_widget()
+                        .boxed()
                         .padding(EdgeInsets::vertical_horizontal(0.0, 5.0))
                         .frame_fixed_height(16.0)
                         .fit_width()
                         .background(RoundedRectangle::new(4.0).fill(EnvironmentColor::Accent.color().darkened(0.2)))
                         .boxed()
                 } else {
-                    clone_box(input.as_widget()).boxed()
-                }.flagged(Map1::read_map(clone_box(input.selection()), |selected| {
+                    input.as_widget().boxed()
+                }.flagged(Map1::read_map(input.selection().boxed(), |selected| {
                     if *selected {
                         WidgetFlag::empty()
                     } else {

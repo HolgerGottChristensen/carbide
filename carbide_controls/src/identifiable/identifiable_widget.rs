@@ -8,7 +8,6 @@ use carbide::widget::foreach_widget::ForEachWidget;
 pub trait AnyIdentifiableWidget<T>: AnyWidget
 where T: StateContract + PartialEq {
     fn identifier(&self) -> &dyn AnyReadState<T=T>;
-    fn as_widget(&self) -> &dyn AnyWidget;
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {}
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {}
@@ -27,10 +26,6 @@ impl<T: StateContract + PartialEq> AnyIdentifiableWidget<T> for Box<dyn AnyIdent
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
         self.deref().identifier()
     }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
-    }
 }
 
 impl<T: StateContract + PartialEq> WidgetExt for Box<dyn AnyIdentifiableWidget<T>> {
@@ -38,7 +33,13 @@ impl<T: StateContract + PartialEq> WidgetExt for Box<dyn AnyIdentifiableWidget<T
 }
 
 impl<T: StateContract + PartialEq> AnyWidget for Box<dyn AnyIdentifiableWidget<T>> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
 
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
 }
 
 impl<
@@ -51,10 +52,6 @@ impl<
 
     fn identifier(&self) -> &dyn AnyReadState<T=G> {
         todo!()
-    }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<G>)) {
@@ -88,10 +85,6 @@ impl<
 
     fn identifier(&self) -> &dyn AnyReadState<T=G> {
         todo!()
-    }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<G>)) {

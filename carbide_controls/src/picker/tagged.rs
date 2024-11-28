@@ -23,10 +23,6 @@ impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiable
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
         &self.tag
     }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
-    }
 }
 
 impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable for Tagged<T, S, C> {

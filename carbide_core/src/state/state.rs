@@ -1,7 +1,6 @@
 
 use std::ops::{Deref, DerefMut};
-
-
+use dyn_clone::clone_box;
 use carbide_core::environment::Environment;
 use crate::environment::EnvironmentStack;
 use crate::state::*;
@@ -44,6 +43,12 @@ pub trait AnyState: AnyReadState {
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value_dyn(&mut self, value: Self::T);
+}
+
+impl<T: StateContract> dyn AnyState<T=T> {
+    pub fn boxed(&self) -> Box<dyn AnyState<T=T>> {
+        clone_box(self)
+    }
 }
 
 // ---------------------------------------------------

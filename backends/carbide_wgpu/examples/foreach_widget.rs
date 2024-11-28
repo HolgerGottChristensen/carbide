@@ -6,8 +6,8 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn delegate(child: impl Widget) -> impl Widget {
-        child.padding(10.0).border()
+    fn delegate(child: &dyn AnyWidget) -> impl Widget {
+        child.boxed().padding(10.0).border()
     }
 
     application.set_scene(Window::new(

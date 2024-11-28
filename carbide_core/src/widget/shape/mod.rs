@@ -51,7 +51,15 @@ pub trait Shape: AnyWidget + 'static {
 
 dyn_clone::clone_trait_object!(Shape);
 
-impl AnyWidget for Box<dyn Shape> {}
+impl AnyWidget for Box<dyn Shape> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}
 
 pub fn tessellate(shape: &mut dyn Shape, rectangle: &Box2D, path: &dyn Fn(&mut Builder, &Box2D)) {
     match shape.get_shape_style() {

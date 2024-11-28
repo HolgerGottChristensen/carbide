@@ -7,7 +7,6 @@ use carbide::widget::foreach_widget::ForEachWidget;
 
 pub trait AnySelectableWidget: AnyWidget {
     fn selection(&self) -> &dyn AnyState<T=bool>;
-    fn as_widget(&self) -> &dyn AnyWidget;
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {}
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnySelectableWidget)) {}
@@ -26,10 +25,6 @@ impl AnySelectableWidget for Box<dyn AnySelectableWidget> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         self.deref().selection()
     }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
-    }
 }
 
 impl WidgetExt for Box<dyn AnySelectableWidget> {
@@ -37,7 +32,13 @@ impl WidgetExt for Box<dyn AnySelectableWidget> {
 }
 
 impl AnyWidget for Box<dyn AnySelectableWidget> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
 
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
 }
 
 impl<
@@ -48,10 +49,6 @@ impl<
     I: ReadState<T=usize>> AnySelectableWidget for ForEach<T, M, U, W, I> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         todo!()
-    }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {
@@ -83,10 +80,6 @@ impl<
 > AnySelectableWidget for ForEachWidget<W, O, D, T> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         todo!()
-    }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        self
     }
 
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnySelectableWidget)) {

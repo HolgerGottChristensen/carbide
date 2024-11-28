@@ -156,7 +156,7 @@ fn main() {
                                 .font_size(EnvironmentFontSize::Title),
                             Spacer::new()
                         )).spacing(0.0),
-                        Proxy::new((
+                        Group::new((
                             PopUpButton::new(draw_figure, draw_figures),
                             PopUpButton::new(dash_mode, dash_modes),
                             PopUpButton::new(line_join, line_joins),

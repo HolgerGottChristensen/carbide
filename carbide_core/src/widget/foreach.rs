@@ -86,6 +86,13 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         ForEachWidget::new(of, with)
     }
 
+    pub fn identity<Sequence: ForEachSequence>(of: Sequence) -> ForEachWidget<Sequence, Box<dyn AnyWidget>, fn(&dyn AnyWidget)->Box<dyn AnyWidget>, dyn AnyWidget> {
+        fn identity(child: &dyn AnyWidget) -> Box<dyn AnyWidget> {
+            child.boxed()
+        }
+        ForEachWidget::new(of, identity)
+    }
+
     pub fn custom_widget<Item: ?Sized + Identifiable + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
         ForEachWidget::new(of, with)
     }

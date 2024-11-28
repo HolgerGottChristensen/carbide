@@ -1,5 +1,4 @@
 use std::hash::Hash;
-use carbide_core::utils::clone_box;
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
@@ -68,7 +67,7 @@ impl<
         match selected.clone() {
             PickerSelection::Single(single) => {
                 Map2::map(
-                    clone_box(widget.identifier()).ignore_writes(),
+                    widget.identifier().boxed().ignore_writes(),
                     single,
                     |value, selection| {
                         value == selection
@@ -82,7 +81,7 @@ impl<
             }
             PickerSelection::Optional(optional) => {
                 Map2::map(
-                    clone_box(widget.identifier()).ignore_writes(),
+                    widget.identifier().boxed().ignore_writes(),
                     optional,
                     |value, selection| {
                         selection.as_ref().is_some_and(|x| x == value)
@@ -98,7 +97,7 @@ impl<
             }
             PickerSelection::Multi(multi) => {
                 Map2::map(
-                    clone_box(widget.identifier()).ignore_writes(),
+                    widget.identifier().boxed().ignore_writes(),
                     multi,
                     |value, selection| {
                         selection.contains(value)
@@ -134,7 +133,7 @@ impl<
                     let selected = selected_for_closure.clone();
                     PickerItem {
                         selection: Self::selection(widget, selected),
-                        inner: clone_box(widget),
+                        inner: widget.as_widget().boxed(),
                     }
                 }
             );

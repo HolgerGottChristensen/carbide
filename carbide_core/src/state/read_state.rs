@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
-use dyn_clone::DynClone;
+use dyn_clone::{clone_box, DynClone};
 use carbide::text::FontWeight;
 
 use carbide_core::environment::Environment;
@@ -33,6 +33,12 @@ pub trait AnyReadState: DynClone + StateSync + Debug + 'static {
     type T: StateContract;
 
     fn value_dyn(&self) -> ValueRef<Self::T>;
+}
+
+impl<T: StateContract> dyn AnyReadState<T=T> {
+    pub fn boxed(&self) -> Box<dyn AnyReadState<T=T>> {
+        clone_box(self)
+    }
 }
 
 // ---------------------------------------------------

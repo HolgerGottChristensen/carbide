@@ -327,6 +327,14 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     }
 }
 
-impl AnyWidget for Box<dyn TextWidget> {}
+impl AnyWidget for Box<dyn TextWidget> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}
 
 dyn_clone::clone_trait_object!(TextWidget);

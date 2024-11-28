@@ -9,7 +9,6 @@ use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map4};
 use carbide::widget::{AnySequence, AnyWidget, EdgeInsets, ForEach, HStack, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
-use carbide_core::utils::clone_box;
 use crate::identifiable::AnySelectableWidget;
 
 #[derive(Debug, Clone)]
@@ -88,7 +87,7 @@ impl PickerStyle for SegmentedStyle {
             ForEach::custom_widget(
                 model,
                 move |w: &dyn AnySelectableWidget| {
-                    SegmentedStyle::delegate(clone_box(w.as_widget()), clone_box(w.selection()), enabled.clone())
+                    SegmentedStyle::delegate(w.as_widget().boxed(), w.selection().boxed(), enabled.clone())
                 }
             )
         ).spacing(0.0)

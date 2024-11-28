@@ -592,4 +592,12 @@ impl<T: Widget,
     B8: ReadState<T=bool>,
     B9: ReadState<T=bool>,
     B10: ReadState<T=bool>,
-> AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {}
+> AnyWidget for Ignore<T, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}

@@ -9,7 +9,6 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, Map2};
 use carbide_core::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Sequence, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
-use carbide_core::utils::clone_box;
 use crate::identifiable::AnySelectableWidget;
 use crate::picker::SegmentedStyle;
 
@@ -117,7 +116,7 @@ impl PickerStyle for InlineStyle {
             ForEach::custom_widget(
                 model,
                 move |w: &dyn AnySelectableWidget| {
-                    InlineStyle::delegate(clone_box(w.as_widget()), clone_box(w.selection()), enabled.clone(), picker_selection_type)
+                    InlineStyle::delegate(w.as_widget().boxed(), w.selection().boxed(), enabled.clone(), picker_selection_type)
                 }
             )
         ).spacing(8.0).cross_axis_alignment(CrossAxisAlignment::Start);

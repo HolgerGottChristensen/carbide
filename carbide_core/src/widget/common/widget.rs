@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
-use dyn_clone::DynClone;
+use dyn_clone::{clone_box, DynClone};
 use carbide::accessibility::AccessibilityContext;
 use carbide::environment::EnvironmentStack;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
@@ -19,10 +19,18 @@ use crate::state::{StateContract, StateSync};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{CommonWidget, IntoWidget, WidgetExt, WidgetId, WidgetSync};
 
-pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {}
+pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {
+    fn as_widget(&self) -> &dyn AnyWidget;
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget;
+}
+
+impl dyn AnyWidget {
+    pub fn boxed(&self) -> Box<dyn AnyWidget> {
+        clone_box(self)
+    }
+}
 
 dyn_clone::clone_trait_object!(AnyWidget);
-
 
 pub trait Widget: AnyWidget + WidgetExt + Clone + private::Sealed {}
 
@@ -42,7 +50,15 @@ mod private {
 //  Implement Widget for Box dyn Widget
 // ---------------------------------------------------
 
-impl AnyWidget for Box<dyn AnyWidget> {}
+impl AnyWidget for Box<dyn AnyWidget> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}
 
 impl WidgetExt for Box<dyn AnyWidget> {}
 

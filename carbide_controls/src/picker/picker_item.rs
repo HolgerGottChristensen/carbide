@@ -16,10 +16,6 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         &self.selection
     }
-
-    fn as_widget(&self) -> &dyn AnyWidget {
-        &self.inner
-    }
 }
 
 impl<W: Widget, S: State<T=bool>> Identifiable for PickerItem<W, S> {

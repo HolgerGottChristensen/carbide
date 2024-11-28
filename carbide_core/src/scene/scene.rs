@@ -13,7 +13,15 @@ pub trait AnyScene: AnyWidget + DynClone + 'static {
     fn is_daemon(&self) -> bool;
 }
 
-impl AnyWidget for Box<dyn AnyScene> {}
+impl AnyWidget for Box<dyn AnyScene> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}
 
 impl AnyScene for Box<dyn AnyScene> {
     fn request_redraw(&self) -> bool {

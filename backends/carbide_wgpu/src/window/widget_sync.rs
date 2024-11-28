@@ -27,7 +27,15 @@ impl<T: ReadState<T=String>, C: Widget> Update for Window<T, C> {
     fn process_update(&mut self, _ctx: &mut UpdateContext) {}
 }
 
-impl<T: ReadState<T=String>, C: Widget> AnyWidget for Window<T, C> {}
+impl<T: ReadState<T=String>, C: Widget> AnyWidget for Window<T, C> {
+    fn as_widget(&self) -> &dyn AnyWidget {
+        self
+    }
+
+    fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+}
 
 impl<T: ReadState<T=String>, C: Widget> WidgetExt for Window<T, C> {}
 
