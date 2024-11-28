@@ -1,10 +1,11 @@
 use std::iter;
 
 use carbide_chart::{Chart, DatasetExt, ScatterController, Stepped};
-use carbide_controls::{ControlsExt, PopUpButton};
+use carbide_controls::{ControlsExt};
+use carbide_controls::picker::{MenuStyle, Picker};
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::state::{LocalState, ValueState};
-use carbide_core::widget::{VStack, WidgetExt};
+use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{locale, LocaleExt};
 use carbide_wgpu::{Application, Window};
 
@@ -55,8 +56,13 @@ fn main() {
                     //Chart::new(ScatterController::new((data3, data6)))
                     .border()
                     .locale(ValueState::new(locale!("da"))),
-                PopUpButton::new(stepped.clone(), vec![Stepped::None, Stepped::Before, Stepped::After, Stepped::Middle, Stepped::MiddleVertical])
-                    .label("Stepped: ")
+                Picker::new("Stepped:", stepped.clone(), (
+                    Text::new("None").tag(Stepped::None),
+                    Text::new("Before").tag(Stepped::Before),
+                    Text::new("After").tag(Stepped::After),
+                    Text::new("Middle").tag(Stepped::Middle),
+                    Text::new("MiddleVertical").tag(Stepped::MiddleVertical),
+                )).picker_style(MenuStyle)
             )).padding(50.0)
         ));
 

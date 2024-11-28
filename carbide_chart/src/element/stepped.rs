@@ -1,6 +1,7 @@
 use carbide::impl_state_value;
+use carbide_derive::StateValue;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, StateValue)]
 pub enum Stepped {
     /// Move Y then X
     Before,
@@ -13,5 +14,3 @@ pub enum Stepped {
     /// Move X and Y
     None,
 }
-
-impl_state_value!(Stepped);
