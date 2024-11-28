@@ -2,7 +2,6 @@ pub use button::*;
 use carbide_core::state::{EnvMap1, Map1};
 pub use list::*;
 pub use plain::*;
-pub use pop_up_button::*;
 pub use slider::*;
 pub use text_input::*;
 pub use controls_ext::*;
@@ -46,7 +45,6 @@ macro_rules! capture {
 mod button;
 mod list;
 mod plain;
-mod pop_up_button;
 mod slider;
 mod text_input;
 mod types;

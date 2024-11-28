@@ -1,6 +1,5 @@
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
-use carbide_core::state::{Map1, ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -20,12 +19,12 @@ fn main() {
         Dimension::new(300.0, 600.0),
         VStack::new(
             Group::sequence((
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
-                Rectangle::new().fill(EnvironmentColor::Blue).frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
+                Rectangle::new().frame(100.0, 50.0),
             ), delegate)
         )
     ));

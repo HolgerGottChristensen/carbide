@@ -1,4 +1,4 @@
-use carbide_controls::{PlainPopUpButton, PlainTextInput};
+use carbide_controls::{PlainTextInput};
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
@@ -86,8 +86,6 @@ fn main() {
                 .clip()
                 .padding(EdgeInsets::all(30.0)),*/
             //PopUpButton::new(model, selected).padding(EdgeInsets::all(50.0)),
-            PlainPopUpButton::new(selected, model)
-                .padding(50.0),
         ))
             .spacing(20.0)
     ));
