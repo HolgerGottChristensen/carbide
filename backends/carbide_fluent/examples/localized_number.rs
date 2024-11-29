@@ -1,6 +1,7 @@
 use icu::locid::locale;
 
-use carbide_controls::{ControlsExt, PopUpButton, Slider};
+use carbide_controls::{ControlsExt, Slider};
+use carbide_controls::picker::Picker;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::LocalState;
@@ -48,51 +49,51 @@ fn main() {
             text,
             VStack::new((
                 Slider::new(number.clone(), 0.0, 100000.0).label(LocalizedString::new("number")),
-                PopUpButton::new(style.clone(), vec![
-                    NumberStyle::Decimal,
-                    NumberStyle::Currency,
-                    NumberStyle::Percent,
-                ]).label(LocalizedString::new("style")),
-                PopUpButton::new(notation.clone(), vec![
-                    NumberNotation::Standard,
-                    NumberNotation::Scientific,
-                    NumberNotation::Engineering,
-                ]).label(LocalizedString::new("notation")),
-                PopUpButton::new(grouping.clone(), vec![
-                    NumberGrouping::Auto,
-                    NumberGrouping::Always,
-                    NumberGrouping::Min2,
-                    NumberGrouping::Never,
-                ]).label(LocalizedString::new("grouping")),
-                PopUpButton::new(rounding.clone(), vec![
-                    RoundingMode::Ceil,
-                    RoundingMode::Floor,
-                    RoundingMode::Expand,
-                    RoundingMode::Trunc,
-                    RoundingMode::HalfCeil,
-                    RoundingMode::HalfFloor,
-                    RoundingMode::HalfExpand,
-                    RoundingMode::HalfTrunc,
-                    RoundingMode::HalfEven,
-                ]).label(LocalizedString::new("rounding")),
+                Picker::new(LocalizedString::new("style"), style.clone(), (
+                    Text::new("Decimal").tag(NumberStyle::Decimal),
+                    Text::new("Currency").tag(NumberStyle::Currency),
+                    Text::new("Percent").tag(NumberStyle::Percent),
+                )),
+                Picker::new(LocalizedString::new("notation"), notation.clone(), (
+                    Text::new("Standard").tag(NumberNotation::Standard),
+                    Text::new("Scientific").tag(NumberNotation::Scientific),
+                    Text::new("Engineering").tag(NumberNotation::Engineering),
+                )),
+                Picker::new(LocalizedString::new("grouping"), grouping.clone(), (
+                    Text::new("Auto").tag(NumberGrouping::Auto),
+                    Text::new("Always").tag(NumberGrouping::Always),
+                    Text::new("Min2").tag(NumberGrouping::Min2),
+                    Text::new("Never").tag(NumberGrouping::Never),
+                )),
+                Picker::new(LocalizedString::new("rounding"), rounding.clone(), (
+                    Text::new("Ceil").tag(RoundingMode::Ceil),
+                    Text::new("Floor").tag(RoundingMode::Floor),
+                    Text::new("Expand").tag(RoundingMode::Expand),
+                    Text::new("Trunc").tag(RoundingMode::Trunc),
+                    Text::new("HalfCeil").tag(RoundingMode::HalfCeil),
+                    Text::new("HalfFloor").tag(RoundingMode::HalfFloor),
+                    Text::new("HalfExpand").tag(RoundingMode::HalfExpand),
+                    Text::new("HalfTrunc").tag(RoundingMode::HalfTrunc),
+                    Text::new("HalfEven").tag(RoundingMode::HalfEven),
+                )),
                 Slider::new(minimum_integer_digits, 0usize, 10usize).label(LocalizedString::new("minimum_integer_digits")),
                 Slider::new(minimum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("minimum_fraction_digits")),
                 Slider::new(maximum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("maximum_fraction_digits")),
                 Slider::new(minimum_significant_digits, 0usize, 10usize).label(LocalizedString::new("minimum_significant_digits")),
                 Slider::new(maximum_significant_digits, 0usize, 10usize).label(LocalizedString::new("maximum_significant_digits")),
             )).spacing(15.0),
-            PopUpButton::new(locale.clone(), vec![
-                locale!("en"),
-                locale!("da"),
-                locale!("ja"),
-                locale!("de"),
-                locale!("en-US"),
-                locale!("en-GB"),
-            ]).label(LocalizedString::new("locale"))
+            Picker::new(LocalizedString::new("locale"), locale.clone(), (
+                Text::new("en").tag(locale!("en")),
+                Text::new("da").tag(locale!("da")),
+                Text::new("ja").tag(locale!("ja")),
+                Text::new("de").tag(locale!("de")),
+                Text::new("en-US").tag(locale!("en-US")),
+                Text::new("en-GB").tag(locale!("en-GB")),
+            )),
         )).spacing(30.0)
             .padding(EdgeInsets::vertical_horizontal(50.0, 30.0))
             .locale(locale)
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

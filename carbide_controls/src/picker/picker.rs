@@ -2,7 +2,7 @@ use std::hash::Hash;
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
-use crate::picker::PickerStyle;
+use crate::picker::{MenuStyle, PickerStyle};
 use crate::{enabled_state, EnabledState};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::focus::Focus;
@@ -123,24 +123,22 @@ impl<
     L: ReadState<T=String>,
 > Initialize for Picker<T, F, M, E, L> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        if let Some(style) = ctx.env_stack.get::<PickerStyleKey>() {
+        let style = ctx.env_stack.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&MenuStyle);
+        let selected_for_closure = self.selected.clone();
 
-            let selected_for_closure = self.selected.clone();
-
-            let foreach = ForEach::custom_widget(
-                self.model.clone(),
-                move |widget: &dyn AnyIdentifiableWidget<T>| {
-                    let selected = selected_for_closure.clone();
-                    PickerItem {
-                        selection: Self::selection(widget, selected),
-                        inner: widget.as_widget().boxed(),
-                    }
+        let foreach = ForEach::custom_widget(
+            self.model.clone(),
+            move |widget: &dyn AnyIdentifiableWidget<T>| {
+                let selected = selected_for_closure.clone();
+                PickerItem {
+                    selection: Self::selection(widget, selected),
+                    inner: widget.as_widget().boxed(),
                 }
-            );
+            }
+        );
 
-            let selection_type = self.selected.to_type();
-            self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
-        }
+        let selection_type = self.selected.to_type();
+        self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
     }
 }
 

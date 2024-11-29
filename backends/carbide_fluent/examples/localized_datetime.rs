@@ -3,7 +3,8 @@ use std::time::Duration;
 use chrono::Local;
 use icu::locid::locale;
 
-use carbide_controls::{ControlsExt, PopUpButton};
+use carbide_controls::{ControlsExt};
+use carbide_controls::picker::{MenuStyle, Picker};
 use carbide_core::asynchronous::Timer;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
@@ -47,37 +48,38 @@ fn main() {
         VStack::new((
             text,
             VStack::new((
-                PopUpButton::new(date_style.clone(), vec![
-                    DateStyle::Full,
-                    DateStyle::Long,
-                    DateStyle::Medium,
-                    DateStyle::Short,
-                    DateStyle::Hidden
-                ]).label(LocalizedString::new("datestyle")),
-                PopUpButton::new(time_style.clone(), vec![
-                    TimeStyle::Full,
-                    TimeStyle::Long,
-                    TimeStyle::Medium,
-                    TimeStyle::Short,
-                    TimeStyle::Hidden
-                ]).label(LocalizedString::new("timestyle")),
-                PopUpButton::new(timezone_style.clone(), vec![
-                    TimezoneStyle::Hidden,
-                    TimezoneStyle::LocalizedGmt,
-                ]).label(LocalizedString::new("timezonestyle")),
+                Picker::new(LocalizedString::new("datestyle"), date_style.clone(), (
+                    Text::new("Full").tag(DateStyle::Full),
+                    Text::new("Long").tag(DateStyle::Long),
+                    Text::new("Medium").tag(DateStyle::Medium),
+                    Text::new("Short").tag(DateStyle::Short),
+                    Text::new("Hidden").tag(DateStyle::Hidden),
+                )),
+                Picker::new(LocalizedString::new("timestyle"), time_style.clone(), (
+                    Text::new("Full").tag(TimeStyle::Full),
+                    Text::new("Long").tag(TimeStyle::Long),
+                    Text::new("Medium").tag(TimeStyle::Medium),
+                    Text::new("Short").tag(TimeStyle::Short),
+                    Text::new("Hidden").tag(TimeStyle::Hidden),
+                )),
+                Picker::new(LocalizedString::new("timezonestyle"), timezone_style.clone(), (
+                    Text::new("Hidden").tag(TimezoneStyle::Hidden),
+                    Text::new("LocalizedGmt").tag(TimezoneStyle::LocalizedGmt),
+                )),
             )),
-            PopUpButton::new(locale.clone(), vec![
-                locale!("en"),
-                locale!("da"),
-                locale!("ja"),
-                locale!("de"),
-                locale!("en-US"),
-                locale!("en-GB"),
-            ]).label(LocalizedString::new("locale"))
+            Picker::new(LocalizedString::new("locale"), locale.clone(), (
+                Text::new("en").tag(locale!("en")),
+                Text::new("da").tag(locale!("da")),
+                Text::new("ja").tag(locale!("ja")),
+                Text::new("de").tag(locale!("de")),
+                Text::new("en-US").tag(locale!("en-US")),
+                Text::new("en-GB").tag(locale!("en-GB")),
+            )),
         )).spacing(30.0)
             .padding(80.0)
             .locale(locale)
-    ).close_application_on_window_close());
+            .picker_style(MenuStyle)
+    ));
 
     application.launch();
 }

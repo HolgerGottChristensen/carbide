@@ -17,5 +17,5 @@ chrono = "0.4.30"
 dyn-clone.workspace = true
 
 [dev-dependencies]
-carbide_wgpu = { path = "../carbide_wgpu" }
+carbide_wgpu = { path = "../carbide_wgpu", features = ["controls"] }
 carbide_controls = { path = "../../carbide_controls", features = ["carbide_fluent"] }

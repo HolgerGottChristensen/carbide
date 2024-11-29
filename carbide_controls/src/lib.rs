@@ -55,6 +55,7 @@ pub mod toggle;
 pub mod picker;
 pub mod identifiable;
 mod selectable;
+mod labelled;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

@@ -1,12 +1,13 @@
 use std::fmt::Debug;
 use carbide::environment::{Key};
-use carbide::state::{ReadState, StateContract};
+use carbide::state::{ReadState, StateContract, ValueState};
 use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2, Widget};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
 use crate::{EnabledKey, Help};
+use crate::labelled::Labelled;
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
 
@@ -23,6 +24,10 @@ pub trait ControlsExt: WidgetExt {
         )
     }
 
+    fn label<L: IntoReadState<String>>(self, label: L) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L::Output> {
+        Labelled::new(label, self)
+    }
+
     fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self, impl Key<Value=bool>, impl ReadState<T=bool>> {
         EnvUpdatingNew2::<Self, EnabledKey, E::Output>::new(enabled.into_read_state(), self)
     }
@@ -35,7 +40,11 @@ pub trait ControlsExt: WidgetExt {
         EnvUpdatingNew::<Self, PickerStyleKey>::new(Box::new(value) as Box<dyn PickerStyle>, self)
     }
 
-    fn tag<T: StateContract + PartialEq, S: ReadState<T=T>>(self, tag: S) -> Tagged<T, S, Self> {
+    fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> {
+        Tagged::new(self, ValueState::new(tag))
+    }
+
+    fn tag_state<T: StateContract + PartialEq, S: ReadState<T=T>>(self, tag: S) -> Tagged<T, S, Self> {
         Tagged::new(self, tag)
     }
 }
