@@ -43,17 +43,17 @@ fn main() {
             HStack::new((
                 calculator_button(
                     Text::new("AC").font_size(32),
-                    closure!(|_, _| ($calculator_state).clear_all()),
+                    closure!(|_| ($calculator_state).clear_all()),
                 )
                     .accent_color(EnvironmentColor::TertiarySystemFill),
                 calculator_button(
                     Text::new("±").font_size(32),
-                    closure!(|_, _| ($calculator_state).negate_current()),
+                    closure!(|_| ($calculator_state).negate_current()),
                 )
                     .accent_color(EnvironmentColor::TertiarySystemFill),
                 calculator_button(
                     Text::new("%").font_size(32),
-                    closure!(|_, _| ($calculator_state).percent_to_decimal()),
+                    closure!(|_| ($calculator_state).percent_to_decimal()),
                 )
                     .accent_color(EnvironmentColor::TertiarySystemFill),
                 operator_button(Operation::Div, calculator_state.clone()),
@@ -85,7 +85,7 @@ fn main() {
                 HStack::new((
                     calculator_button(
                         Text::new(",").font_size(32),
-                        closure!(|_, _| ($calculator_state).push_separator()),
+                        closure!(|_| ($calculator_state).push_separator()),
                     )
                         .accent_color(EnvironmentColor::SystemFill),
                     operator_button(Operation::Eq, calculator_state.clone()),
@@ -100,7 +100,7 @@ fn main() {
     application.launch();
 }
 
-fn calculator_button(label: impl Widget, action: impl MouseAreaAction + Clone + 'static) -> impl Widget + WidgetExt {
+fn calculator_button(label: impl Widget, action: impl Action + Clone + 'static) -> impl Widget + WidgetExt {
     let pressed_state = LocalState::new(false);
     let hovered_state = LocalState::new(false);
 
@@ -133,7 +133,7 @@ fn calculator_button(label: impl Widget, action: impl MouseAreaAction + Clone + 
 fn number_button(number: i64, state: impl State<T=CalculatorState>) -> impl Widget + WidgetExt {
     calculator_button(
         Text::new(number).font_size(32),
-        closure!(|_, _| ($state).append(number)),
+        closure!(|_| ($state).append(number)),
     )
     .accent_color(EnvironmentColor::SystemFill)
 }
@@ -141,6 +141,6 @@ fn number_button(number: i64, state: impl State<T=CalculatorState>) -> impl Widg
 fn operator_button(operator: Operation, state: impl State<T=CalculatorState>) -> impl Widget + WidgetExt {
     calculator_button(
         Text::new(operator.to_symbol()).font_size(32),
-        closure!(|_, _| ($state).set_operation(operator)),
+        closure!(|_| ($state).set_operation(operator)),
     )
 }

@@ -48,7 +48,8 @@ fn main() {
         VStack::new((
             text,
             VStack::new((
-                Slider::new(number.clone(), 0.0, 100000.0).label(LocalizedString::new("number")),
+                Slider::new(number.clone(), 0.0, 100000.0)
+                    .label(LocalizedString::new("number")),
                 Picker::new(LocalizedString::new("style"), style.clone(), (
                     Text::new("Decimal").tag(NumberStyle::Decimal),
                     Text::new("Currency").tag(NumberStyle::Currency),
@@ -76,11 +77,16 @@ fn main() {
                     Text::new("HalfTrunc").tag(RoundingMode::HalfTrunc),
                     Text::new("HalfEven").tag(RoundingMode::HalfEven),
                 )),
-                Slider::new(minimum_integer_digits, 0usize, 10usize).label(LocalizedString::new("minimum_integer_digits")),
-                Slider::new(minimum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("minimum_fraction_digits")),
-                Slider::new(maximum_fraction_digits, 0usize, 10usize).label(LocalizedString::new("maximum_fraction_digits")),
-                Slider::new(minimum_significant_digits, 0usize, 10usize).label(LocalizedString::new("minimum_significant_digits")),
-                Slider::new(maximum_significant_digits, 0usize, 10usize).label(LocalizedString::new("maximum_significant_digits")),
+                Slider::new(minimum_integer_digits, 0usize, 10usize)
+                    .label(LocalizedString::new("minimum_integer_digits")),
+                Slider::new(minimum_fraction_digits, 0usize, 10usize)
+                    .label(LocalizedString::new("minimum_fraction_digits")),
+                Slider::new(maximum_fraction_digits, 0usize, 10usize)
+                    .label(LocalizedString::new("maximum_fraction_digits")),
+                Slider::new(minimum_significant_digits, 0usize, 10usize)
+                    .label(LocalizedString::new("minimum_significant_digits")),
+                Slider::new(maximum_significant_digits, 0usize, 10usize)
+                    .label(LocalizedString::new("maximum_significant_digits")),
             )).spacing(15.0),
             Picker::new(LocalizedString::new("locale"), locale.clone(), (
                 Text::new("en").tag(locale!("en")),

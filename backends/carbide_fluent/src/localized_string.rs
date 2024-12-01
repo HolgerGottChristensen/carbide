@@ -1,14 +1,13 @@
-use std::fmt::Debug;
-use fluent::FluentArgs;
-use fluent::types::{FluentDateTime, FluentNumber};
-use icu::locid::Locale;
-use carbide_core::environment::{Environment, EnvironmentStack};
-use carbide_core::impl_state_value;
-use carbide_core::state::{AnyReadState, StateSync, ReadState, ValueRef};
-use crate::{LANGUAGES, locale};
 use crate::args::{Arg, Args, LocalizedArg};
 use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
+use crate::{locale, LANGUAGES};
+use carbide_core::environment::EnvironmentStack;
+use carbide_core::state::{AnyReadState, ReadState, StateSync, ValueRef};
+use fluent::types::{FluentDateTime, FluentNumber};
+use fluent::FluentArgs;
+use icu::locid::Locale;
+use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
 pub struct LocalizedString<K, S, V> where K: Localizable, V: Args, S: ReadState<T=K> {

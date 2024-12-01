@@ -130,7 +130,7 @@ fn main() {
         "Lines example".to_string(),
         Dimension::new(800.0, 600.0),
         widget,
-    ).close_application_on_window_close());
+    ));
 
     application.launch();
 }

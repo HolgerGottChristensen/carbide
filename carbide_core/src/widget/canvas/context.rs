@@ -164,7 +164,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         todo!()
     }
 
-    /// x, y is the top left corner of the box enclosing the circle
+    /// x, y is the center of the circle
     pub fn circle(&mut self, x: f64, y: f64, diameter: f64) {
         self.move_to(x, y + diameter / 2.0);
         self.arc(
