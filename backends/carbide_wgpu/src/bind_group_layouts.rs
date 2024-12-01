@@ -57,7 +57,7 @@ pub(crate) fn uniform_bind_group_layout(device: &Device) -> BindGroupLayout {
                 count: None,
             },
         ],
-        label: Some("uniform_bind_group_layout"),
+        label: Some("carbide_uniform_bind_group_layout"),
     })
 }
 
@@ -75,7 +75,7 @@ pub(crate) fn uniform_bind_group_layout2(device: &Device) -> BindGroupLayout {
                 count: None,
             },
         ],
-        label: Some("uniform_bind_group_layout2"),
+        label: Some("carbide_uniform_bind_group_layout2"),
     })
 }
 
@@ -99,7 +99,7 @@ pub(crate) fn filter_texture_bind_group_layout(device: &Device) -> BindGroupLayo
                 count: None,
             },
         ],
-        label: Some("uniform_bind_group_layout"),
+        label: Some("carbide_filter_texture_bind_group_layout"),
     })
 }
 
@@ -115,7 +115,7 @@ pub(crate) fn filter_buffer_bind_group_layout(device: &Device) -> BindGroupLayou
             },
             count: None,
         }],
-        label: Some("uniform_bind_group_layout"),
+        label: Some("carbide_filter_buffer_bind_group_layout"),
     })
 }
 
@@ -143,7 +143,7 @@ pub(crate) fn gradient_buffer_bind_group_layout(device: &Device) -> BindGroupLay
                 count: None,
             },
         ],
-        label: Some("gradient_buffer_bind_group_layout"),
+        label: Some("carbide_gradient_buffer_bind_group_layout"),
     })
 }
 
@@ -161,7 +161,7 @@ pub(crate) fn atlas_bind_group_layout(device: &Device) -> BindGroupLayout {
                 count: None,
             },
         ],
-        label: Some("atlas_bind_group_layout"),
+        label: Some("carbide_atlas_bind_group_layout"),
     })
 }
 
@@ -186,6 +186,6 @@ pub(crate) fn main_bind_group_layout(device: &Device) -> BindGroupLayout {
                 count: None,
             }
         ],
-        label: Some("texture_bind_group_layout"),
+        label: Some("carbide_texture_bind_group_layout"),
     })
 }

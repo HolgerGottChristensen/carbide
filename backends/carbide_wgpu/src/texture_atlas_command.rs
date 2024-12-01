@@ -26,7 +26,7 @@ impl<'a> TextureAtlasCommand<'a> {
     /// > of the buffer is over. So you can't do it every frame reasonably
     pub fn create_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("carbide_buffer_init_descriptor"),
+            label: Some("carbide_texture_atlas_buffer"),
             contents: &self.texture_atlas_buffer,
             usage: wgpu::BufferUsages::COPY_SRC,
         })

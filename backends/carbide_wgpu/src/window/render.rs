@@ -21,14 +21,15 @@ use crate::bind_group_layouts::{FILTER_BUFFER_BIND_GROUP_LAYOUT, GRADIENT_DASHES
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::filter::Filter;
 use crate::gradient::{Dashes, Gradient};
-use crate::image::BindGroupExtended;
 use crate::render_context::Uniform;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-use crate::render_pipeline_layouts::RenderPipelines;
 use crate::texture_atlas_command::TextureAtlasCommand;
-use crate::textures::create_depth_stencil_texture;
+use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
 use crate::vertex::Vertex;
 use crate::globals::{ATLAS_CACHE_BIND_GROUP, ATLAS_CACHE_TEXTURE, BIND_GROUPS, FILTER_BIND_GROUPS, PIPELINES};
+use crate::image_context::BindGroupExtended;
+use crate::msaa::Msaa;
+use crate::pipeline::RenderPipelines;
 use crate::window::initialize::ZOOM;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
@@ -268,7 +269,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, render_pipeline_no_mask: &RenderPipeline, output: &SurfaceTexture, atlas_cache_bind_group: &BindGroup, bind_groups: &HashMap<ImageId, BindGroupExtended>) {
+    fn render_texture_to_swapchain(&self, encoder: &mut CommandEncoder, final_render_pipeline: &RenderPipeline, output: &SurfaceTexture, atlas_cache_bind_group: &BindGroup, bind_groups: &HashMap<ImageId, BindGroupExtended>) {
         let instance_range = 0..1;
 
         let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Start);
@@ -282,14 +283,10 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 resolve_target: None,
                 ops: color_op,
             })],
-            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                view: &self.depth_texture_view,
-                depth_ops: Some(depth_op),
-                stencil_ops: Some(stencil_op),
-            }),
+            depth_stencil_attachment: None,
         });
 
-        render_pass.set_pipeline(render_pipeline_no_mask);
+        render_pass.set_pipeline(final_render_pipeline);
         render_pass.set_vertex_buffer(0, self.second_vertex_buffer.slice(..));
         render_pass.set_bind_group(0, &self.targets[0].bind_group, &[]);
         render_pass.set_bind_group(1, &self.uniform_bind_group, &[]);
@@ -347,11 +344,15 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                         render_pass_ops(RenderPassOps::Middle)
                     };
 
+                    let (view, resolve_target) = self.msaa_texture_view.as_ref()
+                        .map(|a| (a, Some(current_target_view)))
+                        .unwrap_or((current_target_view, None));
+
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: current_target_view, // Here is the render target
-                            resolve_target: None,
+                            view, // Here is the render target
+                            resolve_target,
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
@@ -517,11 +518,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
 
+                    let (view, resolve_target) = self.msaa_texture_view.as_ref().map(|a| (a, Some(&self.targets[target_id].view))).unwrap_or((&self.targets[target_id].view, None));
+
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.targets[target_id].view, // Here is the render target
-                            resolve_target: None,
+                            view, // Here is the render target
+                            resolve_target,
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
@@ -558,7 +561,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
             let mut encoder = DEVICE
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Render Encoder"),
+                    label: Some("carbide_command_encoder"),
                 });
 
             let size = self.inner.inner_size();
@@ -593,7 +596,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             let output = self.surface.get_current_texture()?;
 
             // Render from the texture to the swap chain
-            self.render_texture_to_swapchain(&mut encoder, &pipelines.render_pipeline_no_mask, &output, &ATLAS_CACHE_BIND_GROUP, bind_groups);
+            self.render_texture_to_swapchain(&mut encoder, &pipelines.final_render_pipeline, &output, &ATLAS_CACHE_BIND_GROUP, bind_groups);
 
             // submit will accept anything that implements IntoIter
             QUEUE.submit(std::iter::once(encoder.finish()));
@@ -612,11 +615,9 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         //env.set_pixel_height(size.height as f64);
         //self.ui.compound_and_add_event(Input::Redraw);
 
-        let depth_texture =
-            create_depth_stencil_texture(&DEVICE, new_size.width, new_size.height);
-        let depth_texture_view = depth_texture.create_view(&Default::default());
+        self.depth_texture_view = create_depth_stencil_texture_view(&DEVICE, new_size.width, new_size.height, self.msaa);
 
-        self.depth_texture_view = depth_texture_view;
+        self.msaa_texture_view = create_msaa_texture_view(&DEVICE, new_size.width, new_size.height, self.msaa);
 
         self.targets = vec![
             RenderTarget::new(new_size.width, new_size.height)

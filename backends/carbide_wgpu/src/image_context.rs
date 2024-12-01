@@ -1,6 +1,6 @@
+use wgpu::BindGroup;
 use carbide_core::draw::{InnerImageContext, Texture, TextureFormat, ImageId};
 
-use crate::image::BindGroupExtended;
 use crate::application::{DEVICE, QUEUE};
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
 use crate::globals::{BIND_GROUPS};
@@ -87,8 +87,13 @@ pub fn create_bind_group(
         size,
     );
 
-
     create_bind_group_from_wgpu_texture(&wgpu_texture)
+}
+
+pub struct BindGroupExtended {
+    pub bind_group: BindGroup,
+    pub width: u32,
+    pub height: u32,
 }
 
 pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> BindGroupExtended {
@@ -116,7 +121,7 @@ pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> Bind
                 resource: wgpu::BindingResource::Sampler(&sampler),
             },
         ],
-        label: None,
+        label: Some("carbide_texture_bind_group"),
     });
 
     BindGroupExtended {
