@@ -7,23 +7,20 @@ use carbide_core::draw::ImageId;
 pub use window::Window;
 pub use render_target::RenderTarget;
 
-use crate::image::BindGroupExtended;
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 use crate::application::{ADAPTER, INSTANCE};
 pub use crate::application::{DEVICE, QUEUE};
 use crate::globals::BIND_GROUPS;
+use crate::image_context::BindGroupExtended;
 
 mod bind_group_layouts;
 mod bind_groups;
 mod filter;
 mod gradient;
-mod image;
 mod pipeline;
 mod proxy_event_loop;
 //mod render;
 mod render_pass_command;
-mod render_pipeline_layouts;
-mod renderer;
 mod samplers;
 mod texture_atlas_command;
 mod textures;
@@ -35,6 +32,7 @@ mod image_context;
 mod render_target;
 mod window;
 mod globals;
+mod msaa;
 
 pub fn init_logger() {
     }

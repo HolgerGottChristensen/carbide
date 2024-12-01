@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use wgpu::{BindGroup, Texture, TextureDescriptor, TextureFormat, TextureUsages, TextureView};
+use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 use carbide_core::render::InnerLayer;
 
 use crate::application::DEVICE;
@@ -14,19 +14,16 @@ pub struct RenderTarget {
 
 impl RenderTarget {
     pub(crate) fn new(width: u32, height: u32) -> RenderTarget {
-        let depth_or_array_layers = 1;
-
-        let texture_extent = wgpu::Extent3d {
-            width,
-            height,
-            depth_or_array_layers,
-        };
         let descriptor = TextureDescriptor {
-            label: Some("carbide_render_target"),
-            size: texture_extent,
+            label: Some("carbide_render_target_texture"),
+            size: Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
+            dimension: TextureDimension::D2,
             format: TextureFormat::Bgra8UnormSrgb,
             usage: TextureUsages::RENDER_ATTACHMENT
                 | TextureUsages::TEXTURE_BINDING
@@ -51,7 +48,7 @@ impl RenderTarget {
                     resource: wgpu::BindingResource::Sampler(&MAIN_SAMPLER),
                 },
             ],
-            label: Some("diffuse_bind_group"),
+            label: Some("carbide_render_target_bind_group"),
         });
 
         RenderTarget {

@@ -50,7 +50,7 @@ static DEVICE_QUEUE: Lazy<(Arc<Device>, Arc<Queue>)> = Lazy::new(|| {
 
     let (device, queue) = block_on(ADAPTER.request_device(
         &wgpu::DeviceDescriptor {
-            label: None,
+            label: Some("carbide_device"),
             features: wgpu::Features::CLEAR_TEXTURE,
             limits,
         },

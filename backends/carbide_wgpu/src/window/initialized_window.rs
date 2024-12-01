@@ -9,6 +9,7 @@ use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use crate::application::Scenes;
+use crate::msaa::Msaa;
 use crate::render_context::WGPURenderContext;
 use crate::RenderTarget;
 
@@ -20,6 +21,8 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) child: C,
     pub(crate) surface: Surface,
     pub(crate) texture_format: TextureFormat,
+    pub(crate) msaa: Msaa,
+    pub(crate) msaa_texture_view: Option<TextureView>,
     pub(crate) depth_texture_view: TextureView,
     pub(crate) texture_size_bind_group: BindGroup,
     pub(crate) targets: Vec<RenderTarget>,

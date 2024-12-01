@@ -15,6 +15,7 @@ use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Navigatio
 use std::fmt::{Debug, Formatter};
 use carbide_core::draw::theme::Theme;
 use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
+use crate::msaa::Msaa;
 
 pub enum Window<T: ReadState<T=String>, C: Widget> {
     UnInitialized {
@@ -23,6 +24,7 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
         position: Position,
         dimension: Dimension,
         child: C,
+        msaa: Msaa,
     },
     Initialized(InitializedWindow<T, C>),
     Failed
@@ -53,6 +55,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
+            msaa: Msaa::X4
         }
     }
 }

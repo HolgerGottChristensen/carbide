@@ -15,9 +15,10 @@ use crate::{RenderTarget, DEVICE};
 use crate::gradient::{Dashes, Gradient};
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
-use crate::textures::create_depth_stencil_texture;
+use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
 use crate::vertex::Vertex;
 use crate::globals::PIPELINES;
+use crate::msaa::Msaa;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
 use crate::window::Window;
@@ -33,6 +34,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 position,
                 dimension,
                 mut child,
+                msaa,
             } => {
                 let attributes = WindowAttributes::default()
                     .with_inner_size(Size::Logical(LogicalSize {
@@ -113,7 +115,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 let gradient = Gradient::convert(&gradient);
                 let gradient_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("Gradient Buffer"),
+                    label: Some("carbide_gradient_buffer"),
                     contents: &*gradient.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
@@ -128,7 +130,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 };
 
                 let dashes_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("Dashes Buffer"),
+                    label: Some("carbide_dashes_buffer"),
                     contents: &*dashes.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
@@ -167,20 +169,20 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     .unwrap_or(surface_caps.formats[0]);
 
                 if !PIPELINES.contains_key(&preferred_format) {
-                    PIPELINES.insert(preferred_format, create_pipelines(&DEVICE, preferred_format));
+                    PIPELINES.insert(preferred_format, create_pipelines(&DEVICE, preferred_format, msaa));
                 }
 
-                let depth_texture = create_depth_stencil_texture(&DEVICE, size.width, size.height);
-                let depth_texture_view = depth_texture.create_view(&Default::default());
+                let depth_texture_view = create_depth_stencil_texture_view(&DEVICE, size.width, size.height, msaa);
+                let msaa_texture_view = create_msaa_texture_view(&DEVICE, size.width, size.height, msaa);
 
                 let vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("Vertex Buffer"),
+                    label: Some("carbide_primary_vertex_buffer"),
                     contents: &[],
                     usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 });
 
-                let second_vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("Vertex Buffer"),
+                let secondary_vertex_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
+                    label: Some("carbide_secondary_vertex_buffer"),
                     contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
                     usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 });
@@ -194,10 +196,13 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     Theme::Dark => carbide_core::draw::theme::Theme::Dark,
                 };
 
+
                 Window::Initialized(InitializedWindow {
                     id,
                     surface,
                     texture_format: preferred_format,
+                    msaa,
+                    msaa_texture_view,
                     depth_texture_view,
                     texture_size_bind_group,
                     targets: vec![
@@ -209,7 +214,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     gradient_dashes_bind_group: gradient_dashed_bind_group,
                     carbide_to_wgpu_matrix: matrix,
                     vertex_buffer: (vertex_buffer, 0),
-                    second_vertex_buffer,
+                    second_vertex_buffer: secondary_vertex_buffer,
                     render_context: WGPURenderContext::new(),
                     inner: window,
                     accessibility_adapter: adapter,

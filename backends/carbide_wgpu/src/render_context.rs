@@ -228,27 +228,6 @@ impl WGPURenderContext {
             panic!("Trying to finish a render context that is already in a finished state.");
         }
 
-        //println!("Finish render frame: {}", self.frame_count);
-
-        /*match &self.state {
-            State::Plain { start } => {
-                self.push_geometry_command(*start..self.vertices.len());
-            },
-            State::Image { id, start } => {
-                self.push_image_command(id.clone(), *start..self.vertices.len());
-            }
-            State::Finished => {}
-        }
-
-        let mut swap = vec![];
-        std::mem::swap(&mut swap, &mut self.render_pass_inner);
-
-        if !swap.is_empty() {
-            self.render_pass.push(RenderPass::Normal {
-                commands: swap,
-                target_index: 0
-            });
-        }*/
         self.finished = true;
 
         self.filters.retain(|a, _| self.current_frame_filters.contains(a));

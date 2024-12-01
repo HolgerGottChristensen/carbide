@@ -4,7 +4,7 @@ use wgpu::util::DeviceExt;
 
 use carbide_core::draw::Scalar;
 
-pub(crate) fn uniform_bind_group(
+pub(crate) fn create_uniform_bind_group(
     device: &Device,
     uniform_bind_group_layout: &BindGroupLayout,
     uniform_buffer: Buffer,
@@ -15,7 +15,7 @@ pub(crate) fn uniform_bind_group(
             binding: 0,
             resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
         }],
-        label: Some("uniform_bind_group"),
+        label: Some("carbide_uniform_bind_group"),
     })
 }
 
@@ -31,13 +31,13 @@ pub(crate) fn uniforms_to_bind_group(
     let uniforms: [[f32; 4]; 4] = matrix.into();
 
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Uniform Buffer"),
+        label: Some("carbide_uniform_buffer"),
         contents: bytemuck::cast_slice(&[uniforms]),
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
     let color_filter_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Color filter Buffer"),
+        label: Some("carbide_color_filter_buffer"),
         contents: bytemuck::cast_slice(&[
             bytemuck::cast::<f32, [u8; 4]>(hue_rotation),
             bytemuck::cast::<f32, [u8; 4]>(saturation_shift),
@@ -59,7 +59,7 @@ pub(crate) fn uniforms_to_bind_group(
                 resource: wgpu::BindingResource::Buffer(color_filter_buffer.as_entire_buffer_binding()),
             },
         ],
-        label: Some("uniform_bind_group"),
+        label: Some("carbide_uniform_bind_group"),
     })
 }
 
@@ -77,12 +77,12 @@ pub(crate) fn size_to_uniform_bind_group(
     ];
 
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Uniform Buffer"),
+        label: Some("carbide_uniform_buffer"),
         contents: bytemuck::cast_slice(&[uniforms]),
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
-    let uniform_bind_group = uniform_bind_group(device, uniform_bind_group_layout, uniform_buffer);
+    let uniform_bind_group = create_uniform_bind_group(device, uniform_bind_group_layout, uniform_buffer);
 
     uniform_bind_group
 }
@@ -98,7 +98,7 @@ pub(crate) fn filter_buffer_bind_group(
             binding: 0,
             resource: wgpu::BindingResource::Buffer(buffer.as_entire_buffer_binding()),
         }],
-        label: Some("filter_bind_group"),
+        label: Some("carbide_filter_bind_group"),
     })
 }
 
@@ -120,6 +120,6 @@ pub(crate) fn gradient_dashes_bind_group(
                 resource: wgpu::BindingResource::Buffer(dashes_buffer.as_entire_buffer_binding()),
             },
         ],
-        label: Some("gradient_dashes_bind_group"),
+        label: Some("carbide_gradient_dashes_bind_group"),
     })
 }
