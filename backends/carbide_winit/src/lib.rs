@@ -378,6 +378,7 @@ pub fn convert_mouse_button(button: WinitMouseButton) -> MouseButton {
     }
 }
 
+/// https://github.com/rust-windowing/winit/issues/3724
 pub fn convert_mouse_cursor(cursor: MouseCursor) -> CursorIcon {
     match cursor {
         MouseCursor::Default => CursorIcon::Default,

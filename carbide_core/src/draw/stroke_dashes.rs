@@ -8,7 +8,7 @@ pub struct StrokeDashPattern {
     pub dash_type: StrokeDashMode,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StrokeDashCap {
     None, // Also known as Butt
     Round,
@@ -17,7 +17,7 @@ pub enum StrokeDashCap {
     TriangleOut,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StrokeDashMode {
     /// Fast will only check if the triangle making up the line is in a dash
     Fast,

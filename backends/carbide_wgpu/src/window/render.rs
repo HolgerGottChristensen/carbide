@@ -112,7 +112,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                     }
                 }
 
-                initialized.inner.set_cursor_icon(convert_mouse_cursor(ctx.env.cursor()));
+                initialized.inner.set_cursor(convert_mouse_cursor(ctx.env.cursor()));
             }
         });
 

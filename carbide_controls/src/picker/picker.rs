@@ -1,4 +1,6 @@
+use std::collections::BTreeSet;
 use std::hash::Hash;
+use std::marker::PhantomData;
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
@@ -14,13 +16,14 @@ use crate::picker::picker_item::PickerItem;
 
 #[derive(Clone, Widget, Debug)]
 #[carbide_exclude(Initialize)]
-pub struct Picker<T, F, M, E, L>
+pub struct Picker<T, F, M, E, L, S>
 where
-    T: StateContract + PartialEq + Eq + Hash,
+    T: StateContract + PartialEq,
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>
+    M: Sequence<dyn AnyIdentifiableWidget<T>>,
+    S: PickerSelection<T>
 {
     #[id] id: WidgetId,
     position: Position,
@@ -31,15 +34,16 @@ where
 
     #[state] focus: F,
     #[state] enabled: E,
-    #[state] selected: PickerSelection<T>,
+    #[state] selected: S,
     #[state] label: L,
+    phantom_data: PhantomData<T>,
 }
 
 impl<
-    T: StateContract + PartialEq + Eq + Hash,
+    T: StateContract + PartialEq,
     M: Sequence<dyn AnyIdentifiableWidget<T>>,
-> Picker<T, LocalState<Focus>, M, EnabledState, String> {
-    pub fn new<L: IntoReadState<String>>(label: L, selection: impl Into<PickerSelection<T>>, model: M) -> Picker<T, LocalState<Focus>, M, EnabledState, L::Output> {
+> Picker<T, LocalState<Focus>, M, EnabledState, String, LocalState<T>> {
+    pub fn new<L: IntoReadState<String>, S: PickerSelection<T>>(label: L, selection: S, model: M) -> Picker<T, LocalState<Focus>, M, EnabledState, L::Output, S> {
         let focus = LocalState::new(Focus::Unfocused);
 
         Picker {
@@ -52,76 +56,19 @@ impl<
             enabled: enabled_state(),
             selected: selection.into(),
             label: label.into_read_state(),
+            phantom_data: Default::default(),
         }
     }
 }
 
 impl<
-    T: StateContract + PartialEq + Eq + Hash,
+    T: StateContract + PartialEq,
     F: State<T=Focus>,
     M: Sequence<dyn AnyIdentifiableWidget<T>>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
-> Picker<T, F, M, E, L> {
-    fn selection(widget: &dyn AnyIdentifiableWidget<T>, selected: PickerSelection<T>) -> impl State<T=bool> {
-        match selected.clone() {
-            PickerSelection::Single(single) => {
-                Map2::map(
-                    widget.identifier().boxed().ignore_writes(),
-                    single,
-                    |value, selection| {
-                        value == selection
-                    },
-                    |new, value, mut selection| {
-                        if new {
-                            *selection = value.clone();
-                        }
-                    }
-                ).as_dyn()
-            }
-            PickerSelection::Optional(optional) => {
-                Map2::map(
-                    widget.identifier().boxed().ignore_writes(),
-                    optional,
-                    |value, selection| {
-                        selection.as_ref().is_some_and(|x| x == value)
-                    },
-                    |new, value, mut selection| {
-                        if new {
-                            *selection = Some(value.clone());
-                        } else {
-                            *selection = None;
-                        }
-                    }
-                ).as_dyn()
-            }
-            PickerSelection::Multi(multi) => {
-                Map2::map(
-                    widget.identifier().boxed().ignore_writes(),
-                    multi,
-                    |value, selection| {
-                        selection.contains(value)
-                    },
-                    |new, value, mut selection| {
-                        if new {
-                            selection.insert(value.clone());
-                        } else {
-                            selection.remove(&*value);
-                        }
-                    }
-                ).as_dyn()
-            }
-        }
-    }
-}
-
-impl<
-    T: StateContract + PartialEq + Eq + Hash,
-    F: State<T=Focus>,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>,
-    E: ReadState<T=bool>,
-    L: ReadState<T=String>,
-> Initialize for Picker<T, F, M, E, L> {
+    S: PickerSelection<T>
+> Initialize for Picker<T, F, M, E, L, S> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
         let style = ctx.env_stack.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&MenuStyle);
         let selected_for_closure = self.selected.clone();
@@ -130,24 +77,28 @@ impl<
             self.model.clone(),
             move |widget: &dyn AnyIdentifiableWidget<T>| {
                 let selected = selected_for_closure.clone();
+
+                let selected_state = selected.selection(widget);
+
                 PickerItem {
-                    selection: Self::selection(widget, selected),
+                    selection: selected_state,
                     inner: widget.as_widget().boxed(),
                 }
             }
         );
 
-        let selection_type = self.selected.to_type();
+        let selection_type = self.selected.selection_type();
         self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
     }
 }
 
 impl<
-    T: StateContract + PartialEq + Eq + Hash,
+    T: StateContract + PartialEq,
     F: State<T=Focus>,
     M: Sequence<dyn AnyIdentifiableWidget<T>>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
-> CommonWidget for Picker<T, F, M, E, L> {
+    S: PickerSelection<T>
+> CommonWidget for Picker<T, F, M, E, L, S> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, focus: self.focus);
 }

@@ -1,4 +1,4 @@
-use carbide_controls::{CheckBox, PopUpButton, Slider, TextInput};
+use carbide_controls::{ControlsExt, Slider, TextInput};
 use carbide_core::closure;
 use carbide_core::color::{TRANSPARENT, WHITE};
 use carbide_core::draw::{Dimension, Position, StrokeDashCap, StrokeDashMode};
@@ -10,9 +10,10 @@ use carbide_wgpu::{Application, Window};
 use std::f64::consts::PI;
 use std::num::ParseFloatError;
 use std::str::FromStr;
+use carbide_controls::picker::{MenuStyle, Picker};
+use carbide_controls::toggle::{CheckboxStyle, Toggle};
 
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum DrawType {
     Line,
     Circle,
@@ -26,22 +27,11 @@ fn main() {
     let mut application = Application::new();
 
     let draw_figure = LocalState::new(DrawType::LineMouse);
-    let draw_figures = vec![DrawType::Line, DrawType::Circle, DrawType::Star, DrawType::BezierMouse, DrawType::LineMouse, DrawType::U];
-
     let dash_mode = LocalState::new(StrokeDashMode::Pretty);
-    let dash_modes = vec![StrokeDashMode::Fast, StrokeDashMode::Pretty];
-
     let line_cap = LocalState::new(LineCap::Butt);
-    let line_caps = vec![LineCap::Butt, LineCap::Square, LineCap::Round];
-
     let line_join = LocalState::new(LineJoin::Miter);
-    let line_joins = vec![LineJoin::Miter, LineJoin::Round, LineJoin::Bevel];
-
     let dash_start_cap = LocalState::new(StrokeDashCap::None);
-    let dash_start_caps = vec![StrokeDashCap::None, StrokeDashCap::Square, StrokeDashCap::Round, StrokeDashCap::TriangleIn, StrokeDashCap::TriangleOut];
-
     let dash_end_cap = LocalState::new(StrokeDashCap::None);
-    let dash_end_caps = vec![StrokeDashCap::None, StrokeDashCap::Square, StrokeDashCap::Round, StrokeDashCap::TriangleIn, StrokeDashCap::TriangleOut];
 
     let line_width = LocalState::new(30.0);
     let moving = LocalState::new(true);
@@ -157,22 +147,54 @@ fn main() {
                             Spacer::new()
                         )).spacing(0.0),
                         Group::new((
-                            PopUpButton::new(draw_figure, draw_figures),
-                            PopUpButton::new(dash_mode, dash_modes),
-                            PopUpButton::new(line_join, line_joins),
-                            PopUpButton::new(line_cap, line_caps),
-                            PopUpButton::new(dash_start_cap, dash_start_caps),
-                            PopUpButton::new(dash_end_cap, dash_end_caps),
+                            Picker::new("Figure", draw_figure, (
+                                Text::new("Line").tag(DrawType::Line),
+                                Text::new("Circle").tag(DrawType::Circle),
+                                Text::new("Star").tag(DrawType::Star),
+                                Text::new("BezierMouse").tag(DrawType::BezierMouse),
+                                Text::new("LineMouse").tag(DrawType::LineMouse),
+                                Text::new("U").tag(DrawType::U),
+                            )),
+                            Picker::new("Dash mode", dash_mode, (
+                                Text::new("Fast").tag(StrokeDashMode::Fast),
+                                Text::new("Pretty").tag(StrokeDashMode::Pretty),
+                            )),
+                            Picker::new("Line join", line_join, (
+                                Text::new("Miter").tag(LineJoin::Miter),
+                                Text::new("Round").tag(LineJoin::Round),
+                                Text::new("Bevel").tag(LineJoin::Bevel),
+                            )),
+                            Picker::new("Line cap", line_cap, (
+                                Text::new("Butt").tag(LineCap::Butt),
+                                Text::new("Square").tag(LineCap::Square),
+                                Text::new("Round").tag(LineCap::Round),
+                            )),
+                            Picker::new("Start cap", dash_start_cap, (
+                                Text::new("None").tag(StrokeDashCap::None),
+                                Text::new("Square").tag(StrokeDashCap::Square),
+                                Text::new("Round").tag(StrokeDashCap::Round),
+                                Text::new("TriangleIn").tag(StrokeDashCap::TriangleIn),
+                                Text::new("TriangleOut").tag(StrokeDashCap::TriangleOut),
+                            )),
+                            Picker::new("End cap", dash_end_cap, (
+                                Text::new("None").tag(StrokeDashCap::None),
+                                Text::new("Square").tag(StrokeDashCap::Square),
+                                Text::new("Round").tag(StrokeDashCap::Round),
+                                Text::new("TriangleIn").tag(StrokeDashCap::TriangleIn),
+                                Text::new("TriangleOut").tag(StrokeDashCap::TriangleOut),
+                            )),
                         )),
                         Slider::new(line_width, 1.0, 50.0).step(1.0),
                         Slider::new(moving_speed, -2.0, 2.0),
-                        CheckBox::new("Moving", moving),
-                        CheckBox::new("Dash", dash),
+                        Toggle::new("Moving", moving),
+                        Toggle::new("Dash", dash),
                         TextInput::new(dash_pattern_input),
                         Spacer::new()
                     )).padding(10.0)
                 )).frame_fixed_width(300.0)
             )).spacing(2.0)
+                .toggle_style(CheckboxStyle)
+                .picker_style(MenuStyle)
         )
     );
 
