@@ -1,4 +1,3 @@
-pub use button::*;
 use carbide_core::state::{EnvMap1, Map1};
 pub use list::*;
 pub use plain::*;
@@ -41,7 +40,6 @@ macro_rules! capture {
 
 
 
-mod button;
 mod list;
 mod plain;
 mod slider;
@@ -56,6 +54,7 @@ pub mod picker;
 pub mod identifiable;
 mod selectable;
 mod labelled;
+pub mod button;
 
 type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
 

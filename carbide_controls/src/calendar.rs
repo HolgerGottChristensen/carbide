@@ -11,7 +11,8 @@ use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::state::{LocalState, Map1, Map2, Map4, ReadState, State, ValueState};
 use carbide_core::widget::{AnyWidget, Circle, HStack, Image, Rectangle, Spacer, Text, VGridColumn, WidgetExt, ZStack};
 
-use crate::{PlainButton, PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
+use crate::{ControlsExt, PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
+use crate::button::{Button, PlainStyle};
 use crate::plain::plain_calendar::DateSelection;
 
 pub struct Calendar;
@@ -108,22 +109,18 @@ impl PlainCalendarTitleDelegate for CalendarTitleDelegate {
             Text::new(Map1::read_map(month.clone(), |m| format!("{:?}", m))),
             Text::new(year.clone()),
             Spacer::new(),
-            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+            Button::new(Image::new_icon("icons/arrow-left-s-line.png").resizeable().foreground_color(color1.clone()).frame(30.0, 30.0), closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::January {
                     *$year -= 1;
                 }
                 *$month = month.pred();
-            })).delegate(move |_, _, _, _| {
-                Image::new_icon("icons/arrow-left-s-line.png").resizeable().foreground_color(color1.clone()).frame(30.0, 30.0).boxed()
-            }).hovered(hover1),
-            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+            })).hovered(hover1),
+            Button::new(Image::new_icon("icons/arrow-right-s-line.png").resizeable().foreground_color(color2.clone()).frame(30.0, 30.0), closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::December {
                     *$year += 1;
                 }
                 *$month = month.succ();
-            })).delegate(move |_, _, _, _| {
-                Image::new_icon("icons/arrow-right-s-line.png").resizeable().foreground_color(color2.clone()).frame(30.0, 30.0).boxed()
-            }).hovered(hover2),
+            })).hovered(hover2),
         )).boxed()
     }
 }

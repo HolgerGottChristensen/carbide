@@ -1,4 +1,3 @@
-use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::*;

@@ -8,6 +8,7 @@ use dyn_clone::{clone_box, DynClone};
 use indexmap::IndexMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use crate::lifecycle::InitializationContext;
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {
     fn call(&self, child: &T) -> O;
@@ -91,7 +92,13 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
                 }
             } else {
                 // Calculate the resulting widget, using the delegate
-                let result = self.delegate.call(child);
+                let mut result = self.delegate.call(child);
+
+                // Initialize the widget.
+                result.process_initialization(&mut InitializationContext {
+                    env_stack: env,
+                });
+
                 // Insert the result at the index
                 self.content.0.insert_before(index, id, result);
                 // Increment the index

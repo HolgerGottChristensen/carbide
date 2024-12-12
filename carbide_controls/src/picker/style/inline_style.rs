@@ -106,6 +106,7 @@ impl InlineStyle {
                 .stroke_style(1.0)
                 .padding(-1.0)
         ).frame(14.0, 14.0);
+
         radio
     }
 }

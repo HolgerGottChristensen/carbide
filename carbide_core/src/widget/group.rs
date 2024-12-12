@@ -1,12 +1,9 @@
-use std::fmt::{Debug, Formatter};
-use std::marker::PhantomData;
-use carbide::widget::{Identifiable, WidgetSync};
-use carbide_macro::carbide_default_builder2;
-use dyn_clone::DynClone;
-use carbide::draw::{Dimension, Position};
 use crate::flags::WidgetFlag;
 use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetExt, WidgetId};
 use crate::CommonWidgetImpl;
+use carbide::draw::{Dimension, Position};
+use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
 
 pub trait GroupDelegate<T: ?Sized + AnyWidget, I: Sequence<T>, U: ?Sized + AnyWidget, O: Sequence<U>>: Clone + 'static {
     fn call(&self, sequence: I) -> O;

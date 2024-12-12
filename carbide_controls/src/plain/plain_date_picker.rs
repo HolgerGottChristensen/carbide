@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use carbide::focus::FocusManager;
+use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -169,9 +170,13 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
                         });
                     }
 
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
-                        let widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
+                    let mut widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
 
+                    widget.process_initialization(&mut InitializationContext {
+                        env_stack: ctx.env_stack
+                    });
+
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
                         manager.insert(widget)
                     });
                 } else {

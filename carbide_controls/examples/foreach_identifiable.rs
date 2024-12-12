@@ -3,7 +3,6 @@ use carbide_controls::ControlsExt;
 use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use carbide_core::utils::clone_box;
 
 fn main() {
     let mut application = Application::new()
@@ -11,8 +10,8 @@ fn main() {
 
     fn delegate(child: &dyn AnyIdentifiableWidget<u32>) -> impl Widget {
         HStack::new((
-            Text::new(clone_box(child.identifier())),
-            clone_box(child),
+            Text::new(child.identifier().boxed()),
+            child.as_widget().boxed(),
         )).padding(10.0).border()
     }
 
@@ -25,7 +24,7 @@ fn main() {
                 Text::new("Test").tag(11u32),
 
                 ForEach::new(vec![12u32, 13u32], |a, b| {
-                    Text::new("Test").tag(a)
+                    Text::new("Test").tag_state(a)
                 })
             ),
             delegate,

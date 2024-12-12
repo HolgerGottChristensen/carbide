@@ -11,6 +11,7 @@ use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
+use crate::lifecycle::InitializationContext;
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
@@ -142,11 +143,17 @@ impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
 
                 let item_state = IndexState::new(self.model.clone(), index);
 
+                let mut widget = self.delegate.call(item_state.as_dyn(), index_state);
 
-                let widget = self.delegate.call(item_state.as_dyn(), index_state);
+                widget.process_initialization(&mut InitializationContext {
+                    env_stack: env,
+                });
+
                 self.children.push(widget);
             }
         }
+
+
     }
 }
 

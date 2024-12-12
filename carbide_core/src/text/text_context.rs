@@ -7,30 +7,6 @@ use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentStack;
 use crate::render::InnerRenderContext;
 
-// pub struct TextContext<'a>(&'a mut dyn InnerTextContext);
-//
-// impl<'a> TextContext<'a> {
-//     pub fn new<C: InnerTextContext + 'static>(context: &'a mut C) -> Self {
-//         TextContext(context)
-//     }
-//
-//     pub fn calculate_size(&mut self, id: TextId, requested_size: Dimension) -> Dimension {
-//         self.0.calculate_size(id, requested_size, )
-//     }
-//
-//     pub fn calculate_position(&mut self, id: TextId, requested_offset: Position) {
-//         self.0.calculate_position(id, requested_offset)
-//     }
-//
-//     pub fn hash(&self, id: TextId) -> Option<u64> {
-//         self.0.hash(id)
-//     }
-//
-//     pub fn update(&mut self, id: TextId, text: &str) {
-//         self.0.update(id, text)
-//     }
-// }
-
 pub trait InnerTextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut EnvironmentStack) -> Dimension;
 

@@ -4,6 +4,7 @@ use std::iter;
 use std::ops::RangeInclusive;
 
 use chrono::{Datelike, Local, Month, NaiveDate, Weekday};
+use carbide::color::RED;
 use carbide::environment::Environment;
 use carbide::event::ModifierKey;
 use carbide::widget::MouseAreaActionContext;
@@ -15,8 +16,8 @@ use carbide_core::flags::WidgetFlag;
 use carbide_core::render::matrix::num_traits::FromPrimitive;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{AnyWidget, CommonWidget, ForEach, HStack, Image, Rectangle, Spacer, Text, VGrid, VGridColumn, VStack, Widget, WidgetExt, WidgetId, ZStack};
-
-use crate::PlainButton;
+use crate::button::{Button, PlainStyle};
+use crate::ControlsExt;
 
 pub trait PlainCalendarHeaderDelegate: Clone + 'static {
     fn call(&self, weekday: impl ReadState<T=Weekday>) -> Box<dyn AnyWidget>;
@@ -160,7 +161,7 @@ impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemD
     }
 
     fn default_hidden_delegate() -> Box<dyn AnyWidget> {
-        Rectangle::new().fill(TRANSPARENT).boxed()
+        Rectangle::new().fill(RED).boxed()
     }
 
     fn default_title_delegate(month: impl State<T=Month>, year: impl State<T=i32>, _selection: DateSelection) -> Box<dyn AnyWidget> {
@@ -168,22 +169,18 @@ impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemD
             Text::new(Map1::read_map(month.clone(), |m| format!("{:?}", m))),
             Text::new(year.clone()),
             Spacer::new(),
-            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+            Button::new(Image::new("icons/arrow-left-s-line.png"), closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::January {
                     *$year -= 1;
                 }
                 *$month = month.pred();
-            })).delegate(|_, _, _, _| {
-                Image::new("icons/arrow-left-s-line.png").boxed()
-            }),
-            PlainButton::new(closure!(|ctx: MouseAreaActionContext| {
+            })),
+            Button::new(Image::new("icons/arrow-right-s-line.png"), closure!(|ctx: MouseAreaActionContext| {
                 if *$month == Month::December {
                     *$year += 1;
                 }
                 *$month = month.succ();
-            })).delegate(|_, _, _, _| {
-                Image::new("icons/arrow-right-s-line.png").boxed()
-            }),
+            })),
         )).boxed()
     }
 }
@@ -244,101 +241,110 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
         let item_delegate_foreach = item_delegate.clone();
         let hidden_delegate_foreach = hidden_delegate.clone();
 
-        let grid = VGrid::new((
-            ForEach::new(vec![Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat, Weekday::Sun], move |day, _| {
-                header_delegate_foreach.call(day)
-            }),
-            ForEach::new_read(first_weekday, move |_, _| {
-                hidden_delegate_foreach.call()
-            }),
-            ForEach::new_read(days_in_month, move |day: Box<dyn AnyState<T=u32>>, _| {
-                let item_delegate_foreach = item_delegate_foreach.clone();
+        let headers = ForEach::new(vec![Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat, Weekday::Sun], move |day, _| {
+            header_delegate_foreach.call(day)
+        });
 
-                let date = Map3::read_map(year2.clone(), month2.clone(), day.clone(), |y, m, d| {
-                    NaiveDate::from_ymd_opt(*y, m.number_from_month(), *d + 1).unwrap()
-                });
+        let hidden_offsets = ForEach::new_read(first_weekday, move |_, _| {
+            hidden_delegate_foreach.call()
+        });
 
-                let selected = match selection2.clone() {
-                    DateSelection::Single(s) => Map2::read_map(date.clone(), s, |d, s| {
-                        if Some(d) == s.as_ref() {
-                            Selected::Start
-                        } else {
-                            Selected::None
-                        }
-                    }).as_dyn_read(),
-                    DateSelection::Multi(m) => Map2::read_map(date.clone(), m, |d, s| {
-                        if s.contains(d) {
-                            Selected::Start
-                        } else {
-                            Selected::None
-                        }
-                    }).as_dyn_read(),
-                    DateSelection::Range(range) => {
-                        Map2::read_map(date.clone(), range, |d, s| {
-                            if let Some(range) = s.as_ref() {
-                                if range.start() == d {
-                                    Selected::Start
-                                } else if range.end() == d {
-                                    Selected::End
-                                } else if range.contains(d) {
-                                    Selected::In
-                                } else {
-                                    Selected::None
-                                }
+        let dates = ForEach::new_read(days_in_month, move |day: Box<dyn AnyState<T=u32>>, _| {
+            let item_delegate_foreach = item_delegate_foreach.clone();
+
+            let date = Map3::read_map(year2.clone(), month2.clone(), day.clone(), |y, m, d| {
+                NaiveDate::from_ymd_opt(*y, m.number_from_month(), *d + 1).unwrap()
+            });
+
+            let selected = match selection2.clone() {
+                DateSelection::Single(s) => Map2::read_map(date.clone(), s, |d, s| {
+                    if Some(d) == s.as_ref() {
+                        Selected::Start
+                    } else {
+                        Selected::None
+                    }
+                }).as_dyn_read(),
+                DateSelection::Multi(m) => Map2::read_map(date.clone(), m, |d, s| {
+                    if s.contains(d) {
+                        Selected::Start
+                    } else {
+                        Selected::None
+                    }
+                }).as_dyn_read(),
+                DateSelection::Range(range) => {
+                    Map2::read_map(date.clone(), range, |d, s| {
+                        if let Some(range) = s.as_ref() {
+                            if range.start() == d {
+                                Selected::Start
+                            } else if range.end() == d {
+                                Selected::End
+                            } else if range.contains(d) {
+                                Selected::In
                             } else {
                                 Selected::None
                             }
-                        }).as_dyn_read()
+                        } else {
+                            Selected::None
+                        }
+                    }).as_dyn_read()
+                }
+            };
+
+            let s2 = selection2.clone();
+
+            let hovered = LocalState::new(false);
+            let pressed = LocalState::new(false);
+
+            let hovered_for_delegate = hovered.clone();
+            let pressed_for_delegate = pressed.clone();
+            let date_for_delegate = date.clone();
+
+            let label = item_delegate_foreach.call(selected.clone(), hovered_for_delegate.clone(), pressed_for_delegate.clone(), date_for_delegate.clone());
+
+            Button::new(label, move |ctx: MouseAreaActionContext| {
+                let date = date.value().clone();
+
+                match s2.clone() {
+                    DateSelection::Single(mut s) => {
+                        *s.value_mut() = Some(date);
                     }
-                };
+                    DateSelection::Multi(mut m) => {
+                        let value = &mut *m.value_mut();
 
-                let s2 = selection2.clone();
-
-                let hovered = LocalState::new(false);
-                let pressed = LocalState::new(false);
-
-                let hovered_for_delegate = hovered.clone();
-                let pressed_for_delegate = pressed.clone();
-                let date_for_delegate = date.clone();
-
-                PlainButton::new(move |ctx: MouseAreaActionContext| {
-                    let date = date.value().clone();
-
-                    match s2.clone() {
-                        DateSelection::Single(mut s) => {
-                            *s.value_mut() = Some(date);
-                        }
-                        DateSelection::Multi(mut m) => {
-                            let value = &mut *m.value_mut();
-
-                            if !value.contains(&date) {
-                                value.insert(date);
-                            } else {
-                                value.remove(&date);
-                            }
-                        }
-                        DateSelection::Range(mut r) => {
-                            let value = &mut *r.value_mut();
-
-                            if let Some(val) = value {
-                                if &date < val.start() {
-                                    *val = date..=date;
-                                } else if val.start() == val.end() {
-                                    *val = *val.start()..=date;
-                                } else {
-                                    *val = date..=date;
-                                }
-                            } else {
-                                *value = Some(date..=date);
-                            }
+                        if !value.contains(&date) {
+                            value.insert(date);
+                        } else {
+                            value.remove(&date);
                         }
                     }
-                }).delegate(move |_, _, _, _| {
-                    item_delegate_foreach.call(selected.clone(), hovered_for_delegate.clone(), pressed_for_delegate.clone(), date_for_delegate.clone())
-                }).hovered(hovered)
-                    .pressed(pressed)
-            })
-            ), iter::repeat(column.clone()).take(7).collect::<Vec<_>>()).spacing(spacing.clone());
+                    DateSelection::Range(mut r) => {
+                        let value = &mut *r.value_mut();
+
+                        if let Some(val) = value {
+                            if &date < val.start() {
+                                *val = date..=date;
+                            } else if val.start() == val.end() {
+                                *val = *val.start()..=date;
+                            } else {
+                                *val = date..=date;
+                            }
+                        } else {
+                            *value = Some(date..=date);
+                        }
+                    }
+                }
+            }).hovered(hovered)
+                .pressed(pressed)
+        });
+
+        let columns = iter::repeat(column.clone()).take(7).collect::<Vec<_>>();
+
+        let grid = VGrid::new((
+            headers,
+            hidden_offsets,
+            dates
+        ), columns)
+            .spacing(spacing.clone());
 
         PlainCalendar {
             id: WidgetId::new(),
@@ -347,7 +353,7 @@ impl<H: PlainCalendarHeaderDelegate, I: PlainCalendarItemDelegate, D: PlainCalen
             child: VStack::new((
                 title_delegate.call(month.clone(), year.clone(), selection.clone()).flagged(WidgetFlag::USEMAXCROSSAXIS),
                 grid
-            )).spacing(0.0).boxed(),
+            )).spacing(0.0).button_style(PlainStyle).boxed(),
             month,
             year,
             selection,

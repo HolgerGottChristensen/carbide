@@ -7,6 +7,7 @@ use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
 use crate::{EnabledKey, Help};
+use crate::button::{ButtonStyle, ButtonStyleKey};
 use crate::labelled::Labelled;
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
@@ -38,6 +39,10 @@ pub trait ControlsExt: WidgetExt {
 
     fn picker_style(self, value: impl PickerStyle + 'static) -> impl Widget {
         EnvUpdatingNew::<Self, PickerStyleKey>::new(Box::new(value) as Box<dyn PickerStyle>, self)
+    }
+
+    fn button_style(self, value: impl ButtonStyle + 'static) -> impl Widget {
+        EnvUpdatingNew::<Self, ButtonStyleKey>::new(Box::new(value) as Box<dyn ButtonStyle>, self)
     }
 
     fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> {
