@@ -7,7 +7,7 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{IntoReadState, IntoState, LocalState, Map1, Map2, ReadState, State};
 use carbide_core::widget::{CommonWidget, CornerRadii, EdgeInsets, Rectangle, RoundedRectangle, AnyWidget, WidgetExt, WidgetId, ZStack, Widget};
 
-use crate::{enabled_state, EnabledState, PASSWORD_CHAR, PlainTextInput};
+use crate::{EnabledState, PASSWORD_CHAR, PlainTextInput};
 
 const VERTICAL_PADDING: f64 = 0.0;
 const HORIZONTAL_PADDING: f64 = 5.0;
@@ -37,7 +37,7 @@ impl TextInput<Focus, Option<char>, Result<String, String>, bool> {
         let obscure = None;
         let text = text.into_state();
 
-        Self::new_internal(text, focus, obscure, enabled_state())
+        Self::new_internal(text, focus, obscure, EnabledState::new(true))
     }
 }
 

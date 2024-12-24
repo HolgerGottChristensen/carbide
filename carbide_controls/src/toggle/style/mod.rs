@@ -1,9 +1,7 @@
 mod switch_style;
 mod checkbox_style;
-mod automatic_style;
 mod button_style;
 
-pub use automatic_style::*;
 pub use button_style::*;
 use carbide_core::environment::Key;
 use carbide_core::focus::Focus;

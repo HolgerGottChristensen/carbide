@@ -5,7 +5,7 @@ use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, Identifiab
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
 use crate::picker::{MenuStyle, PickerStyle};
-use crate::{enabled_state, EnabledState};
+use crate::{AutomaticStyle, EnabledState};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::focus::Focus;
 use carbide_core::lifecycle::{InitializationContext, Initialize};
@@ -53,7 +53,7 @@ impl<
             child: Rectangle::new().boxed(),
             model,
             focus,
-            enabled: enabled_state(),
+            enabled: EnabledState::new(true),
             selected: selection.into(),
             label: label.into_read_state(),
             phantom_data: Default::default(),
@@ -70,7 +70,7 @@ impl<
     S: PickerSelection<T>
 > Initialize for Picker<T, F, M, E, L, S> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env_stack.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&MenuStyle);
+        let style = ctx.env_stack.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
         let selected_for_closure = self.selected.clone();
 
         let foreach = ForEach::custom_widget(

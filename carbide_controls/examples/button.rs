@@ -1,4 +1,4 @@
-use carbide_controls::{ControlsExt};
+use carbide_controls::{AutomaticStyle, ControlsExt, EnabledState};
 use carbide_controls::button::{BorderedProminentStyle, BorderedStyle, Button, PlainProminentStyle, PlainStyle};
 use carbide_core::accessibility::AccessibilityExt;
 use carbide_core::closure;
@@ -59,6 +59,7 @@ fn main() {
             //.button_style(BorderedProminentStyle)
             //.button_style(PlainStyle)
             //.button_style(PlainProminentStyle)
+            .button_style(AutomaticStyle)
     ));
 
     application.launch();

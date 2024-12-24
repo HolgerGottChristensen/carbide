@@ -12,7 +12,7 @@ pub trait Key: Any + Debug + 'static {
 pub trait Keyable: Debug + 'static {
     type Output: Any + Debug + 'static;
 
-    fn get(&self, stack: &TypeMap) -> Self::Output;
+    fn get(&self, stack: &TypeMap) -> Option<Self::Output>;
     fn with(&self, value: &Self::Output, stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap));
 
     fn with_all(values: &[(Self, Self::Output)], stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap)) where Self: Sized {
@@ -95,7 +95,7 @@ impl<'a> TypeMap<'a> {
         }).flatten()
     }
 
-    pub fn value<K: Keyable>(&self, key: K) -> K::Output {
+    pub fn value<K: Keyable>(&self, key: &K) -> Option<K::Output> {
         key.get(self)
     }
 

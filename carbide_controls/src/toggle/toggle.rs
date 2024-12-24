@@ -1,6 +1,6 @@
 use crate::toggle::toggle_value::ToggleValue;
-use crate::toggle::{AutomaticStyle, SwitchStyle, ToggleAction, ToggleStyle, ToggleStyleKey};
-use crate::{enabled_state, EnabledState};
+use crate::toggle::{ToggleAction, ToggleStyle, ToggleStyleKey};
+use crate::{AutomaticStyle, EnabledState};
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide::draw::{Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
@@ -35,7 +35,7 @@ impl Toggle<LocalState<Focus>, ToggleValue, EnabledState, String> {
     pub fn new<L: IntoReadState<String>, C: IntoState<ToggleValue>>(label: L, value: C) -> Toggle<LocalState<Focus>, C::Output, EnabledState, L::Output> {
         let focus_state = LocalState::new(Focus::Unfocused);
 
-        let enabled_state = enabled_state();
+        let enabled_state = EnabledState::new(true);
 
         Toggle {
             id: WidgetId::new(),

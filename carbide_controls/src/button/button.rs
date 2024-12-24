@@ -17,7 +17,7 @@ use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, LocalState, Map1, Map2, Map3, Map5, ReadState};
 use carbide_core::widget::*;
 
-use crate::{enabled_state, EnabledState};
+use crate::{AutomaticStyle, EnabledState};
 use crate::button::BorderedStyle;
 use crate::button::style::{ButtonStyleKey, PlainStyle};
 use crate::identifiable::AnyIdentifiableWidget;
@@ -49,8 +49,8 @@ pub struct Button<F, A, E, H, P, L> where
     cursor: MouseCursor,
 }
 
-impl Button<LocalState<Focus>, fn(MouseAreaActionContext), EnabledState, LocalState<bool>, LocalState<bool>, Empty> {
-    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<LocalState<Focus>, A, EnabledState, LocalState<bool>, LocalState<bool>, L::Output> {
+impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool>, LocalState<bool>, Empty> {
+    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<LocalState<Focus>, A, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> {
         Button {
             id: WidgetId::new(),
             position: Default::default(),
@@ -59,7 +59,7 @@ impl Button<LocalState<Focus>, fn(MouseAreaActionContext), EnabledState, LocalSt
             action,
             label: label.into_widget(),
             focus: LocalState::new(Focus::Unfocused),
-            enabled: enabled_state(),
+            enabled: EnabledState::new(true),
             hovered: LocalState::new(false),
             pressed: LocalState::new(false),
             cursor: MouseCursor::Pointer,
@@ -127,7 +127,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
 
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Initialize for Button<F, A, E, H, P, L> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env_stack.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&BorderedStyle);
+        let style = ctx.env_stack.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
         let inner = style.create(self.label.clone().boxed(), self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read());
 

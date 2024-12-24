@@ -21,19 +21,19 @@ pub enum EnvironmentFontSize {
 impl Keyable for EnvironmentFontSize {
     type Output = u32;
 
-    fn get(&self, stack: &EnvironmentStack) -> Self::Output {
+    fn get(&self, stack: &EnvironmentStack) -> Option<Self::Output> {
         match self {
-            EnvironmentFontSize::LargeTitle => stack.get::<EnvironmentFontSizeLargeTitle>().cloned().unwrap(),
-            EnvironmentFontSize::Title => stack.get::<EnvironmentFontSizeTitle>().cloned().unwrap(),
-            EnvironmentFontSize::Title2 => stack.get::<EnvironmentFontSizeTitle2>().cloned().unwrap(),
-            EnvironmentFontSize::Title3 => stack.get::<EnvironmentFontSizeTitle3>().cloned().unwrap(),
-            EnvironmentFontSize::Headline => stack.get::<EnvironmentFontSizeHeadline>().cloned().unwrap(),
-            EnvironmentFontSize::Body => stack.get::<EnvironmentFontSizeBody>().cloned().unwrap(),
-            EnvironmentFontSize::Callout => stack.get::<EnvironmentFontSizeCallout>().cloned().unwrap(),
-            EnvironmentFontSize::Subhead => stack.get::<EnvironmentFontSizeSubhead>().cloned().unwrap(),
-            EnvironmentFontSize::Footnote => stack.get::<EnvironmentFontSizeFootnote>().cloned().unwrap(),
-            EnvironmentFontSize::Caption => stack.get::<EnvironmentFontSizeCaption>().cloned().unwrap(),
-            EnvironmentFontSize::Caption2 => stack.get::<EnvironmentFontSizeCaption2>().cloned().unwrap(),
+            EnvironmentFontSize::LargeTitle => stack.get::<EnvironmentFontSizeLargeTitle>().cloned(),
+            EnvironmentFontSize::Title => stack.get::<EnvironmentFontSizeTitle>().cloned(),
+            EnvironmentFontSize::Title2 => stack.get::<EnvironmentFontSizeTitle2>().cloned(),
+            EnvironmentFontSize::Title3 => stack.get::<EnvironmentFontSizeTitle3>().cloned(),
+            EnvironmentFontSize::Headline => stack.get::<EnvironmentFontSizeHeadline>().cloned(),
+            EnvironmentFontSize::Body => stack.get::<EnvironmentFontSizeBody>().cloned(),
+            EnvironmentFontSize::Callout => stack.get::<EnvironmentFontSizeCallout>().cloned(),
+            EnvironmentFontSize::Subhead => stack.get::<EnvironmentFontSizeSubhead>().cloned(),
+            EnvironmentFontSize::Footnote => stack.get::<EnvironmentFontSizeFootnote>().cloned(),
+            EnvironmentFontSize::Caption => stack.get::<EnvironmentFontSizeCaption>().cloned(),
+            EnvironmentFontSize::Caption2 => stack.get::<EnvironmentFontSizeCaption2>().cloned(),
         }
     }
 
@@ -75,7 +75,7 @@ impl ConvertIntoRead<u32> for EnvironmentFontSize {
 
     fn convert<F: AnyReadState<T=EnvironmentFontSize> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            env.value(*value)
+            env.value(value).unwrap()
         })
     }
 }

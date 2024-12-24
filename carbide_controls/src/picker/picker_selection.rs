@@ -100,7 +100,7 @@ impl<T: StateContract + Ord> PickerSelection<T> for LocalState<BTreeSet<T>> {
 }
 
 #[derive(Clone, Debug, Copy, PartialEq)]
-pub enum PickerSelectionType {
+pub(crate) enum PickerSelectionType {
     Optional,
     Single,
     Multi

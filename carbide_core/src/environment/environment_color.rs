@@ -64,56 +64,56 @@ pub enum EnvironmentColor {
 impl Keyable for EnvironmentColor {
     type Output = Color;
 
-    fn get(&self, stack: &EnvironmentStack) -> Self::Output {
+    fn get(&self, stack: &EnvironmentStack) -> Option<Self::Output> {
         match self {
-            EnvironmentColor::Blue => stack.get::<EnvironmentColorBlue>().cloned().unwrap_or_default(),
-            EnvironmentColor::Green => stack.get::<EnvironmentColorGreen>().cloned().unwrap_or_default(),
-            EnvironmentColor::Indigo => stack.get::<EnvironmentColorIndigo>().cloned().unwrap_or_default(),
-            EnvironmentColor::Orange => stack.get::<EnvironmentColorOrange>().cloned().unwrap_or_default(),
-            EnvironmentColor::Pink => stack.get::<EnvironmentColorPink>().cloned().unwrap_or_default(),
-            EnvironmentColor::Purple => stack.get::<EnvironmentColorPurple>().cloned().unwrap_or_default(),
-            EnvironmentColor::Red => stack.get::<EnvironmentColorRed>().cloned().unwrap_or_default(),
-            EnvironmentColor::Teal => stack.get::<EnvironmentColorTeal>().cloned().unwrap_or_default(),
-            EnvironmentColor::Yellow => stack.get::<EnvironmentColorYellow>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray => stack.get::<EnvironmentColorGray>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray2 => stack.get::<EnvironmentColorGray2>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray3 => stack.get::<EnvironmentColorGray3>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray4 => stack.get::<EnvironmentColorGray4>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray5 => stack.get::<EnvironmentColorGray5>().cloned().unwrap_or_default(),
-            EnvironmentColor::Gray6 => stack.get::<EnvironmentColorGray6>().cloned().unwrap_or_default(),
-            EnvironmentColor::Label => stack.get::<EnvironmentColorLabel>().cloned().unwrap_or_default(),
-            EnvironmentColor::SecondaryLabel => stack.get::<EnvironmentColorSecondaryLabel>().cloned().unwrap_or_default(),
-            EnvironmentColor::TertiaryLabel => stack.get::<EnvironmentColorTertiaryLabel>().cloned().unwrap_or_default(),
-            EnvironmentColor::QuaternaryLabel => stack.get::<EnvironmentColorQuaternaryLabel>().cloned().unwrap_or_default(),
-            EnvironmentColor::SystemFill => stack.get::<EnvironmentColorSystemFill>().cloned().unwrap_or_default(),
-            EnvironmentColor::SecondarySystemFill => stack.get::<EnvironmentColorSecondarySystemFill>().cloned().unwrap_or_default(),
-            EnvironmentColor::TertiarySystemFill => stack.get::<EnvironmentColorTertiarySystemFill>().cloned().unwrap_or_default(),
-            EnvironmentColor::QuaternarySystemFill => stack.get::<EnvironmentColorQuaternarySystemFill>().cloned().unwrap_or_default(),
-            EnvironmentColor::PlaceholderText => stack.get::<EnvironmentColorPlaceholderText>().cloned().unwrap_or_default(),
-            EnvironmentColor::SystemBackground => stack.get::<EnvironmentColorSystemBackground>().cloned().unwrap_or_default(),
-            EnvironmentColor::SecondarySystemBackground => stack.get::<EnvironmentColorSecondarySystemBackground>().cloned().unwrap_or_default(),
-            EnvironmentColor::TertiarySystemBackground => stack.get::<EnvironmentColorTertiarySystemBackground>().cloned().unwrap_or_default(),
-            EnvironmentColor::Separator => stack.get::<EnvironmentColorSeparator>().cloned().unwrap_or_default(),
-            EnvironmentColor::OpaqueSeparator => stack.get::<EnvironmentColorOpaqueSeparator>().cloned().unwrap_or_default(),
-            EnvironmentColor::Link => stack.get::<EnvironmentColorLink>().cloned().unwrap_or_default(),
-            EnvironmentColor::DarkText => stack.get::<EnvironmentColorDarkText>().cloned().unwrap_or_default(),
-            EnvironmentColor::LightText => stack.get::<EnvironmentColorLightText>().cloned().unwrap_or_default(),
-            EnvironmentColor::Accent => stack.get::<EnvironmentColorAccent>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThick => stack.get::<EnvironmentColorUltraThick>().cloned().unwrap_or_default(),
-            EnvironmentColor::Thick => stack.get::<EnvironmentColorThick>().cloned().unwrap_or_default(),
-            EnvironmentColor::Regular => stack.get::<EnvironmentColorRegular>().cloned().unwrap_or_default(),
-            EnvironmentColor::Thin => stack.get::<EnvironmentColorThin>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThin => stack.get::<EnvironmentColorUltraThin>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThickLight => stack.get::<EnvironmentColorUltraThickLight>().cloned().unwrap_or_default(),
-            EnvironmentColor::ThickLight => stack.get::<EnvironmentColorThickLight>().cloned().unwrap_or_default(),
-            EnvironmentColor::RegularLight => stack.get::<EnvironmentColorRegularLight>().cloned().unwrap_or_default(),
-            EnvironmentColor::ThinLight => stack.get::<EnvironmentColorThinLight>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThinLight => stack.get::<EnvironmentColorUltraThinLight>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThickDark => stack.get::<EnvironmentColorUltraThickDark>().cloned().unwrap_or_default(),
-            EnvironmentColor::ThickDark => stack.get::<EnvironmentColorThickDark>().cloned().unwrap_or_default(),
-            EnvironmentColor::RegularDark => stack.get::<EnvironmentColorRegularDark>().cloned().unwrap_or_default(),
-            EnvironmentColor::ThinDark => stack.get::<EnvironmentColorThinDark>().cloned().unwrap_or_default(),
-            EnvironmentColor::UltraThinDark => stack.get::<EnvironmentColorUltraThinDark>().cloned().unwrap_or_default(),
+            EnvironmentColor::Blue => stack.get::<EnvironmentColorBlue>().cloned(),
+            EnvironmentColor::Green => stack.get::<EnvironmentColorGreen>().cloned(),
+            EnvironmentColor::Indigo => stack.get::<EnvironmentColorIndigo>().cloned(),
+            EnvironmentColor::Orange => stack.get::<EnvironmentColorOrange>().cloned(),
+            EnvironmentColor::Pink => stack.get::<EnvironmentColorPink>().cloned(),
+            EnvironmentColor::Purple => stack.get::<EnvironmentColorPurple>().cloned(),
+            EnvironmentColor::Red => stack.get::<EnvironmentColorRed>().cloned(),
+            EnvironmentColor::Teal => stack.get::<EnvironmentColorTeal>().cloned(),
+            EnvironmentColor::Yellow => stack.get::<EnvironmentColorYellow>().cloned(),
+            EnvironmentColor::Gray => stack.get::<EnvironmentColorGray>().cloned(),
+            EnvironmentColor::Gray2 => stack.get::<EnvironmentColorGray2>().cloned(),
+            EnvironmentColor::Gray3 => stack.get::<EnvironmentColorGray3>().cloned(),
+            EnvironmentColor::Gray4 => stack.get::<EnvironmentColorGray4>().cloned(),
+            EnvironmentColor::Gray5 => stack.get::<EnvironmentColorGray5>().cloned(),
+            EnvironmentColor::Gray6 => stack.get::<EnvironmentColorGray6>().cloned(),
+            EnvironmentColor::Label => stack.get::<EnvironmentColorLabel>().cloned(),
+            EnvironmentColor::SecondaryLabel => stack.get::<EnvironmentColorSecondaryLabel>().cloned(),
+            EnvironmentColor::TertiaryLabel => stack.get::<EnvironmentColorTertiaryLabel>().cloned(),
+            EnvironmentColor::QuaternaryLabel => stack.get::<EnvironmentColorQuaternaryLabel>().cloned(),
+            EnvironmentColor::SystemFill => stack.get::<EnvironmentColorSystemFill>().cloned(),
+            EnvironmentColor::SecondarySystemFill => stack.get::<EnvironmentColorSecondarySystemFill>().cloned(),
+            EnvironmentColor::TertiarySystemFill => stack.get::<EnvironmentColorTertiarySystemFill>().cloned(),
+            EnvironmentColor::QuaternarySystemFill => stack.get::<EnvironmentColorQuaternarySystemFill>().cloned(),
+            EnvironmentColor::PlaceholderText => stack.get::<EnvironmentColorPlaceholderText>().cloned(),
+            EnvironmentColor::SystemBackground => stack.get::<EnvironmentColorSystemBackground>().cloned(),
+            EnvironmentColor::SecondarySystemBackground => stack.get::<EnvironmentColorSecondarySystemBackground>().cloned(),
+            EnvironmentColor::TertiarySystemBackground => stack.get::<EnvironmentColorTertiarySystemBackground>().cloned(),
+            EnvironmentColor::Separator => stack.get::<EnvironmentColorSeparator>().cloned(),
+            EnvironmentColor::OpaqueSeparator => stack.get::<EnvironmentColorOpaqueSeparator>().cloned(),
+            EnvironmentColor::Link => stack.get::<EnvironmentColorLink>().cloned(),
+            EnvironmentColor::DarkText => stack.get::<EnvironmentColorDarkText>().cloned(),
+            EnvironmentColor::LightText => stack.get::<EnvironmentColorLightText>().cloned(),
+            EnvironmentColor::Accent => stack.get::<EnvironmentColorAccent>().cloned(),
+            EnvironmentColor::UltraThick => stack.get::<EnvironmentColorUltraThick>().cloned(),
+            EnvironmentColor::Thick => stack.get::<EnvironmentColorThick>().cloned(),
+            EnvironmentColor::Regular => stack.get::<EnvironmentColorRegular>().cloned(),
+            EnvironmentColor::Thin => stack.get::<EnvironmentColorThin>().cloned(),
+            EnvironmentColor::UltraThin => stack.get::<EnvironmentColorUltraThin>().cloned(),
+            EnvironmentColor::UltraThickLight => stack.get::<EnvironmentColorUltraThickLight>().cloned(),
+            EnvironmentColor::ThickLight => stack.get::<EnvironmentColorThickLight>().cloned(),
+            EnvironmentColor::RegularLight => stack.get::<EnvironmentColorRegularLight>().cloned(),
+            EnvironmentColor::ThinLight => stack.get::<EnvironmentColorThinLight>().cloned(),
+            EnvironmentColor::UltraThinLight => stack.get::<EnvironmentColorUltraThinLight>().cloned(),
+            EnvironmentColor::UltraThickDark => stack.get::<EnvironmentColorUltraThickDark>().cloned(),
+            EnvironmentColor::ThickDark => stack.get::<EnvironmentColorThickDark>().cloned(),
+            EnvironmentColor::RegularDark => stack.get::<EnvironmentColorRegularDark>().cloned(),
+            EnvironmentColor::ThinDark => stack.get::<EnvironmentColorThinDark>().cloned(),
+            EnvironmentColor::UltraThinDark => stack.get::<EnvironmentColorUltraThinDark>().cloned(),
         }
     }
 
@@ -193,7 +193,7 @@ impl ConvertIntoRead<Color> for EnvironmentColor {
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            value.get(env)
+            value.get(env).unwrap_or_default()
         })
     }
 }
@@ -203,7 +203,7 @@ impl ConvertIntoRead<Style> for EnvironmentColor {
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
-            Style::Color(value.get(env))
+            Style::Color(value.get(env).unwrap_or_default())
         })
     }
 }

@@ -5,7 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{EnvironmentColor};
 use carbide_core::state::{IntoReadState, Map1, ReadState};
 use carbide_core::widget::{CommonWidget, Empty, HStack, Text, AnyWidget, WidgetExt, WidgetId, Widget};
-use crate::enabled_state;
+use crate::EnabledState;
 
 /// # A plain switch widget
 /// This widget contains the basic logic for a switch component, without any styling.
@@ -34,7 +34,7 @@ impl<C: Widget, L: ReadState<T=String>> Labelled<C, L> {
         child: C2,
     ) -> Labelled<HStack<Vec<Box<dyn AnyWidget>>>, L2> {
 
-        let label_color = Map1::read_map(enabled_state(), |enabled| {
+        let label_color = Map1::read_map(EnabledState::new(true), |enabled| {
             if *enabled {
                 EnvironmentColor::Label
             } else {

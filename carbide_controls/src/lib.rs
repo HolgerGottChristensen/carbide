@@ -1,4 +1,3 @@
-use carbide_core::state::{EnvMap1, Map1};
 pub use list::*;
 pub use plain::*;
 pub use slider::*;
@@ -6,9 +5,10 @@ pub use text_input::*;
 pub use controls_ext::*;
 pub use help::*;
 pub use calendar::*;
-use carbide::environment::{EnvironmentStack, Key};
+pub use automatic_style::AutomaticStyle;
+use carbide::environment::Key;
 use carbide::focus::{Focus, FocusManager, Refocus};
-use carbide::state::{ReadState, State};
+use carbide::state::{KeyState, ReadState, State};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, OverlayManager, Widget};
 pub use date_picker::*;
 
@@ -55,21 +55,14 @@ pub mod identifiable;
 mod selectable;
 mod labelled;
 pub mod button;
+mod automatic_style;
 
-type EnabledState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> bool, i32, bool, i32>;
+pub type EnabledState = KeyState<EnabledKey>;
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct EnabledKey;
+pub struct EnabledKey;
 impl Key for EnabledKey {
     type Value = bool;
-}
-
-pub fn enabled_state() -> EnabledState {
-    Map1::read_map_env(0, |env, _| {
-        // Look up enabled in the environment, or default to true of nothing is specified
-        let val = env.get::<EnabledKey>().cloned().unwrap_or(true);
-        val
-    })
 }
 
 #[derive(Debug, Clone)]

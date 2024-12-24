@@ -18,6 +18,8 @@ pub use self::read_state::*;
 pub use self::into_read_state::*;
 pub use self::into_state::*;
 pub use self::state::*;
+pub use self::key_state::*;
+pub use self::keyable_state::*;
 pub use self::state_ext::*;
 pub use self::state_sync::StateSync;
 pub use self::value_state::ValueState;
@@ -51,6 +53,9 @@ mod functor;
 mod flatten;
 mod empty_state;
 mod extensions;
+mod key_state;
+mod keyable_state;
+
 pub use carbide_derive::StateValue;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;

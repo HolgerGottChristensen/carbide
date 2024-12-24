@@ -205,7 +205,7 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> Update for PlainDatePicker<F, E> {
 //  Delegates
 // ---------------------------------------------------
 #[allow(unused)]
-type TextDelegateGenerator = fn(DateSelection) ->Box<dyn AnyReadState<T=String>>;
+type TextDelegateGenerator = fn(DateSelection) -> Box<dyn AnyReadState<T=String>>;
 
 type DelegateGenerator = fn(
     selected_item: DateSelection,

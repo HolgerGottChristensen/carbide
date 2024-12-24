@@ -18,7 +18,7 @@ use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Ma
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId, Wrap};
 
-use crate::{enabled_state, EnabledState};
+use crate::{EnabledState};
 use crate::plain::cursor::{Cursor, CursorIndex};
 
 pub const PASSWORD_CHAR: char = '●';
@@ -105,7 +105,7 @@ impl PlainTextInput<Focus, Color, Option<char>, u32, String, bool> {
             text.into_state(),
             cursor_widget,
             selection_widget,
-            enabled_state(),
+            EnabledState::new(true),
         )
     }
 }

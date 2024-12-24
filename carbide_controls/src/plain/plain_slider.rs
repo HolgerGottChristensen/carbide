@@ -13,7 +13,7 @@ use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, Empty, Rectangle, WidgetExt, WidgetId, Widget};
-use crate::{enabled_state, EnabledState};
+use crate::{EnabledState};
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
 const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
@@ -67,7 +67,7 @@ impl PlainSlider<f64, Focus, f64, f64, f64, Option<f64>, Empty, Empty, Empty, bo
             default_thumb,
             default_track,
             default_background,
-            enabled_state()
+            EnabledState::new(true)
         )
     }
 }
