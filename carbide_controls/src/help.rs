@@ -7,15 +7,9 @@ use carbide_core::event::{MouseEvent, MouseEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
-use crate::types::TooltipPosition;
 
 const PADDING: Scalar = 8.0;
 
-/// # A plain switch widget
-/// This widget contains the basic logic for a switch component, without any styling.
-/// It can be styled by setting the delegate, using the delegate method.
-///
-/// For a styled version, use [crate::Switch] instead.
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent, Render, Layout)]
 pub struct Help<C> where C: Widget {
@@ -145,4 +139,14 @@ impl<C: Widget> Render for Help<C> {
 
 impl<C: Widget> CommonWidget for Help<C> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TooltipPosition {
+    Auto,
+    Mouse,
+    Top,
+    Bottom,
+    Left,
+    Right,
 }

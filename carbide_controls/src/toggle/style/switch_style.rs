@@ -1,15 +1,14 @@
-use std::time::Duration;
-use carbide::accessibility::Role;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
-use crate::UnfocusAction;
-use carbide::color::{Color, ColorExt, TRANSPARENT};
-use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::focus::Focus;
-use carbide::state::{AnyReadState, AnyState, Map1, Map2, ReadState, ReadStateExtTransition, State};
-use carbide::widget::canvas::{Canvas, CanvasContext};
-use carbide::widget::{AnyWidget, Capsule, CornerRadii, Ellipse, HStack, IfElse, MouseArea, RoundedRectangle, Text, Widget, WidgetExt, ZStack};
 use crate::toggle::ToggleStyle;
+use crate::UnfocusAction;
+use carbide_core::accessibility::Role;
+use carbide_core::color::{Color, ColorExt, TRANSPARENT};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
+use carbide_core::focus::Focus;
+use carbide_core::state::{AnyReadState, AnyState, Map1, Map2, ReadState, ReadStateExtTransition, State};
+use carbide_core::widget::{AnyWidget, Capsule, Ellipse, HStack, MouseArea, Text, Widget, WidgetExt, ZStack};
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct SwitchStyle;

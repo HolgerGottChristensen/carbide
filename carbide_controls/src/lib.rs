@@ -44,7 +44,6 @@ mod list;
 mod plain;
 mod slider;
 mod text_input;
-mod types;
 mod controls_ext;
 mod help;
 mod calendar;
