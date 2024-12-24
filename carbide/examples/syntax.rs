@@ -1,7 +1,6 @@
 use carbide_macro::{CarbideUI, gen_optionals};
 use carbide::cursor::MouseCursor;
 use carbide::state::{State};
-use carbide_controls::Button;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::environment::EnvironmentFontSize;

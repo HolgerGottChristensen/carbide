@@ -23,7 +23,6 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::EnvironmentStateKey;
 use carbide_core::widget::*;
 //use carbide_wgpu::{create_bind_group_from_wgpu_texture, with_adapter, with_bind_groups_mut, with_device_queue, with_instance};
 use crate::node3d::{AnyNode3D, Node3D};

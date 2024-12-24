@@ -1,4 +1,5 @@
-use carbide_controls::{Button, List};
+use carbide_controls::{ControlsExt, List};
+use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
@@ -23,25 +24,25 @@ fn main() {
         .expand_width()
     }
 
-    let add_element = Button::new_primary("Add element", closure!(|_| {
+    let add_element = Button::new("Add element", closure!(|_| {
             let len = ($list_model_state).len();
             list_model_state.push(format!("New element: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_element = Button::new_primary("Remove element", closure!(|_| {
+    let remove_element = Button::new("Remove element", closure!(|_| {
             ($list_model_state).pop();
         }))
         .frame(150.0, 22.0)
         .accent_color(EnvironmentColor::Red);
 
-    let add_to_start = Button::new_primary("Add element to start", closure!(|_| {
+    let add_to_start = Button::new("Add element to start", closure!(|_| {
             let len = ($list_model_state).len();
             list_model_state.insert(0, format!("New element start: {}", len + 1));
         }))
         .frame(150.0, 22.0);
 
-    let remove_first = Button::new_primary("Remove first element", closure!(|_| {
+    let remove_first = Button::new("Remove first element", closure!(|_| {
             if ($list_model_state).len() > 0 {
                 list_model_state.remove(0);
             }
@@ -62,6 +63,7 @@ fn main() {
             HStack::new((add_to_start, remove_first)).spacing(10.0),
         ))
             .spacing(10.0)
+            .button_style(BorderedProminentStyle)
     ));
 
     application.launch();

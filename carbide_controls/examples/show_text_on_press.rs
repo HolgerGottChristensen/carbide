@@ -1,4 +1,5 @@
-use carbide_controls::{PASSWORD_CHAR, PlainButton, PlainTextInput};
+use carbide_controls::{PASSWORD_CHAR, PlainTextInput, ControlsExt};
+use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentFontSize;
@@ -26,8 +27,9 @@ fn main() {
                 .obscure(obscure)
                 .font_size(EnvironmentFontSize::Title)
                 .border(),
-            PlainButton::new(closure!(|_|{}))
+            Button::new("Show/hide", closure!(|_|{}))
                 .pressed(pressed)
+                .button_style(BorderedProminentStyle)
         ))
             .spacing(10.0)
             .padding(EdgeInsets::all(40.0)),

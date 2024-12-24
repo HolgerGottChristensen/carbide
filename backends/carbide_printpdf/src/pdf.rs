@@ -10,7 +10,7 @@ use printpdf::{BuiltinFont, Color, Image as PdfImage, ImageTransform, Mm, OP_PAT
 use printpdf::lopdf::content::Operation;
 
 use carbide_core::locate_folder;
-use carbide_core::draw::{Alignment, Dimension, ImageContext, Position};
+use carbide_core::draw::{Alignment, Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::NoopEventSink;
 use carbide_core::layout::{Layout};
@@ -109,7 +109,7 @@ impl Pdf {
         let current_layer = self.document.get_page(PdfPageIndex(0)).get_layer(PdfLayerIndex(0));
         let page_dimensions = Dimension::new(210.0, 297.0);
 
-        self.environment.capture_time();
+        //self.environment.capture_time();
         //self.environment.set_root_alignment(BasicLayouter::Top);
 
         /*let primitives = Primitives::new(

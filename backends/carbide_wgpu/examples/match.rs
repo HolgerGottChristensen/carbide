@@ -1,4 +1,5 @@
-use carbide_controls::{Button, TextInput};
+use carbide_controls::{ControlsExt, TextInput};
+use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
@@ -33,9 +34,10 @@ fn main() {
         Dimension::new(400.0, 600.0),
         VStack::new((
             widget,
-            Button::new_primary("Click to change the view above", closure!(|_| {
+            Button::new("Click to change the view above", closure!(|_| {
                 *$integer_state = (*$integer_state + 1) % 4;
-            })).frame_fixed_height(45.0),
+            })).frame_fixed_height(45.0)
+                .button_style(BorderedProminentStyle),
         ))
     ));
 

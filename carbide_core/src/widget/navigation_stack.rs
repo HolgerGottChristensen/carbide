@@ -161,6 +161,10 @@ impl<K: Key<Value=NavigationManager> + Clone> NavigationStack<K> {
             StackItem::Other(last) => {
                 // replaces the last current element with the last element.
                 std::mem::swap(&mut self.current, last);
+
+                self.current.process_initialization(&mut InitializationContext {
+                    env_stack,
+                })
             }
         }
 
