@@ -1,6 +1,7 @@
 use cgmath::Matrix4;
 use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
 use carbide_core::application::ApplicationManager;
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::EnvironmentStack;
@@ -42,6 +43,7 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) visible: bool,
     pub(crate) theme: Theme,
     pub(crate) scenes: Scenes,
+    pub(crate) mouse_cursor: MouseCursor,
 }
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
@@ -78,13 +80,19 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let handle = self.inner.raw_window_handle();
 
+        let mut cursor = self.mouse_cursor;
+
         env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
             env_stack.with_mut::<SceneManager>(&mut scene_manager, |env_stack| {
                 env_stack.with::<WindowHandleKey>(&handle, |env_stack| {
-                    f(env_stack, self)
+                    env_stack.with_mut::<MouseCursor>(&mut cursor, |env_stack| {
+                        f(env_stack, self)
+                    })
                 })
             })
         });
+
+        self.mouse_cursor = cursor;
 
         if scene_manager.dismiss_requested() {
             println!("Here");

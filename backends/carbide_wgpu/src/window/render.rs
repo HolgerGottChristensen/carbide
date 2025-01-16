@@ -4,6 +4,7 @@ use typed_arena::Arena;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, Queue, RenderPassDepthStencilAttachment, RenderPipeline, SurfaceConfiguration, SurfaceTexture, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_core::application::ApplicationManager;
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::draw::theme::Theme;
 use carbide_core::environment::Environment;
@@ -111,8 +112,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                         initialized.inner.set_title(current);
                     }
                 }
-
-                initialized.inner.set_cursor(convert_mouse_cursor(ctx.env.cursor()));
             }
         });
 
@@ -136,6 +135,10 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
 
         if self.visible {
+            let cursor = convert_mouse_cursor(self.mouse_cursor);
+            self.inner.set_cursor(cursor);
+            self.mouse_cursor = MouseCursor::Default;
+
             match self.render_inner(render_passes, uniform_bind_groups, ctx.text, ctx.env, scale_factor) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost

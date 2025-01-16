@@ -1,5 +1,6 @@
 use wgpu::{BufferUsages, SurfaceConfiguration, TextureFormat, TextureUsages};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{ColorSpace, Dimension, DrawGradient};
 use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::ReadState;
@@ -225,6 +226,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     child,
                     theme,
                     scenes: Default::default(),
+                    mouse_cursor: MouseCursor::Default
                 })
             }
             x => x,

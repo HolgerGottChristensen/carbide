@@ -1,11 +1,9 @@
 use std::fmt::Formatter;
 
-use crate::cursor::MouseCursor;
 use crate::draw::Position;
 use crate::event::{EventSink, HasEventSink};
 
 pub struct Environment {
-    cursor: MouseCursor,
     mouse_position: Position,
 
     event_sink: Box<dyn EventSink>,
@@ -22,7 +20,6 @@ impl Environment {
         event_sink: Box<dyn EventSink>,
     ) -> Self {
         let res = Environment {
-            cursor: MouseCursor::Default,
             mouse_position: Default::default(),
             event_sink,
         };
@@ -36,14 +33,6 @@ impl Environment {
 
     pub fn set_mouse_position(&mut self, position: Position) {
         self.mouse_position = position;
-    }
-    
-    pub fn cursor(&self) -> MouseCursor {
-        self.cursor
-    }
-
-    pub fn set_cursor(&mut self, cursor: MouseCursor) {
-        self.cursor = cursor;
     }
 }
 

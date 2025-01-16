@@ -1,3 +1,4 @@
+use crate::cursor::MouseCursor;
 use crate::render::RenderContext;
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetSync};
@@ -6,7 +7,9 @@ use crate::widget::{CommonWidget, WidgetSync};
 pub trait Render: CommonWidget + WidgetSync {
     fn render(&mut self, ctx: &mut RenderContext) {
         if let Some(cursor) = self.cursor() {
-            ctx.env.set_cursor(cursor);
+            if let Some(env_cursor) = ctx.env_stack.get_mut::<MouseCursor>() {
+                *env_cursor = cursor;
+            }
         }
 
         self.sync(ctx.env_stack);

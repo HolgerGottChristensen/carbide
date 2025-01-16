@@ -1324,7 +1324,9 @@ impl<
 > Render for PlainTextInput<F, C, O, S, T, E> {
     fn render(&mut self, context: &mut RenderContext) {
         if let Some(cursor) = self.cursor() {
-            context.env.set_cursor(cursor);
+            if let Some(env_cursor) = context.env_stack.get_mut::<MouseCursor>() {
+                *env_cursor = cursor;
+            }
         }
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {

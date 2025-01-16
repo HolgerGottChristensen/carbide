@@ -19,7 +19,6 @@ members = [
     "backends/carbide_windows",
     "backends/carbide_rend3",
     "backends/carbide_text",
-    "backends/carbide_macos",
     "backends/carbide_printpdf",
     "backends/carbide_fluent",
     "examples/lines",

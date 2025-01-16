@@ -226,9 +226,6 @@ impl NewEventHandler {
                         env,
                         env_stack,
                     });
-
-                    // Set cursor to default for next frame
-                    env.set_cursor(MouseCursor::Default);
                 }
 
 
