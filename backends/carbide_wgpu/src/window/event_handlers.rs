@@ -1,5 +1,5 @@
 use crate::window::Window;
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget};
 use carbide_winit::dpi::LogicalSize;
@@ -89,7 +89,7 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         match self {
             Window::Initialized(initialized) => {
                 initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {

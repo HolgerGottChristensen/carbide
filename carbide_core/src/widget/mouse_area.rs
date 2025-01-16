@@ -6,7 +6,7 @@ use smallvec::SmallVec;
 use carbide::accessibility;
 use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
 use carbide::environment::EnvironmentStack;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext};
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, OtherEventContext};
 use carbide::scene::SceneManager;
 use carbide::widget::{AnyWidget, WidgetSync};
 use carbide_macro::carbide_default_builder2;
@@ -15,14 +15,15 @@ use crate::CommonWidgetImpl;
 use crate::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext, AccessibilityEventHandler};
+use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext, AccessibilityEventHandler, OtherEventHandler};
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty, Identifiable};
+use crate::widget::keyboard_shortcut::KeyboardShortcutPressed;
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(MouseEvent, KeyboardEvent, Accessibility, AccessibilityEvent)]
+#[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent, Accessibility, AccessibilityEvent)]
 pub struct MouseArea<I, O, F, C, H, P> where
     I: MouseAreaAction,
     O: MouseAreaAction,
@@ -210,10 +211,10 @@ impl<
         }
 
         match event {
-            KeyboardEvent::Press(Key::Enter, _) => {
+            KeyboardEvent::Press { key: Key::Enter, .. } => {
                 self.is_pressed.set_value(true);
             }
-            KeyboardEvent::Release(Key::Enter, _) => {
+            KeyboardEvent::Release { key: Key::Enter, .. } => {
                 if *self.is_pressed.value() {
                     self.is_pressed.set_value(false);
                     self.click.call(MouseAreaActionContext {
@@ -226,6 +227,25 @@ impl<
                 }
             }
             _ => (),
+        }
+    }
+}
+
+impl<
+    I: MouseAreaAction + Clone + 'static,
+    O: MouseAreaAction + Clone + 'static,
+    F: State<T=Focus>,
+    C: Widget,
+    H: State<T=bool>,
+    P: State<T=bool>,
+> OtherEventHandler for MouseArea<I, O, F, C, H, P> {
+    fn handle_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
+        if event.is::<KeyboardShortcutPressed>() {
+            self.click.call(MouseAreaActionContext {
+                env: ctx.env,
+                env_stack: ctx.env_stack,
+                modifier_key: ModifierKey::empty()
+            });
         }
     }
 }

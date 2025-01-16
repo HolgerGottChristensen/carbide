@@ -1,9 +1,10 @@
+use carbide::event::{WindowEvent, WindowEventContext};
 use carbide_macro::carbide_default_builder2;
 
 use crate::color::Color;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
-use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event};
+use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, OtherEvent, WindowEventHandler};
 use crate::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
@@ -11,7 +12,7 @@ use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, 
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, MouseEvent, OtherEvent, Layout)]
+#[carbide_exclude(Render, MouseEvent, WindowEvent, Layout)]
 pub struct Scroll<W> where W: Widget {
     #[id] id: WidgetId,
     child: W,
@@ -226,15 +227,10 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
     }
 }
 
-impl<W: Widget> OtherEventHandler for Scroll<W> {
-    fn handle_other_event(&mut self, _event: &Event, _ctx: &mut OtherEventContext) {
-        match _event {
-            Event::Window(_) => {
-                self.keep_y_within_bounds();
-                self.keep_x_within_bounds();
-            }
-            _ => {}
-        }
+impl<W: Widget> WindowEventHandler for Scroll<W> {
+    fn handle_window_event(&mut self, _: &WindowEvent, _: &mut WindowEventContext) {
+        self.keep_y_within_bounds();
+        self.keep_x_within_bounds();
     }
 }
 

@@ -10,6 +10,7 @@ pub use draw_gradient::*;
 pub use draw_style::*;
 pub use angle::*;
 pub use stroke_dashes::*;
+pub use automatic_style::*;
 
 mod alignment;
 mod dimension;
@@ -26,6 +27,7 @@ pub mod color;
 mod texture;
 mod angle;
 mod stroke_dashes;
+mod automatic_style;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

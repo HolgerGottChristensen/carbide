@@ -1,8 +1,8 @@
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::{ToggleAction, ToggleStyle, ToggleStyleKey};
-use crate::{AutomaticStyle, EnabledState};
+use crate::{EnabledState};
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
-use carbide::draw::{Dimension, Position};
+use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
 use carbide::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};

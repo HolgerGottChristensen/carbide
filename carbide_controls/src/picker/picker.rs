@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use carbide::draw::AutomaticStyle;
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
 use crate::picker::{MenuStyle, PickerStyle};
-use crate::{AutomaticStyle, EnabledState};
+use crate::{EnabledState};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::focus::Focus;
 use carbide_core::lifecycle::{InitializationContext, Initialize};

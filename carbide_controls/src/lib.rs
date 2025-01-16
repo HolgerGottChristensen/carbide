@@ -5,7 +5,6 @@ pub use text_input::*;
 pub use controls_ext::*;
 pub use help::*;
 pub use calendar::*;
-pub use automatic_style::AutomaticStyle;
 use carbide::environment::Key;
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{KeyState, ReadState, State};
@@ -54,7 +53,6 @@ pub mod identifiable;
 mod selectable;
 mod labelled;
 pub mod button;
-mod automatic_style;
 
 pub type EnabledState = KeyState<EnabledKey>;
 

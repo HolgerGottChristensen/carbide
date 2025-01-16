@@ -5,7 +5,7 @@ use carbide::lifecycle::InitializationContext;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::Key;
-use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, Event, WindowEventHandler, AccessibilityEventHandler};
+use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, OtherEvent, WindowEventHandler, AccessibilityEventHandler};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
@@ -181,7 +181,7 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> KeyboardEventHandler for O
 }
 
 impl<K: Key<Value=OverlayManager> + Clone, C: Widget> OtherEventHandler for Overlay<K, C> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with(ctx.env_stack, |env_stack, inner| {
             let inner_ctx = &mut OtherEventContext {
                 text: ctx.text,

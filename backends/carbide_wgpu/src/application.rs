@@ -5,6 +5,7 @@ use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
+use objc::sel;
 use smallvec::SmallVec;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
@@ -15,6 +16,7 @@ use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::environment::{Environment, EnvironmentStack, Key};
+use carbide_core::event::EventSink;
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
@@ -83,6 +85,7 @@ pub struct Application {
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     event_loop: EventLoop<CustomEvent>,
+    event_sink: Arc<dyn EventSink>,
 }
 
 impl Application {
@@ -97,6 +100,8 @@ impl Application {
             Box::new(ProxyEventLoop(event_loop.create_proxy())),
         );
 
+        let event_sink = Arc::new(ProxyEventLoop(event_loop.create_proxy()));
+
         Application {
             id: WidgetId::new(),
             scenes: Default::default(),
@@ -105,6 +110,7 @@ impl Application {
             environment_stack: EnvironmentStack::new(),
             text_context: TextContext::new(),
             event_loop,
+            event_sink,
         }
     }
 
@@ -155,7 +161,8 @@ impl Application {
             environment,
             environment_stack: type_map,
             text_context,
-            event_loop
+            event_loop,
+            event_sink
         } = self;
 
         let mut running = RunningApplication {
@@ -167,6 +174,7 @@ impl Application {
             text_context,
             animation_manager: AnimationManager::new(),
             focus_manager: FocusManager::new(),
+            event_sink,
         };
         event_loop.run_app(&mut running).unwrap();
     }
@@ -189,6 +197,7 @@ pub struct RunningApplication {
     text_context: TextContext,
     animation_manager: AnimationManager,
     focus_manager: FocusManager,
+    event_sink: Arc<dyn EventSink>,
 }
 
 impl RunningApplication {
@@ -209,14 +218,16 @@ impl RunningApplication {
         }
 
         self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-            let mut ctx = InitializationContext {
-                env_stack,
-            };
+            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                let mut ctx = InitializationContext {
+                    env_stack,
+                };
 
-            for mut scene in application_manager.scenes_to_add().drain(..) {
-                scene.process_initialization(&mut ctx);
-                self.scenes.push(scene);
-            }
+                for mut scene in application_manager.scenes_to_add().drain(..) {
+                    scene.process_initialization(&mut ctx);
+                    self.scenes.push(scene);
+                }
+            })
         });
 
         for scene in application_manager.scenes_to_dismiss() {
@@ -245,11 +256,13 @@ impl RunningApplication {
 impl ApplicationHandler<CustomEvent> for RunningApplication {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-            for scene in &mut self.scenes {
-                scene.process_initialization(&mut InitializationContext {
-                    env_stack,
-                });
-            }
+            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                for scene in &mut self.scenes {
+                    scene.process_initialization(&mut InitializationContext {
+                        env_stack,
+                    });
+                }
+            })
         })
     }
 
@@ -264,9 +277,11 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
                 env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
                     env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        for scene in &mut self.scenes {
-                            request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
-                        }
+                        env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                            for scene in &mut self.scenes {
+                                request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                            }
+                        })
                     })
                 })
             })
@@ -286,7 +301,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
                 env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
                     env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                        env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                            request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                        })
                     })
                 })
             })

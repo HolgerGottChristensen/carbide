@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 use carbide::environment::Key;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext, Event, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide::lifecycle::InitializationContext;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
@@ -239,7 +239,7 @@ impl<K: Key<Value=NavigationManager> + Clone> KeyboardEventHandler for Navigatio
 }
 
 impl<K: Key<Value=NavigationManager> + Clone> OtherEventHandler for NavigationStack<K> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with(ctx.env_stack, |env_stack, child| {
             child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,

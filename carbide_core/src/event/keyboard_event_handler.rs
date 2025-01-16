@@ -69,8 +69,8 @@ impl KeyboardEventContext<'_, '_> {
 
 #[derive(Clone, Debug)]
 pub enum KeyboardEvent {
-    Press(Key, ModifierKey),
-    Release(Key, ModifierKey),
+    Press { key: Key, modifiers: ModifierKey, no_modifier_key: Key },
+    Release { key: Key, modifiers: ModifierKey, no_modifier_key: Key },
     Ime(Ime),
 }
 

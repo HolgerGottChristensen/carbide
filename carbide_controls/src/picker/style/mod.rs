@@ -14,6 +14,7 @@ use carbide::state::{AnyReadState, AnyState, ReadStateExtNew, State, StateContra
 use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
+use carbide::draw::AutomaticStyle;
 use crate::picker::picker_selection::PickerSelectionType;
 
 #[derive(Debug, Copy, Clone)]
@@ -32,6 +33,12 @@ pub trait PickerStyle: Debug + DynClone {
         model: Box<dyn AnySequence<dyn AnySelectableWidget>>,
         selection_type: PickerSelectionType,
     ) -> Box<dyn AnyWidget>;
+}
+
+impl PickerStyle for AutomaticStyle {
+    fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
+        MenuStyle.create(focus, enabled, label, model, selection_type)
+    }
 }
 
 clone_trait_object!(PickerStyle);

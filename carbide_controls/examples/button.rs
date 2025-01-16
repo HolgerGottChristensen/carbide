@@ -3,6 +3,7 @@ use carbide_controls::button::{BorderedProminentStyle, BorderedStyle, Button, Pl
 use carbide_core::accessibility::AccessibilityExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
+use carbide_core::event::{Key, ModifierKey};
 use carbide_core::state::{LocalState, ReadStateExtNew, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
@@ -21,6 +22,7 @@ fn main() {
                 .font_size(32u32),
 
             Button::new("Add 1", closure!(|_| { *$counter_state += 1; }))
+                .keyboard_shortcut("r", ModifierKey::ALT)
                 .button_style(BorderedProminentStyle)
                 .frame(90.0, 22.0),
 

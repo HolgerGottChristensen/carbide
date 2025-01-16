@@ -7,9 +7,17 @@ use winit::window::CursorIcon;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::event::{Key, MouseButton, TouchPhase};
 pub use event_handler::*;
+use winit::raw_window_handle_05::RawWindowHandle;
 
 mod event_handler;
 pub mod custom_event;
+
+#[derive(Copy, Clone, Debug)]
+pub struct WindowHandleKey;
+
+impl carbide_core::environment::Key for WindowHandleKey {
+    type Value = RawWindowHandle;
+}
 
 /// Types that have access to a `winit::Window` and can provide the necessary dimensions and hidpi
 /// factor for converting `winit::Event`s to `carbide::event::Input`, as well as set the mouse

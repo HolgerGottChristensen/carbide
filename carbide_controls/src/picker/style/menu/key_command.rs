@@ -12,19 +12,19 @@ impl PartialEq<PopupButtonKeyCommand> for &KeyboardEvent {
     fn eq(&self, other: &PopupButtonKeyCommand) -> bool {
         match other {
             PopupButtonKeyCommand::Next => {
-                matches!(self, KeyboardEvent::Press(Key::ArrowDown, _))
+                matches!(self, KeyboardEvent::Press { key: Key::ArrowDown, .. })
             }
             PopupButtonKeyCommand::Prev => {
-                matches!(self, KeyboardEvent::Press(Key::ArrowUp, _))
+                matches!(self, KeyboardEvent::Press { key: Key::ArrowUp, .. })
             }
             PopupButtonKeyCommand::Select => {
-                matches!(self, KeyboardEvent::Press(Key::Enter, _))
+                matches!(self, KeyboardEvent::Press { key: Key::Enter, .. })
             }
             PopupButtonKeyCommand::Close => {
-                matches!(self, KeyboardEvent::Press(Key::Escape, _))
+                matches!(self, KeyboardEvent::Press { key: Key::Escape, .. })
             }
             PopupButtonKeyCommand::Open => {
-                matches!(self, KeyboardEvent::Press(Key::Space, _) | KeyboardEvent::Press(Key::Enter, _))
+                matches!(self, KeyboardEvent::Press { key: Key::Space, .. } | KeyboardEvent::Press { key: Key::Enter, .. })
             }
         }
     }

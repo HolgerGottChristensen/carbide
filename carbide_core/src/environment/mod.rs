@@ -3,7 +3,7 @@ use carbide_core::state::AnyReadState;
 pub use environment::Environment;
 pub use environment_color::*;
 pub use environment_font_size::EnvironmentFontSize;
-pub use environment_stack::{Key, Keyable, TypeMap as EnvironmentStack};
+pub use environment_stack::{Key, Keyable, TypeMap as EnvironmentStack, AnyDebug};
 
 use crate::widget::AnyWidget;
 

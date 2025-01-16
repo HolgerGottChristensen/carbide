@@ -181,7 +181,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
 impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPlayer<Id> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         match event {
-            KeyboardEvent::Press(Key::ArrowLeft, _) => {
+            KeyboardEvent::Press { key: Key::ArrowLeft, .. } => {
                 let current = *self.current_time.value();
                 if current >= Duration::new(10, 0) {
                     self.current_time.set_value(current - Duration::new(10, 0));
@@ -189,7 +189,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPla
                     self.current_time.set_value(Duration::new(0, 0));
                 }
             }
-            KeyboardEvent::Press(Key::ArrowRight, _) => {
+            KeyboardEvent::Press { key: Key::ArrowRight, .. } => {
                 let current = *self.current_time.value();
                 self.current_time.set_value(current + Duration::new(10, 0));
             }

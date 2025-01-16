@@ -66,10 +66,10 @@ impl<A: OnKeyAction, B: OnKeyAction, C: Widget> OnKey<A, B, C> {
 impl<A: OnKeyAction, B: OnKeyAction, C: Widget> KeyboardEventHandler for OnKey<A, B, C> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         match event {
-            KeyboardEvent::Press(k, m) => {
+            KeyboardEvent::Press { key: k, modifiers: m, .. } => {
                 (self.pressed)(k, *m, ctx)
             }
-            KeyboardEvent::Release(k, m) => {
+            KeyboardEvent::Release { key: k, modifiers: m, .. } => {
                 (self.released)(k, *m, ctx)
             }
             KeyboardEvent::Ime(_) => {}

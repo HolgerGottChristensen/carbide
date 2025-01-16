@@ -2,7 +2,7 @@ use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
 use crate::draw::Dimension;
 use crate::environment::{Key, Keyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, Event, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext};
 use crate::event::{AccessibilityEventHandler, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use crate::focus::FocusContext;
 use crate::focus::Focusable;
@@ -102,7 +102,7 @@ impl<C: Widget, K: Keyable + Clone, V: ReadState<T=K::Output>> Initialize for En
 }
 
 impl<C: Widget, K: Keyable + Clone, V: ReadState<T=K::Output>> OtherEventHandler for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.value.sync(ctx.env_stack);
 
         self.key.with(&*self.value.value(), ctx.env_stack, |inner| {

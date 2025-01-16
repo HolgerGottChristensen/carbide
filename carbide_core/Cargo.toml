@@ -24,7 +24,6 @@ default = ["macro"]
 macro = ["carbide_macro"]
 
 [dependencies]
-raw-window-handle.workspace = true
 carbide_derive = { path = "../carbide_derive" }
 carbide_macro = { path = "../carbide_macro", optional = true }
 rand.workspace = true

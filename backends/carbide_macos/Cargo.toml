@@ -8,10 +8,15 @@ edition.workspace = true
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
+carbide_winit = { path = "../carbide_winit" }
 raw-window-handle = "0.5"
 block = "0.1.6"
 cocoa = "0.24.0"
 objc = "0.2.7"
+objc2 = "0.5.2"
+objc2-foundation = { version = "0.2.2", features = ["NSThread"] }
+objc2-app-kit = { version = "0.2.2", features = ["all"] }
+block2 = "0.5.1"
 core-graphics = "0.22.0"
 foreign-types = "0.3.2"
 lazy_static = "*"

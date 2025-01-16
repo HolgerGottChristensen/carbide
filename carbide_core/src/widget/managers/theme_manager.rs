@@ -4,7 +4,7 @@ use crate::draw::theme::Theme;
 use crate::draw::Color;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, Keyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::focus::{FocusContext, Focusable};
 use crate::layout::{Layout, LayoutContext};
 use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
@@ -221,7 +221,7 @@ impl<C: Widget> Initialize for ThemeManager<C> {
 }
 
 impl<C: Widget> OtherEventHandler for ThemeManager<C> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         let theme = ctx.env_stack.get::<Theme>().cloned().unwrap_or_default();
 
         let values = match theme {

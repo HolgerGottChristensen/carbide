@@ -1,7 +1,6 @@
 pub use custom_event::CoreEvent;
 pub use custom_event::EventSink;
 pub use custom_event::HasEventSink;
-pub use custom_event::HasRawWindowHandleAndEventSink;
 pub use custom_event::NoopEventSink;
 pub use event_handler::EventHandler;
 pub use keyboard_event_handler::*;
@@ -14,7 +13,6 @@ pub use types::key::*;
 pub use types::modifier_key::ModifierKey;
 pub use types::touch::*;
 pub use types::gesture::*;
-pub use event::*;
 
 mod custom_event;
 mod event_handler;
@@ -22,7 +20,6 @@ mod keyboard_event_handler;
 mod mouse_event_handler;
 mod other_event_handler;
 mod types;
-mod event;
 mod window_event_handler;
 mod accessibility_event_handler;
 

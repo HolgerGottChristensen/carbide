@@ -10,7 +10,7 @@ use carbide::widget::Identifiable;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
-use crate::event::{AccessibilityEventHandler, Event, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEventHandler, OtherEvent, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
@@ -157,11 +157,11 @@ impl<T: AnyWidget + ?Sized> WindowEventHandler for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> OtherEventHandler for Box<T> {
-    fn handle_other_event(&mut self, _event: &Event, ctx: &mut OtherEventContext) {
+    fn handle_other_event(&mut self, _event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.deref_mut().handle_other_event(_event, ctx)
     }
 
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.deref_mut().process_other_event(event, ctx)
     }
 }

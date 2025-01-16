@@ -32,7 +32,7 @@ pub trait Keyable: Debug + 'static {
     }
 }
 
-trait AnyDebug: Any + Debug {
+pub trait AnyDebug: Any + Debug {
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
@@ -59,12 +59,12 @@ impl<T> AnyDebug for T where T: Any + Debug {
 
 impl dyn AnyDebug {
     #[inline(always)]
-    fn downcast_ref<T: Any>(&self) -> Option<&T> {
+    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
         self.as_any().downcast_ref()
     }
 
     #[inline(always)]
-    fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
+    pub fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
         self.as_any_mut().downcast_mut::<T>()
     }
 }
@@ -87,7 +87,7 @@ impl<'a> TypeMap<'a> {
 }
 
 impl<'a> TypeMap<'a> {
-    pub fn get<K: Key>(&self) -> Option<&K::Value> {
+    pub fn get<K: Key + ?Sized>(&self) -> Option<&K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data.get(&id), |value| {
@@ -100,7 +100,7 @@ impl<'a> TypeMap<'a> {
     }
 
     #[allow(unsafe_code)]
-    pub fn with<'b, K: Key>(&mut self, v: &'b K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
+    pub fn with<'b, K: Key + ?Sized>(&mut self, v: &'b K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.
@@ -127,7 +127,7 @@ impl<'a> TypeMap<'a> {
 }
 
 impl<'a> TypeMap<'a> {
-    pub fn get_mut<K: Key>(&mut self) -> Option<&mut K::Value> {
+    pub fn get_mut<K: Key + ?Sized>(&mut self) -> Option<&mut K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data_mut.get_mut(&id), |value| {
@@ -136,7 +136,7 @@ impl<'a> TypeMap<'a> {
     }
 
     #[allow(unsafe_code)]
-    pub fn with_mut<'b, K: Key>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
+    pub fn with_mut<'b, K: Key + ?Sized>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.

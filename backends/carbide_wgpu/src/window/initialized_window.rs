@@ -8,6 +8,9 @@ use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget, WidgetId};
+use carbide_winit::raw_window_handle::HasWindowHandle;
+use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
+use carbide_winit::WindowHandleKey;
 use crate::application::Scenes;
 use crate::msaa::Msaa;
 use crate::render_context::WGPURenderContext;
@@ -73,9 +76,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             Dimension::new(physical_dimensions.width as Scalar, physical_dimensions.height as Scalar)
         );
 
+        let handle = self.inner.raw_window_handle();
+
         env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
             env_stack.with_mut::<SceneManager>(&mut scene_manager, |env_stack| {
-                f(env_stack, self)
+                env_stack.with::<WindowHandleKey>(&handle, |env_stack| {
+                    f(env_stack, self)
+                })
             })
         });
 

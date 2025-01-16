@@ -32,7 +32,7 @@ members = [
     "examples/drawing_paths_and_shapes",
     "carbide",
     "carbide_3d",
-    "carbide_chart",
+    "carbide_chart", "carbide_dialogs",
 ]
 
 [workspace.package]
@@ -56,6 +56,6 @@ rand = "0.8.5"
 accesskit = { path = "../Repositories/accesskit/common" }
 accesskit_winit = { path = "../Repositories/accesskit/platforms/winit" }
 smallvec = "1.13.2"
-winit = { version = "0.30.5", features = ["rwh_05"] }
+winit = { version = "0.30.7", features = ["rwh_05"] }
 proc-macro-crate = "3.2.0"
 indexmap = "2.6.0"

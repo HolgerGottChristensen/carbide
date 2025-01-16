@@ -8,14 +8,14 @@ use smallvec::SmallVec;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
 use winit::event::{ElementState, Event, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::Key;
+use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
 use winit::window::{Theme, WindowId};
 use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::{Environment, EnvironmentStack};
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEventContext, WindowEventContext};
-use carbide_core::event::Event::CoreEvent;
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, WindowEventContext};
 use carbide_core::focus::{FocusContext, FocusManager, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
@@ -188,7 +188,10 @@ impl NewEventHandler {
                 RequestRedraw::True
             },
             WindowEvent::Focused(focus) => self.focus(*focus, window_id, scenes, text_context, image_context, env, env_stack),
-            WindowEvent::KeyboardInput { event: winit::event::KeyEvent { logical_key, state, .. }, .. } => self.keyboard(logical_key.clone(), *state, window_id, scenes, text_context, image_context, env, env_stack),
+            WindowEvent::KeyboardInput { event, .. } => {
+                let winit::event::KeyEvent { logical_key, state, .. } = event;
+                self.keyboard(logical_key.clone(), event.key_without_modifiers(), *state, window_id, scenes, text_context, image_context, env, env_stack)
+            },
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = ModifierKey::from_bits_retain(modifiers.state().bits());
                 RequestRedraw::False
@@ -507,7 +510,7 @@ impl NewEventHandler {
                     env,
                 });
 
-                target.process_other_event(&CoreEvent(*core_event), &mut OtherEventContext {
+                target.process_other_event(&OtherEvent::CoreEvent(*core_event), &mut OtherEventContext {
                     text: text_context,
                     image: image_context,
                     env,
@@ -547,6 +550,14 @@ impl NewEventHandler {
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }
+            }
+            CustomEvent::Key(k) => {
+                target.process_other_event(&OtherEvent::Key(*k), &mut OtherEventContext {
+                    text: text_context,
+                    image: image_context,
+                    env,
+                    env_stack,
+                });
             }
         }
 
@@ -622,13 +633,18 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn keyboard(&mut self, logical_key: Key, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
+    pub fn keyboard(&mut self, logical_key: Key, no_modifier_key: Key, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment, env_stack: &mut EnvironmentStack) -> RequestRedraw {
         let key = convert_key(&logical_key);
+        let no_modifier_key = convert_key(&no_modifier_key);
         let mut prevent_default = false;
         match state {
             ElementState::Pressed => {
                 for scene in scenes.iter_mut() {
-                    scene.process_keyboard_event(&KeyboardEvent::Press(key.clone(), self.modifiers), &mut KeyboardEventContext {
+                    scene.process_keyboard_event(&KeyboardEvent::Press {
+                        key: key.clone(),
+                        modifiers: self.modifiers,
+                        no_modifier_key: no_modifier_key.clone()
+                    }, &mut KeyboardEventContext {
                         text: text_context,
                         image: image_context,
                         env,
@@ -657,7 +673,11 @@ impl NewEventHandler {
             },
             ElementState::Released => {
                 for scene in scenes.iter_mut() {
-                    scene.process_keyboard_event(&KeyboardEvent::Release(key.clone(), self.modifiers), &mut KeyboardEventContext {
+                    scene.process_keyboard_event(&KeyboardEvent::Release {
+                        key: key.clone(),
+                        modifiers: self.modifiers,
+                        no_modifier_key: no_modifier_key.clone()
+                    }, &mut KeyboardEventContext {
                         text: text_context,
                         image: image_context,
                         env,

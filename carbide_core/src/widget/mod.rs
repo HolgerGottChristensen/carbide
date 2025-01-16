@@ -113,6 +113,7 @@ mod environment_updating_new2;
 mod environment_updating_new3;
 pub mod managers;
 pub mod foreach_widget;
+mod keyboard_shortcut;
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32, u64);

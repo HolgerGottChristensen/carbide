@@ -706,3 +706,9 @@ pub enum Key {
     /// General-purpose function key.
     F35,
 }
+
+impl Into<Key> for &str {
+    fn into(self) -> Key {
+        Key::Character(self.to_lowercase())
+    }
+}

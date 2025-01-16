@@ -1,4 +1,5 @@
-use carbide_controls::Button;
+use carbide_controls::button::{BorderedProminentStyle, Button};
+use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Dimension;
@@ -52,7 +53,7 @@ fn main() {
     ];
 
     fn delegate(item: impl State<T=MouseCursor>, _: impl ReadState<T=usize>) -> impl Widget {
-        Button::new_primary(format!("{:?}", *item.value()), closure!(|_|{}))
+        Button::new(format!("{:?}", *item.value()), closure!(|_|{}))
             .cursor(item.value().clone())
             .frame(100.0, 22.0)
     }
@@ -64,6 +65,7 @@ fn main() {
             VStack::new(ForEach::new(cursors1, delegate)),
             VStack::new(ForEach::new(cursors2, delegate)),
         )).cross_axis_alignment(CrossAxisAlignment::Start)
+            .button_style(BorderedProminentStyle)
     ));
 
     application.launch();

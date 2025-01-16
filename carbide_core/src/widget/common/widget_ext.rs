@@ -13,8 +13,10 @@ use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
+use crate::event;
 use crate::widget::{Absolute, MouseAreaAction, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew, EnvUpdatingNew3, Overlay, OverlayManager, TextWrapKey};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
+use crate::widget::keyboard_shortcut::KeyboardShortcut;
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
 use crate::widget::Widget;
@@ -224,5 +226,9 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
 
     fn overlay<K: Key<Value=OverlayManager> + Clone>(self) -> Overlay<K, Self> {
         Overlay::<K, Self>::new(self)
+    }
+
+    fn keyboard_shortcut(self, key: impl Into<event::Key>, modifier_key: ModifierKey) -> KeyboardShortcut<Self> {
+        KeyboardShortcut::new(self, key, modifier_key)
     }
 }

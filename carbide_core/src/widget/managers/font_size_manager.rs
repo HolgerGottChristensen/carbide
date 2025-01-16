@@ -4,7 +4,7 @@ use crate::draw::theme::Theme;
 use crate::draw::Color;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentFontSize, Keyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, Event, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::focus::{FocusContext, Focusable};
 use crate::layout::{Layout, LayoutContext};
 use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
@@ -99,7 +99,7 @@ impl<C: Widget> Initialize for FontSizeManager<C> {
 }
 
 impl<C: Widget> OtherEventHandler for FontSizeManager<C> {
-    fn process_other_event(&mut self, event: &Event, ctx: &mut OtherEventContext) {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,

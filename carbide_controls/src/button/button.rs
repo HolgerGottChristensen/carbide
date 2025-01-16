@@ -1,27 +1,20 @@
-use std::fmt::{Debug, Formatter};
 use carbide::accessibility::{Accessibility, AccessibilityContext};
-use carbide::color::{ColorExt, RED};
-use carbide::CommonWidgetImpl;
+use carbide::color::RED;
 use carbide::cursor::MouseCursor;
-use carbide::draw::{Dimension, Position};
+use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
 use carbide::lifecycle::{InitializationContext, Initialize};
-use carbide::state::{IntoState, ReadStateExtNew, State, StateExtNew};
-use carbide_core::color::TRANSPARENT;
-use carbide_core::draw::Alignment;
-use carbide_core::environment::EnvironmentColor;
+use carbide::state::{IntoState, ReadStateExtNew, State};
+use carbide::CommonWidgetImpl;
 use carbide_core::environment::IntoColorReadState;
 use carbide_core::focus::Focus;
-use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, LocalState, Map1, Map2, Map3, Map5, ReadState};
+use carbide_core::state::{LocalState, ReadState};
 use carbide_core::widget::*;
+use std::fmt::{Debug, Formatter};
 
-use crate::{AutomaticStyle, EnabledState};
-use crate::button::BorderedStyle;
-use crate::button::style::{ButtonStyleKey, PlainStyle};
-use crate::identifiable::AnyIdentifiableWidget;
-use crate::picker::{MenuStyle, PickerStyleKey};
+use crate::button::style::ButtonStyleKey;
+use crate::{EnabledState};
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Accessibility, Initialize)]
@@ -98,6 +91,11 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
             pressed: pressed.into_state(),
             cursor: self.cursor,
         }
+    }
+
+    pub fn cursor(mut self, cursor: MouseCursor) -> Button<F, A, E, H, P, L> {
+        self.cursor = cursor;
+        self
     }
 }
 
