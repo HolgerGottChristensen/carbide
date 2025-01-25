@@ -19,7 +19,7 @@ use crate::environment::{Environment};
 use crate::render::{InnerRenderContext, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext};
 use crate::widget::AnyWidget;
-use crate::widget::types::{PrimitiveStore, ShapeStyle, StrokeStyle};
+use crate::widget::types::{TriangleStore, ShapeStyle, StrokeStyle};
 
 mod capsule;
 mod circle;
@@ -28,7 +28,7 @@ mod rectangle;
 mod rounded_rectangle;
 
 pub trait Shape: AnyWidget + 'static {
-    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {

@@ -10,7 +10,7 @@ use crate::render::Render;
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
-use crate::widget::types::PrimitiveStore;
+use crate::widget::types::TriangleStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 
@@ -28,7 +28,7 @@ pub struct Rectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=S
     style: ShapeStyle,
     stroke_style: StrokeStyle,
     // Store the triangles for the border
-    triangle_store: PrimitiveStore,
+    triangle_store: TriangleStore,
 }
 
 impl Rectangle<Style, Style> {
@@ -42,7 +42,7 @@ impl Rectangle<Style, Style> {
             fill_color: EnvironmentColor::Accent.style(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: PrimitiveStore::new(),
+            triangle_store: TriangleStore::new(),
         }
     }
 }
@@ -126,7 +126,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Re
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Rectangle<S, F> {
-    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
 

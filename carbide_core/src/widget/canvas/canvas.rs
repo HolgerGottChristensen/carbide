@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, PrimitiveStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, TriangleStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
 use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -53,7 +53,7 @@ impl<C: Context> CommonWidget for Canvas<C> {
 }
 
 impl<C: Context> Shape for Canvas<C> {
-    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         todo!()
     }
 

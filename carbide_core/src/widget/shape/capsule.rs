@@ -8,9 +8,9 @@ use crate::draw::{Color, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
-use crate::widget::types::PrimitiveStore;
+use crate::widget::types::TriangleStore;
 use crate::widget::types::ShapeStyle;
 use crate::widget::types::StrokeStyle;
 
@@ -25,7 +25,7 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
     #[state] fill_color: F,
     style: ShapeStyle,
     stroke_style: StrokeStyle,
-    triangle_store: PrimitiveStore,
+    triangle_store: TriangleStore,
 }
 
 impl Capsule<Style, Style> {
@@ -39,7 +39,7 @@ impl Capsule<Style, Style> {
             fill_color: EnvironmentColor::Accent.style(),
             style: ShapeStyle::Default,
             stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: PrimitiveStore::new(),
+            triangle_store: TriangleStore::new(),
         }
     }
 }
@@ -88,7 +88,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 }
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Capsule<S, F> {
-    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         &mut self.triangle_store
     }
 

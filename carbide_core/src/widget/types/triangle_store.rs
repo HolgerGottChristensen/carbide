@@ -4,7 +4,7 @@ use crate::widget::types::advanced_color::AdvancedColor;
 
 /// A storage container for primitives that can be used to cache tessellated shapes.
 #[derive(PartialEq, Clone, Debug)]
-pub struct PrimitiveStore {
+pub struct TriangleStore {
     pub latest_stroke_position: Position,
     pub latest_stroke_dimensions: Dimension,
     pub latest_stoke_color: Option<AdvancedColor>,
@@ -15,9 +15,9 @@ pub struct PrimitiveStore {
     pub fill_triangles: Vec<Triangle<Position>>,
 }
 
-impl PrimitiveStore {
-    pub fn new() -> PrimitiveStore {
-        PrimitiveStore {
+impl TriangleStore {
+    pub fn new() -> TriangleStore {
+        TriangleStore {
             latest_stroke_position: Position::new(0.0, 0.0),
             latest_stroke_dimensions: Dimension::new(0.0, 0.0),
             latest_stoke_color: None,
@@ -65,8 +65,8 @@ impl PrimitiveStore {
     }
 }
 
-impl Default for PrimitiveStore {
+impl Default for TriangleStore {
     fn default() -> Self {
-        PrimitiveStore::new()
+        TriangleStore::new()
     }
 }

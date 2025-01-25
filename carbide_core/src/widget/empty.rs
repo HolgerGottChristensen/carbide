@@ -1,5 +1,5 @@
 use carbide_core::CommonWidgetImpl;
-use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle};
+use carbide_core::widget::{CommonWidget, TriangleStore, ShapeStyle, StrokeStyle};
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
@@ -44,7 +44,7 @@ impl AnyScene for Empty {
 }
 
 impl Shape for Empty {
-    fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore {
+    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
         unimplemented!()
     }
 
