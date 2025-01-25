@@ -70,7 +70,7 @@ impl<
     S: PickerSelection<T>
 > Initialize for Picker<T, F, M, E, L, S> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env_stack.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+        let style = ctx.env.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
         let selected_for_closure = self.selected.clone();
 
         let foreach = ForEach::custom_widget(

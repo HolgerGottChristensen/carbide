@@ -1,9 +1,10 @@
 use std::any::{Any, TypeId};
-use carbide::environment::{AnyDebug, Key};
+use carbide::environment::{EnvironmentKey};
 use carbide::event::CoreEvent;
 use crate::draw::InnerImageContext;
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::focus::Focusable;
+use crate::misc::any_debug::AnyDebug;
 use crate::text::InnerTextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
@@ -17,7 +18,7 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         //if ctx.env.is_event_current() {
-            self.sync(ctx.env_stack);
+            self.sync(ctx.env);
             self.handle_other_event(event, ctx);
         //}
 
@@ -30,7 +31,7 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 pub struct OtherEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env_stack: &'a mut EnvironmentStack<'b>,
+    pub env: &'a mut Environment<'b>,
 }
 
 #[derive(Debug)]
@@ -50,7 +51,7 @@ impl OtherEvent {
         }
     }
 
-    pub fn value<K: Key>(&self) -> Option<&K::Value> {
+    pub fn value<K: EnvironmentKey>(&self) -> Option<&K::Value> {
         match self {
             OtherEvent::KeyValue(k, value) => value.downcast_ref(),
             _ => None

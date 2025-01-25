@@ -37,7 +37,7 @@ impl<C: Widget> KeyboardEventHandler for KeyboardShortcut<C> {
                 self.child.process_other_event(&OtherEvent::Key(KeyboardShortcutPressed.type_id()), &mut OtherEventContext {
                     text: ctx.text,
                     image: ctx.image,
-                    env_stack: ctx.env_stack,
+                    env: ctx.env,
                 })
 
             }
@@ -46,7 +46,7 @@ impl<C: Widget> KeyboardEventHandler for KeyboardShortcut<C> {
                 self.child.process_other_event(&OtherEvent::Key(KeyboardShortcutReleased.type_id()), &mut OtherEventContext {
                     text: ctx.text,
                     image: ctx.image,
-                    env_stack: ctx.env_stack,
+                    env: ctx.env,
                 })
 
             }

@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use crate::accessibility::Accessibility;
-use crate::environment::{EnvironmentStack, Key};
+use crate::environment::{Environment, EnvironmentKey};
 use crate::render::Render;
 use std::time::Instant;
 use carbide::animation::Animation;
@@ -61,14 +61,14 @@ impl AnimationManager {
         self.out_of_band_animations.0.push(Box::new(poll));
     }
 
-    pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut AnimationManager)) {
-        if let Some(manager) = env_stack.get_mut::<AnimationManager>() {
+    pub fn get(env: &mut Environment, f: impl FnOnce(&mut AnimationManager)) {
+        if let Some(manager) = env.get_mut::<AnimationManager>() {
             f(manager)
         }
     }
 }
 
-impl Key for AnimationManager {
+impl EnvironmentKey for AnimationManager {
     type Value = AnimationManager;
 }
 

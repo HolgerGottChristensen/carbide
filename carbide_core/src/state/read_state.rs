@@ -4,7 +4,7 @@ use std::ops::{Deref, DerefMut};
 use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::{clone_box, DynClone};
 use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
-use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentStack};
+use crate::environment::{EnvironmentColor, EnvironmentFontSize, Environment};
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::*;
@@ -41,7 +41,7 @@ impl<T: StateContract> dyn AnyReadState<T=T> {
 // ---------------------------------------------------
 
 impl<T: StateContract> StateSync for Box<dyn AnyReadState<T=T>> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }
 }
@@ -92,7 +92,7 @@ mod private {
 
 
 impl<G: StateSync> StateSync for Box<G> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }
 }
@@ -125,7 +125,7 @@ macro_rules! impl_state_value {
     ($($typ: ty),*) => {
         $(
         impl carbide_core::state::StateSync for $typ {
-            fn sync(&mut self, _env: &mut carbide_core::environment::EnvironmentStack) -> bool {
+            fn sync(&mut self, _env: &mut carbide_core::environment::Environment) -> bool {
                 true
             }
         }

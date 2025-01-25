@@ -165,7 +165,7 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
 
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }
@@ -173,16 +173,16 @@ impl<F: State<T=Focus>, E: ReadState<T=bool>> MouseEventHandler for PlainDatePic
                     let mut widget = (self.popup)(self.selected.clone(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.position.as_dyn_read(), self.dimension.as_dyn_read());
 
                     widget.process_initialization(&mut InitializationContext {
-                        env_stack: ctx.env_stack
+                        env: ctx.env
                     });
 
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                         manager.insert(widget)
                     });
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }
@@ -272,7 +272,7 @@ fn default_popup_delegate(
         .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
         .on_click(|ctx: MouseAreaActionContext| {})
         .on_click_outside(|ctx: MouseAreaActionContext| {
-            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             })
         })

@@ -1,8 +1,8 @@
 use std::fmt::Debug;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::state::{EnvMap1, Map1};
 use carbide_derive::StateValue;
-use crate::environment::Key;
+use crate::environment::EnvironmentKey;
 
 /// The way in which text should wrap around the width.
 #[derive(Copy, Clone, Debug, PartialEq, StateValue)]
@@ -24,11 +24,11 @@ impl Default for Wrap {
 #[derive(Debug)]
 pub(crate) struct TextWrapKey;
 
-impl Key for TextWrapKey {
+impl EnvironmentKey for TextWrapKey {
     type Value = Wrap;
 }
 
-pub type WrapState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> Wrap, i32, Wrap, i32>;
+pub type WrapState = EnvMap1<fn(&mut Environment, &i32) -> Wrap, i32, Wrap, i32>;
 
 pub fn wrap_state() -> WrapState {
     Map1::read_map_env(0, |env, _| {

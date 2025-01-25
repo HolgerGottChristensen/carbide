@@ -3,7 +3,7 @@ use crate::misc::flags::WidgetFlag;
 use crate::state::StateSync;
 use crate::widget::{CommonWidget, Content, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
@@ -62,7 +62,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
 
 
 impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
-    fn sync(&mut self, env: &mut EnvironmentStack) {
+    fn sync(&mut self, env: &mut Environment) {
         // Set the initial index to 0
         let mut index = 0;
 
@@ -95,7 +95,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
 
                 // Initialize the widget.
                 result.process_initialization(&mut InitializationContext {
-                    env_stack: env,
+                    env: env,
                 });
 
                 // Insert the result at the index

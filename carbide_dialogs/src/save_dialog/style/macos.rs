@@ -2,7 +2,7 @@ use crate::file_type::FileType;
 use crate::save_dialog::style::SaveDialogStyle;
 use block2::RcBlock;
 use carbide::asynchronous::AsyncContext;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::SpawnTask;
 use carbide_winit::WindowHandleKey;
 use objc2::__framework_prelude::Retained;
@@ -21,7 +21,7 @@ use std::rc::Rc;
 pub struct MacOSNativeSaveDialogStyle;
 
 impl SaveDialogStyle for MacOSNativeSaveDialogStyle {
-    fn open(&self, title: Option<String>, message: Option<String>, prompt: Option<String>, default_file_name: Option<String>, show_hidden_files: bool, path: Option<PathBuf>, file_types: &[FileType], f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, env_stack: &mut EnvironmentStack) {
+    fn open(&self, title: Option<String>, message: Option<String>, prompt: Option<String>, default_file_name: Option<String>, show_hidden_files: bool, path: Option<PathBuf>, file_types: &[FileType], f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, env: &mut Environment) {
         let main_thread_marker = MainThreadMarker::new().expect("to be called on the main thread");
 
         // Create a new open panel with default settings:
@@ -107,7 +107,7 @@ impl SaveDialogStyle for MacOSNativeSaveDialogStyle {
         });
 
         // Open the panel
-        if let Some(&RawWindowHandle::AppKit(AppKitWindowHandle { ns_window, ..})) = env_stack.get::<WindowHandleKey>() {
+        if let Some(&RawWindowHandle::AppKit(AppKitWindowHandle { ns_window, ..})) = env.get::<WindowHandleKey>() {
             let window = unsafe { Retained::retain_autoreleased(ns_window as *mut NSWindow).unwrap() };
 
             unsafe { panel.beginSheetModalForWindow_completionHandler(&window, &block) };

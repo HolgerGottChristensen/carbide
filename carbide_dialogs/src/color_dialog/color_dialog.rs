@@ -1,6 +1,6 @@
 use dyn_clone::clone_box;
 use carbide::draw::{AutomaticStyle, Color};
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateExtNew, StateSync};
 use carbide::widget::WidgetId;
 use crate::color_dialog::style::ColorDialogStyleKey;
@@ -21,13 +21,13 @@ impl ColorDialog {
         }
     }
 
-    pub fn open(mut self, env_stack: &mut EnvironmentStack) {
-        self.color.sync(env_stack);
-        self.show_alpha.sync(env_stack);
+    pub fn open(mut self, env: &mut Environment) {
+        self.color.sync(env);
+        self.show_alpha.sync(env);
 
-        let style = clone_box(env_stack.get::<ColorDialogStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle));
+        let style = clone_box(env.get::<ColorDialogStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle));
 
 
-        style.open(self.color, self.show_alpha, env_stack);
+        style.open(self.color, self.show_alpha, env);
     }
 }

@@ -56,7 +56,7 @@ impl MenuStyleBase<Empty, Focus, bool, fn(EventId, Color) ->Empty, Empty> {
     M: ReadState<T=Vec<T>>,
     E: ReadState<T=bool>,
 > PlainPopUpButton<T, F, S, M, E> {
-    fn open_popup(&self, event_id: EventId, env: &mut EnvironmentStack) {
+    fn open_popup(&self, event_id: EventId, env: &mut Environment) {
         let selected = self.selected.value();
         let hover_model = LocalState::new(self.model.value().iter().position(|x| x == &*selected));
 
@@ -112,9 +112,9 @@ impl<
 
         if event == PopupButtonKeyCommand::Open {
             let mut accent = EnvironmentColor::Accent.color();
-            accent.sync(ctx.env_stack);
+            accent.sync(ctx.env);
 
-            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 let popup = (self.open)(EventId::default(), *accent.value());
                 manager.insert(popup);
             });
@@ -141,22 +141,22 @@ impl<
 
                     if self.get_focus() != Focus::Focused {
                         self.set_focus(Focus::FocusRequested);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }
 
                     let mut accent = EnvironmentColor::Accent.color();
-                    accent.sync(ctx.env_stack);
+                    accent.sync(ctx.env);
 
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                         let popup = (self.open)(*id, *accent.value());
                         manager.insert(popup);
                     });
                 } else {
                     if self.get_focus() == Focus::Focused {
                         self.set_focus(Focus::FocusReleased);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }

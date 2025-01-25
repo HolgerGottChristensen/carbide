@@ -1,9 +1,9 @@
 use smallvec::SmallVec;
 use carbide::draw::Dimension;
-use carbide::environment::Key;
+use carbide::environment::EnvironmentKey;
 use carbide::scene::{AnyScene, Scene, SceneId};
 use crate::draw::Scalar;
-use crate::environment::EnvironmentStack;
+use crate::environment::Environment;
 
 #[derive(Debug, Clone)]
 pub struct SceneManager {
@@ -61,13 +61,13 @@ impl SceneManager {
         self.dismiss
     }
 
-    pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut SceneManager)) {
-        if let Some(manager) = env_stack.get_mut::<SceneManager>() {
+    pub fn get(env: &mut Environment, f: impl FnOnce(&mut SceneManager)) {
+        if let Some(manager) = env.get_mut::<SceneManager>() {
             f(manager)
         }
     }
 }
 
-impl Key for SceneManager {
+impl EnvironmentKey for SceneManager {
     type Value = SceneManager;
 }

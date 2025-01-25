@@ -156,7 +156,7 @@ impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
 #[cfg(feature = "tokio")]
 use std::sync::OnceLock;
 use crate::draw::InnerImageContext;
-use crate::environment::EnvironmentStack;
+use crate::environment::Environment;
 use crate::text::InnerTextContext;
 
 #[cfg(feature = "tokio")]
@@ -200,5 +200,5 @@ pub async fn sleep(duration: Duration) {
 pub struct AsyncContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env_stack: &'a mut EnvironmentStack<'b>,
+    pub env: &'a mut Environment<'b>,
 }

@@ -1,4 +1,4 @@
-use carbide::environment::{EnvironmentStack};
+use carbide::environment::{Environment};
 use carbide::state::StateSync;
 use crate::material::pbr_material::PbrMaterial;
 
@@ -8,7 +8,7 @@ pub enum Material {
 }
 
 impl StateSync for Material {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             Material::PBR(p) => p.sync(env)
         }

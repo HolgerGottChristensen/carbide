@@ -1,4 +1,4 @@
-use crate::environment::{EnvironmentStack, Key};
+use crate::environment::{Environment, EnvironmentKey};
 use crate::focus::Refocus;
 
 #[derive(Debug)]
@@ -13,8 +13,8 @@ impl FocusManager {
         }
     }
 
-    pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut FocusManager)) {
-        if let Some(manager) = env_stack.get_mut::<FocusManager>() {
+    pub fn get(env: &mut Environment, f: impl FnOnce(&mut FocusManager)) {
+        if let Some(manager) = env.get_mut::<FocusManager>() {
             f(manager)
         }
     }
@@ -28,6 +28,6 @@ impl FocusManager {
     }
 }
 
-impl Key for FocusManager {
+impl EnvironmentKey for FocusManager {
     type Value = FocusManager;
 }

@@ -1,4 +1,4 @@
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::state::{AnyReadState, StateSync, ReadState, StateContract, ValueRef};
 
 #[derive(Debug, Clone)]
@@ -22,7 +22,7 @@ where
 }*/
 
 impl<T: StateContract, S: ReadState<T=T>, SS: ReadState<T=S>> StateSync for FlattenedReadState<T, S, SS> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         if self.state.sync(env) {
             self.current = Some(self.state.value().clone());
             self.current.as_mut().unwrap().sync(env)

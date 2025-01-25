@@ -35,11 +35,11 @@ impl Absolute<f64, f64, Empty> {
 
 impl<X: ReadState<T=Scalar>, Y: ReadState<T=Scalar>, C: Widget> Layout for Absolute<X, Y, C> {
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        self.x.sync(ctx.env_stack);
-        self.y.sync(ctx.env_stack);
+        self.x.sync(ctx.env);
+        self.y.sync(ctx.env);
 
         let position = Position::new(*self.x.value(), *self.y.value());
-        let dimension = ctx.env_stack.get_mut::<SceneManager>().map(|a| a.dimensions()).unwrap();
+        let dimension = ctx.env.get_mut::<SceneManager>().map(|a| a.dimensions()).unwrap();
 
         self.child.set_position(Alignment::TopLeading.position(position, dimension, self.child.dimension()));
         self.child.position_children(ctx);

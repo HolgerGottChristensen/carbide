@@ -1,4 +1,4 @@
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::focus::{Focus, Focusable};
 use crate::widget::{CommonWidget, WidgetId, WidgetSync};
 use accesskit::{Node, NodeId, Point, Rect, Role, Size, TreeUpdate};
@@ -19,7 +19,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 
             node.set_author_id(format!("{:?}", self.id()));
 
-            let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+            let scale_factor = ctx.env.get_mut::<SceneManager>()
                 .map(|a| a.scale_factor())
                 .unwrap_or(1.0);
 
@@ -65,7 +65,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
     }
 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         /*if self.has_focus() {
             ctx.nodes.focus = NodeId(self.id().0 as u64);
@@ -77,7 +77,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
             let mut children = SmallVec::<[WidgetId; 8]>::new();
 
             let mut child_ctx = AccessibilityContext {
-                env_stack: ctx.env_stack,
+                env: ctx.env,
                 nodes: ctx.nodes,
                 parent_id: Some(self.id()),
                 children: &mut children,
@@ -116,7 +116,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 }
 
 pub struct AccessibilityContext<'a, 'b: 'a> {
-    pub env_stack: &'a mut EnvironmentStack<'b>,
+    pub env: &'a mut Environment<'b>,
     pub nodes: &'a mut dyn AccessibilityUpdate,
     pub parent_id: Option<WidgetId>,
     pub children: &'a mut SmallVec<[WidgetId; 8]>,

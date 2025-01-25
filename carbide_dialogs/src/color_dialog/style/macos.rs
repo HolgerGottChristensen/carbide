@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 use crate::color_dialog::style::ColorDialogStyle;
 use carbide::color::{Color, ColorExt, RED};
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::event::{CoreEvent, EventSink, NoopEventSink};
 use carbide::state::{AnyReadState, AnyState, LocalState, ReadState, State, StateExtNew, StateSync};
 use objc2::rc::Retained;
@@ -23,11 +23,11 @@ thread_local! {
 pub struct MacOSNativeColorDialogStyle;
 
 impl ColorDialogStyle for MacOSNativeColorDialogStyle {
-    fn open(&self, mut color: Box<dyn AnyState<T=Color>>, mut show_alpha: Box<dyn AnyReadState<T=bool>>, env_stack: &mut EnvironmentStack) {
+    fn open(&self, mut color: Box<dyn AnyState<T=Color>>, mut show_alpha: Box<dyn AnyReadState<T=bool>>, env: &mut Environment) {
         let main_thead_marker = MainThreadMarker::new().expect("To be run in the main thread");
 
-        color.sync(env_stack);
-        show_alpha.sync(env_stack);
+        color.sync(env);
+        show_alpha.sync(env);
 
         let initial_color = *color.value();
 
@@ -49,7 +49,7 @@ impl ColorDialogStyle for MacOSNativeColorDialogStyle {
         unsafe { panel.setShowsAlpha(*show_alpha.value()) };
         unsafe { panel.setAction(Some(sel!(colorChanged:))) };
 
-        let sink = env_stack.get::<dyn EventSink>()
+        let sink = env.get::<dyn EventSink>()
             .expect("Event sink is required to open this color dialog")
             .clone();
 

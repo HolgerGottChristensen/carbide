@@ -2,7 +2,7 @@ use crate::args::{Arg, Args, LocalizedArg};
 use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
 use crate::{locale, LANGUAGES};
-use carbide_core::environment::EnvironmentStack;
+use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, ReadState, StateSync, ValueRef};
 use fluent::types::{FluentDateTime, FluentNumber};
 use fluent::FluentArgs;
@@ -38,7 +38,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> LocalizedString<K, S, V> {
 
 
 impl<K: Localizable, S: ReadState<T=K>, V: Args> StateSync for LocalizedString<K, S, V> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         if let Some(locale) = env.get::<LocaleKey>() {
             //println!("Synced locale: {}", locale);
             self.locale = locale.clone();

@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 
 use crate::state::state_sync::StateSync;
 
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::state::{AnyReadState, ReadState, StateContract, AnyState, Functor, IntoReadState, RMap1, Fn2, Map1};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
@@ -26,7 +26,7 @@ impl<T: StateContract> StaticState<T> {
 }
 
 impl<T: StateContract> StateSync for StaticState<T> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         // TODO: find a smarter way to determine if static state has been updated.
         // I guess we can figuring it out by storing a frame number in the local state
         // and in the env, and then comparing and updating whenever this is called and set_value

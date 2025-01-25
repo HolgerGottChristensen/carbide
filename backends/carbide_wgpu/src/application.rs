@@ -13,7 +13,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::environment::{EnvironmentStack, Key};
+use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::event::EventSink;
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
@@ -70,7 +70,7 @@ pub type Scenes = SmallVec<[Box<dyn AnyScene>; 4]>;
 
 #[derive(Debug)]
 pub(crate) struct ActiveEventLoopKey;
-impl Key for ActiveEventLoopKey {
+impl EnvironmentKey for ActiveEventLoopKey {
     type Value = ActiveEventLoop;
 }
 
@@ -80,7 +80,7 @@ pub struct Application {
     scenes: Scenes,
 
     event_handler: NewEventHandler,
-    environment_stack: EnvironmentStack<'static>,
+    environment: Environment<'static>,
     text_context: TextContext,
     event_loop: EventLoop<CustomEvent>,
     event_sink: Arc<dyn EventSink>,
@@ -100,7 +100,7 @@ impl Application {
             id: WidgetId::new(),
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
-            environment_stack: EnvironmentStack::new(),
+            environment: Environment::new(),
             text_context: TextContext::new(),
             event_loop,
             event_sink,
@@ -151,7 +151,7 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment_stack: type_map,
+            environment: type_map,
             text_context,
             event_loop,
             event_sink
@@ -161,7 +161,7 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment_stack: type_map,
+            environment: type_map,
             text_context,
             animation_manager: AnimationManager::new(),
             focus_manager: FocusManager::new(),
@@ -183,7 +183,7 @@ pub struct RunningApplication {
     id: WidgetId,
     scenes: Scenes,
     event_handler: NewEventHandler,
-    environment_stack: EnvironmentStack<'static>,
+    environment: Environment<'static>,
     text_context: TextContext,
     animation_manager: AnimationManager,
     focus_manager: FocusManager,
@@ -207,10 +207,10 @@ impl RunningApplication {
             event_loop.exit();
         }
 
-        self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+        self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
+            env.with::<dyn EventSink>(&self.event_sink, |env| {
                 let mut ctx = InitializationContext {
-                    env_stack,
+                    env,
                 };
 
                 for mut scene in application_manager.scenes_to_add().drain(..) {
@@ -231,7 +231,7 @@ impl RunningApplication {
         match request {
             RequestRedraw::False => {}
             RequestRedraw::True => {
-                NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.environment_stack);
+                NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.environment);
                 self.request_redraw();
             }
             RequestRedraw::IfAnimationsRequested => {
@@ -245,11 +245,11 @@ impl RunningApplication {
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.environment_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+        self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
+            env.with::<dyn EventSink>(&self.event_sink, |env| {
                 for scene in &mut self.scenes {
                     scene.process_initialization(&mut InitializationContext {
-                        env_stack,
+                        env,
                     });
                 }
             })
@@ -265,14 +265,14 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut mouse_position = self.event_handler.mouse_position();
 
-        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
-                env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-                    env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
-                            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+        self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
+            env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
+                env.with::<ActiveEventLoopKey>(event_loop, |env| {
+                    env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
+                        env.with_mut::<MousePositionKey>(&mut mouse_position, |env| {
+                            env.with::<dyn EventSink>(&self.event_sink, |env| {
                                 for scene in &mut self.scenes {
-                                    request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, env_stack, self.id);
+                                    request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, env, self.id);
                                 }
                             })
                         })
@@ -293,13 +293,13 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut mouse_position = self.event_handler.mouse_position();
 
-        self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
-            env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
-                env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
-                    env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
-                            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
-                                request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env_stack, self.id);
+        self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
+            env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
+                env.with::<ActiveEventLoopKey>(event_loop, |env| {
+                    env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
+                        env.with_mut::<MousePositionKey>(&mut mouse_position, |env| {
+                            env.with::<dyn EventSink>(&self.event_sink, |env| {
+                                request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env, self.id);
                             })
                         })
                     })

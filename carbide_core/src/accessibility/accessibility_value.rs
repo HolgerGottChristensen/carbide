@@ -22,12 +22,12 @@ impl AccessibilityValue<Empty, String> {
 
 impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityValue<C, S> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         let value = &*self.value.value();
 
         let mut child_ctx = AccessibilityContext {
-            env_stack: ctx.env_stack,
+            env: ctx.env,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,
             children: ctx.children,

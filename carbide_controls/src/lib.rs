@@ -5,7 +5,7 @@ pub use text_input::*;
 pub use controls_ext::*;
 pub use help::*;
 pub use calendar::*;
-use carbide::environment::Key;
+use carbide::environment::EnvironmentKey;
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{KeyState, ReadState, State};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, OverlayManager, Widget};
@@ -58,7 +58,7 @@ pub type EnabledState = KeyState<EnabledKey>;
 
 #[derive(Debug, Copy, Clone)]
 pub struct EnabledKey;
-impl Key for EnabledKey {
+impl EnvironmentKey for EnabledKey {
     type Value = bool;
 }
 
@@ -67,10 +67,10 @@ pub(crate) struct UnfocusAction<F>(F) where F: State<T=Focus>;
 
 impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.0.sync(ctx.env_stack);
+        self.0.sync(ctx.env);
         if *self.0.value() == Focus::Focused {
             self.0.set_value(Focus::FocusReleased);
-            FocusManager::get(ctx.env_stack, |manager| {
+            FocusManager::get(ctx.env, |manager| {
                 manager.request_focus(Refocus::FocusRequest)
             });
         }
@@ -80,7 +80,7 @@ impl<F: State<T=Focus>> MouseAreaAction for UnfocusAction<F> {
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct ControlsOverlayKey;
 
-impl Key for ControlsOverlayKey {
+impl EnvironmentKey for ControlsOverlayKey {
     type Value = OverlayManager;
 }
 

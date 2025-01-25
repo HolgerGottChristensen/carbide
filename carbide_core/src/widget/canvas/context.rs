@@ -5,7 +5,7 @@ use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
 use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use crate::animation::AnimationManager;
 use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
 use crate::draw::Color;
@@ -72,7 +72,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn request_animation_frame(&mut self) {
-        if let Some(manager) = self.render_context.env_stack.get_mut::<AnimationManager>() {
+        if let Some(manager) = self.render_context.env.get_mut::<AnimationManager>() {
             manager.request_animation_frame();
         }
     }
@@ -94,12 +94,12 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn mouse_position(&self) -> Position {
-        let pos = self.render_context.env_stack.mouse_position();
+        let pos = self.render_context.env.mouse_position();
         pos - self.position
     }
 
-    pub fn env_stack(&mut self) -> &mut EnvironmentStack<'c> {
-        self.render_context.env_stack
+    pub fn env(&mut self) -> &mut Environment<'c> {
+        self.render_context.env
     }
 
     pub fn set_line_width(&mut self, width: f64) {
@@ -145,13 +145,13 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
     pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
         let mut read_state = style.into_read_state();
-        read_state.sync(self.render_context.env_stack);
+        read_state.sync(self.render_context.env);
         self.current_state.fill_color = read_state.value().clone();
     }
 
     pub fn set_stroke_style<C: IntoReadState<Style>>(&mut self, style: C) {
         let mut read_state = style.into_read_state();
-        read_state.sync(self.render_context.env_stack);
+        read_state.sync(self.render_context.env);
         self.current_state.stroke_color = read_state.value().clone();
     }
 
@@ -325,7 +325,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         };
 
         self.render_context.text.update(text_id, text, &text_style);
-        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env_stack);
+        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env);
 
         let position = match self.current_state.text_alignment {
             Alignment::TopLeading => Position::new(x, y),
@@ -343,7 +343,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             Alignment::Custom(px, py) => Position::new(x - size.width * px, y - size.height * py),
         };
 
-        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env_stack);
+        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env);
 
         let style = self.current_state.fill_color.convert(position + self.position, size);
         self.render_context.style(style, |render_context| {

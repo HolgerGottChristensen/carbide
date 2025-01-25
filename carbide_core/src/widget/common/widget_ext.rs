@@ -4,7 +4,7 @@ use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
 use crate::draw::Dimension;
-use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, Key, Keyable};
+use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, EnvironmentKey, EnvironmentKeyable};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::event::Key as KeyboardKey;
 use crate::misc::flags::WidgetFlag;
@@ -131,7 +131,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Mask::new(mask, self)
     }
 
-    fn text_wrap<E: IntoReadState<Wrap>>(self, wrap: E) -> Wrapped<Self, impl Key<Value=Wrap>, impl ReadState<T=Wrap>> {
+    fn text_wrap<E: IntoReadState<Wrap>>(self, wrap: E) -> Wrapped<Self, impl EnvironmentKey<Value=Wrap>, impl ReadState<T=Wrap>> {
         EnvUpdatingNew2::<Self, TextWrapKey, E::Output>::new(wrap.into_read_state(), self)
     }
 
@@ -167,11 +167,11 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Border::new(self)
     }
 
-    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, impl Key<Value=Color>, C::Output> {
+    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, impl EnvironmentKey<Value=Color>, C::Output> {
         EnvUpdatingNew2::<Self, EnvironmentColorLabel, C::Output>::new(color.into_read_state(), self)
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, impl Key<Value=Color>, C::Output> {
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, impl EnvironmentKey<Value=Color>, C::Output> {
         EnvUpdatingNew2::<Self, EnvironmentColorAccent, C::Output>::new(color.into_read_state(), self)
     }
 
@@ -216,15 +216,15 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Luminance::new(self, shift)
     }
 
-    fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl Key<Value = Theme>, impl ReadState<T=Theme>> {
+    fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl EnvironmentKey<Value = Theme>, impl ReadState<T=Theme>> {
         EnvUpdatingNew2::<ThemeManager<Self>, Theme, T::Output>::new(theme.into_read_state(), ThemeManager::new(self))
     }
 
-    fn environment<K: Keyable + Clone, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> where K::Output: Clone {
+    fn environment<K: EnvironmentKeyable + Clone, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> where K::Output: Clone {
         EnvUpdatingNew3::<Self, K, V::Output>::new(key, value.into_read_state(), self)
     }
 
-    fn overlay<K: Key<Value=OverlayManager> + Clone>(self) -> Overlay<K, Self> {
+    fn overlay<K: EnvironmentKey<Value=OverlayManager> + Clone>(self) -> Overlay<K, Self> {
         Overlay::<K, Self>::new(self)
     }
 

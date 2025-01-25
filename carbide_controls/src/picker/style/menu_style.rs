@@ -259,7 +259,7 @@ impl MouseAreaAction for MenuAction {
         if !*self.enabled.value() {
             return;
         }
-        OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+        OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
             manager.insert(self.popup.clone())
         })
     }

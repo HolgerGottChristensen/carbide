@@ -4,7 +4,7 @@ use std::sync::Arc;
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use carbide_core::state::AnyReadState;
 
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::state::{AnyState, Fn2, Functor, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl<T: StateContract> GlobalState<T> {
 }
 
 impl<T: StateContract> StateSync for GlobalState<T> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         // TODO: find a smarter way to determine if local state has been updated.
         // I guess we can figuring it out by storing a frame number in the local state
         // and in the env, and then comparing and updating whenever this is called and set_value

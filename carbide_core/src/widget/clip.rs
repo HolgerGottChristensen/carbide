@@ -64,7 +64,7 @@ impl<W: Widget> Render for Clip<W> {
             return;
         }
 
-        if let Some(scene_dimensions) = ctx.env_stack.get_mut::<SceneManager>().map(|a| a.dimensions()) {
+        if let Some(scene_dimensions) = ctx.env.get_mut::<SceneManager>().map(|a| a.dimensions()) {
             if self.position.x >= scene_dimensions.width {
                 return;
             }

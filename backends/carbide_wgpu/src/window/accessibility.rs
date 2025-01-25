@@ -12,7 +12,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
             Window::Initialized(initialized) => {
                 let id = initialized.id;
                 if ctx.parent_id.is_none() {
-                    initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                    initialized.with_env(ctx.env, |env, initialized| {
                         initialized.accessibility_adapter.update_if_active(|| {
                             let mut tree_update = TreeUpdate {
                                 nodes: vec![],
@@ -28,7 +28,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                             let mut children = SmallVec::<[WidgetId; 8]>::new();
 
                             initialized.child.process_accessibility(&mut AccessibilityContext {
-                                env_stack,
+                                env,
                                 nodes: &mut tree_update,
                                 parent_id: Some(id),
                                 children: &mut children,
@@ -55,9 +55,9 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                 } else {
                     let mut children = SmallVec::<[WidgetId; 8]>::new();
 
-                    initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                    initialized.with_env(ctx.env, |env, initialized| {
                         initialized.child.process_accessibility(&mut AccessibilityContext {
-                            env_stack,
+                            env,
                             nodes: ctx.nodes,
                             parent_id: Some(initialized.id),
                             children: &mut children,

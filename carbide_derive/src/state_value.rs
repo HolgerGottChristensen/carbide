@@ -15,7 +15,7 @@ pub fn impl_state_value(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     quote! {
         impl #generics #crate_name::state::StateSync for #struct_ident #generics #wheres {
-            fn sync(&mut self, _env: &mut #crate_name::environment::EnvironmentStack) -> bool {
+            fn sync(&mut self, _env: &mut #crate_name::environment::Environment) -> bool {
                 true
             }
         }

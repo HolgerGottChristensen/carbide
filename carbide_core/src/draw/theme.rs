@@ -1,4 +1,4 @@
-use crate::environment::Key;
+use crate::environment::EnvironmentKey;
 use crate::impl_state_value;
 
 #[derive(Copy, Clone, Debug)]
@@ -7,7 +7,7 @@ pub enum Theme {
     Dark
 }
 
-impl Key for Theme {
+impl EnvironmentKey for Theme {
     type Value = Theme;
 }
 

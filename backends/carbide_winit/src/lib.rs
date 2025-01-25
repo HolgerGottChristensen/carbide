@@ -15,7 +15,7 @@ pub mod custom_event;
 #[derive(Copy, Clone, Debug)]
 pub struct WindowHandleKey;
 
-impl carbide_core::environment::Key for WindowHandleKey {
+impl carbide_core::environment::EnvironmentKey for WindowHandleKey {
     type Value = RawWindowHandle;
 }
 

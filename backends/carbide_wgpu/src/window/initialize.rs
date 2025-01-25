@@ -44,7 +44,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
 
 
-                let (window, adapter) = if let Some(eventloop) = ctx.env_stack.get::<ActiveEventLoopKey>() {
+                let (window, adapter) = if let Some(eventloop) = ctx.env.get::<ActiveEventLoopKey>() {
                     let window = eventloop.create_window(attributes).unwrap();
                     let adapter = accesskit_winit::Adapter::with_event_loop_proxy(&window, EVENT_LOOP_PROXY.get().unwrap().clone());
 

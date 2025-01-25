@@ -1,5 +1,5 @@
 use carbide::color::WHITE;
-use carbide::environment::{EnvironmentStack};
+use carbide::environment::{Environment};
 use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
 use crate::material::albedo_component::AlbedoComponent;
@@ -39,7 +39,7 @@ pub struct PbrMaterial {
 }
 
 impl StateSync for PbrMaterial {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.albedo.sync(env)
     }
 }

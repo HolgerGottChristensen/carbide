@@ -186,7 +186,7 @@ impl DatePicker {
             )
             .on_click(|ctx: MouseAreaActionContext| {})
             .on_click_outside(|ctx: MouseAreaActionContext| {
-                OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                     manager.clear();
                 })
             })

@@ -1,5 +1,5 @@
 use crate::draw::InnerImageContext;
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::event::{Key, ModifierKey};
 use crate::focus::Focusable;
 use crate::text::InnerTextContext;
@@ -38,7 +38,7 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
         }*/
 
         if *ctx.is_current {
-            self.sync(ctx.env_stack);
+            self.sync(ctx.env);
             self.handle_keyboard_event(event, ctx);
         }
 
@@ -52,7 +52,7 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
 pub struct KeyboardEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env_stack: &'a mut EnvironmentStack<'b>,
+    pub env: &'a mut Environment<'b>,
     pub is_current: &'a bool,
     pub window_id: &'a u64,
     pub prevent_default: &'a mut bool,

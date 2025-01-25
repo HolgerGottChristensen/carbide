@@ -39,7 +39,7 @@ impl<C: Widget, S: ReadState<T=f64>> CommonWidget for Saturation<C, S> {
 
 impl<C: Widget, S: ReadState<T=f64>> Render for Saturation<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.shift.sync(context.env_stack);
+        self.shift.sync(context.env);
 
         context.saturation_shift(*self.shift.value() as f32, |this| {
             self.child.render(this)

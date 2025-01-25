@@ -100,7 +100,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Layout for Ci
 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Circle<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env_stack);
+        self.sync(context.env);
 
         let radius = self.width() as f32 / 2.0;
         let center = point(self.x() as f32 + radius, self.y() as f32 + radius);

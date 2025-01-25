@@ -15,7 +15,7 @@ pub use rounded_rectangle::*;
 use crate::draw::{NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::triangle_render_context::TriangleRenderContext;
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::render::{InnerRenderContext, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext};
 use crate::widget::AnyWidget;
@@ -31,13 +31,13 @@ pub trait Shape: AnyWidget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
-    fn triangles(&mut self, env: &mut EnvironmentStack) -> Vec<Triangle<Position>> {
+    fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
         let mut geom = TriangleRenderContext(vec![]);
         self.render(&mut RenderContext {
                     render: &mut geom,
                     text: &mut NOOPTextContext,
                     image: &mut NOOPImageContext,
-            env_stack: env,
+            env: env,
         });
 
         geom.0

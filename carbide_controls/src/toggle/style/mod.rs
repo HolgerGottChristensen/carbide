@@ -3,7 +3,7 @@ mod checkbox_style;
 mod button_style;
 
 pub use button_style::*;
-use carbide_core::environment::Key;
+use carbide_core::environment::EnvironmentKey;
 use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState};
 use carbide_core::widget::AnyWidget;
@@ -18,7 +18,7 @@ use crate::toggle::ToggleValue;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct ToggleStyleKey;
 
-impl Key for ToggleStyleKey {
+impl EnvironmentKey for ToggleStyleKey {
     type Value = Box<dyn ToggleStyle>;
 }
 

@@ -27,7 +27,7 @@ impl Object {
 
 impl Render3d for Object {
     fn render(&mut self, context: &mut RenderContext3d) {
-        self.material.sync(context.env_stack);
+        self.material.sync(context.env);
         self.transform = Matrix4::from(Euler::new(Deg(0.0), Deg(0.5), Deg(0.0))) * self.transform;
 
         context.material(&self.material, |context| {

@@ -1,7 +1,7 @@
 use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
 use crate::locale;
-use carbide_core::environment::EnvironmentStack;
+use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, IntoReadState, ReadState, StateSync, ValueRef, ValueState};
 use fluent::types::FluentNumberOptions;
 use icu::locid::Locale;
@@ -324,7 +324,7 @@ impl<
     S10: ReadState<T=Option<usize>>,
     S11: ReadState<T=RoundingMode>,
 > StateSync for LocalizedNumber<V, S, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.value.sync(env);
         self.style.sync(env);
         self.notation.sync(env);

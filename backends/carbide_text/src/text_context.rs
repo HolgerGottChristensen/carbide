@@ -6,7 +6,7 @@ use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
 use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
-use carbide_core::environment::{EnvironmentStack};
+use carbide_core::environment::{Environment};
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::text::{FontStyle, InnerTextContext, TextId};
@@ -73,7 +73,7 @@ impl TextContext {
 }
 
 impl InnerTextContext for TextContext {
-    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut EnvironmentStack) -> Dimension {
+    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (ref mut buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
@@ -116,7 +116,7 @@ impl InnerTextContext for TextContext {
         Dimension::new(width as f64, height as f64)
     }
 
-    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut EnvironmentStack) {
+    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
         let scale_factor = env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);

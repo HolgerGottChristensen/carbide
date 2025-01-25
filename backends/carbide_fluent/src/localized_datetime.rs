@@ -1,7 +1,7 @@
 use crate::locale_ext::LocaleKey;
 use crate::localizable::Localizable;
 use crate::locale;
-use carbide_core::environment::EnvironmentStack;
+use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, IntoReadState, ReadState, StateSync, ValueRef, ValueState};
 use chrono::{DateTime, FixedOffset};
 use fluent::types::{FluentDateTime, FluentDateTimeOptions};
@@ -66,7 +66,7 @@ impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadSt
 }
 
 impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle>> StateSync for LocalizedDateTime<S, D, T, Tz> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.datetime.sync(env);
         self.date_style.sync(env);
         self.time_style.sync(env);

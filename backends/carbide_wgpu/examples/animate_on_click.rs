@@ -28,15 +28,15 @@ fn main() {
                 .offset(offset_x.clone(), 0.0),
             HStack::new((
                 Button::new("Rgba to blue", capture!({color}, |ctx: MouseAreaActionContext| {
-                    animate!(ctx.env_stack, color => BLUE, duration: Duration::new(2, 0))
+                    animate!(ctx.env, color => BLUE, duration: Duration::new(2, 0))
                 }))
                     .frame(96.0, 22.0),
                 Button::new("Hsla to green", capture!({color}, |ctx: MouseAreaActionContext| {
-                    animate!(ctx.env_stack, color => GREEN, interpolation: Color::hsla_blend)
+                    animate!(ctx.env, color => GREEN, interpolation: Color::hsla_blend)
                 }))
                     .frame(98.0, 22.0),
                 Button::new("Hsla to red", capture!({color}, |ctx: MouseAreaActionContext| {
-                    animate!(ctx.env_stack, color => RED, interpolation: Color::hsla_blend, duration: Duration::new(4, 0))
+                    animate!(ctx.env, color => RED, interpolation: Color::hsla_blend, duration: Duration::new(4, 0))
                 }))
                     .frame(96.0, 22.0),
             )).spacing(10.0),
@@ -56,13 +56,13 @@ fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: impl State<T=f64
     HStack::new((
         Button::new(format!("{} left", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() > &119.0 {
-                    animate!(ctx.env_stack, offset := 120.0 => -120.0, curve: curve)
+                    animate!(ctx.env, offset := 120.0 => -120.0, curve: curve)
                 }
             }))
             .frame(150.0, 22.0),
         Button::new(format!("{} right", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() < &-119.0 {
-                    animate!(ctx.env_stack, offset := -120.0 => 120.0, curve: curve)
+                    animate!(ctx.env, offset := -120.0 => 120.0, curve: curve)
                 }
             }))
             .frame(150.0, 22.0),

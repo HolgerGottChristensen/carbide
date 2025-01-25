@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::animation::animation_curve::linear;
 use crate::animation::{Animatable, AnimationManager};
-use crate::environment::EnvironmentStack;
+use crate::environment::Environment;
 use crate::state::util::value_cell::ValueRef;
 use crate::state::{AnyReadState, RMap1, StateSync};
 use crate::state::Map1;
@@ -101,7 +101,7 @@ impl AnimatedState {
 }
 
 impl StateSync for AnimatedState {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         if let Some(manager) = env.get_mut::<AnimationManager>() {
             manager.request_animation_frame();
             self.frame_time = manager.frame_time();

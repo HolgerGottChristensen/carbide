@@ -62,7 +62,7 @@ impl MouseEventHandler for MenuStyleItemBase {
                     let prev = *self.selected.value();
                     *self.selected.value_mut() = !prev;
 
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                         manager.clear()
                     })
                 }

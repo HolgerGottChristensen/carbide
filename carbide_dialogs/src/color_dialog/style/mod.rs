@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::{AutomaticStyle, Color};
-use carbide::environment::{EnvironmentStack, Key};
+use carbide::environment::{Environment, EnvironmentKey};
 use carbide::state::{AnyReadState, AnyState};
 use crate::color_dialog::style::macos::MacOSNativeColorDialogStyle;
 use crate::NativeStyle;
@@ -12,23 +12,23 @@ mod macos;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct ColorDialogStyleKey;
 
-impl Key for ColorDialogStyleKey {
+impl EnvironmentKey for ColorDialogStyleKey {
     type Value = Box<dyn ColorDialogStyle>;
 }
 
 pub trait ColorDialogStyle: Debug + DynClone + 'static {
-    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env_stack: &mut EnvironmentStack);
+    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env: &mut Environment);
 }
 
 impl ColorDialogStyle for AutomaticStyle {
-    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env_stack: &mut EnvironmentStack) {
-        ColorDialogStyle::open(&NativeStyle, color, show_alpha, env_stack)
+    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env: &mut Environment) {
+        ColorDialogStyle::open(&NativeStyle, color, show_alpha, env)
     }
 }
 
 impl ColorDialogStyle for NativeStyle {
-    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env_stack: &mut EnvironmentStack) {
-        MacOSNativeColorDialogStyle.open(color, show_alpha, env_stack)
+    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env: &mut Environment) {
+        MacOSNativeColorDialogStyle.open(color, show_alpha, env)
     }
 }
 

@@ -14,7 +14,7 @@ fn main() {
     )).on_click(|_| {
         println!("Overlay clicked!")
     }).on_click_outside(move |ctx| {
-        OverlayManager::get::<OverlayKey>(ctx.env_stack, |manager| {
+        OverlayManager::get::<OverlayKey>(ctx.env, |manager| {
             manager.clear();
         })
     });
@@ -25,7 +25,7 @@ fn main() {
             .fill(EnvironmentColor::Red)
             .frame(150.0, 50.0)
             .on_click(move |ctx| {
-                OverlayManager::get::<OverlayKey>(ctx.env_stack, |manager| {
+                OverlayManager::get::<OverlayKey>(ctx.env, |manager| {
                     manager.insert(overlay.clone().accent_color(Color::random().with_lightness(0.3)));
                 })
             }),
@@ -43,6 +43,6 @@ fn main() {
 
 #[derive(Copy, Clone, Debug)]
 struct OverlayKey;
-impl Key for OverlayKey {
+impl EnvironmentKey for OverlayKey {
     type Value = OverlayManager;
 }

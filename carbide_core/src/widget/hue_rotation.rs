@@ -39,7 +39,7 @@ impl<C: Widget, S: ReadState<T=Angle>> CommonWidget for HueRotation<C, S> {
 
 impl<C: Widget, S: ReadState<T=Angle>> Render for HueRotation<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.rotation.sync(context.env_stack);
+        self.rotation.sync(context.env);
 
         let angle = *self.rotation.value();
 

@@ -23,7 +23,7 @@ pub struct MenuStylePopupBase {
 
 impl Layout for MenuStylePopupBase {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         let res = self.child.calculate_size(self.dimension(), ctx);
 
@@ -36,7 +36,7 @@ impl MouseEventHandler for MenuStylePopupBase {
         match event {
             MouseEvent::Click(_, position, _) => {
                 if !self.child.is_inside(*position) {
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                         manager.clear();
                     })
                 }
@@ -49,7 +49,7 @@ impl MouseEventHandler for MenuStylePopupBase {
 impl KeyboardEventHandler for MenuStylePopupBase {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if !*self.enabled.value() {
-            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             });
             return;
@@ -58,7 +58,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
         ctx.prevent_default();
 
         if event == PopupButtonKeyCommand::Close {
-            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             });
             return;
@@ -67,7 +67,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
         let id = *self.hovered.value();
 
         self.model.foreach_direct(&mut |child| {
-            child.sync(ctx.env_stack);
+            child.sync(ctx.env);
         });
 
         if event == PopupButtonKeyCommand::Select {
@@ -81,7 +81,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
                 })
             }
 
-            OverlayManager::get::<ControlsOverlayKey>(ctx.env_stack, |manager| {
+            OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             })
         } else if event == PopupButtonKeyCommand::Next {

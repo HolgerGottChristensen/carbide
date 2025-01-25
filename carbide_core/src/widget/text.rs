@@ -214,26 +214,26 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Layout for Text<T, S, C, FS, FW, W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
-        self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env_stack);
+        self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
 
         self.dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+        let scale_factor = ctx.env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);
 
-        ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0 / scale_factor), ctx.env_stack)
+        ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0 / scale_factor), ctx.env)
     }
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Render for Text<T, S, C, FS, FW, W> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env_stack);
+        self.sync(context.env);
 
         let default_color = self.color.value();
 
@@ -245,9 +245,9 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Accessibility for Text<T, S, C, FS, FW, W> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
-        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+        let scale_factor = ctx.env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);
 

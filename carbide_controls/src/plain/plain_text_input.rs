@@ -5,7 +5,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use carbide::animation::AnimationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide::draw::Alignment;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
@@ -476,7 +476,7 @@ impl<
             TextInputKeyCommand::JumpToRight => self.jump_to_right(),
             TextInputKeyCommand::JumpSelectToLeft => self.jump_select_to_left(),
             TextInputKeyCommand::JumpSelectToRight => self.jump_select_to_right(),
-            TextInputKeyCommand::Enter => self.enter(ctx.env_stack),
+            TextInputKeyCommand::Enter => self.enter(ctx.env),
             TextInputKeyCommand::Space => self.text(" "),
             TextInputKeyCommand::Text(s, m) => {
                 if s.len() == 0 || s.chars().next().unwrap().is_control() || m.contains(ModifierKey::SUPER) {
@@ -529,7 +529,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn enter(&mut self, _env: &mut EnvironmentStack) {
+    fn enter(&mut self, _env: &mut Environment) {
         self.set_focus(Focus::Unfocused);
     }
 
@@ -1158,7 +1158,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn text_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         if self.get_focus() == Focus::Unfocused {
-            self.request_focus(ctx.env_stack);
+            self.request_focus(ctx.env);
         }
 
         let x = position.x - self.position.x - *self.text_offset.value();
@@ -1275,7 +1275,7 @@ impl<
         //println!("Position children called");
         if let Some(speed) = self.current_offset_speed {
             self.update_offset_with_speed_to_make_cursor_visible(speed, ctx.text);
-            if let Some(manager) = ctx.env_stack.get_mut::<AnimationManager>() {
+            if let Some(manager) = ctx.env.get_mut::<AnimationManager>() {
                 manager.request_animation_frame();
             }
         } else {
@@ -1324,7 +1324,7 @@ impl<
 > Render for PlainTextInput<F, C, O, S, T, E> {
     fn render(&mut self, context: &mut RenderContext) {
         if let Some(cursor) = self.cursor() {
-            if let Some(env_cursor) = context.env_stack.get_mut::<MouseCursor>() {
+            if let Some(env_cursor) = context.env.get_mut::<MouseCursor>() {
                 *env_cursor = cursor;
             }
         }

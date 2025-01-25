@@ -5,7 +5,7 @@ mod bordered_prominent;
 
 use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
-use carbide::environment::Key;
+use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnyWidget, Widget};
@@ -18,7 +18,7 @@ use carbide::draw::AutomaticStyle;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct ButtonStyleKey;
 
-impl Key for ButtonStyleKey {
+impl EnvironmentKey for ButtonStyleKey {
     type Value = Box<dyn ButtonStyle>;
 }
 

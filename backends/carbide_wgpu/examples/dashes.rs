@@ -91,7 +91,7 @@ fn main() {
                                 draw_star(Position::new(dimension.width / 2.0, dimension.height / 2.0), 5, dimension.width / 2.0, dimension.width / 6.0, ctx);
                             }
                             DrawType::BezierMouse => {
-                                let mouse_position = ctx.env_stack().mouse_position();
+                                let mouse_position = ctx.env().mouse_position();
 
                                 ctx.move_to(0.0, 0.0);
                                 ctx.bezier_curve_to(

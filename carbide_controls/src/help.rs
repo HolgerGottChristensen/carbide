@@ -100,7 +100,7 @@ impl<C: Widget> Layout for Help<C> {
                 y = self.y() - PADDING - self.help.height();
             }
             TooltipPosition::Mouse => {
-                let mouse_position = ctx.env_stack.mouse_position();
+                let mouse_position = ctx.env.mouse_position();
 
                 x = mouse_position.x;
                 y = mouse_position.y - PADDING - self.help.height();

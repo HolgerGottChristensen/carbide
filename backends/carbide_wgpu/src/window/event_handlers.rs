@@ -11,14 +11,14 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
             Window::Initialized(initialized) => {
                 let id: u64 = initialized.inner.id().into();
 
-                initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut MouseEventContext {
                         text: ctx.text,
                         image: ctx.image,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
                         consumed: ctx.consumed,
-                        env_stack,
+                        env,
                     };
 
                     for scene in &mut initialized.scenes {
@@ -38,9 +38,9 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         match self {
             Window::Initialized(initialized) => {
-                initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut AccessibilityEventContext {
-                        env_stack,
+                        env,
                     };
 
                     for scene in &mut initialized.scenes {
@@ -62,11 +62,11 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
             Window::Initialized(initialized) => {
                 let id: u64 = initialized.inner.id().into();
 
-                initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut KeyboardEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env_stack,
+                        env,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
                         prevent_default: ctx.prevent_default,
@@ -89,11 +89,11 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         match self {
             Window::Initialized(initialized) => {
-                initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut OtherEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env_stack,
+                        env,
                     };
 
                     for scene in &mut initialized.scenes {
@@ -151,7 +151,7 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                             }*/
                         }
                         WindowEvent::CloseRequested => {
-                            initialized.close(ctx.env_stack);
+                            initialized.close(ctx.env);
                         }
                         WindowEvent::ThemeChanged => {
                             let theme = match initialized.inner.theme().unwrap_or(Theme::Dark) {
@@ -166,11 +166,11 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                     }
                 }
 
-                initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+                initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut WindowEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env_stack,
+                        env,
                         is_current: &is_current,
                         window_id: ctx.window_id,
                     };

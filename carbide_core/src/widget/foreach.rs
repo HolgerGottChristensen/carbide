@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 
 use crate::draw::{Dimension, Position};
-use crate::environment::EnvironmentStack;
+use crate::environment::Environment;
 use crate::misc::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
@@ -122,7 +122,7 @@ impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
         U: Delegate<T, W>,
         I: ReadState<T=usize>
 {
-    fn sync(&mut self, env: &mut EnvironmentStack) {
+    fn sync(&mut self, env: &mut Environment) {
         self.model.sync(env);
         self.index_offset.sync(env);
 
@@ -146,7 +146,7 @@ impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
                 let mut widget = self.delegate.call(item_state.as_dyn(), index_state);
 
                 widget.process_initialization(&mut InitializationContext {
-                    env_stack: env,
+                    env: env,
                 });
 
                 self.children.push(widget);

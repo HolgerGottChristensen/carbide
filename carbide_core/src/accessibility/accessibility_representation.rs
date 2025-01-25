@@ -22,7 +22,7 @@ impl AccessibilityRepresentation<Empty, Empty> {
 
 impl<C: Widget, S: Widget> Accessibility for AccessibilityRepresentation<C, S> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         // Process the accessibility of the children
         self.representation.process_accessibility(ctx);

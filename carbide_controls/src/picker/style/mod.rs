@@ -8,7 +8,7 @@ pub use segmented_style::*;
 pub use menu_style::*;
 
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
-use carbide::environment::Key;
+use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, ReadStateExtNew, State, StateContract, StateExtNew};
 use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt};
@@ -20,7 +20,7 @@ use crate::picker::picker_selection::PickerSelectionType;
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct PickerStyleKey;
 
-impl Key for PickerStyleKey {
+impl EnvironmentKey for PickerStyleKey {
     type Value = Box<dyn PickerStyle>;
 }
 

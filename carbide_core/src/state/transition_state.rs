@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use carbide::animation::AnimationManager;
 use crate::animation::{Animatable, ease_in_out};
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
 
 #[derive(Clone)]
@@ -94,7 +94,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> Transition
 }
 
 impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync for TransitionState<T, S> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         let res = self.inner.sync(env);
 
         if let Some(manager) = env.get_mut::<AnimationManager>() {

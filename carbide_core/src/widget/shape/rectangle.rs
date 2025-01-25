@@ -98,7 +98,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Rectangle<S, F> {
     fn render(&mut self, context: &mut RenderContext) {
 
-        self.sync(context.env_stack);
+        self.sync(context.env);
 
         let rect = rect(
             self.x() as f32,

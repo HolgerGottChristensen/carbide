@@ -158,17 +158,17 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_top_height, requested_bottom_height) = match &mut self.split {
             SplitType::Start(offset) => {
-                offset.sync(ctx.env_stack);
+                offset.sync(ctx.env);
                 (offset.value().clone(), requested_size.height - offset.value().clone())
             },
             SplitType::Percent(percent) => {
-                percent.sync(ctx.env_stack);
+                percent.sync(ctx.env);
                 let leading = requested_size.height * percent.value().clone();
                 let trailing = requested_size.height * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
             SplitType::End(offset) => {
-                offset.sync(ctx.env_stack);
+                offset.sync(ctx.env);
                 (requested_size.height - offset.value().clone(), offset.value().clone())
             },
         };

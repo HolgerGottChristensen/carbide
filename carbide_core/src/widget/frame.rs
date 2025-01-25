@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Alignment, Dimension, Position};
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State, ValueRef, ValueRefMut};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
@@ -210,7 +210,7 @@ enum Fixity<T: State<T=f64>> {
 }
 
 impl<T: State<T=f64> + Clone> StateSync for Fixity<T> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         match self {
             Fixity::Expand(_) => false,
             Fixity::Fit(_) => false,

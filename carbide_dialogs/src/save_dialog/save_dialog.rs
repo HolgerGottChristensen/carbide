@@ -2,7 +2,7 @@ use crate::file_type::FileType;
 use crate::save_dialog::style::SaveDialogStyleKey;
 use carbide::asynchronous::AsyncContext;
 use carbide::draw::AutomaticStyle;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState, ReadStateExtNew, StateSync};
 use carbide_core::state::AnyReadState;
 use carbide_core::widget::{Identifiable, WidgetId};
@@ -74,14 +74,14 @@ impl SaveDialog {
         self
     }
 
-    pub fn open(mut self, env_stack: &mut EnvironmentStack, f: impl Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static) {
-        self.title.sync(env_stack);
-        self.message.sync(env_stack);
-        self.prompt.sync(env_stack);
-        self.default_file_name.sync(env_stack);
-        self.show_hidden_files.sync(env_stack);
-        self.path.sync(env_stack);
-        self.file_types.sync(env_stack);
+    pub fn open(mut self, env: &mut Environment, f: impl Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static) {
+        self.title.sync(env);
+        self.message.sync(env);
+        self.prompt.sync(env);
+        self.default_file_name.sync(env);
+        self.show_hidden_files.sync(env);
+        self.path.sync(env);
+        self.file_types.sync(env);
 
         let title = &*self.title.value();
         let message = &*self.message.value();
@@ -91,7 +91,7 @@ impl SaveDialog {
         let path = &*self.path.value();
         let file_types = &*self.file_types.value();
 
-        let style = clone_box(env_stack.get::<SaveDialogStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle));
+        let style = clone_box(env.get::<SaveDialogStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle));
 
         let callback = Box::new(f);
 
@@ -104,7 +104,7 @@ impl SaveDialog {
             path.clone(),
             file_types,
             callback,
-            env_stack
+            env
         );
     }
 }

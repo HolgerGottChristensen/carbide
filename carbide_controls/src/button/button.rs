@@ -105,11 +105,11 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
 
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Accessibility for Button<F, A, E, H, P, L> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.enabled.sync(ctx.env_stack);
+        self.enabled.sync(ctx.env);
         let enabled = *self.enabled.value();
 
         self.child.process_accessibility(&mut AccessibilityContext {
-            env_stack: ctx.env_stack,
+            env: ctx.env,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,
             children: ctx.children,
@@ -124,7 +124,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
 
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Initialize for Button<F, A, E, H, P, L> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env_stack.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+        let style = ctx.env.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
         let inner = style.create(self.label.clone().boxed(), self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read());
 
@@ -172,14 +172,14 @@ struct ButtonAction<A, F, E> where
 
 impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonAction<A, F, E> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.enabled.sync(ctx.env_stack);
-        self.focus.sync(ctx.env_stack);
+        self.enabled.sync(ctx.env);
+        self.focus.sync(ctx.env);
 
         if *self.enabled.value() {
             if *self.focus.value() != Focus::Focused {
                 self.focus.set_value(Focus::FocusRequested);
 
-                FocusManager::get(ctx.env_stack, |manager| {
+                FocusManager::get(ctx.env, |manager| {
                     manager.request_focus(Refocus::FocusRequest)
                 });
             }
@@ -201,11 +201,11 @@ struct ButtonOutsideAction<A, F, E> where
 
 impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonOutsideAction<A, F, E> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
-        self.focus.sync(ctx.env_stack);
+        self.focus.sync(ctx.env);
         if *self.focus.value() == Focus::Focused {
             self.focus.set_value(Focus::FocusReleased);
 
-            FocusManager::get(ctx.env_stack, |manager| {
+            FocusManager::get(ctx.env, |manager| {
                 manager.request_focus(Refocus::FocusRequest)
             });
         }

@@ -6,7 +6,7 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSString};
 use objc::{msg_send, class, sel, sel_impl};
 use carbide::animation::AnimationManager;
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::event::{EventSink, NoopEventSink};
 use carbide::layout::LayoutContext;
 use carbide::scene::SceneManager;
@@ -116,7 +116,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if &*self.video_id_state.value() != &self.video_id {
-            self.change_video(ctx.env_stack);
+            self.change_video(ctx.env);
         }
 
         self.update_rate();
@@ -131,7 +131,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
 
             let mut scale_factor = 1.0;
 
-            SceneManager::get(ctx.env_stack, |manager| {
+            SceneManager::get(ctx.env, |manager| {
                 scale_factor = manager.scale_factor();
             });
 
@@ -278,7 +278,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
             unsafe {
                 let rate: f32 = msg_send![player.player, rate];
                 if rate != 0.0 {
-                    AnimationManager::get(ctx.env_stack, |manager| {
+                    AnimationManager::get(ctx.env, |manager| {
                         manager.request_animation_frame();
                     })
                 }
@@ -318,7 +318,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
         }
     }
 
-    fn change_video(&mut self, env: &mut EnvironmentStack) {
+    fn change_video(&mut self, env: &mut Environment) {
         println!("Change video to: {:?}", &*self.video_id_state.value());
 
         // add observer

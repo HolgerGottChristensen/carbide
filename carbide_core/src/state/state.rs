@@ -1,7 +1,7 @@
 
 use std::ops::{Deref, DerefMut};
 use dyn_clone::clone_box;
-use crate::environment::EnvironmentStack;
+use crate::environment::Environment;
 use crate::state::*;
 use crate::state::ReadState;
 use crate::state::util::value_cell::ValueRefMut;
@@ -54,7 +54,7 @@ impl<T: StateContract> dyn AnyState<T=T> {
 //  Implementations
 // ---------------------------------------------------
 impl<T: StateContract> StateSync for Box<dyn AnyState<T=T>> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.deref_mut().sync(env)
     }
 }

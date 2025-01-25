@@ -4,7 +4,7 @@ use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::draw::theme::Theme;
-use carbide_core::environment::EnvironmentStack;
+use carbide_core::environment::Environment;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
@@ -46,17 +46,17 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
-    pub fn close(&self, env_stack: &mut EnvironmentStack) {
+    pub fn close(&self, env: &mut Environment) {
         let mut closed = false;
 
-        SceneManager::get(env_stack, |manager| {
+        SceneManager::get(env, |manager| {
             println!("Close sub scene");
             manager.dismiss_sub_scene(self.id);
             closed = true;
         });
 
         if !closed {
-            ApplicationManager::get(env_stack, |manager| {
+            ApplicationManager::get(env, |manager| {
                 println!("Close scene");
                 manager.dismiss_scene(self.id);
                 closed = true;
@@ -68,7 +68,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    pub fn with_env_stack(&mut self, env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack, &mut Self)) {
+    pub fn with_env(&mut self, env: &mut Environment, f: impl FnOnce(&mut Environment, &mut Self)) {
         let theme_for_frame = self.theme;
         let physical_dimensions = self.inner.inner_size();
 
@@ -81,11 +81,11 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let mut cursor = self.mouse_cursor;
 
-        env_stack.with::<Theme>(&theme_for_frame, |env_stack| {
-            env_stack.with_mut::<SceneManager>(&mut scene_manager, |env_stack| {
-                env_stack.with::<WindowHandleKey>(&handle, |env_stack| {
-                    env_stack.with_mut::<MouseCursor>(&mut cursor, |env_stack| {
-                        f(env_stack, self)
+        env.with::<Theme>(&theme_for_frame, |env| {
+            env.with_mut::<SceneManager>(&mut scene_manager, |env| {
+                env.with::<WindowHandleKey>(&handle, |env| {
+                    env.with_mut::<MouseCursor>(&mut cursor, |env| {
+                        f(env, self)
                     })
                 })
             })
@@ -95,10 +95,10 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         if scene_manager.dismiss_requested() {
             println!("Here");
-            self.close(env_stack);
+            self.close(env);
         } else {
             let mut ctx = InitializationContext {
-                env_stack,
+                env,
             };
 
             for mut scene in scene_manager.scenes_to_add().drain(..) {

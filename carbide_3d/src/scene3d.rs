@@ -53,18 +53,18 @@ impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> CommonWidget for Scene3d<C
 
 impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
     fn render(&mut self, ctx: &mut RenderContext) {
-        AnimationManager::get(ctx.env_stack, |manager| {
+        AnimationManager::get(ctx.env, |manager| {
             manager.request_animation_frame();
         });
 
-        ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env_stack| {
+        ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env| {
             self.context.start();
 
             self.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
                     render: &mut *self.context,
                     image: &mut *self.image_context,
-                    env_stack,
+                    env,
                 });
             });
 

@@ -3,7 +3,7 @@ use accesskit::{Node, Point, Rect, Role, Size};
 use smallvec::SmallVec;
 use carbide::accessibility;
 use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, OtherEventContext};
 use carbide::scene::SceneManager;
 use carbide::widget::WidgetSync;
@@ -215,7 +215,7 @@ impl<
                 if *self.is_pressed.value() {
                     self.is_pressed.set_value(false);
                     self.click.call(MouseAreaActionContext {
-                        env_stack: ctx.env_stack,
+                        env: ctx.env,
                         modifier_key: ModifierKey::empty()
                     });
                 } else {
@@ -238,7 +238,7 @@ impl<
     fn handle_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         if event.is::<KeyboardShortcutPressed>() {
             self.click.call(MouseAreaActionContext {
-                env_stack: ctx.env_stack,
+                env: ctx.env,
                 modifier_key: ModifierKey::empty()
             });
         }
@@ -282,13 +282,13 @@ impl<
                 if self.is_inside(*mouse_position) {
                     //self.request_focus(ctx.env);
                     self.click.call(MouseAreaActionContext {
-                        env_stack: ctx.env_stack,
+                        env: ctx.env,
                         modifier_key: *modifier
                     });
                 } else {
                     //self.set_focus(Focus::Unfocused);
                     self.click_outside.call(MouseAreaActionContext {
-                        env_stack: ctx.env_stack,
+                        env: ctx.env,
                         modifier_key: *modifier
                     });
                 }
@@ -333,15 +333,15 @@ impl<
         match event.action {
             AccessibilityAction::Click => {
                 self.click.call(MouseAreaActionContext {
-                    env_stack: ctx.env_stack,
+                    env: ctx.env,
                     modifier_key: ModifierKey::empty()
                 });
             }
             AccessibilityAction::Focus => {
-                self.request_focus(ctx.env_stack)
+                self.request_focus(ctx.env)
             }
             AccessibilityAction::Blur => {
-                self.request_blur(ctx.env_stack)
+                self.request_blur(ctx.env)
             }
             _ => ()
         }
@@ -357,14 +357,14 @@ impl<
     P: State<T=bool>,
 > Accessibility for MouseArea<I, O, F, C, H, P> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
         let mut nodes = SmallVec::<[AccessibilityNode; 1]>::new();
 
         let mut child_ctx = AccessibilityContext {
-            env_stack: ctx.env_stack,
+            env: ctx.env,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
             children: &mut children,
@@ -382,7 +382,7 @@ impl<
 
         let mut builder = Node::new(Role::Button);
 
-        let scale_factor = ctx.env_stack.get_mut::<SceneManager>()
+        let scale_factor = ctx.env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);
 
@@ -473,6 +473,6 @@ impl<I> Action for I where I: Fn(MouseAreaActionContext<'_, '_>) + Clone + 'stat
 
 /// The context given when handling on click actions.
 pub struct MouseAreaActionContext<'a, 'b: 'a> {
-    pub env_stack: &'a mut EnvironmentStack<'b>,
+    pub env: &'a mut Environment<'b>,
     pub modifier_key: ModifierKey
 }

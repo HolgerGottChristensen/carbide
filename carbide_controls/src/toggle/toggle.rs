@@ -53,7 +53,7 @@ impl Toggle<LocalState<Focus>, ToggleValue, EnabledState, String> {
 
 impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadState<T=String>> Initialize for Toggle<F, V, E, L> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        if let Some(style) = ctx.env_stack.get::<ToggleStyleKey>() {
+        if let Some(style) = ctx.env.get::<ToggleStyleKey>() {
             self.child = style.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
             self.role = style.toggle_role();
         } else {
@@ -71,13 +71,13 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
                     value: self.value.clone(),
                     focus: self.focus.clone(),
                     enabled: self.enabled.clone(),
-                }.trigger(ctx.env_stack);
+                }.trigger(ctx.env);
             }
             AccessibilityAction::Focus => {
-                self.request_focus(ctx.env_stack)
+                self.request_focus(ctx.env)
             }
             AccessibilityAction::Blur => {
-                self.request_blur(ctx.env_stack)
+                self.request_blur(ctx.env)
             }
             _ => ()
         }
@@ -90,14 +90,14 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
     }
 
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
 
         let mut children = SmallVec::<[WidgetId; 8]>::new();
 
         let mut nodes = SmallVec::<[AccessibilityNode; 1]>::new();
 
         let mut child_ctx = AccessibilityContext {
-            env_stack: ctx.env_stack,
+            env: ctx.env,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
             children: &mut children,

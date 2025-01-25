@@ -18,7 +18,7 @@ fn main() {
                 Text::new("Click below to open a new window"),
                 MouseArea::new(Rectangle::new().fill(Color::random()))
                     .on_click(closure!(|ctx| {
-                        ApplicationManager::get(ctx.env_stack, |manager| {
+                        ApplicationManager::get(ctx.env, |manager| {
                             manager.add_scene(window())
                         })
                     }))
@@ -26,7 +26,7 @@ fn main() {
                 Text::new("Click below to open a new sub window"),
                 MouseArea::new(Rectangle::new().fill(Color::random()))
                     .on_click(closure!(|ctx| {
-                        SceneManager::get(ctx.env_stack, |manager| {
+                        SceneManager::get(ctx.env, |manager| {
                             manager.add_sub_scene(window())
                         })
                     }))

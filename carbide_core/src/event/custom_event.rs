@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use dyn_clone::DynClone;
-use crate::environment::Key;
+use crate::environment::EnvironmentKey;
 
 #[derive(Debug, Clone, Copy)]
 pub enum CoreEvent {
@@ -15,7 +15,7 @@ pub trait EventSink: DynClone + Send {
 
 dyn_clone::clone_trait_object!(EventSink);
 
-impl Key for dyn EventSink {
+impl EnvironmentKey for dyn EventSink {
     type Value = Arc<dyn EventSink>;
 }
 

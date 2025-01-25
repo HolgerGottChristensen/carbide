@@ -1,6 +1,6 @@
-use crate::environment::{EnvironmentStack, Keyable};
+use crate::environment::{Environment, EnvironmentKeyable};
 use crate::state::*;
-use carbide::environment::Key;
+use carbide::environment::EnvironmentKey;
 
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug, Copy)]
@@ -18,10 +18,10 @@ pub enum EnvironmentFontSize {
     Caption2,
 }
 
-impl Keyable for EnvironmentFontSize {
+impl EnvironmentKeyable for EnvironmentFontSize {
     type Output = u32;
 
-    fn get(&self, stack: &EnvironmentStack) -> Option<Self::Output> {
+    fn get(&self, stack: &Environment) -> Option<Self::Output> {
         match self {
             EnvironmentFontSize::LargeTitle => stack.get::<EnvironmentFontSizeLargeTitle>().cloned(),
             EnvironmentFontSize::Title => stack.get::<EnvironmentFontSizeTitle>().cloned(),
@@ -37,7 +37,7 @@ impl Keyable for EnvironmentFontSize {
         }
     }
 
-    fn with(&self, value: &Self::Output, stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack)) {
+    fn with(&self, value: &Self::Output, stack: &mut Environment, f: impl FnOnce(&mut Environment)) {
         match self {
             EnvironmentFontSize::LargeTitle => stack.with::<EnvironmentFontSizeLargeTitle>(value, f),
             EnvironmentFontSize::Title => stack.with::<EnvironmentFontSizeTitle>(value, f),
@@ -71,7 +71,7 @@ impl Default for EnvironmentFontSize {
 // ---------------------------------------------------
 
 impl ConvertIntoRead<u32> for EnvironmentFontSize {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut EnvironmentStack, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut Environment, &EnvironmentFontSize)->u32, EnvironmentFontSize, u32, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentFontSize> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
@@ -82,66 +82,66 @@ impl ConvertIntoRead<u32> for EnvironmentFontSize {
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeLargeTitle;
-impl Key for EnvironmentFontSizeLargeTitle {
+impl EnvironmentKey for EnvironmentFontSizeLargeTitle {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle;
-impl Key for EnvironmentFontSizeTitle {
+impl EnvironmentKey for EnvironmentFontSizeTitle {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle2;
-impl Key for EnvironmentFontSizeTitle2 {
+impl EnvironmentKey for EnvironmentFontSizeTitle2 {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle3;
-impl Key for EnvironmentFontSizeTitle3 {
+impl EnvironmentKey for EnvironmentFontSizeTitle3 {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeHeadline;
-impl Key for EnvironmentFontSizeHeadline {
+impl EnvironmentKey for EnvironmentFontSizeHeadline {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeBody;
-impl Key for EnvironmentFontSizeBody {
+impl EnvironmentKey for EnvironmentFontSizeBody {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCallout;
-impl Key for EnvironmentFontSizeCallout {
+impl EnvironmentKey for EnvironmentFontSizeCallout {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeSubhead;
-impl Key for EnvironmentFontSizeSubhead {
+impl EnvironmentKey for EnvironmentFontSizeSubhead {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeFootnote;
-impl Key for EnvironmentFontSizeFootnote {
+impl EnvironmentKey for EnvironmentFontSizeFootnote {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCaption;
-impl Key for EnvironmentFontSizeCaption {
+impl EnvironmentKey for EnvironmentFontSizeCaption {
     type Value = u32;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCaption2;
-impl Key for EnvironmentFontSizeCaption2 {
+impl EnvironmentKey for EnvironmentFontSizeCaption2 {
     type Value = u32;
 }

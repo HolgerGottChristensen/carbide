@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use carbide::environment::{EnvironmentStack};
+use carbide::environment::{Environment};
 use carbide::render::matrix::{One, Zero};
 use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;
@@ -18,7 +18,7 @@ pub trait DataSet: Debug + 'static {
     fn min(&self) -> (Self::X, Self::Y, Self::Z);
     fn max(&self) -> (Self::X, Self::Y, Self::Z);
 
-    fn options(&self, env: &mut EnvironmentStack) -> DataSetOptions {
+    fn options(&self, env: &mut Environment) -> DataSetOptions {
         DataSetOptions {
             color: DataColor::Inherit,
             stepped: Stepped::None,

@@ -1,6 +1,6 @@
 use smallvec::SmallVec;
 use carbide::scene::{Scene, SceneId};
-use crate::environment::{EnvironmentStack, Key};
+use crate::environment::{Environment, EnvironmentKey};
 use crate::scene::{AnyScene, SceneSequence};
 
 #[derive(Debug)]
@@ -49,13 +49,13 @@ impl ApplicationManager {
         &self.dismiss_scenes
     }
 
-    pub fn get(env_stack: &mut EnvironmentStack, f: impl FnOnce(&mut ApplicationManager)) {
-        if let Some(manager) = env_stack.get_mut::<ApplicationManager>() {
+    pub fn get(env: &mut Environment, f: impl FnOnce(&mut ApplicationManager)) {
+        if let Some(manager) = env.get_mut::<ApplicationManager>() {
             f(manager)
         }
     }
 }
 
-impl Key for ApplicationManager {
+impl EnvironmentKey for ApplicationManager {
     type Value = ApplicationManager;
 }

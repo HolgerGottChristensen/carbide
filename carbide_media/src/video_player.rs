@@ -169,7 +169,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if *ctx.is_current {
             if !*ctx.consumed {
-                self.sync(ctx.env_stack);
+                self.sync(ctx.env);
                 self.handle_mouse_event(event, ctx);
             }
         }
@@ -223,7 +223,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
 
 impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
     fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env_stack);
+        self.sync(context.env);
         self.video.render(context);
 
         if self.video_overlay_visible || *self.buffering.value() {

@@ -21,7 +21,7 @@ fn main() {
                     .set_message(Some("This is a message".to_string()))
                     .set_title(Some("This is a title".to_string()))
                     .set_file_types(vec![FileType::new("Rust source", vec!["rs"])])
-                    .open(ctx.env_stack, |res, _| {
+                    .open(ctx.env, |res, _| {
                         println!("Received open paths: {:?}", res.unwrap());
                     });
 

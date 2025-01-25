@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
-use crate::environment::{EnvironmentStack};
+use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, StateContract};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};
@@ -50,7 +50,7 @@ impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> FieldState<S, FRO
 }
 
 impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> StateSync for FieldState<S, FROM, TO> {
-    fn sync(&mut self, env: &mut EnvironmentStack) -> bool {
+    fn sync(&mut self, env: &mut Environment) -> bool {
         self.state.sync(env)
     }
 }

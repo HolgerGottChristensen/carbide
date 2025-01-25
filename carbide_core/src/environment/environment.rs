@@ -4,18 +4,19 @@ use std::fmt::Debug;
 use std::hash::{BuildHasherDefault, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
+use crate::misc::any_debug::AnyDebug;
 
-pub trait Key: Any + Debug + 'static {
+pub trait EnvironmentKey: Any + Debug + 'static {
     type Value: Any + Debug + 'static;
 }
 
-pub trait Keyable: Debug + 'static {
+pub trait EnvironmentKeyable: Debug + 'static {
     type Output: Any + Debug + 'static;
 
-    fn get(&self, stack: &TypeMap) -> Option<Self::Output>;
-    fn with(&self, value: &Self::Output, stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap));
+    fn get(&self, stack: &Environment) -> Option<Self::Output>;
+    fn with(&self, value: &Self::Output, stack: &mut Environment, f: impl FnOnce(&mut Environment));
 
-    fn with_all(values: &[(Self, Self::Output)], stack: &mut TypeMap, f: impl FnOnce(&mut TypeMap)) where Self: Sized {
+    fn with_all(values: &[(Self, Self::Output)], stack: &mut Environment, f: impl FnOnce(&mut Environment)) where Self: Sized {
         match values {
             [(slef, first), rest @ ..] => {
                 slef.with(first, stack, |inner| {
@@ -32,53 +33,16 @@ pub trait Keyable: Debug + 'static {
     }
 }
 
-pub trait AnyDebug: Any + Debug {
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
-
-    /// Gets the type name of `self`
-    fn type_name(&self) -> &'static str;
-}
-
-impl<T> AnyDebug for T where T: Any + Debug {
-    #[inline(always)]
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    #[inline(always)]
-    fn as_any_mut(&mut self) -> &mut dyn Any {
-        self
-    }
-
-    #[inline(always)]
-    fn type_name(&self) -> &'static str {
-        core::any::type_name::<T>()
-    }
-}
-
-impl dyn AnyDebug {
-    #[inline(always)]
-    pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
-        self.as_any().downcast_ref()
-    }
-
-    #[inline(always)]
-    pub fn downcast_mut<T: Any>(&mut self) -> Option<&mut T> {
-        self.as_any_mut().downcast_mut::<T>()
-    }
-}
-
-pub struct TypeMap<'a> {
+pub struct Environment<'a> {
     data: HashMap<TypeId, &'a dyn AnyDebug, BuildTypeIdHasher>,
     data_mut: HashMap<TypeId, &'a mut dyn AnyDebug, BuildTypeIdHasher>,
     _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
 }
 
 
-impl<'a> TypeMap<'a> {
+impl<'a> Environment<'a> {
     pub fn new() -> Self {
-        TypeMap {
+        Environment {
             data: HashMap::with_hasher(BuildTypeIdHasher::default()),
             data_mut: HashMap::with_hasher(BuildTypeIdHasher::default()),
             _marker: Default::default(),
@@ -86,8 +50,8 @@ impl<'a> TypeMap<'a> {
     }
 }
 
-impl<'a> TypeMap<'a> {
-    pub fn get<K: Key + ?Sized>(&self) -> Option<&K::Value> {
+impl<'a> Environment<'a> {
+    pub fn get<K: EnvironmentKey + ?Sized>(&self) -> Option<&K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data.get(&id), |value| {
@@ -95,12 +59,12 @@ impl<'a> TypeMap<'a> {
         }).flatten()
     }
 
-    pub fn value<K: Keyable>(&self, key: &K) -> Option<K::Output> {
+    pub fn value<K: EnvironmentKeyable>(&self, key: &K) -> Option<K::Output> {
         key.get(self)
     }
 
     #[allow(unsafe_code)]
-    pub fn with<'b, K: Key + ?Sized>(&mut self, v: &'b K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
+    pub fn with<'b, K: EnvironmentKey + ?Sized>(&mut self, v: &'b K::Value, f: impl FnOnce(&mut Environment)) where 'a: 'b {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.
@@ -112,7 +76,7 @@ impl<'a> TypeMap<'a> {
         // removed again, before returning from the function, ensuring the
         // reference to the value v does is not in the map after the closure,
         // and thus making sure it does not escape.
-        let transmuted: &'b mut TypeMap<'b> = unsafe { transmute(self) };
+        let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
         transmuted.data.insert(id, v);
 
@@ -126,8 +90,8 @@ impl<'a> TypeMap<'a> {
     }
 }
 
-impl<'a> TypeMap<'a> {
-    pub fn get_mut<K: Key + ?Sized>(&mut self) -> Option<&mut K::Value> {
+impl<'a> Environment<'a> {
+    pub fn get_mut<K: EnvironmentKey + ?Sized>(&mut self) -> Option<&mut K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data_mut.get_mut(&id), |value| {
@@ -136,7 +100,7 @@ impl<'a> TypeMap<'a> {
     }
 
     #[allow(unsafe_code)]
-    pub fn with_mut<'b, K: Key + ?Sized>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut TypeMap)) where 'a: 'b {
+    pub fn with_mut<'b, K: EnvironmentKey + ?Sized>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut Environment)) where 'a: 'b {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.
@@ -148,7 +112,7 @@ impl<'a> TypeMap<'a> {
         // removed again, before returning from the function, ensuring the
         // reference to the value v does is not in the map after the closure,
         // and thus making sure it does not escape.
-        let transmuted: &'b mut TypeMap<'b> = unsafe { transmute(self) };
+        let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
         transmuted.data_mut.insert(id, v);
 
@@ -182,15 +146,15 @@ impl Hasher for TypeIdHasher {
 }
 
 mod tests {
-    use crate::environment::environment_stack::{Key, TypeMap};
+    use crate::environment::environment::{EnvironmentKey, Environment};
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey;
-    impl Key for TestKey { type Value = u64; }
+    impl EnvironmentKey for TestKey { type Value = u64; }
 
     #[test]
     fn simple() {
-        let mut map = TypeMap::new();
+        let mut map = Environment::new();
 
         map.with::<TestKey>(&42, |inner| {
             let get = inner.get::<TestKey>();

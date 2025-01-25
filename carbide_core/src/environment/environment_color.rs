@@ -1,5 +1,5 @@
 use crate::draw::Color;
-use crate::environment::{EnvironmentStack, Key, Keyable};
+use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable};
 use crate::render::Style;
 use crate::state::*;
 
@@ -61,10 +61,10 @@ pub enum EnvironmentColor {
     UltraThinDark,
 }
 
-impl Keyable for EnvironmentColor {
+impl EnvironmentKeyable for EnvironmentColor {
     type Output = Color;
 
-    fn get(&self, stack: &EnvironmentStack) -> Option<Self::Output> {
+    fn get(&self, stack: &Environment) -> Option<Self::Output> {
         match self {
             EnvironmentColor::Blue => stack.get::<EnvironmentColorBlue>().cloned(),
             EnvironmentColor::Green => stack.get::<EnvironmentColorGreen>().cloned(),
@@ -117,7 +117,7 @@ impl Keyable for EnvironmentColor {
         }
     }
 
-    fn with(&self, value: &Self::Output, stack: &mut EnvironmentStack, f: impl FnOnce(&mut EnvironmentStack)) {
+    fn with(&self, value: &Self::Output, stack: &mut Environment, f: impl FnOnce(&mut Environment)) {
         match self {
             EnvironmentColor::Blue => stack.with::<EnvironmentColorBlue>(value, f),
             EnvironmentColor::Green => stack.with::<EnvironmentColorGreen>(value, f),
@@ -189,7 +189,7 @@ impl Default for EnvironmentColor {
 // ---------------------------------------------------
 
 impl ConvertIntoRead<Color> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut EnvironmentStack, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut Environment, &EnvironmentColor)->Color, EnvironmentColor, Color, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
@@ -199,7 +199,7 @@ impl ConvertIntoRead<Color> for EnvironmentColor {
 }
 
 impl ConvertIntoRead<Style> for EnvironmentColor {
-    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut EnvironmentStack, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = EnvMap1<fn(&mut Environment, &EnvironmentColor)->Style, EnvironmentColor, Style, G>;
 
     fn convert<F: AnyReadState<T=EnvironmentColor> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map_env(f, |env, value| {
@@ -223,291 +223,291 @@ impl<T> IntoColorReadState for T where T: IntoReadState<Color> {
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorBlue;
-impl Key for EnvironmentColorBlue {
+impl EnvironmentKey for EnvironmentColorBlue {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGreen;
-impl Key for EnvironmentColorGreen {
+impl EnvironmentKey for EnvironmentColorGreen {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorIndigo;
-impl Key for EnvironmentColorIndigo {
+impl EnvironmentKey for EnvironmentColorIndigo {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorOrange;
-impl Key for EnvironmentColorOrange {
+impl EnvironmentKey for EnvironmentColorOrange {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPink;
-impl Key for EnvironmentColorPink {
+impl EnvironmentKey for EnvironmentColorPink {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPurple;
-impl Key for EnvironmentColorPurple {
+impl EnvironmentKey for EnvironmentColorPurple {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRed;
-impl Key for EnvironmentColorRed {
+impl EnvironmentKey for EnvironmentColorRed {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTeal;
-impl Key for EnvironmentColorTeal {
+impl EnvironmentKey for EnvironmentColorTeal {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorYellow;
-impl Key for EnvironmentColorYellow {
+impl EnvironmentKey for EnvironmentColorYellow {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray;
-impl Key for EnvironmentColorGray {
+impl EnvironmentKey for EnvironmentColorGray {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray2;
-impl Key for EnvironmentColorGray2 {
+impl EnvironmentKey for EnvironmentColorGray2 {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray3;
-impl Key for EnvironmentColorGray3 {
+impl EnvironmentKey for EnvironmentColorGray3 {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray4;
-impl Key for EnvironmentColorGray4 {
+impl EnvironmentKey for EnvironmentColorGray4 {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray5;
-impl Key for EnvironmentColorGray5 {
+impl EnvironmentKey for EnvironmentColorGray5 {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray6;
-impl Key for EnvironmentColorGray6 {
+impl EnvironmentKey for EnvironmentColorGray6 {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct EnvironmentColorLabel;
-impl Key for EnvironmentColorLabel {
+impl EnvironmentKey for EnvironmentColorLabel {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondaryLabel;
-impl Key for EnvironmentColorSecondaryLabel {
+impl EnvironmentKey for EnvironmentColorSecondaryLabel {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiaryLabel;
-impl Key for EnvironmentColorTertiaryLabel {
+impl EnvironmentKey for EnvironmentColorTertiaryLabel {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorQuaternaryLabel;
-impl Key for EnvironmentColorQuaternaryLabel {
+impl EnvironmentKey for EnvironmentColorQuaternaryLabel {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSystemFill;
-impl Key for EnvironmentColorSystemFill {
+impl EnvironmentKey for EnvironmentColorSystemFill {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondarySystemFill;
-impl Key for EnvironmentColorSecondarySystemFill {
+impl EnvironmentKey for EnvironmentColorSecondarySystemFill {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiarySystemFill;
-impl Key for EnvironmentColorTertiarySystemFill {
+impl EnvironmentKey for EnvironmentColorTertiarySystemFill {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorQuaternarySystemFill;
-impl Key for EnvironmentColorQuaternarySystemFill {
+impl EnvironmentKey for EnvironmentColorQuaternarySystemFill {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPlaceholderText;
-impl Key for EnvironmentColorPlaceholderText {
+impl EnvironmentKey for EnvironmentColorPlaceholderText {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSystemBackground;
-impl Key for EnvironmentColorSystemBackground {
+impl EnvironmentKey for EnvironmentColorSystemBackground {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondarySystemBackground;
-impl Key for EnvironmentColorSecondarySystemBackground {
+impl EnvironmentKey for EnvironmentColorSecondarySystemBackground {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiarySystemBackground;
-impl Key for EnvironmentColorTertiarySystemBackground {
+impl EnvironmentKey for EnvironmentColorTertiarySystemBackground {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSeparator;
-impl Key for EnvironmentColorSeparator {
+impl EnvironmentKey for EnvironmentColorSeparator {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorOpaqueSeparator;
-impl Key for EnvironmentColorOpaqueSeparator {
+impl EnvironmentKey for EnvironmentColorOpaqueSeparator {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorLink;
-impl Key for EnvironmentColorLink {
+impl EnvironmentKey for EnvironmentColorLink {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorDarkText;
-impl Key for EnvironmentColorDarkText {
+impl EnvironmentKey for EnvironmentColorDarkText {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorLightText;
-impl Key for EnvironmentColorLightText {
+impl EnvironmentKey for EnvironmentColorLightText {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct EnvironmentColorAccent;
-impl Key for EnvironmentColorAccent {
+impl EnvironmentKey for EnvironmentColorAccent {
     type Value = Color;
 }
 
 // Material colors theme
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThick;
-impl Key for EnvironmentColorUltraThick {
+impl EnvironmentKey for EnvironmentColorUltraThick {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThick;
-impl Key for EnvironmentColorThick {
+impl EnvironmentKey for EnvironmentColorThick {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegular;
-impl Key for EnvironmentColorRegular {
+impl EnvironmentKey for EnvironmentColorRegular {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThin;
-impl Key for EnvironmentColorThin {
+impl EnvironmentKey for EnvironmentColorThin {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThin;
-impl Key for EnvironmentColorUltraThin {
+impl EnvironmentKey for EnvironmentColorUltraThin {
     type Value = Color;
 }
 
 // Material colors theme light
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThickLight;
-impl Key for EnvironmentColorUltraThickLight {
+impl EnvironmentKey for EnvironmentColorUltraThickLight {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThickLight;
-impl Key for EnvironmentColorThickLight {
+impl EnvironmentKey for EnvironmentColorThickLight {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegularLight;
-impl Key for EnvironmentColorRegularLight {
+impl EnvironmentKey for EnvironmentColorRegularLight {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThinLight;
-impl Key for EnvironmentColorThinLight {
+impl EnvironmentKey for EnvironmentColorThinLight {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThinLight;
-impl Key for EnvironmentColorUltraThinLight {
+impl EnvironmentKey for EnvironmentColorUltraThinLight {
     type Value = Color;
 }
 
 // Material colors theme dark
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThickDark;
-impl Key for EnvironmentColorUltraThickDark {
+impl EnvironmentKey for EnvironmentColorUltraThickDark {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThickDark;
-impl Key for EnvironmentColorThickDark {
+impl EnvironmentKey for EnvironmentColorThickDark {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegularDark;
-impl Key for EnvironmentColorRegularDark {
+impl EnvironmentKey for EnvironmentColorRegularDark {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThinDark;
-impl Key for EnvironmentColorThinDark {
+impl EnvironmentKey for EnvironmentColorThinDark {
     type Value = Color;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThinDark;
-impl Key for EnvironmentColorUltraThinDark {
+impl EnvironmentKey for EnvironmentColorUltraThinDark {
     type Value = Color;
 }

@@ -6,12 +6,12 @@ use crate::widget::{CommonWidget, WidgetSync};
 pub trait Render: CommonWidget + WidgetSync {
     fn render(&mut self, ctx: &mut RenderContext) {
         if let Some(cursor) = self.cursor() {
-            if let Some(env_cursor) = ctx.env_stack.get_mut::<MouseCursor>() {
+            if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
                 *env_cursor = cursor;
             }
         }
 
-        self.sync(ctx.env_stack);
+        self.sync(ctx.env);
         self.foreach_child_mut(&mut |child| {
             child.render(ctx);
         });

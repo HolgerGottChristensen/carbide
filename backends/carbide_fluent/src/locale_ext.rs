@@ -1,20 +1,20 @@
 use icu::locid::{Locale, locale};
-use carbide_core::environment::{EnvironmentStack, Key};
+use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::state::{EnvMap1, IntoReadState, Map1, ReadState};
 use carbide_core::widget::{EnvUpdatingNew2, WidgetExt};
 
 type WithLocale<C, K, V> = EnvUpdatingNew2<C, K, V>;
-type LocaleState = EnvMap1<fn(&mut EnvironmentStack, &i32) -> Locale, i32, Locale, i32>;
+type LocaleState = EnvMap1<fn(&mut Environment, &i32) -> Locale, i32, Locale, i32>;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct LocaleKey;
-impl Key for LocaleKey {
+impl EnvironmentKey for LocaleKey {
     type Value = Locale;
 }
 
 
 pub trait LocaleExt: WidgetExt {
-    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> WithLocale<Self, impl Key<Value=Locale>, impl ReadState<T=Locale>> {
+    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> WithLocale<Self, impl EnvironmentKey<Value=Locale>, impl ReadState<T=Locale>> {
         EnvUpdatingNew2::<Self, LocaleKey, L::Output>::new(locale.into_read_state(), self)
     }
 }

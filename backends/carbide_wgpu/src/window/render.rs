@@ -50,13 +50,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         let logical_dimensions = physical_dimensions.to_logical(scale_factor);
         let dimensions = Dimension::new(logical_dimensions.width, logical_dimensions.height);
 
-        self.with_env_stack(ctx.env_stack, |env_stack, initialized| {
+        self.with_env(ctx.env, |env, initialized| {
             for scene in &mut initialized.scenes {
                 scene.render(&mut RenderContext {
                     render: ctx.render,
                     text: ctx.text,
                     image: ctx.image,
-                    env_stack,
+                    env,
                 });
             }
 
@@ -64,14 +64,14 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env_stack,
+                env,
             });
 
             // Calculate size
             initialized.child.calculate_size(dimensions, &mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env_stack,
+                env,
             });
 
             // Position children
@@ -80,7 +80,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.position_children(&mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env_stack,
+                env,
             });
 
             // Render the children
@@ -92,12 +92,12 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 render: &mut initialized.render_context,
                 text: ctx.text,
                 image: ctx.image,
-                env_stack,
+                env,
             });
 
             if initialized.visible {
                 {
-                    initialized.title.sync(env_stack);
+                    initialized.title.sync(env);
 
                     let current = &*initialized.title.value();
                     if &initialized.inner.title() != current {
@@ -142,7 +142,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 // The system is out of memory, we should probably quit
                 Err(wgpu::SurfaceError::OutOfMemory) => {
                     println!("Swap chain out of memory");
-                    ApplicationManager::get(ctx.env_stack, |manager| {
+                    ApplicationManager::get(ctx.env, |manager| {
                         manager.close();
                     });
                 }

@@ -5,7 +5,7 @@
 //! are using custom mouse cursor render not provided here, then using one of the implementations in
 //! `carbide::backend` should be sufficient.
 
-use crate::environment::Key;
+use crate::environment::EnvironmentKey;
 
 /// This enum specifies cursor render used by internal widgets. For custom widgets using custom
 /// cursor render, you can still use this enum by specifying a numbered custom variant.
@@ -49,6 +49,6 @@ pub enum MouseCursor {
     Custom(u8),
 }
 
-impl Key for MouseCursor {
+impl EnvironmentKey for MouseCursor {
     type Value = MouseCursor;
 }

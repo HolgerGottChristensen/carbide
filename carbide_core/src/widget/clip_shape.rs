@@ -1,4 +1,4 @@
-use carbide::environment::EnvironmentStack;
+use carbide::environment::Environment;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -36,7 +36,7 @@ impl ClipShape<Empty, Empty> {
 }
 
 impl<C: Widget, S: Shape + Clone> WidgetSync for ClipShape<C, S> {
-    fn sync(&mut self, env: &mut EnvironmentStack) {
+    fn sync(&mut self, env: &mut Environment) {
         self.child.sync(env);
         self.shape.sync(env);
     }
@@ -68,7 +68,7 @@ impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
 
 impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        let stencil_triangles = &self.shape.triangles(context.env_stack);
+        let stencil_triangles = &self.shape.triangles(context.env);
 
         context.stencil(stencil_triangles, |this| {
             self.foreach_child_mut(&mut |child| {

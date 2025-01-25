@@ -305,7 +305,7 @@ impl<
                 if self.thumb.is_inside(*position) || self.background.is_inside(*position) {
                     if *self.focus.value() != Focus::Focused {
                         self.focus.set_value(Focus::FocusRequested);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }
@@ -319,7 +319,7 @@ impl<
                 } else {
                     if *self.focus.value() == Focus::Focused {
                         self.focus.set_value(Focus::FocusReleased);
-                        FocusManager::get(ctx.env_stack, |manager| {
+                        FocusManager::get(ctx.env, |manager| {
                             manager.request_focus(Refocus::FocusRequest)
                         });
                     }

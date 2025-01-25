@@ -13,7 +13,7 @@ pub struct GraphCanvas(pub LocalState<Graph>);
 
 impl Context for GraphCanvas {
     fn call(&mut self, context: &mut CanvasContext) {
-        self.0.sync(context.env_stack());
+        self.0.sync(context.env());
         let mut graph = self.0.value_mut();
         context.set_line_width(1.0);
 

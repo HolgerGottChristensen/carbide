@@ -162,17 +162,17 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let (requested_leading_width, requested_trailing_width) = match &mut self.split {
             SplitType::Start(offset) => {
-                offset.sync(ctx.env_stack);
+                offset.sync(ctx.env);
                 (offset.value().clone(), requested_size.width - offset.value().clone())
             },
             SplitType::Percent(percent) => {
-                percent.sync(ctx.env_stack);
+                percent.sync(ctx.env);
                 let leading = requested_size.width * percent.value().clone();
                 let trailing = requested_size.width * (1.0 - percent.value().clone());
                 (leading, trailing)
             }
             SplitType::End(offset) => {
-                offset.sync(ctx.env_stack);
+                offset.sync(ctx.env);
                 (requested_size.width - offset.value().clone(), offset.value().clone())
             },
         };

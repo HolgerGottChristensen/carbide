@@ -16,43 +16,43 @@ fn main() {
                 Text::new(format!("Index: {}", n)),
 
                 Button::new("Push", move |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.push(item(n + 1));
                     });
                 }).frame(80.0, 22.0),
 
                 Button::new("Push 2", move |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.extend(vec![item(n + 1), item(n + 2)])
                     })
                 }).frame(80.0, 22.0),
 
                 Button::new("Pop", |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.pop();
                     })
                 }).frame(80.0, 22.0),
 
                 Button::new("Pop 2", |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.pop_n(2);
                     })
                 }).frame(80.0, 22.0),
 
                 Button::new("Pop all", |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.pop_all();
                     })
                 }).frame(80.0, 22.0),
 
                 Button::new("Replace", move |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.replace(item(n));
                     })
                 }).frame(80.0, 22.0),
 
                 Button::new("Replace all", move |ctx| {
-                    NavigationManager::root(ctx.env_stack, |manager| {
+                    NavigationManager::root(ctx.env, |manager| {
                         manager.replace_all(item(0));
                     })
                 }).frame(80.0, 22.0),

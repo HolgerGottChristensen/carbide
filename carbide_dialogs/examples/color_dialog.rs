@@ -26,7 +26,7 @@ fn main() {
                 Button::new("Open dialog", move |ctx| {
 
                     ColorDialog::new(state.clone(), true)
-                        .open(ctx.env_stack);
+                        .open(ctx.env);
 
                 }).frame(120.0, 22.0)
                     .button_style(BorderedProminentStyle)
