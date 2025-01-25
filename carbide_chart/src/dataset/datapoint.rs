@@ -1,5 +1,5 @@
-use carbide::draw::{Color, Position, Scalar};
-use carbide::render::matrix::{One, Zero};
+use carbide::draw::{Position, Scalar};
+use carbide::render::matrix::Zero;
 use crate::DataColor;
 use crate::dataset::datavalue::DataValue;
 

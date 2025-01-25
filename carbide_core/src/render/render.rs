@@ -1,6 +1,5 @@
 use crate::misc::cursor::MouseCursor;
 use crate::render::RenderContext;
-use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetSync};
 
 /// The render trait is used to get the primitives from a widget. It contains two basic functions.

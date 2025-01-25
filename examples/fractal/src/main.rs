@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use chrono::{Local, Timelike};
 
 use carbide::color::{Color, ColorExt, WHITE};
-use carbide::draw::{Dimension, Position, Rect};
+use carbide::draw::{Dimension, Position};
 use carbide::environment::*;
 use carbide::widget::canvas::*;
 use carbide::widget::*;

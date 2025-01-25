@@ -8,4 +8,3 @@ mod picker_action;
 pub use picker::*;
 pub use tagged::*;
 pub use style::*;
-pub(crate) use picker_selection::PickerSelectionType;

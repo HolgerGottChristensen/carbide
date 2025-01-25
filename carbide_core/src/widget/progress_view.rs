@@ -1,6 +1,4 @@
 use std::time::Duration;
-use carbide::widget::AnyWidget;
-use carbide_core::draw::Rect;
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_macro::carbide_default_builder2;
 

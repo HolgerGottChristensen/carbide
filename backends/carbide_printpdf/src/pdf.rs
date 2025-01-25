@@ -1,23 +1,7 @@
-
-use std::ffi::OsStr;
-use std::fs;
-use std::fs::File;
-use std::io::BufWriter;
-use std::path::Path;
-use std::rc::Rc;
-
-use printpdf::{BuiltinFont, Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
-use printpdf::lopdf::content::Operation;
-
-use carbide_core::draw::{Alignment, Dimension, Position};
-use carbide_core::event::NoopEventSink;
-use carbide_core::layout::{Layout};
-use carbide_core::render::{Render, RenderContext};
-use carbide_core::text::{FontId, FontStyle, FontWeight};
-use carbide_core::widget::{Empty, AnyWidget, WidgetExt};
-//use carbide_core::window::TWindow;
-use crate::image_context::PDFImageContext;
-use crate::render_context::PDFRenderContext;
+use printpdf::{Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point};
+use carbide_core::draw::{Dimension, Position};
+use carbide_core::render::Render;
+use carbide_core::widget::AnyWidget;
 
 pub struct Pdf {
     widgets: Box<dyn AnyWidget>,

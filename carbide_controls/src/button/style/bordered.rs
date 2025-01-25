@@ -1,11 +1,10 @@
 use carbide::color::{ColorExt, TRANSPARENT};
 use carbide::draw::Alignment;
-use carbide::draw::theme::Theme;
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
 use carbide::render::Style;
-use carbide::state::{AnyReadState, Map1, Map2, Map3, Map4, Map5};
-use carbide::widget::{AnyWidget, CornerRadii, EdgeInsets, Gradient, GradientPosition, RoundedRectangle, WidgetExt, ZStack};
+use carbide::state::{AnyReadState, Map1, Map2, Map5};
+use carbide::widget::{AnyWidget, CornerRadii, Gradient, GradientPosition, RoundedRectangle, WidgetExt, ZStack};
 use crate::button::style::ButtonStyle;
 
 #[derive(Copy, Clone, Debug)]

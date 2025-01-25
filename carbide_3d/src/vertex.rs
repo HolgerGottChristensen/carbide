@@ -1,5 +1,5 @@
 use carbide::draw::Color;
-use carbide::render::matrix::{Vector2, Vector3, Vector4, Zero};
+use carbide::render::matrix::{Vector2, Vector3, Zero};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vertex {

@@ -4,7 +4,6 @@ use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{InnerTextContext, TextId};
-use crate::widget::FilterId;
 
 pub struct TriangleRenderContext(pub Vec<Triangle<Position>>);
 impl InnerRenderContext for TriangleRenderContext {

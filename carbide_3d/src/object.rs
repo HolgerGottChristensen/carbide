@@ -1,8 +1,6 @@
 use carbide::render::matrix::{Deg, Euler, Matrix4, SquareMatrix};
 use carbide::state::StateSync;
-use carbide::widget::Empty;
 use crate::material::Material;
-use crate::material::pbr_material::PbrMaterial;
 use crate::mesh::Mesh;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use crate::render3d::Render3d;

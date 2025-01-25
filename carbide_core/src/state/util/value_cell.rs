@@ -9,7 +9,6 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 
 use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
-use crate::state::AnyReadState;
 
 type BorrowFlag = isize;
 

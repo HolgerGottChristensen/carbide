@@ -1,4 +1,4 @@
-use carbide_core::color::{ColorExt, BLACK, WHITE};
+use carbide_core::color::ColorExt;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::state::{AnyState, ReadState};

@@ -1,4 +1,3 @@
-use carbide::widget::WidgetId;
 use serde::Deserialize;
 use carbide::controls::Identifiable;
 

@@ -1,4 +1,3 @@
-use carbide::state::StateSync;
 use crate::draw::InnerImageContext;
 use crate::environment::{EnvironmentStack};
 use crate::event::{Key, ModifierKey};

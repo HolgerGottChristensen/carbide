@@ -1,7 +1,4 @@
-use std::process::{Command, Stdio};
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::widget::{Circle, CornerRadii, HStack, Image, Rectangle, RoundedRectangle, Text, VStack, WidgetExt, ZStack};
-use carbide_printpdf::Pdf;
+use carbide_core::widget::WidgetExt;
 
 fn main() {
     /*let mut pdf = Pdf::new("test_rectangle");

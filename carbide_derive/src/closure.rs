@@ -1,14 +1,13 @@
 use std::collections::hash_map::RandomState;
 use std::collections::HashSet;
 use std::iter::FromIterator;
-use proc_macro2::{Ident, Span};
+use proc_macro2::Ident;
 use quote::ToTokens;
-use carbide_syn::{Error, Expr, ExprClosure, ExprUnary, parse_quote, UnOp, Macro, Token, parse_macro_input};
+use carbide_syn::{Error, Expr, ExprClosure, ExprUnary, parse_quote, UnOp, Macro, Token};
 use carbide_syn::fold::{Fold, fold_expr};
 use carbide_syn::parse::{Parse, ParseStream};
 use carbide_syn::punctuated::Punctuated;
 use carbide_syn::spanned::Spanned;
-use carbide_syn::token::Token;
 use crate::utils::get_crate_name;
 
 pub fn process_a_expr(ast: Expr) -> Expr {

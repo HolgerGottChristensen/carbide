@@ -1,4 +1,4 @@
-use accesskit::{Action, ActionData};
+use accesskit::ActionData;
 use carbide::focus::Focusable;
 use carbide::widget::{CommonWidget, WidgetSync};
 use crate::accessibility::AccessibilityAction;

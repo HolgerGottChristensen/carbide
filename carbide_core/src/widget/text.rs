@@ -1,6 +1,5 @@
 use std::fmt::Debug;
-use accesskit::{Node, NodeId, Point, Rect, Role, Size};
-use smallvec::SmallVec;
+use accesskit::{Node, Point, Rect, Role, Size};
 use carbide::accessibility::AccessibilityContext;
 use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;

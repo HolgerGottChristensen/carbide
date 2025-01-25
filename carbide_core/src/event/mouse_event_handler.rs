@@ -3,7 +3,6 @@ use crate::draw::{InnerImageContext, Position, Scalar};
 use crate::environment::{EnvironmentStack};
 use crate::event::{EventId, ModifierKey, TouchPhase};
 use crate::focus::Focusable;
-use crate::state::StateSync;
 use crate::text::InnerTextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 

@@ -1,4 +1,4 @@
-use carbide_core::draw::{Rect, ImageId, DrawGradient, StrokeDashPattern};
+use carbide_core::draw::{Rect, ImageId};
 use carbide_core::render::LayerId;
 use carbide_core::widget::FilterId;
 use crate::gradient::{Dashes, Gradient};

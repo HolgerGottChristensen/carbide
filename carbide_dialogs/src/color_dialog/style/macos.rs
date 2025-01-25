@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::sync::Arc;
 use crate::color_dialog::style::ColorDialogStyle;
 use carbide::color::{Color, ColorExt, RED};

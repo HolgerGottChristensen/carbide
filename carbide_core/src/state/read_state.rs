@@ -3,9 +3,6 @@ use std::ops::{Deref, DerefMut};
 
 use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::{clone_box, DynClone};
-use carbide::text::FontWeight;
-
-
 use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentStack};
 use crate::focus::Focus;
@@ -13,7 +10,6 @@ use crate::render::Style;
 use crate::state::*;
 use crate::state::state_sync::StateSync;
 use crate::state::util::value_cell::ValueRef;
-use crate::text::FontStyle;
 use crate::widget::{EdgeInsets, Gradient};
 
 // ---------------------------------------------------

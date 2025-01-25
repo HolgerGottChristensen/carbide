@@ -1,6 +1,3 @@
-use carbide_core::draw::{Dimension};
-use carbide_wgpu::{Application, Window};
-
 fn main() {
     /*let mut application = Application::new();
 

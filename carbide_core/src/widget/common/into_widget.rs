@@ -2,7 +2,7 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::render::Style;
 use crate::state::IntoReadState;
 use crate::text::{FontStyle, FontWeight};
-use crate::widget::{Text, Widget, Wrap, WrapState};
+use crate::widget::{Text, Widget, WrapState};
 
 // ---------------------------------------------------
 //  Definitions

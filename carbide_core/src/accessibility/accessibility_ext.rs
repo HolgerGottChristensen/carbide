@@ -1,4 +1,4 @@
-use carbide::widget::{AnyWidget, WidgetExt};
+use carbide::widget::WidgetExt;
 use crate::accessibility::accessibility_hint::AccessibilityHint;
 use crate::accessibility::accessibility_label::AccessibilityLabel;
 use crate::accessibility::accessibility_representation::AccessibilityRepresentation;

@@ -2,7 +2,7 @@ use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::{LocalState, State};
-use carbide_core::widget::{MouseArea, Rectangle, Text, WidgetExt, ZStack};
+use carbide_core::widget::{MouseArea, Rectangle, Text, WidgetExt};
 use carbide_wgpu::{Application, Window};
 
 fn main() {

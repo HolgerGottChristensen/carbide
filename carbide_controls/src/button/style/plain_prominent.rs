@@ -1,8 +1,7 @@
 use carbide::color::{ColorExt, TRANSPARENT};
-use carbide::draw::theme::Theme;
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::focus::Focus;
-use carbide::state::{AnyReadState, Map2, Map3, Map4, Map5};
+use carbide::state::{AnyReadState, Map2, Map4};
 use carbide::widget::{AnyWidget, CornerRadii, EdgeInsets, RoundedRectangle, WidgetExt};
 use crate::button::style::ButtonStyle;
 

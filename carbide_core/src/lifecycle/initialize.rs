@@ -1,5 +1,4 @@
 use carbide::widget::{CommonWidget, WidgetSync};
-use std::any::Any;
 use crate::environment::EnvironmentStack;
 
 pub trait Initialize: CommonWidget + WidgetSync {

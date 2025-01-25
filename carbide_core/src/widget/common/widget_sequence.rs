@@ -2,10 +2,9 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use dyn_clone::{clone_box, clone_trait_object, DynClone};
-use indexmap::IndexMap;
 use carbide::state::AnyReadState;
 use crate::state::{Map1, ReadStateExtNew};
-use crate::widget::{AnyWidget, BuildWidgetIdHasher, Content, Widget, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, Content, Widget, WidgetSync};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {

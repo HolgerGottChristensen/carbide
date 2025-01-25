@@ -1,4 +1,3 @@
-use cgmath::Rad;
 use lyon::math::{Angle, Point};
 
 #[derive(Debug, Copy, Clone, PartialEq)]

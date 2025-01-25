@@ -18,7 +18,6 @@ use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
 use carbide_core::widget::WidgetId;
 use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, Gradient, GradientPosition, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
 use std::fmt::Debug;
-use carbide::state::StateSync;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;

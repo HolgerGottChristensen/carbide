@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use dyn_clone::DynClone;
-use crate::environment::{EnvironmentStack, Key};
+use crate::environment::Key;
 
 #[derive(Debug, Clone, Copy)]
 pub enum CoreEvent {

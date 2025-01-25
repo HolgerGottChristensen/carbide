@@ -1,4 +1,3 @@
-use carbide::impl_state_value;
 use carbide_derive::StateValue;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, StateValue)]

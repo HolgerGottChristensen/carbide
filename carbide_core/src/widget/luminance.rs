@@ -1,4 +1,3 @@
-use carbide::widget::AnyWidget;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

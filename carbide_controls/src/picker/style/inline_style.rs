@@ -7,10 +7,9 @@ use carbide_core::color::{Color, TRANSPARENT};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, Map2};
-use carbide_core::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Sequence, Text, VStack, Widget, WidgetExt, ZStack};
+use carbide_core::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
 use crate::identifiable::AnySelectableWidget;
-use crate::picker::SegmentedStyle;
 
 #[derive(Debug, Clone)]
 pub struct InlineStyle;

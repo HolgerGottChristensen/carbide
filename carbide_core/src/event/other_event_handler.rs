@@ -4,7 +4,6 @@ use carbide::event::CoreEvent;
 use crate::draw::InnerImageContext;
 use crate::environment::{EnvironmentStack};
 use crate::focus::Focusable;
-use crate::state::StateSync;
 use crate::text::InnerTextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 

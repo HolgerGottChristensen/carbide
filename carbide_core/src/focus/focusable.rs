@@ -1,7 +1,6 @@
 use carbide::environment::EnvironmentStack;
 use crate::focus::focus::Focus;
 use crate::focus::{FocusManager, Refocus};
-use crate::state::StateSync;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait Focusable: CommonWidget + WidgetSync {

@@ -9,11 +9,10 @@ mod accessibility;
 
 use crate::window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{EnvironmentColor, EnvironmentStack};
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{IntoReadState, ReadState};
-use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, NavigationStack, Overlay, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, NavigationStack, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use std::fmt::{Debug, Formatter};
-use carbide_core::draw::theme::Theme;
 use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
 use crate::msaa::Msaa;
 

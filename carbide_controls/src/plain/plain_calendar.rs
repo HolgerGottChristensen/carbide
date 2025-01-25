@@ -5,11 +5,10 @@ use std::ops::RangeInclusive;
 
 use chrono::{Datelike, Local, Month, NaiveDate, Weekday};
 use carbide::color::RED;
-use carbide::event::ModifierKey;
 use carbide::widget::MouseAreaActionContext;
 use carbide_core::closure;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{color::TRANSPARENT, Dimension, Position};
+use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::flags::WidgetFlag;
 use carbide_core::render::matrix::num_traits::FromPrimitive;

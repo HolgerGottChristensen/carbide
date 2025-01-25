@@ -6,7 +6,6 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
-use carbide_core::draw::theme::Theme;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::{Initialize, UpdateContext};
 use carbide_core::render::{Render, RenderContext};
@@ -28,7 +27,6 @@ use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_vie
 use crate::vertex::Vertex;
 use crate::globals::{ATLAS_CACHE_BIND_GROUP, ATLAS_CACHE_TEXTURE, BIND_GROUPS, FILTER_BIND_GROUPS, PIPELINES};
 use crate::image_context::BindGroupExtended;
-use crate::msaa::Msaa;
 use crate::pipeline::RenderPipelines;
 use crate::window::initialize::ZOOM;
 use crate::window::initialized_window::InitializedWindow;

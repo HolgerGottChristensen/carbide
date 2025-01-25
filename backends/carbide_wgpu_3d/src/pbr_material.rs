@@ -1,11 +1,7 @@
-use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
-use dashmap::DashMap;
 use encase::ShaderType;
 use once_cell::sync::Lazy;
 use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, ShaderStages, TextureSampleType, TextureViewDimension};
 use carbide_3d::InnerImageContext3d;
-use carbide_3d::material::albedo_component::AlbedoComponent;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;

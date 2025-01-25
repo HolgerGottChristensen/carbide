@@ -16,7 +16,6 @@ use carbide_struct::CarbideStruct;
 use carbide_syn::Expr;
 use crate::carbide_gen_optionals::CarbideGenOptionals;
 use crate::carbide_item::CarbideItem;
-use crate::util::get_crate_name;
 
 #[allow(non_snake_case)]
 #[proc_macro]

@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
-use carbide_media::{Video, VideoPlayer};
+use carbide_media::VideoPlayer;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

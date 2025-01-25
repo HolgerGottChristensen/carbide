@@ -1,12 +1,12 @@
 use carbide::lifecycle::{Update, UpdateContext};
-use carbide::widget::{AnyWidget, EdgeInsets};
+use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Dimension, Position, Rect};
+use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId};
-use carbide_core::widget::canvas::{Canvas, CanvasContext};
+use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
-use crate::controller::{DatasetController, LineController, ScatterController};
+use crate::controller::{DatasetController, LineController};
 use crate::scale::LinearScale;
 
 #[derive(Debug, Clone, Widget)]

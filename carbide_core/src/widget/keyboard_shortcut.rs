@@ -1,6 +1,6 @@
 use std::any::Any;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, OtherEvent};
-use carbide::{event, ModifierWidgetImpl};
+use carbide::ModifierWidgetImpl;
 use carbide::widget::{CommonWidget, Identifiable, Widget, WidgetId};
 use crate::event::{Key, KeyboardEventHandler, ModifierKey, OtherEventContext};
 use crate::widget::{Empty, IntoWidget};

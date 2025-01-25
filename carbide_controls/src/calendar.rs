@@ -1,8 +1,7 @@
 use chrono::{Local, Month, NaiveDate, Weekday};
 use chrono::Datelike;
 use carbide::color::ColorExt;
-use carbide::event::ModifierKey;
-use carbide::widget::{MouseArea, MouseAreaActionContext};
+use carbide::widget::MouseAreaActionContext;
 use carbide_core::closure;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::Dimension;
@@ -10,8 +9,8 @@ use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::state::{LocalState, Map1, Map2, Map4, ReadState, State, ValueState};
 use carbide_core::widget::{AnyWidget, Circle, HStack, Image, Rectangle, Spacer, Text, VGridColumn, WidgetExt, ZStack};
 
-use crate::{ControlsExt, PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
-use crate::button::{Button, PlainStyle};
+use crate::{PlainCalendar, PlainCalendarHeaderDelegate, PlainCalendarHiddenDelegate, PlainCalendarItemDelegate, PlainCalendarTitleDelegate, Selected};
+use crate::button::Button;
 use crate::plain::plain_calendar::DateSelection;
 
 pub struct Calendar;

@@ -1,6 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use cgmath::{InnerSpace, Rad};
-
 //use crate::draw::path_builder::PathBuilder;
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;

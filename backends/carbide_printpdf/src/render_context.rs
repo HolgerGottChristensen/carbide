@@ -1,17 +1,7 @@
-use std::collections::HashMap;
-use std::path::Path;
-use printpdf::{Color, ImageTransform, IndirectFontRef, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfLayerReference, Point, Pt, Px, Rgb};
-use printpdf::lopdf::content::Operation;
-use carbide_core::draw::{Dimension, InnerImageContext, Position, Rect, Texture, TextureFormat};
-use carbide_core::draw::DrawStyle;
-use carbide_core::draw::ImageId;
-use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::render::{CarbideTransform, InnerRenderContext};
-use carbide_core::text::{InnerTextContext, TextId};
-use carbide_core::widget::FilterId;
-use printpdf::Image as PdfImage;
-use carbide_core::image::{DynamicImage, RgbaImage};
-use crate::image_context::{IMAGES, PDFImageContext};
+use printpdf::{Color, IndirectFontRef, PdfLayerReference};
+use carbide_core::draw::Dimension;
+use carbide_core::render::InnerRenderContext;
+use carbide_core::text::InnerTextContext;
 
 pub struct PDFRenderContext {
     /*style_stack: Vec<WGPUStyle>,

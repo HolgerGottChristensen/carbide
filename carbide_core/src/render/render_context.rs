@@ -9,9 +9,9 @@ use crate::draw::shape::triangle::Triangle;
 use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
-use crate::widget::{FilterId, ImageFilter};
+use crate::widget::ImageFilter;
 use crate::environment::{EnvironmentStack};
-use crate::render::layer::{Layer, LayerId, NoopLayer};
+use crate::render::layer::{Layer, LayerId};
 
 pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,

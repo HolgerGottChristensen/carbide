@@ -3,7 +3,7 @@ use carbide::draw::{Dimension, Position, Rect, Scalar};
 use carbide::widget::EdgeInsets;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataSetSequence};
+use crate::{DataColor, DataPoint, DataSet, DataSetSequence};
 use crate::element::Stepped;
 use crate::scale::{Axis, LinearScale, Scale};
 

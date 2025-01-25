@@ -1,9 +1,6 @@
 use crate::accessibility::{Accessibility, AccessibilityContext};
-use crate::color::rgba_bytes;
-use crate::draw::theme::Theme;
-use crate::draw::Color;
 use crate::draw::Dimension;
-use crate::environment::{EnvironmentColor, EnvironmentFontSize, Keyable};
+use crate::environment::{EnvironmentFontSize, Keyable};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::focus::{FocusContext, Focusable};
 use crate::layout::{Layout, LayoutContext};
@@ -12,7 +9,7 @@ use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
 use carbide::ModifierWidgetImpl;
-use carbide::widget::{AnyWidget, Identifiable, WidgetId};
+use carbide::widget::{Identifiable, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]

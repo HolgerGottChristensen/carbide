@@ -1,8 +1,7 @@
 use carbide::{Application, Window, closure};
-use carbide::accessibility::AccessibilityExt;
 use carbide::draw::Dimension;
 use carbide::state::LocalState;
-use carbide::widget::{MouseAreaActionContext, Text, VStack, WidgetExt};
+use carbide::widget::{Text, VStack, WidgetExt};
 use carbide::controls::{Button};
 use carbide::environment::EnvironmentFontSize::LargeTitle;
 

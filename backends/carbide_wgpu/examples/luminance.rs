@@ -1,5 +1,5 @@
 use std::time::Duration;
-use carbide_core::animation::{bounce_in_out, ease_in_out, linear};
+use carbide_core::animation::linear;
 use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;

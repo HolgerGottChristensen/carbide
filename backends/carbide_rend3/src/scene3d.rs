@@ -1,32 +1,6 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::fmt::{Debug, Formatter};
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
-use std::rc::Rc;
-use std::sync::Arc;
-use image::buffer;
-use rend3::{InstanceAdapterDevice, PotentialAdapter, Renderer, ShaderPreProcessor};
-use rend3::types::{DirectionalLightChange, DirectionalLightHandle, glam, MaterialHandle, ObjectHandle, TextureCubeHandle};
-use rend3::types::glam::{Mat3, Mat4, UVec2, Vec3};
-use rend3_routine::base::BaseRenderGraph;
-use rend3_routine::pbr::{PbrMaterial, PbrRoutine, SampleType};
-use rend3_routine::skybox::SkyboxRoutine;
-use rend3_routine::tonemapping::TonemappingRoutine;
-use uuid::Uuid;
-use wgpu::{Texture, TextureFormat, TextureUsages};
-
-use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Color, Dimension, Position, Rect};
-use carbide_core::draw::ImageId;
-use carbide_core::environment::{EnvironmentColor};
-use carbide_core::layout::{Layout, LayoutContext};
-use carbide_core::draw::MODE_IMAGE;
-use carbide_core::render::{Render, RenderContext};
-use carbide_core::widget::*;
-//use carbide_wgpu::{create_bind_group_from_wgpu_texture, with_adapter, with_bind_groups_mut, with_device_queue, with_instance};
-use crate::node3d::{AnyNode3D, Node3D};
-/*
+use std::fmt::Debug;
+use carbide_core::render::Render;
+use carbide_core::widget::*;/*
 #[derive(Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
 pub struct Scene3d {

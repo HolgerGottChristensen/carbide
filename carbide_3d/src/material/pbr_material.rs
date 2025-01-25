@@ -1,9 +1,7 @@
-use std::ops::Deref;
 use carbide::color::WHITE;
-use carbide::draw::Color;
 use carbide::environment::{EnvironmentStack};
 use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
-use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew, StateSync};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
 use crate::material::albedo_component::AlbedoComponent;
 use crate::material::ao_mr_textures::AoMRTextures;
 use crate::material::clearcoat_textures::ClearcoatTextures;

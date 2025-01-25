@@ -3,11 +3,10 @@ use carbide::event::{EventId, KeyboardEvent, KeyboardEventContext, KeyboardEvent
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{IntoReadState, IntoState, ReadState, State, StateSync};
 use carbide::widget::{CommonWidget, Empty, IntoWidget, OverlayManager, Widget, WidgetId};
-use carbide::{CommonWidgetImpl, ModifierWidgetImpl};
+use carbide::CommonWidgetImpl;
 use std::fmt::{Debug, Formatter};
-use carbide::color::RED;
 use carbide::draw::{Color, Dimension, Position};
-use carbide::environment::{EnvironmentColor, EnvironmentStack, IntoColorReadState};
+use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::flags::WidgetFlag;
 use crate::ControlsOverlayKey;
 

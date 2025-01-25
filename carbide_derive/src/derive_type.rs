@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use syn::{Generics, WhereClause};
 
 #[derive(Hash, Eq, PartialEq, Debug)]

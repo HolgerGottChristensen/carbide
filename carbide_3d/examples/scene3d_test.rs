@@ -1,20 +1,15 @@
 use std::collections::HashMap;
-use std::env::current_dir;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
 use tobj::GPU_LOAD_OPTIONS;
 use carbide_3d::{Handedness, Mesh, Object, Scene3d, Vertex};
 use carbide_3d::camera::camera_projection::CameraProjection;
 use carbide_3d::camera::SimpleCamera;
 use carbide_3d::light::DirectionalLight;
-use carbide_3d::material::Material;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::node3d::Node3dExt;
-use carbide_core::color::{BLACK, BLUE, ColorExt, DARK_CHARCOAL, DARK_GREEN, GREEN, GREY, ORANGE, RED, WHITE};
+use carbide_core::color::{BLUE, ColorExt, DARK_CHARCOAL, ORANGE, WHITE};
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::render::matrix::{Deg, Euler, InnerSpace, Matrix4, Point3, Rad, SquareMatrix, Vector3};
-use carbide_core::state::{AnimatedState, Functor, GlobalState, LocalState, ReadState, ReadStateExtNew};
+use carbide_core::render::matrix::{InnerSpace, Matrix4, Point3, Vector3};
+use carbide_core::state::{GlobalState, LocalState, ReadState};
 use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
 

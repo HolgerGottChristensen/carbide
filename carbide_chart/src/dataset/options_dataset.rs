@@ -1,4 +1,3 @@
-use std::io::Read;
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentStack};
 use carbide::state::{IntoReadState, ReadState};

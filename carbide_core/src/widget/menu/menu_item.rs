@@ -1,7 +1,4 @@
-use std::fmt::{Debug, Formatter};
-
-use dyn_clone::DynClone;
-
+use std::fmt::Debug;
 use carbide_core::widget::menu::menu::Menu;
 
 use crate::event::HotKey;

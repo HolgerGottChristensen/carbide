@@ -1,6 +1,6 @@
 use chrono::{Days, Local};
 
-use carbide_controls::{PlainCalendar, PlainDatePicker};
+use carbide_controls::PlainDatePicker;
 use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::widget::WidgetExt;

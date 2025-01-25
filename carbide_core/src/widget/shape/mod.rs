@@ -2,27 +2,23 @@ use lyon::lyon_tessellation::path::path::Builder;
 use lyon::lyon_tessellation::StrokeAlignment;
 use lyon::math::Box2D;
 use lyon::tessellation::{
-    BuffersBuilder, FillOptions, FillTessellator, FillVertex, Side, StrokeOptions,
+    BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeOptions,
     StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers,
 };
 use lyon::tessellation::path::Path;
 
 pub use capsule::*;
-use carbide::draw::Dimension;
 pub use circle::*;
 pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
-
-use crate::color::Color;
-use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, StrokeDashPattern};
-use crate::draw::shape::stroke_vertex::StrokeVertex;
+use crate::draw::{NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::triangle_render_context::TriangleRenderContext;
 use crate::environment::{EnvironmentStack};
-use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
-use crate::text::{InnerTextContext, NOOPTextContext, TextId};
-use crate::widget::{AnyWidget, FilterId};
+use crate::render::{InnerRenderContext, RenderContext};
+use crate::text::{InnerTextContext, NOOPTextContext};
+use crate::widget::AnyWidget;
 use crate::widget::types::{PrimitiveStore, ShapeStyle, StrokeStyle};
 
 mod capsule;

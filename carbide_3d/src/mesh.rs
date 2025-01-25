@@ -1,7 +1,5 @@
-use std::path::Path;
 use tobj::Model;
 use carbide::render::matrix::{InnerSpace, Vector2, Vector3, Zero};
-use carbide::state::ReadStateExtNew;
 use crate::handedness::Handedness;
 use crate::vertex::Vertex;
 

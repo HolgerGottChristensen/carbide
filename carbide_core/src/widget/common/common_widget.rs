@@ -4,7 +4,7 @@ use crate::misc::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::misc::flags::WidgetFlag;
 use crate::focus::Focus;
-use crate::widget::{AnyWidget, WidgetId};
+use crate::widget::AnyWidget;
 
 pub trait CommonWidget: Identifiable {
     fn flag(&self) -> WidgetFlag {

@@ -1,4 +1,3 @@
-use carbide::widget::AnyWidget;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle};
 use carbide_macro::carbide_default_builder2;

@@ -7,7 +7,7 @@ use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{EnvironmentColor};
-use carbide_core::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
+use carbide_core::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyState, IntoReadState, LocalState, Map2, ReadState, ReadStateExtNew, State, StateExtNew, StateSync};

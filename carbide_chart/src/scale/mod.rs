@@ -4,12 +4,11 @@ mod bounds;
 
 use std::fmt::Debug;
 use std::ops::Range;
-use carbide::color::{GREEN, RED, WHITE, YELLOW};
+use carbide::color::{GREEN, RED, YELLOW};
 use carbide::draw::{Alignment, Rect};
 use carbide::environment::EnvironmentStack;
 use carbide::state::{ReadState, StateSync};
-use carbide::widget::EdgeInsets;
-use carbide_core::draw::{Dimension, Position, Scalar};
+use carbide_core::draw::Scalar;
 use carbide_core::widget::canvas::CanvasContext;
 pub use linear_scale::*;
 

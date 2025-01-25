@@ -1,6 +1,6 @@
 use carbide::color::{Color, WHITE};
 use carbide::environment::EnvironmentStack;
-use carbide::render::matrix::{Deg, Euler, InnerSpace, Matrix4, SquareMatrix, Vector3, Vector4, Zero};
+use carbide::render::matrix::{InnerSpace, Matrix4, SquareMatrix, Vector3, Zero};
 use carbide::state::{IntoReadState, StateSync, ReadState};
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use crate::render3d::Render3d;

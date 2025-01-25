@@ -12,7 +12,7 @@ use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
 use carbide::ModifierWidgetImpl;
-use carbide::widget::{AnyWidget, Identifiable, WidgetId};
+use carbide::widget::{Identifiable, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]
