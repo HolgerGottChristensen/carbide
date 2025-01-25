@@ -1,5 +1,4 @@
 use accesskit::{Action, ActionData};
-use carbide::environment::Environment;
 use carbide::focus::Focusable;
 use carbide::widget::{CommonWidget, WidgetSync};
 use crate::accessibility::AccessibilityAction;
@@ -23,7 +22,6 @@ pub trait AccessibilityEventHandler: CommonWidget + WidgetSync + Focusable {
 }
 
 pub struct AccessibilityEventContext<'a, 'b: 'a> {
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
 }
 

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use carbide::animation::AnimationManager;
 use crate::animation::{Animatable, ease_in_out};
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
 
 #[derive(Clone)]

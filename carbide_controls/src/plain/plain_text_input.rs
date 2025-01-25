@@ -3,14 +3,14 @@ use std::ops::Range;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide::animation::AnimationManager;
-use carbide_core::misc::cursor::MouseCursor;
+use carbide_core::cursor::MouseCursor;
 use carbide::draw::Alignment;
-
+use carbide::environment::EnvironmentStack;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use carbide_core::event::{Ime, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
@@ -476,7 +476,7 @@ impl<
             TextInputKeyCommand::JumpToRight => self.jump_to_right(),
             TextInputKeyCommand::JumpSelectToLeft => self.jump_select_to_left(),
             TextInputKeyCommand::JumpSelectToRight => self.jump_select_to_right(),
-            TextInputKeyCommand::Enter => self.enter(ctx.env),
+            TextInputKeyCommand::Enter => self.enter(ctx.env_stack),
             TextInputKeyCommand::Space => self.text(" "),
             TextInputKeyCommand::Text(s, m) => {
                 if s.len() == 0 || s.chars().next().unwrap().is_control() || m.contains(ModifierKey::SUPER) {
@@ -529,7 +529,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn enter(&mut self, _env: &mut Environment) {
+    fn enter(&mut self, _env: &mut EnvironmentStack) {
         self.set_focus(Focus::Unfocused);
     }
 

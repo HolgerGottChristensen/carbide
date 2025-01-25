@@ -1,7 +1,8 @@
 use std::time::Instant;
 use carbide_core::color::{GREEN, RED, WHITE};
 use carbide_core::draw::{Alignment, Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::{EnvironmentColor};
+use carbide_core::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};

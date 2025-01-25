@@ -17,7 +17,7 @@ pub use args::Arg;
 pub use args::LocalizedArg;
 pub use locale_ext::LocaleExt;
 pub use icu::locid::locale;
-use carbide_core::misc::locate_folder;
+use carbide_core::locate_folder;
 
 mod localized_string;
 mod localizable;

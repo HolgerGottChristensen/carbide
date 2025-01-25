@@ -151,7 +151,6 @@ impl<C: Widget> Layout for ThemeManager<C> {
             response = self.child.calculate_size(requested_size, &mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             });
         });
@@ -176,7 +175,6 @@ impl<C: Widget> Layout for ThemeManager<C> {
             self.child.position_children(&mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -196,7 +194,6 @@ impl<C: Widget> Update for ThemeManager<C> {
             self.child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -233,7 +230,6 @@ impl<C: Widget> OtherEventHandler for ThemeManager<C> {
             self.child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -253,7 +249,6 @@ impl<C: Widget> WindowEventHandler for ThemeManager<C> {
             self.child.process_window_event(event, &mut WindowEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -273,7 +268,6 @@ impl<C: Widget> AccessibilityEventHandler for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_accessibility_event(event, &mut AccessibilityEventContext {
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -293,7 +287,6 @@ impl<C: Widget> KeyboardEventHandler for ThemeManager<C> {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -316,7 +309,6 @@ impl<C: Widget> MouseEventHandler for ThemeManager<C> {
             self.child.process_mouse_event(event, &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -337,7 +329,6 @@ impl<C: Widget> Focusable for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_focus_next(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -355,7 +346,6 @@ impl<C: Widget> Focusable for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_focus_previous(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -373,7 +363,6 @@ impl<C: Widget> Focusable for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_focus_request(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -393,7 +382,6 @@ impl<C: Widget> Accessibility for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env_stack, |inner| {
             self.child.process_accessibility(&mut AccessibilityContext {
-                env: ctx.env,
                 env_stack: inner,
                 nodes: ctx.nodes,
                 parent_id: ctx.parent_id,
@@ -422,7 +410,6 @@ impl<C: Widget> Render for ThemeManager<C> {
                 render: ctx.render,
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

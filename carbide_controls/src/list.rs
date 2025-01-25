@@ -11,7 +11,7 @@ use carbide::widget::{AnyWidget, MouseArea, MouseAreaActionContext};
 use carbide::widget::canvas::CanvasContext;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::{EnvironmentColor};
 use carbide_core::event::ModifierKey;
 use carbide_core::state::{
     LocalState, ReadState, State, StateContract,

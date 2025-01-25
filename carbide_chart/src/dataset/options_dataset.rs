@@ -1,6 +1,6 @@
 use std::io::Read;
 use carbide::draw::Scalar;
-use carbide::environment::{Environment, EnvironmentStack};
+use carbide::environment::{EnvironmentStack};
 use carbide::state::{IntoReadState, ReadState};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions};
 use crate::element::Stepped;

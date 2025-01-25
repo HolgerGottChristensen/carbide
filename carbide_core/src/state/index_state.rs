@@ -4,7 +4,7 @@ use std::ops::{Deref, Index, IndexMut};
 
 use carbide_core::state::{AnyState, StateSync};
 
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, ReadState, RMap1, StateContract};
 use crate::state::state::State;
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};

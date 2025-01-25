@@ -1,7 +1,6 @@
 use chrono::{Local, Month, NaiveDate, Weekday};
 use chrono::Datelike;
 use carbide::color::ColorExt;
-use carbide::environment::Environment;
 use carbide::event::ModifierKey;
 use carbide::widget::{MouseArea, MouseAreaActionContext};
 use carbide_core::closure;

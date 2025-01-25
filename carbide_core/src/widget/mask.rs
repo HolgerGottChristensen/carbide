@@ -4,7 +4,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
-use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;

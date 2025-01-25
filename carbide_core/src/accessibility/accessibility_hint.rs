@@ -27,7 +27,6 @@ impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityHint<C, S
         let hint = &*self.hint.value();
 
         let mut child_ctx = AccessibilityContext {
-            env: ctx.env,
             env_stack: ctx.env_stack,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,

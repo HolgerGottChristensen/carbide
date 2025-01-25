@@ -2,7 +2,6 @@ use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::{AnyWidget, EdgeInsets};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position, Rect};
-use carbide_core::environment::Environment;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};

@@ -15,7 +15,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::environment::{Environment, EnvironmentStack, Key};
+use carbide_core::environment::{EnvironmentStack, Key};
 use carbide_core::event::EventSink;
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
@@ -82,7 +82,6 @@ pub struct Application {
     scenes: Scenes,
 
     event_handler: NewEventHandler,
-    environment: Environment,
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     event_loop: EventLoop<CustomEvent>,
@@ -97,17 +96,12 @@ impl Application {
 
         set_event_sink(ProxyEventLoop(event_loop.create_proxy()));
 
-        let environment = Environment::new(
-            Box::new(ProxyEventLoop(event_loop.create_proxy())),
-        );
-
         let event_sink = Arc::new(ProxyEventLoop(event_loop.create_proxy()));
 
         Application {
             id: WidgetId::new(),
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
-            environment,
             environment_stack: EnvironmentStack::new(),
             text_context: TextContext::new(),
             event_loop,
@@ -159,7 +153,6 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment,
             environment_stack: type_map,
             text_context,
             event_loop,
@@ -170,7 +163,6 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment,
             environment_stack: type_map,
             text_context,
             animation_manager: AnimationManager::new(),
@@ -193,7 +185,6 @@ pub struct RunningApplication {
     id: WidgetId,
     scenes: Scenes,
     event_handler: NewEventHandler,
-    environment: Environment,
     environment_stack: EnvironmentStack<'static>,
     text_context: TextContext,
     animation_manager: AnimationManager,
@@ -242,7 +233,7 @@ impl RunningApplication {
         match request {
             RequestRedraw::False => {}
             RequestRedraw::True => {
-                NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.environment, &mut self.environment_stack);
+                NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.environment_stack);
                 self.request_redraw();
             }
             RequestRedraw::IfAnimationsRequested => {
@@ -283,7 +274,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                         env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
                             env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
                                 for scene in &mut self.scenes {
-                                    request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                                    request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, env_stack, self.id);
                                 }
                             })
                         })
@@ -310,7 +301,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                     env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
                         env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
                             env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
-                                request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                                request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env_stack, self.id);
                             })
                         })
                     })

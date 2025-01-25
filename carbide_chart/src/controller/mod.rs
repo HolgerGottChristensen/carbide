@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use carbide::widget::EdgeInsets;
-use carbide_core::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;

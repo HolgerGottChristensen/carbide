@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use carbide::environment::{Environment, EnvironmentStack};
+use carbide::environment::{EnvironmentStack};
 use carbide::render::matrix::{One, Zero};
 use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;

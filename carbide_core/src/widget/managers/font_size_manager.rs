@@ -50,7 +50,6 @@ impl<C: Widget> Layout for FontSizeManager<C> {
             response = self.child.calculate_size(requested_size, &mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             });
         });
@@ -68,7 +67,6 @@ impl<C: Widget> Layout for FontSizeManager<C> {
             self.child.position_children(&mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -81,7 +79,6 @@ impl<C: Widget> Update for FontSizeManager<C> {
             self.child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -104,7 +101,6 @@ impl<C: Widget> OtherEventHandler for FontSizeManager<C> {
             self.child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -117,7 +113,6 @@ impl<C: Widget> WindowEventHandler for FontSizeManager<C> {
             self.child.process_window_event(event, &mut WindowEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -130,7 +125,6 @@ impl<C: Widget> AccessibilityEventHandler for FontSizeManager<C> {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_accessibility_event(event, &mut AccessibilityEventContext {
-                env: ctx.env,
                 env_stack: inner,
             })
         })
@@ -143,7 +137,6 @@ impl<C: Widget> KeyboardEventHandler for FontSizeManager<C> {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -159,7 +152,6 @@ impl<C: Widget> MouseEventHandler for FontSizeManager<C> {
             self.child.process_mouse_event(event, &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -173,7 +165,6 @@ impl<C: Widget> Focusable for FontSizeManager<C> {
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_focus_next(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -184,7 +175,6 @@ impl<C: Widget> Focusable for FontSizeManager<C> {
     fn process_focus_previous(&mut self, ctx: &mut FocusContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_focus_previous(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -195,7 +185,6 @@ impl<C: Widget> Focusable for FontSizeManager<C> {
     fn process_focus_request(&mut self, ctx: &mut FocusContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_focus_request(&mut FocusContext {
-                env: ctx.env,
                 env_stack: inner,
                 focus_count: ctx.focus_count,
                 available: ctx.available,
@@ -208,7 +197,6 @@ impl<C: Widget> Accessibility for FontSizeManager<C> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env_stack, |inner| {
             self.child.process_accessibility(&mut AccessibilityContext {
-                env: ctx.env,
                 env_stack: inner,
                 nodes: ctx.nodes,
                 parent_id: ctx.parent_id,
@@ -230,7 +218,6 @@ impl<C: Widget> Render for FontSizeManager<C> {
                 render: ctx.render,
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack: inner,
             })
         })

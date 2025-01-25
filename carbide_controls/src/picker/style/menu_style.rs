@@ -8,7 +8,7 @@ use carbide_core::draw::Rect;
 use carbide_core::draw::{Alignment, Dimension};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::event::EventId;
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
 use carbide_core::lens;
 use carbide_core::render::Style;

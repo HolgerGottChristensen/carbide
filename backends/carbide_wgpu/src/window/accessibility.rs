@@ -29,7 +29,6 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                             let mut children = SmallVec::<[WidgetId; 8]>::new();
 
                             initialized.child.process_accessibility(&mut AccessibilityContext {
-                                env: ctx.env,
                                 env_stack,
                                 nodes: &mut tree_update,
                                 parent_id: Some(id),
@@ -59,7 +58,6 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
 
                     initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
                         initialized.child.process_accessibility(&mut AccessibilityContext {
-                            env: ctx.env,
                             env_stack,
                             nodes: ctx.nodes,
                             parent_id: Some(initialized.id),

@@ -7,7 +7,6 @@ use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::draw::theme::Theme;
-use carbide_core::environment::Environment;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::{Initialize, UpdateContext};
 use carbide_core::render::{Render, RenderContext};
@@ -59,7 +58,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                     render: ctx.render,
                     text: ctx.text,
                     image: ctx.image,
-                    env: ctx.env,
                     env_stack,
                 });
             }
@@ -68,7 +66,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             });
 
@@ -76,7 +73,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.calculate_size(dimensions, &mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             });
 
@@ -86,7 +82,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.position_children(&mut LayoutContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             });
 
@@ -99,7 +94,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 render: &mut initialized.render_context,
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             });
 
@@ -139,7 +133,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             self.inner.set_cursor(cursor);
             self.mouse_cursor = MouseCursor::Default;
 
-            match self.render_inner(render_passes, uniform_bind_groups, ctx.text, ctx.env, scale_factor) {
+            match self.render_inner(render_passes, uniform_bind_groups, ctx.text, scale_factor) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -175,7 +169,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         });
     }
 
-    fn update_filter_bind_groups(&self, device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, env: &mut Environment, size: PhysicalSize<u32>) {
+    fn update_filter_bind_groups(&self, device: &Device, filter_bind_groups: &mut HashMap<FilterId, BindGroup>, size: PhysicalSize<u32>) {
         let filters = self.render_context.filters();
 
         filter_bind_groups.retain(|id, _| filters.contains_key(id));
@@ -558,7 +552,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, env: &mut Environment, scale_factor: Scalar) -> Result<(), wgpu::SurfaceError> {
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, scale_factor: Scalar) -> Result<(), wgpu::SurfaceError> {
         BIND_GROUPS.with(|bind_groups|  {
             let bind_groups = &*bind_groups.borrow();
 
@@ -573,7 +567,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             Self::update_atlas_cache(&DEVICE, &mut encoder, ctx);
 
             // Update filter bind groups
-            self.update_filter_bind_groups(&DEVICE,  &mut *FILTER_BIND_GROUPS.write().unwrap(), env, size);
+            self.update_filter_bind_groups(&DEVICE,  &mut *FILTER_BIND_GROUPS.write().unwrap(), size);
 
             // Ensure the images are added as bind groups
             //Self::ensure_images_exist_as_bind_groups(device, queue, bind_groups, env);

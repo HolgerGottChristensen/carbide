@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 
 use crate::state::state_sync::StateSync;
 
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, ReadState, StateContract, AnyState, Functor, IntoReadState, RMap1, Fn2, Map1};
 use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 

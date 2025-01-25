@@ -2,7 +2,7 @@ use std::any::{Any, TypeId};
 use carbide::environment::{AnyDebug, Key};
 use carbide::event::CoreEvent;
 use crate::draw::InnerImageContext;
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::focus::Focusable;
 use crate::state::StateSync;
 use crate::text::InnerTextContext;
@@ -31,7 +31,6 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 pub struct OtherEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
 }
 

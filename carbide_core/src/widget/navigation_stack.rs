@@ -199,7 +199,6 @@ impl<K: Key<Value=NavigationManager> + Clone> Update for NavigationStack<K> {
             child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             })
         })
@@ -212,7 +211,6 @@ impl<K: Key<Value=NavigationManager> + Clone> MouseEventHandler for NavigationSt
             child.process_mouse_event(event, &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
                 consumed: ctx.consumed,
@@ -228,7 +226,6 @@ impl<K: Key<Value=NavigationManager> + Clone> KeyboardEventHandler for Navigatio
             child.process_keyboard_event(event, &mut KeyboardEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -244,7 +241,6 @@ impl<K: Key<Value=NavigationManager> + Clone> OtherEventHandler for NavigationSt
             child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             })
         })
@@ -257,7 +253,6 @@ impl<K: Key<Value=NavigationManager> + Clone> WindowEventHandler for NavigationS
             child.process_window_event(event, &mut WindowEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -270,7 +265,6 @@ impl<K: Key<Value=NavigationManager> + Clone> AccessibilityEventHandler for Navi
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         self.with(ctx.env_stack, |env_stack, child| {
             child.process_accessibility_event(event, &mut AccessibilityEventContext {
-                env: ctx.env,
                 env_stack,
             })
         })

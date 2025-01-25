@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::focus::{Focus, Focusable};
 use crate::widget::{CommonWidget, WidgetId, WidgetSync};
 use accesskit::{Action, Node, NodeId, Point, Rect, Role, Size, TreeUpdate};
@@ -11,7 +11,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
     fn role(&self) -> Option<Role> { None }
 
     #[allow(unused_variables)]
-    fn accessibility(&mut self, node: &mut Node, env: &mut Environment) {}
+    fn accessibility(&mut self, node: &mut Node) {}
 
     fn accessibility_create_node(&mut self, ctx: &mut AccessibilityContext) -> Option<Node> {
         if let Some(role) = self.role() {
@@ -77,7 +77,6 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
             let mut children = SmallVec::<[WidgetId; 8]>::new();
 
             let mut child_ctx = AccessibilityContext {
-                env: ctx.env,
                 env_stack: ctx.env_stack,
                 nodes: ctx.nodes,
                 parent_id: Some(self.id()),
@@ -94,7 +93,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
                 child.process_accessibility(&mut child_ctx);
             });
 
-            self.accessibility(&mut node, ctx.env);
+            self.accessibility(&mut node);
 
             node.set_children(
                 children.into_iter()
@@ -117,7 +116,6 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
 }
 
 pub struct AccessibilityContext<'a, 'b: 'a> {
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
     pub nodes: &'a mut dyn AccessibilityUpdate,
     pub parent_id: Option<WidgetId>,

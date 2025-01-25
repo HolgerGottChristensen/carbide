@@ -6,7 +6,7 @@ use swash::scale::image::Content;
 use swash::zeno::{Format, Vector};
 
 use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
-use carbide_core::environment::{Environment, EnvironmentStack};
+use carbide_core::environment::{EnvironmentStack};
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::text::{FontStyle, InnerTextContext, TextId};

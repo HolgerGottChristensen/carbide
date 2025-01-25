@@ -5,7 +5,6 @@ use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::{clone_box, DynClone};
 use carbide::text::FontWeight;
 
-use carbide_core::environment::Environment;
 
 use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize, EnvironmentStack};

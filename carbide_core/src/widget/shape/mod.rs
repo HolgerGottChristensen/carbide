@@ -19,7 +19,7 @@ use crate::draw::{DrawStyle, ImageId, NOOPImageContext, Position, Rect, Scalar, 
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::triangle_render_context::TriangleRenderContext;
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer, RenderContext};
 use crate::text::{InnerTextContext, NOOPTextContext, TextId};
 use crate::widget::{AnyWidget, FilterId};
@@ -35,14 +35,13 @@ pub trait Shape: AnyWidget + 'static {
     fn get_triangle_store_mut(&mut self) -> &mut PrimitiveStore;
     fn get_stroke_style(&self) -> StrokeStyle;
     fn get_shape_style(&self) -> ShapeStyle;
-    fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
+    fn triangles(&mut self, env: &mut EnvironmentStack) -> Vec<Triangle<Position>> {
         let mut geom = TriangleRenderContext(vec![]);
         self.render(&mut RenderContext {
                     render: &mut geom,
                     text: &mut NOOPTextContext,
                     image: &mut NOOPImageContext,
-            env,
-            env_stack: &mut EnvironmentStack::new(),
+            env_stack: env,
         });
 
         geom.0

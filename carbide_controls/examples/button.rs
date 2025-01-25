@@ -1,8 +1,8 @@
-use carbide_controls::{AutomaticStyle, ControlsExt, EnabledState};
+use carbide_controls::{ControlsExt, EnabledState};
 use carbide_controls::button::{BorderedProminentStyle, BorderedStyle, Button, PlainProminentStyle, PlainStyle};
 use carbide_core::accessibility::AccessibilityExt;
 use carbide_core::closure;
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{AutomaticStyle, Dimension};
 use carbide_core::event::{Key, ModifierKey};
 use carbide_core::state::{LocalState, ReadStateExtNew, State};
 use carbide_core::widget::*;

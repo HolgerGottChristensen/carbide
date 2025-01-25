@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, Ordering};
 use image::DynamicImage;
-use carbide::environment::Environment;
 use carbide::text::TextStyle;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentStack;

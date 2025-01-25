@@ -1,5 +1,5 @@
+use carbide::environment::EnvironmentStack;
 use carbide_core::draw::{Position, Scalar};
-use carbide_core::environment::Environment;
 use carbide_core::widget::canvas::{CanvasContext, LineCap, LineJoin};
 use crate::element::cubic_interpolation_mode::CubicInterpolationMode;
 use crate::element::Element;
@@ -28,7 +28,7 @@ impl Element for Line {
         self.position.y
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment) {
+    fn draw(&self, ctx: &mut CanvasContext, env: &mut EnvironmentStack) {
         todo!()
     }
 }

@@ -19,7 +19,7 @@ use wgpu::{Texture, TextureFormat, TextureUsages};
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position, Rect};
 use carbide_core::draw::ImageId;
-use carbide_core::environment::{Environment, EnvironmentColor};
+use carbide_core::environment::{EnvironmentColor};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};

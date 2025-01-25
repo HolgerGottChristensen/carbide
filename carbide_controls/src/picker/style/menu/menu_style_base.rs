@@ -8,7 +8,7 @@ use std::fmt::{Debug, Formatter};
 use carbide::color::RED;
 use carbide::draw::{Color, Dimension, Position};
 use carbide::environment::{EnvironmentColor, EnvironmentStack, IntoColorReadState};
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use crate::ControlsOverlayKey;
 
 #[derive(Clone, Widget)]

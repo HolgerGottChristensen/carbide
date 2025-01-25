@@ -2,11 +2,11 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use dyn_clone::DynClone;
 use rend3::Renderer;
-use carbide_core::environment::Environment;
+use carbide::environment::EnvironmentStack;
 use carbide_core::state::StateSync;
 
 pub trait AnyNode3D: DynClone + 'static {
-    fn update(&mut self, renderer: &Arc<Renderer>, env: &mut Environment);
+    fn update(&mut self, renderer: &Arc<Renderer>, env: &mut EnvironmentStack);
 }
 
 dyn_clone::clone_trait_object!(AnyNode3D);

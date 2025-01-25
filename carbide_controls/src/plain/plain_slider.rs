@@ -7,7 +7,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventHandler};
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};

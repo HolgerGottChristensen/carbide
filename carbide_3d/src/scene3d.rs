@@ -58,14 +58,13 @@ impl<C: Node3dSequence, V: ReadState<T=Matrix4<f32>>> Render for Scene3d<C, V> {
             manager.request_animation_frame();
         });
 
-        ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env, env_stack| {
+        ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env_stack| {
             self.context.start();
 
             self.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
                     render: &mut *self.context,
                     image: &mut *self.image_context,
-                    env,
                     env_stack,
                 });
             });

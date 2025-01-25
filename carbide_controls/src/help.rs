@@ -1,6 +1,7 @@
 use std::fmt::{Debug};
 use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
+use carbide::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::{CommonWidgetImpl};
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::event::{MouseEvent, MouseEventHandler};

@@ -116,7 +116,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> Update for Overlay<K, C> {
             let inner_ctx = &mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             };
 
@@ -135,7 +134,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> MouseEventHandler for Over
             let inner_ctx = &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
                 consumed: ctx.consumed,
@@ -161,7 +159,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> KeyboardEventHandler for O
             let inner_ctx = &mut KeyboardEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -186,7 +183,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> OtherEventHandler for Over
             let inner_ctx = &mut OtherEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
             };
 
@@ -208,7 +204,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> WindowEventHandler for Ove
             let inner_ctx = &mut WindowEventContext {
                 text: ctx.text,
                 image: ctx.image,
-                env: ctx.env,
                 env_stack,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -230,7 +225,6 @@ impl<K: Key<Value=OverlayManager> + Clone, C: Widget> AccessibilityEventHandler 
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         self.with(ctx.env_stack, |env_stack, inner| {
             let inner_ctx = &mut AccessibilityEventContext {
-                env: ctx.env,
                 env_stack,
             };
 

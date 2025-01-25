@@ -6,7 +6,7 @@ use chrono::Local;
 
 use carbide_core::asynchronous::Timer;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{Environment, EnvironmentFontSize};
+use carbide_core::environment::{EnvironmentFontSize};
 use carbide_core::event::ModifierKey;
 use carbide_core::state::Map1;
 use carbide_core::widget::{Text, VStack, WidgetExt};

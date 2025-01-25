@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, StateSync, ReadState, StateContract, ValueRef};
 
 #[derive(Debug, Clone)]

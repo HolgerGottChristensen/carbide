@@ -1,5 +1,5 @@
 use icu::locid::{Locale, locale};
-use carbide_core::environment::{Environment, EnvironmentStack, Key};
+use carbide_core::environment::{EnvironmentStack, Key};
 use carbide_core::state::{EnvMap1, IntoReadState, Map1, ReadState};
 use carbide_core::widget::{EnvUpdatingNew2, WidgetExt};
 

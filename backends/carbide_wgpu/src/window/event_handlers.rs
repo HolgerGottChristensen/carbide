@@ -15,7 +15,6 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
                     let new_ctx = &mut MouseEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env: ctx.env,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
                         consumed: ctx.consumed,
@@ -41,7 +40,6 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
             Window::Initialized(initialized) => {
                 initialized.with_env_stack(ctx.env_stack, |env_stack, initialized| {
                     let new_ctx = &mut AccessibilityEventContext {
-                        env: ctx.env,
                         env_stack,
                     };
 
@@ -68,7 +66,6 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
                     let new_ctx = &mut KeyboardEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env: ctx.env,
                         env_stack,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
@@ -96,7 +93,6 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                     let new_ctx = &mut OtherEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env: ctx.env,
                         env_stack,
                     };
 
@@ -174,7 +170,6 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                     let new_ctx = &mut WindowEventContext {
                         text: ctx.text,
                         image: ctx.image,
-                        env: ctx.env,
                         env_stack,
                         is_current: &is_current,
                         window_id: ctx.window_id,

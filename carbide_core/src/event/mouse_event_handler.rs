@@ -1,6 +1,6 @@
 use std::time::Duration;
 use crate::draw::{InnerImageContext, Position, Scalar};
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::event::{EventId, ModifierKey, TouchPhase};
 use crate::focus::Focusable;
 use crate::state::StateSync;
@@ -35,7 +35,6 @@ pub trait MouseEventHandler: CommonWidget + WidgetSync + Focusable {
 pub struct MouseEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
     pub is_current: &'a bool,
     pub window_id: &'a u64,
     pub consumed: &'a mut bool,

@@ -1,5 +1,4 @@
 use carbide::widget::EdgeInsets;
-use carbide_core::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::scale::{Axis, LinearScale, Scale};

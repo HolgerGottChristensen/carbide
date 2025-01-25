@@ -4,21 +4,9 @@ use dyn_clone::DynClone;
 
 use carbide_core::widget::menu::menu::Menu;
 
-use crate::environment::Environment;
 use crate::event::HotKey;
 use crate::widget::WidgetId;
 
-pub trait MenuAction: Fn(&mut Environment)->() + DynClone {}
-
-impl<I> MenuAction for I where I: Fn(&mut Environment)->() + Clone {}
-
-dyn_clone::clone_trait_object!(MenuAction);
-
-impl Debug for Box<dyn MenuAction> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("MenuAction").finish()
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum MenuItem {
@@ -28,7 +16,7 @@ pub enum MenuItem {
         hotkey: Option<HotKey>,
         enabled: bool,
         selected: bool,
-        action: Box<dyn MenuAction>,
+        //action: Box<dyn MenuAction>,
     },
     Separator,
     SubMenu {
@@ -48,7 +36,7 @@ impl MenuItem {
             hotkey: None,
             enabled: true,
             selected,
-            action: Box::new(|_| {})
+            //action: Box::new(|_| {})
         }
     }
 
@@ -77,7 +65,7 @@ impl MenuItem {
         self
     }
 
-    pub fn action(mut self, action: Box<dyn MenuAction>) -> Self {
+    /*pub fn action(mut self, action: Box<dyn MenuAction>) -> Self {
         let a = action;
         match &mut self {
             MenuItem::Item { action, .. } => {
@@ -88,5 +76,5 @@ impl MenuItem {
         }
 
         self
-    }
+    }*/
 }

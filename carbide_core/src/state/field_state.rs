@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide_core::state::AnyState;
 
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, StateContract};
 use crate::state::{ReadState, State};
 use crate::state::util::value_cell::{ValueRef, ValueRefMut};

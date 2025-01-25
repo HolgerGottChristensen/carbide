@@ -1,4 +1,5 @@
-use carbide_controls::Button;
+use carbide_controls::button::{BorderedProminentStyle, Button};
+use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentFontSize;
@@ -18,7 +19,8 @@ fn main() {
         VStack::new((
             Text::new(switch.clone())
                 .font_size(EnvironmentFontSize::Title),
-            Button::new_primary("Change", closure!(|_| { *$switch = !*$switch; }))
+            Button::new("Change", closure!(|_| { *$switch = !*$switch; }))
+                .button_style(BorderedProminentStyle)
                 .frame(96.0, 22.0),
         )).spacing(10.0)
             .on_change(switch.clone(), closure!(|old, new| {

@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 
 pub trait WidgetSync {
     #[allow(unused_variables)]

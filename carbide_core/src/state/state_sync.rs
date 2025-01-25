@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 
 pub trait StateSync {
     /// This will get called automatically if the field storing this is marked #\[state\] and is

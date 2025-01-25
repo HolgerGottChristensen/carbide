@@ -9,7 +9,6 @@ use carbide::lifecycle::InitializationContext;
 use carbide::widget::Identifiable;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
-use crate::environment::Environment;
 use crate::event::{AccessibilityEventHandler, OtherEvent, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
@@ -203,8 +202,8 @@ impl<T: AnyWidget + ?Sized> Initialize for Box<T> {
 }
 
 impl<T: AnyWidget + ?Sized> Accessibility for Box<T> {
-    fn accessibility(&mut self, builder: &mut Node, env: &mut Environment) {
-        self.deref_mut().accessibility(builder, env);
+    fn accessibility(&mut self, builder: &mut Node) {
+        self.deref_mut().accessibility(builder);
     }
 
     fn role(&self) -> Option<Role> {

@@ -4,7 +4,6 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
-use crate::environment::Environment;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::StateSync;
@@ -70,7 +69,7 @@ impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
 
 impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        let stencil_triangles = &self.shape.triangles(context.env);
+        let stencil_triangles = &self.shape.triangles(context.env_stack);
 
         context.stencil(stencil_triangles, |this| {
             self.foreach_child_mut(&mut |child| {

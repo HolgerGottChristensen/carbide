@@ -4,7 +4,7 @@ use crate::{EnabledState};
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
@@ -97,7 +97,6 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
         let mut nodes = SmallVec::<[AccessibilityNode; 1]>::new();
 
         let mut child_ctx = AccessibilityContext {
-            env: ctx.env,
             env_stack: ctx.env_stack,
             nodes: &mut nodes,
             parent_id: Some(self.id()),

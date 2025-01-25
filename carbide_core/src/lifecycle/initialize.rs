@@ -1,4 +1,3 @@
-use carbide::environment::Environment;
 use carbide::widget::{CommonWidget, WidgetSync};
 use std::any::Any;
 use crate::environment::EnvironmentStack;

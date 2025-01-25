@@ -7,7 +7,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::environment::{Environment, EnvironmentColor};
+use crate::environment::{EnvironmentColor};
 use crate::state::AnimatedState;
 use crate::widget::{Circle, CommonWidget, Empty, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;

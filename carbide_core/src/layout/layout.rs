@@ -1,5 +1,5 @@
 use crate::draw::{Dimension, InnerImageContext};
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::text::InnerTextContext;
 use crate::widget::CommonWidget;
 
@@ -56,6 +56,5 @@ pub trait Layout: CommonWidget {
 pub struct LayoutContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
 }

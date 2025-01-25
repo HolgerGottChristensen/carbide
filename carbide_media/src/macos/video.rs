@@ -1,5 +1,6 @@
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
+use std::sync::Arc;
 use std::time::Duration;
 use bitflags::Flags;
 use cocoa::base::{id, nil};
@@ -7,12 +8,13 @@ use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSInteger, NSS
 use objc::{msg_send, class, sel, sel_impl};
 use objc::runtime::BOOL;
 use carbide::animation::AnimationManager;
+use carbide::environment::EnvironmentStack;
+use carbide::event::{EventSink, NoopEventSink};
 use carbide::layout::LayoutContext;
 use carbide::scene::SceneManager;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
-use carbide_core::environment::Environment;
 use carbide_core::event::{CoreEvent, HasEventSink, Key, KeyboardEvent, KeyboardEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::draw::MODE_IMAGE;
@@ -116,7 +118,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if &*self.video_id_state.value() != &self.video_id {
-            self.change_video(ctx.env);
+            self.change_video(ctx.env_stack);
         }
 
         self.update_rate();
@@ -318,7 +320,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
         }
     }
 
-    fn change_video(&mut self, env: &mut Environment) {
+    fn change_video(&mut self, env: &mut EnvironmentStack) {
         println!("Change video to: {:?}", &*self.video_id_state.value());
 
         // add observer
@@ -341,7 +343,13 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
 
                 let duration = self.duration.clone();
                 let buffering = self.buffering.clone();
-                let sink = env.event_sink();
+
+                let sink = if let Some(sink) = env.get::<dyn EventSink>().cloned() {
+                    sink
+                } else {
+                    Arc::new(NoopEventSink)
+                };
+
                 let listener = listener(move |key_path, map| {
                     let mut duration = duration.clone();
                     let mut buffering = buffering.clone();

@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use dyn_clone::DynClone;
 use carbide::draw::Color;
-use carbide::environment::{Environment, EnvironmentStack};
+use carbide::environment::{EnvironmentStack};
 use carbide::render::Layer;
 use carbide::render::matrix::{Matrix4, Vector3};
 use crate::camera::Camera;
@@ -12,7 +12,6 @@ use crate::mesh::Mesh;
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
     pub(crate) image: &'a mut dyn InnerImageContext3d,
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
 
 }

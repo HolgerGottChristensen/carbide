@@ -10,14 +10,13 @@ use crate::render::CarbideTransform;
 
 use crate::text::{InnerTextContext, TextId};
 use crate::widget::{FilterId, ImageFilter};
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::render::layer::{Layer, LayerId, NoopLayer};
 
 pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
 }
 
@@ -163,9 +162,9 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.text(text, self.text);
     }
 
-    pub fn layer<R, F: FnOnce(Layer, &mut Environment, &mut EnvironmentStack) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
+    pub fn layer<R, F: FnOnce(Layer, &mut EnvironmentStack) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
         let layer = self.render.layer(layer_id, bounding_box.dimension);
-        let res = f(layer, self.env, self.env_stack);
+        let res = f(layer, self.env_stack);
         self.render.render_layer(layer_id, bounding_box);
 
         res

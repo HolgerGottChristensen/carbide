@@ -1,5 +1,4 @@
 use carbide::environment::EnvironmentStack;
-use crate::environment::Environment;
 use crate::focus::focus::Focus;
 use crate::focus::{FocusManager, Refocus};
 use crate::state::StateSync;
@@ -89,7 +88,6 @@ pub trait Focusable: CommonWidget + WidgetSync {
 }
 
 pub struct FocusContext<'a, 'b: 'a> {
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
     pub focus_count: &'a mut u32,
     pub available: &'a mut bool,

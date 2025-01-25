@@ -1,6 +1,6 @@
 use carbide::state::StateSync;
 use crate::draw::InnerImageContext;
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::event::{Key, ModifierKey};
 use crate::focus::Focusable;
 use crate::text::InnerTextContext;
@@ -53,7 +53,6 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
 pub struct KeyboardEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
     pub is_current: &'a bool,
     pub window_id: &'a u64,

@@ -27,7 +27,6 @@ impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityLabel<C, 
         let label = &*self.label.value();
 
         let mut child_ctx = AccessibilityContext {
-            env: ctx.env,
             env_stack: ctx.env_stack,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,

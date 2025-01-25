@@ -1,6 +1,6 @@
 use std::time::Duration;
-
-use carbide_controls::Button;
+use carbide_controls::button::{BorderedProminentStyle, Button};
+use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtTransition, State};
@@ -23,16 +23,17 @@ fn main() {
                 .frame(60.0, 60.0)
                 .offset(transition, 0.0),
             HStack::new((
-                Button::new_primary("Left", closure!(|_| {
+                Button::new("Left", closure!(|_| {
                     *$offset = -120.0;
                 }))
                     .frame(96.0, 22.0),
-                Button::new_primary("Right", closure!(|_| {
+                Button::new("Right", closure!(|_| {
                     *$offset = 120.0;
                 }))
                     .frame(96.0, 22.0),
             )).spacing(10.0),
         )).spacing(10.0)
+            .button_style(BorderedProminentStyle)
     ));
 
 

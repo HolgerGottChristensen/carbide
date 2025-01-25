@@ -12,6 +12,7 @@ use std::num::ParseFloatError;
 use std::str::FromStr;
 use carbide_controls::picker::{MenuStyle, Picker};
 use carbide_controls::toggle::{CheckboxStyle, Toggle};
+use carbide_core::mouse_position::MousePositionEnvironmentExt;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum DrawType {

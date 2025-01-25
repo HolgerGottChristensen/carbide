@@ -14,7 +14,6 @@ use crate::accessibility::{Accessibility, AccessibilityAction};
 use crate::CommonWidgetImpl;
 use crate::misc::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext, AccessibilityEventHandler, OtherEventHandler};
 use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
@@ -218,7 +217,6 @@ impl<
                 if *self.is_pressed.value() {
                     self.is_pressed.set_value(false);
                     self.click.call(MouseAreaActionContext {
-                        env: ctx.env,
                         env_stack: ctx.env_stack,
                         modifier_key: ModifierKey::empty()
                     });
@@ -242,7 +240,6 @@ impl<
     fn handle_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         if event.is::<KeyboardShortcutPressed>() {
             self.click.call(MouseAreaActionContext {
-                env: ctx.env,
                 env_stack: ctx.env_stack,
                 modifier_key: ModifierKey::empty()
             });
@@ -287,14 +284,12 @@ impl<
                 if self.is_inside(*mouse_position) {
                     //self.request_focus(ctx.env);
                     self.click.call(MouseAreaActionContext {
-                        env: ctx.env,
                         env_stack: ctx.env_stack,
                         modifier_key: *modifier
                     });
                 } else {
                     //self.set_focus(Focus::Unfocused);
                     self.click_outside.call(MouseAreaActionContext {
-                        env: ctx.env,
                         env_stack: ctx.env_stack,
                         modifier_key: *modifier
                     });
@@ -340,7 +335,6 @@ impl<
         match event.action {
             AccessibilityAction::Click => {
                 self.click.call(MouseAreaActionContext {
-                    env: ctx.env,
                     env_stack: ctx.env_stack,
                     modifier_key: ModifierKey::empty()
                 });
@@ -372,7 +366,6 @@ impl<
         let mut nodes = SmallVec::<[AccessibilityNode; 1]>::new();
 
         let mut child_ctx = AccessibilityContext {
-            env: ctx.env,
             env_stack: ctx.env_stack,
             nodes: &mut nodes,
             parent_id: Some(self.id()),
@@ -482,7 +475,6 @@ impl<I> Action for I where I: Fn(MouseAreaActionContext<'_, '_>) + Clone + 'stat
 
 /// The context given when handling on click actions.
 pub struct MouseAreaActionContext<'a, 'b: 'a> {
-    pub env: &'a mut Environment,
     pub env_stack: &'a mut EnvironmentStack<'b>,
     pub modifier_key: ModifierKey
 }

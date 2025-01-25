@@ -1,8 +1,8 @@
 use carbide::accessibility::{Accessibility, AccessibilityContext};
 use carbide::color::RED;
-use carbide_core::misc::cursor::MouseCursor;
+use carbide_core::cursor::MouseCursor;
 use carbide::draw::{AutomaticStyle, Dimension, Position};
-use carbide_core::misc::flags::WidgetFlag;
+use carbide_core::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, ReadStateExtNew, State};
@@ -109,7 +109,6 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
         let enabled = *self.enabled.value();
 
         self.child.process_accessibility(&mut AccessibilityContext {
-            env: ctx.env,
             env_stack: ctx.env_stack,
             nodes: ctx.nodes,
             parent_id: ctx.parent_id,

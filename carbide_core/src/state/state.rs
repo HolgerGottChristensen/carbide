@@ -1,7 +1,6 @@
 
 use std::ops::{Deref, DerefMut};
 use dyn_clone::clone_box;
-use carbide_core::environment::Environment;
 use crate::environment::EnvironmentStack;
 use crate::state::*;
 use crate::state::ReadState;

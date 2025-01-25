@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use crate::environment::{Environment, EnvironmentStack};
+use crate::environment::{EnvironmentStack};
 use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, State, StateContract, ValueRef, ValueRefMut};
 
 #[derive(Clone, Debug)]

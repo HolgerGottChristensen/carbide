@@ -4,8 +4,6 @@ use std::time::Duration;
 pub use timer::Timer;
 pub use task::Task;
 
-use crate::environment::Environment;
-
 pub mod thread_task;
 mod timer;
 mod task;
@@ -158,6 +156,7 @@ impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
 #[cfg(feature = "tokio")]
 use std::sync::OnceLock;
 use crate::draw::InnerImageContext;
+use crate::environment::EnvironmentStack;
 use crate::text::InnerTextContext;
 
 #[cfg(feature = "tokio")]
@@ -198,8 +197,8 @@ pub async fn sleep(duration: Duration) {
     std::thread::sleep(duration)
 }
 
-pub struct AsyncContext<'a> {
+pub struct AsyncContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
-    pub env: &'a mut Environment,
+    pub env_stack: &'a mut EnvironmentStack<'b>,
 }

@@ -14,7 +14,6 @@ use crate::draw::Color;
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::svg_path_builder::SVGPathBuilder;
-use crate::environment::Environment;
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
@@ -101,9 +100,6 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         pos - self.position
     }
 
-    pub fn env(&mut self) -> &mut Environment {
-        self.render_context.env
-    }
     pub fn env_stack(&mut self) -> &mut EnvironmentStack<'c> {
         self.render_context.env_stack
     }

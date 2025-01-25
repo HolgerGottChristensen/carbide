@@ -10,14 +10,13 @@ use carbide::environment::EnvironmentStack;
 use carbide::state::{ReadState, StateSync};
 use carbide::widget::EdgeInsets;
 use carbide_core::draw::{Dimension, Position, Scalar};
-use carbide_core::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 pub use linear_scale::*;
 
 pub trait Scale: Clone + Debug + 'static {
     fn axis(&self) -> Axis;
 
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment, area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, env: &mut EnvironmentStack, area: Rect) {
         self.draw_grid(ctx, area);
         self.draw_border(ctx, area);
     }
