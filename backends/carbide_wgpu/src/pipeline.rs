@@ -5,14 +5,14 @@ use crate::globals::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, 
 use crate::msaa::Msaa;
 
 pub struct RenderPipelines {
-    pub(crate) final_render_pipeline: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_no_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_add_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_in_mask: wgpu::RenderPipeline,
-    pub(crate) render_pipeline_remove_mask: wgpu::RenderPipeline,
+    pub(crate) final_render_pipeline: RenderPipeline,
+    pub(crate) render_pipeline_no_mask: RenderPipeline,
+    pub(crate) render_pipeline_add_mask: RenderPipeline,
+    pub(crate) render_pipeline_in_mask: RenderPipeline,
+    pub(crate) render_pipeline_remove_mask: RenderPipeline,
 
     /// This is used when applying normal filter, or in the second pass of the of the two pass filter
-    pub(crate) render_pipeline_in_mask_filter: wgpu::RenderPipeline,
+    pub(crate) render_pipeline_in_mask_filter: RenderPipeline,
 }
 
 

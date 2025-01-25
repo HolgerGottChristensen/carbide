@@ -5,11 +5,10 @@ use std::io::Read;
 use std::str::FromStr;
 
 use fluent::FluentResource;
-use icu::locid::{Locale};
+use icu::locid::Locale;
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
 
-use carbide_core::{impl_state_value, locate_folder};
 pub use localized_string::*;
 pub use localized_datetime::*;
 pub use localized_number::*;
@@ -18,6 +17,7 @@ pub use args::Arg;
 pub use args::LocalizedArg;
 pub use locale_ext::LocaleExt;
 pub use icu::locid::locale;
+use carbide_core::misc::locate_folder;
 
 mod localized_string;
 mod localizable;

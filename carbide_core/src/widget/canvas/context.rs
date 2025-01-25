@@ -15,6 +15,7 @@ use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::environment::Environment;
+use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::state::ReadStateExtNew;
@@ -96,7 +97,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn mouse_position(&self) -> Position {
-        let pos = self.render_context.env.mouse_position();
+        let pos = self.render_context.env_stack.mouse_position();
         pos - self.position
     }
 

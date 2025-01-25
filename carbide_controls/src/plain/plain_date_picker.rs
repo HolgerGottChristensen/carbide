@@ -7,7 +7,7 @@ use carbide_core::environment::{Environment, EnvironmentColor};
 use carbide_core::event::{
     KeyboardEvent, KeyboardEventHandler, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext
 };
-use carbide_core::flags::WidgetFlag;
+use carbide_core::misc::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Refocus};
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::lifecycle::{Update, UpdateContext};

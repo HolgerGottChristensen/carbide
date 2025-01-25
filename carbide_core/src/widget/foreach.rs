@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentStack;
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, StateSync, ValueState};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;

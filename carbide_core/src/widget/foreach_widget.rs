@@ -1,5 +1,5 @@
 use crate::draw::{Dimension, Position};
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::state::StateSync;
 use crate::widget::{BuildWidgetIdHasher, CommonWidget, Content, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;

@@ -17,6 +17,7 @@ use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::{Environment, EnvironmentStack};
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, WindowEventContext};
 use carbide_core::focus::{FocusContext, FocusManager, Refocus};
+use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::text::InnerTextContext;
@@ -87,6 +88,10 @@ impl NewEventHandler {
     pub fn next_id(&mut self) -> EventId {
         self.event_id += 1;
         EventId::new(self.event_id)
+    }
+
+    pub fn mouse_position(&self) -> Position {
+        self.mouse_position
     }
 
     pub fn handle_refocus(target: &mut [Box<dyn AnyScene>], focus_manager: &mut FocusManager, env: &mut Environment, env_stack: &mut EnvironmentStack) {
@@ -740,7 +745,9 @@ impl NewEventHandler {
             return RequestRedraw::False;
         }
 
-        env.set_mouse_position(self.mouse_position);
+        if let Some(position) = env_stack.get_mut::<MousePositionKey>() {
+            *position = self.mouse_position;
+        }
 
         let delta_xy = self.mouse_position - last_mouse_xy;
 

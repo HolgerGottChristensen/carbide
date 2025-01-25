@@ -3,14 +3,14 @@ use std::ops::Range;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide::animation::AnimationManager;
-use carbide::cursor::MouseCursor;
+use carbide_core::misc::cursor::MouseCursor;
 use carbide::draw::Alignment;
 
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use carbide_core::event::{Ime, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
-use carbide_core::flags::WidgetFlag;
+use carbide_core::misc::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};

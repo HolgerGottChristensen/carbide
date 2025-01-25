@@ -1,5 +1,5 @@
 use bitflags::bitflags;
-use crate::impl_state_value;
+use carbide::impl_state_value;
 
 bitflags! {
     #[derive(Copy, Clone, Debug, Eq, PartialEq)]

@@ -17,7 +17,7 @@ use rand::Rng;
 use crate::animation::Animatable;
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Functor, Map1, RMap1};
-use crate::utils::{fmod, turns_to_radians};
+use crate::misc::utils::{fmod, turns_to_radians};
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug)]

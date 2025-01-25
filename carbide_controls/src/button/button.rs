@@ -1,8 +1,8 @@
 use carbide::accessibility::{Accessibility, AccessibilityContext};
 use carbide::color::RED;
-use carbide::cursor::MouseCursor;
+use carbide_core::misc::cursor::MouseCursor;
 use carbide::draw::{AutomaticStyle, Dimension, Position};
-use carbide::flags::WidgetFlag;
+use carbide_core::misc::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, ReadStateExtNew, State};

@@ -16,7 +16,7 @@ use crate::widget::{CommonWidget, Widget};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use carbide::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use carbide::state::ReadState;
 use carbide::widget::{AnyWidget, Flagged, Identifiable, WidgetId};
 

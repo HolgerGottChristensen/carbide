@@ -11,7 +11,7 @@ use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::Environment;
 use crate::event::{AccessibilityEventHandler, OtherEvent, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};

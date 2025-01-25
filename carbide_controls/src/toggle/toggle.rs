@@ -4,7 +4,7 @@ use crate::{EnabledState};
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
-use carbide::flags::WidgetFlag;
+use carbide_core::misc::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};

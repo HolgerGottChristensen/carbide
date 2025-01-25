@@ -7,7 +7,7 @@ use crate::draw::Dimension;
 use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, Key, Keyable};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::event::Key as KeyboardKey;
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::{IntoReadState, RMap1};

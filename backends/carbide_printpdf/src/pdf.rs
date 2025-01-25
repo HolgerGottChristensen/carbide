@@ -9,7 +9,7 @@ use std::rc::Rc;
 use printpdf::{BuiltinFont, Color, Image as PdfImage, ImageTransform, Mm, OP_PATH_CONST_LINE_TO, OP_PATH_CONST_MOVE_TO, OP_PATH_PAINT_FILL_NZ, PdfDocument, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point, Px, Rgb};
 use printpdf::lopdf::content::Operation;
 
-use carbide_core::locate_folder;
+use carbide_core::misc::locate_folder;
 use carbide_core::draw::{Alignment, Dimension, Position};
 use carbide_core::environment::Environment;
 use carbide_core::event::NoopEventSink;

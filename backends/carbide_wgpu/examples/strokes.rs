@@ -17,7 +17,7 @@ fn main() {
             "Stroke example",
             Dimension::new(600.0, 600.0),
             Canvas::new(move |context: &mut CanvasContext| {
-                let mouse_position = context.env().mouse_position();
+                let mouse_position = context.env_stack().mouse_position();
                 context.request_animation_frame();
                 context.move_to(100.0, 100.0);
                 /*context.line_to(500.0, 100.0);

@@ -23,6 +23,7 @@ use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::InnerTextContext;
 use carbide_core::widget::{CommonWidget, Empty, WidgetId};
 use carbide_core::locate_folder;
+use carbide_core::mouse_position::MousePositionKey;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;
@@ -273,14 +274,18 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut application_manager = ApplicationManager::new();
 
+        let mut mouse_position = self.event_handler.mouse_position();
+
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
                 env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
                     env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
-                            for scene in &mut self.scenes {
-                                request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
-                            }
+                        env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
+                            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                                for scene in &mut self.scenes {
+                                    request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                                }
+                            })
                         })
                     })
                 })
@@ -297,12 +302,16 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut application_manager = ApplicationManager::new();
 
+        let mut mouse_position = self.event_handler.mouse_position();
+
         self.environment_stack.with_mut::<AnimationManager>(&mut self.animation_manager, |env_stack| {
             env_stack.with_mut::<ApplicationManager>(&mut application_manager, |env_stack| {
                 env_stack.with::<ActiveEventLoopKey>(event_loop, |env_stack| {
                     env_stack.with_mut::<FocusManager>(&mut self.focus_manager, |env_stack| {
-                        env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
-                            request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                        env_stack.with_mut::<MousePositionKey>(&mut mouse_position, |env_stack| {
+                            env_stack.with::<dyn EventSink>(&self.event_sink, |env_stack| {
+                                request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, &mut self.environment, env_stack, self.id);
+                            })
                         })
                     })
                 })

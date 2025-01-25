@@ -1,8 +1,8 @@
 use carbide::draw::Alignment;
 use carbide::widget::Identifiable;
-use crate::cursor::MouseCursor;
+use crate::misc::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::focus::Focus;
 use crate::widget::{AnyWidget, WidgetId};
 

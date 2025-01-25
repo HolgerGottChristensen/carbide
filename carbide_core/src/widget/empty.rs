@@ -4,7 +4,7 @@ use carbide_core::widget::{CommonWidget, PrimitiveStore, ShapeStyle, StrokeStyle
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::scene::AnyScene;
 use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
 

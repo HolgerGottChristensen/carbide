@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use dyn_clone::DynClone;
-use crate::environment::Key;
+use crate::environment::{EnvironmentStack, Key};
 
 #[derive(Debug, Clone, Copy)]
 pub enum CoreEvent {
@@ -24,7 +24,6 @@ impl Debug for dyn EventSink {
         f.write_str("dyn EventSink")
     }
 }
-
 
 #[derive(Clone)]
 pub struct NoopEventSink;

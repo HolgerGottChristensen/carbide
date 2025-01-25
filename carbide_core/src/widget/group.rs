@@ -1,4 +1,4 @@
-use crate::flags::WidgetFlag;
+use crate::misc::flags::WidgetFlag;
 use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetExt, WidgetId};
 use crate::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};

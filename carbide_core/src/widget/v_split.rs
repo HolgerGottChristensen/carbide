@@ -1,6 +1,6 @@
 use carbide_macro::carbide_default_builder2;
 
-use crate::cursor::MouseCursor;
+use crate::misc::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use crate::layout::{Layout, LayoutContext};
