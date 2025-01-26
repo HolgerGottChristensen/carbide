@@ -13,12 +13,13 @@ use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::draw::{Dimension, InnerImageContext, Position, Scalar};
 use carbide_core::environment::{Environment};
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, WindowEventContext};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, OtherEventHandler, WindowEventContext};
 use carbide_core::focus::{FocusContext, FocusManager, Refocus};
 use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::text::InnerTextContext;
+use carbide_core::widget::managers::{ShortcutManager, ShortcutPressed, ShortcutReleased};
 use carbide_core::widget::WidgetId;
 use crate::{convert_key, convert_mouse_button, convert_touch_phase};
 use crate::custom_event::CustomEvent;
@@ -493,6 +494,8 @@ impl NewEventHandler {
                     text: text_context,
                     image: image_context,
                     env,
+                    is_current: &false,
+                    is_consumed: &mut false,
                 });
             }
             CustomEvent::Accessibility(accesskit_winit::Event { window_id, window_event}) => {
@@ -526,13 +529,6 @@ impl NewEventHandler {
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }
-            }
-            CustomEvent::Key(k) => {
-                target.process_other_event(&OtherEvent::Key(*k), &mut OtherEventContext {
-                    text: text_context,
-                    image: image_context,
-                    env,
-                });
             }
         }
 
@@ -608,22 +604,44 @@ impl NewEventHandler {
     pub fn keyboard(&mut self, logical_key: Key, no_modifier_key: Key, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], text_context: &mut impl InnerTextContext, image_context: &mut impl InnerImageContext, env: &mut Environment) -> RequestRedraw {
         let key = convert_key(&logical_key);
         let no_modifier_key = convert_key(&no_modifier_key);
+
         let mut prevent_default = false;
+
+        let mut shortcut_manager = ShortcutManager::new();
+
         match state {
             ElementState::Pressed => {
-                for scene in scenes.iter_mut() {
-                    scene.process_keyboard_event(&KeyboardEvent::Press {
-                        key: key.clone(),
-                        modifiers: self.modifiers,
-                        no_modifier_key: no_modifier_key.clone()
-                    }, &mut KeyboardEventContext {
-                        text: text_context,
-                        image: image_context,
-                        env,
-                        is_current: &false,
-                        window_id: &window_id.into(),
-                        prevent_default: &mut prevent_default,
-                    });
+                env.with_mut::<ShortcutManager>(&mut shortcut_manager, |env| {
+                    for scene in scenes.iter_mut() {
+                        scene.process_keyboard_event(&KeyboardEvent::Press {
+                            key: key.clone(),
+                            modifiers: self.modifiers,
+                            no_modifier_key: no_modifier_key.clone()
+                        }, &mut KeyboardEventContext {
+                            text: text_context,
+                            image: image_context,
+                            env,
+                            is_current: &false,
+                            window_id: &window_id.into(),
+                            prevent_default: &mut prevent_default,
+                        });
+                    }
+                });
+
+                if let Some(shortcut) = shortcut_manager.has_shortcut() {
+                    let event = OtherEvent::new(ShortcutPressed(shortcut));
+
+                    for scene in scenes.iter_mut() {
+                        scene.process_other_event(&event, &mut OtherEventContext {
+                            text: text_context,
+                            image: image_context,
+                            env,
+                            is_current: &false,
+                            is_consumed: &mut false,
+                        });
+                    }
+
+                    return RequestRedraw::True;
                 }
 
                 if !prevent_default {
@@ -643,19 +661,37 @@ impl NewEventHandler {
                 }
             },
             ElementState::Released => {
-                for scene in scenes.iter_mut() {
-                    scene.process_keyboard_event(&KeyboardEvent::Release {
-                        key: key.clone(),
-                        modifiers: self.modifiers,
-                        no_modifier_key: no_modifier_key.clone()
-                    }, &mut KeyboardEventContext {
-                        text: text_context,
-                        image: image_context,
-                        env,
-                        is_current: &false,
-                        window_id: &window_id.into(),
-                        prevent_default: &mut prevent_default,
-                    });
+                env.with_mut::<ShortcutManager>(&mut shortcut_manager, |env| {
+                    for scene in scenes.iter_mut() {
+                        scene.process_keyboard_event(&KeyboardEvent::Release {
+                            key: key.clone(),
+                            modifiers: self.modifiers,
+                            no_modifier_key: no_modifier_key.clone()
+                        }, &mut KeyboardEventContext {
+                            text: text_context,
+                            image: image_context,
+                            env,
+                            is_current: &false,
+                            window_id: &window_id.into(),
+                            prevent_default: &mut prevent_default,
+                        });
+                    }
+                });
+
+                if let Some(shortcut) = shortcut_manager.has_shortcut() {
+                    let event = OtherEvent::new(ShortcutReleased(shortcut));
+
+                    for scene in scenes.iter_mut() {
+                        scene.process_other_event(&event, &mut OtherEventContext {
+                            text: text_context,
+                            image: image_context,
+                            env,
+                            is_current: &false,
+                            is_consumed: &mut false,
+                        });
+                    }
+
+                    return RequestRedraw::True;
                 }
             },
         };

@@ -94,6 +94,8 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                         text: ctx.text,
                         image: ctx.image,
                         env,
+                        is_current: ctx.is_current,
+                        is_consumed: ctx.is_consumed,
                     };
 
                     for scene in &mut initialized.scenes {

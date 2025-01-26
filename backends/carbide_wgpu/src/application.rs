@@ -22,6 +22,7 @@ use carbide_core::text::InnerTextContext;
 use carbide_core::widget::WidgetId;
 use carbide_core::locate_folder;
 use carbide_core::mouse_position::MousePositionKey;
+use carbide_core::widget::managers::ShortcutManager;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;

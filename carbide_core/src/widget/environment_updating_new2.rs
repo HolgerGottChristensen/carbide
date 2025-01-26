@@ -117,6 +117,8 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> OtherEventHandler f
                 text: ctx.text,
                 image: ctx.image,
                 env: inner,
+                is_current: ctx.is_current,
+                is_consumed: ctx.is_consumed,
             })
         })
     }

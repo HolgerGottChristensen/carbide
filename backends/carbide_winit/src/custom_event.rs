@@ -5,7 +5,6 @@ use std::any::TypeId;
 pub enum CustomEvent {
     Core(carbide_core::event::CoreEvent),
     Accessibility(Event),
-    Key(TypeId),
 }
 
 impl From<Event> for CustomEvent {

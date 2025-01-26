@@ -1,4 +1,5 @@
-use std::any::{Any, TypeId};
+use std::any::{type_name, Any, TypeId};
+use std::ops::{Deref, DerefMut};
 use carbide::environment::{EnvironmentKey};
 use carbide::event::CoreEvent;
 use crate::draw::InnerImageContext;
@@ -32,28 +33,39 @@ pub struct OtherEventContext<'a, 'b: 'a> {
     pub text: &'a mut dyn InnerTextContext,
     pub image: &'a mut dyn InnerImageContext,
     pub env: &'a mut Environment<'b>,
+    pub is_current: &'a bool,
+    pub is_consumed: &'a mut bool
 }
 
 #[derive(Debug)]
 pub enum OtherEvent {
     CoreEvent(CoreEvent),
-    Key(TypeId),
-    KeyValue(TypeId, Box<dyn AnyDebug>)
+    Dynamic(Box<dyn AnyDebug>)
 }
 
 impl OtherEvent {
-    pub fn is<K: ?Sized + 'static>(&self) -> bool {
+    pub fn new<K: AnyDebug>(value: K) -> Self {
+        OtherEvent::Dynamic(Box::new(value))
+    }
+
+    pub fn is<K: AnyDebug>(&self) -> bool {
         let type_id = TypeId::of::<K>();
         match self {
             OtherEvent::CoreEvent(a) => a.type_id() == type_id,
-            OtherEvent::Key(k) => *k == type_id,
-            OtherEvent::KeyValue(k, _) => *k == type_id,
+            OtherEvent::Dynamic(value) => value.deref().type_id() == type_id,
         }
     }
 
-    pub fn value<K: EnvironmentKey>(&self) -> Option<&K::Value> {
+    pub fn value<K: AnyDebug>(&self) -> Option<&K> {
+        let type_id = TypeId::of::<K>();
         match self {
-            OtherEvent::KeyValue(k, value) => value.downcast_ref(),
+            OtherEvent::Dynamic(value) => {
+                if value.deref().type_id() == type_id {
+                    value.downcast_ref()
+                } else {
+                    None
+                }
+            },
             _ => None
         }
     }

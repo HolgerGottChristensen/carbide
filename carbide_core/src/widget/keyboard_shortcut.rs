@@ -2,17 +2,12 @@ use std::any::Any;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, OtherEvent};
 use carbide::ModifierWidgetImpl;
 use carbide::widget::{CommonWidget, Identifiable, Widget, WidgetId};
-use crate::event::{Key, KeyboardEventHandler, ModifierKey, OtherEventContext};
+use crate::event::{Key, KeyboardEventHandler, ModifierKey, OtherEventContext, OtherEventHandler};
 use crate::widget::{Empty, IntoWidget};
-
-#[derive(Copy, Clone, Debug)]
-pub struct KeyboardShortcutPressed;
-
-#[derive(Copy, Clone, Debug)]
-pub struct KeyboardShortcutReleased;
+use crate::widget::managers::{ShortcutManager, ShortcutPressed, ShortcutReleased};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(KeyboardEvent)]
+#[carbide_exclude(KeyboardEvent, OtherEvent)]
 pub struct KeyboardShortcut<C> where C: Widget {
     child: C,
     key: Key,
@@ -31,26 +26,52 @@ impl KeyboardShortcut<Empty> {
 
 impl<C: Widget> KeyboardEventHandler for KeyboardShortcut<C> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        match event {
-            KeyboardEvent::Press { no_modifier_key, modifiers, .. } if &self.key == no_modifier_key && &self.modifiers == modifiers => {
-
-                self.child.process_other_event(&OtherEvent::Key(KeyboardShortcutPressed.type_id()), &mut OtherEventContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env: ctx.env,
-                })
-
+        let handle_event = match event {
+            KeyboardEvent::Press { no_modifier_key, modifiers, .. } => {
+                &self.key == no_modifier_key && &self.modifiers == modifiers
             }
-            KeyboardEvent::Release { no_modifier_key, modifiers, .. } if &self.key == no_modifier_key && &self.modifiers == modifiers => {
-
-                self.child.process_other_event(&OtherEvent::Key(KeyboardShortcutReleased.type_id()), &mut OtherEventContext {
-                    text: ctx.text,
-                    image: ctx.image,
-                    env: ctx.env,
-                })
-
+            KeyboardEvent::Release { no_modifier_key, modifiers, .. } => {
+                &self.key == no_modifier_key && &self.modifiers == modifiers
             }
-            _ => {}
+            _ => false
+        };
+
+        if handle_event {
+            if let Some(manager) = ctx.env.get_mut::<ShortcutManager>() {
+                manager.shortcut(self.id());
+            }
+        }
+    }
+}
+
+impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
+    fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
+        if let Some(pressed) = event.value::<ShortcutPressed>() {
+            if pressed.0 == self.id() {
+                self.foreach_child_direct(&mut |child| {
+                    child.process_other_event(event, &mut OtherEventContext {
+                        text: ctx.text,
+                        image: ctx.image,
+                        env: ctx.env,
+                        is_current: &true,
+                        is_consumed: ctx.is_consumed,
+                    });
+                });
+            }
+        }
+
+        if let Some(released) = event.value::<ShortcutReleased>() {
+            if released.0 == self.id() {
+                self.foreach_child_direct(&mut |child| {
+                    child.process_other_event(event, &mut OtherEventContext {
+                        text: ctx.text,
+                        image: ctx.image,
+                        env: ctx.env,
+                        is_current: &true,
+                        is_consumed: ctx.is_consumed,
+                    });
+                });
+            }
         }
     }
 }

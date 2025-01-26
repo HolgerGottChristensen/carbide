@@ -2,7 +2,8 @@ use std::ops::Deref;
 
 use carbide::{closure, Application, Window};
 use carbide::color::ColorExt;
-use carbide::controls::PlainButton;
+use carbide::controls::button::{Button, PlainStyle};
+use carbide::controls::ControlsExt;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
 use carbide::state::{LocalState, Map3, ReadState, State, ReadStateExtNew};
@@ -95,6 +96,7 @@ fn main() {
                 .spacing(1.0),
         ))
             .spacing(1.0)
+            .button_style(PlainStyle)
     ));
 
     application.launch();
@@ -119,13 +121,10 @@ fn calculator_button(label: impl Widget, action: impl Action + Clone + 'static) 
         },
     );
 
-    PlainButton::new(action)
-        .delegate(move |_, _, _, _| {
-            ZStack::new((
-                Rectangle::new().fill(background_color.clone()),
-                label.clone(),
-            )).boxed()
-        })
+    Button::new(ZStack::new((
+        Rectangle::new().fill(background_color.clone()),
+        label.clone(),
+    )), action)
         .pressed(pressed_state)
         .hovered(hovered_state)
 }

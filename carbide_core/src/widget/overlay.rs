@@ -184,6 +184,8 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> OtherEventHandl
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                is_current: ctx.is_current,
+                is_consumed: ctx.is_consumed,
             };
 
             if let Some(overlay) = &mut inner.overlay {

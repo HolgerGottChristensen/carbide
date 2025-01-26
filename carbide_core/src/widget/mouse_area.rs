@@ -17,7 +17,7 @@ use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::state::{IntoState, State};
 use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty, Identifiable};
-use crate::widget::keyboard_shortcut::KeyboardShortcutPressed;
+use crate::widget::managers::{ShortcutPressed, ShortcutReleased};
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(MouseEvent, KeyboardEvent, OtherEvent, Accessibility, AccessibilityEvent)]
@@ -236,11 +236,19 @@ impl<
     P: State<T=bool>,
 > OtherEventHandler for MouseArea<I, O, F, C, H, P> {
     fn handle_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
-        if event.is::<KeyboardShortcutPressed>() {
-            self.click.call(MouseAreaActionContext {
-                env: ctx.env,
-                modifier_key: ModifierKey::empty()
-            });
+        if *ctx.is_current && !*ctx.is_consumed {
+            if event.is::<ShortcutPressed>() {
+                self.is_pressed.set_value(true);
+                *ctx.is_consumed = true;
+            }
+            if event.is::<ShortcutReleased>() {
+                self.is_pressed.set_value(false);
+                self.click.call(MouseAreaActionContext {
+                    env: ctx.env,
+                    modifier_key: ModifierKey::empty()
+                });
+                *ctx.is_consumed = true;
+            }
         }
     }
 }

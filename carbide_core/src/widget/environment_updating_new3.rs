@@ -106,6 +106,8 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> OtherE
                 text: ctx.text,
                 image: ctx.image,
                 env: inner,
+                is_current: ctx.is_current,
+                is_consumed: ctx.is_consumed,
             })
         })
     }

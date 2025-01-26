@@ -10,7 +10,7 @@ pub trait Layout: CommonWidget {
     /// image will have the size of the image, even if it is larger than the requested size.
     /// The widget should return the chosen dimensions back to the caller.
     /// The default behavior is to calculate the size of the first child and return that as the
-    /// chosen size. If no child are present, the widget will chose the requested size.
+    /// chosen size. If no child are present, the widget will choose the requested size.
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         let mut chosen = requested_size;

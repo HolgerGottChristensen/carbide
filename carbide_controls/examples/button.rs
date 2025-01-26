@@ -22,11 +22,12 @@ fn main() {
                 .font_size(32u32),
 
             Button::new("Add 1", closure!(|_| { *$counter_state += 1; }))
-                .keyboard_shortcut("r", ModifierKey::ALT)
+                .keyboard_shortcut("+", ModifierKey::ALT)
                 .button_style(BorderedProminentStyle)
                 .frame(90.0, 22.0),
 
             Button::new("Subtract 1", closure!(|_| { *$counter_state -= 1; }))
+                .keyboard_shortcut("-", ModifierKey::ALT)
                 .frame(90.0, 22.0),
 
             Button::new("Disabled", closure!(|_|{}))

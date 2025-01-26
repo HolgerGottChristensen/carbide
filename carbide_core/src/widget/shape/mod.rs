@@ -33,11 +33,12 @@ pub trait Shape: AnyWidget + 'static {
     fn get_shape_style(&self) -> ShapeStyle;
     fn triangles(&mut self, env: &mut Environment) -> Vec<Triangle<Position>> {
         let mut geom = TriangleRenderContext(vec![]);
+
         self.render(&mut RenderContext {
-                    render: &mut geom,
-                    text: &mut NOOPTextContext,
-                    image: &mut NOOPImageContext,
-            env: env,
+            render: &mut geom,
+            text: &mut NOOPTextContext,
+            image: &mut NOOPImageContext,
+            env
         });
 
         geom.0

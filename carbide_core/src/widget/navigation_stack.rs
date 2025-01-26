@@ -242,6 +242,8 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> OtherEventHandler for N
                 text: ctx.text,
                 image: ctx.image,
                 env,
+                is_current: ctx.is_current,
+                is_consumed: ctx.is_consumed,
             })
         })
     }

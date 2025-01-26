@@ -20,23 +20,6 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
     /// manage the events yourself. Overriding this you are thereby able to restrict events to
     /// a widgets children.
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        /*if bitflags::Flags::contains(&self.flag(), CarbideFlags::FOCUSABLE) && self.get_focus() == Focus::Focused && *ctx.is_current {
-            match event {
-                KeyboardEvent::Press(key, modifier) => {
-                    if key == &Key::Tab {
-                        if modifier.shift_key() {
-                            self.set_focus(Focus::FocusReleased);
-                            ctx.env.request_focus(Refocus::FocusPrevious);
-                        } else if bitflags::Flags::is_empty(modifier) {
-                            self.set_focus(Focus::FocusReleased);
-                            ctx.env.request_focus(Refocus::FocusNext);
-                        }
-                    }
-                }
-                _ => (),
-            }
-        }*/
-
         if *ctx.is_current {
             self.sync(ctx.env);
             self.handle_keyboard_event(event, ctx);
