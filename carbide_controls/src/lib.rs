@@ -41,7 +41,7 @@ macro_rules! capture {
 
 mod list;
 mod plain;
-mod slider;
+mod old_slider;
 mod text_input;
 mod controls_ext;
 mod help;
@@ -53,6 +53,7 @@ pub mod identifiable;
 mod selectable;
 mod labelled;
 pub mod button;
+mod slider;
 
 pub type EnabledState = KeyState<EnabledKey>;
 
