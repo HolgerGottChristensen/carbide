@@ -10,8 +10,8 @@ use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::render::{Render, RenderContext};
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, Map1, Map3, Map4, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, MouseArea, Rectangle, Widget, WidgetExt, WidgetId};
-use crate::{EnabledState, PlainSlider, SliderValue};
-use crate::button::{Button, ButtonStyleKey};
+use crate::{EnabledState};
+use crate::slider::slider_value::SliderValue;
 use crate::slider::style::SliderStyleKey;
 
 const SMOOTH_VALUE_INCREMENT: f64 = 0.05;

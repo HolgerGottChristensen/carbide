@@ -1,13 +1,15 @@
 mod plain;
+mod unstyled;
 
 use std::fmt::Debug;
-use dyn_clone::DynClone;
+use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::AutomaticStyle;
 use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnySequence, AnyWidget};
 pub use plain::PlainStyle;
+pub use unstyled::UnstyledStyle;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct SliderStyleKey;
@@ -55,3 +57,5 @@ impl SliderStyle for AutomaticStyle {
         PlainStyle.create_background(focus, enabled, percent, stepped)
     }
 }
+
+clone_trait_object!(SliderStyle);

@@ -6,10 +6,11 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
-use crate::{EnabledKey, Help};
+use crate::{EnabledKey, Help, SliderStyle};
 use crate::button::{ButtonStyle, ButtonStyleKey};
 use crate::labelled::Labelled;
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
+use crate::slider::SliderStyleKey;
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
 
 type Enabled<C, K, V> = EnvUpdatingNew2<C, K, V>;
@@ -43,6 +44,10 @@ pub trait ControlsExt: WidgetExt {
 
     fn button_style(self, value: impl ButtonStyle + 'static) -> impl Widget {
         EnvUpdatingNew::<Self, ButtonStyleKey>::new(Box::new(value) as Box<dyn ButtonStyle>, self)
+    }
+
+    fn slider_style(self, value: impl SliderStyle + 'static) -> impl Widget {
+        EnvUpdatingNew::<Self, SliderStyleKey>::new(Box::new(value) as Box<dyn SliderStyle>, self)
     }
 
     fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> {

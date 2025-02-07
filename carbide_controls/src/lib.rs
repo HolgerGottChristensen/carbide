@@ -41,7 +41,6 @@ macro_rules! capture {
 
 mod list;
 mod plain;
-mod old_slider;
 mod text_input;
 mod controls_ext;
 mod help;
