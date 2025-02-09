@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
-use dyn_clone::{clone_box, DynClone};
+use dyn_clone::{clone_box, clone_trait_object, DynClone};
 use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize, Environment};
 use crate::focus::Focus;
@@ -124,20 +124,20 @@ impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result
 macro_rules! impl_state_value {
     ($($typ: ty),*) => {
         $(
-        impl carbide_core::state::StateSync for $typ {
-            fn sync(&mut self, _env: &mut carbide_core::environment::Environment) -> bool {
+        impl $crate::state::StateSync for $typ {
+            fn sync(&mut self, _env: &mut $crate::environment::Environment) -> bool {
                 true
             }
         }
-        impl carbide_core::state::AnyReadState for $typ {
+        impl $crate::state::AnyReadState for $typ {
             type T = $typ;
-            fn value_dyn(&self) -> carbide_core::state::ValueRef<$typ> {
-                carbide_core::state::ValueRef::Borrow(self)
+            fn value_dyn(&self) -> $crate::state::ValueRef<$typ> {
+                $crate::state::ValueRef::Borrow(self)
             }
         }
-        impl carbide_core::state::AnyState for $typ {
-            fn value_dyn_mut(&mut self) -> carbide_core::state::ValueRefMut<$typ> {
-                carbide_core::state::ValueRefMut::Borrow(Some(self))
+        impl $crate::state::AnyState for $typ {
+            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<$typ> {
+                $crate::state::ValueRefMut::Borrow(Some(self))
             }
 
             fn set_value_dyn(&mut self, value: $typ) {
@@ -158,44 +158,24 @@ impl_state_value!(
     EdgeInsets, Position, Dimension, Rect, Angle,
     ImageId
 );
-/*
-impl IntoReadStateHelper<i32, i32, u32> for i32 {
-    type Output = RMap1<fn(&i32)->u32, i32, u32, i32>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
-            *c as u32
-        })
-    }
-}
-
-impl IntoReadStateHelper<i32, i32, f64> for i32 {
-    type Output = RMap1<fn(&i32)->f64, i32, f64, i32>;
-
-    fn into_read_state_helper(self) -> Self::Output {
-        Map1::read_map(self, |c| {
-            *c as f64
-        })
-    }
-}*/
 
 #[macro_export]
-macro_rules! impl_read_state1 {
-    ($($typ: ident),*) => {
+macro_rules! impl_state_value_generic {
+    ($($typ: ident < $( $generic: ident $(: $bound: ident $(+ $rest: ident)*)? ),* > ),*) => {
         $(
-        impl<G> StateSync for $typ<G> {}
-        impl<G: Debug + Clone + 'static> AnyReadState for $typ<G> {
-            type T = $typ<G>;
-            fn value_dyn(&self) -> ValueRef<$typ<G>> {
-                ValueRef::Borrow(self)
+        impl<$($generic $(: $bound $(+ $rest)* )?),*> $crate::state::StateSync for $typ <$($generic),*> {}
+        impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyReadState for $typ<$($generic),*> {
+            type T = $typ<$($generic),*>;
+            fn value_dyn(&self) -> $crate::state::ValueRef<$typ<$($generic),*>> {
+                $crate::state::ValueRef::Borrow(self)
             }
         }
-        impl<G: Debug + Clone + 'static> AnyState for $typ<G> {
-            fn value_dyn_mut(&mut self) -> ValueRefMut<$typ<G>> {
-                ValueRefMut::Borrow(Some(self))
+        impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyState for $typ <$($generic),*> {
+            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<$typ<$($generic),*>> {
+                $crate::state::ValueRefMut::Borrow(Some(self))
             }
 
-            fn set_value_dyn(&mut self, value: $typ<G>) {
+            fn set_value_dyn(&mut self, value: $typ<$($generic),*>) {
                 *self = value;
             }
         }
@@ -203,4 +183,8 @@ macro_rules! impl_read_state1 {
     };
 }
 
-impl_read_state1!(Option, Vec, Matrix4, Matrix3, Matrix2, Vector1, Vector2, Vector3, Vector4);
+impl_state_value_generic!(
+    Option<T>, Vec<T>, Matrix4<T>,
+    Matrix3<T>, Matrix2<T>, Vector1<T>,
+    Vector2<T>, Vector3<T>, Vector4<T>
+);

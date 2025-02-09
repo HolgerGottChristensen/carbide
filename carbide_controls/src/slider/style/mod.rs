@@ -10,6 +10,7 @@ use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnySequence, AnyWidget};
 pub use plain::PlainStyle;
 pub use unstyled::UnstyledStyle;
+use crate::SliderSteppingType;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct SliderStyleKey;
@@ -24,7 +25,7 @@ pub trait SliderStyle: Debug + DynClone {
         focus: Box<dyn AnyReadState<T=Focus>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         percent: Box<dyn AnyReadState<T=f64>>,
-        stepped: Box<dyn AnyReadState<T=bool>>
+        stepping_type: Box<dyn AnyReadState<T=SliderSteppingType>>
     ) -> Box<dyn AnyWidget>;
 
     fn create_track(
@@ -32,7 +33,7 @@ pub trait SliderStyle: Debug + DynClone {
         focus: Box<dyn AnyReadState<T=Focus>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         percent: Box<dyn AnyReadState<T=f64>>,
-        stepped: Box<dyn AnyReadState<T=bool>>
+        stepping_type: Box<dyn AnyReadState<T=SliderSteppingType>>
     ) -> Box<dyn AnyWidget>;
 
     fn create_background(
@@ -40,20 +41,20 @@ pub trait SliderStyle: Debug + DynClone {
         focus: Box<dyn AnyReadState<T=Focus>>,
         enabled: Box<dyn AnyReadState<T=bool>>,
         percent: Box<dyn AnyReadState<T=f64>>,
-        stepped: Box<dyn AnyReadState<T=bool>>
+        stepping_type: Box<dyn AnyReadState<T=SliderSteppingType>>
     ) -> Box<dyn AnyWidget>;
 }
 
 impl SliderStyle for AutomaticStyle {
-    fn create_thumb(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn create_thumb(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         PlainStyle.create_thumb(focus, enabled, percent, stepped)
     }
 
-    fn create_track(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn create_track(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         PlainStyle.create_track(focus, enabled, percent, stepped)
     }
 
-    fn create_background(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn create_background(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         PlainStyle.create_background(focus, enabled, percent, stepped)
     }
 }
