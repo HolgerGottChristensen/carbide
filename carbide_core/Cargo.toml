@@ -4,9 +4,7 @@ version.workspace = true
 repository.workspace = true
 edition.workspace = true
 authors = [
-    "Holger Gott Christensen <holger.gott@icloud.com>",
-    "Mitchell Nordine <mitchell.nordine@gmail.com>",
-    "Sven Nilsen <bvssvni@gmail.com>"
+    "Holger Gott Christensen",
 ]
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "An easy-to-use, 100% Rust, extensible 2D GUI library."
@@ -29,7 +27,7 @@ carbide_macro = { path = "../carbide_macro", optional = true }
 rand.workspace = true
 bitflags.workspace = true
 dyn-clone.workspace = true
-parking_lot = "0.12.1"
+parking_lot.workspace = true
 smallvec.workspace = true
 dashmap.workspace = true
 indexmap.workspace = true

@@ -7,17 +7,11 @@ members = [
     "carbide_derive",
     "carbide_media",
     "carbide_syn",
-    #"backends/carbide_example_shared",
     "backends/carbide_winit",
-    # "backends/carbide_gfx",
-    #"backends/carbide_glium",
-    # "backends/carbide_piston",
-    # "backends/carbide_rendy",
-    # "backends/carbide_vulkano",
     "backends/carbide_wgpu",
     "backends/carbide_wgpu_3d",
     "backends/carbide_windows",
-    "backends/carbide_text",
+    "backends/carbide_cosmic_text",
     "backends/carbide_printpdf",
     "backends/carbide_fluent",
     "examples/lines",
@@ -30,7 +24,8 @@ members = [
     "examples/drawing_paths_and_shapes",
     "carbide",
     "carbide_3d",
-    "carbide_chart", "carbide_dialogs",
+    "carbide_chart",
+    "carbide_dialogs",
 ]
 
 [workspace.package]
@@ -57,3 +52,5 @@ smallvec = "1.13.2"
 winit = { version = "0.30.7", features = ["rwh_05"] }
 proc-macro-crate = "3.2.0"
 indexmap = "2.6.0"
+parking_lot = "0.12.3"
+

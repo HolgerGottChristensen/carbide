@@ -3,6 +3,9 @@ name = "carbide_dialogs"
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
+authors = [
+    "Holger Gott Christensen",
+]
 
 [dependencies]
 carbide_core = { path = "../carbide_core" }

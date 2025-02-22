@@ -3,7 +3,9 @@ name = "carbide"
 version.workspace = true
 repository.workspace = true
 edition.workspace = true
-authors = ["Holger Gott Christensen <holger.gott@icloud.com>"]
+authors = [
+    "Holger Gott Christensen",
+]
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 categories = ["gui"]
 license = "MIT OR Apache-2.0"

@@ -3,6 +3,9 @@ name = "carbide_printpdf"
 version.workspace = true
 repository.workspace = true
 edition.workspace = true
+authors = [
+    "Holger Gott Christensen",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

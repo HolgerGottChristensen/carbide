@@ -22,7 +22,7 @@ use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContext as _;
 use carbide_core::widget::WidgetId;
-use carbide_text::text_context::TextContext;
+use carbide_cosmic_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;
 use carbide_winit::event::WindowEvent;
