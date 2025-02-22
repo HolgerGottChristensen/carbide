@@ -57,7 +57,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
     }).collect::<Vec<_>>());
 
-    let mut id_idents: Vec<Ident> = fields.map_or(vec![], |n| n.iter().filter_map(|field| {
+    let id_idents: Vec<Ident> = fields.map_or(vec![], |n| n.iter().filter_map(|field| {
         let mut contains_state = false;
 
         for attr in &field.attrs {

@@ -16,7 +16,7 @@ use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseB
 use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, Widget, WidgetExt, WidgetId, Empty, Identifiable};
+use crate::widget::{CommonWidget, Widget, WidgetId, Empty, Identifiable};
 use crate::widget::managers::{ShortcutPressed, ShortcutReleased};
 
 #[derive(Clone, Widget)]

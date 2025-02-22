@@ -1,5 +1,4 @@
 use carbide::draw::{Alignment, Color, Position};
-use carbide::environment::Environment;
 use carbide::state::IntoReadState;
 use carbide::widget::canvas::{Canvas, CanvasContext};
 use carbide::widget::{Widget, WidgetExt};

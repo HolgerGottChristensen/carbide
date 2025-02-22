@@ -5,7 +5,7 @@ use crate::draw::{Color, Dimension, DrawStyle, Position, Rect};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

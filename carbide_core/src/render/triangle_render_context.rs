@@ -65,7 +65,7 @@ impl InnerRenderContext for TriangleRenderContext {
 
     fn mask_end(&mut self) {}
 
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer {
+    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension) -> Layer {
         static LAYER: NoopLayer = NoopLayer;
         Layer {
             inner: &LAYER,
@@ -73,5 +73,5 @@ impl InnerRenderContext for TriangleRenderContext {
         }
     }
 
-    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {}
+    fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
 }

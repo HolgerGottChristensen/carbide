@@ -3,7 +3,7 @@ use smallvec::{SmallVec, smallvec};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, Sequence};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, Sequence};
 
 #[derive(Debug, Clone)]
 pub enum HGridRow {

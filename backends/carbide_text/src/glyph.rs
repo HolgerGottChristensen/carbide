@@ -1,9 +1,9 @@
-use carbide_rusttype::{GlyphId, point};
 use carbide_rusttype::PositionedGlyph;
+use carbide_rusttype::{point, GlyphId};
 
+use crate::atlas::texture_atlas::AtlasEntry;
 use carbide_core::draw::{Position, Rect, Scalar};
 use carbide_core::text::{FontId, FontSize};
-use crate::atlas::texture_atlas::AtlasEntry;
 
 pub const GLYPH_TOLERANCE: f64 = 0.25;
 

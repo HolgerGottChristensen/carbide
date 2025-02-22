@@ -5,7 +5,7 @@ use carbide_core::widget::CommonWidget;
 use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;
 use crate::state::IntoReadState;
-use crate::widget::{Empty, IntoWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{Empty, IntoWidget, Widget, WidgetId};
 use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]

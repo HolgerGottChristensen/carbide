@@ -1,5 +1,5 @@
-use carbide::draw::ImageId;
 use crate::material::material_flags::MaterialFlags;
+use carbide::draw::ImageId;
 
 /// How the Ambient Occlusion, Metalic, and Roughness values should be
 /// determined.

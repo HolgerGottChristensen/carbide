@@ -1,10 +1,10 @@
+use cosmic_text::CacheKey;
 use std::cell::RefCell;
 use std::rc::Rc;
-use cosmic_text::{CacheKey};
 
-use fxhash::{FxHashMap};
+use fxhash::FxHashMap;
 
-use carbide_core::draw::{Dimension, Position, Rect, Scalar, ImageId};
+use carbide_core::draw::{Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::image;
 
 use carbide_core::image::{DynamicImage, GenericImage, GenericImageView};

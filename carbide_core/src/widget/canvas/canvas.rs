@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, TriangleStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, TriangleStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetId};
 use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.

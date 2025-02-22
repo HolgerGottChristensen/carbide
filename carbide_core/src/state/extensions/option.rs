@@ -45,9 +45,10 @@ impl<T: StateContract, S: ReadState<T=Option<T>>> OptionExtension<T> for S {
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use crate::state::extensions::option::OptionExtension;
     use crate::state::{LocalState, State};
+    use crate::state::extensions::option::OptionExtension;
     use crate::state::read_state::ReadState;
 
     #[test]

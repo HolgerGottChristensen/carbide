@@ -1,6 +1,6 @@
+use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// Unique image identifier.
 ///

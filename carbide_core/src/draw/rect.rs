@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::ops::{Add, Div, Mul};
 
 use crate::draw::dimension::Dimension;

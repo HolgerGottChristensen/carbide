@@ -1,9 +1,9 @@
+use carbide_core::draw::{ImageContext, ImageId, Texture, TextureFormat};
 use wgpu::BindGroup;
-use carbide_core::draw::{ImageContext, Texture, TextureFormat, ImageId};
 
 use crate::application::{DEVICE, QUEUE};
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
-use crate::globals::{BIND_GROUPS};
+use crate::globals::BIND_GROUPS;
 
 pub struct WGPUImageContext;
 

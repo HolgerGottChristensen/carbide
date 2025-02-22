@@ -1,8 +1,7 @@
+use crate::window::Window;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId};
-use crate::window::Window;
-
 
 
 impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {

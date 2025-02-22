@@ -1,9 +1,9 @@
+use crate::material::material_flags::MaterialFlags;
 use bitflags::Flags;
 use carbide::color::WHITE;
 use carbide::draw::{Color, ImageId};
 use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
-use crate::material::material_flags::MaterialFlags;
 
 /// How the albedo color should be determined.
 #[derive(Debug, Clone)]

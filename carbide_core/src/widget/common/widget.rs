@@ -14,9 +14,8 @@ use crate::misc::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::state::{StateContract, StateSync};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
-use crate::widget::{CommonWidget, IntoWidget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 
 pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {
     fn as_widget(&self) -> &dyn AnyWidget;

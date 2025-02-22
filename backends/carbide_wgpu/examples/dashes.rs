@@ -1,8 +1,11 @@
+use carbide_controls::picker::{MenuStyle, Picker};
+use carbide_controls::toggle::{CheckboxStyle, Toggle};
 use carbide_controls::{ControlsExt, Slider, TextInput};
 use carbide_core::closure;
 use carbide_core::color::{TRANSPARENT, WHITE};
 use carbide_core::draw::{Dimension, Position, StrokeDashCap, StrokeDashMode};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};
 use carbide_core::widget::*;
@@ -10,9 +13,6 @@ use carbide_wgpu::{Application, Window};
 use std::f64::consts::PI;
 use std::num::ParseFloatError;
 use std::str::FromStr;
-use carbide_controls::picker::{MenuStyle, Picker};
-use carbide_controls::toggle::{CheckboxStyle, Toggle};
-use carbide_core::mouse_position::MousePositionEnvironmentExt;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum DrawType {

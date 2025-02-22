@@ -1,15 +1,15 @@
-use carbide::color::WHITE;
-use carbide::environment::{Environment};
-use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
 use crate::material::albedo_component::AlbedoComponent;
 use crate::material::ao_mr_textures::AoMRTextures;
 use crate::material::clearcoat_textures::ClearcoatTextures;
-use crate::material::Material;
 use crate::material::material_component::MaterialComponent;
 use crate::material::normal_texture::NormalTexture;
 use crate::material::sample_type::SampleType;
 use crate::material::transparency::Transparency;
+use crate::material::Material;
+use carbide::color::WHITE;
+use carbide::environment::Environment;
+use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
 
 // Consider:
 //

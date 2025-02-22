@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};
 use crate::render::Render;
-use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetExt, WidgetId};
+use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

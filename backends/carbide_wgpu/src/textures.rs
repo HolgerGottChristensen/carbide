@@ -1,5 +1,5 @@
-use wgpu::{Device, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 use crate::msaa::Msaa;
+use wgpu::{Device, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 
 pub(crate) fn create_depth_stencil_texture_view(device: &Device, width: u32, height: u32, msaa: Msaa) -> TextureView {
     device.create_texture(&TextureDescriptor {

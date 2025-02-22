@@ -1,7 +1,7 @@
-use carbide::{Application, Window};
 use carbide::draw::Dimension;
 use carbide::state::State;
 use carbide::widget::WidgetExt;
+use carbide::{Application, Window};
 
 use crate::mandelbrot::Mandelbrot;
 

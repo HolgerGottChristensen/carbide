@@ -1,16 +1,16 @@
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
-use cgmath::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
-use dyn_clone::{clone_box, clone_trait_object, DynClone};
-use crate::draw::{Angle, Color, Dimension, Position, Rect, ImageId};
-use crate::environment::{EnvironmentColor, EnvironmentFontSize, Environment};
+use crate::draw::{Angle, Color, Dimension, ImageId, Position, Rect};
+use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::focus::Focus;
 use crate::render::Style;
-use crate::state::*;
 use crate::state::state_sync::StateSync;
 use crate::state::util::value_cell::ValueRef;
+use crate::state::*;
 use crate::widget::{EdgeInsets, Gradient};
+use crate::math::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
+use dyn_clone::{clone_box, DynClone};
 
 // ---------------------------------------------------
 //  Definitions

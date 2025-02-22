@@ -9,7 +9,7 @@ use crate::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, Mo
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 
 #[derive(Debug)]
 pub enum OverlayAction {

@@ -1,9 +1,9 @@
+use crate::application::DEVICE;
 use once_cell::sync::Lazy;
 use wgpu::{
     BindGroupLayout, BufferBindingType, Device, SamplerBindingType, TextureSampleType,
     TextureViewDimension,
 };
-use crate::application::DEVICE;
 
 pub(crate) static UNIFORM_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
     uniform_bind_group_layout(&DEVICE)

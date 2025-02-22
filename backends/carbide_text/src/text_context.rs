@@ -1,21 +1,21 @@
-use std::path::PathBuf;
 use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashImage, Weight};
 use fxhash::FxHashMap;
-use swash::scale::{Render, ScaleContext, Source, StrikeWith};
+use std::path::PathBuf;
 use swash::scale::image::Content;
+use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::zeno::{Format, Vector};
 
-use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, Scalar};
-use carbide_core::environment::{Environment};
-use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
-use carbide_core::render::InnerRenderContext;
-use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
-use carbide_core::text::TextStyle;
-use carbide_core::widget::Wrap;
-use unicode_segmentation::UnicodeSegmentation;
-use carbide_core::scene::SceneManager;
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::metadata::Metadata;
+use carbide_core::draw::{Dimension, Position, Rect, Scalar, MODE_TEXT, MODE_TEXT_COLOR};
+use carbide_core::environment::Environment;
+use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
+use carbide_core::render::InnerRenderContext;
+use carbide_core::scene::SceneManager;
+use carbide_core::text::TextStyle;
+use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
+use carbide_core::widget::Wrap;
+use unicode_segmentation::UnicodeSegmentation;
 
 pub struct TextContext {
     map: FxHashMap<TextId, (Buffer, Metadata)>,

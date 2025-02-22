@@ -1,8 +1,8 @@
 use wgpu::{BindGroupLayout, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, MultisampleState, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, TextureFormat, VertexState};
 
-use crate::vertex::Vertex;
 use crate::globals::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 use crate::msaa::Msaa;
+use crate::vertex::Vertex;
 
 pub struct RenderPipelines {
     pub(crate) final_render_pipeline: RenderPipeline,

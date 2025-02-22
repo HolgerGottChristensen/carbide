@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use carbide::controls::Identifiable;
+use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Article {

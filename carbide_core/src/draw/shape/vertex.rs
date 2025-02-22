@@ -1,5 +1,5 @@
-use crate::draw::Position;
 use crate::draw::shape::stroke_vertex::StrokeVertex;
+use crate::draw::Position;
 use crate::widget::ColoredPoint;
 
 /// Types used as vertices that make up a list of triangles.
@@ -30,11 +30,11 @@ impl Vertex for (Position, Position) {
         todo!()
     }
 
-    fn add_vertex(self, add: Position) -> Self {
+    fn add_vertex(self, _add: Position) -> Self {
         todo!()
     }
 
-    fn offset(&mut self, other: Position) {
+    fn offset(&mut self, _other: Position) {
         todo!()
     }
 }
@@ -44,11 +44,11 @@ impl Vertex for StrokeVertex {
         todo!()
     }
 
-    fn add_vertex(self, add: Position) -> Self {
+    fn add_vertex(self, _add: Position) -> Self {
         todo!()
     }
 
-    fn offset(&mut self, other: Position) {
+    fn offset(&mut self, _other: Position) {
         todo!()
     }
 }

@@ -1,10 +1,10 @@
+use carbide_core::render::InnerLayer;
 use std::fmt::{Debug, Formatter};
 use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
-use carbide_core::render::InnerLayer;
 
 use crate::application::DEVICE;
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
-use crate::globals::{MAIN_SAMPLER};
+use crate::globals::MAIN_SAMPLER;
 
 pub struct RenderTarget {
     pub(crate) texture: Texture,

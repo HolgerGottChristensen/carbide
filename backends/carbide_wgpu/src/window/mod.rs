@@ -7,14 +7,14 @@ mod render;
 mod initialized_window;
 mod accessibility;
 
+use crate::msaa::Msaa;
 use crate::window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{IntoReadState, ReadState};
+use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
 use carbide_core::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, NavigationStack, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use std::fmt::{Debug, Formatter};
-use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
-use crate::msaa::Msaa;
 
 pub enum Window<T: ReadState<T=String>, C: Widget> {
     UnInitialized {

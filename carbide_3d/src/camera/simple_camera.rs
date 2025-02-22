@@ -1,7 +1,7 @@
+use crate::camera::camera_projection::CameraProjection;
+use crate::camera::Camera;
 use carbide::render::matrix::Matrix4;
 use carbide::state::ReadState;
-use crate::camera::Camera;
-use crate::camera::camera_projection::CameraProjection;
 
 #[derive(Debug, Clone)]
 pub struct SimpleCamera<V> where V: ReadState<T=Matrix4<f32>> {

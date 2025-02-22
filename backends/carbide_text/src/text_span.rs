@@ -1,8 +1,8 @@
-use carbide_core::draw::Scalar;
-use carbide_core::widget::AnyWidget;
 use crate::glyph::Glyph;
 use crate::text_context::TextContext;
+use carbide_core::draw::Scalar;
 use carbide_core::text::TextStyle;
+use carbide_core::widget::AnyWidget;
 
 #[derive(Debug, Clone)]
 pub enum TextSpan {

@@ -1,7 +1,7 @@
-use tobj::Model;
-use carbide::render::matrix::{InnerSpace, Vector2, Vector3, Zero};
 use crate::handedness::Handedness;
 use crate::vertex::Vertex;
+use carbide::render::matrix::{InnerSpace, Vector2, Vector3, Zero};
+use tobj::Model;
 
 #[derive(Debug, Clone)]
 pub struct Mesh {

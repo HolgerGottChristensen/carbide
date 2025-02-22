@@ -1,5 +1,5 @@
-use carbide_controls::{ControlsExt, TextInput};
 use carbide_controls::button::{BorderedProminentStyle, Button};
+use carbide_controls::{ControlsExt, TextInput};
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};

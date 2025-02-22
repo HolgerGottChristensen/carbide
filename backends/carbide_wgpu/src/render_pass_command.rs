@@ -1,7 +1,7 @@
-use carbide_core::draw::{Rect, ImageId};
+use crate::gradient::{Dashes, Gradient};
+use carbide_core::draw::{ImageId, Rect};
 use carbide_core::render::LayerId;
 use carbide_core::widget::FilterId;
-use crate::gradient::{Dashes, Gradient};
 
 /// A draw command that maps directly to the `wgpu::CommandEncoder` method. By returning
 /// `RenderPassCommand`s, we can avoid consuming the entire `AutoCommandBufferBuilder` itself which might

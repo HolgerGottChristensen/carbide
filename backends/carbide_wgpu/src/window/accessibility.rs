@@ -1,9 +1,9 @@
+use crate::Window;
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
-use smallvec::SmallVec;
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{Identifiable, Widget, WidgetId};
-use crate::Window;
+use smallvec::SmallVec;
 
 impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {

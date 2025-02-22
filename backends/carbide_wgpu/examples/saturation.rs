@@ -1,9 +1,9 @@
-use std::time::Duration;
 use carbide_core::animation::linear;
 use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use std::time::Duration;
 
 fn main() {
     let mut application = Application::new()

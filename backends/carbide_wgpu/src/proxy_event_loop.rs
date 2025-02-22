@@ -1,6 +1,6 @@
 use carbide_winit::event_loop::EventLoopProxy;
 
-use carbide_core::event::{EventSink};
+use carbide_core::event::EventSink;
 use carbide_winit::custom_event::CustomEvent;
 
 #[derive(Clone)]

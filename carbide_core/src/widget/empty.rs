@@ -5,7 +5,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;
 use crate::scene::AnyScene;
-use crate::widget::{Shape, Widget, WidgetExt, WidgetId};
+use crate::widget::{Shape, Widget, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {

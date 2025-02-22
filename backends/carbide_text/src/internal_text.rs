@@ -1,15 +1,15 @@
-use carbide_core::color::Color;
-use carbide_core::draw::{Dimension, Position, Rect, Scalar};
-use carbide_core::environment::Environment;
-use crate::text_span::TextSpan;
-use carbide_core::text::TextDecoration;
-use carbide_core::widget::Justify;
-use carbide_core::widget::Wrap;
 use crate::atlas::texture_atlas::TextureAtlas;
 use crate::font::Font;
 use crate::glyph::Glyph;
 use crate::text_context::TextContext;
+use crate::text_span::TextSpan;
+use carbide_core::color::Color;
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::environment::Environment;
+use carbide_core::text::TextDecoration;
 use carbide_core::text::TextStyle;
+use carbide_core::widget::Justify;
+use carbide_core::widget::Wrap;
 
 #[derive(Debug, Clone)]
 pub struct Text {

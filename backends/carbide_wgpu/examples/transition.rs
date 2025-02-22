@@ -1,4 +1,3 @@
-use std::time::Duration;
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::ControlsExt;
 use carbide_core::closure;
@@ -6,6 +5,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtTransition, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use std::time::Duration;
 
 fn main() {
     let mut application = Application::new()

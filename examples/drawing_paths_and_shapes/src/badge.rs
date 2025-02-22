@@ -1,8 +1,8 @@
+use crate::badge_background::BadgeBackground;
+use crate::badge_symbol::BadgeSymbol;
 use carbide::draw::{Alignment, Dimension, Rect};
 use carbide::state::{LocalState, Map1};
 use carbide::widget::{ForEach, GeometryReader, Widget, WidgetExt, ZStack};
-use crate::badge_background::BadgeBackground;
-use crate::badge_symbol::BadgeSymbol;
 
 pub struct Badge;
 

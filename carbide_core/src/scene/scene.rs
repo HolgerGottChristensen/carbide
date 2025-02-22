@@ -1,8 +1,6 @@
-use std::fmt::Debug;
 use std::ops::Deref;
 
 use dyn_clone::DynClone;
-use carbide::widget::{Widget, WidgetExt};
 use carbide_core::widget::AnyWidget;
 
 pub trait AnyScene: AnyWidget + DynClone + 'static {

@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::misc::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout)]
@@ -64,7 +64,7 @@ impl CommonWidget for Spacer {
 
     fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
     fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 

@@ -1,7 +1,7 @@
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{calculate_size_vstack, Layout, LayoutContext, position_children_vstack};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, Sequence};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetId, Sequence};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]

@@ -21,7 +21,6 @@ carbide_core = { path = "../../carbide_core" }
 carbide_winit = { path = "../carbide_winit" }
 carbide_controls = { path = "../../carbide_controls", optional = true }
 carbide_text = { path = "../carbide_text" }
-cgmath.workspace = true
 log = "0.4"
 wgpu.workspace = true
 futures = "0.3"

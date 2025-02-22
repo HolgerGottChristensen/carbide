@@ -5,7 +5,7 @@ use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::{Environment};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State, ValueRef, ValueRefMut};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]

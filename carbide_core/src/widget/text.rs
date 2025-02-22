@@ -10,7 +10,7 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{wrap_state, AnyWidget, CommonWidget, Identifiable, Justify, Widget, WidgetExt, WidgetId, WidgetSync, WrapState};
+use crate::widget::{wrap_state, AnyWidget, CommonWidget, Identifiable, Justify, Widget, WidgetId, WidgetSync, WrapState};
 use crate::widget::types::Wrap;
 
 /// Displays some given text centered within a rectangular area.
@@ -108,7 +108,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
         self
     }
 
-    pub fn font_weight<FW: IntoReadState<FontWeight>>(mut self, weight: FW) -> Text<T2, S2, C2, FS2, FW::Output, W> {
+    pub fn font_weight<FW: IntoReadState<FontWeight>>(self, weight: FW) -> Text<T2, S2, C2, FS2, FW::Output, W> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -125,7 +125,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
         }
     }
 
-    pub fn font_style<FS: IntoReadState<FontStyle>>(mut self, style: FS) -> Text<T2, S2, C2, FS::Output, FW2, W> {
+    pub fn font_style<FS: IntoReadState<FontStyle>>(self, style: FS) -> Text<T2, S2, C2, FS::Output, FW2, W> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -147,11 +147,11 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
         self.font_weight(FontWeight::Bold)
     }
 
-    pub fn italic(mut self) -> Text<T2, S2, C2, FontStyle, FW2, W> {
+    pub fn italic(self) -> Text<T2, S2, C2, FontStyle, FW2, W> {
         self.font_style(FontStyle::Italic)
     }
 
-    pub fn wrap<W2: IntoReadState<Wrap>>(mut self, wrap: W2) -> Text<T2, S2, C2, FS2, FW2, W2::Output> {
+    pub fn wrap<W2: IntoReadState<Wrap>>(self, wrap: W2) -> Text<T2, S2, C2, FS2, FW2, W2::Output> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -287,7 +287,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> CommonWidget for Text<T, S, C, FS, FW, W> {
     fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 
     fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
 

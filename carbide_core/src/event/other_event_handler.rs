@@ -1,13 +1,12 @@
-use std::any::{type_name, Any, TypeId};
-use std::ops::{Deref, DerefMut};
-use carbide::environment::{EnvironmentKey};
-use carbide::event::CoreEvent;
 use crate::draw::ImageContext;
-use crate::environment::{Environment};
+use crate::environment::Environment;
 use crate::focus::Focusable;
 use crate::misc::any_debug::AnyDebug;
 use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
+use carbide::event::CoreEvent;
+use std::any::{Any, TypeId};
+use std::ops::Deref;
 
 pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
     /// This will get called if there are event that are not covered by the other functions.

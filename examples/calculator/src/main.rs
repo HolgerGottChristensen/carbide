@@ -1,13 +1,13 @@
 use std::ops::Deref;
 
-use carbide::{closure, Application, Window};
 use carbide::color::ColorExt;
 use carbide::controls::button::{Button, PlainStyle};
 use carbide::controls::ControlsExt;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::state::{LocalState, Map3, ReadState, State, ReadStateExtNew};
+use carbide::state::{LocalState, Map3, ReadState, ReadStateExtNew, State};
 use carbide::widget::*;
+use carbide::{closure, Application, Window};
 
 use crate::calculator_state::{CalculatorState, Operation};
 

@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::render::{Render, RenderContext};
-use crate::widget::{Empty, Widget, WidgetExt, WidgetId, CommonWidget};
+use crate::widget::{Empty, Widget, WidgetId, CommonWidget};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

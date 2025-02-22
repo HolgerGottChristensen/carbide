@@ -17,7 +17,6 @@ members = [
     "backends/carbide_wgpu",
     "backends/carbide_wgpu_3d",
     "backends/carbide_windows",
-    "backends/carbide_rend3",
     "backends/carbide_text",
     "backends/carbide_printpdf",
     "backends/carbide_fluent",
@@ -51,7 +50,7 @@ wgpu = "0.16.1"
 bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 include_dir = "0.7.4"
-rand = "0.8.5"
+rand = "0.9.0"
 accesskit = { path = "../Repositories/accesskit/common" }
 accesskit_winit = { path = "../Repositories/accesskit/platforms/winit" }
 smallvec = "1.13.2"

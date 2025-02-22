@@ -10,7 +10,7 @@ use crate::draw::{Color, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetExt, WidgetId, WidgetSync, ZStack};
+use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
 use crate::widget::shape::{Shape, tessellate};
 use crate::widget::types::TriangleStore;
 use crate::widget::types::ShapeStyle;

@@ -4,7 +4,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 
 pub trait OnKeyAction: Fn(&Key, ModifierKey, &mut KeyboardEventContext) + Clone + 'static {}
 

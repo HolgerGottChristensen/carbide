@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{calculate_size_hstack, Layout, LayoutContext, position_children_hstack};
-use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetId, Sequence};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetId, Sequence};
 
 /// # HStack
 /// The horizontal stack in Carbide is one of the main layout components.
@@ -145,14 +145,14 @@ use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetExt, WidgetI
 /// use carbide_core::widget::{HStack, Rectangle, WidgetExt, Spacer};
 ///
 /// fn main() {
-///     HStack::new(vec![
+///     HStack::new((
 ///         Spacer::new(),
 ///         Spacer::new(),
 ///         Rectangle::new().frame(10.0, 10.0),
 ///         Spacer::new(),
 ///         Rectangle::new().frame(10.0, 10.0),
 ///         Spacer::new(),
-///     ]);
+///     ));
 /// }
 /// ```
 /// That will result in the following layout:

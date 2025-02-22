@@ -1,3 +1,4 @@
+extern crate carbide_core as carbide;
 mod scene3d;
 mod render_context3d;
 mod vertex;
@@ -15,16 +16,14 @@ mod node3d_sequence;
 mod image_context3d;
 
 use dashmap::DashMap;
-use once_cell::sync::Lazy;
-pub use scene3d::*;
-pub use render_context3d::*;
-pub use mesh::*;
-pub use vertex::*;
-pub use object::*;
 pub use handedness::*;
 pub use image_context3d::*;
-
-extern crate carbide_core as carbide;
+pub use mesh::*;
+pub use object::*;
+use once_cell::sync::Lazy;
+pub use render_context3d::*;
+pub use scene3d::*;
+pub use vertex::*;
 
 
 pub(crate) static AVAILABLE_CONTEXT3D_INITIALIZERS: Lazy<DashMap<&'static str, fn()->Box<dyn InnerRenderContext3d>>> = Lazy::new(|| {

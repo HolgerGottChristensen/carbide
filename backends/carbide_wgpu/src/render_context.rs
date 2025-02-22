@@ -1,13 +1,13 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
-use cgmath::{Matrix4, SquareMatrix};
 use wgpu::BindGroup;
 
 use carbide_core::color::{Color, ColorExt, WHITE};
-use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, Position, Rect, DrawStyle, ImageId, MODE_GEOMETRY_DASH, StrokeDashPattern, MODE_GRADIENT_GEOMETRY_DASH, Dimension, StrokeDashMode, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY_DASH_FAST};
 use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
 use carbide_core::draw::shape::triangle::Triangle;
+use carbide_core::draw::{Dimension, DrawStyle, ImageId, Position, Rect, StrokeDashMode, StrokeDashPattern, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
+use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{TextContext, TextId};
 use carbide_core::widget::{FilterId, ImageFilter};

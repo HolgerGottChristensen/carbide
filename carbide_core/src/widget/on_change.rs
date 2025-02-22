@@ -4,8 +4,8 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::state::{StateSync, ReadState, StateContract};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::state::{ReadState, StateContract};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId, WidgetSync};
 
 pub trait Changed<T: StateContract>: Fn(Option<&T>, &T) + Clone + 'static {}
 

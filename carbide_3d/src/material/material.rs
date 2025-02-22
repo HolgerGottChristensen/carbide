@@ -1,6 +1,6 @@
-use carbide::environment::{Environment};
-use carbide::state::StateSync;
 use crate::material::pbr_material::PbrMaterial;
+use carbide::environment::Environment;
+use carbide::state::StateSync;
 
 #[derive(Debug, Clone)]
 pub enum Material {

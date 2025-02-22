@@ -67,3 +67,8 @@ mod misc;
 pub mod image {
     pub use image::*;
 }
+
+/// Reexport of the cgmath crate
+pub mod math {
+    pub use cgmath::*;
+}

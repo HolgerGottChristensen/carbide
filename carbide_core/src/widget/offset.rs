@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]

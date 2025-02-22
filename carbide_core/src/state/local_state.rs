@@ -39,7 +39,7 @@ impl<T: StateContract> LocalState<T> {
 }
 
 impl<T: StateContract> StateSync for LocalState<T> {
-    fn sync(&mut self, env: &mut Environment) -> bool {
+    fn sync(&mut self, _env: &mut Environment) -> bool {
         // TODO: find a smarter way to determine if local state has been updated.
         // I guess we can figuring it out by storing a frame number in the local state
         // and in the env, and then comparing and updating whenever this is called and set_value

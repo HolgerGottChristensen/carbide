@@ -5,18 +5,18 @@ extern crate carbide_core;
 extern crate gfx;
 extern crate gfx_core;
 
-use gfx::{Resources, Factory, texture, PipelineState,
-          handle::RenderTargetView,
-          traits::FactoryExt,
+use gfx::{handle::RenderTargetView, texture, traits::FactoryExt, Factory,
+          PipelineState,
+          Resources,
 };
 
 use carbide_core::{
-    Rect,
-    Scalar,
     color,
     image,
     render,
     text::{rt, GlyphCache},
+    Rect,
+    Scalar,
 };
 
 /// A `Command` describing a step in the drawing process.
@@ -123,8 +123,8 @@ mod defines {
     //it appears gfx_defines generates unsafe code
     #![allow(unsafe_code)]
 
-    use gfx;
     use super::ColorFormat;
+    use gfx;
     // Vertex and pipeline declarations
     gfx_defines! {
         vertex Vertex {

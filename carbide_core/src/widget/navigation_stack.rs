@@ -7,7 +7,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::{Environment};
 use crate::event::{AccessibilityEventHandler, KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 
 #[derive(Debug, Clone)]
 pub struct NavigationManager {

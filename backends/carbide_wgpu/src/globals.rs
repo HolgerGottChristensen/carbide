@@ -1,18 +1,18 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::sync::RwLock;
-use dashmap::DashMap;
-use once_cell::sync::Lazy;
-use wgpu::{BindGroup, PipelineLayout, Sampler, ShaderModule, Texture, TextureFormat};
-use carbide_core::draw;
-use carbide_core::draw::ImageId;
-use carbide_core::widget::FilterId;
 use crate::bind_group_layouts::{ATLAS_BIND_GROUP_LAYOUT, FILTER_BUFFER_BIND_GROUP_LAYOUT, FILTER_TEXTURE_BIND_GROUP_LAYOUT, GRADIENT_DASHES_BIND_GROUP_LAYOUT, MAIN_TEXTURE_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT};
-use crate::DEVICE;
 use crate::image_context::{create_bind_group, BindGroupExtended};
 use crate::pipeline::{filter_pipeline_layout, main_pipeline_layout, RenderPipelines};
 use crate::samplers::main_sampler;
 use crate::textures::create_atlas_cache_texture;
+use crate::DEVICE;
+use carbide_core::draw;
+use carbide_core::draw::ImageId;
+use carbide_core::widget::FilterId;
+use dashmap::DashMap;
+use once_cell::sync::Lazy;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::sync::RwLock;
+use wgpu::{BindGroup, PipelineLayout, Sampler, ShaderModule, Texture, TextureFormat};
 
 pub(crate) static MAIN_SHADER: Lazy<ShaderModule> = Lazy::new(|| {
     DEVICE.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"))

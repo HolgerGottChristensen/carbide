@@ -16,8 +16,8 @@ use crate::draw::{NOOPImageContext, Position, Scalar};
 use crate::draw::shape::triangle::Triangle;
 use crate::render::triangle_render_context::TriangleRenderContext;
 use crate::environment::{Environment};
-use crate::render::{InnerRenderContext, RenderContext};
-use crate::text::{TextContext, NOOPTextContext};
+use crate::render::{RenderContext};
+use crate::text::NOOPTextContext;
 use crate::widget::AnyWidget;
 use crate::widget::types::{TriangleStore, ShapeStyle, StrokeStyle};
 

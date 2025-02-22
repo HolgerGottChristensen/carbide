@@ -4,7 +4,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 
 /// Takes a child and a background widget, and sizes the background the same as the child.
 /// The background will be shown behind the child widget.
@@ -18,7 +18,6 @@ use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
 ///     .background(Rectangle::new());
 /// ```
 ///
-
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render)]
 pub struct Background<F, B> where

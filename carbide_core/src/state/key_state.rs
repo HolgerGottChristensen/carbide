@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable};
+use crate::environment::{Environment, EnvironmentKey};
 use carbide::state::{AnyReadState, StateSync, ValueRef};
 
 #[derive(Debug)]

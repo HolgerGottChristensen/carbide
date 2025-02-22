@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 pub use carbide_core::*;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[cfg(feature = "carbide_macro")]
 pub use carbide_macro::*;

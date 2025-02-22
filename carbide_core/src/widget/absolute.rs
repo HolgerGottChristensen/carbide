@@ -6,7 +6,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::ReadState;
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]

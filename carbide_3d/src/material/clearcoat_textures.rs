@@ -1,5 +1,5 @@
-use carbide::draw::ImageId;
 use crate::material::material_flags::MaterialFlags;
+use carbide::draw::ImageId;
 
 /// How clearcoat values should be derived.
 #[derive(Debug, Clone)]

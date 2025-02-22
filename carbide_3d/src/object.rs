@@ -1,10 +1,10 @@
-use carbide::render::matrix::{Deg, Euler, Matrix4, SquareMatrix};
-use carbide::state::StateSync;
 use crate::material::Material;
 use crate::mesh::Mesh;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use crate::render3d::Render3d;
 use crate::RenderContext3d;
+use carbide::render::matrix::{Deg, Euler, Matrix4, SquareMatrix};
+use carbide::state::StateSync;
 
 #[derive(Debug, Clone)]
 pub struct Object {

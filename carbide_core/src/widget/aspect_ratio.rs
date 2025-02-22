@@ -4,7 +4,7 @@ use crate::{CommonWidgetImpl, impl_state_value};
 use crate::draw::{Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 
 #[derive(Debug, Clone)]
 pub enum ContentMode {

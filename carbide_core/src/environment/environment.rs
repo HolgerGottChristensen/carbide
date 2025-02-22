@@ -49,9 +49,6 @@ pub trait EnvironmentKeyable: Debug + 'static {
                     Self::with_all(rest, inner, f)
                 })
             }
-            [(key, value)] => {
-                key.with(value, stack, f)
-            }
             [] => {
                 f(stack)
             }

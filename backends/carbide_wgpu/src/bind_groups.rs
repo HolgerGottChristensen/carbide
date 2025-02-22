@@ -1,8 +1,8 @@
-use cgmath::Matrix4;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
 use wgpu::util::DeviceExt;
+use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
 
 use carbide_core::draw::Scalar;
+use carbide_core::math::Matrix4;
 
 pub(crate) fn create_uniform_bind_group(
     device: &Device,

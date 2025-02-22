@@ -3,7 +3,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widget, WidgetExt, WidgetId};
+use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widget, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

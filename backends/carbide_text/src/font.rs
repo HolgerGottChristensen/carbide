@@ -1,15 +1,15 @@
-use std::fmt::{Debug, Formatter};
-use std::path::Path;
 use carbide_core::draw::{Position, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image;
 use carbide_core::image::{DynamicImage, GenericImage, Rgba};
 use carbide_core::text::{FontId, FontSize, FontStyle, FontWeight};
+use std::fmt::{Debug, Formatter};
+use std::path::Path;
 
 
-use carbide_rusttype::{GlyphId, point, Scale, Weight};
 use crate::glyph::Glyph;
 use crate::text_context::TextContext;
+use carbide_rusttype::{point, GlyphId, Scale, Weight};
 
 
 type RustTypeFont = carbide_rusttype::Font<'static>;

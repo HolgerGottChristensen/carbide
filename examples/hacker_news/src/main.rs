@@ -1,12 +1,10 @@
 use std::ops::Deref;
 
 use chrono::{TimeZone, Utc};
-use futures::{FutureExt, StreamExt};
 use futures::stream::FuturesOrdered;
+use futures::{FutureExt, StreamExt};
 use reqwest::get;
 
-use carbide::{closure, lens, task, ui};
-use carbide::{Application, Window};
 use carbide::color::TRANSPARENT;
 use carbide::controls::List;
 use carbide::draw::{Alignment, Color, Dimension};
@@ -14,6 +12,8 @@ use carbide::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadS
 use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State};
 use carbide::text::FontWeight;
 use carbide::widget::*;
+use carbide::{closure, lens, task, ui};
+use carbide::{Application, Window};
 
 use crate::article::Article;
 use crate::item::HNItem;

@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::Local;
 
 use carbide_core::asynchronous::Timer;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{EnvironmentFontSize};
+use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::Map1;
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_wgpu::{Application, Window};

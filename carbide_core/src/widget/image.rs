@@ -12,7 +12,7 @@ use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, Style, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Widget, WidgetExt, WidgetId, CommonWidget, WidgetSync, Identifiable};
+use crate::widget::{Widget, WidgetId, CommonWidget, WidgetSync, Identifiable};
 use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.

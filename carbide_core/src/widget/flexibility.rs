@@ -3,7 +3,7 @@ use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
-use crate::widget::{Widget, WidgetExt, WidgetId};
+use crate::widget::{Widget, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flexibility<C> where C: Widget {

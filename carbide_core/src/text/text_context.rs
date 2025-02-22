@@ -74,7 +74,7 @@ impl TextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn remove(&mut self, id: TextId) {
+    fn remove(&mut self, _id: TextId) {
         unimplemented!()
     }
 }

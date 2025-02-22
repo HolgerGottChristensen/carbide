@@ -1,6 +1,6 @@
 use crate::color;
-use crate::draw::Position;
 use crate::draw::shape::vertex::Vertex;
+use crate::draw::Position;
 use crate::widget::ColoredPoint;
 
 /// A single triangle described by three vertices.

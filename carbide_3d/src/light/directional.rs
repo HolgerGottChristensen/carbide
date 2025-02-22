@@ -1,10 +1,10 @@
-use carbide::color::{Color, WHITE};
-use carbide::environment::Environment;
-use carbide::render::matrix::{InnerSpace, Matrix4, SquareMatrix, Vector3, Zero};
-use carbide::state::{IntoReadState, StateSync, ReadState};
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use crate::render3d::Render3d;
 use crate::RenderContext3d;
+use carbide::color::{Color, WHITE};
+use carbide::environment::Environment;
+use carbide::render::matrix::{InnerSpace, Matrix4, SquareMatrix, Vector3, Zero};
+use carbide::state::{IntoReadState, ReadState, StateSync};
 
 #[derive(Clone, Copy, Debug)]
 pub struct DirectionalLight<D, C, I>

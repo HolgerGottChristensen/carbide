@@ -1,7 +1,6 @@
 use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;
-use crate::state::StateSync;
-use crate::widget::{CommonWidget, Content, Identifiable, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, Content, Identifiable, Sequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 use carbide::environment::Environment;
 use dyn_clone::DynClone;
@@ -116,7 +115,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
         unimplemented!()
     }
 
-    fn set_position(&mut self, position: Position) {
+    fn set_position(&mut self, _: Position) {
         unimplemented!()
     }
 
@@ -124,7 +123,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
         unimplemented!()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {
+    fn set_dimension(&mut self, _: Dimension) {
         unimplemented!()
     }
 }

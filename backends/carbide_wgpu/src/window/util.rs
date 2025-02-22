@@ -1,5 +1,5 @@
-use cgmath::{Matrix4, Vector3};
 use carbide_core::draw::{Dimension, Scalar};
+use carbide_core::math::{ortho, Matrix4, Vector3};
 
 pub fn calculate_carbide_to_wgpu_matrix(
     dimension: Dimension,
@@ -9,7 +9,7 @@ pub fn calculate_carbide_to_wgpu_matrix(
     let scale = (scale_factor / half_height) as f32;
 
     #[rustfmt::skip]
-    pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
+    pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
         1.0, 0.0, 0.0, 0.0,
         0.0, 1.0, 0.0, 0.0,
         0.0, 0.0, 0.5, 0.0,
@@ -25,7 +25,7 @@ pub fn calculate_carbide_to_wgpu_matrix(
 
     let aspect_ratio = (dimension.width / dimension.height) as f32;
 
-    let ortho = cgmath::ortho(
+    let ortho = ortho(
         -1.0 * aspect_ratio,
         1.0 * aspect_ratio,
         -1.0,

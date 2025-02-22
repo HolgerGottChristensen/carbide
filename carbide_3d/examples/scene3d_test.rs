@@ -1,17 +1,17 @@
-use std::collections::HashMap;
-use tobj::GPU_LOAD_OPTIONS;
-use carbide_3d::{Handedness, Mesh, Object, Scene3d, Vertex};
 use carbide_3d::camera::camera_projection::CameraProjection;
 use carbide_3d::camera::SimpleCamera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_core::color::{BLUE, ColorExt, DARK_CHARCOAL, ORANGE, WHITE};
+use carbide_3d::{Handedness, Mesh, Object, Scene3d, Vertex};
+use carbide_core::color::{ColorExt, BLUE, DARK_CHARCOAL, ORANGE, WHITE};
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::render::matrix::{InnerSpace, Matrix4, Point3, Vector3};
 use carbide_core::state::{GlobalState, LocalState, ReadState};
 use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
+use std::collections::HashMap;
+use tobj::GPU_LOAD_OPTIONS;
 
 fn main() {
     carbide_wgpu_3d::init();

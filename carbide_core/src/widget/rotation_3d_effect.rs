@@ -5,7 +5,7 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

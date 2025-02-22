@@ -1,17 +1,17 @@
 use carbide::animation::AnimationManager;
 use carbide::draw::Rect;
-use carbide::render::{LayerId, RenderContext};
 use carbide::render::matrix::Matrix4;
+use carbide::render::{LayerId, RenderContext};
 use carbide::state::ReadState;
-use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::Render;
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::CommonWidgetImpl;
 
-use crate::{image_context3d, InnerImageContext3d, InnerRenderContext3d, render_context3d, RenderContext3d};
 use crate::camera::SimpleCamera;
 use crate::node3d_sequence::Node3dSequence;
 use crate::render3d::Render3d;
+use crate::{image_context3d, render_context3d, InnerImageContext3d, InnerRenderContext3d, RenderContext3d};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

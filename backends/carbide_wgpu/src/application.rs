@@ -1,10 +1,10 @@
 use futures::executor::block_on;
 use once_cell::sync::Lazy;
+use smallvec::SmallVec;
 use std::ffi::OsStr;
 use std::fmt::{Debug, Formatter};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
-use smallvec::SmallVec;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
 
@@ -17,12 +17,11 @@ use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::event::EventSink;
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
-use carbide_core::scene::{AnyScene, Scene, SceneSequence};
-use carbide_core::widget::WidgetId;
 use carbide_core::locate_folder;
 use carbide_core::mouse_position::MousePositionKey;
+use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContext as _;
-use carbide_core::widget::managers::ShortcutManager;
+use carbide_core::widget::WidgetId;
 use carbide_text::text_context::TextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;

@@ -15,7 +15,6 @@ use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::state::ReadStateExtNew;
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::Wrap;
 
@@ -155,7 +154,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.stroke_color = read_state.value().clone();
     }
 
-    pub fn rect(&mut self, x: f64, y: f64, width: f64, height: f64) {
+    pub fn rect(&mut self, _x: f64, _y: f64, _width: f64, _height: f64) {
         todo!()
     }
 
@@ -302,7 +301,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         )
     }
 
-    pub fn arc_to(&mut self, x1: f64, y1: f64, x2: f64, y2: f64, r: f64) {
+    pub fn arc_to(&mut self, _x1: f64, _y1: f64, _x2: f64, _y2: f64, _r: f64) {
         todo!()
     }
 
@@ -445,9 +444,9 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             .indices
             .chunks(3)
             .map(|indices| {
-                let mut vertex0 = geometry.vertices[indices[0] as usize];
-                let mut vertex1 = geometry.vertices[indices[1] as usize];
-                let mut vertex2 = geometry.vertices[indices[2] as usize];
+                let vertex0 = geometry.vertices[indices[0] as usize];
+                let vertex1 = geometry.vertices[indices[1] as usize];
+                let vertex2 = geometry.vertices[indices[2] as usize];
 
                 let first = vertex0;
 

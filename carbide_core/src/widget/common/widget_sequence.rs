@@ -1,10 +1,9 @@
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use dyn_clone::{clone_box, clone_trait_object, DynClone};
 use carbide::state::AnyReadState;
 use crate::state::{Map1, ReadStateExtNew};
-use crate::widget::{AnyWidget, Content, Widget, WidgetSync};
+use crate::widget::{AnyWidget, Content, Widget};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {
@@ -12,7 +11,7 @@ pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Siz
 
         Map1::read_map(0, move |_| {
             let mut count = 0;
-            s.foreach(&mut |a| {
+            s.foreach(&mut |_| {
                 count += 1;
             });
 
@@ -32,16 +31,6 @@ clone_trait_object!(<T: ?Sized> AnySequence<T>);
 pub trait Sequence<T=dyn AnyWidget>: AnySequence<T> + Clone where T: ?Sized {}
 
 impl<T: ?Sized, W> Sequence<T> for W where W: AnySequence<T> + Clone {}
-
-mod private {
-    use crate::widget::AnySequence;
-
-    // This disallows implementing Widget manually, and requires something to implement
-    // AnyWidget to implement Widget.
-    pub trait Sealed {}
-
-    impl<T> Sealed for T where T: AnySequence {}
-}
 
 impl<T: ?Sized + 'static> AnySequence<T> for Box<dyn AnySequence<T>> {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a T)) {

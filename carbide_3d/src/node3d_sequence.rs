@@ -1,5 +1,5 @@
-use std::fmt::Debug;
 use crate::node3d::{AnyNode3d, Node3d};
+use std::fmt::Debug;
 
 pub trait Node3dSequence: Clone + Debug + 'static {
     fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyNode3d));

@@ -1,5 +1,5 @@
 use crate::misc::flags::WidgetFlag;
-use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetId};
 use crate::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
 use std::fmt::{Debug, Formatter};
@@ -83,7 +83,7 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
         unreachable!()
     }
 
-    fn set_position(&mut self, position: Position) {
+    fn set_position(&mut self, _: Position) {
         unreachable!()
     }
 
@@ -91,7 +91,7 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
         unreachable!()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {
+    fn set_dimension(&mut self, _: Dimension) {
         unreachable!()
     }
 }

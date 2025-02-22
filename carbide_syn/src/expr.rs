@@ -962,8 +962,8 @@ pub(crate) mod parsing {
     use crate::parse::ParseBuffer;
     use crate::parse::{Parse, ParseStream, Result};
     use crate::path;
-    use std::cmp::Ordering;
     use proc_macro2::Delimiter;
+    use std::cmp::Ordering;
 
     mod kw {
         crate::custom_keyword!(builtin);

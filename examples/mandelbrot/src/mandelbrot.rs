@@ -4,21 +4,21 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
-use num::{Complex, Zero};
 use num::complex::ComplexFloat;
+use num::{Complex, Zero};
 use uuid::Uuid;
 
 use carbide::asynchronous::get_event_sink;
 use carbide::color::ColorExt;
-use carbide::CommonWidgetImpl;
-use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::draw::ImageId;
 use carbide::draw::MODE_IMAGE;
+use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::event::{CoreEvent, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
-use carbide::render::{Render, RenderContext};
 use carbide::render::matrix::{Deg, Matrix4, Vector3};
+use carbide::render::{Render, RenderContext};
 use carbide::widget::*;
+use carbide::CommonWidgetImpl;
 
 const MAX_ITER: u32 = 1000;
 //const MAX_ITER: u32 = 20;
