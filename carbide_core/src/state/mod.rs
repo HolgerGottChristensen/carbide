@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub use r#impl::*;
 pub use tuple_state::*;
 pub use util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
@@ -38,7 +37,6 @@ mod index_state;
 //mod async_state;
 mod field_state;
 mod ignore_writes_state;
-mod r#impl;
 mod read_state;
 mod tuple_state;
 mod util;
