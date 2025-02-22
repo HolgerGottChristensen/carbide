@@ -2,21 +2,21 @@ use carbide::color::Color;
 use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{InnerImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
+use crate::draw::{ImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 
 use crate::render::CarbideTransform;
 
-use crate::text::{InnerTextContext, TextId};
+use crate::text::{TextContext, TextId};
 use crate::widget::ImageFilter;
 use crate::environment::{Environment};
 use crate::render::layer::{Layer, LayerId};
 
 pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,
-    pub text: &'a mut dyn InnerTextContext,
-    pub image: &'a mut dyn InnerImageContext,
+    pub text: &'a mut dyn TextContext,
+    pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }
 
@@ -208,7 +208,7 @@ pub trait InnerRenderContext {
 
     fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32);
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext);
+    fn text(&mut self, text: TextId, ctx: &mut dyn TextContext);
 
     fn filter_new(&mut self);
     fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool);

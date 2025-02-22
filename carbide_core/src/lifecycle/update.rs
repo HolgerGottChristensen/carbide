@@ -1,6 +1,6 @@
-use crate::draw::InnerImageContext;
+use crate::draw::ImageContext;
 use crate::environment::{Environment};
-use crate::text::InnerTextContext;
+use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait Update: CommonWidget + WidgetSync {
@@ -19,7 +19,7 @@ pub trait Update: CommonWidget + WidgetSync {
 
 
 pub struct UpdateContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn InnerTextContext,
-    pub image: &'a mut dyn InnerImageContext,
+    pub text: &'a mut dyn TextContext,
+    pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }

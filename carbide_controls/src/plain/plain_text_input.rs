@@ -15,7 +15,7 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State};
-use carbide_core::text::InnerTextContext;
+use carbide_core::text::TextContext;
 use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId, Wrap};
 
 use crate::{EnabledState};
@@ -1019,7 +1019,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
     }
 
-    fn update_offset_with_speed_to_make_cursor_visible(&mut self, speed: f64, _ctx: &mut dyn InnerTextContext) {
+    fn update_offset_with_speed_to_make_cursor_visible(&mut self, speed: f64, _ctx: &mut dyn TextContext) {
         let mut current_offset = *self.text_offset.value();
 
         current_offset += speed;
@@ -1032,7 +1032,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
     }
 
         /// Update the current scroll offset to make the cursor visible within the text field if possible
-    fn update_offset_to_make_cursor_visible(&mut self, ctx: &mut dyn InnerTextContext) {
+    fn update_offset_to_make_cursor_visible(&mut self, ctx: &mut dyn TextContext) {
         let mut current_offset = *self.text_offset.value();
 
         if self.get_focus() == Focus::Focused {
@@ -1124,7 +1124,7 @@ impl<
 }
 
 impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: ReadState<T=u32>, T: State<T=String>, E: ReadState<T=bool>> PlainTextInput<F, C, O, S, T, E> {
-    fn drag_selection(&mut self, ctx: &mut dyn InnerTextContext, to: &Position, _delta_xy: &Position) {
+    fn drag_selection(&mut self, ctx: &mut dyn TextContext, to: &Position, _delta_xy: &Position) {
         if to.x - self.x() < 0.0 {
             self.current_offset_speed = Some(SCROLL_SUPER_FAST_SPEED);
         } else if (self.x() + self.width()) - to.x < 0.0 {

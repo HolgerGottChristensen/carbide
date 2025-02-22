@@ -2,7 +2,8 @@ use carbide::{Application, Window, closure};
 use carbide::draw::Dimension;
 use carbide::state::LocalState;
 use carbide::widget::{Text, VStack, WidgetExt};
-use carbide::controls::{Button};
+use carbide::controls::button::{BorderedProminentStyle, Button};
+use carbide::controls::ControlsExt;
 use carbide::environment::EnvironmentFontSize::LargeTitle;
 
 fn main() {
@@ -13,7 +14,7 @@ fn main() {
 
     let text = Text::new(counter.clone()).font_size(LargeTitle);
 
-    let button = Button::new_primary("Increase counter", closure!(|_| {
+    let button = Button::new("Increase counter", closure!(|_| {
         *$counter += 1;
     })).frame(200.0, 30.0);
 
@@ -23,7 +24,7 @@ fn main() {
         VStack::new((
             text,
             button
-        ))
+        )).button_style(BorderedProminentStyle)
     ));
 
     application.launch();

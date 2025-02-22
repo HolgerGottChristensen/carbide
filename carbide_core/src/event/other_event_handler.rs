@@ -2,11 +2,11 @@ use std::any::{type_name, Any, TypeId};
 use std::ops::{Deref, DerefMut};
 use carbide::environment::{EnvironmentKey};
 use carbide::event::CoreEvent;
-use crate::draw::InnerImageContext;
+use crate::draw::ImageContext;
 use crate::environment::{Environment};
 use crate::focus::Focusable;
 use crate::misc::any_debug::AnyDebug;
-use crate::text::InnerTextContext;
+use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
@@ -30,8 +30,8 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 }
 
 pub struct OtherEventContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn InnerTextContext,
-    pub image: &'a mut dyn InnerImageContext,
+    pub text: &'a mut dyn TextContext,
+    pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
     pub is_current: &'a bool,
     pub is_consumed: &'a mut bool

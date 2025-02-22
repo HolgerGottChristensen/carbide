@@ -1,5 +1,5 @@
 use wgpu::BindGroup;
-use carbide_core::draw::{InnerImageContext, Texture, TextureFormat, ImageId};
+use carbide_core::draw::{ImageContext, Texture, TextureFormat, ImageId};
 
 use crate::application::{DEVICE, QUEUE};
 use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
@@ -7,7 +7,7 @@ use crate::globals::{BIND_GROUPS};
 
 pub struct WGPUImageContext;
 
-impl InnerImageContext for WGPUImageContext {
+impl ImageContext for WGPUImageContext {
     fn texture_exist(&self, id: &ImageId) -> bool {
         BIND_GROUPS.with(|bind_groups| {
             let bind_groups = &mut *bind_groups.borrow_mut();

@@ -9,7 +9,7 @@ use carbide_core::draw::{MODE_GEOMETRY, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_IC
 use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
 use carbide_core::draw::shape::triangle::Triangle;
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
-use carbide_core::text::{InnerTextContext, TextId};
+use carbide_core::text::{TextContext, TextId};
 use carbide_core::widget::{FilterId, ImageFilter};
 
 use crate::gradient::{Dashes, Gradient};
@@ -779,7 +779,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw_image(id.map(|id| WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
     }
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn InnerTextContext) {
+    fn text(&mut self, text: TextId, ctx: &mut dyn TextContext) {
         if self.skip_rendering {
             return;
         }

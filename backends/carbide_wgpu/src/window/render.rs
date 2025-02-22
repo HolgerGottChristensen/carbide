@@ -10,7 +10,7 @@ use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::{Initialize, UpdateContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::ReadState;
-use carbide_core::text::InnerTextContext;
+use carbide_core::text::TextContext;
 use carbide_core::widget::{FilterId, Widget};
 use carbide_winit::convert_mouse_cursor;
 use carbide_winit::dpi::PhysicalSize;
@@ -156,7 +156,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn InnerTextContext) {
+    fn update_atlas_cache(device: &Device, encoder: &mut CommandEncoder, ctx: &mut dyn TextContext) {
         ctx.update_cache(&mut |image| {
             TextureAtlasCommand {
                 texture_atlas_buffer: image.as_bytes(),
@@ -550,7 +550,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn InnerTextContext, scale_factor: Scalar) -> Result<(), wgpu::SurfaceError> {
+    fn render_inner(&self, render_passes: Vec<RenderPass>, uniform_bind_groups: Vec<BindGroup>, ctx: &mut dyn TextContext, scale_factor: Scalar) -> Result<(), wgpu::SurfaceError> {
         BIND_GROUPS.with(|bind_groups|  {
             let bind_groups = &*bind_groups.borrow();
 

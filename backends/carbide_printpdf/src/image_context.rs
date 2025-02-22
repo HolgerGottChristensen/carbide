@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 use carbide_core::draw::ImageId;
-use carbide_core::draw::{InnerImageContext, Texture, TextureFormat};
+use carbide_core::draw::{ImageContext, Texture, TextureFormat};
 use printpdf::Image as PdfImage;
 use carbide_core::image::{DynamicImage, RgbaImage};
 
@@ -11,7 +11,7 @@ thread_local! {
 
 pub struct PDFImageContext;
 
-impl InnerImageContext for PDFImageContext {
+impl ImageContext for PDFImageContext {
     fn texture_exist(&self, id: &ImageId) -> bool {
         IMAGES.with(|images| {
             images.borrow().contains_key(id)

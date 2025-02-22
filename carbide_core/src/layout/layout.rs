@@ -1,6 +1,6 @@
-use crate::draw::{Dimension, InnerImageContext};
+use crate::draw::{Dimension, ImageContext};
 use crate::environment::{Environment};
-use crate::text::InnerTextContext;
+use crate::text::TextContext;
 use crate::widget::CommonWidget;
 
 pub trait Layout: CommonWidget {
@@ -54,7 +54,7 @@ pub trait Layout: CommonWidget {
 }
 
 pub struct LayoutContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn InnerTextContext,
-    pub image: &'a mut dyn InnerImageContext,
+    pub text: &'a mut dyn TextContext,
+    pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }

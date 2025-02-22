@@ -6,7 +6,7 @@ use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::render::InnerRenderContext;
 
-pub trait InnerTextContext {
+pub trait TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension;
 
     fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment);
@@ -33,7 +33,7 @@ pub trait InnerTextContext {
 
 pub struct NOOPTextContext;
 
-impl InnerTextContext for NOOPTextContext {
+impl TextContext for NOOPTextContext {
     fn calculate_size(&mut self, _id: TextId, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
         unimplemented!()
     }

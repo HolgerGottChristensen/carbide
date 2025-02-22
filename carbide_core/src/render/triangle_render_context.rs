@@ -3,7 +3,7 @@ use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect, Scalar, 
 use crate::draw::shape::stroke_vertex::StrokeVertex;
 use crate::draw::shape::triangle::Triangle;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
-use crate::text::{InnerTextContext, TextId};
+use crate::text::{TextContext, TextId};
 
 pub struct TriangleRenderContext(pub Vec<Triangle<Position>>);
 impl InnerRenderContext for TriangleRenderContext {
@@ -51,7 +51,7 @@ impl InnerRenderContext for TriangleRenderContext {
 
     fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
 
-    fn text(&mut self, _text: TextId, _ctx: &mut dyn InnerTextContext) {}
+    fn text(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 
     fn filter_new(&mut self) {}
 

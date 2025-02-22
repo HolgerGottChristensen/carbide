@@ -9,7 +9,7 @@ use carbide_core::draw::{Dimension, MODE_TEXT, MODE_TEXT_COLOR, Position, Rect, 
 use carbide_core::environment::{Environment};
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
-use carbide_core::text::{FontStyle, InnerTextContext, TextId};
+use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
 use carbide_core::text::TextStyle;
 use carbide_core::widget::Wrap;
 use unicode_segmentation::UnicodeSegmentation;
