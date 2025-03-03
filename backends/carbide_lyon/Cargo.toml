@@ -1,0 +1,9 @@
+[package]
+name = "carbide_lyon"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+carbide_core = { path = "../../carbide_core" }
+lyon.workspace = true

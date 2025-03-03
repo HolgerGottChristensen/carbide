@@ -2,14 +2,13 @@ use carbide::color::Color;
 use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{ImageContext, Position, DrawStyle, ImageId, StrokeDashPattern};
-use crate::draw::shape::stroke_vertex::StrokeVertex;
-use crate::draw::shape::triangle::Triangle;
+use crate::draw::{ImageContext, Position, DrawStyle, ImageId, StrokeDashPattern, Scalar};
+use crate::draw::shape::{DrawShape, StrokeAlignment};
 
 use crate::render::CarbideTransform;
 
 use crate::text::{TextContext, TextId};
-use crate::widget::ImageFilter;
+use crate::widget::{AnyShape, ImageFilter};
 use crate::environment::{Environment};
 use crate::render::layer::{Layer, LayerId};
 
@@ -101,43 +100,19 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &[Triangle<Position>], f: F) -> R {
+    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &dyn AnyShape, f: F) -> R {
         self.render.stencil(geometry);
         let res = f(self);
         self.render.pop_stencil();
         res
     }
 
-    /// Renders the geometry with the current style
-    pub fn geometry(&mut self, geometry: &[Triangle<Position>]) {
-        if geometry.is_empty() {
-            return;
-        }
-
-        self.render.geometry(geometry);
+    pub fn fill_shape(&mut self, shape: &dyn AnyShape) {
+        self.render.fill_shape(shape);
     }
 
-    pub fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
-        if stroke.is_empty() {
-            return;
-        }
-
-        self.render.stroke(stroke);
-    }
-
-    pub fn rect(&mut self, rect: Rect) {
-        self.geometry(&[
-            Triangle([
-                rect.position,
-                Position::new(rect.position.x + rect.width(), rect.position.y),
-                Position::new(rect.position.x, rect.position.y + rect.height()),
-            ]),
-            Triangle([
-                Position::new(rect.position.x + rect.width(), rect.position.y),
-                Position::new(rect.position.x + rect.width(), rect.position.y + rect.height()),
-                Position::new(rect.position.x, rect.position.y + rect.height()),
-            ]),
-        ])
+    pub fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment) {
+        self.render.stroke_shape(shape, stroke_width, stroke_alignment);
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: DrawStyle, f: F) -> R {
@@ -184,20 +159,11 @@ pub trait InnerRenderContext {
     fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect);
     fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect);
 
-    fn stencil(&mut self, geometry: &[Triangle<Position>]);
+    fn stencil(&mut self, shape: &dyn AnyShape);
     fn pop_stencil(&mut self);
 
-    /// Renders the geometry with the current style
-    fn geometry(&mut self, geometry: &[Triangle<Position>]);
-    fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]);
-
-
-    fn rect(&mut self, rect: Rect) {
-        self.geometry(&[
-            (rect.bottom_left(), rect.bottom_right(), rect.top_left()).into(),
-            (rect.bottom_right(), rect.top_right(), rect.top_left()).into(),
-        ])
-    }
+    fn fill_shape(&mut self, shape: &dyn AnyShape);
+    fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment);
 
     // TODO: Consider making it take a reference to Style
     fn style(&mut self, style: DrawStyle);

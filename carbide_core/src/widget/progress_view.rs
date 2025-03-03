@@ -1,4 +1,5 @@
 use std::time::Duration;
+use carbide::draw::Angle;
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_macro::carbide_default_builder2;
 
@@ -43,11 +44,10 @@ impl ProgressView<Empty> {
             Canvas::new(|context: &mut CanvasContext| {
                 context.move_to(2.0, context.dimension().height / 2.0);
                 context.arc(
-                    context.dimension().width / 2.0,
-                    context.dimension().height / 2.0,
+                    Position::new(context.dimension().width / 2.0, context.dimension().height / 2.0),
                     context.dimension().height / 2.0 - 2.0,
-                    0.0,
-                    60.0,
+                    Angle::Degrees(0.0),
+                    Angle::Degrees(60.0),
                 );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);
@@ -58,11 +58,10 @@ impl ProgressView<Empty> {
             Canvas::new(|context: &mut CanvasContext| {
                 context.move_to(2.0, context.dimension().height / 2.0);
                 context.arc(
-                    context.dimension().width / 2.0,
-                    context.dimension().height / 2.0,
+                    Position::new(context.dimension().width / 2.0, context.dimension().height / 2.0),
                     context.dimension().height / 2.0 - 2.0,
-                    0.0,
-                    120.0,
+                    Angle::Degrees(0.0),
+                    Angle::Degrees(120.0),
                 );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);

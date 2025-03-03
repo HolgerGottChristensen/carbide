@@ -1,6 +1,6 @@
 use crate::draw::Scalar;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct CornerRadii {
     pub top_left: Scalar,
     pub top_right: Scalar,

@@ -1,11 +1,12 @@
 use std::fmt::{Debug, Formatter};
+use carbide::draw::shape::DrawShape;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, TriangleStore, Shape, ShapeStyle, StrokeStyle, Widget, WidgetId};
+use crate::widget::{CommonWidget, AnyShape, ShapeStyle, StrokeStyle, Widget, WidgetId};
 use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -52,16 +53,12 @@ impl<C: Context> CommonWidget for Canvas<C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
-impl<C: Context> Shape for Canvas<C> {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
+impl<C: Context> AnyShape for Canvas<C> {
+    fn cache_key(&self) -> Option<WidgetId> {
         todo!()
     }
 
-    fn get_stroke_style(&self) -> StrokeStyle {
-        todo!()
-    }
-
-    fn get_shape_style(&self) -> ShapeStyle {
+    fn description(&self) -> DrawShape {
         todo!()
     }
 }

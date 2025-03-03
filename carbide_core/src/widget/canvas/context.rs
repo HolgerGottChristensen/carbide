@@ -3,20 +3,20 @@ use std::fmt::{Debug, Formatter};
 use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
 use lyon::algorithms::path::Path;
 use lyon::lyon_algorithms::path::math::point;
-use lyon::math::{Angle, Point};
 use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
+use carbide::draw::shape::DrawShape;
 use carbide::environment::Environment;
+use carbide::widget::WidgetId;
 use crate::animation::AnimationManager;
-use crate::draw::{Alignment, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
+use crate::draw::{Alignment, Angle, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
 use crate::draw::Color;
-use crate::draw::shape::stroke_vertex::StrokeVertex;
-use crate::draw::shape::triangle::Triangle;
+use crate::draw::path::PathBuilder;
 use crate::draw::svg_path_builder::SVGPathBuilder;
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::Wrap;
+use crate::widget::{AnyShape, Wrap};
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
     render_context: &'a mut RenderContext<'b, 'c>,
@@ -24,7 +24,7 @@ pub struct CanvasContext<'a, 'b, 'c: 'b> {
     state_stack: Vec<ContextState>,
     position: Position,
     dimension: Dimension,
-    path_builder: SVGPathBuilder,
+    path_builder: PathBuilder,
 }
 
 #[derive(Debug, Clone)]
@@ -66,7 +66,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             state_stack: vec![],
             position,
             dimension,
-            path_builder: SVGPathBuilder::new(),
+            path_builder: PathBuilder::new(),
         }
     }
 
@@ -162,11 +162,10 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     pub fn circle(&mut self, x: f64, y: f64, diameter: f64) {
         self.move_to(x, y + diameter / 2.0);
         self.arc(
-            x,
-            y,
+            Position::new(x, y),
             diameter / 2.0,
-            0.0,
-            360.0,
+            Angle::Degrees(0.0),
+            Angle::Degrees(360.0),
         );
         self.move_to(0.0, 0.0);
     }
@@ -176,11 +175,25 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn fill(&mut self) {
-        let path = self.path_builder.clone().build();
-        let fill_options = FillOptions::default();
-        let geometry = self.get_fill_geometry(path, fill_options);
+        #[derive(Clone, Debug)]
+        struct FillShape {
+            path: carbide_core::draw::path::Path,
+        }
+
+        impl AnyShape for FillShape {
+            fn cache_key(&self) -> Option<WidgetId> {
+                todo!()
+            }
+
+            fn description(&self) -> DrawShape {
+                DrawShape::Path(self.path.clone())
+            }
+        }
+
+        let path = self.path_builder.path().clone();
+
         self.render_context.style(self.current_state.fill_color.convert(self.position, self.dimension), |ctx| {
-            ctx.geometry(&geometry)
+            ctx.fill_shape(&FillShape { path })
         });
     }
 
@@ -191,7 +204,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             .with_miter_limit(self.current_state.miter_limit)
             .with_line_join(self.current_state.join_style);
 
-        let path = self.path_builder.clone().build();
+        /*let path = self.path_builder.clone().build();
         let dashes = self.current_state.dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
             StrokeDashPattern {
                 pattern: pattern.clone(),
@@ -208,16 +221,16 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             render_context.stroke_dash_pattern(dashes, |render_context| {
                 render_context.stroke(&geometry)
             })
-        })
+        })*/
     }
 
     pub fn begin_path(&mut self) {
-        self.path_builder = SVGPathBuilder::new();
+        self.path_builder = PathBuilder::new();
     }
 
     pub fn move_to(&mut self, x: f64, y: f64) {
         let position = Position::new(x, y) + self.position;
-        self.path_builder.move_to(point(position.x as f32, position.y as f32));
+        self.path_builder.move_to(position);
     }
 
     pub fn close_path(&mut self) {
@@ -226,22 +239,23 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
     pub fn line_to(&mut self, x: f64, y: f64) {
         let position = Position::new(x, y) + self.position;
-        self.path_builder.line_to(point(position.x as f32, position.y as f32));
+        self.path_builder.line_to(position);
     }
 
     pub fn add_lines(&mut self, lines: impl IntoIterator<Item=Position>) {
         for line in lines {
             let position = line + self.position;
-            self.path_builder.line_to(point(position.x as f32, position.y as f32));
+            self.path_builder.line_to(position);
         }
     }
 
     pub fn clip(&mut self) {
-        let path = self.path_builder.clone().build();
+        /*let path = self.path_builder.clone().build();
         let fill_options = FillOptions::default();
         let geometry = self.get_fill_geometry(path, fill_options);
         self.render_context.render.stencil(&geometry);
-        self.current_state.clip_count += 1;
+        self.current_state.clip_count += 1;*/
+        todo!()
     }
 
     pub fn save(&mut self) {
@@ -269,10 +283,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         let ctrl = ctrl + self.position;
         let to = to + self.position;
 
-        self.path_builder.quadratic_bezier_to(
-            point(ctrl.x as f32, ctrl.y as f32),
-            point(to.x as f32, to.y as f32)
-        );
+        self.path_builder.quadratic_bezier_to(ctrl, to);
     }
 
     pub fn bezier_curve_to(&mut self, ctrl1: Position, ctrl2: Position, to: Position) {
@@ -280,24 +291,17 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         let ctrl2 = ctrl2 + self.position;
         let to = to + self.position;
 
-        self.path_builder.cubic_bezier_to(
-            point(ctrl1.x as f32, ctrl1.y as f32),
-            point(ctrl2.x as f32, ctrl2.y as f32),
-            point(to.x as f32, to.y as f32)
-        );
+        self.path_builder.cubic_bezier_to(ctrl1, ctrl2, to);
     }
 
-    pub fn arc(&mut self, x: f64, y: f64, r: f64, start_angle: f64, end_angle: f64) {
-        let sweep_angle = end_angle - start_angle;
-
-        let x = x + self.position.x;
-        let y = y + self.position.y;
+    pub fn arc(&mut self, center: Position, r: f64, start_angle: Angle, end_angle: Angle) {
+        let center = center + self.position;
 
         self.path_builder.arc(
-            point(x as f32, y as f32),
+            center,
             Dimension::new(r, r),
-            sweep_angle as f32,
-            start_angle as f32,
+            start_angle,
+            end_angle,
         )
     }
 
@@ -365,7 +369,7 @@ impl<'a, 'b, 'c: 'b> Drop for CanvasContext<'a, 'b, 'c> {
 
 const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;
 
-impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
+/*impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     pub fn get_fill_geometry(&self, path: Path, fill_options: FillOptions) -> Vec<Triangle<Position>> {
         let mut geometry: VertexBuffers<Position, u16> = VertexBuffers::new();
         let mut tessellator = FillTessellator::new();
@@ -505,7 +509,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
         triangles
     }
-}
+}*/
 
 impl<'a, 'b, 'c: 'b> Debug for CanvasContext<'a, 'b, 'c> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

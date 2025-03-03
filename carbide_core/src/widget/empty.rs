@@ -1,11 +1,12 @@
+use carbide::draw::shape::DrawShape;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::widget::{CommonWidget, TriangleStore, ShapeStyle, StrokeStyle};
+use carbide_core::widget::{CommonWidget, ShapeStyle, StrokeStyle};
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;
 use crate::scene::AnyScene;
-use crate::widget::{Shape, Widget, WidgetId};
+use crate::widget::{AnyShape, Widget, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {
@@ -43,16 +44,12 @@ impl AnyScene for Empty {
     }
 }
 
-impl Shape for Empty {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
-        unimplemented!()
+impl AnyShape for Empty {
+    fn cache_key(&self) -> Option<WidgetId> {
+        todo!()
     }
 
-    fn get_stroke_style(&self) -> StrokeStyle {
-        unimplemented!()
-    }
-
-    fn get_shape_style(&self) -> ShapeStyle {
-        unimplemented!()
+    fn description(&self) -> DrawShape {
+        todo!()
     }
 }

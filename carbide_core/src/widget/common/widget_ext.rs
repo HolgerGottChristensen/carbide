@@ -14,7 +14,7 @@ use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
 use crate::event;
-use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, Shape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager, TextWrapKey};
+use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager, TextWrapKey};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::keyboard_shortcut::KeyboardShortcut;
 use crate::widget::luminance::Luminance;
@@ -123,7 +123,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Clip::new(self)
     }
 
-    fn clip_shape<S: Shape + Clone>(self, shape: S) -> ClipShape<Self, S> {
+    fn clip_shape<S: AnyShape + AnyWidget + Clone>(self, shape: S) -> ClipShape<Self, S> {
         ClipShape::new(self, shape)
     }
 

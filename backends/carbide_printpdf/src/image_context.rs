@@ -38,9 +38,11 @@ impl ImageContext for PDFImageContext {
             };
 
             // Image with alpha support waiting for merge and release of: https://github.com/fschutt/printpdf/pull/158
-            let pdf_image = PdfImage::from_dynamic_image(&DynamicImage::ImageRgb8(DynamicImage::ImageRgba8(dynamic_image).to_rgb8()));
+            //let pdf_image = PdfImage::from_dynamic_image(&DynamicImage::ImageRgb8(DynamicImage::ImageRgba8(dynamic_image).to_rgb8()));
 
-            images.borrow_mut().insert(id, (pdf_image, width, height));
+            //images.borrow_mut().insert(id, (pdf_image, width, height));
+
+            todo!();
             true
         })
 

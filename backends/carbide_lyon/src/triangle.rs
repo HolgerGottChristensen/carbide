@@ -1,7 +1,7 @@
-use crate::color;
-use crate::draw::shape::vertex::Vertex;
-use crate::draw::Position;
-use crate::widget::ColoredPoint;
+use carbide_core::color;
+use carbide_core::draw::Position;
+use carbide_core::widget::ColoredPoint;
+use crate::vertex::Vertex;
 
 /// A single triangle described by three vertices.
 #[derive(Copy, Clone, Debug, PartialEq)]

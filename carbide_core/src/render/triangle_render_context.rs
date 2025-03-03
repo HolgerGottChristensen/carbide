@@ -1,11 +1,10 @@
-use carbide::widget::ImageFilter;
+use carbide::draw::shape::StrokeAlignment;
+use carbide::widget::{AnyShape, ImageFilter};
 use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect, Scalar, StrokeDashPattern};
-use crate::draw::shape::stroke_vertex::StrokeVertex;
-use crate::draw::shape::triangle::Triangle;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
 
-pub struct TriangleRenderContext(pub Vec<Triangle<Position>>);
+pub struct TriangleRenderContext(pub Vec<Position>);
 impl InnerRenderContext for TriangleRenderContext {
     fn transform(&mut self, _transform: CarbideTransform) {}
 
@@ -23,22 +22,16 @@ impl InnerRenderContext for TriangleRenderContext {
 
     fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
+    fn stencil(&mut self, _geometry: &dyn AnyShape) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn geometry(&mut self, geometry: &[Triangle<Position>]) {
-        self.0.extend(geometry);
+    fn fill_shape(&mut self, shape: &dyn AnyShape) {
+        todo!()
     }
 
-    fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
-        self.0.extend(stroke.iter().map(|a| {
-            Triangle([
-                Position::new(a.0[0].position.x as Scalar, a.0[0].position.y as Scalar),
-                Position::new(a.0[1].position.x as Scalar, a.0[1].position.y as Scalar),
-                Position::new(a.0[2].position.x as Scalar, a.0[2].position.y as Scalar),
-            ])
-        }))
+    fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment) {
+        todo!()
     }
 
     fn style(&mut self, _style: DrawStyle) {}

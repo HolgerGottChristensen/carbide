@@ -1,38 +1,34 @@
 use std::ops::{Add, AddAssign};
+use crate::widget::StrokeStyle;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ShapeStyle {
     Default,
     Fill,
-    Stroke,
-    FillAndStroke,
-}
-
-impl ShapeStyle {
-    pub fn add_style(&self, style: ShapeStyle) -> ShapeStyle {
-        match (self, style) {
-            (_, ShapeStyle::FillAndStroke) | (ShapeStyle::FillAndStroke, _) => {
-                ShapeStyle::FillAndStroke
-            }
-
-            (ShapeStyle::Default, ShapeStyle::Default) => ShapeStyle::Default,
-            (ShapeStyle::Default, ShapeStyle::Fill) => ShapeStyle::Fill,
-            (ShapeStyle::Default, ShapeStyle::Stroke) => ShapeStyle::Stroke,
-
-            (ShapeStyle::Fill, ShapeStyle::Stroke) => ShapeStyle::FillAndStroke,
-            (ShapeStyle::Stroke, ShapeStyle::Fill) => ShapeStyle::FillAndStroke,
-
-            (ShapeStyle::Stroke, _) => ShapeStyle::Stroke,
-            (ShapeStyle::Fill, _) => ShapeStyle::Fill,
-        }
-    }
+    Stroke { line_width: f64 },
+    FillAndStroke { line_width: f64 },
 }
 
 impl Add for ShapeStyle {
     type Output = ShapeStyle;
 
     fn add(self, rhs: Self) -> Self::Output {
-        self.add_style(rhs)
+        match (self, rhs) {
+            (ShapeStyle::Default, _) => rhs,
+            (_, ShapeStyle::Default) => self,
+            
+            (ShapeStyle::FillAndStroke { .. }, ShapeStyle::FillAndStroke { line_width }) => ShapeStyle::FillAndStroke { line_width },
+            (ShapeStyle::FillAndStroke { line_width }, ShapeStyle::Fill) => ShapeStyle::FillAndStroke { line_width },
+            (ShapeStyle::FillAndStroke { .. }, ShapeStyle::Stroke { line_width }) => ShapeStyle::FillAndStroke { line_width },
+
+            (ShapeStyle::Stroke { line_width }, ShapeStyle::Fill) => ShapeStyle::FillAndStroke { line_width },
+            (ShapeStyle::Stroke { .. }, ShapeStyle::Stroke { line_width }) => ShapeStyle::Stroke { line_width },
+            (ShapeStyle::Stroke { .. }, ShapeStyle::FillAndStroke { line_width }) => ShapeStyle::FillAndStroke { line_width },
+            
+            (ShapeStyle::Fill, ShapeStyle::Stroke { line_width }) => ShapeStyle::FillAndStroke { line_width },
+            (ShapeStyle::Fill, ShapeStyle::Fill) => ShapeStyle::Fill,
+            (ShapeStyle::Fill, ShapeStyle::FillAndStroke { line_width }) => ShapeStyle::FillAndStroke { line_width },
+        }
     }
 }
 

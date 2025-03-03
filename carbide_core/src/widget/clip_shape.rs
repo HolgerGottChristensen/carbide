@@ -5,14 +5,14 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::widget::{CommonWidget, Empty, Shape, Widget, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, Empty, AnyShape, Widget, WidgetId, WidgetSync, AnyWidget};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
 pub struct ClipShape<C, S>
 where
     C: Widget,
-    S: Shape + Clone
+    S: AnyShape + AnyWidget + Clone
 {
     #[id] id: WidgetId,
     child: C,
@@ -23,7 +23,7 @@ where
 
 impl ClipShape<Empty, Empty> {
     #[carbide_default_builder2]
-    pub fn new<C: Widget, S: Shape + Clone>(child: C, shape: S) -> ClipShape<C, S> {
+    pub fn new<C: Widget, S: AnyShape + AnyWidget + Clone>(child: C, shape: S) -> ClipShape<C, S> {
         ClipShape {
             id: WidgetId::new(),
             child,
@@ -34,14 +34,14 @@ impl ClipShape<Empty, Empty> {
     }
 }
 
-impl<C: Widget, S: Shape + Clone> WidgetSync for ClipShape<C, S> {
+impl<C: Widget, S: AnyShape + AnyWidget + Clone> WidgetSync for ClipShape<C, S> {
     fn sync(&mut self, env: &mut Environment) {
         self.child.sync(env);
         self.shape.sync(env);
     }
 }
 
-impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
+impl<C: Widget, S: AnyShape + AnyWidget + Clone> Layout for ClipShape<C, S> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.child.calculate_size(requested_size, ctx);
         self.shape.calculate_size(requested_size, ctx);
@@ -61,18 +61,18 @@ impl<C: Widget, S: Shape + Clone> Layout for ClipShape<C, S> {
     }
 }
 
-impl<C: Widget, S: Shape + Clone> CommonWidget for ClipShape<C, S> {
+impl<C: Widget, S: AnyShape + AnyWidget + Clone> CommonWidget for ClipShape<C, S> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }
 
-impl<C: Widget, S: Shape + Clone> Render for ClipShape<C, S> {
+impl<C: Widget, S: AnyShape + AnyWidget + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        let stencil_triangles = &self.shape.triangles(context.env);
+        /*let stencil_triangles = &self.shape.triangles(context.env);
 
         context.stencil(stencil_triangles, |this| {
             self.foreach_child_mut(&mut |child| {
                 child.render(this);
             });
-        })
+        })*/
     }
 }

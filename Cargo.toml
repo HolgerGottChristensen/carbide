@@ -13,6 +13,7 @@ members = [
     "backends/carbide_windows",
     "backends/carbide_cosmic_text",
     "backends/carbide_printpdf",
+    "backends/carbide_lyon",
     "backends/carbide_fluent",
     "examples/lines",
     "examples/hacker_news",
@@ -46,8 +47,8 @@ bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 include_dir = "0.7.4"
 rand = "0.9.0"
-accesskit = { path = "../Repositories/accesskit/common" }
-accesskit_winit = { path = "../Repositories/accesskit/platforms/winit" }
+accesskit = "0.17.1"
+accesskit_winit = "0.23.1"
 smallvec = "1.13.2"
 winit = { version = "0.30.7", features = ["rwh_05"] }
 proc-macro-crate = "3.2.0"

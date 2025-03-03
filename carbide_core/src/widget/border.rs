@@ -92,7 +92,7 @@ impl<W: Widget, C: ReadState<T=Color>> CommonWidget for Border<W, C> {
 
 impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        let rect = Rect::new(self.position, self.dimension);
+        /*let rect = Rect::new(self.position, self.dimension);
         let (l, r, b, t) = rect.l_r_b_t();
 
         let border_width = self.border_width as f64;
@@ -124,6 +124,6 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
             this.rect(right_border);
             this.rect(top_border);
             this.rect(bottom_border);
-        })
+        })*/
     }
 }

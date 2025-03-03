@@ -16,7 +16,7 @@ mod alignment;
 mod dimension;
 mod draw_gradient;
 mod image;
-pub mod path_builder;
+//pub mod path_builder;
 mod position;
 mod rect;
 pub mod shape;
@@ -28,6 +28,7 @@ mod texture;
 mod angle;
 mod stroke_dashes;
 mod automatic_style;
+pub mod path;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

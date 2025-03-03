@@ -1,6 +1,6 @@
-use crate::draw::shape::stroke_vertex::StrokeVertex;
-use crate::draw::Position;
-use crate::widget::ColoredPoint;
+use carbide_core::draw::Position;
+use carbide_core::widget::ColoredPoint;
+use crate::stroke_vertex::StrokeVertex;
 
 /// Types used as vertices that make up a list of triangles.
 pub trait Vertex: Clone + Copy + PartialEq {

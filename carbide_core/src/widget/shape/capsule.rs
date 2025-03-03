@@ -1,6 +1,7 @@
 use lyon::geom::euclid::rect;
 use lyon::tessellation::path::builder::BorderRadii;
 use lyon::tessellation::path::Winding;
+use carbide::draw::shape::{DrawShape, StrokeAlignment};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -9,10 +10,8 @@ use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
-use crate::widget::shape::{Shape, tessellate};
-use crate::widget::types::TriangleStore;
+use crate::widget::shape::{AnyShape};
 use crate::widget::types::ShapeStyle;
-use crate::widget::types::StrokeStyle;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -24,8 +23,6 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
     #[state] stroke_color: S,
     #[state] fill_color: F,
     style: ShapeStyle,
-    stroke_style: StrokeStyle,
-    triangle_store: TriangleStore,
 }
 
 impl Capsule<Style, Style> {
@@ -38,8 +35,6 @@ impl Capsule<Style, Style> {
             stroke_color: EnvironmentColor::Accent.style(),
             fill_color: EnvironmentColor::Accent.style(),
             style: ShapeStyle::Default,
-            stroke_style: StrokeStyle::Solid { line_width: 2.0 },
-            triangle_store: TriangleStore::new(),
         }
     }
 }
@@ -53,8 +48,6 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2,
             stroke_color: self.stroke_color,
             fill_color: color.into_read_state(),
             style: self.style + ShapeStyle::Fill,
-            stroke_style: self.stroke_style,
-            triangle_store: self.triangle_store,
         }
     }
 
@@ -65,15 +58,12 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2,
             dimension: self.dimension,
             stroke_color: color.into_read_state(),
             fill_color: self.fill_color,
-            style: self.style + ShapeStyle::Stroke,
-            stroke_style: self.stroke_style,
-            triangle_store: self.triangle_store,
+            style: self.style + ShapeStyle::Stroke { line_width: 2.0 },
         }
     }
 
     pub fn stroke_style(mut self, line_width: f64) -> Self {
-        self.stroke_style = StrokeStyle::Solid { line_width };
-        self.style += ShapeStyle::Stroke;
+        self.style += ShapeStyle::Stroke { line_width };
         self
     }
 
@@ -87,17 +77,13 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
-impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Shape for Capsule<S, F> {
-    fn get_triangle_store_mut(&mut self) -> &mut TriangleStore {
-        &mut self.triangle_store
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for Capsule<S, F> {
+    fn cache_key(&self) -> Option<WidgetId> {
+        todo!()
     }
 
-    fn get_stroke_style(&self) -> StrokeStyle {
-        self.stroke_style.clone()
-    }
-
-    fn get_shape_style(&self) -> ShapeStyle {
-        self.style.clone()
+    fn description(&self) -> DrawShape {
+        DrawShape::Capsule(self.bounding_box())
     }
 }
 
@@ -105,36 +91,25 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ca
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
-        let rect = rect(
-            self.x() as f32,
-            self.y() as f32,
-            self.width() as f32,
-            self.height() as f32,
-        );
-
-        tessellate(self, &rect.to_box2d(), &|builder, rect| {
-            builder.add_rounded_rectangle(
-                rect,
-                &BorderRadii {
-                    top_left: f32::MAX,
-                    top_right: f32::MAX,
-                    bottom_left: f32::MAX,
-                    bottom_right: f32::MAX,
-                },
-                Winding::Positive,
-            );
-        });
-
-        if self.triangle_store.fill_triangles.len() > 0 {
-            context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                this.geometry(&self.triangle_store.fill_triangles)
-            })
-        }
-
-        if self.triangle_store.stroke_triangles.len() > 0 {
-            context.style(self.stroke_color.value().clone().convert(self.position, self.dimension), |this| {
-                this.geometry(&self.triangle_store.stroke_triangles)
-            })
+        match self.style {
+            ShapeStyle::Default | ShapeStyle::Fill => {
+                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
+                    this.fill_shape(self)
+                })
+            }
+            ShapeStyle::Stroke { line_width } => {
+                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
+                    this.stroke_shape(self, line_width, StrokeAlignment::Positive)
+                })
+            }
+            ShapeStyle::FillAndStroke { line_width } => {
+                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
+                    this.fill_shape(self)
+                });
+                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
+                    this.stroke_shape(self, line_width, StrokeAlignment::Positive)
+                });
+            }
         }
     }
 }

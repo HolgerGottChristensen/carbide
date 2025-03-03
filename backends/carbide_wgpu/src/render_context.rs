@@ -4,14 +4,15 @@ use std::ops::Range;
 use wgpu::BindGroup;
 
 use carbide_core::color::{Color, ColorExt, WHITE};
-use carbide_core::draw::shape::stroke_vertex::StrokeVertex;
-use carbide_core::draw::shape::triangle::Triangle;
-use carbide_core::draw::{Dimension, DrawStyle, ImageId, Position, Rect, StrokeDashMode, StrokeDashPattern, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
+use carbide_lyon::stroke_vertex::StrokeVertex;
+use carbide_lyon::triangle::Triangle;
+use carbide_core::draw::{Dimension, DrawStyle, ImageId, Position, Rect, Scalar, StrokeDashMode, StrokeDashPattern, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
+use carbide_core::draw::shape::StrokeAlignment;
 use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{TextContext, TextId};
-use carbide_core::widget::{FilterId, ImageFilter};
-
+use carbide_core::widget::{AnyShape, FilterId, ImageFilter, ShapeStyle};
+use carbide_lyon::Tesselator;
 use crate::gradient::{Dashes, Gradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
@@ -52,6 +53,8 @@ pub struct WGPURenderContext {
     current_target: usize,
 
     layers: HashMap<LayerId, RenderTarget>,
+
+    tesselator: Tesselator,
 }
 
 #[derive(Debug, Clone)]
@@ -150,6 +153,7 @@ impl WGPURenderContext {
             layers: Default::default(),
             filters: HashMap::new(),
             current_frame_filters: HashSet::new(),
+            tesselator: Tesselator::new(),
         }
     }
 
@@ -355,6 +359,157 @@ impl WGPURenderContext {
 
             self.push_command(RenderPassCommand::Gradient(gradient.clone()));
         }
+    }
+}
+
+impl WGPURenderContext {
+    fn fill(&mut self, geometry: impl Iterator<Item=Triangle<Position>>) {
+        if self.skip_rendering {
+            return;
+        }
+        //println!("draw geometry: {}", geometry.len());
+
+        let style = self.style_stack.last().unwrap().clone();
+
+        let (color, gradient) = match style {
+            WGPUStyle::Color(c) => {
+                (c, false)
+            },
+            WGPUStyle::Gradient(g) => {
+                self.ensure_state_gradient(&g);
+                ([0.0, 0.0, 0.0, 1.0], true)
+            },
+        };
+
+        let mode = if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY };
+        let mode = if self.masked { mode | 0b100000 } else { mode };
+
+        let start = self.vertices.len();
+        self.vertices.extend(
+            geometry
+                .flat_map(|triangle| {
+                    [
+                        Vertex::new_from_2d(
+                            triangle.0[0].x as f32,
+                            triangle.0[0].y as f32,
+                            color,
+                            [0.0, 0.0],
+                            mode
+                        ),
+                        Vertex::new_from_2d(
+                            triangle.0[1].x as f32,
+                            triangle.0[1].y as f32,
+                            color,
+                            [0.0, 0.0],
+                            mode
+                        ),
+                        Vertex::new_from_2d(
+                            triangle.0[2].x as f32,
+                            triangle.0[2].y as f32,
+                            color,
+                            [0.0, 0.0],
+                            mode
+                        )
+                    ]
+                })
+        );
+
+        self.draw(start as u32, self.vertices.len() as u32);
+    }
+
+    fn stroke(&mut self, stroke: impl Iterator<Item=Triangle<StrokeVertex>>) {
+        if self.skip_rendering {
+            return;
+        }
+        //println!("draw geometry: {}", geometry.len());
+
+        let style = self.style_stack.last().unwrap().clone();
+
+        let (mut color, gradient) = match style {
+            WGPUStyle::Color(c) => {
+                (c, false)
+            },
+            WGPUStyle::Gradient(g) => {
+                self.ensure_state_gradient(&g);
+                ([0.0, 0.0, 0.0, 1.0], true)
+            },
+        };
+
+        let new_stroke_dash = self.stroke_dash_stack.last().unwrap();
+
+        if &self.current_stroke_dash != new_stroke_dash {
+            if let Some(new_stroke_dash) = new_stroke_dash {
+                assert_ne!(new_stroke_dash.pattern.len(), 0);
+                let repeat = new_stroke_dash.pattern.len() % 2 == 1;
+
+                let pattern_count = new_stroke_dash.pattern.len();
+                let count = (if repeat { pattern_count * 2 } else { pattern_count }).min(32);
+
+                let mut dashes = [0.0f32; 32];
+                let mut total_dash_width = 0.0;
+
+                for i in 0..count {
+                    dashes[i] = (new_stroke_dash.pattern[i % pattern_count] as f32).abs();
+                    total_dash_width += dashes[i];
+                }
+
+                let offset = total_dash_width - new_stroke_dash.offset as f32 % total_dash_width;
+
+                self.push_command(RenderPassCommand::StrokeDashing (Dashes {
+                    dashes,
+                    dash_count: count as u32,
+                    start_cap: new_stroke_dash.start_cap as u32,
+                    end_cap: new_stroke_dash.end_cap as u32,
+                    total_dash_width,
+                    dash_offset: offset,
+                }));
+            }
+            self.current_stroke_dash = self.stroke_dash_stack.last().unwrap().clone();
+        }
+
+        let mode = if let Some(stroke_dash) = &self.current_stroke_dash {
+            if stroke_dash.dash_type == StrokeDashMode::Fast {
+                if gradient { MODE_GRADIENT_GEOMETRY_DASH_FAST } else { MODE_GEOMETRY_DASH_FAST }
+            } else {
+                if gradient { MODE_GRADIENT_GEOMETRY_DASH } else { MODE_GEOMETRY_DASH }
+            }
+        } else {
+            if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY }
+        };
+
+        let mode = if self.masked { mode | 0b100000 } else { mode };
+
+        let start = self.vertices.len();
+        self.vertices.extend(
+            stroke
+                .flat_map(|triangle| triangle.0)
+                .map(|v| {
+                    Vertex {
+                        position: [
+                            v.position.x,
+                            v.position.y,
+                            0.0
+                        ],
+                        tex_coords: [0.0, 0.0],
+                        rgba: if gradient { Color::random().to_fsa() } else { color },
+                        mode,
+                        attributes0: [
+                            v.start.x,
+                            v.start.y,
+                            v.end.x,
+                            v.end.y,
+                        ],
+                        attributes1: [
+                            v.start_angle.radians,
+                            v.end_angle.radians,
+                            v.width,
+                            v.offset
+                        ],
+                    }
+                })
+        );
+
+        self.draw(start as u32, self.vertices.len() as u32);
     }
 }
 
@@ -574,14 +729,14 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn stencil(&mut self, geometry: &[Triangle<Position>]) {
+    fn stencil(&mut self, geometry: &dyn AnyShape) {
         if self.skip_rendering {
             return;
         }
 
         let start = self.vertices.len();
 
-        self.vertices.extend(
+        /*self.vertices.extend(
             geometry.iter()
                 .flat_map(|triangle| &triangle.0)
                 .map(|position| Vertex::new_from_2d(
@@ -591,7 +746,9 @@ impl InnerRenderContext for WGPURenderContext {
                     [0.0, 0.0],
                     MODE_GEOMETRY
                 ))
-        );
+        );*/
+
+        todo!();
 
         let range = start as u32..self.vertices.len() as u32;
 
@@ -612,136 +769,23 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn geometry(&mut self, geometry: &[Triangle<Position>]) {
+    fn fill_shape(&mut self, shape: &dyn AnyShape) {
         if self.skip_rendering {
             return;
         }
-        //println!("draw geometry: {}", geometry.len());
 
-        let style = self.style_stack.last().unwrap().clone();
-
-        let (color, gradient) = match style {
-            WGPUStyle::Color(c) => {
-                (c, false)
-            },
-            WGPUStyle::Gradient(g) => {
-                self.ensure_state_gradient(&g);
-                ([0.0, 0.0, 0.0, 1.0], true)
-            },
-        };
-
-        let mode = if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY };
-        let mode = if self.masked { mode | 0b100000 } else { mode };
-
-        let start = self.vertices.len();
-        self.vertices.extend(
-            geometry.iter()
-                .flat_map(|triangle| &triangle.0)
-                .map(|position| Vertex::new_from_2d(
-                    position.x as f32,
-                    position.y as f32,
-                    color,
-                    [0.0, 0.0],
-                    mode
-                ))
-        );
-
-        self.draw(start as u32, self.vertices.len() as u32);
+        let triangles = self.tesselator.fill(shape.description());
+        self.fill(triangles);
     }
 
-    fn stroke(&mut self, stroke: &[Triangle<StrokeVertex>]) {
+    fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment) {
         if self.skip_rendering {
             return;
         }
-        //println!("draw geometry: {}", geometry.len());
 
-        let style = self.style_stack.last().unwrap().clone();
+        let triangles = self.tesselator.stroke(shape.description(), stroke_width, stroke_alignment);
 
-        let (mut color, gradient) = match style {
-            WGPUStyle::Color(c) => {
-                (c, false)
-            },
-            WGPUStyle::Gradient(g) => {
-                self.ensure_state_gradient(&g);
-                ([0.0, 0.0, 0.0, 1.0], true)
-            },
-        };
-
-        let new_stroke_dash = self.stroke_dash_stack.last().unwrap();
-
-        if &self.current_stroke_dash != new_stroke_dash {
-            if let Some(new_stroke_dash) = new_stroke_dash {
-                assert_ne!(new_stroke_dash.pattern.len(), 0);
-                let repeat = new_stroke_dash.pattern.len() % 2 == 1;
-
-                let pattern_count = new_stroke_dash.pattern.len();
-                let count = (if repeat { pattern_count * 2 } else { pattern_count }).min(32);
-
-                let mut dashes = [0.0f32; 32];
-                let mut total_dash_width = 0.0;
-
-                for i in 0..count {
-                    dashes[i] = (new_stroke_dash.pattern[i % pattern_count] as f32).abs();
-                    total_dash_width += dashes[i];
-                }
-
-                let offset = total_dash_width - new_stroke_dash.offset as f32 % total_dash_width;
-
-                self.push_command(RenderPassCommand::StrokeDashing (Dashes {
-                    dashes,
-                    dash_count: count as u32,
-                    start_cap: new_stroke_dash.start_cap as u32,
-                    end_cap: new_stroke_dash.end_cap as u32,
-                    total_dash_width,
-                    dash_offset: offset,
-                }));
-            }
-            self.current_stroke_dash = self.stroke_dash_stack.last().unwrap().clone();
-        }
-
-        let mode = if let Some(stroke_dash) = &self.current_stroke_dash {
-            if stroke_dash.dash_type == StrokeDashMode::Fast {
-                if gradient { MODE_GRADIENT_GEOMETRY_DASH_FAST } else { MODE_GEOMETRY_DASH_FAST }
-            } else {
-                if gradient { MODE_GRADIENT_GEOMETRY_DASH } else { MODE_GEOMETRY_DASH }
-            }
-        } else {
-            if gradient { MODE_GRADIENT_GEOMETRY } else { MODE_GEOMETRY }
-        };
-
-        let mode = if self.masked { mode | 0b100000 } else { mode };
-
-        let start = self.vertices.len();
-        self.vertices.extend(
-            stroke.iter()
-                .flat_map(|triangle| &triangle.0)
-                .map(|v| {
-                    Vertex {
-                        position: [
-                            v.position.x,
-                            v.position.y,
-                            0.0
-                        ],
-                        tex_coords: [0.0, 0.0],
-                        rgba: if gradient { Color::random().to_fsa() } else { color },
-                        mode,
-                        attributes0: [
-                            v.start.x,
-                            v.start.y,
-                            v.end.x,
-                            v.end.y,
-                        ],
-                        attributes1: [
-                            v.start_angle.radians,
-                            v.end_angle.radians,
-                            v.width,
-                            v.offset
-                        ],
-                    }
-                })
-        );
-
-        self.draw(start as u32, self.vertices.len() as u32);
+        self.stroke(triangles);
     }
 
     fn style(&mut self, style: DrawStyle) {

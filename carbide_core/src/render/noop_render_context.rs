@@ -1,7 +1,7 @@
-use carbide::widget::ImageFilter;
+use carbide::draw::Scalar;
+use carbide::draw::shape::StrokeAlignment;
+use carbide::widget::{AnyShape, ImageFilter};
 use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect, StrokeDashPattern};
-use crate::draw::shape::stroke_vertex::StrokeVertex;
-use crate::draw::shape::triangle::Triangle;
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
 
@@ -24,13 +24,13 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, _geometry: &[Triangle<Position>]) {}
+    fn stencil(&mut self, _geometry: &dyn AnyShape) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn geometry(&mut self, _geometry: &[Triangle<Position>]) {}
+    fn fill_shape(&mut self, _shape: &dyn AnyShape) {}
 
-    fn stroke(&mut self, _stroke: &[Triangle<StrokeVertex>]) {}
+    fn stroke_shape(&mut self, _shape: &dyn AnyShape, _stroke_width: Scalar, _stroke_alignment: StrokeAlignment) {}
 
     fn style(&mut self, _style: DrawStyle) {}
     fn pop_style(&mut self) {}

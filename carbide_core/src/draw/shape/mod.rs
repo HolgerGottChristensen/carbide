@@ -1,3 +1,5 @@
-pub mod triangle;
-pub mod vertex;
-pub mod stroke_vertex;
+mod draw_shape;
+mod stroke_alignment;
+
+pub use draw_shape::*;
+pub use stroke_alignment::*;
