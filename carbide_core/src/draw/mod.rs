@@ -1,6 +1,6 @@
 pub use alignment::Alignment;
 pub use angle::*;
-pub use automatic_style::*;
+pub use crate::misc::automatic_style::*;
 pub use color::Color;
 pub use dimension::Dimension;
 pub use draw_gradient::*;
@@ -9,8 +9,8 @@ pub use image::image_context::*;
 pub use image::*;
 pub use position::Position;
 pub use rect::Rect;
-pub use stroke_dashes::*;
 pub use texture::*;
+pub use draw_shape::*;
 
 mod alignment;
 mod dimension;
@@ -19,16 +19,14 @@ mod image;
 //pub mod path_builder;
 mod position;
 mod rect;
-pub mod shape;
-pub mod svg_path_builder;
 pub mod theme;
 mod draw_style;
 pub mod color;
 mod texture;
 mod angle;
-mod stroke_dashes;
-mod automatic_style;
 pub mod path;
+mod draw_shape;
+pub mod stroke;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

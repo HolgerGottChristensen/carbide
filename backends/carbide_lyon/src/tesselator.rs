@@ -2,9 +2,8 @@ use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, Fill
 use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{Path, Winding};
 use lyon::path::builder::BorderRadii;
-use lyon::tessellation::{StrokeAlignment, StrokeOptions};
-use carbide_core::draw::{Position, Scalar};
-use carbide_core::draw::shape::DrawShape;
+use lyon::tessellation::{LineCap, StrokeAlignment, StrokeOptions};
+use carbide_core::draw::{DrawShape, Position, Scalar};
 use crate::stroke_vertex::StrokeVertex;
 use crate::triangle::Triangle;
 use lyon::tessellation::{StrokeVertex as LyonStrokeVertex};
@@ -148,7 +147,7 @@ impl Tesselator {
         triangles.into_iter()
     }
 
-    pub fn stroke(&mut self, draw_shape: DrawShape, width: Scalar, stroke_alignment: carbide_core::draw::shape::StrokeAlignment) -> impl Iterator<Item=Triangle<StrokeVertex>> {
+    pub fn stroke(&mut self, draw_shape: DrawShape, width: Scalar, stroke_alignment: carbide_core::draw::stroke::StrokeAlignment) -> impl Iterator<Item=Triangle<StrokeVertex>> {
 
         let path = self.path(draw_shape);
 
@@ -171,9 +170,9 @@ impl Tesselator {
         //println!("{:?}", path);
 
         let stroke_alignment = match stroke_alignment {
-            carbide_core::draw::shape::StrokeAlignment::Center => StrokeAlignment::Center,
-            carbide_core::draw::shape::StrokeAlignment::Positive => StrokeAlignment::Positive,
-            carbide_core::draw::shape::StrokeAlignment::Negative => StrokeAlignment::Negative,
+            carbide_core::draw::stroke::StrokeAlignment::Center => StrokeAlignment::Center,
+            carbide_core::draw::stroke::StrokeAlignment::Positive => StrokeAlignment::Positive,
+            carbide_core::draw::stroke::StrokeAlignment::Negative => StrokeAlignment::Negative,
         };
 
         {

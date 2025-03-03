@@ -14,10 +14,11 @@ use carbide_core::lens;
 use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew};
 use carbide_core::state::{StateExtNew, ValueState};
-use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap};
+use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::WidgetId;
 use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, Gradient, GradientPosition, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
 use std::fmt::Debug;
+use carbide::draw::stroke::StrokeCap;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
@@ -234,7 +235,7 @@ impl MenuStyle {
 
             ctx.set_stroke_style(mark_color.clone());
             ctx.set_line_width(1.5);
-            ctx.set_line_cap(LineCap::Round);
+            ctx.set_line_cap(StrokeCap::Round);
             ctx.stroke()
         });
 

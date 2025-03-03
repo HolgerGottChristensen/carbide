@@ -4,3 +4,4 @@ pub mod locate_folder;
 pub mod utils;
 pub mod mouse_position;
 pub(crate) mod any_debug;
+pub mod automatic_style;

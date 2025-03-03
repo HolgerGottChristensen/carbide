@@ -1,7 +1,7 @@
 use carbide::draw::Scalar;
-use carbide::draw::shape::StrokeAlignment;
 use carbide::widget::{AnyShape, ImageFilter};
-use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect, StrokeDashPattern};
+use crate::draw::{Color, Dimension, DrawStyle, ImageId, Position, Rect};
+use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern};
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
 

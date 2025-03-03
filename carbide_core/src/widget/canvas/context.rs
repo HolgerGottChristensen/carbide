@@ -1,22 +1,16 @@
-use std::fmt::{Debug, Formatter};
-//use crate::draw::path_builder::PathBuilder;
-use lyon::algorithms::path::builder::{Build, SvgPathBuilder};
-use lyon::algorithms::path::Path;
-use lyon::lyon_algorithms::path::math::point;
-use lyon::tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, LineCap, LineJoin, StrokeOptions, StrokeTessellator, StrokeVertex as LyonStrokeVertex, VertexBuffers};
-use carbide::draw::shape::DrawShape;
-use carbide::environment::Environment;
-use carbide::widget::WidgetId;
 use crate::animation::AnimationManager;
-use crate::draw::{Alignment, Angle, Dimension, Position, Scalar, StrokeDashCap, StrokeDashMode, StrokeDashPattern};
-use crate::draw::Color;
 use crate::draw::path::PathBuilder;
-use crate::draw::svg_path_builder::SVGPathBuilder;
+use crate::draw::{Color, DrawShape};
+use crate::draw::{Alignment, Angle, Dimension, Position, Scalar};
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyShape, Wrap};
+use carbide::environment::Environment;
+use carbide::widget::WidgetId;
+use std::fmt::{Debug, Formatter};
+use crate::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeJoin};
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
     render_context: &'a mut RenderContext<'b, 'c>,
@@ -31,8 +25,8 @@ pub struct CanvasContext<'a, 'b, 'c: 'b> {
 pub struct ContextState {
     stroke_color: Style,
     fill_color: Style,
-    cap_style: LineCap,
-    join_style: LineJoin,
+    cap_style: StrokeCap,
+    join_style: StrokeJoin,
     line_width: Scalar,
     dash_pattern: Option<Vec<f64>>,
     dash_offset: Scalar,
@@ -51,15 +45,15 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             current_state: ContextState {
                 stroke_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
                 fill_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
-                cap_style: LineCap::Round,
-                join_style: LineJoin::Round,
+                cap_style: StrokeCap::Round,
+                join_style: StrokeJoin::Round,
                 line_width: 2.0,
                 dash_pattern: None,
                 dash_offset: 0.0,
                 dash_start_cap: StrokeDashCap::None,
                 dash_end_cap: StrokeDashCap::None,
                 dash_mode: StrokeDashMode::Pretty,
-                miter_limit: StrokeOptions::DEFAULT_MITER_LIMIT,
+                miter_limit: 4.0, //StrokeOptions::DEFAULT_MITER_LIMIT,
                 text_alignment: Alignment::TopLeading,
                 clip_count: 0,
             },
@@ -130,11 +124,11 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.dash_mode = mode;
     }
 
-    pub fn set_line_join(&mut self, join: LineJoin) {
+    pub fn set_line_join(&mut self, join: StrokeJoin) {
         self.current_state.join_style = join;
     }
 
-    pub fn set_line_cap(&mut self, cap: LineCap) {
+    pub fn set_line_cap(&mut self, cap: StrokeCap) {
         self.current_state.cap_style = cap;
     }
 
@@ -198,13 +192,13 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn stroke(&mut self) {
-        let stroke_options = StrokeOptions::default()
+        /*let stroke_options = StrokeOptions::default()
             .with_line_cap(self.current_state.cap_style)
             .with_line_width(self.current_state.line_width as f32)
             .with_miter_limit(self.current_state.miter_limit)
             .with_line_join(self.current_state.join_style);
 
-        /*let path = self.path_builder.clone().build();
+        let path = self.path_builder.clone().build();
         let dashes = self.current_state.dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
             StrokeDashPattern {
                 pattern: pattern.clone(),

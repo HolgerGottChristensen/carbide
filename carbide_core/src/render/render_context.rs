@@ -2,9 +2,8 @@ use carbide::color::Color;
 use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{ImageContext, Position, DrawStyle, ImageId, StrokeDashPattern, Scalar};
-use crate::draw::shape::{DrawShape, StrokeAlignment};
-
+use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar};
+use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern};
 use crate::render::CarbideTransform;
 
 use crate::text::{TextContext, TextId};

@@ -11,7 +11,6 @@ pub use scale_mode::*;
 pub use scroll_direction::*;
 pub use shape_style::*;
 pub use split_type::*;
-pub use stroke_style::*;
 pub use text_wrap::*;
 
 mod advanced_color;
@@ -27,5 +26,4 @@ mod scale_mode;
 mod scroll_direction;
 mod shape_style;
 mod split_type;
-mod stroke_style;
 mod text_wrap;

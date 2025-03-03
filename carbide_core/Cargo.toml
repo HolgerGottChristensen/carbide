@@ -32,7 +32,6 @@ smallvec.workspace = true
 dashmap.workspace = true
 indexmap.workspace = true
 
-lyon.workspace = true
 accesskit.workspace = true
 fxhash = "0.2.1"
 image = "0.25.5"

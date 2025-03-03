@@ -1,11 +1,8 @@
-use lyon::geom::euclid::rect;
-use lyon::tessellation::path::builder::BorderRadii;
-use lyon::tessellation::path::Winding;
-use carbide::draw::shape::{DrawShape, StrokeAlignment};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, Position};
+use crate::draw::{Color, Dimension, DrawShape, Position};
+use crate::draw::stroke::StrokeAlignment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};

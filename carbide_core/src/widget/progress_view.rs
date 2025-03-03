@@ -6,11 +6,11 @@ use carbide_macro::carbide_default_builder2;
 use crate::color::WHITE;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
+use crate::draw::stroke::StrokeCap;
 use crate::environment::{EnvironmentColor};
 use crate::state::AnimatedState;
 use crate::widget::{Circle, CommonWidget, Empty, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
-use crate::widget::canvas::LineCap;
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressView<W> where W: Widget {
@@ -51,7 +51,7 @@ impl ProgressView<Empty> {
                 );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);
-                context.set_line_cap(LineCap::Round);
+                context.set_line_cap(StrokeCap::Round);
                 context.stroke();
             })
                 .rotation_effect(animation),
@@ -65,7 +65,7 @@ impl ProgressView<Empty> {
                 );
                 context.set_stroke_style(WHITE);
                 context.set_line_width(4.0);
-                context.set_line_cap(LineCap::Round);
+                context.set_line_cap(StrokeCap::Round);
                 context.stroke();
             })
                 .rotation_effect(animation2),

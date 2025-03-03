@@ -1,5 +1,4 @@
 use std::ops::{Add, AddAssign};
-use crate::widget::StrokeStyle;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ShapeStyle {

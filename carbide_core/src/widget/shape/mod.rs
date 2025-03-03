@@ -1,13 +1,13 @@
 use dyn_clone::DynClone;
 use std::fmt::Debug;
 
-use crate::draw::shape::DrawShape;
 use crate::widget::{AnyWidget, WidgetId};
 pub use capsule::*;
 pub use circle::*;
 pub use ellipse::*;
 pub use rectangle::*;
 pub use rounded_rectangle::*;
+use crate::draw::DrawShape;
 
 mod capsule;
 mod circle;
