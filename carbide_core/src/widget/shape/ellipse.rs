@@ -1,3 +1,4 @@
+use carbide::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
@@ -83,20 +84,20 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for El
         match self.style {
             ShapeStyle::Default | ShapeStyle::Fill => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.fill_shape(self)
+                    this.shape(self, ShapeStyle::Fill)
                 })
             }
             ShapeStyle::Stroke { line_width } => {
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.stroke_shape(self, line_width, StrokeAlignment::Positive)
+                    this.shape(self, ShapeStyle::Stroke { line_width })
                 })
             }
             ShapeStyle::FillAndStroke { line_width } => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.fill_shape(self)
+                    this.shape(self, ShapeStyle::Fill)
                 });
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.stroke_shape(self, line_width, StrokeAlignment::Positive)
+                    this.shape(self, ShapeStyle::Stroke { line_width })
                 });
             }
         }
@@ -110,5 +111,9 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
 
     fn description(&self) -> DrawShape {
         DrawShape::Ellipse(self.bounding_box())
+    }
+
+    fn options(&self) -> DrawOptions {
+        self.style.into()
     }
 }

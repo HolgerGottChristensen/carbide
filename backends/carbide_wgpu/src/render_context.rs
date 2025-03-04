@@ -6,7 +6,7 @@ use wgpu::BindGroup;
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
-use carbide_core::draw::{Dimension, DrawStyle, ImageId, Position, Rect, Scalar, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
+use carbide_core::draw::{Dimension, DrawOptions, DrawStyle, ImageId, Position, Rect, Scalar, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT};
 use carbide_core::draw::stroke::{StrokeAlignment, StrokeDashMode, StrokeDashPattern};
 use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
@@ -729,26 +729,43 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn stencil(&mut self, geometry: &dyn AnyShape) {
+    fn stencil(&mut self, shape: &dyn AnyShape, options: DrawOptions) {
         if self.skip_rendering {
             return;
         }
 
         let start = self.vertices.len();
 
-        /*self.vertices.extend(
-            geometry.iter()
-                .flat_map(|triangle| &triangle.0)
-                .map(|position| Vertex::new_from_2d(
-                    position.x as f32,
-                    position.y as f32,
-                    [1.0, 1.0, 1.0, 1.0],
-                    [0.0, 0.0],
-                    MODE_GEOMETRY
-                ))
-        );*/
-
-        todo!();
+        match options {
+            DrawOptions::Fill(options) => {
+                let triangles = self.tesselator.fill(shape.description(), options);
+                self.vertices.extend(
+                    triangles
+                        .flat_map(|triangle| triangle.0)
+                        .map(|position| Vertex::new_from_2d(
+                            position.x as f32,
+                            position.y as f32,
+                            [1.0, 1.0, 1.0, 1.0],
+                            [0.0, 0.0],
+                            MODE_GEOMETRY
+                        ))
+                );
+            }
+            DrawOptions::Stroke(options) => {
+                let triangles = self.tesselator.stroke(shape.description(), options);
+                self.vertices.extend(
+                    triangles
+                        .flat_map(|triangle| triangle.0)
+                        .map(|position| Vertex::new_from_2d(
+                            position.position.x,
+                            position.position.y,
+                            [1.0, 1.0, 1.0, 1.0],
+                            [0.0, 0.0],
+                            MODE_GEOMETRY
+                        ))
+                );
+            }
+        }
 
         let range = start as u32..self.vertices.len() as u32;
 
@@ -769,23 +786,21 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn fill_shape(&mut self, shape: &dyn AnyShape) {
+    fn shape(&mut self, shape: &dyn AnyShape, options: DrawOptions) {
         if self.skip_rendering {
             return;
         }
 
-        let triangles = self.tesselator.fill(shape.description());
-        self.fill(triangles);
-    }
-
-    fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment) {
-        if self.skip_rendering {
-            return;
+        match options {
+            DrawOptions::Fill(options) => {
+                let triangles = self.tesselator.fill(shape.description(), options);
+                self.fill(triangles);
+            }
+            DrawOptions::Stroke(options) => {
+                let triangles = self.tesselator.stroke(shape.description(), options);
+                self.stroke(triangles);
+            }
         }
-
-        let triangles = self.tesselator.stroke(shape.description(), stroke_width, stroke_alignment);
-
-        self.stroke(triangles);
     }
 
     fn style(&mut self, style: DrawStyle) {

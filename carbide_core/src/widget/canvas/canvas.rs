@@ -1,11 +1,12 @@
 use std::fmt::{Debug, Formatter};
+use carbide::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, DrawShape, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, AnyShape, Widget, WidgetId};
+use crate::widget::{CommonWidget, AnyShape, Widget, WidgetId, ShapeStyle};
 use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.
@@ -58,7 +59,11 @@ impl<C: Context> AnyShape for Canvas<C> {
     }
 
     fn description(&self) -> DrawShape {
-        todo!()
+        DrawShape::Rectangle(self.bounding_box())
+    }
+
+    fn options(&self) -> DrawOptions {
+        ShapeStyle::Fill.into()
     }
 }
 

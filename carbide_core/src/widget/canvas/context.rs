@@ -6,11 +6,12 @@ use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{AnyShape, Wrap};
+use crate::widget::{AnyShape, ShapeStyle, Wrap};
 use carbide::environment::Environment;
 use carbide::widget::WidgetId;
 use std::fmt::{Debug, Formatter};
-use crate::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeJoin};
+use carbide::draw::DrawOptions;
+use crate::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, StrokeJoin, StrokeOptions};
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
     render_context: &'a mut RenderContext<'b, 'c>,
@@ -33,7 +34,7 @@ pub struct ContextState {
     dash_start_cap: StrokeDashCap,
     dash_end_cap: StrokeDashCap,
     dash_mode: StrokeDashMode,
-    miter_limit: f32,
+    miter_limit: Scalar,
     text_alignment: Alignment,
     clip_count: u32,
 }
@@ -132,8 +133,8 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.cap_style = cap;
     }
 
-    pub fn set_miter_limit(&mut self, limit: f64) {
-        self.current_state.miter_limit = limit as f32;
+    pub fn set_miter_limit(&mut self, limit: Scalar) {
+        self.current_state.miter_limit = limit;
     }
 
     pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
@@ -182,23 +183,45 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             fn description(&self) -> DrawShape {
                 DrawShape::Path(self.path.clone())
             }
+
+            fn options(&self) -> DrawOptions {
+                todo!()
+            }
         }
 
         let path = self.path_builder.path().clone();
 
         self.render_context.style(self.current_state.fill_color.convert(self.position, self.dimension), |ctx| {
-            ctx.fill_shape(&FillShape { path })
+            ctx.shape(&FillShape { path }, ShapeStyle::Fill)
         });
     }
 
     pub fn stroke(&mut self) {
-        /*let stroke_options = StrokeOptions::default()
-            .with_line_cap(self.current_state.cap_style)
-            .with_line_width(self.current_state.line_width as f32)
-            .with_miter_limit(self.current_state.miter_limit)
-            .with_line_join(self.current_state.join_style);
+        #[derive(Clone, Debug)]
+        struct StrokeShape {
+            path: carbide_core::draw::path::Path,
+        }
 
-        let path = self.path_builder.clone().build();
+        impl AnyShape for StrokeShape {
+            fn cache_key(&self) -> Option<WidgetId> {
+                todo!()
+            }
+
+            fn description(&self) -> DrawShape {
+                DrawShape::Path(self.path.clone())
+            }
+
+            fn options(&self) -> DrawOptions {
+                todo!()
+            }
+        }
+
+        let stroke_options = StrokeOptions::default()
+            .with_stroke_cap(self.current_state.cap_style)
+            .with_stroke_width(self.current_state.line_width)
+            .with_miter_limit(self.current_state.miter_limit)
+            .with_stroke_join(self.current_state.join_style);
+
         let dashes = self.current_state.dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
             StrokeDashPattern {
                 pattern: pattern.clone(),
@@ -209,13 +232,13 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             }
         });
 
-        let draw_style = self.current_state.stroke_color.convert(self.position, self.dimension);
-        let geometry = self.get_stroke_geometry(path, stroke_options);
-        self.render_context.style(draw_style, |render_context| {
-            render_context.stroke_dash_pattern(dashes, |render_context| {
-                render_context.stroke(&geometry)
+        let path = self.path_builder.path().clone();
+
+        self.render_context.style(self.current_state.stroke_color.convert(self.position, self.dimension), |ctx| {
+            ctx.stroke_dash_pattern(dashes, |ctx| {
+                ctx.shape(&StrokeShape { path }, stroke_options)
             })
-        })*/
+        });
     }
 
     pub fn begin_path(&mut self) {

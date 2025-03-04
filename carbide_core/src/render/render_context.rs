@@ -2,8 +2,8 @@ use carbide::color::Color;
 use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar};
-use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern};
+use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar, DrawOptions};
+use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern, StrokeOptions};
 use crate::render::CarbideTransform;
 
 use crate::text::{TextContext, TextId};
@@ -99,19 +99,15 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, geometry: &dyn AnyShape, f: F) -> R {
-        self.render.stencil(geometry);
+    pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, shape: &dyn AnyShape, options: impl Into<DrawOptions>, f: F) -> R {
+        self.render.stencil(shape, options.into());
         let res = f(self);
         self.render.pop_stencil();
         res
     }
 
-    pub fn fill_shape(&mut self, shape: &dyn AnyShape) {
-        self.render.fill_shape(shape);
-    }
-
-    pub fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment) {
-        self.render.stroke_shape(shape, stroke_width, stroke_alignment);
+    pub fn shape(&mut self, shape: &dyn AnyShape, options: impl Into<DrawOptions>) {
+        self.render.shape(shape, options.into());
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: DrawStyle, f: F) -> R {
@@ -158,11 +154,10 @@ pub trait InnerRenderContext {
     fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect);
     fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect);
 
-    fn stencil(&mut self, shape: &dyn AnyShape);
+    fn stencil(&mut self, shape: &dyn AnyShape, options: DrawOptions);
     fn pop_stencil(&mut self);
 
-    fn fill_shape(&mut self, shape: &dyn AnyShape);
-    fn stroke_shape(&mut self, shape: &dyn AnyShape, stroke_width: Scalar, stroke_alignment: StrokeAlignment);
+    fn shape(&mut self, shape: &dyn AnyShape, options: DrawOptions);
 
     // TODO: Consider making it take a reference to Style
     fn style(&mut self, style: DrawStyle);

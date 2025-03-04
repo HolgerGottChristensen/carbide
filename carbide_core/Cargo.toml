@@ -31,11 +31,11 @@ parking_lot.workspace = true
 smallvec.workspace = true
 dashmap.workspace = true
 indexmap.workspace = true
+cgmath.workspace = true
 
 accesskit.workspace = true
 fxhash = "0.2.1"
 image = "0.25.5"
-cgmath.workspace = true
 futures = "0.3.21"
 oneshot = "0.1.3"
 

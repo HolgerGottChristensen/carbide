@@ -10,7 +10,6 @@ mod render_context;
 mod style;
 mod layer;
 mod noop_render_context;
-pub mod triangle_render_context;
 
 pub type CarbideTransform = Matrix4<f32>;
 

@@ -2,7 +2,7 @@ use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, Fill
 use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{Path, Winding};
 use lyon::path::builder::BorderRadii;
-use lyon::tessellation::{LineCap, StrokeAlignment, StrokeOptions};
+use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
 use carbide_core::draw::{DrawShape, Position, Scalar};
 use crate::stroke_vertex::StrokeVertex;
 use crate::triangle::Triangle;
@@ -106,12 +106,14 @@ impl Tesselator {
 
                 return builder.build();
             }
+            DrawShape::Single(_) => {}
+            DrawShape::Multiple(_) => {}
         }
 
         builder.build()
     }
 
-    pub fn fill(&mut self, draw_shape: DrawShape) -> impl Iterator<Item=Triangle<Position>> {
+    pub fn fill(&mut self, draw_shape: DrawShape, options: carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> {
 
         let path = self.path(draw_shape);
 
@@ -119,7 +121,13 @@ impl Tesselator {
 
         let mut tessellator = FillTessellator::new();
 
-        let fill_options = FillOptions::default();
+        let fill_rule = match options.fill_rule {
+            carbide_core::draw::fill::FillRule::EvenOdd => FillRule::EvenOdd,
+            carbide_core::draw::fill::FillRule::NonZero => FillRule::NonZero
+        };
+
+        let fill_options = FillOptions::default()
+            .with_fill_rule(fill_rule);
 
         {
             // Compute the tessellation.
@@ -147,8 +155,7 @@ impl Tesselator {
         triangles.into_iter()
     }
 
-    pub fn stroke(&mut self, draw_shape: DrawShape, width: Scalar, stroke_alignment: carbide_core::draw::stroke::StrokeAlignment) -> impl Iterator<Item=Triangle<StrokeVertex>> {
-
+    pub fn stroke(&mut self, draw_shape: DrawShape, options: carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> {
         let path = self.path(draw_shape);
 
         #[derive(Debug, Copy, Clone, PartialEq)]
@@ -169,11 +176,15 @@ impl Tesselator {
 
         //println!("{:?}", path);
 
-        let stroke_alignment = match stroke_alignment {
+        let stroke_width = options.stroke_width as f32;
+
+        let stroke_alignment = match options.stroke_alignment {
             carbide_core::draw::stroke::StrokeAlignment::Center => StrokeAlignment::Center,
             carbide_core::draw::stroke::StrokeAlignment::Positive => StrokeAlignment::Positive,
             carbide_core::draw::stroke::StrokeAlignment::Negative => StrokeAlignment::Negative,
         };
+
+
 
         {
             // Compute the tessellation.
@@ -181,7 +192,7 @@ impl Tesselator {
                 .tessellate_path(
                     &path,
                     &StrokeOptions::default()
-                        .with_line_width(width as f32)
+                        .with_line_width(stroke_width)
                         .with_alignment(stroke_alignment),
                     &mut BuffersBuilder::new(&mut geometry, |vertex: LyonStrokeVertex| {
                         //dbg!(&vertex);

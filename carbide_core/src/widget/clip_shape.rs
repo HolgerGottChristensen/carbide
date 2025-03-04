@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::widget::{CommonWidget, Empty, AnyShape, Widget, WidgetId, WidgetSync, AnyWidget};
+use crate::widget::{CommonWidget, Empty, AnyShape, Widget, WidgetId, WidgetSync, AnyWidget, ShapeStyle};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, StateSync)]
@@ -67,12 +67,8 @@ impl<C: Widget, S: AnyShape + AnyWidget + Clone> CommonWidget for ClipShape<C, S
 
 impl<C: Widget, S: AnyShape + AnyWidget + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        /*let stencil_triangles = &self.shape.triangles(context.env);
-
-        context.stencil(stencil_triangles, |this| {
-            self.foreach_child_mut(&mut |child| {
-                child.render(this);
-            });
-        })*/
+        context.stencil(&self.shape, self.shape.options(), |ctx| {
+            self.child.render(ctx)
+        })
     }
 }

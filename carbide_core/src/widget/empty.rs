@@ -1,3 +1,4 @@
+use carbide::draw::DrawOptions;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder2;
@@ -49,6 +50,10 @@ impl AnyShape for Empty {
     }
 
     fn description(&self) -> DrawShape {
+        todo!()
+    }
+
+    fn options(&self) -> DrawOptions {
         todo!()
     }
 }

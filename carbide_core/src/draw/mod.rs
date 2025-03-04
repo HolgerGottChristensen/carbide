@@ -11,6 +11,7 @@ pub use position::Position;
 pub use rect::Rect;
 pub use texture::*;
 pub use draw_shape::*;
+pub use draw_options::*;
 
 mod alignment;
 mod dimension;
@@ -27,6 +28,8 @@ mod angle;
 pub mod path;
 mod draw_shape;
 pub mod stroke;
+pub mod fill;
+mod draw_options;
 
 /// An alias over the Scalar type used throughout carbide.
 ///
