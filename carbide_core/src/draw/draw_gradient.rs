@@ -1,5 +1,5 @@
 use crate::draw::{Dimension, Position, Color};
-use crate::widget::{Gradient, GradientRepeat, GradientType, GradientPosition};
+use crate::draw::gradient::{Gradient, GradientPosition, GradientRepeat, GradientType};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ColorSpace {

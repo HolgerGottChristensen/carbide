@@ -3,16 +3,17 @@ use carbide_controls::toggle::{CheckboxStyle, Toggle};
 use carbide_controls::{ControlsExt, Slider, TextInput};
 use carbide_core::closure;
 use carbide_core::color::{TRANSPARENT, WHITE};
-use carbide_core::draw::{Dimension, Position, StrokeDashCap, StrokeDashMode};
+use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::state::{LocalState, Map1, State};
-use carbide_core::widget::canvas::{Canvas, CanvasContext, LineCap, LineJoin};
+use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::f64::consts::PI;
 use std::num::ParseFloatError;
 use std::str::FromStr;
+use carbide_core::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeJoin};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum DrawType {
@@ -29,8 +30,8 @@ fn main() {
 
     let draw_figure = LocalState::new(DrawType::LineMouse);
     let dash_mode = LocalState::new(StrokeDashMode::Pretty);
-    let line_cap = LocalState::new(LineCap::Butt);
-    let line_join = LocalState::new(LineJoin::Miter);
+    let line_cap = LocalState::new(StrokeCap::Butt);
+    let line_join = LocalState::new(StrokeJoin::Miter);
     let dash_start_cap = LocalState::new(StrokeDashCap::None);
     let dash_end_cap = LocalState::new(StrokeDashCap::None);
 
@@ -161,14 +162,14 @@ fn main() {
                                 Text::new("Pretty").tag(StrokeDashMode::Pretty),
                             )),
                             Picker::new("Line join", line_join, (
-                                Text::new("Miter").tag(LineJoin::Miter),
-                                Text::new("Round").tag(LineJoin::Round),
-                                Text::new("Bevel").tag(LineJoin::Bevel),
+                                Text::new("Miter").tag(StrokeJoin::Miter),
+                                Text::new("Round").tag(StrokeJoin::Round),
+                                Text::new("Bevel").tag(StrokeJoin::Bevel),
                             )),
                             Picker::new("Line cap", line_cap, (
-                                Text::new("Butt").tag(LineCap::Butt),
-                                Text::new("Square").tag(LineCap::Square),
-                                Text::new("Round").tag(LineCap::Round),
+                                Text::new("Butt").tag(StrokeCap::Butt),
+                                Text::new("Square").tag(StrokeCap::Square),
+                                Text::new("Round").tag(StrokeCap::Round),
                             )),
                             Picker::new("Start cap", dash_start_cap, (
                                 Text::new("None").tag(StrokeDashCap::None),

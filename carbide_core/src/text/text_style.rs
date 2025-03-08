@@ -4,7 +4,7 @@ use carbide_core::text::FontSize;
 use carbide_core::text::FontStyle;
 use carbide_core::text::FontWeight;
 use carbide_core::text::TextDecoration;
-use crate::widget::Wrap;
+use crate::text::text_wrap::Wrap;
 
 /// The text style for a piece of text
 #[derive(Clone, Debug, PartialEq)]

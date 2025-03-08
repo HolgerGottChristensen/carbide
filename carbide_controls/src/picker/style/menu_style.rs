@@ -16,9 +16,11 @@ use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, 
 use carbide_core::state::{StateExtNew, ValueState};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::WidgetId;
-use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, Gradient, GradientPosition, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, Wrap, ZStack};
+use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
+use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::draw::stroke::StrokeCap;
+use carbide::text::text_wrap::Wrap;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;

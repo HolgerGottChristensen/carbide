@@ -29,6 +29,7 @@ pub mod fill;
 pub mod path;
 pub mod stroke;
 pub mod theme;
+pub mod gradient;
 
 /// An alias over the Scalar type used throughout carbide.
 ///

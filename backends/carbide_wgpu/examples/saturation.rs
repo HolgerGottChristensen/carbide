@@ -4,6 +4,7 @@ use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::time::Duration;
+use carbide_core::draw::gradient::Gradient;
 
 fn main() {
     let mut application = Application::new()

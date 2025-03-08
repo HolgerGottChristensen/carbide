@@ -6,12 +6,13 @@ use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{AnyShape, ShapeStyle, Wrap};
+use crate::widget::{AnyShape, ShapeStyle};
 use carbide::environment::Environment;
 use carbide::widget::WidgetId;
 use std::fmt::{Debug, Formatter};
 use carbide::draw::DrawOptions;
 use crate::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, StrokeJoin, StrokeOptions};
+use crate::text::text_wrap::Wrap;
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
     render_context: &'a mut RenderContext<'b, 'c>,

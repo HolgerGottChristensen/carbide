@@ -1,4 +1,5 @@
 use carbide_core::draw::{Alignment, Color, Dimension};
+use carbide_core::draw::gradient::Gradient;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

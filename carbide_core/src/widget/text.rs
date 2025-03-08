@@ -10,8 +10,9 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{wrap_state, AnyWidget, CommonWidget, Identifiable, Justify, Widget, WidgetId, WidgetSync, WrapState};
-use crate::widget::types::Wrap;
+use crate::text::text_justify::TextJustify;
+use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
+use crate::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId, WidgetSync};
 
 /// Displays some given text centered within a rectangular area.
 ///
@@ -170,21 +171,21 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
 
     /// Align the text to the left of its bounding **Rect**'s *x* axis range.
     pub fn justify_left(self) -> Self {
-        self.justify(Justify::Left)
+        self.justify(TextJustify::Left)
     }
 
     /// Align the text to the middle of its bounding **Rect**'s *x* axis range.
     pub fn justify_center(self) -> Self {
-        self.justify(Justify::Center)
+        self.justify(TextJustify::Center)
     }
 
-    pub fn justify(self, _j: Justify) -> Self {
+    pub fn justify(self, _j: TextJustify) -> Self {
         self
     }
 
     /// Align the text to the right of its bounding **Rect**'s *x* axis range.
     pub fn justify_right(self) -> Self {
-        self.justify(Justify::Right)
+        self.justify(TextJustify::Right)
     }
 
     pub fn get_style(&self) -> TextStyle {

@@ -6,6 +6,7 @@ use carbide::animation::AnimationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide::draw::Alignment;
 use carbide::environment::Environment;
+use carbide::text::text_wrap::Wrap;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
@@ -16,7 +17,7 @@ use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State};
 use carbide_core::text::TextContext;
-use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId, Wrap};
+use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId};
 
 use crate::{EnabledState};
 use crate::plain::cursor::{Cursor, CursorIndex};

@@ -1,3 +1,4 @@
+use carbide::draw::gradient::{Gradient, GradientPosition};
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::toggle::ToggleStyle;
@@ -9,7 +10,7 @@ use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::render::Style;
 use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, Map5, ReadState, State};
-use carbide_core::widget::{AnyWidget, CornerRadii, EdgeInsets, Gradient, GradientPosition, MouseArea, RoundedRectangle, Text, Widget, WidgetExt};
+use carbide_core::widget::{AnyWidget, CornerRadii, EdgeInsets, MouseArea, RoundedRectangle, Text, Widget, WidgetExt};
 
 #[derive(Debug, Clone)]
 pub struct ButtonStyle;

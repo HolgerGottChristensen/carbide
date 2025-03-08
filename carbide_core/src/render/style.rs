@@ -1,5 +1,5 @@
 use crate::draw::{Color, Dimension, DrawGradient, DrawStyle, Position};
-use crate::widget::Gradient;
+use crate::draw::gradient::Gradient;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Style {

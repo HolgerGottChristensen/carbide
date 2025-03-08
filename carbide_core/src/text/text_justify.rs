@@ -1,6 +1,6 @@
 /// A type used for referring to typographic alignment of `Text`.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Justify {
+pub enum TextJustify {
     /// Align text to the start of the bounding `Rect`'s *x* axis.
     Left,
     /// Symmetrically align text along the *y* axis.

@@ -1,6 +1,7 @@
+use carbide::draw::stroke::{StrokeCap, StrokeJoin};
 use carbide::environment::Environment;
 use carbide_core::draw::{Position, Scalar};
-use carbide_core::widget::canvas::{CanvasContext, LineCap, LineJoin};
+use carbide_core::widget::canvas::{CanvasContext};
 use crate::element::cubic_interpolation_mode::CubicInterpolationMode;
 use crate::element::Element;
 use crate::element::span_gaps::SpanGaps;
@@ -9,8 +10,8 @@ use crate::element::stepped::Stepped;
 pub struct Line {
     position: Position,
     points: Vec<Position>,
-    border_cap_style: LineCap,
-    border_join_style: LineJoin,
+    border_cap_style: StrokeCap,
+    border_join_style: StrokeJoin,
     border_width: Scalar,
     cap_bezier_points: bool,
     cubic_interpolation_mode: CubicInterpolationMode,

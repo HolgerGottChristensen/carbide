@@ -1,5 +1,4 @@
 use cgmath::Matrix4;
-use carbide::widget::Wrap;
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
@@ -14,7 +13,8 @@ use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
 use crate::event;
-use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager, TextWrapKey};
+use crate::text::text_wrap::{TextWrapKey, Wrap};
+use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::keyboard_shortcut::KeyboardShortcut;
 use crate::widget::luminance::Luminance;

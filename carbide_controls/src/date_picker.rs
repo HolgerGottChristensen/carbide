@@ -1,5 +1,6 @@
 use carbide::draw::Alignment;
 use carbide::scene::SceneManager;
+use carbide::text::text_wrap::Wrap;
 use carbide_core::color::TRANSPARENT;
 use carbide_core::draw::{Dimension, Position, Rect};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};

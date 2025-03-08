@@ -9,4 +9,5 @@ pub mod pre_multiply;
 pub mod image_context;
 mod image_mode;
 mod image_options;
+pub mod image_information;
 

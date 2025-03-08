@@ -6,6 +6,7 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSString};
 use objc::{msg_send, class, sel, sel_impl};
 use carbide::animation::AnimationManager;
+use carbide::draw::{ImageMode, ImageOptions};
 use carbide::environment::Environment;
 use carbide::event::{EventSink, NoopEventSink};
 use carbide::layout::LayoutContext;
@@ -15,7 +16,6 @@ use carbide_core::draw::ImageId;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide_core::event::CoreEvent;
 use carbide_core::layout::Layout;
-use carbide_core::draw::MODE_IMAGE;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, AnyState, IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId, ScaleMode};
@@ -474,8 +474,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
                 context.image(
                     id.clone(),
                     Rect::new(self.position, self.dimension),
-                    Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
-                    MODE_IMAGE
+                    ImageOptions { source_rect: Some(Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0))), mode: ImageMode::Image }
                 );
             }
         }

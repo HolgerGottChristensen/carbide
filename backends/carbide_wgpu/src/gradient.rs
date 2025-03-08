@@ -1,6 +1,6 @@
 use carbide_core::color::ColorExt;
 use carbide_core::draw::{ColorSpace, DrawGradient};
-use carbide_core::widget::{GradientRepeat, GradientType};
+use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]

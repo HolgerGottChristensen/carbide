@@ -14,8 +14,8 @@ use carbide_core::render::InnerRenderContext;
 use carbide_core::scene::SceneManager;
 use carbide_core::text::TextStyle;
 use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
-use carbide_core::widget::Wrap;
 use unicode_segmentation::UnicodeSegmentation;
+use carbide_core::text::text_wrap::Wrap;
 
 pub struct TextContext {
     map: FxHashMap<TextId, (Buffer, Metadata)>,

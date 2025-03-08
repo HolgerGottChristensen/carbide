@@ -15,12 +15,13 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{ColorSpace, Dimension, DrawGradient};
 use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::ReadState;
-use carbide_core::widget::{CommonWidget, GradientRepeat, GradientType, Widget};
+use carbide_core::widget::{CommonWidget, Widget};
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use carbide_winit::update_scale_factor;
 use carbide_winit::window::{Theme, WindowAttributes};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BufferUsages, SurfaceConfiguration, TextureFormat, TextureUsages};
+use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 
 pub const ZOOM: f32 = 1.0;
 
