@@ -36,7 +36,6 @@ impl<T> Context for T where T: Fn(&mut CanvasContext) + Clone + 'static {
 type DefaultCanvasContext = fn(&mut CanvasContext);
 
 impl Canvas<DefaultCanvasContext> {
-
     #[carbide_default_builder2]
     pub fn new<C: Context>(context: C) -> Canvas<C> {
         Canvas {

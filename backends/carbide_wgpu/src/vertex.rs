@@ -2,7 +2,7 @@ use carbide_winit::dpi::PhysicalSize;
 use wgpu::VertexFormat;
 
 use carbide_core::draw::Scalar;
-use carbide_core::draw::MODE_IMAGE;
+use crate::MODE_IMAGE;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

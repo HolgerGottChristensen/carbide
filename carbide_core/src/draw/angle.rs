@@ -15,7 +15,7 @@ impl Angle {
         match self {
             Angle::Degrees(d) => *d / 360.0,
             Angle::Turns(t) => *t,
-            Angle::Radians(r) => *r / 2.0*PI,
+            Angle::Radians(r) => *r / 2.0 * PI,
             Angle::Gradians(g) => *g / 400.0,
         }
     }
@@ -24,7 +24,7 @@ impl Angle {
         match self {
             Angle::Degrees(d) => *d,
             Angle::Turns(t) => *t * 360.0,
-            Angle::Radians(r) => (*r / 2.0*PI) * 360.0,
+            Angle::Radians(r) => (*r / 2.0 * PI) * 360.0,
             Angle::Gradians(g) => (*g / 400.0) * 360.0,
         }
     }

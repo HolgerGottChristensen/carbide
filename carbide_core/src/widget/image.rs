@@ -6,7 +6,7 @@ use carbide::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, ImageId, MODE_ICON, MODE_IMAGE, Position, Rect, Scalar, Texture, TextureFormat};
+use crate::draw::{Dimension, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::pre_multiply::PreMultiply;
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
@@ -25,7 +25,7 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=S
     /// The rectangle area of the original source image that should be used.
     src_rect: Option<Rect>,
     color: Option<C>,
-    mode: u32,
+    mode: ImageMode,
     position: Position,
     dimension: Dimension,
     scale_mode: ScaleMode,
@@ -41,7 +41,7 @@ impl Image<Option<ImageId>, Style> {
             image_id: id.into_read_state(),
             src_rect: None,
             color: None,
-            mode: MODE_IMAGE,
+            mode: ImageMode::Image,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
@@ -56,7 +56,7 @@ impl Image<Option<ImageId>, Style> {
             image_id: id.into_read_state(),
             src_rect: None,
             color: Some(EnvironmentColor::Label.style()),
-            mode: MODE_ICON,
+            mode: ImageMode::Icon,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             scale_mode: ScaleMode::Fit,
@@ -217,10 +217,10 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
 
             if let Some(color) = self.color.as_ref().map(|col| col.value().clone()) {
                 context.style(color.convert(self.position, self.dimension), |this| {
-                    this.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
+                    this.image(id.clone(), Rect::new(self.position, self.dimension), ImageOptions { source_rect: Some(source_rect), mode: self.mode })
                 })
             } else {
-                context.image(id.clone(), Rect::new(self.position, self.dimension), source_rect, self.mode)
+                context.image(id.clone(), Rect::new(self.position, self.dimension), ImageOptions { source_rect: Some(source_rect), mode: self.mode })
             }
         } else {
             //println!("Missing else")

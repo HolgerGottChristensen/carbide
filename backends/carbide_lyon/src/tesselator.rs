@@ -1,6 +1,6 @@
 use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeTessellator, VertexBuffers};
 use lyon::math::{point, vector, Angle, Point};
-use lyon::path::{Path, Winding};
+use lyon::path::{LineJoin, Path, Winding};
 use lyon::path::builder::BorderRadii;
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
 use carbide_core::draw::{DrawShape, Position, Scalar};
@@ -184,16 +184,44 @@ impl Tesselator {
             carbide_core::draw::stroke::StrokeAlignment::Negative => StrokeAlignment::Negative,
         };
 
+        let start_cap = match options.start_cap {
+            carbide_core::draw::stroke::StrokeCap::Butt => LineCap::Butt,
+            carbide_core::draw::stroke::StrokeCap::Square => LineCap::Square,
+            carbide_core::draw::stroke::StrokeCap::Round => LineCap::Round,
+        };
 
+        let end_cap = match options.end_cap {
+            carbide_core::draw::stroke::StrokeCap::Butt => LineCap::Butt,
+            carbide_core::draw::stroke::StrokeCap::Square => LineCap::Square,
+            carbide_core::draw::stroke::StrokeCap::Round => LineCap::Round,
+        };
+
+        let (join, miter) = match options.stroke_join {
+            carbide_core::draw::stroke::StrokeJoin::Miter => (LineJoin::Miter, None),
+            carbide_core::draw::stroke::StrokeJoin::MiterClip { miter_limit } => (LineJoin::MiterClip, Some(miter_limit)),
+            carbide_core::draw::stroke::StrokeJoin::Round => (LineJoin::Round, None),
+            carbide_core::draw::stroke::StrokeJoin::Bevel => (LineJoin::Bevel, None),
+        };
+
+        let stroke_options = StrokeOptions::default()
+            .with_line_width(stroke_width)
+            .with_alignment(stroke_alignment)
+            .with_start_cap(start_cap)
+            .with_end_cap(end_cap)
+            .with_line_join(join);
+
+        let stroke_options = if let Some(miter) = miter {
+            stroke_options.with_miter_limit(miter as f32)
+        } else {
+            stroke_options
+        };
 
         {
             // Compute the tessellation.
             tessellator
                 .tessellate_path(
                     &path,
-                    &StrokeOptions::default()
-                        .with_line_width(stroke_width)
-                        .with_alignment(stroke_alignment),
+                    &stroke_options,
                     &mut BuffersBuilder::new(&mut geometry, |vertex: LyonStrokeVertex| {
                         //dbg!(&vertex);
 

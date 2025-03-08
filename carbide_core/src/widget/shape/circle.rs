@@ -1,16 +1,12 @@
-use carbide::draw::DrawOptions;
-use carbide_macro::carbide_default_builder2;
-
-use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, DrawShape, Position};
-use crate::draw::stroke::StrokeAlignment;
+use crate::draw::{Color, Dimension, DrawShape, Position, DrawOptions};
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
-use crate::widget::shape::{AnyShape};
+use crate::widget::shape::AnyShape;
 use crate::widget::types::ShapeStyle;
+use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
+use crate::CommonWidgetImpl;
 
 /// A simple, non-interactive widget for drawing a single **Circle**.
 #[derive(Debug, Clone, Widget)]
@@ -25,7 +21,6 @@ pub struct Circle<S, F> where S: ReadState<T=Style>, F: ReadState<T=Style> {
 }
 
 impl Circle<Style, Style> {
-    #[carbide_default_builder2]
     pub fn new() -> Circle<impl ReadState<T=Style>, impl ReadState<T=Style>> {
         Circle {
             id: WidgetId::new(),

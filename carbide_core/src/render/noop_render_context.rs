@@ -1,6 +1,6 @@
 use carbide::draw::Scalar;
 use carbide::widget::{AnyShape, ImageFilter};
-use crate::draw::{Color, Dimension, DrawOptions, DrawStyle, ImageId, Position, Rect};
+use crate::draw::{Color, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Position, Rect};
 use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern};
 use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
@@ -36,7 +36,7 @@ impl InnerRenderContext for NoopRenderContext {
     fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
     fn pop_stroke_dash_pattern(&mut self) {}
 
-    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _source_rect: Rect, _mode: u32) {}
+    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _options: ImageOptions) {}
 
     fn text(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 

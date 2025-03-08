@@ -7,7 +7,7 @@ use swash::zeno::{Format, Vector};
 
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::metadata::Metadata;
-use carbide_core::draw::{Dimension, Position, Rect, Scalar, MODE_TEXT, MODE_TEXT_COLOR};
+use carbide_core::draw::{Dimension, ImageMode, ImageOptions, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
@@ -208,10 +208,8 @@ impl InnerTextContext for TextContext {
                     ctx.image(
                         None,
                         bb,
-                        book.tex_coords,
-                        if book.has_color { MODE_TEXT_COLOR } else { MODE_TEXT }
+                        ImageOptions { source_rect: Some(book.tex_coords), mode: if book.has_color { ImageMode::TextColor } else { ImageMode::Text } }
                     );
-
                 }
             }
         }

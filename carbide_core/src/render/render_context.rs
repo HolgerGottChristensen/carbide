@@ -2,7 +2,7 @@ use carbide::color::Color;
 use carbide::draw::Dimension;
 use carbide_core::draw::Rect;
 use crate::color::WHITE;
-use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar, DrawOptions};
+use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar, DrawOptions, ImageOptions};
 use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern, StrokeOptions};
 use crate::render::CarbideTransform;
 
@@ -124,8 +124,8 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    pub fn image(&mut self, id: ImageId, bounding_box: Rect, source_rect: Rect, mode: u32) {
-        self.render.image(Some(id), bounding_box, source_rect, mode);
+    pub fn image(&mut self, id: ImageId, bounding_box: Rect, options: impl Into<ImageOptions>) {
+        self.render.image(Some(id), bounding_box, options.into());
     }
 
     pub fn text(&mut self, text: TextId) {
@@ -166,7 +166,7 @@ pub trait InnerRenderContext {
     fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>);
     fn pop_stroke_dash_pattern(&mut self);
 
-    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, source_rect: Rect, mode: u32);
+    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, options: ImageOptions);
 
     fn text(&mut self, text: TextId, ctx: &mut dyn TextContext);
 
