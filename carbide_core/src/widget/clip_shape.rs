@@ -67,7 +67,7 @@ impl<C: Widget, S: AnyShape + AnyWidget + Clone> CommonWidget for ClipShape<C, S
 
 impl<C: Widget, S: AnyShape + AnyWidget + Clone> Render for ClipShape<C, S> {
     fn render(&mut self, context: &mut RenderContext) {
-        context.stencil(&self.shape, self.shape.options(), |ctx| {
+        context.stencil(&self.shape, ShapeStyle::Fill, |ctx| {
             self.child.render(ctx)
         })
     }

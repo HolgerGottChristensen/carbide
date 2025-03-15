@@ -18,7 +18,6 @@ mod rounded_rectangle;
 pub trait AnyShape: Debug + DynClone + 'static {
     fn cache_key(&self) -> Option<WidgetId>; // TODO: ShapeId
     fn description(&self) -> DrawShape;
-    fn options(&self) -> DrawOptions;
 }
 
 dyn_clone::clone_trait_object!(AnyShape);

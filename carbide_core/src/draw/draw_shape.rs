@@ -1,6 +1,6 @@
 use carbide::draw::Position;
 use crate::draw::path::Path;
-use crate::draw::{DrawOptions, Rect, Scalar};
+use crate::draw::{Rect, Scalar};
 use crate::widget::CornerRadii;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -11,6 +11,4 @@ pub enum DrawShape {
     Circle(Position, Scalar),
     Ellipse(Rect),
     Path(Path),
-    Single(Box<(DrawShape, DrawOptions)>),
-    Multiple(Vec<(DrawShape, DrawOptions)>),
 }

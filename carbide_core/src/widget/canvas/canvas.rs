@@ -60,10 +60,6 @@ impl<C: Context> AnyShape for Canvas<C> {
     fn description(&self) -> DrawShape {
         DrawShape::Rectangle(self.bounding_box())
     }
-
-    fn options(&self) -> DrawOptions {
-        ShapeStyle::Fill.into()
-    }
 }
 
 impl<C: Context> Render for Canvas<C> {

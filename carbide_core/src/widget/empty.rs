@@ -52,8 +52,4 @@ impl AnyShape for Empty {
     fn description(&self) -> DrawShape {
         todo!()
     }
-
-    fn options(&self) -> DrawOptions {
-        todo!()
-    }
 }

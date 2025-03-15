@@ -9,8 +9,9 @@ use carbide_lyon::triangle::Triangle;
 use carbide_core::draw::{Dimension, DrawOptions, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar};
 use carbide_core::draw::stroke::{StrokeAlignment, StrokeDashMode, StrokeDashPattern};
 use carbide_core::math::{Matrix4, SquareMatrix};
-use carbide_core::render::{CarbideTransform, InnerRenderContext, Layer, LayerId};
+use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::{TextContext, TextId};
+use carbide_core::text::glyph::GlyphRenderMode;
 use carbide_core::widget::{AnyShape, FilterId, ImageFilter, ShapeStyle};
 use carbide_lyon::Tesselator;
 use crate::gradient::{Dashes, Gradient};
@@ -515,7 +516,7 @@ impl WGPURenderContext {
 }
 
 impl InnerRenderContext for WGPURenderContext {
-    fn transform(&mut self, transform: CarbideTransform) {
+    fn transform(&mut self, transform: Matrix4<f32>) {
         let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
 
         let new_uniform = Uniform {
@@ -730,12 +731,12 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn stencil(&mut self, shape: &dyn AnyShape, options: DrawOptions) {
+    fn stencil(&mut self, shape: &[(&dyn AnyShape, DrawOptions)]) {
         if self.skip_rendering {
             return;
         }
 
-        let start = self.vertices.len();
+        /*let start = self.vertices.len();
 
         match options {
             DrawOptions::Fill(options) => {
@@ -772,7 +773,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.stencil_stack.push(range.clone());
 
-        self.push_command(RenderPassCommand::Stencil { vertex_range: range });
+        self.push_command(RenderPassCommand::Stencil { vertex_range: range });*/
     }
 
     fn pop_stencil(&mut self) {
@@ -835,18 +836,16 @@ impl InnerRenderContext for WGPURenderContext {
         self.stroke_dash_stack.pop();
     }
 
-    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, options: ImageOptions) {
+    fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions) {
 
         let source_rect = options.source_rect.unwrap_or_else(|| Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)));
 
         let mode = match options.mode {
             ImageMode::Image => MODE_IMAGE,
             ImageMode::Icon => MODE_ICON,
-            ImageMode::Text => MODE_TEXT,
-            ImageMode::TextColor => MODE_TEXT_COLOR,
         };
 
-        self.draw_image(id.map(|id| WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
+        self.draw_image(Some(WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
     }
 
     fn text(&mut self, text: TextId, ctx: &mut dyn TextContext) {
@@ -854,7 +853,14 @@ impl InnerRenderContext for WGPURenderContext {
             return;
         }
 
-        ctx.render(text, self);
+        ctx.render(text, &mut |glyph| {
+            let mode = match glyph.mode {
+                GlyphRenderMode::Plain => MODE_TEXT,
+                GlyphRenderMode::Colored => MODE_TEXT_COLOR,
+            };
+
+            self.draw_image(None, glyph.bounding_box, glyph.texture_coords, mode);
+        });
     }
 
     fn filter_new(&mut self) {

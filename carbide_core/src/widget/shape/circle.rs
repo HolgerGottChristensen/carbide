@@ -115,8 +115,4 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
     fn description(&self) -> DrawShape {
         DrawShape::Circle(self.center_point(), self.dimension.width / 2.0)
     }
-
-    fn options(&self) -> DrawOptions {
-        self.style.into()
-    }
 }

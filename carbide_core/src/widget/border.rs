@@ -1,11 +1,17 @@
+use std::fmt::{Debug, Formatter};
+use dyn_clone::DynClone;
+use carbide::draw::DrawShape;
+use carbide::draw::stroke::StrokeAlignment;
+use carbide::widget::AnyShape;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, DrawStyle, Position, Rect};
+use crate::draw::stroke::StrokeOptions;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
+use crate::widget::{CommonWidget, Empty, Rectangle, Shape, Widget, WidgetId};
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -92,38 +98,34 @@ impl<W: Widget, C: ReadState<T=Color>> CommonWidget for Border<W, C> {
 
 impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
     fn render(&mut self, context: &mut RenderContext) {
-        /*let rect = Rect::new(self.position, self.dimension);
-        let (l, r, b, t) = rect.l_r_b_t();
+        #[derive(Debug, Clone)]
+        struct BorderShape {
+            rect: Rect,
+        }
 
-        let border_width = self.border_width as f64;
+        impl AnyShape for BorderShape {
+            fn cache_key(&self) -> Option<WidgetId> {
+                None
+            }
 
-        let left_border = Rect::new(
-            Position::new(l, b),
-            Dimension::new(border_width, rect.height()),
-        );
-        let right_border = Rect::new(
-            Position::new(r - border_width, b),
-            Dimension::new(border_width, rect.height()),
-        );
+            fn description(&self) -> DrawShape {
+                DrawShape::Rectangle(self.rect)
+            }
+        }
 
-        let top_border = Rect::new(
-            Position::new(l + border_width, b),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
-        let bottom_border = Rect::new(
-            Position::new(l + border_width, t - border_width),
-            Dimension::new(rect.width() - border_width * 2.0, border_width),
-        );
+        let rect = Rect::new(self.position, self.dimension);
 
         self.foreach_child_mut(&mut |child| {
             child.render(context);
         });
 
-        context.style(DrawStyle::Color(*self.color.value()), |this| {
-            this.rect(left_border);
-            this.rect(right_border);
-            this.rect(top_border);
-            this.rect(bottom_border);
-        })*/
+        context.style(DrawStyle::Color(*self.color.value()), |context| {
+            context.shape(
+                &BorderShape { rect },
+                StrokeOptions::default()
+                    .with_stroke_width(self.border_width as f64)
+                    .with_alignment(StrokeAlignment::Positive)
+            );
+        })
     }
 }

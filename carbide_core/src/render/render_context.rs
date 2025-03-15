@@ -1,15 +1,15 @@
-use carbide::color::Color;
-use carbide::draw::Dimension;
-use carbide_core::draw::Rect;
+use crate::color::Color;
 use crate::color::WHITE;
-use crate::draw::{ImageContext, Position, DrawStyle, ImageId, Scalar, DrawOptions, ImageOptions};
-use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern, StrokeOptions};
-use crate::render::CarbideTransform;
+use crate::draw::stroke::StrokeDashPattern;
+use crate::draw::Dimension;
+use crate::draw::Rect;
+use crate::draw::{DrawOptions, DrawStyle, ImageContext, ImageId, ImageOptions};
+use crate::math::Matrix4;
 
+use crate::environment::Environment;
+use crate::render::layer::{Layer, LayerId};
 use crate::text::{TextContext, TextId};
 use crate::widget::{AnyShape, ImageFilter};
-use crate::environment::{Environment};
-use crate::render::layer::{Layer, LayerId};
 
 pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,
@@ -21,7 +21,7 @@ pub struct RenderContext<'a, 'b: 'a> {
 impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
     // TODO: Change BasicLayouter to something more suitable
-    pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: CarbideTransform, f: F) -> R {
+    pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: Matrix4<f32>, f: F) -> R {
         self.render.transform(transform);
         let res = f(self);
         self.render.pop_transform();
@@ -100,7 +100,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     }
 
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, shape: &dyn AnyShape, options: impl Into<DrawOptions>, f: F) -> R {
-        self.render.stencil(shape, options.into());
+        self.render.stencil(&[(shape, options.into())]);
         let res = f(self);
         self.render.pop_stencil();
         res
@@ -125,7 +125,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     }
 
     pub fn image(&mut self, id: ImageId, bounding_box: Rect, options: impl Into<ImageOptions>) {
-        self.render.image(Some(id), bounding_box, options.into());
+        self.render.image(id, bounding_box, options.into());
     }
 
     pub fn text(&mut self, text: TextId) {
@@ -142,7 +142,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 }
 
 pub trait InnerRenderContext {
-    fn transform(&mut self, transform: CarbideTransform);
+    fn transform(&mut self, transform: Matrix4<f32>);
     fn pop_transform(&mut self);
 
     fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool);
@@ -154,7 +154,7 @@ pub trait InnerRenderContext {
     fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect);
     fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect);
 
-    fn stencil(&mut self, shape: &dyn AnyShape, options: DrawOptions);
+    fn stencil(&mut self, shapes: &[(&dyn AnyShape, DrawOptions)]);
     fn pop_stencil(&mut self);
 
     fn shape(&mut self, shape: &dyn AnyShape, options: DrawOptions);
@@ -166,7 +166,7 @@ pub trait InnerRenderContext {
     fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>);
     fn pop_stroke_dash_pattern(&mut self);
 
-    fn image(&mut self, id: Option<ImageId>, bounding_box: Rect, options: ImageOptions);
+    fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions);
 
     fn text(&mut self, text: TextId, ctx: &mut dyn TextContext);
 

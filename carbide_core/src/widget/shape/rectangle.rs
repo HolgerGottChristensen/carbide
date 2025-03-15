@@ -116,8 +116,4 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
     fn description(&self) -> DrawShape {
         DrawShape::Rectangle(self.bounding_box())
     }
-
-    fn options(&self) -> DrawOptions {
-        self.style.into()
-    }
 }

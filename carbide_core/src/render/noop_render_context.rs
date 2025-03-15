@@ -1,14 +1,14 @@
-use carbide::draw::Scalar;
-use carbide::widget::{AnyShape, ImageFilter};
-use crate::draw::{Color, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Position, Rect};
-use crate::draw::stroke::{StrokeAlignment, StrokeDashPattern};
-use crate::render::{CarbideTransform, InnerRenderContext, Layer, LayerId, NoopLayer};
+use cgmath::Matrix4;
+use crate::draw::stroke::StrokeDashPattern;
+use crate::draw::{Color, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Rect};
+use crate::render::{InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
+use carbide::widget::{AnyShape, ImageFilter};
 
 pub struct NoopRenderContext;
 
 impl InnerRenderContext for NoopRenderContext {
-    fn transform(&mut self, _transform: CarbideTransform) {}
+    fn transform(&mut self, _transform: Matrix4<f32>) {}
 
     fn pop_transform(&mut self) {}
 
@@ -24,7 +24,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, _geometry: &dyn AnyShape, _options: DrawOptions) {}
+    fn stencil(&mut self, _geometry: &[(&dyn AnyShape, DrawOptions)]) {}
 
     fn pop_stencil(&mut self) {}
 
@@ -36,7 +36,7 @@ impl InnerRenderContext for NoopRenderContext {
     fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
     fn pop_stroke_dash_pattern(&mut self) {}
 
-    fn image(&mut self, _id: Option<ImageId>, _bounding_box: Rect, _options: ImageOptions) {}
+    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
     fn text(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 

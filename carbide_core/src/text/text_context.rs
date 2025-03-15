@@ -5,6 +5,7 @@ use carbide::text::TextStyle;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
 use crate::render::InnerRenderContext;
+use crate::text::glyph::Glyph;
 
 pub trait TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension;
@@ -15,7 +16,7 @@ pub trait TextContext {
 
     fn update(&mut self, id: TextId, text: &str, style: &TextStyle);
 
-    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext);
+    fn render(&mut self, id: TextId, f: &mut dyn FnMut(&Glyph));
 
     fn prepare_render(&mut self);
 
@@ -50,7 +51,7 @@ impl TextContext for NOOPTextContext {
         unimplemented!()
     }
 
-    fn render(&mut self, _id: TextId, _ctx: &mut dyn InnerRenderContext) {
+    fn render(&mut self, _id: TextId, _f: &mut dyn FnMut(&Glyph)) {
         unimplemented!()
     }
 

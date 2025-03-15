@@ -1,7 +1,7 @@
 use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeTessellator, VertexBuffers};
 use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{LineJoin, Path, Winding};
-use lyon::path::builder::BorderRadii;
+use lyon::path::builder::{BorderRadii, SvgPathBuilder};
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
 use carbide_core::draw::{DrawShape, Position, Scalar};
 use crate::stroke_vertex::StrokeVertex;
@@ -100,14 +100,21 @@ impl Tesselator {
                         PathInstruction::CubicBezierTo { ctrl1, ctrl2, to } => {
                             builder.cubic_bezier_to(point(ctrl1.x as f32, ctrl1.y as f32), point(ctrl2.x as f32, ctrl2.y as f32), point(to.x as f32, to.y as f32));
                         }
-                        PathInstruction::Arc { center, radius, start_angle, end_angle } => {}
+                        PathInstruction::Arc { center, radius, start_angle, end_angle } => {
+                            let sweep = end_angle.degrees() - start_angle.degrees();
+
+                            builder.arc(
+                                point(center.x as f32, center.y as f32),
+                                vector(radius.width as f32, radius.height as f32),
+                                Angle::degrees(sweep as f32),
+                                Angle::degrees(start_angle.degrees() as f32)
+                            );
+                        }
                     }
                 }
 
                 return builder.build();
             }
-            DrawShape::Single(_) => {}
-            DrawShape::Multiple(_) => {}
         }
 
         builder.build()

@@ -7,7 +7,7 @@ use swash::zeno::{Format, Vector};
 
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::metadata::Metadata;
-use carbide_core::draw::{Dimension, ImageMode, ImageOptions, Position, Rect, Scalar};
+use carbide_core::draw::{Dimension, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
@@ -16,6 +16,7 @@ use carbide_core::text::TextStyle;
 use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide_core::text::text_wrap::Wrap;
+use carbide_core::text::glyph::{Glyph, GlyphRenderMode};
 
 pub struct TextContext {
     map: FxHashMap<TextId, (Buffer, Metadata)>,
@@ -172,7 +173,7 @@ impl InnerTextContext for TextContext {
         }
     }
 
-    fn render(&mut self, id: TextId, ctx: &mut dyn InnerRenderContext) {
+    fn render(&mut self, id: TextId, f: &mut dyn FnMut(&Glyph)) {
         let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         // Inspect the output runs
@@ -205,11 +206,11 @@ impl InnerTextContext for TextContext {
                     ctx.rect(bb);
                     ctx.pop_style();*/
 
-                    ctx.image(
-                        None,
-                        bb,
-                        ImageOptions { source_rect: Some(book.tex_coords), mode: if book.has_color { ImageMode::TextColor } else { ImageMode::Text } }
-                    );
+                    f(&Glyph {
+                        bounding_box: bb,
+                        texture_coords: book.tex_coords,
+                        mode: if book.has_color { GlyphRenderMode::Colored } else { GlyphRenderMode::Plain }
+                    });
                 }
             }
         }

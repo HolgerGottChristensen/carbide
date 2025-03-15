@@ -184,10 +184,6 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             fn description(&self) -> DrawShape {
                 DrawShape::Path(self.path.clone())
             }
-
-            fn options(&self) -> DrawOptions {
-                todo!()
-            }
         }
 
         let path = self.path_builder.path().clone();
@@ -210,10 +206,6 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
             fn description(&self) -> DrawShape {
                 DrawShape::Path(self.path.clone())
-            }
-
-            fn options(&self) -> DrawOptions {
-                todo!()
             }
         }
 

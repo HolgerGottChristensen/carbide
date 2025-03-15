@@ -1,4 +1,4 @@
-use cgmath::{Deg, Matrix4, Point3, Vector3};
+use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
 
 use carbide_macro::carbide_default_builder2;
 
@@ -123,7 +123,7 @@ impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for R
         self.sync(context.env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
         let fov = self.fov as f32;
-        let perspective = cgmath::perspective(Deg(fov), 1.0, 1.0, 10.0);
+        let perspective = perspective(Deg(fov), 1.0, 1.0, 10.0);
         let angle_to_screen_center = 90.0;
 
         let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;

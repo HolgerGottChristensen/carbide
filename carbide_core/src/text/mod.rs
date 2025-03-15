@@ -10,6 +10,7 @@ mod text_style;
 pub mod text_wrap;
 pub mod text_justify;
 pub mod text_decoration;
+pub mod glyph;
 
 pub type FontId = usize;
 pub type FontSize = u32;
