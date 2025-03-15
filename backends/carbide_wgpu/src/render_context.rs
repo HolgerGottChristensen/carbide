@@ -3,23 +3,25 @@ use std::ops::Range;
 
 use wgpu::BindGroup;
 
-use carbide_core::color::{Color, ColorExt, WHITE};
-use carbide_lyon::stroke_vertex::StrokeVertex;
-use carbide_lyon::triangle::Triangle;
-use carbide_core::draw::{Dimension, DrawOptions, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar};
-use carbide_core::draw::stroke::{StrokeAlignment, StrokeDashMode, StrokeDashPattern};
-use carbide_core::math::{Matrix4, SquareMatrix};
-use carbide_core::render::{InnerRenderContext, Layer, LayerId};
-use carbide_core::text::{TextContext, TextId};
-use carbide_core::text::glyph::GlyphRenderMode;
-use carbide_core::widget::{AnyShape, FilterId, ImageFilter, ShapeStyle};
-use carbide_lyon::Tesselator;
 use crate::gradient::{Dashes, Gradient};
-use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::render_target::RenderTarget;
 use crate::vertex::Vertex;
+use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
+
+use carbide_core::color::{Color, ColorExt, WHITE};
+use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
+use carbide_core::draw::{Dimension, DrawOptions, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect};
+use carbide_core::math::{Matrix4, SquareMatrix};
+use carbide_core::render::{InnerRenderContext, Layer, LayerId};
+use carbide_core::text::glyph::GlyphRenderMode;
+use carbide_core::text::{TextContext, TextId};
+use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
+
+use carbide_lyon::stroke_vertex::StrokeVertex;
+use carbide_lyon::triangle::Triangle;
+use carbide_lyon::Tesselator;
 
 #[derive(Debug)]
 pub struct WGPURenderContext {

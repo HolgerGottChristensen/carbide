@@ -1,15 +1,13 @@
-use carbide::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
-use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, DrawShape, Position};
-use crate::draw::stroke::StrokeAlignment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Blur, CommonWidget, CornerRadii, Widget, WidgetId, WidgetSync, ZStack};
-use crate::widget::shape::{AnyShape};
+use crate::widget::shape::AnyShape;
 use crate::widget::types::ShapeStyle;
+use crate::widget::{Blur, CommonWidget, CornerRadii, Widget, WidgetId, WidgetSync, ZStack};
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

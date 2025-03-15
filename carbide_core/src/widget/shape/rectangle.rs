@@ -1,4 +1,3 @@
-use carbide::draw::DrawOptions;
 use carbide_core::render::{RenderContext, Style};
 use carbide_macro::carbide_default_builder2;
 
@@ -10,7 +9,6 @@ use crate::widget::shape::AnyShape;
 use crate::widget::types::ShapeStyle;
 use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
 use crate::CommonWidgetImpl;
-use crate::draw::stroke::StrokeAlignment;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]

@@ -20,7 +20,6 @@ pub struct RenderContext<'a, 'b: 'a> {
 
 impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
-    // TODO: Change BasicLayouter to something more suitable
     pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: Matrix4<f32>, f: F) -> R {
         self.render.transform(transform);
         let res = f(self);
@@ -110,8 +109,8 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.shape(shape, options.into());
     }
 
-    pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: DrawStyle, f: F) -> R {
-        self.render.style(style);
+    pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: impl Into<DrawStyle>, f: F) -> R {
+        self.render.style(style.into());
         let res = f(self);
         self.render.pop_style();
         res
