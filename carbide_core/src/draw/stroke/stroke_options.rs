@@ -1,5 +1,5 @@
 use carbide::draw::Scalar;
-use crate::draw::stroke::{StrokeAlignment, StrokeCap, StrokeJoin};
+use crate::draw::stroke::{StrokeAlignment, LineCap, LineJoin};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[non_exhaustive]
@@ -7,17 +7,17 @@ pub struct StrokeOptions {
     /// What cap to use at the start of each sub-path.
     ///
     /// Default value: `LineCap::Butt`.
-    pub start_cap: StrokeCap,
+    pub start_cap: LineCap,
 
     /// What cap to use at the end of each sub-path.
     ///
     /// Default value: `LineCap::Butt`.
-    pub end_cap: StrokeCap,
+    pub end_cap: LineCap,
 
     /// See the SVG specification.
     ///
     /// Default value: `LineJoin::Miter`.
-    pub stroke_join: StrokeJoin,
+    pub stroke_join: LineJoin,
 
     /// Line width
     ///
@@ -37,8 +37,8 @@ pub struct StrokeOptions {
 impl StrokeOptions {
     pub const MINIMUM_MITER_LIMIT: Scalar = 1.0;
     pub const DEFAULT_MITER_LIMIT: Scalar = 4.0;
-    pub const DEFAULT_LINE_CAP: StrokeCap = StrokeCap::Butt;
-    pub const DEFAULT_LINE_JOIN: StrokeJoin = StrokeJoin::Miter;
+    pub const DEFAULT_LINE_CAP: LineCap = LineCap::Butt;
+    pub const DEFAULT_LINE_JOIN: LineJoin = LineJoin::Miter;
     pub const DEFAULT_LINE_WIDTH: Scalar = 2.0;
     pub const DEFAULT_ALIGNMENT: StrokeAlignment = StrokeAlignment::Center;
 
@@ -52,26 +52,26 @@ impl StrokeOptions {
     };
 
     #[inline]
-    pub const fn with_stroke_cap(mut self, cap: StrokeCap) -> Self {
+    pub const fn with_stroke_cap(mut self, cap: LineCap) -> Self {
         self.start_cap = cap;
         self.end_cap = cap;
         self
     }
 
     #[inline]
-    pub const fn with_start_cap(mut self, cap: StrokeCap) -> Self {
+    pub const fn with_start_cap(mut self, cap: LineCap) -> Self {
         self.start_cap = cap;
         self
     }
 
     #[inline]
-    pub const fn with_end_cap(mut self, cap: StrokeCap) -> Self {
+    pub const fn with_end_cap(mut self, cap: LineCap) -> Self {
         self.end_cap = cap;
         self
     }
 
     #[inline]
-    pub const fn with_stroke_join(mut self, join: StrokeJoin) -> Self {
+    pub const fn with_stroke_join(mut self, join: LineJoin) -> Self {
         self.stroke_join = join;
         self
     }

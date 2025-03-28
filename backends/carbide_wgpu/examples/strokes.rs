@@ -6,7 +6,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::time::Instant;
 use carbide_core::draw::gradient::Gradient;
-use carbide_core::draw::stroke::{StrokeCap, StrokeJoin};
+use carbide_core::draw::stroke::{LineCap, LineJoin};
 
 fn main() {
     let mut application = Application::new();
@@ -40,14 +40,14 @@ fn main() {
                 );
 
                 context.set_miter_limit(100.0);
-                context.set_line_join(StrokeJoin::Miter);
+                context.set_line_join(LineJoin::Miter);
                 context.set_line_width(3.0);
                 //context.set_dash_offset(9.0);
                 context.set_dash_offset(Instant::now().duration_since(start).as_secs_f64() * 30.0);
                 context.set_dash_pattern(Some(vec![2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]));
                 //context.set_stroke_style(WHITE);
                 context.set_stroke_style(Gradient::linear(vec![RED, GREEN], Alignment::TopLeading, Alignment::BottomTrailing));
-                context.set_line_cap(StrokeCap::Butt);
+                context.set_line_cap(LineCap::Butt);
                 context.stroke();
             })
         )

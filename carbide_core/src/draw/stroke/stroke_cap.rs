@@ -1,7 +1,7 @@
 
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum StrokeCap {
+pub enum LineCap {
     /// The stroke for each sub-path does not extend beyond its two endpoints.
     /// A zero length sub-path will therefore not have any stroke.
     Butt,

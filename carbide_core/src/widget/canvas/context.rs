@@ -11,7 +11,7 @@ use carbide::environment::Environment;
 use carbide::widget::WidgetId;
 use std::fmt::{Debug, Formatter};
 use carbide::draw::DrawOptions;
-use crate::draw::stroke::{StrokeCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, StrokeJoin, StrokeOptions};
+use crate::draw::stroke::{LineCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, LineJoin, StrokeOptions};
 use crate::text::text_wrap::Wrap;
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
@@ -27,8 +27,8 @@ pub struct CanvasContext<'a, 'b, 'c: 'b> {
 pub struct ContextState {
     stroke_color: Style,
     fill_color: Style,
-    cap_style: StrokeCap,
-    join_style: StrokeJoin,
+    cap_style: LineCap,
+    join_style: LineJoin,
     line_width: Scalar,
     dash_pattern: Option<Vec<f64>>,
     dash_offset: Scalar,
@@ -47,8 +47,8 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             current_state: ContextState {
                 stroke_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
                 fill_color: Style::Color(Color::Rgba(0.0, 0.0, 0.0, 1.0)),
-                cap_style: StrokeCap::Round,
-                join_style: StrokeJoin::Round,
+                cap_style: LineCap::Round,
+                join_style: LineJoin::Round,
                 line_width: 2.0,
                 dash_pattern: None,
                 dash_offset: 0.0,
@@ -126,11 +126,11 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.dash_mode = mode;
     }
 
-    pub fn set_line_join(&mut self, join: StrokeJoin) {
+    pub fn set_line_join(&mut self, join: LineJoin) {
         self.current_state.join_style = join;
     }
 
-    pub fn set_line_cap(&mut self, cap: StrokeCap) {
+    pub fn set_line_cap(&mut self, cap: LineCap) {
         self.current_state.cap_style = cap;
     }
 

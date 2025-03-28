@@ -194,22 +194,22 @@ impl Tesselator {
         };
 
         let start_cap = match options.start_cap {
-            carbide_core::draw::stroke::StrokeCap::Butt => LineCap::Butt,
-            carbide_core::draw::stroke::StrokeCap::Square => LineCap::Square,
-            carbide_core::draw::stroke::StrokeCap::Round => LineCap::Round,
+            carbide_core::draw::stroke::LineCap::Butt => LineCap::Butt,
+            carbide_core::draw::stroke::LineCap::Square => LineCap::Square,
+            carbide_core::draw::stroke::LineCap::Round => LineCap::Round,
         };
 
         let end_cap = match options.end_cap {
-            carbide_core::draw::stroke::StrokeCap::Butt => LineCap::Butt,
-            carbide_core::draw::stroke::StrokeCap::Square => LineCap::Square,
-            carbide_core::draw::stroke::StrokeCap::Round => LineCap::Round,
+            carbide_core::draw::stroke::LineCap::Butt => LineCap::Butt,
+            carbide_core::draw::stroke::LineCap::Square => LineCap::Square,
+            carbide_core::draw::stroke::LineCap::Round => LineCap::Round,
         };
 
         let (join, miter) = match options.stroke_join {
-            carbide_core::draw::stroke::StrokeJoin::Miter => (LineJoin::Miter, None),
-            carbide_core::draw::stroke::StrokeJoin::MiterClip { miter_limit } => (LineJoin::MiterClip, Some(miter_limit)),
-            carbide_core::draw::stroke::StrokeJoin::Round => (LineJoin::Round, None),
-            carbide_core::draw::stroke::StrokeJoin::Bevel => (LineJoin::Bevel, None),
+            carbide_core::draw::stroke::LineJoin::Miter => (LineJoin::Miter, None),
+            carbide_core::draw::stroke::LineJoin::MiterClip { miter_limit } => (LineJoin::MiterClip, Some(miter_limit)),
+            carbide_core::draw::stroke::LineJoin::Round => (LineJoin::Round, None),
+            carbide_core::draw::stroke::LineJoin::Bevel => (LineJoin::Bevel, None),
         };
 
         let stroke_options = StrokeOptions::default()

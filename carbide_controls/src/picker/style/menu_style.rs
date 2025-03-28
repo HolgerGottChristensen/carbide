@@ -19,7 +19,7 @@ use carbide_core::widget::WidgetId;
 use carbide_core::widget::{AnySequence, AnyWidget, CommonWidget, CornerRadii, CrossAxisAlignment, EdgeInsets, ForEach, HStack, MouseAreaAction, MouseAreaActionContext, OverlayManager, RoundedRectangle, Spacer, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
 use carbide::draw::gradient::{Gradient, GradientPosition};
-use carbide::draw::stroke::StrokeCap;
+use carbide::draw::stroke::LineCap;
 use carbide::text::text_wrap::Wrap;
 
 #[derive(Debug, Clone)]
@@ -237,7 +237,7 @@ impl MenuStyle {
 
             ctx.set_stroke_style(mark_color.clone());
             ctx.set_line_width(1.5);
-            ctx.set_line_cap(StrokeCap::Round);
+            ctx.set_line_cap(LineCap::Round);
             ctx.stroke()
         });
 

@@ -1,7 +1,7 @@
 use crate::draw::Scalar;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum StrokeJoin {
+pub enum LineJoin {
     /// A sharp corner is to be used to join path segments.
     Miter,
     /// Same as a miter join, but if the miter limit is exceeded,

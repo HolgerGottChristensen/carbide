@@ -7,6 +7,7 @@ use carbide::environment::*;
 use carbide::widget::canvas::*;
 use carbide::widget::*;
 use carbide::{Application, Window};
+use carbide::draw::stroke::LineCap;
 
 fn main() {
     let mut application = Application::new();
