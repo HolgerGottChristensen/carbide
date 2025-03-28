@@ -3,7 +3,7 @@ use carbide::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, DrawShape, Position};
+use crate::draw::{Dimension, CompositeDrawShape, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, AnyShape, Widget, WidgetId, ShapeStyle};
@@ -57,8 +57,8 @@ impl<C: Context> AnyShape for Canvas<C> {
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
-        DrawShape::Rectangle(self.bounding_box())
+    fn description(&self) -> CompositeDrawShape {
+        todo!()
     }
 }
 

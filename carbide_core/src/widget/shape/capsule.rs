@@ -1,8 +1,8 @@
-use carbide::draw::DrawOptions;
+use carbide::draw::{DrawOptions, DrawShape};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, DrawShape, Position};
+use crate::draw::{Color, Dimension, CompositeDrawShape, Position};
 use crate::draw::fill::FillOptions;
 use crate::draw::stroke::StrokeAlignment;
 use crate::environment::EnvironmentColor;
@@ -76,39 +76,41 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> CommonWidget 
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
+impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
+    fn render(&mut self, context: &mut RenderContext) {
+        self.sync(context.env);
+
+        let primitive = DrawShape::Capsule(self.bounding_box());
+
+        match self.style {
+            ShapeStyle::Default | ShapeStyle::Fill => {
+                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
+                    this.shape(primitive, ShapeStyle::Fill)
+                })
+            }
+            ShapeStyle::Stroke { line_width } => {
+                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
+                })
+            }
+            ShapeStyle::FillAndStroke { line_width } => {
+                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
+                    this.shape(primitive.clone(), ShapeStyle::Fill)
+                });
+                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
+                });
+            }
+        }
+    }
+}
+
 impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for Capsule<S, F> {
     fn cache_key(&self) -> Option<WidgetId> {
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
-        DrawShape::Capsule(self.bounding_box())
-    }
-}
-
-impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Capsule<S, F> {
-    fn render(&mut self, context: &mut RenderContext) {
-        self.sync(context.env);
-
-        match self.style {
-            ShapeStyle::Default | ShapeStyle::Fill => {
-                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
-                })
-            }
-            ShapeStyle::Stroke { line_width } => {
-                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
-                })
-            }
-            ShapeStyle::FillAndStroke { line_width } => {
-                context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
-                });
-                context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
-                });
-            }
-        }
+    fn description(&self) -> CompositeDrawShape {
+        todo!()
     }
 }

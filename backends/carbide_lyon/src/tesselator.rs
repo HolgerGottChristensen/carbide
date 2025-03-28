@@ -3,7 +3,7 @@ use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{LineJoin, Path, Winding};
 use lyon::path::builder::{BorderRadii, SvgPathBuilder};
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
-use carbide_core::draw::{DrawShape, Position, Scalar};
+use carbide_core::draw::{CompositeDrawShape, Position, DrawShape, Scalar};
 use crate::stroke_vertex::StrokeVertex;
 use crate::triangle::Triangle;
 use lyon::tessellation::{StrokeVertex as LyonStrokeVertex};
@@ -20,6 +20,8 @@ impl Tesselator {
     pub fn new() -> Tesselator {
         Tesselator {}
     }
+
+
 
     fn path(&mut self, draw_shape: DrawShape) -> Path {
         let mut builder = Path::builder();
@@ -279,29 +281,29 @@ impl Tesselator {
 
                 Triangle([
                     StrokeVertex {
-                        position: vertex0.position,
-                        start: min.current,
-                        end: max.current,
-                        start_angle,
-                        end_angle,
+                        position: Position::new(vertex0.position.x as Scalar, vertex0.position.y as Scalar),
+                        start: Position::new(min.current.x as Scalar, min.current.y as Scalar),
+                        end: Position::new(max.current.x as Scalar, max.current.y as Scalar),
+                        start_angle: carbide_core::draw::Angle::Radians(start_angle.radians as Scalar),
+                        end_angle: carbide_core::draw::Angle::Radians(end_angle.radians as Scalar),
                         width: vertex0.width,
                         offset: min.offset,
                     },
                     StrokeVertex {
-                        position: vertex1.position,
-                        start: min.current,
-                        end: max.current,
-                        start_angle,
-                        end_angle,
+                        position: Position::new(vertex1.position.x as Scalar, vertex1.position.y as Scalar),
+                        start: Position::new(min.current.x as Scalar, min.current.y as Scalar),
+                        end: Position::new(max.current.x as Scalar, max.current.y as Scalar),
+                        start_angle: carbide_core::draw::Angle::Radians(start_angle.radians as Scalar),
+                        end_angle: carbide_core::draw::Angle::Radians(end_angle.radians as Scalar),
                         width: vertex1.width,
                         offset: min.offset,
                     },
                     StrokeVertex {
-                        position: vertex2.position,
-                        start: min.current,
-                        end: max.current,
-                        start_angle,
-                        end_angle,
+                        position: Position::new(vertex2.position.x as Scalar, vertex2.position.y as Scalar),
+                        start: Position::new(min.current.x as Scalar, min.current.y as Scalar),
+                        end: Position::new(max.current.x as Scalar, max.current.y as Scalar),
+                        start_angle: carbide_core::draw::Angle::Radians(start_angle.radians as Scalar),
+                        end_angle: carbide_core::draw::Angle::Radians(end_angle.radians as Scalar),
                         width: vertex2.width,
                         offset: min.offset,
                     },

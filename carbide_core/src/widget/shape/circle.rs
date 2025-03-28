@@ -1,4 +1,5 @@
-use crate::draw::{Color, Dimension, DrawShape, Position, DrawOptions};
+use carbide::draw::DrawShape;
+use crate::draw::{Color, Dimension, CompositeDrawShape, Position, DrawOptions};
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
@@ -84,23 +85,25 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ci
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
+        let primitive = DrawShape::Circle(self.center_point(), self.dimension.width / 2.0);
+
         match self.style {
             ShapeStyle::Default | ShapeStyle::Fill => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive, ShapeStyle::Fill)
                 })
             }
             ShapeStyle::Stroke { line_width } => {
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 })
             }
             ShapeStyle::FillAndStroke { line_width } => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive.clone(), ShapeStyle::Fill)
                 });
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 });
             }
         }
@@ -112,7 +115,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
-        DrawShape::Circle(self.center_point(), self.dimension.width / 2.0)
+    fn description(&self) -> CompositeDrawShape {
+        todo!()
     }
 }

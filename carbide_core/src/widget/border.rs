@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
-use carbide::draw::DrawShape;
+use carbide::draw::{CompositeDrawShape, DrawShape};
 use carbide::draw::stroke::StrokeAlignment;
 use carbide::widget::AnyShape;
 use carbide_macro::carbide_default_builder2;
@@ -103,13 +103,9 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
             rect: Rect,
         }
 
-        impl AnyShape for BorderShape {
-            fn cache_key(&self) -> Option<WidgetId> {
-                None
-            }
-
-            fn description(&self) -> DrawShape {
-                DrawShape::Rectangle(self.rect)
+        impl From<BorderShape> for DrawShape {
+            fn from(value: BorderShape) -> Self {
+                DrawShape::Rectangle(value.rect)
             }
         }
 
@@ -121,7 +117,7 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
 
         context.style(DrawStyle::Color(*self.color.value()), |context| {
             context.shape(
-                &BorderShape { rect },
+                BorderShape { rect },
                 StrokeOptions::default()
                     .with_stroke_width(self.border_width as f64)
                     .with_alignment(StrokeAlignment::Positive)

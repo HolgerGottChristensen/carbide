@@ -1,11 +1,11 @@
-use lyon::math::{Angle, Point};
+use carbide_core::draw::{Angle, Position};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct StrokeVertex {
-    pub position: Point,
+    pub position: Position,
 
-    pub start: Point,
-    pub end: Point,
+    pub start: Position,
+    pub end: Position,
 
     pub start_angle: Angle,
     pub end_angle: Angle,

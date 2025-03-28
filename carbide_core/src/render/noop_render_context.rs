@@ -1,6 +1,7 @@
 use cgmath::Matrix4;
+use carbide::draw::DrawShape;
 use crate::draw::stroke::StrokeDashPattern;
-use crate::draw::{Color, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Rect};
+use crate::draw::{Color, Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageOptions, Rect};
 use crate::render::{InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
 use carbide::widget::{AnyShape, ImageFilter};
@@ -24,11 +25,11 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, _geometry: &[(&dyn AnyShape, DrawOptions)]) {}
+    fn stencil(&mut self, _shape: CompositeDrawShape) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn shape(&mut self, _shape: &dyn AnyShape, _options: DrawOptions) {}
+    fn shape(&mut self, shape: DrawShape, option: DrawOptions) {}
 
     fn style(&mut self, _style: DrawStyle) {}
     fn pop_style(&mut self) {}

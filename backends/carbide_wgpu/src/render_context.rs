@@ -12,13 +12,12 @@ use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRA
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
-use carbide_core::draw::{Dimension, DrawOptions, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect};
+use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape};
 use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
 use carbide_core::text::{TextContext, TextId};
 use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
-
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
 use carbide_lyon::Tesselator;
@@ -364,6 +363,39 @@ impl WGPURenderContext {
             self.push_command(RenderPassCommand::Gradient(gradient.clone()));
         }
     }
+
+    fn add_clip_shape_vertices(&mut self, shape: DrawShape, options: DrawOptions) {
+        match options {
+            DrawOptions::Fill(options) => {
+                let triangles = self.tesselator.fill(shape, options);
+                self.vertices.extend(
+                    triangles
+                        .flat_map(|triangle| triangle.0)
+                        .map(|position| Vertex::new_from_2d(
+                            position.x as f32,
+                            position.y as f32,
+                            [1.0, 1.0, 1.0, 1.0],
+                            [0.0, 0.0],
+                            MODE_GEOMETRY
+                        ))
+                );
+            }
+            DrawOptions::Stroke(options) => {
+                let triangles = self.tesselator.stroke(shape, options);
+                self.vertices.extend(
+                    triangles
+                        .flat_map(|triangle| triangle.0)
+                        .map(|position| Vertex::new_from_2d(
+                            position.position.x as f32,
+                            position.position.y as f32,
+                            [1.0, 1.0, 1.0, 1.0],
+                            [0.0, 0.0],
+                            MODE_GEOMETRY
+                        ))
+                );
+            }
+        }
+    }
 }
 
 impl WGPURenderContext {
@@ -490,22 +522,22 @@ impl WGPURenderContext {
                 .map(|v| {
                     Vertex {
                         position: [
-                            v.position.x,
-                            v.position.y,
+                            v.position.x as f32,
+                            v.position.y as f32,
                             0.0
                         ],
                         tex_coords: [0.0, 0.0],
                         rgba: if gradient { Color::random().to_fsa() } else { color },
                         mode,
                         attributes0: [
-                            v.start.x,
-                            v.start.y,
-                            v.end.x,
-                            v.end.y,
+                            v.start.x as f32,
+                            v.start.y as f32,
+                            v.end.x as f32,
+                            v.end.y as f32,
                         ],
                         attributes1: [
-                            v.start_angle.radians,
-                            v.end_angle.radians,
+                            v.start_angle.radians() as f32,
+                            v.end_angle.radians() as f32,
                             v.width,
                             v.offset
                         ],
@@ -733,41 +765,22 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn stencil(&mut self, shape: &[(&dyn AnyShape, DrawOptions)]) {
+    fn stencil(&mut self, shape: CompositeDrawShape) {
         if self.skip_rendering {
             return;
         }
 
-        /*let start = self.vertices.len();
+        let start = self.vertices.len();
 
-        match options {
-            DrawOptions::Fill(options) => {
-                let triangles = self.tesselator.fill(shape.description(), options);
-                self.vertices.extend(
-                    triangles
-                        .flat_map(|triangle| triangle.0)
-                        .map(|position| Vertex::new_from_2d(
-                            position.x as f32,
-                            position.y as f32,
-                            [1.0, 1.0, 1.0, 1.0],
-                            [0.0, 0.0],
-                            MODE_GEOMETRY
-                        ))
-                );
+        match shape {
+            CompositeDrawShape::Zero => {}
+            CompositeDrawShape::One(shape, options) => {
+                self.add_clip_shape_vertices(shape, options);
             }
-            DrawOptions::Stroke(options) => {
-                let triangles = self.tesselator.stroke(shape.description(), options);
-                self.vertices.extend(
-                    triangles
-                        .flat_map(|triangle| triangle.0)
-                        .map(|position| Vertex::new_from_2d(
-                            position.position.x,
-                            position.position.y,
-                            [1.0, 1.0, 1.0, 1.0],
-                            [0.0, 0.0],
-                            MODE_GEOMETRY
-                        ))
-                );
+            CompositeDrawShape::Many(shapes) => {
+                for (shape, options) in shapes {
+                    self.add_clip_shape_vertices(shape, options);
+                }
             }
         }
 
@@ -775,7 +788,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.stencil_stack.push(range.clone());
 
-        self.push_command(RenderPassCommand::Stencil { vertex_range: range });*/
+        self.push_command(RenderPassCommand::Stencil { vertex_range: range });
     }
 
     fn pop_stencil(&mut self) {
@@ -790,18 +803,18 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn shape(&mut self, shape: &dyn AnyShape, options: DrawOptions) {
+    fn shape(&mut self, shape: DrawShape, options: DrawOptions) {
         if self.skip_rendering {
             return;
         }
 
         match options {
             DrawOptions::Fill(options) => {
-                let triangles = self.tesselator.fill(shape.description(), options);
+                let triangles = self.tesselator.fill(shape, options);
                 self.fill(triangles);
             }
             DrawOptions::Stroke(options) => {
-                let triangles = self.tesselator.stroke(shape.description(), options);
+                let triangles = self.tesselator.stroke(shape, options);
                 self.stroke(triangles);
             }
         }

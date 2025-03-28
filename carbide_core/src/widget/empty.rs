@@ -3,7 +3,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Dimension, DrawShape, Position};
+use crate::draw::{Dimension, CompositeDrawShape, Position};
 use crate::misc::flags::WidgetFlag;
 use crate::scene::AnyScene;
 use crate::widget::{AnyShape, Widget, WidgetId};
@@ -49,7 +49,7 @@ impl AnyShape for Empty {
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
+    fn description(&self) -> CompositeDrawShape {
         todo!()
     }
 }

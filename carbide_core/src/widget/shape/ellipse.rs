@@ -1,8 +1,8 @@
-use carbide::draw::DrawOptions;
+use carbide::draw::{DrawOptions, DrawShape};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, DrawShape, Position};
+use crate::draw::{Color, Dimension, CompositeDrawShape, Position};
 use crate::draw::stroke::StrokeAlignment;
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
@@ -81,23 +81,25 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for El
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
+        let primitive = DrawShape::Ellipse(self.bounding_box());
+
         match self.style {
             ShapeStyle::Default | ShapeStyle::Fill => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive, ShapeStyle::Fill)
                 })
             }
             ShapeStyle::Stroke { line_width } => {
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 })
             }
             ShapeStyle::FillAndStroke { line_width } => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive.clone(), ShapeStyle::Fill)
                 });
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 });
             }
         }
@@ -109,7 +111,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
-        DrawShape::Ellipse(self.bounding_box())
+    fn description(&self) -> CompositeDrawShape {
+        todo!()
     }
 }

@@ -1,6 +1,6 @@
 use carbide_macro::carbide_default_builder2;
 
-use crate::draw::{Color, Dimension, DrawShape, Position};
+use crate::draw::{Color, Dimension, CompositeDrawShape, Position, DrawShape};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
@@ -17,10 +17,8 @@ pub struct RoundedRectangle<S, F> where S: ReadState<T=Style> + Clone, F: ReadSt
     position: Position,
     dimension: Dimension,
     corner_radii: CornerRadii,
-    #[state]
-    stroke_color: S,
-    #[state]
-    fill_color: F,
+    #[state] stroke_color: S,
+    #[state] fill_color: F,
     style: ShapeStyle,
 }
 
@@ -83,23 +81,25 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> Render for Ro
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
+        let primitive = DrawShape::RoundedRectangle(self.bounding_box(), self.corner_radii);
+
         match self.style {
             ShapeStyle::Default | ShapeStyle::Fill => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive, ShapeStyle::Fill)
                 })
             }
             ShapeStyle::Stroke { line_width } => {
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 })
             }
             ShapeStyle::FillAndStroke { line_width } => {
                 context.style(self.fill_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Fill)
+                    this.shape(primitive.clone(), ShapeStyle::Fill)
                 });
                 context.style(self.stroke_color.value().convert(self.position, self.dimension), |this| {
-                    this.shape(self, ShapeStyle::Stroke { line_width })
+                    this.shape(primitive, ShapeStyle::Stroke { line_width })
                 });
             }
         }
@@ -111,7 +111,7 @@ impl<S: ReadState<T=Style> + Clone, F: ReadState<T=Style> + Clone> AnyShape for 
         todo!()
     }
 
-    fn description(&self) -> DrawShape {
-        DrawShape::RoundedRectangle(self.bounding_box(), self.corner_radii)
+    fn description(&self) -> CompositeDrawShape {
+        todo!()
     }
 }

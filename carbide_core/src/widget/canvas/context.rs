@@ -1,6 +1,6 @@
 use crate::animation::AnimationManager;
 use crate::draw::path::PathBuilder;
-use crate::draw::{Color, DrawShape};
+use crate::draw::{Color, CompositeDrawShape, DrawShape};
 use crate::draw::{Alignment, Angle, Dimension, Position, Scalar};
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
@@ -176,20 +176,16 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             path: carbide_core::draw::path::Path,
         }
 
-        impl AnyShape for FillShape {
-            fn cache_key(&self) -> Option<WidgetId> {
-                todo!()
-            }
-
-            fn description(&self) -> DrawShape {
-                DrawShape::Path(self.path.clone())
+        impl From<FillShape> for DrawShape {
+            fn from(value: FillShape) -> Self {
+                DrawShape::Path(value.path.clone())
             }
         }
 
         let path = self.path_builder.path().clone();
 
         self.render_context.style(self.current_state.fill_color.convert(self.position, self.dimension), |ctx| {
-            ctx.shape(&FillShape { path }, ShapeStyle::Fill)
+            ctx.shape(FillShape { path }, ShapeStyle::Fill)
         });
     }
 
@@ -199,13 +195,9 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             path: carbide_core::draw::path::Path,
         }
 
-        impl AnyShape for StrokeShape {
-            fn cache_key(&self) -> Option<WidgetId> {
-                todo!()
-            }
-
-            fn description(&self) -> DrawShape {
-                DrawShape::Path(self.path.clone())
+        impl From<StrokeShape> for DrawShape {
+            fn from(value: StrokeShape) -> Self {
+                DrawShape::Path(value.path.clone())
             }
         }
 
@@ -229,7 +221,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
         self.render_context.style(self.current_state.stroke_color.convert(self.position, self.dimension), |ctx| {
             ctx.stroke_dash_pattern(dashes, |ctx| {
-                ctx.shape(&StrokeShape { path }, stroke_options)
+                ctx.shape(StrokeShape { path }, stroke_options)
             })
         });
     }

@@ -28,6 +28,15 @@ impl Angle {
             Angle::Gradians(g) => (*g / 400.0) * 360.0,
         }
     }
+
+    pub fn radians(&self) -> f64 {
+        match self {
+            Angle::Degrees(d) => *d * PI / 180.0,
+            Angle::Turns(t) => *t * PI / 2.0,
+            Angle::Radians(r) => *r,
+            Angle::Gradians(g) => *g * PI / 200.0,
+        }
+    }
 }
 
 impl ConvertIntoRead<Angle> for f64 {

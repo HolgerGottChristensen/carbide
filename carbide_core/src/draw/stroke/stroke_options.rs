@@ -30,6 +30,7 @@ pub struct StrokeOptions {
     /// Default value: `StrokeOptions::DEFAULT_MITER_LIMIT`.
     pub miter_limit: Scalar,
 
+    /// How the stroke should be aligned.
     pub stroke_alignment: StrokeAlignment,
 }
 
