@@ -54,7 +54,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
-            msaa: Msaa::X4
+            msaa: Msaa::X1
         }
     }
 }

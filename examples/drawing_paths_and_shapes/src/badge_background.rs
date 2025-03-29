@@ -1,6 +1,7 @@
 use carbide::draw::{Alignment, Color, Dimension, Position};
+use carbide::draw::gradient::Gradient;
 use carbide::widget::canvas::{Canvas, CanvasContext};
-use carbide::widget::{Gradient, Widget, WidgetExt};
+use carbide::widget::{Widget, WidgetExt};
 
 use crate::hexagon_parameters::HexagonParameters;
 

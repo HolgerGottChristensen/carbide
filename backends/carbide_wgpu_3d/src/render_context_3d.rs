@@ -7,7 +7,7 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use carbide_3d::camera::Camera;
 use carbide_3d::material::{Material};
 use carbide_core::color::{Color, ColorExt};
-use carbide_core::render::matrix::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
+use carbide_core::math::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 use carbide_core::state::ReadState;
 use carbide_wgpu::{DEVICE, QUEUE, RenderTarget};
 use crate::camera::WgpuCamera;

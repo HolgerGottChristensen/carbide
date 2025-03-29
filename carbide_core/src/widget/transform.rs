@@ -15,8 +15,7 @@ pub struct Transform<W, M> where W: Widget, M: ReadState<T=Matrix4<f32>> {
     position: Position,
     dimension: Dimension,
     anchor: Alignment,
-    #[state]
-    matrix: M,
+    #[state] matrix: M,
 }
 
 impl Transform<Empty, Matrix4<f32>> {

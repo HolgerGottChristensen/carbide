@@ -10,15 +10,14 @@ use uuid::Uuid;
 
 use carbide::asynchronous::get_event_sink;
 use carbide::color::ColorExt;
-use carbide::draw::ImageId;
-use carbide::draw::MODE_IMAGE;
+use carbide::draw::{ImageId, ImageMode, ImageOptions};
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::event::{CoreEvent, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
-use carbide::render::matrix::{Deg, Matrix4, Vector3};
 use carbide::render::{Render, RenderContext};
 use carbide::widget::*;
 use carbide::CommonWidgetImpl;
+use carbide::math::{Deg, Matrix4, Vector3};
 
 const MAX_ITER: u32 = 1000;
 //const MAX_ITER: u32 = 20;
@@ -169,8 +168,7 @@ impl Render for Mandelbrot {
                                     Position::new(info.x as Scalar, info.y as Scalar),
                                     Dimension::new(info.width as Scalar, info.height as Scalar),
                                 ),
-                                Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
-                                MODE_IMAGE,
+                                ImageMode::Image,
                             )
                         }
                     });

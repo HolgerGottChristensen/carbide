@@ -2,7 +2,8 @@ use std::cmp::Ordering;
 
 use carbide::{closure, lens, ui};
 use carbide::{Application, Window};
-use carbide::controls::{Button, Slider, TextInput};
+use carbide::controls::{ControlsExt, Slider, TextInput};
+use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::draw::{Dimension, Position, Scalar};
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State};
@@ -50,21 +51,21 @@ fn main() {
 
     let node_editor = NodeEditor::new(&state);
 
-    let add_wall_button = Button::new_primary("Add Wall", closure!(|_| {
+    let add_wall_button = Button::new("Add Wall", closure!(|_| {
         *$editing_mode = EditingMode::CreateWallP1 {
             mouse_position: Position::new(0.0, 0.0),
             state: CreateWallState::Invalid,
         };
     })).frame(70.0, 26.0);
 
-    let selection_button = Button::new_primary("Selection", closure!(|_| {
+    let selection_button = Button::new("Selection", closure!(|_| {
         *$editing_mode = EditingMode::Selection {
             selected: SelectedState::None,
             hovered: SelectedState::None,
         };
     })).frame(70.0, 26.0);
 
-    let editing_button = Button::new_primary("Editing", closure!(|_| {
+    let editing_button = Button::new("Editing", closure!(|_| {
         *$editing_mode = EditingMode::Editing;
     }))
         .frame(70.0, 26.0);
@@ -107,7 +108,8 @@ fn main() {
     ))
     .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
     .frame_fixed_height(35.0)
-    .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
+    .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
+    .button_style(BorderedProminentStyle);
 
 
     let widget = VStack::new((

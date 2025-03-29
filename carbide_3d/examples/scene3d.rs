@@ -7,7 +7,6 @@ use carbide_core::animation::ease_in_out;
 use carbide_core::color::{ColorExt, BLUE, DARK_BLUE, DARK_CHARCOAL, DARK_GREEN, RED, WHITE};
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
-use carbide_core::render::matrix::{Deg, Euler, InnerSpace, Matrix3, Matrix4, Point3, Vector2, Vector3, Zero};
 use carbide_core::state::{AnimatedState, GlobalState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
@@ -15,6 +14,7 @@ use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::time::Duration;
 use tobj::GPU_LOAD_OPTIONS;
+use carbide_core::math::{Deg, Euler, InnerSpace, Matrix3, Matrix4, Point3, Vector2, Vector3, Zero};
 
 fn main() {
     carbide_wgpu_3d::init();

@@ -1,5 +1,5 @@
 use encase::ShaderType;
-use carbide_core::render::matrix::Vector4;
+use carbide_core::math::Vector4;
 
 #[derive(Debug, Copy, Clone, ShaderType)]
 pub struct WgpuUniforms {

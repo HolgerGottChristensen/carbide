@@ -4,10 +4,10 @@ use crate::material::Material;
 use crate::mesh::Mesh;
 use carbide::draw::Color;
 use carbide::environment::Environment;
-use carbide::render::matrix::{Matrix4, Vector3};
 use carbide::render::Layer;
 use dyn_clone::DynClone;
 use std::fmt::Debug;
+use carbide::math::{Matrix4, Vector3};
 
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,

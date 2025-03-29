@@ -8,7 +8,7 @@ use crate::material::transparency::Transparency;
 use crate::material::Material;
 use carbide::color::WHITE;
 use carbide::environment::Environment;
-use carbide::render::matrix::{Matrix3, SquareMatrix, Vector3};
+use carbide::math::{Matrix3, SquareMatrix, Vector3};
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
 
 // Consider:

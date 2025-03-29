@@ -1,6 +1,6 @@
+use carbide::math::Matrix4;
 use crate::camera::camera_projection::CameraProjection;
 use crate::camera::Camera;
-use carbide::render::matrix::Matrix4;
 use carbide::state::ReadState;
 
 #[derive(Debug, Clone)]

@@ -263,13 +263,13 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut application_manager = ApplicationManager::new();
 
-        let mut mouse_position = self.event_handler.mouse_position();
+        let mouse_position = self.event_handler.mouse_position();
 
         self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
             env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
                 env.with::<ActiveEventLoopKey>(event_loop, |env| {
                     env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
-                        env.with_mut::<MousePositionKey>(&mut mouse_position, |env| {
+                        env.with::<MousePositionKey>(&mouse_position, |env| {
                             env.with::<dyn EventSink>(&self.event_sink, |env| {
                                 for scene in &mut self.scenes {
                                     request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, env, self.id);
@@ -291,13 +291,13 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mut application_manager = ApplicationManager::new();
 
-        let mut mouse_position = self.event_handler.mouse_position();
+        let mouse_position = self.event_handler.mouse_position();
 
         self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
             env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
                 env.with::<ActiveEventLoopKey>(event_loop, |env| {
                     env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
-                        env.with_mut::<MousePositionKey>(&mut mouse_position, |env| {
+                        env.with::<MousePositionKey>(&mouse_position, |env| {
                             env.with::<dyn EventSink>(&self.event_sink, |env| {
                                 request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env, self.id);
                             })

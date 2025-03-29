@@ -1,6 +1,6 @@
 use carbide::animation::AnimationManager;
 use carbide::draw::Rect;
-use carbide::render::matrix::Matrix4;
+use carbide::math::Matrix4;
 use carbide::render::{LayerId, RenderContext};
 use carbide::state::ReadState;
 use carbide_core::draw::{Dimension, Position};

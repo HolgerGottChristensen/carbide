@@ -1,4 +1,4 @@
-use carbide::render::matrix::Vector3;
+use carbide::math::Vector3;
 
 pub struct PointLight {
     /// The position of the light in the world.

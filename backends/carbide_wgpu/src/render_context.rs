@@ -3,7 +3,7 @@ use std::ops::Range;
 
 use wgpu::BindGroup;
 
-use crate::gradient::{Dashes, Gradient};
+use crate::gradient::{WgpuDashes, WgpuGradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::render_target::RenderTarget;
@@ -36,14 +36,14 @@ pub struct WGPURenderContext {
     filter_target_stack: Vec<(usize, usize)>,
 
     uniforms: Vec<Uniform>,
-    gradients: Vec<Gradient>,
+    gradients: Vec<WgpuGradient>,
     filters: HashMap<FilterId, ImageFilter>,
     vertices: Vec<Vertex>,
 
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
     current_bind_group: Option<WGPUBindGroup>,
-    current_gradient: Option<Gradient>,
+    current_gradient: Option<WgpuGradient>,
     current_stroke_dash: Option<StrokeDashPattern>,
     current_frame_filters: HashSet<FilterId>,
 
@@ -63,7 +63,7 @@ pub struct WGPURenderContext {
 #[derive(Debug, Clone)]
 enum WGPUStyle {
     Color([f32; 4]),
-    Gradient(Gradient),
+    Gradient(WgpuGradient),
 }
 
 #[derive(Debug, PartialEq)]
@@ -219,7 +219,7 @@ impl WGPURenderContext {
         &self.filters
     }
 
-    pub fn gradients(&self) -> &Vec<Gradient> {
+    pub fn gradients(&self) -> &Vec<WgpuGradient> {
         &self.gradients
     }
 
@@ -350,7 +350,7 @@ impl WGPURenderContext {
         self.render_pass.push(RenderPass::Normal { commands: vec![], target_index: index });
     }
 
-    fn ensure_state_gradient(&mut self, gradient: &Gradient) {
+    fn ensure_state_gradient(&mut self, gradient: &WgpuGradient) {
         let needs_update = if let Some(current) = &mut self.current_gradient {
             current != gradient
         } else {
@@ -491,7 +491,7 @@ impl WGPURenderContext {
 
                 let offset = total_dash_width - new_stroke_dash.offset as f32 % total_dash_width;
 
-                self.push_command(RenderPassCommand::StrokeDashing (Dashes {
+                self.push_command(RenderPassCommand::StrokeDashing (WgpuDashes {
                     dashes,
                     dash_count: count as u32,
                     start_cap: new_stroke_dash.start_cap as u32,
@@ -830,7 +830,7 @@ impl InnerRenderContext for WGPURenderContext {
                 self.style_stack.push(WGPUStyle::Color(color));
             }
             DrawStyle::Gradient(g) => {
-                self.style_stack.push(WGPUStyle::Gradient(Gradient::convert(&g)))
+                self.style_stack.push(WGPUStyle::Gradient(WgpuGradient::convert(&g)))
             }
             DrawStyle::MultiGradient(_) => {
                 todo!()

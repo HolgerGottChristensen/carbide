@@ -10,7 +10,7 @@ use carbide_core::color::ColorExt;
 use carbide_core::draw::{ImageId, Texture, TextureFormat};
 use carbide_core::draw::pre_multiply::PreMultiply;
 use carbide_core::image;
-use carbide_core::render::matrix::{Matrix3, Vector3, Vector4, Zero};
+use carbide_core::math::{Matrix3, Vector3, Vector4, Zero};
 use carbide_core::state::ReadState;
 use carbide_wgpu::DEVICE;
 use crate::image_context_3d::{ImageContext3d, TEXTURES};

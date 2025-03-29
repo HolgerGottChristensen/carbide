@@ -2,7 +2,7 @@ use crate::application::{ActiveEventLoopKey, ADAPTER, EVENT_LOOP_PROXY, INSTANCE
 use crate::bind_group_layouts::{GRADIENT_DASHES_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT2};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::globals::PIPELINES;
-use crate::gradient::{Dashes, Gradient};
+use crate::gradient::{WgpuDashes, WgpuGradient};
 use crate::pipeline::create_pipelines;
 use crate::render_context::WGPURenderContext;
 use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
@@ -113,14 +113,14 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     color_space: ColorSpace::Linear,
                 };
 
-                let gradient = Gradient::convert(&gradient);
+                let gradient = WgpuGradient::convert(&gradient);
                 let gradient_buffer = DEVICE.create_buffer_init(&BufferInitDescriptor {
                     label: Some("carbide_gradient_buffer"),
                     contents: &*gradient.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
 
-                let dashes = Dashes {
+                let dashes = WgpuDashes {
                     dashes: [1.0; 32],
                     dash_count: 2,
                     start_cap: 0,

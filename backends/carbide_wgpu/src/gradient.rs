@@ -4,7 +4,7 @@ use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
-pub struct Dashes {
+pub struct WgpuDashes {
     pub dashes: [f32; 32],
     pub dash_count: u32,
     pub start_cap: u32,
@@ -13,7 +13,7 @@ pub struct Dashes {
     pub dash_offset: f32,
 }
 
-impl Dashes {
+impl WgpuDashes {
     pub(crate) fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
         bytes.extend_from_slice(bytemuck::cast_slice(&self.dashes));
@@ -28,7 +28,7 @@ impl Dashes {
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
-pub struct Gradient {
+pub struct WgpuGradient {
     pub colors: [[f32; 4]; 16],
     pub ratios: [f32; 16],
 
@@ -41,7 +41,7 @@ pub struct Gradient {
     pub mode: u32,
 }
 
-impl Gradient {
+impl WgpuGradient {
     pub(crate) fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
         bytes.extend_from_slice(bytemuck::cast_slice(&self.colors));

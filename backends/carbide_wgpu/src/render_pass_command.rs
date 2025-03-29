@@ -1,4 +1,4 @@
-use crate::gradient::{Dashes, Gradient};
+use crate::gradient::{WgpuDashes, WgpuGradient};
 use carbide_core::draw::{ImageId, Rect};
 use carbide_core::render::LayerId;
 use carbide_core::widget::FilterId;
@@ -25,8 +25,8 @@ pub enum RenderPassCommand {
     Uniform {
         uniform_bind_group_index: usize,
     },
-    Gradient(Gradient),
-    StrokeDashing(Dashes),
+    Gradient(WgpuGradient),
+    StrokeDashing(WgpuDashes),
     /// A new image requires drawing and in turn a new bind group requires setting.
     SetBindGroup {
         bind_group: WGPUBindGroup,

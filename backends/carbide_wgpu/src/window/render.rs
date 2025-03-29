@@ -3,7 +3,7 @@ use crate::bind_group_layouts::{FILTER_BUFFER_BIND_GROUP_LAYOUT, GRADIENT_DASHES
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::filter::Filter;
 use crate::globals::{ATLAS_CACHE_BIND_GROUP, ATLAS_CACHE_TEXTURE, BIND_GROUPS, FILTER_BIND_GROUPS, PIPELINES};
-use crate::gradient::{Dashes, Gradient};
+use crate::gradient::{WgpuDashes, WgpuGradient};
 use crate::image_context::BindGroupExtended;
 use crate::pipeline::RenderPipelines;
 use crate::render_context::Uniform;
@@ -229,7 +229,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<Gradient>, _uniform_bind_group_layout: &BindGroupLayout, gradient_bind_groups: &mut Vec<BindGroup>) {
+    fn ensure_gradients_in_buffer(device: &Device, gradients: &Vec<WgpuGradient>, _uniform_bind_group_layout: &BindGroupLayout, gradient_bind_groups: &mut Vec<BindGroup>) {
         for gradient in gradients {
             let gradient_buffer =
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -238,7 +238,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                     usage: wgpu::BufferUsages::STORAGE,
                 });
 
-            let dashes = Dashes {
+            let dashes = WgpuDashes {
                 dashes: [1.0; 32],
                 dash_count: 2,
                 start_cap: 0,

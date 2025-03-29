@@ -1,4 +1,4 @@
-use carbide::render::matrix::{Matrix4, Vector3};
+use carbide::math::{Matrix4, Vector3};
 
 /// Describes how the world should be projected into the camera.
 #[derive(Debug, Copy, Clone)]

@@ -1,5 +1,5 @@
 use encase::{ArrayLength, ShaderType};
-use carbide_core::render::matrix::{Matrix4, Vector2, Vector3};
+use carbide_core::math::{Matrix4, Vector2, Vector3};
 
 #[derive(Debug, Clone, ShaderType)]
 pub struct WgpuDirectionalLightBuffer {

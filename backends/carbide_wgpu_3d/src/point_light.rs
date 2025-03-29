@@ -1,5 +1,5 @@
 use encase::{ArrayLength, ShaderType};
-use carbide_core::render::matrix::{Vector3, Vector4};
+use carbide_core::math::{Vector3, Vector4};
 
 #[derive(Debug, Copy, Clone, ShaderType)]
 pub struct WgpuPointLight {

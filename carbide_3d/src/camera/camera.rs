@@ -1,6 +1,6 @@
 use crate::camera::camera_projection::CameraProjection;
-use carbide::render::matrix::{Deg, Matrix4, Rad, Vector4};
 use std::fmt::Debug;
+use carbide::math::{Deg, Matrix4, Rad, Vector4};
 
 pub trait Camera: Debug {
     fn view(&self) -> Matrix4<f32>;
