@@ -1,18 +1,18 @@
-use std::fmt::Debug;
-use accesskit::{Node, Point, Rect, Role, Size};
-use carbide::accessibility::AccessibilityContext;
-use carbide::scene::SceneManager;
-use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
+use crate::accessibility::AccessibilityContext;
 use crate::draw::{Dimension, Position};
 use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
+use crate::scene::SceneManager;
 use crate::state::{IntoReadState, ReadState};
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::text::text_justify::TextJustify;
 use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
+use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId, WidgetSync};
+use accesskit::{Node, Point, Rect, Role, Size};
+use carbide_macro::carbide_default_builder2;
+use std::fmt::Debug;
 
 /// Displays some given text centered within a rectangular area.
 ///

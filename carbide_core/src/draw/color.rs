@@ -13,8 +13,9 @@ use std::f32::consts::PI;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
-
+use carbide::utils::clamp;
 use crate::animation::Animatable;
+use crate::draw::Scalar;
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Functor, Map1, RMap1};
 use crate::misc::utils::{fmod, turns_to_radians};
@@ -57,11 +58,12 @@ impl Color {
     /// is called.
     pub fn random() -> Self {
         let mut rng = rand::thread_rng();
-        return rgb(
+
+        rgb(
             rng.gen_range(0.0..=1.0),
             rng.gen_range(0.0..=1.0),
             rng.gen_range(0.0..=1.0),
-        );
+        )
     }
 
     /// This method will generate a color based on the time since the UNIX_EPOCH.
@@ -74,7 +76,52 @@ impl Color {
             .duration_since(UNIX_EPOCH)
             .expect("Could not get duration since UNIX_EPOCH");
         let duration_since = duration.as_millis() / 8 % 360;
-        return hsl(f32::to_radians(duration_since as f32), 1.0, 0.5);
+        hsl(f32::to_radians(duration_since as f32), 1.0, 0.5)
+    }
+
+    /// Convert the temperature from kelvin to a color.
+    /// The lower end of the spectrum is more red, and the higher is more blue
+    /// The input is clamped between 1000 and 40000 kelvin.
+    ///
+    /// The implementation is based on:
+    /// https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+    pub fn temperature(temperature: Scalar) -> Self {
+        let temperature = clamp(temperature, 1000.0, 40000.0) / 100.0;
+
+        let red = if temperature <= 66.0 {
+            255.0
+        } else {
+            let red = temperature - 60.0;
+            let red = 329.698727446 * Scalar::powf(red, -0.1332047592);
+            clamp(red, 0.0, 255.0)
+        };
+
+        let green = if temperature <= 66.0 {
+            let green = temperature;
+            let green = 99.4708025861 * Scalar::ln(green) - 161.1195681661;
+            clamp(green, 0.0, 255.0)
+        } else {
+            let green = temperature - 60.0;
+            let green = 288.1221695283 * Scalar::powf(green, -0.0755148492);
+            clamp(green, 0.0, 255.0)
+        };
+
+        let blue = if temperature >= 66.0 {
+            255.0
+        } else if temperature <= 19.0 {
+            0.0
+        } else {
+            let blue = temperature - 10.0;
+            let blue = 138.5177312231 * Scalar::ln(blue) - 305.0447927307;
+            clamp(blue, 0.0, 255.0)
+        };
+
+        Color::Rgba(
+            red as f32 / 255.0,
+            green as f32 / 255.0,
+            blue as f32 / 255.0,
+            1.0,
+        )
     }
 }
 
