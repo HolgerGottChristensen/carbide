@@ -10,7 +10,7 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winit = "0.26.1"
+winit.workspace = true
 
 
 

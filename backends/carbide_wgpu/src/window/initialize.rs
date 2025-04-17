@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::application::{ActiveEventLoopKey, ADAPTER, EVENT_LOOP_PROXY, INSTANCE};
 use crate::bind_group_layouts::{GRADIENT_DASHES_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT, UNIFORM_BIND_GROUP_LAYOUT2};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
@@ -46,7 +47,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
 
                 let (window, adapter) = if let Some(eventloop) = ctx.env.get::<ActiveEventLoopKey>() {
-                    let window = eventloop.create_window(attributes).unwrap();
+                    let window = Arc::new(eventloop.create_window(attributes).unwrap());
                     let adapter = accesskit_winit::Adapter::with_event_loop_proxy(&window, EVENT_LOOP_PROXY.get().unwrap().clone());
 
                     (window, adapter)
@@ -83,7 +84,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 let scale_factor = window.scale_factor();
 
 
-                let surface = unsafe { INSTANCE.create_surface(&window) }.unwrap();
+                let surface = unsafe { INSTANCE.create_surface(window.clone()) }.unwrap();
 
                 // Configure the surface with format, size and usage
                 let surface_caps = surface.get_capabilities(&*ADAPTER);
@@ -96,6 +97,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                         width: window.inner_size().width,
                         height: window.inner_size().height,
                         present_mode: surface_caps.present_modes[0],
+                        desired_maximum_frame_latency: 2,
                         alpha_mode: wgpu::CompositeAlphaMode::Auto,
                         view_formats: vec![],
                     },

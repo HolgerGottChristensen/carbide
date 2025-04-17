@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue};
+use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue, StoreOp};
 
 pub use application::Application;
 use carbide_core::draw::ImageId;
@@ -44,40 +44,40 @@ enum RenderPassOps {
 
 fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operations<u32>, Operations<f32>) {
     let color_op = match ops_type {
-        RenderPassOps::Start => wgpu::Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color {
+        RenderPassOps::Start => Operations {
+            load: LoadOp::Clear(wgpu::Color {
                 r: 1.0,
                 g: 0.0,
                 b: 0.0,
                 a: 1.0,
             }),
-            store: true,
+            store: StoreOp::Store,
         },
-        RenderPassOps::Middle => wgpu::Operations {
+        RenderPassOps::Middle => Operations {
             load: LoadOp::Load,
-            store: true,
+            store: StoreOp::Store,
         },
     };
 
     let stencil_op = match ops_type {
-        RenderPassOps::Start => wgpu::Operations {
-            load: wgpu::LoadOp::Clear(0),
-            store: true,
+        RenderPassOps::Start => Operations {
+            load: LoadOp::Clear(0),
+            store: StoreOp::Store,
         },
-        RenderPassOps::Middle => wgpu::Operations {
+        RenderPassOps::Middle => Operations {
             load: LoadOp::Load,
-            store: true,
+            store: StoreOp::Store,
         },
     };
 
     let depth_op = match ops_type {
-        RenderPassOps::Start => wgpu::Operations {
-            load: wgpu::LoadOp::Clear(1.0),
-            store: true,
+        RenderPassOps::Start => Operations {
+            load: LoadOp::Clear(1.0),
+            store: StoreOp::Store,
         },
-        RenderPassOps::Middle => wgpu::Operations {
+        RenderPassOps::Middle => Operations {
             load: LoadOp::Load,
-            store: true,
+            store: StoreOp::Store,
         },
     };
 

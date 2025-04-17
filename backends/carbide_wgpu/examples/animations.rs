@@ -8,7 +8,6 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-
     let mut application = Application::new();
 
     let widgets = VStack::new(vec![
@@ -38,15 +37,11 @@ fn main() {
     application.launch()
 }
 
-fn animation_position_state(curve: fn(f64) -> f64) -> impl ReadState<T=f64> {
-    AnimatedState::custom(curve)
+fn animation_ball(curve: fn(f64) -> f64) -> impl Widget {
+    let state = AnimatedState::custom(curve)
         .duration(Duration::new(2, 0))
         .repeat_alternate()
-        .range(-150.0, 150.0)
-}
-
-fn animation_ball(curve: fn(f64) -> f64) -> impl Widget {
-    let state = animation_position_state(curve);
+        .range(-150.0, 150.0);
 
     Circle::new()
         .fill(EnvironmentColor::Accent)

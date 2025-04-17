@@ -13,7 +13,6 @@ fn main() {
             Image::new_icon("images/rust.png")
                 .foreground_color(EnvironmentColor::Accent),
             Rectangle::new()
-                .fill(EnvironmentColor::Accent)
                 .frame(50.0, 50.0),
         )).accent_color(EnvironmentColor::Green),
     ));

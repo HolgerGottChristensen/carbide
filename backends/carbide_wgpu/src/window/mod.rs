@@ -31,7 +31,6 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
 
 impl Window<String, Empty> {
     pub fn new<T: IntoReadState<String>, C: IntoWidget>(title: T, dimension: Dimension, child: C) -> Window<T::Output, impl Widget> {
-
         let child = child.into_widget();
 
         #[cfg(feature = "controls")]

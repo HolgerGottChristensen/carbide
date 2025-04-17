@@ -10,7 +10,6 @@ publish = false
 
 [dependencies]
 carbide = { path = "../../carbide", features = ["controls"] }
-nalgebra = "0.21.1"
 euclid = "0.20.13"
 smol_str = "0.1.15"
 approx = "0.3.2"

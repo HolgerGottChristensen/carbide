@@ -646,14 +646,14 @@ fn hsl_to_rgb(hsl: vec3<f32>) -> vec3<f32> {
 }
 
 fn hueRamp(a: f32, b: f32, hue: f32) -> f32 {
-   	let hue = fract(hue);
+   	let hue_fract = fract(hue);
 
-   	if ((6.0 * hue) < 1.0){
-   		return a + (b - a) * 6.0 * hue;
-   	} else if ((2.0 * hue) < 1.0) {
+   	if ((6.0 * hue_fract) < 1.0){
+   		return a + (b - a) * 6.0 * hue_fract;
+   	} else if ((2.0 * hue_fract) < 1.0) {
    		return b;
-   	} else if ((3.0 * hue) < 2.0) {
-   		return a + (b - a) * ((2.0 / 3.0) - hue) * 6.0;
+   	} else if ((3.0 * hue_fract) < 2.0) {
+   		return a + (b - a) * ((2.0 / 3.0) - hue_fract) * 6.0;
    	} else {
    	    return a;
    	}

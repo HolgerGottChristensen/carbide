@@ -23,7 +23,7 @@ fn main() {
             Image::new("images/landscape.png")
                 .scaled_to_fill()
                 .frame(500.0, 400.0),
-            Filter::new(ImageFilter::sobel(), Empty::new().boxed())
+            Filter::new(ImageFilter::sobel(), Empty::new())
                 .clip_shape(Circle::new())
                 .frame(200.0, 200.0)
                 .offset(position_x.clone(), 0.0),

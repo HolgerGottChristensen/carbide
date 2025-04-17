@@ -279,6 +279,8 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 ops: color_op,
             })],
             depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
         });
 
         render_pass.set_pipeline(final_render_pipeline);
@@ -355,6 +357,8 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
                     });
 
                     render_pass.set_stencil_reference(stencil_level);
@@ -527,6 +531,8 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
+                        timestamp_writes: None,
+                        occlusion_query_set: None,
                     });
 
                     render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
@@ -662,6 +668,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                 width: new_size.width,
                 height: new_size.height,
                 present_mode: surface_caps.present_modes[0],
+                desired_maximum_frame_latency: 2,
                 alpha_mode: wgpu::CompositeAlphaMode::Auto,
                 view_formats: vec![],
             },

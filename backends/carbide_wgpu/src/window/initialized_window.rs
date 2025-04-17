@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use crate::application::Scenes;
 use crate::msaa::Msaa;
 use crate::render_context::WGPURenderContext;
@@ -22,7 +23,7 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) position: Position,
     pub(crate) dimension: Dimension,
     pub(crate) child: C,
-    pub(crate) surface: Surface,
+    pub(crate) surface: Surface<'static>,
     pub(crate) texture_format: TextureFormat,
     pub(crate) msaa: Msaa,
     pub(crate) msaa_texture_view: Option<TextureView>,
@@ -37,7 +38,7 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) vertex_buffer: (Buffer, usize),
     pub(crate) second_vertex_buffer: Buffer,
     pub(crate) render_context: WGPURenderContext,
-    pub(crate) inner: carbide_winit::window::Window,
+    pub(crate) inner: Arc<carbide_winit::window::Window>,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,
     pub(crate) theme: Theme,

@@ -31,9 +31,10 @@ use carbide_winit::window::WindowId as WinitWindowId;
 use carbide_winit::{NewEventHandler, RequestRedraw};
 
 pub(crate) static INSTANCE: Lazy<Arc<Instance>> = Lazy::new(|| {
-    Arc::new(Instance::new(wgpu::InstanceDescriptor {
+    Arc::new(Instance::new(&wgpu::InstanceDescriptor {
         backends: wgpu::Backends::all(),
-        dx12_shader_compiler: Default::default(),
+        flags: Default::default(),
+        backend_options: Default::default(),
     }))
 });
 
@@ -52,10 +53,11 @@ static DEVICE_QUEUE: Lazy<(Arc<Device>, Arc<Queue>)> = Lazy::new(|| {
     let (device, queue) = block_on(ADAPTER.request_device(
         &wgpu::DeviceDescriptor {
             label: Some("carbide_device"),
-            features: wgpu::Features::CLEAR_TEXTURE,
-            limits,
-        },
-        None, // Trace path
+            required_features: Default::default(),
+            required_limits: limits,
+            memory_hints: Default::default(),
+            trace: Default::default(),
+        }
     )).unwrap();
 
     (Arc::new(device), Arc::new(queue))

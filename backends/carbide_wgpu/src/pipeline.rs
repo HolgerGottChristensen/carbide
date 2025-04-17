@@ -140,7 +140,8 @@ pub(crate) fn create_render_pipeline(
         layout: Some(render_pipeline_layout),
         vertex: VertexState {
             module: &shader,
-            entry_point: "main_vs",
+            entry_point: Some("main_vs"),
+            compilation_options: Default::default(),
             buffers: &[Vertex::desc()],
         },
         primitive: PrimitiveState {
@@ -169,7 +170,8 @@ pub(crate) fn create_render_pipeline(
         },
         fragment: Some(FragmentState {
             module: &shader,
-            entry_point: "main_fs",
+            entry_point: Some("main_fs"),
+            compilation_options: Default::default(),
             targets: &[Some(ColorTargetState {
                 format: preferred_format,
                 blend: Some(BlendState::PREMULTIPLIED_ALPHA_BLENDING),
@@ -177,6 +179,7 @@ pub(crate) fn create_render_pipeline(
             })],
         }),
         multiview: None,
+        cache: None,
     })
 }
 
@@ -191,7 +194,8 @@ pub(crate) fn create_final_render_pipeline(
         layout: Some(render_pipeline_layout),
         vertex: VertexState {
             module: &shader,
-            entry_point: "main_vs",
+            entry_point: Some("main_vs"),
+            compilation_options: Default::default(),
             buffers: &[Vertex::desc()],
         },
         primitive: PrimitiveState {
@@ -207,7 +211,8 @@ pub(crate) fn create_final_render_pipeline(
         multisample: Default::default(),
         fragment: Some(FragmentState {
             module: &shader,
-            entry_point: "main_fs",
+            entry_point: Some("main_fs"),
+            compilation_options: Default::default(),
             targets: &[Some(ColorTargetState {
                 format: preferred_format,
                 blend: Some(BlendState::PREMULTIPLIED_ALPHA_BLENDING),
@@ -215,6 +220,7 @@ pub(crate) fn create_final_render_pipeline(
             })],
         }),
         multiview: None,
+        cache: None,
     })
 }
 
