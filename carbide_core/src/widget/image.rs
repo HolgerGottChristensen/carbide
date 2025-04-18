@@ -121,7 +121,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Image<Id, C> {
 impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<Id, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         if let Some(image_id) = &*self.image_id.value() {
-            if !ctx.image.texture_exist(image_id) {
+            if !ctx.image.texture_exist(image_id, ctx.env) {
                 let path = if image_id.is_relative() {
                     let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
                         .for_folder("assets")
@@ -144,7 +144,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
                     data: &image.to_rgba8().into_raw(),
                 };
 
-                ctx.image.update_texture(image_id.clone(), texture);
+                ctx.image.update_texture(image_id.clone(), texture, ctx.env);
 
                 //env.image_map.insert(image_id.clone(), image);
             }
@@ -154,7 +154,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
             source_rect.dimension
         } else {
             let image_dimensions = self.image_id.value().as_ref().map(|id| {
-                ctx.image.texture_dimensions(id)
+                ctx.image.texture_dimensions(id, ctx.env)
             }).flatten().unwrap_or((100, 100));
 
             Dimension::new(image_dimensions.0 as Scalar, image_dimensions.1 as Scalar)
@@ -203,7 +203,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Render for Image<I
             let source_rect = match self.src_rect {
                 None => Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0)),
                 Some(src_rect) => {
-                    let (image_w, image_h) = context.image.texture_dimensions(id).unwrap();
+                    let (image_w, image_h) = context.image.texture_dimensions(id, context.env).unwrap();
                     let (image_w, image_h) = (image_w as Scalar, image_h as Scalar);
 
                     let (l, r, b, t) = src_rect.l_r_b_t();

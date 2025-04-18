@@ -3,7 +3,7 @@ use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use std::time::Duration;
+use carbide_core::time::*;
 use carbide_core::draw::gradient::Gradient;
 
 fn main() {

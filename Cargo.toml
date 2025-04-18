@@ -42,7 +42,7 @@ raw-window-handle = "0.5"
 lyon = { path = "../Repositories/lyon/crates/lyon" }
 dashmap = "5.5.3"
 once_cell = "1.19.0"
-wgpu = { version = "25" }
+wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
 bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 include_dir = "0.7.4"
@@ -55,4 +55,7 @@ winit = { version = "0.30", features = ["rwh_05"] }
 proc-macro-crate = "3.2.0"
 indexmap = "2.6.0"
 parking_lot = "0.12.3"
+console_error_panic_hook = "0.1.7"
+console_log = "1"
+web-time = "1.1.0"
 

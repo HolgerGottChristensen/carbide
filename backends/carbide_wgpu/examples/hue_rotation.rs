@@ -1,10 +1,9 @@
-use std::time::Duration;
-
 use carbide_core::animation::bounce_out;
 use carbide_core::draw::{Alignment, Color, ColorSpace, Dimension};
 use carbide_core::draw::gradient::Gradient;
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
+use carbide_core::time::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

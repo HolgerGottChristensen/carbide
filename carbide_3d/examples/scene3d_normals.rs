@@ -12,7 +12,7 @@ use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
 use std::collections::HashMap;
 use std::f32::consts::PI;
-use std::time::Duration;
+use carbide_core::time::*;
 use tobj::GPU_LOAD_OPTIONS;
 use carbide_core::math::{Deg, Euler, InnerSpace, Matrix3, Matrix4, Point3, Vector2, Vector3, Zero};
 

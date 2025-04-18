@@ -1,4 +1,4 @@
-use std::time::Duration;
+use crate::time::*;
 use crate::draw::{ImageContext, Position, Scalar};
 use crate::environment::{Environment};
 use crate::event::{EventId, ModifierKey, TouchPhase};

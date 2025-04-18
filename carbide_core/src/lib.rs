@@ -66,3 +66,8 @@ pub mod image {
 pub mod math {
     pub use cgmath::*;
 }
+
+pub mod time {
+    pub use web_time::*;
+    pub use std::time::Duration;
+}

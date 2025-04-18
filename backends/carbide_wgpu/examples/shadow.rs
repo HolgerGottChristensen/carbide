@@ -1,5 +1,4 @@
-use std::time::Duration;
-
+use carbide_core::time::*;
 use carbide_core::animation::ease_in_out;
 use carbide_core::color::{LIGHT_BLUE, RED};
 use carbide_core::draw::{Color, Dimension};

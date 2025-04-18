@@ -1,10 +1,10 @@
 use std::fmt::{Debug, Formatter};
-use std::time::{Duration, Instant};
 use carbide_core::state::AnyState;
 
 use crate::animation::animatable::Animatable;
 use crate::animation::linear;
 use crate::state::{IntoState, RepeatMode, State, StateContract, StateExtNew};
+use crate::time::*;
 
 #[derive(Clone)]
 pub struct Animation<T>

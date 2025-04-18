@@ -1,5 +1,5 @@
 use crate::msaa::Msaa;
-use wgpu::{Device, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Device, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 
 pub(crate) fn create_depth_stencil_texture_view(device: &Device, width: u32, height: u32, msaa: Msaa) -> TextureView {
     device.create_texture(&TextureDescriptor {
@@ -55,5 +55,20 @@ pub fn create_atlas_cache_texture(device: &Device, width: u32, height: u32) -> T
         format: TextureFormat::Rgba8UnormSrgb,
         usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
         view_formats: &[],
+    })
+}
+
+pub fn create_atlas_cache_bind_group(device: &Device, texture: &Texture, layout: &BindGroupLayout) -> BindGroup {
+    let view = texture.create_view(&Default::default());
+
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&view),
+            },
+        ],
+        label: None,
     })
 }

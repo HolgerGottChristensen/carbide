@@ -1,9 +1,10 @@
 use wgpu::{BindGroupLayout, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, MultisampleState, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, TextureFormat, VertexState};
 
-use crate::globals::{FILTER_RENDER_PIPELINE_LAYOUT, FILTER_SHADER, MAIN_SHADER, RENDER_PIPELINE_LAYOUT};
 use crate::msaa::Msaa;
 use crate::vertex::Vertex;
+use crate::wgpu_context::WgpuContext;
 
+#[derive(Debug)]
 pub struct RenderPipelines {
     pub(crate) final_render_pipeline: RenderPipeline,
     pub(crate) render_pipeline_no_mask: RenderPipeline,
@@ -62,54 +63,54 @@ pub(crate) enum MaskType {
     RemoveMask,
 }
 
-pub(crate) fn create_pipelines(device: &Device, preferred_format: TextureFormat, msaa: Msaa) -> RenderPipelines {
+pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: Msaa) -> RenderPipelines {
     let render_pipeline_no_mask_no_msaa = create_final_render_pipeline(
-        device,
-        &RENDER_PIPELINE_LAYOUT,
-        &MAIN_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.main_pipeline_layout,
+        &wgpu_context.main_shader,
         preferred_format,
     );
 
     let render_pipeline_no_mask = create_render_pipeline(
-        device,
-        &RENDER_PIPELINE_LAYOUT,
-        &MAIN_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.main_pipeline_layout,
+        &wgpu_context.main_shader,
         preferred_format,
         MaskType::NoMask,
         msaa
     );
 
     let render_pipeline_add_mask = create_render_pipeline(
-        device,
-        &RENDER_PIPELINE_LAYOUT,
-        &MAIN_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.main_pipeline_layout,
+        &wgpu_context.main_shader,
         preferred_format,
         MaskType::AddMask,
         msaa
     );
 
     let render_pipeline_in_mask = create_render_pipeline(
-        device,
-        &RENDER_PIPELINE_LAYOUT,
-        &MAIN_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.main_pipeline_layout,
+        &wgpu_context.main_shader,
         preferred_format,
         MaskType::InMask,
         msaa
     );
 
     let render_pipeline_remove_mask = create_render_pipeline(
-        device,
-        &RENDER_PIPELINE_LAYOUT,
-        &MAIN_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.main_pipeline_layout,
+        &wgpu_context.main_shader,
         preferred_format,
         MaskType::RemoveMask,
         msaa
     );
 
     let render_pipeline_in_mask_filter = create_render_pipeline(
-        device,
-        &FILTER_RENDER_PIPELINE_LAYOUT,
-        &FILTER_SHADER,
+        &wgpu_context.device,
+        &wgpu_context.filter_pipeline_layout,
+        &wgpu_context.filter_shader,
         preferred_format,
         MaskType::InMask,
         msaa

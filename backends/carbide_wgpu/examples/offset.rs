@@ -1,3 +1,4 @@
+use log::info;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
 use carbide_core::widget::*;
@@ -5,6 +6,8 @@ use carbide_wgpu::{Application, Window};
 
 fn main() {
     let mut application = Application::new();
+
+    info!("Set scene");
 
     application.set_scene(
         Window::new(
@@ -17,6 +20,8 @@ fn main() {
                 .border()
         )
     );
+
+    info!("Take off");
 
     application.launch()
 }

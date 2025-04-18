@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use carbide_controls::{capture, ControlsExt};
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_core as carbide; // Required only in internal examples
@@ -9,6 +7,7 @@ use carbide_core::color::{BLUE, Color, GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::widget::*;
+use carbide_core::time::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

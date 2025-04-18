@@ -7,9 +7,6 @@ use carbide_core::draw::ImageId;
 pub use render_target::RenderTarget;
 pub use window::Window;
 
-use crate::application::{ADAPTER, INSTANCE};
-pub use crate::application::{DEVICE, QUEUE};
-use crate::globals::BIND_GROUPS;
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 use crate::image_context::BindGroupExtended;
 
@@ -31,8 +28,8 @@ mod render_context;
 mod image_context;
 mod render_target;
 mod window;
-mod globals;
 mod msaa;
+mod wgpu_context;
 
 pub fn init_logger() {
     }
@@ -83,30 +80,6 @@ fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operati
 
     (color_op, stencil_op, depth_op)
 }
-
-pub fn with_bind_groups<F: FnOnce(&HashMap<ImageId, BindGroupExtended>)->R, R>(f: F) -> R {
-    BIND_GROUPS.with(|bind_groups| {
-        let bind_groups = &*bind_groups.borrow();
-        f(bind_groups)
-    })
-}
-
-pub fn with_adapter<F: FnOnce(Arc<Adapter>)->R, R>(f: F) -> R {
-    f(ADAPTER.clone())
-}
-
-pub fn with_device<F: FnOnce(Arc<Device>)->R, R>(f: F) -> R {
-    f(DEVICE.clone())
-}
-
-pub fn with_queue<F: FnOnce(Arc<Queue>)->R, R>(f: F) -> R {
-    f(QUEUE.clone())
-}
-
-pub fn with_instance<F: FnOnce(Arc<Instance>)->R, R>(f: F) -> R {
-    f(INSTANCE.clone())
-}
-
 
 /// Draw text from the text cache texture `tex` in the fragment shader.
 pub const MODE_TEXT: u32 = 0;

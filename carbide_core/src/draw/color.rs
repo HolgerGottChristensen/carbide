@@ -10,7 +10,6 @@
 //!
 
 use std::f32::consts::PI;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
 use carbide::utils::clamp;
@@ -19,6 +18,7 @@ use crate::draw::Scalar;
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Functor, Map1, RMap1};
 use crate::misc::utils::{fmod, turns_to_radians};
+use crate::time::*;
 
 /// Color supporting RGB and HSL variants.
 #[derive(PartialEq, Copy, Clone, Debug)]

@@ -1,44 +1,40 @@
 use carbide_core::draw::{ImageContext, ImageId, Texture, TextureFormat};
-use wgpu::BindGroup;
-
-use crate::application::{DEVICE, QUEUE};
-use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
-use crate::globals::BIND_GROUPS;
+use wgpu::{BindGroup, BindGroupLayout, Device, Queue};
+use carbide_core::environment::Environment;
+use crate::wgpu_context::WgpuContext;
 
 pub struct WGPUImageContext;
 
 impl ImageContext for WGPUImageContext {
-    fn texture_exist(&self, id: &ImageId) -> bool {
-        BIND_GROUPS.with(|bind_groups| {
-            let bind_groups = &mut *bind_groups.borrow_mut();
-            bind_groups.contains_key(id)
-        })
+    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
+        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+        wgpu_context.bind_groups.contains_key(id)
     }
 
-    fn texture_dimensions(&self, id: &ImageId) -> Option<(u32, u32)> {
-        BIND_GROUPS.with(|bind_groups| {
-            let bind_groups = &mut *bind_groups.borrow_mut();
-            bind_groups.get(id)
-                .map(|group| {
-                    (group.width, group.height)
-                })
-        })
+    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
+        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+
+        wgpu_context.bind_groups.get(id)
+            .map(|group| {
+                (group.width, group.height)
+            })
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture) -> bool {
-        BIND_GROUPS.with(|bind_groups| {
-            let bind_groups = &mut *bind_groups.borrow_mut();
+    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
+        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
 
-            let bind_group = create_bind_group(texture);
-            bind_groups.insert(id, bind_group);
+        let bind_group = create_bind_group(&wgpu_context.device, &wgpu_context.queue, texture, &wgpu_context.main_texture_bind_group_layout);
+        wgpu_context.bind_groups.insert(id, bind_group);
 
-            true
-        })
+        true
     }
 }
 
 pub fn create_bind_group(
+    device: &Device,
+    queue: &Queue,
     texture: Texture,
+    main_texture_bind_group_layout: &BindGroupLayout
 ) -> BindGroupExtended {
     let width = texture.width;
     let height = texture.height;
@@ -54,7 +50,7 @@ pub fn create_bind_group(
         TextureFormat::BGRA8 => wgpu::TextureFormat::Bgra8UnormSrgb,
     };
 
-    let wgpu_texture = DEVICE.create_texture(&wgpu::TextureDescriptor {
+    let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: None,
         size,
         mip_level_count: 1,
@@ -71,15 +67,15 @@ pub fn create_bind_group(
     //println!("size: {}", texture.height * texture.bytes_per_row);
 
 
-    QUEUE.write_texture(
-        wgpu::ImageCopyTexture {
+    queue.write_texture(
+        wgpu::TexelCopyTextureInfo {
             texture: &wgpu_texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
             aspect: Default::default(),
         },
         &texture.data,
-        wgpu::ImageDataLayout {
+        wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(texture.bytes_per_row),
             rows_per_image: Some(texture.height),
@@ -87,19 +83,20 @@ pub fn create_bind_group(
         size,
     );
 
-    create_bind_group_from_wgpu_texture(&wgpu_texture)
+    create_bind_group_from_wgpu_texture(&wgpu_texture, device, main_texture_bind_group_layout)
 }
 
+#[derive(Debug)]
 pub struct BindGroupExtended {
     pub bind_group: BindGroup,
     pub width: u32,
     pub height: u32,
 }
 
-pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> BindGroupExtended {
+pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture, device: &Device, main_texture_bind_group_layout: &BindGroupLayout) -> BindGroupExtended {
     let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let sampler = DEVICE.create_sampler(&wgpu::SamplerDescriptor {
+    let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         address_mode_u: wgpu::AddressMode::ClampToEdge,
         address_mode_v: wgpu::AddressMode::ClampToEdge,
         address_mode_w: wgpu::AddressMode::ClampToEdge,
@@ -109,8 +106,8 @@ pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture) -> Bind
         ..Default::default()
     });
 
-    let bind_group = DEVICE.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &MAIN_TEXTURE_BIND_GROUP_LAYOUT,
+    let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: main_texture_bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,

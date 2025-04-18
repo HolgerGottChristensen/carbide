@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
+use carbide_core::time::*;
 use carbide::animation::AnimationManager;
 use crate::animation::{Animatable, ease_in_out};
 use crate::environment::{Environment};

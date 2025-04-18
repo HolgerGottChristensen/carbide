@@ -1,6 +1,6 @@
 use std::slice::from_raw_parts;
 use std::sync::Arc;
-use std::time::Duration;
+use carbide_core::time::*;
 use bitflags::Flags;
 use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSString};

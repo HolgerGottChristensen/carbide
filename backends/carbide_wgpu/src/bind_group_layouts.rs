@@ -1,37 +1,7 @@
-use crate::application::DEVICE;
-use once_cell::sync::Lazy;
 use wgpu::{
     BindGroupLayout, BufferBindingType, Device, SamplerBindingType, TextureSampleType,
     TextureViewDimension,
 };
-
-pub(crate) static UNIFORM_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    uniform_bind_group_layout(&DEVICE)
-});
-
-pub(crate) static UNIFORM_BIND_GROUP_LAYOUT2: Lazy<BindGroupLayout> = Lazy::new(|| {
-    uniform_bind_group_layout2(&DEVICE)
-});
-
-pub(crate) static FILTER_TEXTURE_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    filter_texture_bind_group_layout(&DEVICE)
-});
-
-pub(crate) static FILTER_BUFFER_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    filter_buffer_bind_group_layout(&DEVICE)
-});
-
-pub(crate) static MAIN_TEXTURE_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    main_bind_group_layout(&DEVICE)
-});
-
-pub(crate) static GRADIENT_DASHES_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    gradient_buffer_bind_group_layout(&DEVICE)
-});
-
-pub(crate) static ATLAS_BIND_GROUP_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    atlas_bind_group_layout(&DEVICE)
-});
 
 pub(crate) fn uniform_bind_group_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

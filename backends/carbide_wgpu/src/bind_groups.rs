@@ -1,8 +1,28 @@
+use std::collections::HashMap;
 use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
-
-use carbide_core::draw::Scalar;
+use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, Queue};
+use carbide_core::draw;
+use carbide_core::draw::{ImageId, Scalar};
 use carbide_core::math::Matrix4;
+use crate::image_context::{create_bind_group, BindGroupExtended};
+
+pub fn create_bind_groups(device: &Device, queue: &Queue, main_texture_bind_group_layout: &BindGroupLayout) -> HashMap<ImageId, BindGroupExtended> {
+    let mut map = HashMap::new();
+
+    let texture = draw::Texture {
+        width: 1,
+        height: 1,
+        bytes_per_row: 4,
+        format: draw::TextureFormat::RGBA8,
+        data: &[0u8, 0u8, 0u8, 255u8],
+    };
+
+    let bind_group = create_bind_group(device, queue, texture, main_texture_bind_group_layout);
+
+    map.insert(ImageId::default(), bind_group);
+
+    map
+}
 
 pub(crate) fn create_uniform_bind_group(
     device: &Device,

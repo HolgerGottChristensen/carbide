@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign};
-use std::time::{Duration, Instant};
 use accesskit::{NodeId, TreeUpdate};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
 use winit::event::{ElementState, Ime, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::keyboard::Key;
+#[cfg(not(target_arch = "wasm32"))]
 use winit::platform::modifier_supplement::KeyEventExtModifierSupplement;
 use winit::window::WindowId;
 use carbide_core::accessibility::AccessibilityContext;
@@ -19,6 +19,7 @@ use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::text::TextContext;
+use carbide_core::time::*;
 use carbide_core::widget::managers::{ShortcutManager, ShortcutPressed, ShortcutReleased};
 use carbide_core::widget::WidgetId;
 use crate::{convert_key, convert_mouse_button, convert_touch_phase};
@@ -187,7 +188,16 @@ impl NewEventHandler {
             WindowEvent::Focused(focus) => self.focus(*focus, window_id, scenes, text_context, image_context, env),
             WindowEvent::KeyboardInput { event, .. } => {
                 let winit::event::KeyEvent { logical_key, state, .. } = event;
-                self.keyboard(logical_key.clone(), event.key_without_modifiers(), *state, window_id, scenes, text_context, image_context, env)
+
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    self.keyboard(logical_key.clone(), event.key_without_modifiers(), *state, window_id, scenes, text_context, image_context, env)
+                }
+                #[cfg(target_arch = "wasm32")]
+                {
+                    self.keyboard(logical_key.clone(), logical_key.clone(), *state, window_id, scenes, text_context, image_context, env)
+
+                }
             },
             WindowEvent::ModifiersChanged(modifiers) => {
                 self.modifiers = ModifierKey::from_bits_retain(modifiers.state().bits());

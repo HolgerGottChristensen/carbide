@@ -1,5 +1,4 @@
-use std::time::Duration;
-
+use carbide_core::time::*;
 use crate::ControlsOverlayKey;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::EventId;

@@ -8,7 +8,7 @@ use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, Map1, Map2, ReadState, ReadStateExtTransition, State};
 use carbide_core::widget::{AnyWidget, Capsule, Ellipse, HStack, MouseArea, Text, Widget, WidgetExt, ZStack};
-use std::time::Duration;
+use carbide_core::time::*;
 
 #[derive(Debug, Clone)]
 pub struct SwitchStyle;

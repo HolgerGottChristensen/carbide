@@ -1,10 +1,8 @@
 use carbide_core::render::InnerLayer;
 use std::fmt::{Debug, Formatter};
 use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
-
-use crate::application::DEVICE;
-use crate::bind_group_layouts::MAIN_TEXTURE_BIND_GROUP_LAYOUT;
-use crate::globals::MAIN_SAMPLER;
+use carbide_core::environment::Environment;
+use crate::wgpu_context::WgpuContext;
 
 pub struct RenderTarget {
     pub(crate) texture: Texture,
@@ -13,7 +11,7 @@ pub struct RenderTarget {
 }
 
 impl RenderTarget {
-    pub(crate) fn new(width: u32, height: u32) -> RenderTarget {
+    pub(crate) fn new(width: u32, height: u32, env: &mut Environment) -> RenderTarget {
         let descriptor = TextureDescriptor {
             label: Some("carbide_render_target_texture"),
             size: Extent3d {
@@ -32,12 +30,14 @@ impl RenderTarget {
             view_formats: &[],
         };
 
-        let texture = DEVICE.create_texture(&descriptor);
+        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+
+        let texture = wgpu_context.device.create_texture(&descriptor);
 
         let view = texture.create_view(&Default::default());
 
-        let bind_group = DEVICE.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &MAIN_TEXTURE_BIND_GROUP_LAYOUT,
+        let bind_group = wgpu_context.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &wgpu_context.main_texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -45,7 +45,7 @@ impl RenderTarget {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&MAIN_SAMPLER),
+                    resource: wgpu::BindingResource::Sampler(&wgpu_context.main_sampler),
                 },
             ],
             label: Some("carbide_render_target_bind_group"),

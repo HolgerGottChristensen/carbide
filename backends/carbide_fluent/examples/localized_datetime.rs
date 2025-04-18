@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use chrono::Local;
 use icu::locid::locale;
 
@@ -10,6 +8,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{GlobalState, LocalState, State};
 use carbide_core::widget::{Text, VStack, WidgetExt};
+use carbide_core::time::*;
 use carbide_fluent::{DateStyle, LocalizedDateTime, LocalizedString, TimeStyle, TimezoneStyle};
 use carbide_fluent::LocaleExt;
 use carbide_wgpu::{Application, Window};

@@ -3,7 +3,7 @@ mod video;
 use std::cell::OnceCell;
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::time::Duration;
+use carbide_core::time::*;
 use bitflags::bitflags;
 use cocoa::base::id;
 use cocoa::foundation::NSString;

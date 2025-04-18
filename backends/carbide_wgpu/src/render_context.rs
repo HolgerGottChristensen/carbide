@@ -1053,7 +1053,8 @@ impl InnerRenderContext for WGPURenderContext {
             let target = self.layers.get_mut(&layer_id).unwrap();
 
             if target.texture.width() != width || target.texture.height() != height {
-                *target = RenderTarget::new(width, height);
+                //*target = RenderTarget::new(width, height, );
+                todo!()
             }
 
             Layer {
@@ -1061,7 +1062,7 @@ impl InnerRenderContext for WGPURenderContext {
                 inner2: target,
             }
         } else {
-            let new_layer = RenderTarget::new(width, height);
+            /*let new_layer = RenderTarget::new(width, height);
 
             self.layers.insert(layer_id, new_layer);
 
@@ -1070,7 +1071,8 @@ impl InnerRenderContext for WGPURenderContext {
             Layer {
                 inner,
                 inner2: inner
-            }
+            }*/
+            todo!()
         }
     }
 

@@ -1,6 +1,6 @@
 use std::cell::RefCell;
 use std::future::Future;
-use std::time::Duration;
+use crate::time::*;
 pub use timer::Timer;
 pub use task::Task;
 

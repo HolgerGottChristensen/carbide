@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::time::{Duration, Instant};
 
 use crate::animation::animation_curve::linear;
 use crate::animation::{Animatable, AnimationManager};
@@ -7,6 +6,7 @@ use crate::environment::Environment;
 use crate::state::util::value_cell::ValueRef;
 use crate::state::{AnyReadState, RMap1, StateSync};
 use crate::state::Map1;
+use crate::time::*;
 
 #[derive(Clone, Debug)]
 pub enum RepeatMode {

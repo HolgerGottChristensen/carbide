@@ -1,8 +1,8 @@
 use crate::environment::{Environment, EnvironmentKey};
 use carbide::animation::Animation;
 use carbide::state::StateContract;
+use crate::time::*;
 use std::fmt::{Debug, Formatter};
-use std::time::Instant;
 
 #[derive(Debug)]
 pub struct AnimationManager {

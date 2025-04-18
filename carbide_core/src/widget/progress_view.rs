@@ -1,4 +1,3 @@
-use std::time::Duration;
 use carbide::draw::Angle;
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_macro::carbide_default_builder2;
@@ -9,6 +8,7 @@ use crate::draw::{Dimension, Position};
 use crate::draw::stroke::LineCap;
 use crate::environment::{EnvironmentColor};
 use crate::state::AnimatedState;
+use crate::time::*;
 use crate::widget::{Circle, CommonWidget, Empty, Widget, WidgetExt, WidgetId, ZStack};
 use crate::widget::canvas::Canvas;
 

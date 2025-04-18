@@ -5,7 +5,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtTransition, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
-use std::time::Duration;
+use carbide_core::time::*;
 
 fn main() {
     let mut application = Application::new()

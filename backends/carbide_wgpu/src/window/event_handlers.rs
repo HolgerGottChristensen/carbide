@@ -124,7 +124,7 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                 if is_current {
                     match event {
                         WindowEvent::Resize(size) => {
-                            initialized.resize(LogicalSize::new(size.width, size.height).to_physical(initialized.inner.scale_factor()));
+                            initialized.resize(LogicalSize::new(size.width, size.height).to_physical(initialized.inner.scale_factor()), ctx.env);
                             initialized.inner.request_redraw();
                         }
                         WindowEvent::Focus => {
