@@ -584,10 +584,10 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         info!("{:?}", size);
 
         // Handle update of atlas cache
-        //Self::update_atlas_cache(&wgpu_context.device, &mut encoder, ctx, &wgpu_context.atlas_cache_texture);
+        Self::update_atlas_cache(&wgpu_context.device, &mut encoder, ctx, &wgpu_context.atlas_cache_texture);
 
         // Update filter bind groups
-        //self.update_filter_bind_groups(size, wgpu_context);
+        self.update_filter_bind_groups(size, wgpu_context);
 
         info!("{:#?}", &self.surface_configuration.format);
 

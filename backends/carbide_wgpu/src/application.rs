@@ -163,8 +163,15 @@ impl Application {
             wgpu_context,
         };
 
-        //event_loop.spawn_app(running)
-        event_loop.run_app(&mut running).unwrap();
+        #[cfg(target_arch = "wasm32")]
+        {
+            use carbide_winit::platform::web::EventLoopExtWebSys;
+            event_loop.spawn_app(running)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            event_loop.run_app(&mut running).unwrap();
+        }
     }
 }
 
