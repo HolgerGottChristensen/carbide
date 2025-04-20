@@ -136,7 +136,7 @@ pub(crate) fn atlas_bind_group_layout(device: &Device) -> BindGroupLayout {
 }
 
 
-pub(crate) fn main_bind_group_layout(device: &Device) -> BindGroupLayout {
+pub(crate) fn texture_bind_group_layout(device: &Device) -> BindGroupLayout {
     device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         entries: &[
             wgpu::BindGroupLayoutEntry {

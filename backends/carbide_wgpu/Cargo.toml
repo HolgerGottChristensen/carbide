@@ -59,6 +59,9 @@ chrono = "0.4.31"
 surf = { version = "2.3" }
 tokio = { version = "1", features = ["full"] }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.11.7"
+
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 console_error_panic_hook.workspace = true
 console_log.workspace = true

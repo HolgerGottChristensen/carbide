@@ -30,7 +30,7 @@ use carbide_winit::event::WindowEvent;
 use carbide_winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
 use carbide_winit::window::WindowId as WinitWindowId;
 use carbide_winit::{NewEventHandler, RequestRedraw};
-use crate::bind_group_layouts::main_bind_group_layout;
+use crate::bind_group_layouts::texture_bind_group_layout;
 use crate::samplers::main_sampler;
 use crate::wgpu_context::WgpuContext;
 
@@ -62,7 +62,10 @@ impl Application {
         {
             std::panic::set_hook(Box::new(console_error_panic_hook::hook));
             console_log::init().expect("could not initialize logger");
-            //wasm_bindgen_futures::spawn_local(run(event_loop, window));
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            env_logger::init();
         }
 
         let event_loop = EventLoop::<CustomEvent>::with_user_event().build().unwrap();
@@ -124,7 +127,15 @@ impl Application {
     }
 
     pub fn launch(mut self) {
-        block_on(Application::launch_inner(self))
+        #[cfg(target_arch = "wasm32")]
+        {
+            wasm_bindgen_futures::spawn_local(Application::launch_inner(self))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            block_on(Application::launch_inner(self))
+        }
+
     }
 
     async fn launch_inner(mut application: Application) {

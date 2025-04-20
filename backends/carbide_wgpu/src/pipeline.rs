@@ -6,7 +6,6 @@ use crate::wgpu_context::WgpuContext;
 
 #[derive(Debug)]
 pub struct RenderPipelines {
-    pub(crate) final_render_pipeline: RenderPipeline,
     pub(crate) render_pipeline_no_mask: RenderPipeline,
     pub(crate) render_pipeline_add_mask: RenderPipeline,
     pub(crate) render_pipeline_in_mask: RenderPipeline,
@@ -15,7 +14,6 @@ pub struct RenderPipelines {
     /// This is used when applying normal filter, or in the second pass of the of the two pass filter
     pub(crate) render_pipeline_in_mask_filter: RenderPipeline,
 }
-
 
 pub(crate) fn main_pipeline_layout(
     device: &Device,
@@ -64,13 +62,6 @@ pub(crate) enum MaskType {
 }
 
 pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: Msaa) -> RenderPipelines {
-    let render_pipeline_no_mask_no_msaa = create_final_render_pipeline(
-        &wgpu_context.device,
-        &wgpu_context.main_pipeline_layout,
-        &wgpu_context.main_shader,
-        preferred_format,
-    );
-
     let render_pipeline_no_mask = create_render_pipeline(
         &wgpu_context.device,
         &wgpu_context.main_pipeline_layout,
@@ -117,7 +108,6 @@ pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: Tex
     );
 
     RenderPipelines {
-        final_render_pipeline: render_pipeline_no_mask_no_msaa,
         render_pipeline_no_mask,
         render_pipeline_add_mask,
         render_pipeline_in_mask,
@@ -137,7 +127,7 @@ pub(crate) fn create_render_pipeline(
     let (stencil_desc, col) = mask_render_state(mask_type);
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some(&format!("Render Pipeline, {:?}", mask_type)),
+        label: Some(&format!("carbide_render_pipeline_{:?}", mask_type)),
         layout: Some(render_pipeline_layout),
         vertex: VertexState {
             module: &shader,
@@ -186,18 +176,34 @@ pub(crate) fn create_render_pipeline(
 
 pub(crate) fn create_final_render_pipeline(
     device: &Device,
-    render_pipeline_layout: &PipelineLayout,
-    shader: &ShaderModule,
+    texture_bind_group_layout: &BindGroupLayout,
+    shader_srgb: &ShaderModule,
+    shader_linear: &ShaderModule,
     preferred_format: TextureFormat,
 ) -> RenderPipeline {
+
+    let final_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("carbide_final_pipeline_layout"),
+        bind_group_layouts: &[
+            texture_bind_group_layout,
+        ],
+        push_constant_ranges: &[],
+    });
+
+    let shader = if preferred_format.is_srgb() {
+        shader_srgb
+    } else {
+        shader_linear
+    };
+
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("carbide_final_render_pipeline"),
-        layout: Some(render_pipeline_layout),
+        layout: Some(&final_pipeline_layout),
         vertex: VertexState {
             module: &shader,
-            entry_point: Some("main_vs"),
+            entry_point: Some("vs_main"),
             compilation_options: Default::default(),
-            buffers: &[Vertex::desc()],
+            buffers: &[],
         },
         primitive: PrimitiveState {
             topology: PrimitiveTopology::TriangleList,
@@ -212,7 +218,7 @@ pub(crate) fn create_final_render_pipeline(
         multisample: Default::default(),
         fragment: Some(FragmentState {
             module: &shader,
-            entry_point: Some("main_fs"),
+            entry_point: Some("fs_main"),
             compilation_options: Default::default(),
             targets: &[Some(ColorTargetState {
                 format: preferred_format,

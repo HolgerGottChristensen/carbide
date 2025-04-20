@@ -23,7 +23,7 @@ impl ImageContext for WGPUImageContext {
     fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
         let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
 
-        let bind_group = create_bind_group(&wgpu_context.device, &wgpu_context.queue, texture, &wgpu_context.main_texture_bind_group_layout);
+        let bind_group = create_bind_group(&wgpu_context.device, &wgpu_context.queue, texture, &wgpu_context.texture_bind_group_layout);
         wgpu_context.bind_groups.insert(id, bind_group);
 
         true

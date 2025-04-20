@@ -4,6 +4,8 @@ use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, Te
 use carbide_core::environment::Environment;
 use crate::wgpu_context::WgpuContext;
 
+pub const RENDER_TARGET_FORMAT: TextureFormat = TextureFormat::Bgra8UnormSrgb;
+
 pub struct RenderTarget {
     pub(crate) texture: Texture,
     pub(crate) view: TextureView,
@@ -22,7 +24,7 @@ impl RenderTarget {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
-            format: TextureFormat::Bgra8UnormSrgb,
+            format: RENDER_TARGET_FORMAT,
             usage: TextureUsages::RENDER_ATTACHMENT
                 | TextureUsages::TEXTURE_BINDING
                 | TextureUsages::COPY_SRC
@@ -37,7 +39,7 @@ impl RenderTarget {
         let view = texture.create_view(&Default::default());
 
         let bind_group = wgpu_context.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &wgpu_context.main_texture_bind_group_layout,
+            layout: &wgpu_context.texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
