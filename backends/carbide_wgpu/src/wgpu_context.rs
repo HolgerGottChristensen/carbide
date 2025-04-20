@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use dashmap::DashMap;
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Instance, PipelineLayout, Queue, Sampler, ShaderModule, Texture, TextureFormat};
+use log::{error, info};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Instance, PipelineLayout, Queue, RenderPipeline, Sampler, ShaderModule, Texture, TextureFormat};
 use carbide_core::draw::ImageId;
 use carbide_core::environment::EnvironmentKey;
 use carbide_core::widget::FilterId;
-use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, main_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
+use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, texture_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
 use crate::bind_groups::create_bind_groups;
 use crate::image_context::BindGroupExtended;
 use crate::pipeline::{filter_pipeline_layout, main_pipeline_layout, RenderPipelines};
@@ -21,8 +22,10 @@ pub struct WgpuContext {
     pub main_sampler: Sampler,
     pub main_shader: ShaderModule,
     pub filter_shader: ShaderModule,
+    pub final_render_shader_srgb: ShaderModule,
+    pub final_render_shader_linear: ShaderModule,
 
-    pub main_texture_bind_group_layout: BindGroupLayout,
+    pub texture_bind_group_layout: BindGroupLayout,
     pub uniform_bind_group_layout: BindGroupLayout,
     pub uniform_bind_group_layout2: BindGroupLayout,
     pub filter_texture_bind_group_layout: BindGroupLayout,
@@ -59,6 +62,8 @@ impl WgpuContext {
         let mut limits = wgpu::Limits::default();
         limits.max_bind_groups = 5;
 
+        info!("{:#?}", adapter.limits());
+
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: Some("carbide_device"),
@@ -69,11 +74,14 @@ impl WgpuContext {
             }
         ).await.unwrap();
 
+        info!("{:#?}", device.limits());
+        info!("{:#?}", device.features());
+
         let main_sampler = main_sampler(&device);
 
-        let main_texture_bind_group_layout = main_bind_group_layout(&device);
+        let texture_bind_group_layout = texture_bind_group_layout(&device);
 
-        let bind_groups = create_bind_groups(&device, &queue, &main_texture_bind_group_layout);
+        let bind_groups = create_bind_groups(&device, &queue, &texture_bind_group_layout);
 
         let main_shader = device.create_shader_module(wgpu::include_wgsl!("../shaders/shader.wgsl"));
         let filter_shader = device.create_shader_module(wgpu::include_wgsl!("../shaders/filter.wgsl"));
@@ -90,7 +98,7 @@ impl WgpuContext {
 
         let main_pipeline_layout = main_pipeline_layout(
             &device,
-            &main_texture_bind_group_layout,
+            &texture_bind_group_layout,
             &uniform_bind_group_layout,
             &gradient_buffer_bind_group_layout,
             &atlas_cache_bind_group_layout,
@@ -103,6 +111,9 @@ impl WgpuContext {
             &uniform_bind_group_layout,
         );
 
+        let final_render_shader_linear = device.create_shader_module(wgpu::include_wgsl!("../shaders/final_linear.wgsl"));
+        let final_render_shader_srgb = device.create_shader_module(wgpu::include_wgsl!("../shaders/final_srgb.wgsl"));
+
         WgpuContext {
             instance,
             adapter,
@@ -111,7 +122,9 @@ impl WgpuContext {
             main_sampler,
             main_shader,
             filter_shader,
-            main_texture_bind_group_layout,
+            final_render_shader_srgb,
+            final_render_shader_linear,
+            texture_bind_group_layout,
             uniform_bind_group_layout,
             uniform_bind_group_layout2,
             filter_texture_bind_group_layout,

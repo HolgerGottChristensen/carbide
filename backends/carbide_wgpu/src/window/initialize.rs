@@ -3,7 +3,7 @@ use log::info;
 use crate::application::{ActiveEventLoopKey, EVENT_LOOP_PROXY};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::gradient::{WgpuDashes, WgpuGradient};
-use crate::pipeline::create_pipelines;
+use crate::pipeline::{create_final_render_pipeline, create_pipelines};
 use crate::render_context::WGPURenderContext;
 use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
 use crate::vertex::Vertex;
@@ -22,6 +22,7 @@ use carbide_winit::window::{Theme, WindowAttributes};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BufferUsages, SurfaceConfiguration, TextureFormat, TextureUsages};
 use carbide_core::draw::gradient::{GradientRepeat, GradientType};
+use crate::render_target::RENDER_TARGET_FORMAT;
 use crate::wgpu_context::WgpuContext;
 
 pub const ZOOM: f32 = 1.0;
@@ -51,13 +52,13 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     use wasm_bindgen::JsCast;
                     use carbide_winit::platform::web::WindowAttributesExtWebSys;
 
-                    let canvas = web_sys::window()
+                    let canvas = wgpu::web_sys::window()
                         .unwrap()
                         .document()
                         .unwrap()
                         .get_element_by_id("canvas")
                         .unwrap()
-                        .dyn_into::<web_sys::HtmlCanvasElement>()
+                        .dyn_into::<wgpu::web_sys::HtmlCanvasElement>()
                         .unwrap();
 
                     info!("Found and converted canvas");
@@ -104,23 +105,20 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
 
-                let surface = unsafe { wgpu_context.instance.create_surface(window.clone()) }.unwrap();
+                let surface = wgpu_context.instance
+                    .create_surface(window.clone())
+                    .unwrap();
+
+                let surface_configuration = surface.get_default_config(
+                    &wgpu_context.adapter,
+                    window.inner_size().width,
+                    window.inner_size().height
+                ).unwrap();
 
                 // Configure the surface with format, size and usage
-                let surface_caps = surface.get_capabilities(&wgpu_context.adapter);
-
                 surface.configure(
                     &wgpu_context.device,
-                    &SurfaceConfiguration {
-                        usage: TextureUsages::RENDER_ATTACHMENT,
-                        format: TextureFormat::Bgra8UnormSrgb,
-                        width: window.inner_size().width,
-                        height: window.inner_size().height,
-                        present_mode: surface_caps.present_modes[0],
-                        desired_maximum_frame_latency: 2,
-                        alpha_mode: wgpu::CompositeAlphaMode::Auto,
-                        view_formats: vec![],
-                    },
+                    &surface_configuration,
                 );
 
                 let matrix = calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
@@ -184,16 +182,20 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     scale_factor,
                 );
 
-                let preferred_format = surface_caps.formats.iter()
-                    .copied()
-                    .filter(|f| f.is_srgb())
-                    .next()
-                    .unwrap_or(surface_caps.formats[0]);
+                info!("{:#?}", surface_configuration);
 
-                if !wgpu_context.pipelines.contains_key(&preferred_format) {
-                    let pipeline = create_pipelines(wgpu_context, preferred_format, msaa);
-                    wgpu_context.pipelines.insert(preferred_format, pipeline);
+                if !wgpu_context.pipelines.contains_key(&RENDER_TARGET_FORMAT) {
+                    let pipeline = create_pipelines(wgpu_context, RENDER_TARGET_FORMAT, msaa);
+                    wgpu_context.pipelines.insert(RENDER_TARGET_FORMAT, pipeline);
                 }
+
+                let final_render_pipeline = create_final_render_pipeline(
+                    &wgpu_context.device,
+                    &wgpu_context.texture_bind_group_layout,
+                    &wgpu_context.final_render_shader_srgb,
+                    &wgpu_context.final_render_shader_linear,
+                    surface_configuration.format,
+                );
 
                 let depth_texture_view = create_depth_stencil_texture_view(&wgpu_context.device, size.width, size.height, msaa);
                 let msaa_texture_view = create_msaa_texture_view(&wgpu_context.device, size.width, size.height, msaa);
@@ -201,12 +203,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 let vertex_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("carbide_primary_vertex_buffer"),
                     contents: &[],
-                    usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                });
-
-                let secondary_vertex_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("carbide_secondary_vertex_buffer"),
-                    contents: bytemuck::cast_slice(&Vertex::rect(size, scale_factor, ZOOM)),
                     usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 });
 
@@ -219,11 +215,11 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     Theme::Dark => carbide_core::draw::theme::Theme::Dark,
                 };
 
-
                 Window::Initialized(InitializedWindow {
                     id,
                     surface,
-                    texture_format: preferred_format,
+                    surface_configuration,
+                    surface_render_pipeline: final_render_pipeline,
                     msaa,
                     msaa_texture_view,
                     depth_texture_view,
@@ -237,7 +233,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     gradient_dashes_bind_group: gradient_dashed_bind_group,
                     carbide_to_wgpu_matrix: matrix,
                     vertex_buffer: (vertex_buffer, 0),
-                    second_vertex_buffer: secondary_vertex_buffer,
                     render_context: WGPURenderContext::new(),
                     inner: window,
                     accessibility_adapter,

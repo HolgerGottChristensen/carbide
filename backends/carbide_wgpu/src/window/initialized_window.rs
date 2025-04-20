@@ -14,7 +14,7 @@ use carbide_core::state::ReadState;
 use carbide_core::widget::{CommonWidget, Widget};
 use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
 use carbide_winit::WindowHandleKey;
-use wgpu::{BindGroup, Buffer, Surface, TextureFormat, TextureView};
+use wgpu::{BindGroup, Buffer, RenderPipeline, Surface, SurfaceConfiguration, TextureView};
 use carbide_core::math::Matrix4;
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
@@ -23,8 +23,11 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) position: Position,
     pub(crate) dimension: Dimension,
     pub(crate) child: C,
+
     pub(crate) surface: Surface<'static>,
-    pub(crate) texture_format: TextureFormat,
+    pub(crate) surface_configuration: SurfaceConfiguration,
+    pub(crate) surface_render_pipeline: RenderPipeline,
+
     pub(crate) msaa: Msaa,
     pub(crate) msaa_texture_view: Option<TextureView>,
     pub(crate) depth_texture_view: TextureView,
@@ -36,7 +39,6 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) gradient_dashes_bind_group: BindGroup,
     pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
     pub(crate) vertex_buffer: (Buffer, usize),
-    pub(crate) second_vertex_buffer: Buffer,
     pub(crate) render_context: WGPURenderContext,
     pub(crate) inner: Arc<carbide_winit::window::Window>,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
