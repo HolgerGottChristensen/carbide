@@ -24,8 +24,6 @@ macro = ["carbide_macro"]
 [dependencies]
 carbide_derive = { path = "../carbide_derive" }
 carbide_macro = { path = "../carbide_macro", optional = true }
-rand.workspace = true
-getrandom.workspace = true
 bitflags.workspace = true
 dyn-clone.workspace = true
 parking_lot.workspace = true

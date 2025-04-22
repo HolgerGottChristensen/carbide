@@ -10,8 +10,8 @@
 //!
 
 use std::f32::consts::PI;
-
-use rand::Rng;
+use std::hash::{DefaultHasher, Hash, Hasher};
+use std::sync::atomic::{AtomicU64, Ordering};
 use carbide::utils::clamp;
 use crate::animation::Animatable;
 use crate::draw::Scalar;
@@ -56,14 +56,21 @@ impl Color {
 
     /// This method will generate a random color each time it
     /// is called.
+    /// The ordering of the colors generated are deterministic
     pub fn random() -> Self {
-        let mut rng = rand::thread_rng();
+        // Store a shared atomic state, and add 1 each iteration
+        static STATE: AtomicU64 = AtomicU64::new(0);
+        let current = STATE.fetch_add(1, Ordering::Relaxed);
 
-        rgb(
-            rng.random_range(0.0..=1.0),
-            rng.random_range(0.0..=1.0),
-            rng.random_range(0.0..=1.0),
-        )
+        // Hash the current state
+        let mut hasher = DefaultHasher::new();
+        current.hash(&mut hasher);
+
+        // Extract the bytes from the hash
+        let result = hasher.finish().to_be_bytes();
+
+        // Create a color based on the bytes
+        Self::new_rgb(result[0], result[1], result[2])
     }
 
     /// This method will generate a color based on the time since the UNIX_EPOCH.
