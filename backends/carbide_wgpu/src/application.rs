@@ -126,6 +126,10 @@ impl Application {
         self.text_context.add_font(path.as_ref().to_path_buf());
     }
 
+    pub fn text_context_mut(&mut self) -> &mut dyn carbide_core::text::TextContext {
+        &mut self.text_context
+    }
+
     pub fn launch(mut self) {
         #[cfg(target_arch = "wasm32")]
         {

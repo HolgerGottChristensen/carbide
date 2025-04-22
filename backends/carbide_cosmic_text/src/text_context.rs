@@ -1,6 +1,7 @@
 use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashImage, Weight};
 use fxhash::FxHashMap;
 use std::path::PathBuf;
+use include_dir::{include_dir, Dir};
 use swash::scale::image::Content;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::zeno::{Format, Vector};
@@ -28,9 +29,25 @@ pub struct TextContext {
 
 impl TextContext {
     pub fn new() -> TextContext {
+
+        let mut system = FontSystem::new();
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            static FONTS: Dir = include_dir!("$CARGO_MANIFEST_DIR/../../assets/fonts");
+
+            let files = FONTS.find("**/*.ttf")
+                .expect("Glob pattern is valid")
+                .filter_map(|entry| entry.as_file());
+
+            for file in files {
+                system.db_mut().load_font_data(file.contents().to_vec())
+            }
+        }
+
         TextContext {
             map: Default::default(),
-            font_system: FontSystem::new(),
+            font_system: system,
             atlas: TextureAtlas::new(1024, 1024),
             scale_context: ScaleContext::new(),
         }
@@ -226,6 +243,10 @@ impl InnerTextContext for TextContext {
 
     fn add_font(&mut self, p: PathBuf) {
         self.font_system.db_mut().load_font_file(p).unwrap();
+    }
+
+    fn add_font_from_bytes(&mut self, bytes: Vec<u8>) {
+        self.font_system.db_mut().load_font_data(bytes)
     }
 
     fn hit(&self, id: TextId, position: Position) -> (usize, usize) {

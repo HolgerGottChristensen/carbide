@@ -15,3 +15,4 @@ fxhash = "0.2.1"
 cosmic-text = "0.10.0"
 swash = "0.1.8"
 unicode-segmentation = "1.7.1"
+include_dir = { workspace = true, features = ["glob"]}

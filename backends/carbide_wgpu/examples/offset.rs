@@ -13,11 +13,12 @@ fn main() {
         Window::new(
             "Offset example - Carbide",
             Dimension::new(200.0, 200.0),
-            Rectangle::new()
+            /*Rectangle::new()
                 .fill(EnvironmentColor::Accent)
                 .frame(100.0, 100.0)
                 .offset(50.0, 50.0)
-                .border()
+                .border()*/
+            Text::new("Hello world!")
         )
     );
 

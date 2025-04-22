@@ -23,6 +23,7 @@ pub trait TextContext {
     fn update_cache(&mut self, f: &mut dyn FnMut(&DynamicImage));
 
     fn add_font(&mut self, p: PathBuf);
+    fn add_font_from_bytes(&mut self, bytes: Vec<u8>);
 
     /// Returns (line, index)
     fn hit(&self, id: TextId, position: Position) -> (usize, usize);
@@ -64,6 +65,10 @@ impl TextContext for NOOPTextContext {
     }
 
     fn add_font(&mut self, _p: PathBuf) {
+        unimplemented!()
+    }
+
+    fn add_font_from_bytes(&mut self, _bytes: Vec<u8>) {
         unimplemented!()
     }
 
