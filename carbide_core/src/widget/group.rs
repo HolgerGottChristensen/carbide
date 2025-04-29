@@ -1,7 +1,7 @@
 use crate::misc::flags::WidgetFlag;
 use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetId};
 use crate::CommonWidgetImpl;
-use carbide::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position};
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 

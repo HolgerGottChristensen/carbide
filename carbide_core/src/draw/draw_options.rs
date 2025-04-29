@@ -1,4 +1,4 @@
-use carbide::draw::stroke::StrokeAlignment;
+use crate::draw::stroke::StrokeAlignment;
 use crate::draw::fill::FillOptions;
 use crate::draw::stroke::StrokeOptions;
 use crate::widget::ShapeStyle;

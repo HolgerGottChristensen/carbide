@@ -2,7 +2,7 @@ use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;
 use crate::widget::{CommonWidget, Content, Identifiable, Sequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
-use carbide::environment::Environment;
+use crate::environment::Environment;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;

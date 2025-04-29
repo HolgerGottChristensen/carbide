@@ -1,4 +1,4 @@
-use carbide::environment::Environment;
+use crate::environment::Environment;
 use crate::draw::image::ImageId;
 use crate::draw::Texture;
 

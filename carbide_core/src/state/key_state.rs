@@ -1,5 +1,5 @@
 use crate::environment::{Environment, EnvironmentKey};
-use carbide::state::{AnyReadState, StateSync, ValueRef};
+use crate::state::{AnyReadState, StateSync, ValueRef};
 
 #[derive(Debug)]
 pub struct KeyState<K: EnvironmentKey> where K::Value: Clone {

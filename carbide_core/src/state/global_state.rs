@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-use carbide_core::state::AnyReadState;
+use crate::state::AnyReadState;
 
 use crate::environment::{Environment};
 use crate::state::{AnyState, Fn2, Functor, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueRef, ValueRefMut};

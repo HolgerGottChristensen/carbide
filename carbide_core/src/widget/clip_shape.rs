@@ -1,10 +1,10 @@
-use carbide::color::Color;
-use carbide::draw::stroke::StrokeDashPattern;
-use carbide::draw::{DrawOptions, DrawShape, DrawStyle, ImageId, ImageOptions, Rect};
-use carbide::environment::Environment;
-use carbide::render::{InnerRenderContext, Layer, LayerId};
-use carbide::text::{TextContext, TextId};
-use carbide::widget::ImageFilter;
+use crate::color::Color;
+use crate::draw::stroke::StrokeDashPattern;
+use crate::draw::{DrawOptions, DrawShape, DrawStyle, ImageId, ImageOptions, Rect};
+use crate::environment::Environment;
+use crate::render::{InnerRenderContext, Layer, LayerId};
+use crate::text::{TextContext, TextId};
+use crate::widget::ImageFilter;
 use carbide_macro::carbide_default_builder2;
 use cgmath::Matrix4;
 

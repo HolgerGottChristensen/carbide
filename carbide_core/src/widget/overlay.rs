@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
-use carbide::environment::Environment;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext, WindowEvent, WindowEventContext};
-use carbide::lifecycle::InitializationContext;
+use crate::environment::Environment;
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, WindowEvent, WindowEventContext};
+use crate::lifecycle::InitializationContext;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentKey;

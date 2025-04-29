@@ -1,4 +1,4 @@
-use carbide::draw::Dimension;
+use crate::draw::Dimension;
 use crate::draw::{Angle, Position};
 
 #[derive(Copy, Clone, Debug, PartialEq)]

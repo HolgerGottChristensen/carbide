@@ -1,8 +1,8 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 use std::ops::Deref;
 use accesskit::{Node, Point, Role, Size};
-use carbide::accessibility::AccessibilityContext;
-use carbide::scene::SceneManager;
+use crate::accessibility::AccessibilityContext;
+use crate::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::Accessibility;
 use crate::CommonWidgetImpl;
@@ -123,7 +123,7 @@ impl<Id: ReadState<T=Option<ImageId>>, C: ReadState<T=Style>> Layout for Image<I
         if let Some(image_id) = &*self.image_id.value() {
             if !ctx.image.texture_exist(image_id, ctx.env) {
                 let path = if image_id.is_relative() {
-                    let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
+                    let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
                         .for_folder("assets")
                         .unwrap();
 

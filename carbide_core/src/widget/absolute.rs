@@ -1,5 +1,5 @@
-use carbide::scene::SceneManager;
-use carbide_core::state::IntoReadState;
+use crate::scene::SceneManager;
+use crate::state::IntoReadState;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

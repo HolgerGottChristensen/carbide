@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
 
-use carbide_core::state::AnyState;
-use carbide_core::state::state_sync::StateSync;
+use crate::state::AnyState;
+use crate::state::state_sync::StateSync;
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, ReadState, RMap1, StateContract};

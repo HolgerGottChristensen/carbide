@@ -8,8 +8,8 @@ use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext}
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
-use carbide::ModifierWidgetImpl;
-use carbide::widget::{Identifiable, WidgetId};
+use crate::ModifierWidgetImpl;
+use crate::widget::{Identifiable, WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]

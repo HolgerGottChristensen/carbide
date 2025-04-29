@@ -1,6 +1,6 @@
-use carbide::draw::DrawOptions;
-use carbide_core::CommonWidgetImpl;
-use carbide_core::widget::{CommonWidget};
+use crate::draw::DrawOptions;
+use crate::CommonWidgetImpl;
+use crate::widget::{CommonWidget};
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, CompositeDrawShape, Position};

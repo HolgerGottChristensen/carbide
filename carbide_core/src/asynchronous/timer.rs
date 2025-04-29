@@ -2,9 +2,9 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
-use carbide_core::time::*;
+use crate::time::*;
 use parking_lot::RwLock;
-use carbide_core::asynchronous::spawn;
+use crate::asynchronous::spawn;
 use crate::asynchronous::EVENT_SINK;
 use crate::event::CoreEvent;
 

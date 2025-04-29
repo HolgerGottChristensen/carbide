@@ -1,4 +1,3 @@
-
 use carbide_core::asynchronous::sleep;
 use carbide_core::color::WHITE;
 use carbide_core::draw::{Color, Dimension};

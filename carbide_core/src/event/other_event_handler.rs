@@ -4,7 +4,7 @@ use crate::focus::Focusable;
 use crate::misc::any_debug::AnyDebug;
 use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
-use carbide::event::CoreEvent;
+use crate::event::CoreEvent;
 use std::any::{Any, TypeId};
 use std::ops::Deref;
 

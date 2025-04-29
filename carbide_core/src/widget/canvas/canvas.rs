@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use carbide::draw::DrawOptions;
+use crate::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

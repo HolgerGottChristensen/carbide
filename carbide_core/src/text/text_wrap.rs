@@ -1,6 +1,6 @@
 use std::fmt::Debug;
-use carbide::environment::Environment;
-use carbide::state::{EnvMap1, Map1};
+use crate::environment::Environment;
+use crate::state::{EnvMap1, Map1};
 use carbide_derive::StateValue;
 use crate::environment::EnvironmentKey;
 

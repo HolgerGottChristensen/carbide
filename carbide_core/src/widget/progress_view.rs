@@ -1,5 +1,5 @@
-use carbide::draw::Angle;
-use carbide_core::widget::canvas::CanvasContext;
+use crate::draw::Angle;
+use crate::widget::canvas::CanvasContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::color::WHITE;

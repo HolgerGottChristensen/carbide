@@ -30,7 +30,7 @@ fn main() {
 
                 }).frame(120.0, 22.0)
                     .button_style(BorderedProminentStyle)
-                    .open_dialog_style(NativeStyle)
+                    .color_dialog_style(NativeStyle)
             ))
         )
     );

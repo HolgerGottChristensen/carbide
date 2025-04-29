@@ -27,7 +27,7 @@ pub trait Functor<T: StateContract> {
 macro_rules! impl_functor {
     ($($typ: ty),*) => {
         $(
-        impl carbide_core::state::Functor<$typ> for $typ {
+        impl $crate::state::Functor<$typ> for $typ {
             type Output<G: StateContract, F: Fn2<$typ, G>> = G;
             fn map<U: StateContract, F: Fn2<$typ, U>>(self, f: F) -> Self::Output<U, F> {
                 f(&self)

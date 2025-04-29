@@ -1,5 +1,5 @@
-use carbide_core::CommonWidgetImpl;
-use carbide_core::render::RenderContext;
+use crate::CommonWidgetImpl;
+use crate::render::RenderContext;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position, Rect};

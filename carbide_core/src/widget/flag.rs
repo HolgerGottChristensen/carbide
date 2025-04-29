@@ -1,6 +1,6 @@
-use carbide::state::ReadState;
-use carbide::widget::Identifiable;
-use carbide_core::widget::CommonWidget;
+use crate::state::ReadState;
+use crate::widget::Identifiable;
+use crate::widget::CommonWidget;
 
 use crate::draw::{Dimension, Position};
 use crate::misc::flags::WidgetFlag;

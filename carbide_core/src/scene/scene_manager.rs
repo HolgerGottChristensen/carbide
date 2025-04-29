@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
-use carbide::draw::Dimension;
-use carbide::environment::EnvironmentKey;
-use carbide::scene::{AnyScene, Scene, SceneId};
+use crate::draw::Dimension;
+use crate::environment::EnvironmentKey;
+use crate::scene::{AnyScene, Scene, SceneId};
 use crate::draw::Scalar;
 use crate::environment::Environment;
 

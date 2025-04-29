@@ -7,10 +7,10 @@ use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyShape, ShapeStyle};
-use carbide::environment::Environment;
-use carbide::widget::WidgetId;
+use crate::environment::Environment;
+use crate::widget::WidgetId;
 use std::fmt::{Debug, Formatter};
-use carbide::draw::DrawOptions;
+use crate::draw::DrawOptions;
 use crate::draw::stroke::{LineCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, LineJoin, StrokeOptions};
 use crate::text::text_wrap::Wrap;
 
@@ -173,7 +173,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     pub fn fill(&mut self) {
         #[derive(Clone, Debug)]
         struct FillShape {
-            path: carbide_core::draw::path::Path,
+            path: crate::draw::path::Path,
         }
 
         impl From<FillShape> for DrawShape {
@@ -192,7 +192,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     pub fn stroke(&mut self) {
         #[derive(Clone, Debug)]
         struct StrokeShape {
-            path: carbide_core::draw::path::Path,
+            path: crate::draw::path::Path,
         }
 
         impl From<StrokeShape> for DrawShape {

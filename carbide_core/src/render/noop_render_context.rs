@@ -1,10 +1,10 @@
 use cgmath::Matrix4;
-use carbide::draw::DrawShape;
+use crate::draw::DrawShape;
 use crate::draw::stroke::StrokeDashPattern;
 use crate::draw::{Color, Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageOptions, Rect};
 use crate::render::{InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
-use carbide::widget::{AnyShape, ImageFilter};
+use crate::widget::{AnyShape, ImageFilter};
 
 pub struct NoopRenderContext;
 

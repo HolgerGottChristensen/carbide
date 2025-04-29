@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use carbide_core::state::AnyState;
+use crate::state::AnyState;
 
 use crate::animation::animatable::Animatable;
 use crate::animation::linear;

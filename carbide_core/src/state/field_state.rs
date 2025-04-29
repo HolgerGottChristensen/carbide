@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use carbide_core::state::AnyState;
+use crate::state::AnyState;
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, StateContract};

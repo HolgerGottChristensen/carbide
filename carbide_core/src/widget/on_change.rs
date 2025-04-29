@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Formatter};
-use carbide::environment::Environment;
+use crate::environment::Environment;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

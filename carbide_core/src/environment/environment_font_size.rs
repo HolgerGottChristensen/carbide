@@ -1,6 +1,6 @@
 use crate::environment::{Environment, EnvironmentKeyable};
 use crate::state::*;
-use carbide::environment::EnvironmentKey;
+use crate::environment::EnvironmentKey;
 
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug, Copy)]

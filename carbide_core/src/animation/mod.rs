@@ -19,7 +19,7 @@ macro_rules! animate {
                 use $crate::state::ReadState;
 
                 let start = $state.value().clone();
-                let animation = carbide::animation::Animation::new(
+                let animation = $crate::animation::Animation::new(
                     $state.clone(),
                     start,
                     $to,
@@ -45,7 +45,7 @@ macro_rules! animate {
 
 
                 let start = $state.value().clone();
-                let animation = carbide::animation::Animation::new_custom(
+                let animation = $crate::animation::Animation::new_custom(
                     $state.clone(),
                     start,
                     $to,

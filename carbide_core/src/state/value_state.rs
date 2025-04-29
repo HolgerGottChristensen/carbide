@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 
-use carbide_core::state::AnyState;
-use carbide_core::state::StateSync;
+use crate::state::AnyState;
+use crate::state::StateSync;
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
 use crate::state::{ValueRef, ValueRefMut};
 

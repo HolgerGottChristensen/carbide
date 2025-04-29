@@ -1,5 +1,5 @@
 use indexmap::IndexMap;
-use carbide::widget::{BuildWidgetIdHasher, Widget, WidgetId};
+use crate::widget::{BuildWidgetIdHasher, Widget, WidgetId};
 
 #[derive(Clone, Debug)]
 pub struct Content<O: Widget>(pub IndexMap<WidgetId, O, BuildWidgetIdHasher>, pub usize);

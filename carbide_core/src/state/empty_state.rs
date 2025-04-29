@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use carbide::state::{StateSync, ValueRefMut};
+use crate::state::{StateSync, ValueRefMut};
 use crate::state::{AnyReadState, AnyState, StateContract, ValueRef};
 
 #[derive(Debug, Copy, Clone)]

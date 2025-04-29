@@ -13,6 +13,13 @@ pub use date_picker::*;
 
 extern crate carbide_core as carbide;
 
+#[doc(hidden)]
+pub mod __private {
+    pub mod core {
+        pub use carbide_core::*;
+    }
+}
+
 #[macro_export]
 macro_rules! capture {
     ($([$($t:ident),*],)? $({$($u:ident),*},)? |$($a:ident: $typ:ty),*| $b:block) => {
@@ -24,7 +31,7 @@ macro_rules! capture {
             #[allow(unused_mut)]
             move |$($a: $typ),*| {
 
-                use carbide_core::state::State;
+                use $crate::__private::core::state::State;
                 $($(let mut $t = $t.clone();)*)?
                 $($(let mut $u = $u.clone();)*)?
                 //{

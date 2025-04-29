@@ -1,5 +1,5 @@
 use smallvec::SmallVec;
-use carbide::scene::{Scene, SceneId};
+use crate::scene::{Scene, SceneId};
 use crate::environment::{Environment, EnvironmentKey};
 use crate::scene::{AnyScene, SceneSequence};
 

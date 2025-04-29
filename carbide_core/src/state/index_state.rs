@@ -2,7 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 
-use carbide_core::state::{AnyState, StateSync};
+use crate::state::{AnyState, StateSync};
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, ReadState, RMap1, StateContract};

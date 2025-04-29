@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Formatter};
 use dyn_clone::DynClone;
-use carbide::draw::{CompositeDrawShape, DrawShape};
-use carbide::draw::stroke::StrokeAlignment;
-use carbide::widget::AnyShape;
+use crate::draw::{CompositeDrawShape, DrawShape};
+use crate::draw::stroke::StrokeAlignment;
+use crate::widget::AnyShape;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

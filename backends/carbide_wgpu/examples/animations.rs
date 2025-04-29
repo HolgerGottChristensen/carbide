@@ -1,9 +1,9 @@
-use carbide_core::animation::{bounce_in, bounce_in_out, bounce_out, ease_in, ease_in_out, ease_out, elastic_in, elastic_in_out, elastic_out, fast_linear_to_slow_ease_in, fast_out_slow_in, linear, slow_middle};
+use carbide_core::animation::*;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
-use carbide_core::state::{AnimatedState, ReadState};
-use carbide_core::widget::*;
+use carbide_core::state::AnimatedState;
 use carbide_core::time::*;
+use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

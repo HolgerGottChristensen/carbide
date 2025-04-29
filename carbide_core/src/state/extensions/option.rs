@@ -1,4 +1,4 @@
-use carbide::state::Map1;
+use crate::state::Map1;
 use crate::state::{IntoReadState, IntoState, Map2, ReadState, State, StateContract};
 
 pub trait OptionExtension<T: StateContract>: ReadState<T=Option<T>> {

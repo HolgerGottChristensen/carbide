@@ -3,7 +3,7 @@ use crate::focus::{Focus, Focusable};
 use crate::widget::{CommonWidget, WidgetId, WidgetSync};
 use accesskit::{Node, NodeId, Point, Rect, Role, Size, TreeUpdate};
 use smallvec::SmallVec;
-use carbide::accessibility::AccessibilityNode;
+use crate::accessibility::AccessibilityNode;
 use crate::accessibility::AccessibilityAction;
 use crate::scene::SceneManager;
 

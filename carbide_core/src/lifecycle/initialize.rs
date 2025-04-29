@@ -1,4 +1,4 @@
-use carbide::widget::{CommonWidget, WidgetSync};
+use crate::widget::{CommonWidget, WidgetSync};
 use crate::environment::Environment;
 
 pub trait Initialize: CommonWidget + WidgetSync {

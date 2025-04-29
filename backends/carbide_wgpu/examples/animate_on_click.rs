@@ -1,18 +1,16 @@
-use carbide_controls::{capture, ControlsExt};
 use carbide_controls::button::{BorderedProminentStyle, Button};
-use carbide_core as carbide; // Required only in internal examples
-use carbide_core::{animate};
+use carbide_controls::{capture, ControlsExt};
+use carbide_core::animate;
 use carbide_core::animation::{bounce_out, ease_in_out, elastic_in_out, linear};
-use carbide_core::color::{BLUE, Color, GREEN, RED};
+use carbide_core::color::{Color, BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadState, State};
-use carbide_core::widget::*;
 use carbide_core::time::*;
+use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new().with_asset_fonts();
 
     let offset_x = LocalState::new(-120.0);
     let color = LocalState::new(RED);
@@ -44,29 +42,38 @@ fn main() {
             animation_buttons(bounce_out, "Bounce out", offset_x.clone()),
             animation_buttons(ease_in_out, "Ease in-out", offset_x.clone()),
         )).spacing(10.0)
-            .button_style(BorderedProminentStyle)
+            .button_style(BorderedProminentStyle),
     ));
-
 
     application.launch();
 }
 
-fn animation_buttons(curve: fn(f64) -> f64, name: &str, offset: impl State<T=f64>) -> Box<dyn AnyWidget> {
+fn animation_buttons(
+    curve: fn(f64) -> f64,
+    name: &str,
+    offset: impl State<T = f64>,
+) -> Box<dyn AnyWidget> {
     HStack::new((
-        Button::new(format!("{} left", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
+        Button::new(
+            format!("{} left", name),
+            capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() > &119.0 {
                     animate!(ctx.env, offset := 120.0 => -120.0, curve: curve)
                 }
-            }))
-            .frame(150.0, 22.0),
-        Button::new(format!("{} right", name), capture!({ offset }, |ctx: MouseAreaActionContext| {
+            }),
+        )
+        .frame(150.0, 22.0),
+        Button::new(
+            format!("{} right", name),
+            capture!({ offset }, |ctx: MouseAreaActionContext| {
                 if &*offset.value() < &-119.0 {
                     animate!(ctx.env, offset := -120.0 => 120.0, curve: curve)
                 }
-            }))
-            .frame(150.0, 22.0),
+            }),
+        )
+        .frame(150.0, 22.0),
     ))
     .spacing(10.0)
-        .button_style(BorderedProminentStyle)
-        .boxed()
+    .button_style(BorderedProminentStyle)
+    .boxed()
 }

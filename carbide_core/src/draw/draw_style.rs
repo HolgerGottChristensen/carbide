@@ -1,4 +1,4 @@
-use carbide_core::draw::draw_gradient::DrawGradient;
+use crate::draw::draw_gradient::DrawGradient;
 use crate::draw::Color;
 
 #[derive(Debug, Clone, PartialEq)]

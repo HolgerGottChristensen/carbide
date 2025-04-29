@@ -1,4 +1,4 @@
-use carbide::scene::SceneManager;
+use crate::scene::SceneManager;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

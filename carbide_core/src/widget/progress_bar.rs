@@ -1,4 +1,4 @@
-use carbide_core::state::{IntoReadState, ReadState};
+use crate::state::{IntoReadState, ReadState};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;

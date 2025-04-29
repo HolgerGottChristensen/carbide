@@ -12,7 +12,7 @@
 use std::f32::consts::PI;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::atomic::{AtomicU64, Ordering};
-use carbide::utils::clamp;
+use crate::utils::clamp;
 use crate::animation::Animatable;
 use crate::draw::Scalar;
 use crate::render::Style;

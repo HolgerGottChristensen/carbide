@@ -49,7 +49,7 @@ pub(crate) fn get_crate_name() -> TokenStream {
         Ok(FoundCrate::Itself) => "carbide".to_string(),
         Err(e1) => match crate_name("carbide_core") {
             Ok(FoundCrate::Name(name)) => name,
-            Ok(FoundCrate::Itself) => "carbide_core".to_string(),
+            Ok(FoundCrate::Itself) => "crate".to_string(),
             Err(e2) => {
                 panic!("{} \n {}", e1, e2);
             }

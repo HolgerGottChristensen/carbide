@@ -1,5 +1,5 @@
 use std::f64::consts::PI;
-use carbide::state::AnyReadState;
+use crate::state::AnyReadState;
 use crate::state::{ConvertIntoRead, Map1, RMap1};
 
 #[derive(Debug, Clone, Copy, PartialOrd, PartialEq)]

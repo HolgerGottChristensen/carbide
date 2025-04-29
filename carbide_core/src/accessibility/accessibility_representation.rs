@@ -1,4 +1,4 @@
-use carbide::widget::{Identifiable, WidgetId};
+use crate::widget::{Identifiable, WidgetId};
 use crate::accessibility::{AccessibilityContext, Accessibility};
 use crate::widget::{Empty, IntoWidget, Widget, CommonWidget, WidgetSync};
 use crate::ModifierWidgetImpl;

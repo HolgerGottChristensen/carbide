@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use dyn_clone::DynClone;
-use carbide_core::widget::AnyWidget;
+use crate::widget::AnyWidget;
 
 pub trait AnyScene: AnyWidget + DynClone + 'static {
     fn request_redraw(&self) -> bool;

@@ -15,7 +15,7 @@ use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget, WidgetId};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
-use carbide::widget::Identifiable;
+use crate::widget::Identifiable;
 use crate::state::ReadState;
 
 #[derive(Debug, Clone, Widget)]

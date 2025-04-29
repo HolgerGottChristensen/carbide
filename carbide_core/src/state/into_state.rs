@@ -76,7 +76,7 @@ impl ConvertIntoRead<Vec<u32>> for u32 {
 macro_rules! impl_string_state {
     ($($typ: ty),*) => {
         $(
-        impl carbide_core::state::ConvertIntoRead<String> for $typ {
+        impl $crate::state::ConvertIntoRead<String> for $typ {
             type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&$typ)->String, $typ, String, G>;
 
             fn convert<F: AnyReadState<T=$typ> + Clone>(f: F) -> Self::Output<F> {

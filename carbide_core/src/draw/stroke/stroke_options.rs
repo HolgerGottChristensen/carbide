@@ -1,4 +1,4 @@
-use carbide::draw::Scalar;
+use crate::draw::Scalar;
 use crate::draw::stroke::{StrokeAlignment, LineCap, LineJoin};
 
 #[derive(Copy, Clone, Debug, PartialEq)]

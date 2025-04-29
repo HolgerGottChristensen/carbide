@@ -4,12 +4,11 @@
 
 #![deny(unsafe_code)]
 
-extern crate self as carbide_core;
 extern crate self as carbide;
 
 pub use futures::TryFutureExt;
 
-pub use carbide_core::asynchronous::SpawnTask;
+pub use crate::asynchronous::SpawnTask;
 
 pub use draw::color;
 pub use misc::*;
@@ -19,7 +18,7 @@ pub use carbide_derive::closure;
 #[macro_export]
 macro_rules! lens {
     ($i:ident.$fields:tt) => {
-        carbide::state::FieldState::new(
+        $crate::state::FieldState::new(
             $i.clone(),
             |item| { &item.$fields },
             |item| { &mut item.$fields }

@@ -1,16 +1,12 @@
-use carbide::draw::DrawShape;
-use crate::color::Color;
-use crate::color::WHITE;
+use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;
-use crate::draw::{CompositeDrawShape, Rect};
-use crate::draw::Dimension;
-use crate::draw::{DrawOptions, DrawStyle, ImageContext, ImageId, ImageOptions};
+use crate::draw::{CompositeDrawShape, Dimension, DrawOptions, DrawShape, DrawStyle, ImageContext, ImageId, ImageOptions, Rect};
 use crate::math::Matrix4;
 
 use crate::environment::Environment;
 use crate::render::layer::{Layer, LayerId};
 use crate::text::{TextContext, TextId};
-use crate::widget::{AnyShape, ImageFilter};
+use crate::widget::ImageFilter;
 
 /// # Render context
 /// The context is provided using rendering, and provides methods that allows rendering to a scene.

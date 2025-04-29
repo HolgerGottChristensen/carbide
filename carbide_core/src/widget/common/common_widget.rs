@@ -1,5 +1,5 @@
-use carbide::draw::Alignment;
-use carbide::widget::Identifiable;
+use crate::draw::Alignment;
+use crate::widget::Identifiable;
 use crate::misc::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
 use crate::misc::flags::WidgetFlag;
@@ -137,43 +137,43 @@ pub trait CommonWidget: Identifiable {
 #[macro_export]
 macro_rules! CommonWidgetImpl {
     ($self:ident, child: () $(, $($rest:tt)*)?) => {
-        fn foreach_child<'a>(&'a $self, _f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {}
-        fn foreach_child_mut<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
-        fn foreach_child_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
-        fn foreach_child_direct<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
-        fn foreach_child_direct_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {}
+        fn foreach_child<'a>(&'a $self, _f: &mut dyn FnMut(&'a dyn $crate::widget::AnyWidget)) {}
+        fn foreach_child_mut<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {}
+        fn foreach_child_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {}
+        fn foreach_child_direct<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {}
+        fn foreach_child_direct_rev<'a>(&'a mut $self, _f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {}
 
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
 
     ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
         #[allow(unused_imports)]
-        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::AnySequence;
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
             $child.foreach(f);
         }
 
         #[allow(unused_imports)]
-        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::AnySequence;
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
             $child.foreach_mut(f);
         }
 
         #[allow(unused_imports)]
-        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::AnySequence;
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
             $child.foreach_rev(f);
         }
 
         #[allow(unused_imports)]
-        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::AnySequence;
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
             $child.foreach_direct(f);
         }
 
         #[allow(unused_imports)]
-        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn carbide::widget::AnyWidget)) {
-            use carbide::widget::AnySequence;
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
             $child.foreach_direct_rev(f);
         }
 
@@ -181,11 +181,11 @@ macro_rules! CommonWidgetImpl {
     };
 
     ($self:ident, position: $position:expr $(, $($rest:tt)*)?) => {
-        fn position(&$self) -> carbide::draw::Position {
+        fn position(&$self) -> $crate::draw::Position {
             $position
         }
 
-        fn set_position(&mut $self, position: carbide::draw::Position) {
+        fn set_position(&mut $self, position: $crate::draw::Position) {
             $position = position;
         }
 
@@ -193,11 +193,11 @@ macro_rules! CommonWidgetImpl {
     };
 
     ($self:ident, dimension: $dimension:expr $(, $($rest:tt)*)?) => {
-        fn dimension(&$self) -> carbide::draw::Dimension {
+        fn dimension(&$self) -> $crate::draw::Dimension {
             $dimension
         }
 
-        fn set_dimension(&mut $self, dimension: carbide::draw::Dimension) {
+        fn set_dimension(&mut $self, dimension: $crate::draw::Dimension) {
             $dimension = dimension
         }
 
@@ -205,7 +205,7 @@ macro_rules! CommonWidgetImpl {
     };
 
     ($self:ident, flag: $flag:expr $(, $($rest:tt)*)?) => {
-        fn flag(&$self) -> carbide::flags::WidgetFlag {
+        fn flag(&$self) -> $crate::flags::WidgetFlag {
             $flag
         }
 

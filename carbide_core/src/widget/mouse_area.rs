@@ -1,12 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use accesskit::{Node, Point, Rect, Role, Size};
 use smallvec::SmallVec;
-use carbide::accessibility;
-use carbide::accessibility::{AccessibilityContext, AccessibilityNode};
-use carbide::environment::Environment;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, OtherEventContext};
-use carbide::scene::SceneManager;
-use carbide::widget::WidgetSync;
+use crate::accessibility;
+use crate::accessibility::{AccessibilityContext, AccessibilityNode};
+use crate::environment::Environment;
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, OtherEventContext};
+use crate::scene::SceneManager;
+use crate::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::{Accessibility, AccessibilityAction};
 use crate::CommonWidgetImpl;

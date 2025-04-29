@@ -1,4 +1,4 @@
-use carbide_core::widget::{CommonWidget, Empty};
+use crate::widget::{CommonWidget, Empty};
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
