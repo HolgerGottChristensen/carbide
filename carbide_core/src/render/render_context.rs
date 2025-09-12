@@ -93,7 +93,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     }
 
     pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
-        let layer = self.render.layer(layer_id, bounding_box.dimension);
+        let layer = self.render.layer(layer_id, bounding_box.dimension, self.env);
         let res = f(layer, self.env);
         self.render.render_layer(layer_id, bounding_box);
 
@@ -197,6 +197,6 @@ pub trait InnerRenderContext {
     fn mask_in(&mut self);
     fn mask_end(&mut self);
 
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer;
+    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension, env: &mut Environment) -> Layer;
     fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect);
 }

@@ -11,10 +11,11 @@ use carbide_core::widget::WidgetExt;
 use carbide_wgpu::{Application, Window};
 use std::collections::HashMap;
 use tobj::GPU_LOAD_OPTIONS;
+use carbide_3d::render::ContextFactory3d;
 use carbide_core::math::{InnerSpace, Matrix4, Point3, Vector3};
+use carbide_wgpu_3d::WGPURenderContext3d;
 
 fn main() {
-    carbide_wgpu_3d::init();
 
     let (models, materials) =
         tobj::load_obj(
@@ -30,6 +31,10 @@ fn main() {
     println!("Number of materials       = {}", materials.len());
 
     let mut application = Application::new();
+
+    application.add_environment_owned::<ContextFactory3d>(ContextFactory3d {
+        render_context: |env| { Box::new(WGPURenderContext3d::new(env))},
+    });
 
     let material = PbrMaterial::new().color(ORANGE);
     let material2 = PbrMaterial::new().color(DARK_CHARCOAL);

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use carbide_core::draw::ImageId;
 use carbide_core::draw::{ImageContext, Texture, TextureFormat};
 use printpdf::Image as PdfImage;
+use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, RgbaImage};
 
 thread_local! {
@@ -12,13 +13,13 @@ thread_local! {
 pub struct PDFImageContext;
 
 impl ImageContext for PDFImageContext {
-    fn texture_exist(&self, id: &ImageId) -> bool {
+    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
         IMAGES.with(|images| {
             images.borrow().contains_key(id)
         })
     }
 
-    fn texture_dimensions(&self, id: &ImageId) -> Option<(u32, u32)> {
+    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
         IMAGES.with(|images| {
             let borrow = images.borrow();
             let (_, width, height) = borrow.get(id)?;
@@ -27,7 +28,7 @@ impl ImageContext for PDFImageContext {
         })
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture) -> bool {
+    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
         IMAGES.with(|images| {
             let width = texture.width;
             let height = texture.height;

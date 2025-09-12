@@ -86,7 +86,7 @@ impl Render for Mandelbrot {
                         bytes_per_row: image.width() * 4,
                         format: TextureFormat::RGBA8,
                         data: image.as_bytes(),
-                    });
+                    }, context.env);
                     true
                 }
                 Err(TryRecvError::Empty) => {
@@ -161,7 +161,7 @@ impl Render for Mandelbrot {
             for x in start_tile_x..end_tile_x {
                 for y in start_tile_y..end_tile_y {
                     self.images.get(&(x, y, 0)).map(|(id, info)| {
-                        if this.image.texture_exist(id) {
+                        if this.image.texture_exist(id, this.env) {
                             this.image(
                                 id.clone(),
                                 Rect::new(

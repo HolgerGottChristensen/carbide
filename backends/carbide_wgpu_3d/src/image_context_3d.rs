@@ -1,8 +1,9 @@
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
+use wgpu::{Device, Queue};
 use carbide_3d::InnerImageContext3d;
 use carbide_core::draw::{ImageId, Texture, TextureFormat};
-use carbide_wgpu::{DEVICE, QUEUE};
+use carbide_core::environment::Environment;
 
 pub(crate) fn image_context_3d_initializer() -> Box<dyn InnerImageContext3d> {
     Box::new(ImageContext3d)
@@ -11,7 +12,7 @@ pub(crate) fn image_context_3d_initializer() -> Box<dyn InnerImageContext3d> {
 #[derive(Debug, Clone)]
 pub struct ImageContext3d;
 
-pub(crate) static TEXTURES: Lazy<DashMap<ImageId, wgpu::Texture>> = Lazy::new(|| {
+/*pub(crate) static TEXTURES: Lazy<DashMap<ImageId, wgpu::Texture>> = Lazy::new(|| {
     let mut map = DashMap::new();
 
     let texture = Texture {
@@ -24,25 +25,27 @@ pub(crate) static TEXTURES: Lazy<DashMap<ImageId, wgpu::Texture>> = Lazy::new(||
 
     map.insert(ImageId::default(), create_wgpu_texture(texture));
     map
-});
+});*/
 
 impl InnerImageContext3d for ImageContext3d {
-    fn texture_exist(&self, id: &ImageId) -> bool {
-        TEXTURES.contains_key(id)
+    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
+        //TEXTURES.contains_key(id)
+        todo!()
     }
 
-    fn texture_dimensions(&self, id: &ImageId) -> Option<(u32, u32)> {
-        TEXTURES.get(id).map(|a| (a.width(), a.height()))
+    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
+        //TEXTURES.get(id).map(|a| (a.width(), a.height()))
+        todo!()
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture) -> bool {
-        let texture = create_wgpu_texture(texture);
-        TEXTURES.insert(id, texture);
+    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
+        /*let texture = create_wgpu_texture(texture);
+        TEXTURES.insert(id, texture);*/
         true
     }
 }
 
-fn create_wgpu_texture(texture: Texture) -> wgpu::Texture {
+fn create_wgpu_texture(texture: Texture, device: &Device, queue: &Queue) -> wgpu::Texture {
     let width = texture.width;
     let height = texture.height;
 
@@ -57,7 +60,7 @@ fn create_wgpu_texture(texture: Texture) -> wgpu::Texture {
         TextureFormat::BGRA8 => wgpu::TextureFormat::Bgra8Unorm,
     };
 
-    let wgpu_texture = DEVICE.create_texture(&wgpu::TextureDescriptor {
+    let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: None,
         size,
         mip_level_count: 1,
@@ -75,7 +78,7 @@ fn create_wgpu_texture(texture: Texture) -> wgpu::Texture {
 
     println!("{:?}", texture.data.chunks(4).next());
 
-    QUEUE.write_texture(
+    queue.write_texture(
         wgpu::ImageCopyTexture {
             texture: &wgpu_texture,
             mip_level: 0,

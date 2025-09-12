@@ -6,7 +6,7 @@ use crate::MODE_IMAGE;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
+pub struct WgpuVertex {
     pub position: [f32; 3],
     pub tex_coords: [f32; 2],
     pub rgba: [f32; 4],
@@ -15,9 +15,9 @@ pub struct Vertex {
     pub attributes1: [f32; 4],
 }
 
-impl Vertex {
-    pub fn new_from_2d(x: f32, y: f32, color: [f32; 4], tex_coords: [f32; 2], mode: u32) -> Vertex {
-        Vertex {
+impl WgpuVertex {
+    pub fn new_from_2d(x: f32, y: f32, color: [f32; 4], tex_coords: [f32; 2], mode: u32) -> WgpuVertex {
+        WgpuVertex {
             position: [x, y, 0.0],
             tex_coords,
             rgba: color,
@@ -29,7 +29,7 @@ impl Vertex {
 
     pub fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
         wgpu::VertexBufferLayout {
-            array_stride: size_of::<Vertex>() as wgpu::BufferAddress,
+            array_stride: size_of::<WgpuVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {

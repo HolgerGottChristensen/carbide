@@ -87,6 +87,14 @@ impl Application {
         }
     }
 
+    pub fn add_environment<K: EnvironmentKey + ?Sized>(&mut self, value: &'static K::Value) {
+        self.environment.insert::<K>(value)
+    }
+
+    pub fn add_environment_owned<K: EnvironmentKey + ?Sized>(&mut self, value: K::Value) {
+        self.environment.insert::<K>(Box::leak(Box::new(value)))
+    }
+
     pub fn assets() -> PathBuf {
         locate_folder::Search::KidsThenParents(3, 5)
             .for_folder("assets")

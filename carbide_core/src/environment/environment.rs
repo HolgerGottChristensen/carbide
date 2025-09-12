@@ -119,6 +119,11 @@ impl<'a> Environment<'a> {
     /// inserted into the mutable part of the environment can be retrieved by this method.
     ///
     /// If the value does not exist in the mutable part of the environment, `None` will be returned.
+    ///
+    /// WARNING: It is unsafe to mem swap the reference returned by this function. This is because the
+    /// value you are extracting and swapping with have a lifetime that has been artificially shortened
+    /// due to the scoping rules of the environment. If you swap with some value, that actually has
+    /// a short lifetime, it will be invalid when the environment is used in the outer scopes.
     pub fn get_mut<K: EnvironmentKey + ?Sized>(&mut self) -> Option<&mut K::Value> {
         let id = TypeId::of::<K>();
 
@@ -182,6 +187,36 @@ impl<'a> Environment<'a> {
             transmuted.data_mut.insert(id, old);
         } else {
             transmuted.data_mut.remove(&id);
+        }
+    }
+}
+
+impl Environment<'static> {
+    // This is only safe because its static, and no other lifetime lives longer than static.
+    // If it was not static, and we insert in an env with 'b,
+    // and it is not removed before going back to 'a, it will be an invalid reference.
+    pub fn insert<K: EnvironmentKey + ?Sized>(&mut self, v: &'static K::Value) {
+        let id = TypeId::of::<K>();
+
+        self.data.insert(id, v);
+    }
+}
+
+impl<'a> Environment<'a> {
+
+    pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(&K::Value, &mut Environment)) {
+        let id = TypeId::of::<K>();
+
+        let value = self.data.remove(&id);
+
+        if let Some(inner) = value {
+            if let Some(inner_inner) = inner.downcast_ref() {
+                f(inner_inner, self);
+            }
+        }
+
+        if let Some(val) = value {
+            self.data.insert(id, val);
         }
     }
 }

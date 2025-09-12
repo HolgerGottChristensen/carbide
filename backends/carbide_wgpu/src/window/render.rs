@@ -1,18 +1,18 @@
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
-use crate::filter::Filter;
-use crate::gradient::{WgpuDashes, WgpuGradient};
+use crate::wgpu_filter::WgpuFilter;
+use crate::wgpu_gradient::{WgpuGradient};
 use crate::image_context::BindGroupExtended;
 use crate::pipeline::RenderPipelines;
 use crate::render_context::Uniform;
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::texture_atlas_command::TextureAtlasCommand;
 use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
-use crate::vertex::Vertex;
+use crate::wgpu_vertex::WgpuVertex;
 use crate::window::initialize::ZOOM;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
 use crate::window::Window;
-use crate::{render_pass_ops, RenderPassOps, RenderTarget};
+use crate::{render_pass_ops, RenderPassOps, WgpuRenderTarget};
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
@@ -31,8 +31,9 @@ use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, LoadOp, Operations, Queue, RenderPassDepthStencilAttachment, RenderPipeline, StoreOp, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
 use carbide_core::environment::Environment;
 use carbide_core::math::Matrix4;
-use crate::render_target::RENDER_TARGET_FORMAT;
+use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
 use crate::wgpu_context::WgpuContext;
+use crate::wgpu_dashes::WgpuDashes;
 
 impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
@@ -115,7 +116,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         let target_count = self.render_context.target_count();
         if self.targets.len() < target_count {
             for _ in self.targets.len()..target_count {
-                self.targets.push(RenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height, ctx.env));
+                self.targets.push(WgpuRenderTarget::new(self.inner.inner_size().width, self.inner.inner_size().height, ctx.env));
             }
         }
 
@@ -179,7 +180,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         for (filter_id, filter) in filters {
             if !wgpu_context.filter_bind_groups.contains_key(filter_id) {
-                let mut filter: Filter = filter.clone().into();
+                let mut filter: WgpuFilter = filter.clone().into();
                 filter.texture_size = [size.width as f32, size.height as f32];
 
                 let filter_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
@@ -200,7 +201,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         }
     }
 
-    fn ensure_vertices_in_buffer(device: &Device, queue: &Queue, vertices: &Vec<Vertex>, vertex_buffer: &mut Buffer, buffer_size: &mut usize) {
+    fn ensure_vertices_in_buffer(device: &Device, queue: &Queue, vertices: &Vec<WgpuVertex>, vertex_buffer: &mut Buffer, buffer_size: &mut usize) {
         if vertices.len() <= *buffer_size {
             // There is space in the current vertex buffer
             queue.write_buffer(vertex_buffer, 0, bytemuck::cast_slice(vertices));
@@ -637,7 +638,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             vertex: wgpu::VertexState {
                 module: &wgpu_context.main_shader,
                 entry_point: Some("main_vs"),
-                buffers: &[Vertex::desc()],
+                buffers: &[WgpuVertex::desc()],
                 compilation_options: Default::default(),
             },
             fragment: Some(wgpu::FragmentState {
@@ -693,7 +694,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         let size = new_size;
 
         self.targets = vec![
-            RenderTarget::new(new_size.width, new_size.height, env)
+            WgpuRenderTarget::new(new_size.width, new_size.height, env)
         ];
 
         let wgpu_context = env.get_mut::<WgpuContext>().unwrap();

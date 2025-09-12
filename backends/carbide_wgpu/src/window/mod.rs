@@ -7,7 +7,7 @@ mod render;
 mod initialized_window;
 mod accessibility;
 
-use crate::msaa::Msaa;
+use crate::wgpu_msaa::WgpuMsaa;
 use crate::window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
@@ -23,7 +23,7 @@ pub enum Window<T: ReadState<T=String>, C: Widget> {
         position: Position,
         dimension: Dimension,
         child: C,
-        msaa: Msaa,
+        msaa: WgpuMsaa,
     },
     Initialized(InitializedWindow<T, C>),
     Failed
@@ -53,7 +53,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
-            msaa: Msaa::X1
+            msaa: WgpuMsaa::X1
         }
     }
 }

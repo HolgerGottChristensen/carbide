@@ -1,15 +1,15 @@
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Msaa {
+pub enum WgpuMsaa {
     X1,
     X4,
 }
 
-impl Msaa {
+impl WgpuMsaa {
     pub fn to_samples(&self) -> u32 {
         match self {
-            Msaa::X1 => 1,
-            Msaa::X4 => 4,
+            WgpuMsaa::X1 => 1,
+            WgpuMsaa::X4 => 4,
         }
     }
 }

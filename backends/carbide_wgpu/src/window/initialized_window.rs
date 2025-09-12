@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use crate::application::Scenes;
-use crate::msaa::Msaa;
+use crate::wgpu_msaa::WgpuMsaa;
 use crate::render_context::WGPURenderContext;
-use crate::RenderTarget;
+use crate::WgpuRenderTarget;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;
@@ -28,11 +28,11 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) surface_configuration: SurfaceConfiguration,
     pub(crate) surface_render_pipeline: RenderPipeline,
 
-    pub(crate) msaa: Msaa,
+    pub(crate) msaa: WgpuMsaa,
     pub(crate) msaa_texture_view: Option<TextureView>,
     pub(crate) depth_texture_view: TextureView,
     pub(crate) texture_size_bind_group: BindGroup,
-    pub(crate) targets: Vec<RenderTarget>,
+    pub(crate) targets: Vec<WgpuRenderTarget>,
     pub(crate) uniform_bind_group: BindGroup,
     pub(crate) gradient_buffer: Buffer,
     pub(crate) dashes_buffer: Buffer,

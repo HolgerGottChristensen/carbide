@@ -1,7 +1,7 @@
 use wgpu::{BindGroupLayout, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, MultisampleState, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, TextureFormat, VertexState};
 
-use crate::msaa::Msaa;
-use crate::vertex::Vertex;
+use crate::wgpu_msaa::WgpuMsaa;
+use crate::wgpu_vertex::WgpuVertex;
 use crate::wgpu_context::WgpuContext;
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ pub(crate) enum MaskType {
     RemoveMask,
 }
 
-pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: Msaa) -> RenderPipelines {
+pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: WgpuMsaa) -> RenderPipelines {
     let render_pipeline_no_mask = create_render_pipeline(
         &wgpu_context.device,
         &wgpu_context.main_pipeline_layout,
@@ -122,7 +122,7 @@ pub(crate) fn create_render_pipeline(
     shader: &ShaderModule,
     preferred_format: TextureFormat,
     mask_type: MaskType,
-    msaa: Msaa
+    msaa: WgpuMsaa
 ) -> RenderPipeline {
     let (stencil_desc, col) = mask_render_state(mask_type);
 
@@ -133,7 +133,7 @@ pub(crate) fn create_render_pipeline(
             module: &shader,
             entry_point: Some("main_vs"),
             compilation_options: Default::default(),
-            buffers: &[Vertex::desc()],
+            buffers: &[WgpuVertex::desc()],
         },
         primitive: PrimitiveState {
             topology: PrimitiveTopology::TriangleList,

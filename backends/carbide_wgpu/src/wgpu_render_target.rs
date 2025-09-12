@@ -6,14 +6,14 @@ use crate::wgpu_context::WgpuContext;
 
 pub const RENDER_TARGET_FORMAT: TextureFormat = TextureFormat::Bgra8UnormSrgb;
 
-pub struct RenderTarget {
+pub struct WgpuRenderTarget {
     pub(crate) texture: Texture,
     pub(crate) view: TextureView,
     pub(crate) bind_group: BindGroup,
 }
 
-impl RenderTarget {
-    pub(crate) fn new(width: u32, height: u32, env: &mut Environment) -> RenderTarget {
+impl WgpuRenderTarget {
+    pub(crate) fn new(width: u32, height: u32, env: &mut Environment) -> WgpuRenderTarget {
         let descriptor = TextureDescriptor {
             label: Some("carbide_render_target_texture"),
             size: Extent3d {
@@ -53,7 +53,7 @@ impl RenderTarget {
             label: Some("carbide_render_target_bind_group"),
         });
 
-        RenderTarget {
+        WgpuRenderTarget {
             texture,
             view,
             bind_group,
@@ -69,13 +69,13 @@ impl RenderTarget {
     }
 }
 
-impl InnerLayer for RenderTarget {
+impl InnerLayer for WgpuRenderTarget {
     fn dimensions(&self) -> (u32, u32) {
         (self.texture.width(), self.texture.height())
     }
 }
 
-impl Debug for RenderTarget {
+impl Debug for WgpuRenderTarget {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RenderTarget")
             .finish()

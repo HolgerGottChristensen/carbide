@@ -1,4 +1,5 @@
 use cgmath::Matrix4;
+use carbide::environment::Environment;
 use crate::draw::DrawShape;
 use crate::draw::stroke::StrokeDashPattern;
 use crate::draw::{Color, Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageOptions, Rect};
@@ -51,7 +52,7 @@ impl InnerRenderContext for NoopRenderContext {
     fn mask_in(&mut self) {}
     fn mask_end(&mut self) {}
 
-    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension) -> Layer {
+    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension, _env: &mut Environment) -> Layer {
         static LAYER: NoopLayer = NoopLayer;
         Layer {
             inner: &LAYER,

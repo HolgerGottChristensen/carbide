@@ -4,30 +4,6 @@ use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq)]
-pub struct WgpuDashes {
-    pub dashes: [f32; 32],
-    pub dash_count: u32,
-    pub start_cap: u32,
-    pub end_cap: u32,
-    pub total_dash_width: f32,
-    pub dash_offset: f32,
-}
-
-impl WgpuDashes {
-    pub(crate) fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![];
-        bytes.extend_from_slice(bytemuck::cast_slice(&self.dashes));
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.dash_count));
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.start_cap));
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.end_cap));
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.total_dash_width));
-        bytes.extend_from_slice(bytemuck::bytes_of(&self.dash_offset));
-        bytes
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
 pub struct WgpuGradient {
     pub colors: [[f32; 4]; 16],
     pub ratios: [f32; 16],
@@ -148,18 +124,3 @@ impl WgpuGradient {
         }
     }
 }
-
-// impl From<carbide_core::widget::ImageFilter> for Gradient {
-//     fn from(filter: carbide_core::widget::ImageFilter) -> Self {
-//         let filter_len = filter.filter.len();
-//         let converted_filters = filter.filter.iter().map(|f| {
-//             [0.0, f.offset_x as f32, f.offset_y as f32, f.weight]
-//         }).collect::<Vec<_>>();
-//
-//         Gradient {
-//             texture_size: [100.0, 100.0],
-//             number_of_filter_entries: filter_len as u32,
-//             filter_entries: converted_filters,
-//         }
-//     }
-// }

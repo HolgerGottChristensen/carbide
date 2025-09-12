@@ -2,15 +2,15 @@ use std::sync::Arc;
 use log::info;
 use crate::application::{ActiveEventLoopKey, EVENT_LOOP_PROXY};
 use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
-use crate::gradient::{WgpuDashes, WgpuGradient};
+use crate::wgpu_gradient::WgpuGradient;
 use crate::pipeline::{create_final_render_pipeline, create_pipelines};
 use crate::render_context::WGPURenderContext;
 use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
-use crate::vertex::Vertex;
+use crate::wgpu_vertex::WgpuVertex;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
 use crate::window::Window;
-use crate::{RenderTarget};
+use crate::{WgpuRenderTarget};
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{ColorSpace, Dimension, DrawGradient};
 use carbide_core::lifecycle::{InitializationContext, Initialize};
@@ -22,8 +22,9 @@ use carbide_winit::window::{Theme, WindowAttributes};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BufferUsages, SurfaceConfiguration, TextureFormat, TextureUsages};
 use carbide_core::draw::gradient::{GradientRepeat, GradientType};
-use crate::render_target::RENDER_TARGET_FORMAT;
+use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
 use crate::wgpu_context::WgpuContext;
+use crate::wgpu_dashes::WgpuDashes;
 
 pub const ZOOM: f32 = 1.0;
 
@@ -225,7 +226,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     depth_texture_view,
                     texture_size_bind_group,
                     targets: vec![
-                        RenderTarget::new(size.width, size.height, ctx.env)
+                        WgpuRenderTarget::new(size.width, size.height, ctx.env)
                     ],
                     uniform_bind_group,
                     gradient_buffer,

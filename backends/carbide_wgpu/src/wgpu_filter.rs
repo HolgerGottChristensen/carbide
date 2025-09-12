@@ -1,12 +1,12 @@
 #[repr(C)]
 #[derive(Clone, Debug)]
-pub struct Filter {
+pub struct WgpuFilter {
     pub texture_size: [f32; 2],
     pub number_of_filter_entries: u32,
     pub filter_entries: Vec<[f32; 4]>,
 }
 
-impl Filter {
+impl WgpuFilter {
     pub(crate) fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
         bytes.extend_from_slice(bytemuck::bytes_of(&self.texture_size));
@@ -16,7 +16,7 @@ impl Filter {
     }
 }
 
-impl From<carbide_core::widget::ImageFilter> for Filter {
+impl From<carbide_core::widget::ImageFilter> for WgpuFilter {
     fn from(filter: carbide_core::widget::ImageFilter) -> Self {
         let filter_len = filter.filter.len();
         let converted_filters = filter
@@ -25,7 +25,7 @@ impl From<carbide_core::widget::ImageFilter> for Filter {
             .map(|f| [0.0, f.offset_x as f32, f.offset_y as f32, f.weight])
             .collect::<Vec<_>>();
 
-        Filter {
+        WgpuFilter {
             texture_size: [100.0, 100.0],
             number_of_filter_entries: filter_len as u32,
             filter_entries: converted_filters,

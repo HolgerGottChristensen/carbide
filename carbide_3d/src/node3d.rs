@@ -1,10 +1,9 @@
-use crate::render3d::Render3d;
-use crate::RenderContext3d;
 use dyn_clone::DynClone;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU32, Ordering};
 use carbide::math::Matrix4;
+use crate::render::{Render3d, RenderContext3d};
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NodeId(u32);

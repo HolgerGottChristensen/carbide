@@ -3,16 +3,17 @@ use std::ops::Range;
 
 use wgpu::BindGroup;
 
-use crate::gradient::{WgpuDashes, WgpuGradient};
+use crate::wgpu_gradient::{WgpuGradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-use crate::render_target::RenderTarget;
-use crate::vertex::Vertex;
+use crate::wgpu_render_target::WgpuRenderTarget;
+use crate::wgpu_vertex::WgpuVertex;
 use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
 use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape};
+use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
@@ -21,6 +22,7 @@ use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
 use carbide_lyon::Tesselator;
+use crate::wgpu_dashes::WgpuDashes;
 
 #[derive(Debug)]
 pub struct WGPURenderContext {
@@ -38,7 +40,7 @@ pub struct WGPURenderContext {
     uniforms: Vec<Uniform>,
     gradients: Vec<WgpuGradient>,
     filters: HashMap<FilterId, ImageFilter>,
-    vertices: Vec<Vertex>,
+    vertices: Vec<WgpuVertex>,
 
     render_pass: Vec<RenderPass>,
     render_pass_inner: Vec<RenderPassCommand>,
@@ -55,7 +57,7 @@ pub struct WGPURenderContext {
     masked: bool,
     current_target: usize,
 
-    layers: HashMap<LayerId, RenderTarget>,
+    layers: HashMap<LayerId, WgpuRenderTarget>,
 
     tesselator: Tesselator,
 }
@@ -208,7 +210,7 @@ impl WGPURenderContext {
         self.current_target = 0;
     }
 
-    pub fn vertices(&self) -> &Vec<Vertex> {
+    pub fn vertices(&self) -> &Vec<WgpuVertex> {
         &self.vertices
     }
 
@@ -309,7 +311,7 @@ impl WGPURenderContext {
 
         let mode = if self.masked { mode | 0b100000 } else { mode };
 
-        let create_vertex = |x, y, tx, ty| Vertex {
+        let create_vertex = |x, y, tx, ty| WgpuVertex {
             position: [x as f32, y as f32, 0.0],
             tex_coords: [tx as f32, ty as f32],
             rgba: color,
@@ -371,7 +373,7 @@ impl WGPURenderContext {
                 self.vertices.extend(
                     triangles
                         .flat_map(|triangle| triangle.0)
-                        .map(|position| Vertex::new_from_2d(
+                        .map(|position| WgpuVertex::new_from_2d(
                             position.x as f32,
                             position.y as f32,
                             [1.0, 1.0, 1.0, 1.0],
@@ -385,7 +387,7 @@ impl WGPURenderContext {
                 self.vertices.extend(
                     triangles
                         .flat_map(|triangle| triangle.0)
-                        .map(|position| Vertex::new_from_2d(
+                        .map(|position| WgpuVertex::new_from_2d(
                             position.position.x as f32,
                             position.position.y as f32,
                             [1.0, 1.0, 1.0, 1.0],
@@ -425,21 +427,21 @@ impl WGPURenderContext {
             geometry
                 .flat_map(|triangle| {
                     [
-                        Vertex::new_from_2d(
+                        WgpuVertex::new_from_2d(
                             triangle.0[0].x as f32,
                             triangle.0[0].y as f32,
                             color,
                             [0.0, 0.0],
                             mode
                         ),
-                        Vertex::new_from_2d(
+                        WgpuVertex::new_from_2d(
                             triangle.0[1].x as f32,
                             triangle.0[1].y as f32,
                             color,
                             [0.0, 0.0],
                             mode
                         ),
-                        Vertex::new_from_2d(
+                        WgpuVertex::new_from_2d(
                             triangle.0[2].x as f32,
                             triangle.0[2].y as f32,
                             color,
@@ -520,7 +522,7 @@ impl WGPURenderContext {
             stroke
                 .flat_map(|triangle| triangle.0)
                 .map(|v| {
-                    Vertex {
+                    WgpuVertex {
                         position: [
                             v.position.x as f32,
                             v.position.y as f32,
@@ -644,7 +646,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.filters.entry(filter.id).or_insert_with(|| filter.clone());
         self.current_frame_filters.insert(filter.id);
 
-        let create_vertex = |x, y| Vertex {
+        let create_vertex = |x, y| WgpuVertex {
             position: [x as f32, y as f32, 0.0],
             tex_coords: [
                 (x / self.window_bounding_box.dimension.width) as f32,
@@ -694,7 +696,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.filters.entry(filter2.id).or_insert_with(|| filter2.clone());
         self.current_frame_filters.insert(filter2.id);
 
-        let create_vertex = |x, y| Vertex {
+        let create_vertex = |x, y| WgpuVertex {
             position: [x as f32, y as f32, 0.0],
             tex_coords: [
                 (x / self.window_bounding_box.dimension.width) as f32,
@@ -893,7 +895,7 @@ impl InnerRenderContext for WGPURenderContext {
     fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool) {
         let (target, old_target) = self.filter_target_stack.pop().unwrap();
 
-        let create_vertex = |x, y, tx, ty| Vertex {
+        let create_vertex = |x, y, tx, ty| WgpuVertex {
             position: [x as f32, y as f32, 0.0],
             tex_coords: [tx as f32, ty as f32],
             rgba: color
@@ -957,7 +959,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.filters.entry(filter2.id).or_insert_with(|| filter2.clone());
         self.current_frame_filters.insert(filter2.id);
 
-        let create_vertex = |x, y, tx, ty| Vertex {
+        let create_vertex = |x, y, tx, ty| WgpuVertex {
             position: [x as f32, y as f32, 0.0],
             tex_coords: [tx as f32, ty as f32],
             rgba: color
@@ -1045,7 +1047,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(mask);
     }
 
-    fn layer(&mut self, layer_id: LayerId, requested_size: Dimension) -> Layer {
+    fn layer(&mut self, layer_id: LayerId, requested_size: Dimension, env: &mut Environment) -> Layer {
         let width = requested_size.width.floor().max(1.0) as u32;
         let height = requested_size.height.floor().max(1.0) as u32;
 
@@ -1053,8 +1055,7 @@ impl InnerRenderContext for WGPURenderContext {
             let target = self.layers.get_mut(&layer_id).unwrap();
 
             if target.texture.width() != width || target.texture.height() != height {
-                //*target = RenderTarget::new(width, height, );
-                todo!()
+                *target = WgpuRenderTarget::new(width, height, env);
             }
 
             Layer {
@@ -1062,7 +1063,7 @@ impl InnerRenderContext for WGPURenderContext {
                 inner2: target,
             }
         } else {
-            /*let new_layer = RenderTarget::new(width, height);
+            let new_layer = WgpuRenderTarget::new(width, height, env);
 
             self.layers.insert(layer_id, new_layer);
 
@@ -1071,8 +1072,7 @@ impl InnerRenderContext for WGPURenderContext {
             Layer {
                 inner,
                 inner2: inner
-            }*/
-            todo!()
+            }
         }
     }
 

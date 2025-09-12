@@ -1,8 +1,15 @@
 use crate::camera::camera_projection::CameraProjection;
 use std::fmt::Debug;
+use carbide_core::time::Instant;
+use dyn_clone::{clone_trait_object, DynClone};
+use carbide::environment::Environment;
+use carbide::event::EventHandler;
+use carbide::lifecycle::Update;
 use carbide::math::{Deg, Matrix4, Rad, Vector4};
+use carbide::render::Layer;
+use crate::camera::CameraSpec;
 
-pub trait Camera: Debug {
+pub trait Camera: Debug + Clone + EventHandler + Update + 'static {
     fn view(&self) -> Matrix4<f32>;
     fn projection(&self) -> CameraProjection;
     fn view_projection(&self, aspect_ratio: f32) -> Matrix4<f32> {
@@ -19,6 +26,16 @@ pub trait Camera: Debug {
                 perspective_infinite_reverse_lh(Deg(vfov), aspect_ratio, near)
             }
             CameraProjection::Raw(proj) => proj,
+        }
+    }
+
+    fn to_spec(&self, layer: &Layer) -> CameraSpec {
+
+        let aspect_ratio = layer.dimensions().0 as f32 / layer.dimensions().1 as f32;
+
+        CameraSpec {
+            view: self.view(),
+            view_projection: self.view_projection(aspect_ratio),
         }
     }
 }
@@ -38,6 +55,31 @@ pub fn perspective_infinite_reverse_lh<T: Into<Rad<f32>>>(
         Vector4::new(0.0, h, 0.0, 0.0),
         Vector4::new(0.0, 0.0, 0.0, 1.0),
         Vector4::new(0.0, 0.0, z_near, 0.0),
+    )
+}
+
+pub fn perspective_infinite_lh<T: Into<Rad<f32>>>(fov_y: T, aspect_ratio: f32, z_near: f32) -> Matrix4<f32> {
+    let fov_y_radians = fov_y.into().0;
+
+    let (sin_fov, cos_fov) = f32::sin_cos(0.5 * fov_y_radians);
+    let h = cos_fov / sin_fov;
+    let w = h / aspect_ratio;
+    Matrix4::from_cols(
+        Vector4::new(w, 0.0, 0.0, 0.0),
+        Vector4::new(0.0, h, 0.0, 0.0),
+        Vector4::new(0.0, 0.0, 1.0, 1.0),
+        Vector4::new(0.0, 0.0, -z_near, 0.0),
+    )
+}
+
+pub fn perspective_infinite_rh<T: Into<Rad<f32>>>(fov_y: T, aspect_ratio: f32, z_near: f32) -> Matrix4<f32> {
+    let fov_y_radians = fov_y.into().0;
+    let f = 1.0 / f32::tan(0.5 * fov_y_radians);
+    Matrix4::from_cols(
+        Vector4::new(f / aspect_ratio, 0.0, 0.0, 0.0),
+        Vector4::new(0.0, f, 0.0, 0.0),
+        Vector4::new(0.0, 0.0, -1.0, -1.0),
+        Vector4::new(0.0, 0.0, -z_near, 0.0),
     )
 }
 

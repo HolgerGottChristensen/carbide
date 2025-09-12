@@ -27,6 +27,7 @@ members = [
     "carbide_3d",
     "carbide_chart",
     "carbide_dialogs",
+    "backends/carbide_tesellation_cache",
 ]
 
 [workspace.package]
@@ -37,7 +38,7 @@ repository = "https://github.com/HolgerGottChristensen/carbide.git"
 [workspace.dependencies]
 dyn-clone = "1.0.5"
 chrono = "0.4"
-cgmath = "0.18"
+cgmath = { version = "0.18", features = ["mint"] }
 raw-window-handle = "0.5"
 lyon = { path = "../Repositories/lyon/crates/lyon" }
 dashmap = "5.5.3"

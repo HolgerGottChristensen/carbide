@@ -44,10 +44,10 @@ var primary_sampler: sampler;
 @group(1) @binding(3)
 var<storage> uniforms: Uniforms;
 
-@group(2) @binding(0)
+/*@group(2) @binding(0)
 var albedo_tex: texture_2d<f32>;
 @group(2) @binding(1)
-var normal_tex: texture_2d<f32>;
+var normal_tex: texture_2d<f32>;*/
 
 @vertex
 fn main_vs(
@@ -71,6 +71,7 @@ fn main_vs(
 
     var out: VertexOutput;
     out.position = model_view_proj * vec4<f32>(position, 1.0);
+    out.view_position = model_view * vec4<f32>(position, 1.0);
     out.normal = normalize(mv_mat3 * (inv_scale_sq * -normal));
     out.tangent = normalize(mv_mat3 * (inv_scale_sq * tangent));
     //out.normal = normalize((inv_scale_sq * normal));
@@ -84,7 +85,7 @@ fn main_vs(
     out.color_0 = color_0;
     out.color_1 = color_1;
     out.material = object.material_index;
-    out.view_position = model_view * vec4<f32>(position, 1.0);
+
     return out;
 }
 

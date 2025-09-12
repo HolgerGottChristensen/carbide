@@ -174,7 +174,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn mask_end(&mut self) {}
 
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension) -> Layer {
+    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension, env: &mut Environment) -> Layer {
         todo!()
     }
 

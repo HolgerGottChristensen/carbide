@@ -1,7 +1,7 @@
-use crate::msaa::Msaa;
+use crate::wgpu_msaa::WgpuMsaa;
 use wgpu::{BindGroup, BindGroupLayout, Device, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 
-pub(crate) fn create_depth_stencil_texture_view(device: &Device, width: u32, height: u32, msaa: Msaa) -> TextureView {
+pub(crate) fn create_depth_stencil_texture_view(device: &Device, width: u32, height: u32, msaa: WgpuMsaa) -> TextureView {
     device.create_texture(&TextureDescriptor {
         label: Some("carbide_depth_stencil_texture"),
         size: Extent3d {
@@ -18,10 +18,10 @@ pub(crate) fn create_depth_stencil_texture_view(device: &Device, width: u32, hei
     }).create_view(&Default::default())
 }
 
-pub(crate) fn create_msaa_texture_view(device: &Device, width: u32, height: u32, msaa: Msaa) -> Option<TextureView> {
+pub(crate) fn create_msaa_texture_view(device: &Device, width: u32, height: u32, msaa: WgpuMsaa) -> Option<TextureView> {
     match msaa {
-        Msaa::X1 => None,
-        Msaa::X4 => Some(
+        WgpuMsaa::X1 => None,
+        WgpuMsaa::X4 => Some(
             device.create_texture(&TextureDescriptor {
                 label: Some("carbide_msaa_texture"),
                 size: Extent3d {

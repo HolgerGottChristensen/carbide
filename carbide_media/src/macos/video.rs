@@ -127,7 +127,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
 
 
         let information = self.video_id.as_ref().and_then(|id| {
-            let (width, height) = ctx.image.texture_dimensions(id)?;
+            let (width, height) = ctx.image.texture_dimensions(id, ctx.env)?;
 
             let mut scale_factor = 1.0;
 
@@ -310,7 +310,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                         bytes_per_row: bytes_per_row as u32,
                         format: TextureFormat::BGRA8,
                         data: from_raw_parts(address, width * height * 4),
-                    });
+                    }, ctx.env);
 
                     let lockCode = CVPixelBufferUnlockBaseAddress(buffer, 0);
                 }
@@ -470,7 +470,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
 impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
     fn render(&mut self, context: &mut RenderContext) {
         if let Some(id) = &self.video_id {
-            if context.image.texture_exist(id) {
+            if context.image.texture_exist(id, context.env) {
                 context.image(
                     id.clone(),
                     Rect::new(self.position, self.dimension),

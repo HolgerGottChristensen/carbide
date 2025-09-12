@@ -1,12 +1,9 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use include_dir::{Dir, include_dir};
-use once_cell::sync::Lazy;
 use wgpu::{ShaderModule, ShaderModuleDescriptor, ShaderSource};
-use carbide_3d::{register_image_context3d_initializer, register_render_context3d_initializer};
-use carbide_wgpu::DEVICE;
-use crate::image_context_3d::image_context_3d_initializer;
-use crate::render_context_3d::render_context_3d_initializer;
+pub use render_context_3d::WGPURenderContext3d;
+pub use image_context_3d::ImageContext3d;
 
 mod render_context_3d;
 mod pbr_material;
@@ -21,18 +18,8 @@ mod point_light;
 mod uniforms;
 mod image_context_3d;
 
-// TODO: Call this in the application new.
-pub fn init() {
-    register_render_context3d_initializer("carbide_wgpu_3d", render_context_3d_initializer);
-    register_image_context3d_initializer("carbide_wgpu_3d", image_context_3d_initializer);
-}
-
 static SHADERS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/shaders");
 static INCLUDE_PREFIX: &'static str = "//!include";
-
-pub(crate) static SHADER: Lazy<ShaderModule> = Lazy::new(|| {
-    DEVICE.create_shader_module(preprocess_shader("pbr/pbr.wgsl"))
-});
 
 fn preprocess_shader<S: AsRef<Path>>(path: S) -> ShaderModuleDescriptor<'static> {
     let mut files_to_process = Vec::new();
@@ -44,7 +31,7 @@ fn preprocess_shader<S: AsRef<Path>>(path: S) -> ShaderModuleDescriptor<'static>
     while let Some(path) = files_to_process.pop() {
         if files_processed.contains(&path) { continue; }
         files_processed.insert(path.clone());
-        let file = SHADERS_DIR.get_file(path.clone()).expect(&format!("the included shader directory to contain a filw with the path: {:?}", path));
+        let file = SHADERS_DIR.get_file(path.clone()).expect(&format!("the included shader directory to contain a file with the path: {:?}", path));
         let content = file.contents_utf8().expect("the file to be readable in utf8");
         let mut lines = content.lines();
 

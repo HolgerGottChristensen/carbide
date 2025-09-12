@@ -1,6 +1,6 @@
 use encase::ShaderType;
 use once_cell::sync::Lazy;
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, ShaderStages, TextureSampleType, TextureViewDimension};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Device, ShaderStages, TextureSampleType, TextureViewDimension};
 use carbide_3d::InnerImageContext3d;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
@@ -9,11 +9,12 @@ use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::{ImageId, Texture, TextureFormat};
 use carbide_core::draw::pre_multiply::PreMultiply;
+use carbide_core::environment::Environment;
 use carbide_core::image;
 use carbide_core::math::{Matrix3, Vector3, Vector4, Zero};
 use carbide_core::state::ReadState;
-use carbide_wgpu::DEVICE;
-use crate::image_context_3d::{ImageContext3d, TEXTURES};
+use carbide_wgpu::WgpuContext;
+use crate::image_context_3d::{ImageContext3d};
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
 pub struct WgpuPbrMaterial {
@@ -39,14 +40,14 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
-    pub(crate) fn from_material(material: &PbrMaterial) -> Self {
+    pub(crate) fn from_material(material: &PbrMaterial, env: &mut Environment) -> Self {
         let albedo = material.albedo.value().to_value();
 
         if let Some(image_id) = material.albedo.value().to_texture() {
-            load_image(image_id);
+            load_image(image_id, env);
         }
         if let Some(image_id) = material.normal.value().to_texture() {
-            load_image(image_id);
+            load_image(image_id, env);
         }
 
         Self {
@@ -98,8 +99,8 @@ impl WgpuPbrMaterial {
     }
 }
 
-fn load_image(id: &ImageId) {
-    if !ImageContext3d.texture_exist(id) {
+fn load_image(id: &ImageId, env: &mut Environment) {
+    if !ImageContext3d.texture_exist(id, env) {
         let path = if id.is_relative() {
             let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
                 .for_folder("assets")
@@ -122,7 +123,7 @@ fn load_image(id: &ImageId) {
             data: &image.to_rgba8().into_raw(),
         };
 
-        ImageContext3d.update_texture(id.clone(), texture);
+        ImageContext3d.update_texture(id.clone(), texture, env);
     }
 }
 
@@ -132,11 +133,11 @@ pub struct WgpuPbrMaterialTextures {
     pub(crate) normal: ImageId,
 }
 
-pub(crate) static PBR_BIND_GROUPS_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
-    DEVICE.create_bind_group_layout(&BindGroupLayoutDescriptor {
+pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
+    device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: None,
         entries: &[
-            BindGroupLayoutEntry {
+            /*BindGroupLayoutEntry {
                 binding: 0,
                 visibility: ShaderStages::FRAGMENT,
                 ty: BindingType::Texture {
@@ -155,23 +156,23 @@ pub(crate) static PBR_BIND_GROUPS_LAYOUT: Lazy<BindGroupLayout> = Lazy::new(|| {
                     multisampled: false,
                 },
                 count: None,
-            },
+            },*/
         ],
     })
-});
+}
 
+pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, device: &Device) -> BindGroup {
 
-pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures) -> BindGroup {
-    let layout = &*PBR_BIND_GROUPS_LAYOUT;
+    let layout = create_pbr_bind_group_layout(device);
 
     let views = &[
-        TEXTURES.get(&textures.albedo).unwrap().create_view(&Default::default()),
-        TEXTURES.get(&textures.normal).unwrap().create_view(&Default::default())
+        //TEXTURES.get(&textures.albedo).unwrap().create_view(&Default::default()),
+        //TEXTURES.get(&textures.normal).unwrap().create_view(&Default::default())
     ];
 
-    DEVICE.create_bind_group(&BindGroupDescriptor {
+    device.create_bind_group(&BindGroupDescriptor {
         label: None,
-        layout,
+        layout: &layout,
         entries: &views.into_iter().enumerate().map(|(idx, view)| {
             wgpu::BindGroupEntry {
                 binding: idx as u32,

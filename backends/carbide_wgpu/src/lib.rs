@@ -4,16 +4,17 @@ use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue, StoreOp};
 
 pub use application::Application;
 use carbide_core::draw::ImageId;
-pub use render_target::RenderTarget;
+pub use wgpu_render_target::WgpuRenderTarget;
 pub use window::Window;
 
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 use crate::image_context::BindGroupExtended;
+pub use wgpu_context::*;
 
 mod bind_group_layouts;
 mod bind_groups;
-mod filter;
-mod gradient;
+mod wgpu_filter;
+mod wgpu_gradient;
 mod pipeline;
 mod proxy_event_loop;
 //mod render;
@@ -21,15 +22,16 @@ mod render_pass_command;
 mod samplers;
 mod texture_atlas_command;
 mod textures;
-mod vertex;
+mod wgpu_vertex;
 //pub mod window;
 mod application;
 mod render_context;
 mod image_context;
-mod render_target;
+mod wgpu_render_target;
 mod window;
-mod msaa;
+mod wgpu_msaa;
 mod wgpu_context;
+mod wgpu_dashes;
 
 pub fn init_logger() {
     }
