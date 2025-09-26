@@ -1,7 +1,7 @@
 use crate::draw::ImageContext;
 use crate::environment::Environment;
 use crate::focus::Focusable;
-use crate::misc::any_debug::AnyDebug;
+use crate::common::any_debug::AnyDebug;
 use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 use crate::event::CoreEvent;

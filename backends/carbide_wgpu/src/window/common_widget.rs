@@ -1,10 +1,11 @@
 use crate::window::Window;
 use carbide_core::draw::{Dimension, Position};
+use carbide_core::identifiable::Identifiable;
 use carbide_core::state::ReadState;
-use carbide_core::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId};
+use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 
 
-impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
+impl<T: ReadState<T=String>, C: Widget> Identifiable<WidgetId> for Window<T, C> {
     fn id(&self) -> WidgetId {
         match self {
             Window::UnInitialized { id, .. } => *id,

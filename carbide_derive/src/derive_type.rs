@@ -175,7 +175,7 @@ fn id_token_stream(
     if let Some(id) = id_idents.first() {
         quote! {
             #[automatically_derived]
-            impl #generics carbide::widget::Identifiable for #ident #generics #wheres {
+            impl #generics carbide::identifiable::Identifiable<carbide::widget::WidgetId> for #ident #generics #wheres {
                 fn id(&self) -> carbide::widget::WidgetId {
                     self.#id
                 }

@@ -6,12 +6,12 @@ use crate::accessibility::AccessibilityContext;
 use crate::environment::Environment;
 use crate::event::{AccessibilityEvent, AccessibilityEventContext};
 use crate::lifecycle::InitializationContext;
-use crate::widget::Identifiable;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::event::{AccessibilityEventHandler, OtherEvent, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable, FocusContext};
+use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
@@ -60,7 +60,7 @@ impl AnyWidget for Box<dyn AnyWidget> {
 
 impl WidgetExt for Box<dyn AnyWidget> {}
 
-impl<T: AnyWidget + ?Sized + Identifiable> Identifiable for Box<T> {
+impl<T: AnyWidget + ?Sized + Identifiable<WidgetId>> Identifiable<WidgetId> for Box<T> {
     fn id(&self) -> WidgetId {
         self.deref().id()
     }

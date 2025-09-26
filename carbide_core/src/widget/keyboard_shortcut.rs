@@ -1,7 +1,8 @@
 use crate::event::{Key, KeyboardEventHandler, ModifierKey, OtherEventContext, OtherEventHandler};
 use crate::event::{KeyboardEvent, KeyboardEventContext, OtherEvent};
+use crate::identifiable::Identifiable;
 use crate::widget::managers::{ShortcutManager, ShortcutPressed, ShortcutReleased};
-use crate::widget::{CommonWidget, Identifiable, Widget, WidgetId};
+use crate::widget::{CommonWidget, Widget, WidgetId};
 use crate::widget::{Empty, IntoWidget};
 use crate::ModifierWidgetImpl;
 
@@ -75,7 +76,7 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
     }
 }
 
-impl<C: Widget> Identifiable for KeyboardShortcut<C> {
+impl<C: Widget> Identifiable<WidgetId> for KeyboardShortcut<C> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

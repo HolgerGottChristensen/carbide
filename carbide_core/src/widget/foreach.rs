@@ -5,12 +5,13 @@ use std::marker::PhantomData;
 
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Sequence as ForEachSequence, Widget, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
+use crate::identifiable::Identifiable;
 use crate::lifecycle::InitializationContext;
 
 pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
@@ -94,7 +95,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         ForEachWidget::new(of, identity)
     }
 
-    pub fn custom_widget<Item: ?Sized + Identifiable + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
+    pub fn custom_widget<Item: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
         ForEachWidget::new(of, with)
     }
 

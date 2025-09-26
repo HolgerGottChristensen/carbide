@@ -2,9 +2,10 @@ use crate::identifiable::AnySelectableWidget;
 use carbide::accessibility::Accessibility;
 use carbide::render::Render;
 use carbide::state::{AnyState, State};
-use carbide::widget::{CommonWidget, Identifiable, Widget, WidgetId};
+use carbide::widget::{CommonWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
 use std::hash::Hash;
+use carbide::identifiable::Identifiable;
 
 #[derive(Clone, Debug, Widget)]
 pub struct PickerItem<W, S> where W: Widget, S: State<T=bool> {
@@ -18,7 +19,7 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
     }
 }
 
-impl<W: Widget, S: State<T=bool>> Identifiable for PickerItem<W, S> {
+impl<W: Widget, S: State<T=bool>> Identifiable<WidgetId> for PickerItem<W, S> {
     fn id(&self) -> WidgetId {
         self.inner.id()
     }

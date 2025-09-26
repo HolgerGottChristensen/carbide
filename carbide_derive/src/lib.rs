@@ -14,6 +14,7 @@ mod utils;
 mod widget;
 mod closure;
 mod state_value;
+mod identifiable;
 
 #[proc_macro_derive(Widget, attributes(state, id, carbide_derive, carbide_exclude))]
 pub fn derive_widget(input: TokenStream) -> TokenStream {
@@ -24,6 +25,11 @@ pub fn derive_widget(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(StateValue, attributes())]
 pub fn derive_state_value(input: TokenStream) -> TokenStream {
     impl_derive(input, state_value::impl_state_value)
+}
+
+#[proc_macro_derive(Identifiable, attributes(id))]
+pub fn derive_identifiable(input: TokenStream) -> TokenStream {
+    impl_derive(input, identifiable::impl_identifiable)
 }
 
 // Use the given function to generate a TokenStream for the derive implementation.

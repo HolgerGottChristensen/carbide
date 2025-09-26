@@ -1,7 +1,7 @@
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Dimension, Position};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::state::ReadState;
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
 

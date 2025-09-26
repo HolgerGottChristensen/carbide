@@ -94,7 +94,7 @@ impl<T: StateContract, S: State<T=FROM>, FROM: StateContract, TO: StateContract>
 
 #[cfg(test)]
 mod tests {
-    use carbide_core::state::Map1;
+    use crate::state::Map1;
     use crate::state::{FieldState, GlobalState, LocalState, ReadState, State};
 
     #[test]

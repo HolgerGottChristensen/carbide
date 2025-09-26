@@ -1,12 +1,12 @@
 use crate::state::ReadState;
-use crate::widget::Identifiable;
 use crate::widget::CommonWidget;
 
 use crate::draw::{Dimension, Position};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::state::IntoReadState;
 use crate::widget::{Empty, IntoWidget, Widget, WidgetId};
 use crate::CommonWidgetImpl;
+use crate::identifiable::Identifiable;
 
 #[derive(Debug, Clone, Widget)]
 pub struct Flagged<C, F> where C: Widget, F: ReadState<T=WidgetFlag> {
@@ -23,7 +23,7 @@ impl Flagged<Empty, WidgetFlag> {
     }
 }
 
-impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable for Flagged<C, F> {
+impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable<WidgetId> for Flagged<C, F> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }
@@ -31,6 +31,10 @@ impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable for Flagged<C, F> {
 
 impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
     CommonWidgetImpl!(self, child: self.child);
+
+    fn flag(&self) -> WidgetFlag {
+        *self.flags.value()
+    }
 
     fn position(&self) -> Position {
         self.child.position()
@@ -46,9 +50,5 @@ impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.child.set_dimension(dimension)
-    }
-
-    fn flag(&self) -> WidgetFlag {
-        *self.flags.value()
     }
 }

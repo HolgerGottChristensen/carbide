@@ -10,9 +10,10 @@ use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
 use carbide::event::{AccessibilityEventHandler, EventHandler, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use carbide::focus::Focusable;
+use carbide::identifiable::Identifiable;
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::math::{Deg, Euler, Matrix4, Quaternion, Vector3};
-use carbide::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use crate::camera::Camera;
 use crate::camera::camera_projection::CameraProjection;
 
@@ -63,7 +64,7 @@ impl CommonWidget for OrbitCamera {
     }
 }
 
-impl Identifiable for OrbitCamera {
+impl Identifiable<WidgetId> for OrbitCamera {
     fn id(&self) -> WidgetId {
         self.id
     }

@@ -1,11 +1,12 @@
 use crate::draw::{Dimension, Position};
-use crate::misc::flags::WidgetFlag;
-use crate::widget::{CommonWidget, Content, Identifiable, Sequence, Widget, WidgetId, WidgetSync};
+use crate::common::flags::WidgetFlag;
+use crate::widget::{CommonWidget, Content, Sequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 use crate::environment::Environment;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use crate::identifiable::Identifiable;
 use crate::lifecycle::InitializationContext;
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {
@@ -22,7 +23,7 @@ impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(&T) -> O + Clone 
 #[carbide_exclude(StateSync)]
 pub struct ForEachWidget<W, O, D, T>
 where
-    T: ?Sized + Identifiable + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: Widget,
     D: Delegate<T, O>
@@ -35,7 +36,7 @@ where
     phantom_data: PhantomData<T>,
 }
 
-impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Clone for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Clone for ForEachWidget<W, O, D, T> {
     fn clone(&self) -> Self {
         ForEachWidget {
             id: WidgetId::new(),
@@ -47,7 +48,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
     }
 }
 
-impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
     pub(crate) fn new(sequence: W, delegate: D) -> Self {
         ForEachWidget {
             id: WidgetId::new(),
@@ -60,7 +61,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
 }
 
 
-impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
     fn sync(&mut self, env: &mut Environment) {
         // Set the initial index to 0
         let mut index = 0;
@@ -108,7 +109,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
     }
 }
 
-impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> CommonWidget for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> CommonWidget for ForEachWidget<W, O, D, T> {
     CommonWidgetImpl!(self, flag: WidgetFlag::PROXY, child: self.content);
 
     fn position(&self) -> Position {
@@ -128,7 +129,7 @@ impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>,
     }
 }
 
-impl<T: ?Sized + Identifiable + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
+impl<T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEachChild")
             .field("content", &self.content)

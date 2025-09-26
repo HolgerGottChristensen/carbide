@@ -5,10 +5,11 @@ use carbide::draw::AutomaticStyle;
 use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState, ReadStateExtNew, StateSync};
 use carbide_core::state::AnyReadState;
-use carbide_core::widget::{Identifiable, WidgetId};
+use carbide_core::widget::{WidgetId};
 use dyn_clone::clone_box;
 use oneshot::RecvError;
 use std::path::PathBuf;
+use carbide::identifiable::Identifiable;
 
 #[derive(Debug)]
 pub struct SaveDialog {
@@ -109,7 +110,7 @@ impl SaveDialog {
     }
 }
 
-impl Identifiable for SaveDialog {
+impl Identifiable<WidgetId> for SaveDialog {
     fn id(&self) -> WidgetId {
         self.id
     }

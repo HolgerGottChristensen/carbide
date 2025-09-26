@@ -5,7 +5,7 @@ use crate::color::Color;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, WindowEventHandler};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};

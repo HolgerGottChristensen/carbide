@@ -1,5 +1,6 @@
 use carbide_core::animation::bounce_out;
-use carbide_core::draw::{Alignment, Color, ColorSpace, Dimension};
+use carbide_core::draw::{Alignment, Color, Dimension};
+use carbide_core::draw::color_space::ColorSpace;
 use carbide_core::draw::gradient::Gradient;
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;

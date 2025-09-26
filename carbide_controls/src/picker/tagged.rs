@@ -1,8 +1,9 @@
 use crate::identifiable::{AnyIdentifiableWidget};
 use carbide::state::{AnyReadState, IntoReadState, ReadState, StateContract};
-use carbide::widget::{CommonWidget, Empty, Identifiable, IntoWidget, Widget, WidgetId};
+use carbide::widget::{CommonWidget, Empty, IntoWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
 use std::fmt::Debug;
+use carbide::identifiable::Identifiable;
 
 #[derive(Clone, Widget, Debug)]
 pub struct Tagged<T, S, C> where T: StateContract + PartialEq, C: Widget, S: ReadState<T=T> {
@@ -25,7 +26,7 @@ impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiable
     }
 }
 
-impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable for Tagged<T, S, C> {
+impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable<WidgetId> for Tagged<T, S, C> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

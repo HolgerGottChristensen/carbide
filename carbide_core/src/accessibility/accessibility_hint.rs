@@ -1,5 +1,5 @@
-use crate::widget::Identifiable;
 use crate::accessibility::{AccessibilityContext, Accessibility};
+use crate::identifiable::Identifiable;
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{Empty, IntoWidget, Widget, CommonWidget, WidgetSync, WidgetId};
 use crate::ModifierWidgetImpl;
@@ -43,7 +43,7 @@ impl<C: Widget, S: ReadState<T=String>> Accessibility for AccessibilityHint<C, S
     }
 }
 
-impl<C: Widget, S: ReadState<T=String>> Identifiable for AccessibilityHint<C, S> {
+impl<C: Widget, S: ReadState<T=String>> Identifiable<WidgetId> for AccessibilityHint<C, S> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

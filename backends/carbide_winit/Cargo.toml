@@ -3,9 +3,7 @@ name = "carbide_winit"
 version.workspace = true
 repository.workspace = true
 edition.workspace = true
-authors = [
-    "Holger Gott Christensen",
-]
+authors.workspace = true
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "A crate to convert from winit types to equivalents in carbide"
 license = "MIT OR Apache-2.0"
@@ -21,4 +19,3 @@ dashmap.workspace = true
 once_cell.workspace = true
 accesskit.workspace = true
 accesskit_winit.workspace = true
-smallvec.workspace = true

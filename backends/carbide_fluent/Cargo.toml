@@ -15,9 +15,8 @@ fluent = { path = "../../../Repositories/fluent-rs/fluent" }
 intl-memoizer = { path = "../../../Repositories/fluent-rs/intl-memoizer" }
 lazy_static = "1.4.0"
 icu = "1.2.0"
-walkdir = "2.4.0"
+walkdir.workspace = true
 chrono = "0.4.30"
-dyn-clone.workspace = true
 
 [dev-dependencies]
 carbide_wgpu = { path = "../carbide_wgpu", features = ["controls"] }

@@ -64,7 +64,7 @@ impl<T> StateContract for T where T: Clone + Debug + 'static {}
 
 #[cfg(test)]
 mod tests {
-    use carbide_core::state::Map1;
+    use crate::state::Map1;
     use crate::state::{GlobalState, LocalState, ReadState, State};
 
     #[test]

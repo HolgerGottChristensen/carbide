@@ -15,7 +15,7 @@ use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget, WidgetId};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
-use crate::widget::Identifiable;
+use crate::identifiable::Identifiable;
 use crate::state::ReadState;
 
 #[derive(Debug, Clone, Widget)]
@@ -248,7 +248,7 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Render
     }
 }
 
-impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Identifiable for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
+impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Identifiable<WidgetId> for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

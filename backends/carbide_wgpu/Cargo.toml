@@ -3,9 +3,7 @@ name = "carbide_wgpu"
 version.workspace = true
 repository.workspace = true
 edition.workspace = true
-authors = [
-    "Holger Gott Christensen",
-]
+authors.workspace = true
 keywords = ["ui", "gui", "interface", "graphics", "wgpu"]
 description = "A crate to assist with rendering carbide UIs via wgpu."
 license = "MIT OR Apache-2.0"
@@ -24,12 +22,11 @@ carbide_controls = { path = "../../carbide_controls", optional = true }
 carbide_cosmic_text = { path = "../carbide_cosmic_text" }
 log = "0.4"
 wgpu.workspace = true
-futures = "0.3"
+futures.workspace = true
 bytemuck.workspace = true
-anyhow = "1.0"
-walkdir = "2.4.0"
+walkdir.workspace = true
 #smaa = "0.4.0"
-typed-arena = "2.0.2"
+typed-arena.workspace = true
 once_cell.workspace = true
 dashmap.workspace = true
 accesskit_winit.workspace = true
@@ -51,7 +48,6 @@ carbide_controls = { path = "../../carbide_controls" }
 carbide_macro = { path = "../../carbide_macro" }
 futures = "0.3"
 async-std = { version = "1.10.0" }
-
 reqwest = "0.11.22"
 chrono = "0.4.31"
 

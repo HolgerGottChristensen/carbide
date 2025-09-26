@@ -196,7 +196,7 @@ fn path_to_string(path: Path) -> String {
     string
 }
 
-fn is_attribute_path(path: Path, equal_to: &str) -> bool {
+pub(crate) fn is_attribute_path(path: Path, equal_to: &str) -> bool {
     let is = path.segments.len() == 1
         && match path.segments.first() {
             None => false,

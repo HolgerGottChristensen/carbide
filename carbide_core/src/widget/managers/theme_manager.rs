@@ -6,13 +6,14 @@ use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentKeyable};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::focus::{FocusContext, Focusable};
+use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
 use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
 use crate::render::Render;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget};
 use crate::ModifierWidgetImpl;
-use crate::widget::{Identifiable, WidgetId};
+use crate::widget::{WidgetId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_derive(StateSync)]
@@ -418,7 +419,7 @@ impl<C: Widget> Render for ThemeManager<C> {
     }
 }
 
-impl<C: Widget> Identifiable for ThemeManager<C> {
+impl<C: Widget> Identifiable<WidgetId> for ThemeManager<C> {
     fn id(&self) -> WidgetId {
         self.child.id()
     }

@@ -1,4 +1,4 @@
-pub use crate::misc::automatic_style::*;
+pub use crate::common::automatic_style::*;
 pub use alignment::Alignment;
 pub use angle::*;
 pub use color::Color;
@@ -29,6 +29,7 @@ pub mod fill;
 pub mod path;
 pub mod stroke;
 pub mod theme;
+pub mod color_space;
 pub mod gradient;
 
 /// An alias over the Scalar type used throughout carbide.

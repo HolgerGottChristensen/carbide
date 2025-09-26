@@ -17,6 +17,9 @@ pub trait Fn2<I, O>: Fn(&I)->O + Clone + 'static {}
 
 impl<T, I, O> Fn2<I, O> for T where T: Fn(&I)->O + Clone + 'static {}
 
+/// A trait indicating that a type is mappable. This is useful when you want to
+/// implement a common method for all wrappers of a certain type.
+/// In carbide, this is usually different kinds of State.
 pub trait Functor<T: StateContract> {
     type Output<G: StateContract, F: Fn2<T, G>>;
 

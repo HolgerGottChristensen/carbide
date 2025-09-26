@@ -1,15 +1,6 @@
 use crate::draw::{Dimension, Position, Color};
+use crate::draw::color_space::ColorSpace;
 use crate::draw::gradient::{Gradient, GradientPosition, GradientRepeat, GradientType};
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ColorSpace {
-    Linear,
-    OkLAB,
-    Srgb,
-    Xyz,
-    Cielab,
-    HSL,
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DrawGradient {

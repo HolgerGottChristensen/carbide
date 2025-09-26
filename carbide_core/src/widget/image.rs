@@ -9,10 +9,11 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat};
 use crate::draw::pre_multiply::PreMultiply;
 use crate::environment::EnvironmentColor;
+use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, Style, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Widget, WidgetId, CommonWidget, WidgetSync, Identifiable};
+use crate::widget::{Widget, WidgetId, CommonWidget, WidgetSync};
 use crate::widget::types::ScaleMode;
 
 /// A primitive and basic widget for drawing an `Image`.

@@ -114,20 +114,20 @@ fn main() {
                 .frame_fixed_width(6.0),
         )
         .with_alignment(Alignment::Leading)
-            .on_click(closure!(|_| {
-                current_hn_item.clone().set_value(None);
-                let id = article.value().id;
+        .on_click(closure!(|_| {
+            current_hn_item.clone().set_value(None);
+            let id = article.value().id;
 
-                task!(current_hn_item := {
-                    let response = get(format!("https://hn.algolia.com/api/v1/items/{}", id)).await.unwrap();
-                    let item = response.json::<HNItem>().await.unwrap();
+            task!(current_hn_item := {
+                let response = get(format!("https://hn.algolia.com/api/v1/items/{}", id)).await.unwrap();
+                let item = response.json::<HNItem>().await.unwrap();
 
-                    println!("{:#?}", item);
+                println!("{:#?}", item);
 
-                    Some(item)
-                });
-            }))
-            .boxed()
+                Some(item)
+            });
+        }))
+        .boxed()
     };
 
     let loader = ZStack::new((

@@ -1,6 +1,6 @@
 use smallvec::{SmallVec, smallvec};
 use crate::draw::{Dimension, Position};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::widget::{CrossAxisAlignment, AnyWidget};
 

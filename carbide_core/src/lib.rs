@@ -11,7 +11,7 @@ pub use futures::TryFutureExt;
 pub use crate::asynchronous::SpawnTask;
 
 pub use draw::color;
-pub use misc::*;
+pub use common::*;
 
 pub use carbide_derive::closure;
 
@@ -41,20 +41,20 @@ macro_rules! reverse {
 
 pub mod accessibility;
 pub mod animation;
+pub mod application;
 pub mod asynchronous;
+pub mod common;
 pub mod draw;
 pub mod environment;
 pub mod event;
 pub mod focus;
 pub mod layout;
+pub mod lifecycle;
 pub mod render;
+pub mod scene;
 pub mod state;
 pub mod text;
 pub mod widget;
-pub mod scene;
-pub mod lifecycle;
-pub mod application;
-mod misc;
 
 /// Reexport of the image crate
 pub mod image {

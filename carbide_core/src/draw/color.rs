@@ -17,7 +17,7 @@ use crate::animation::Animatable;
 use crate::draw::Scalar;
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Functor, Map1, RMap1};
-use crate::misc::utils::{fmod, turns_to_radians};
+use crate::common::utils::{fmod, turns_to_radians};
 use crate::time::*;
 
 /// Color supporting RGB and HSL variants.

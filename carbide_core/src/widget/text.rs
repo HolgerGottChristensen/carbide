@@ -9,10 +9,11 @@ use crate::state::{IntoReadState, ReadState};
 use crate::text::text_justify::TextJustify;
 use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{AnyWidget, CommonWidget, Identifiable, Widget, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use accesskit::{Node, Point, Rect, Role, Size};
 use carbide_macro::carbide_default_builder2;
 use std::fmt::Debug;
+use crate::identifiable::Identifiable;
 
 /// Displays some given text centered within a rectangular area.
 ///

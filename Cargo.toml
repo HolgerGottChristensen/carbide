@@ -34,28 +34,34 @@ members = [
 version = "0.72.0"
 edition = "2021"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
+authors = [
+    "Holger Gott Christensen"
+]
 
 [workspace.dependencies]
-dyn-clone = "1.0.5"
-chrono = "0.4"
-cgmath = { version = "0.18", features = ["mint"] }
-raw-window-handle = "0.5"
-lyon = { path = "../Repositories/lyon/crates/lyon" }
-dashmap = "5.5.3"
-once_cell = "1.19.0"
-wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
-bitflags = "2.4.0"
-bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
-include_dir = "0.7.4"
-rand = { version = "0.9.0" }
 accesskit = "0.17.1"
 accesskit_winit = "0.23.1"
-smallvec = "1.13.2"
-winit = { version = "0.30", features = ["rwh_05"] }
-proc-macro-crate = "3.2.0"
-indexmap = "2.6.0"
-parking_lot = "0.12.3"
+bitflags = "2.4.0"
+bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
+cgmath = { version = "0.18", features = ["mint"] }
+chrono = "0.4"
 console_error_panic_hook = "0.1.7"
 console_log = "1"
+dashmap = "6.1.0"
+dyn-clone = "1.0.5"
+futures = "0.3"
+image = "0.25.5"
+include_dir = "0.7.4"
+indexmap = "2.6.0"
+once_cell = "1.19.0"
+parking_lot = "0.12.3"
+proc-macro-crate = "3.2.0"
+rand = { version = "0.9.0" }
+raw-window-handle = "0.5"
+smallvec = "1.13.2"
+typed-arena = "2.0.2"
+walkdir = "2.4.0"
 web-time = "1.1.0"
+wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
+winit = { version = "0.30", features = ["rwh_05"] }
 

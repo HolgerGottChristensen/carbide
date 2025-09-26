@@ -8,9 +8,10 @@ use carbide_core::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, Identifiable, Widget, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 use carbide::CommonWidgetImpl;
 use smallvec::SmallVec;
+use carbide::identifiable::Identifiable;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Initialize, Accessibility, AccessibilityEvent)]

@@ -10,13 +10,14 @@ use crate::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
 use crate::accessibility::{Accessibility, AccessibilityAction};
 use crate::CommonWidgetImpl;
-use crate::misc::cursor::MouseCursor;
+use crate::common::cursor::MouseCursor;
 use crate::draw::{Dimension, Position};
 use crate::event::{Key, KeyboardEvent, KeyboardEventHandler, ModifierKey, MouseButton, MouseEvent, MouseEventHandler, KeyboardEventContext, MouseEventContext, AccessibilityEventHandler, OtherEventHandler};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::focus::{Focus, Focusable};
+use crate::identifiable::Identifiable;
 use crate::state::{IntoState, State};
-use crate::widget::{CommonWidget, Widget, WidgetId, Empty, Identifiable};
+use crate::widget::{CommonWidget, Widget, WidgetId, Empty};
 use crate::widget::managers::{ShortcutPressed, ShortcutReleased};
 
 #[derive(Clone, Widget)]

@@ -1,12 +1,13 @@
 use crate::draw::Alignment;
-use crate::widget::Identifiable;
-use crate::misc::cursor::MouseCursor;
+use crate::widget::{WidgetId};
+use crate::common::cursor::MouseCursor;
 use crate::draw::{Dimension, Position, Rect, Scalar};
-use crate::misc::flags::WidgetFlag;
+use crate::common::flags::WidgetFlag;
 use crate::focus::Focus;
+use crate::identifiable::Identifiable;
 use crate::widget::AnyWidget;
 
-pub trait CommonWidget: Identifiable {
+pub trait CommonWidget: Identifiable<WidgetId> {
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::EMPTY
     }

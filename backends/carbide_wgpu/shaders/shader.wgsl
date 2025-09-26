@@ -124,7 +124,6 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         case 7u: {
             col = gradient_color(in.gradient_coord) * atlas_pixel.a;
         }
-        /*
         // Stroke dashing mode - FAST
         case 8u, 9u: {
             // If the mode is even, we use the vertex color, otherwise the gradient color
@@ -194,7 +193,6 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
                 }
             }
         }
-        */
         default: {
            col = vec4<f32>(1.0, 0.0, 0.0, 1.0);
         }
@@ -214,7 +212,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 
 
-/*
+
 // Returns:
 // - 0: Error - negative dist
 // - 1: In an end cap
@@ -303,7 +301,7 @@ fn dash(position: vec2<f32>, direction: vec2<f32>, origin: vec2<f32>, length: f3
 
     return 5u;
 }
-*/
+
 
 fn cap(x: f32, y: f32, w: f32, ty: u32) -> bool {
     switch (ty) {

@@ -1,7 +1,8 @@
 use dyn_clone::DynClone;
+use carbide::identifiable::Identifiable;
 use crate::identifiable::{AnySelectableWidget, SelectableWidget};
 use carbide::reverse;
-use carbide::widget::{AnySequence, Content, Identifiable, Sequence, WidgetSync};
+use carbide::widget::{AnySequence, Content, Sequence, WidgetId, WidgetSync};
 use carbide::widget::foreach_widget::{Delegate, ForEachWidget};
 
 impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
@@ -186,7 +187,7 @@ macro_rules! tuple_sequence_impl {
 #[allow(non_snake_case)]
 #[allow(unused_parens)]
 impl<
-    T: ?Sized + Identifiable + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: SelectableWidget,
     D: Delegate<T, O>

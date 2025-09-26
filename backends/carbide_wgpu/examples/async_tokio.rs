@@ -75,7 +75,7 @@ fn main() {
             data: &image.to_rgba8().into_raw(),
         };
 
-        ctx.image.update_texture(id.clone(), texture);
+        ctx.image.update_texture(id.clone(), texture, ctx.env);
         image_id_for_async.clone().set_value(Some(id));
     });
 

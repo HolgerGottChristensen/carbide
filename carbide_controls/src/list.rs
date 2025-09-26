@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 
 use carbide::closure;
 use carbide::draw::Rect;
+use carbide::identifiable::Identifiable;
 use carbide::state::{AnyReadState, AnyState, Map1};
 use carbide::widget::{AnyWidget, MouseArea, MouseAreaActionContext};
 use carbide::widget::canvas::CanvasContext;
@@ -398,16 +399,6 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     }
 }
 
-pub trait Identifiable<I: StateContract + PartialEq> {
-    fn identifier(&self) -> I;
-}
-
-impl<T: StateContract + PartialEq> Identifiable<T> for T {
-    fn identifier(&self) -> T {
-        self.clone()
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum ListSelection<T: StateContract> {
     Single(LocalState<Option<T>>),
@@ -450,7 +441,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
         MouseArea::new(self.inner_delegate.call(item.clone(), index.clone()))
             .on_click(closure!(|ctx: MouseAreaActionContext| {
                 let mut selection = selection.clone();
-                let identifier = item.value().identifier();
+                let identifier = item.value().id();
 
                 let model = Clone::clone(&model);
                 let model = carbide::state::ReadState::value(&model);
@@ -491,7 +482,7 @@ impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Deleg
 
                                 for val in min..=max {
                                     //dbg!(&internal_model);
-                                    let id = (*model)[val].identifier();
+                                    let id = (*model)[val].id();
 
                                     selections.value_mut().insert(id);
                                 }

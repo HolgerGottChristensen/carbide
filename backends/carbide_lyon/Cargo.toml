@@ -6,4 +6,4 @@ repository.workspace = true
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
-lyon.workspace = true
+lyon = { path = "../../../Repositories/lyon/crates/lyon" }

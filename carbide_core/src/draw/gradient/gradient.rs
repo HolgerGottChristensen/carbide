@@ -1,29 +1,14 @@
-use crate::draw::{Alignment, Color, ColorSpace, Position};
+use crate::draw::{Alignment, Color, Position};
+use crate::draw::color_space::ColorSpace;
+use crate::draw::gradient::{GradientPosition, GradientRepeat, GradientType};
 use crate::render::Style;
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum GradientPosition {
-    Absolute(Position),
-    Relative(f64, f64),
-    Alignment(Alignment),
-}
 
-/// The different types of gradients in carbide.
-#[derive(Debug, Clone, PartialEq)]
-pub enum GradientType {
-    Linear,
-    Radial,
-    Diamond,
-    Conic,
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum GradientRepeat {
-    Clamp,
-    Repeat,
-    Mirror,
-}
+
+
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {

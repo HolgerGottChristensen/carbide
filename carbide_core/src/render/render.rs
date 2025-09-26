@@ -1,4 +1,4 @@
-use crate::misc::cursor::MouseCursor;
+use crate::common::cursor::MouseCursor;
 use crate::render::RenderContext;
 use crate::widget::{CommonWidget, WidgetSync};
 

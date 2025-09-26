@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::hash::{BuildHasherDefault, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
-use crate::misc::any_debug::AnyDebug;
+use crate::common::any_debug::AnyDebug;
 
 /// # EnvironmentKey
 /// A key into the environment that can be used to retrieve a value.
@@ -246,6 +246,7 @@ mod tests {
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey;
+
     impl EnvironmentKey for TestKey { type Value = u64; }
 
     #[test]

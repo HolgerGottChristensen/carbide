@@ -2,7 +2,8 @@ use carbide::state::{AnyState, ReadState, State, StateContract};
 use std::fmt::Debug;
 use std::ops::Deref;
 use dyn_clone::DynClone;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Identifiable, Sequence, WidgetExt, WidgetSync};
+use carbide::identifiable::Identifiable;
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Sequence, WidgetExt, WidgetId, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
 
 pub trait AnySelectableWidget: AnyWidget {
@@ -73,7 +74,7 @@ impl<
 }
 
 impl<
-    T: ?Sized + Identifiable + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: SelectableWidget,
     D: carbide::widget::foreach_widget::Delegate<T, O>
