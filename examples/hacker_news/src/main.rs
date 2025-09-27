@@ -38,7 +38,7 @@ fn main() {
         response.iter().take(25).for_each(|id| {
             let client = client.clone();
 
-            futures.push(
+            futures.push_back(
                 async move {
                     client.get(format!("https://hacker-news.firebaseio.com/v0/item/{}.json", id)).send().await.unwrap().json::<Article>().await.unwrap()
                 }
@@ -85,7 +85,8 @@ fn main() {
 
         VStack::new((
             HStack::new((
-                Text::new(lens!(article.title)).font_weight(FontWeight::Bold),
+                Text::new(lens!(article.title))
+                    .font_weight(FontWeight::Bold),
                 Spacer::new(),
             )),
             HStack::new((
@@ -94,7 +95,8 @@ fn main() {
                     .resizeable()
                     .frame(16.0, 16.0)
                     .accent_color(EnvironmentColor::SecondaryLabel),
-                Text::new(lens!(article.score)).custom_flexibility(3),
+                Text::new(lens!(article.score))
+                    .custom_flexibility(3),
                 Image::new_icon("icons/chat-1-line.png")
                     .resizeable()
                     .frame(16.0, 16.0)

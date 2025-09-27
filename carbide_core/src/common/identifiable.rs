@@ -1,5 +1,4 @@
 use carbide::state::StateContract;
-use crate::widget::WidgetId;
 
 pub trait Identifiable<I: StateContract + PartialEq> {
     fn id(&self) -> I;
