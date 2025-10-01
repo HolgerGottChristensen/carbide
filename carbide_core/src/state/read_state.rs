@@ -20,14 +20,14 @@ pub trait ReadState: AnyReadState + Clone + IntoReadState<Self::T> + private::Se
     /// This retrieves a immutable reference to the value contained in the state.
     /// This type implements deref to get a reference to the actual value. The [`ValueRef`]
     /// should not be used directly.
-    fn value(&self) -> ValueRef<Self::T>;
+    fn value(&self) -> ValueRef<'_, Self::T>;
 }
 
 /// The trait to implement for read-only state.
 pub trait AnyReadState: DynClone + StateSync + Debug + 'static {
     type T: StateContract;
 
-    fn value_dyn(&self) -> ValueRef<Self::T>;
+    fn value_dyn(&self) -> ValueRef<'_, Self::T>;
 }
 
 impl<T: StateContract> dyn AnyReadState<T=T> {
@@ -49,7 +49,7 @@ impl<T: StateContract> StateSync for Box<dyn AnyReadState<T=T>> {
 impl<T: StateContract> AnyReadState for Box<dyn AnyReadState<T=T>> {
     type T = T;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         self.deref().value_dyn()
     }
 }
@@ -57,7 +57,7 @@ impl<T: StateContract> AnyReadState for Box<dyn AnyReadState<T=T>> {
 // Blanket implementation, implementing ReadState for all types that
 // implement AnyReadState, Clone and IntoReadState
 impl<T> ReadState for T where T: AnyReadState + Clone + IntoReadState<Self::T> {
-    fn value(&self) -> ValueRef<Self::T> {
+    fn value(&self) -> ValueRef<'_, Self::T> {
         self.value_dyn()
     }
 }
@@ -98,7 +98,7 @@ impl<G: StateSync> StateSync for Box<G> {
 }
 impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> AnyReadState for Box<F> {
     type T = G;
-    fn value_dyn(&self) -> ValueRef<G> {
+    fn value_dyn(&self) -> ValueRef<'_, G> {
         self.deref().value()
     }
 }
@@ -106,12 +106,12 @@ impl<G: Debug + Clone + 'static, F: ReadState<T=G> + Clone> AnyReadState for Box
 impl<T, E> StateSync for Result<T, E> {}
 impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyReadState for Result<T, E> {
     type T = Result<T, E>;
-    fn value_dyn(&self) -> ValueRef<Result<T, E>> {
+    fn value_dyn(&self) -> ValueRef<'_, Result<T, E>> {
         ValueRef::Borrow(self)
     }
 }
 impl<T: Debug + Clone + 'static, E: Debug + Clone + 'static> AnyState for Result<T, E> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Result<T, E>> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, Result<T, E>> {
         ValueRefMut::Borrow(Some(self))
     }
 
@@ -131,12 +131,12 @@ macro_rules! impl_state_value {
         }
         impl $crate::state::AnyReadState for $typ {
             type T = $typ;
-            fn value_dyn(&self) -> $crate::state::ValueRef<$typ> {
+            fn value_dyn(&self) -> $crate::state::ValueRef<'_, $typ> {
                 $crate::state::ValueRef::Borrow(self)
             }
         }
         impl $crate::state::AnyState for $typ {
-            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<$typ> {
+            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<'_, $typ> {
                 $crate::state::ValueRefMut::Borrow(Some(self))
             }
 
@@ -166,12 +166,12 @@ macro_rules! impl_state_value_generic {
         impl<$($generic $(: $bound $(+ $rest)* )?),*> $crate::state::StateSync for $typ <$($generic),*> {}
         impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyReadState for $typ<$($generic),*> {
             type T = $typ<$($generic),*>;
-            fn value_dyn(&self) -> $crate::state::ValueRef<$typ<$($generic),*>> {
+            fn value_dyn(&self) -> $crate::state::ValueRef<'_, $typ<$($generic),*>> {
                 $crate::state::ValueRef::Borrow(self)
             }
         }
         impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyState for $typ <$($generic),*> {
-            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<$typ<$($generic),*>> {
+            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<'_, $typ<$($generic),*>> {
                 $crate::state::ValueRefMut::Borrow(Some(self))
             }
 

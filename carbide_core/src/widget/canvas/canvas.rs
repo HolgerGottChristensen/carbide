@@ -1,12 +1,11 @@
 use std::fmt::{Debug, Formatter};
-use crate::draw::DrawOptions;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, CompositeDrawShape, Position};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, AnyShape, Widget, WidgetId, ShapeStyle};
+use crate::widget::{CommonWidget, AnyShape, Widget, WidgetId};
 use crate::widget::canvas::CanvasContext;
 
 /// A basic, non-interactive rectangle shape widget.

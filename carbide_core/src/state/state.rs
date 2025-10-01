@@ -18,7 +18,7 @@ pub trait State: ReadState + AnyState + IntoState<Self::T> + private::Sealed {
     /// If a ValueState is mutated, it will only affect that state, but not any clones of it.
     /// After mutating the state, you should make sure to call [`State::notify()`]. This will
     /// make sure that all dependent states are notified that you have changed the state.
-    fn value_mut(&mut self) -> ValueRefMut<Self::T>;
+    fn value_mut(&mut self) -> ValueRefMut<'_, Self::T>;
 
     /// This is used to set the value of a state. Use this when you have state that might be mapped
     /// from the MapOwnedState. This makes sure that it is mapped all the way back to the original
@@ -35,7 +35,7 @@ pub trait AnyState: AnyReadState {
     /// If a ValueState is mutated, it will only affect that state, but not any clones of it.
     /// After mutating the state, you should make sure to call [`State::notify()`]. This will
     /// make sure that all dependent states are notified that you have changed the state.
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T>;
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, Self::T>;
 
     /// This is used to set the value of a state. Use this when you have state that might be mapped
     /// from the MapOwnedState. This makes sure that it is mapped all the way back to the original
@@ -62,13 +62,13 @@ impl<T: StateContract> StateSync for Box<dyn AnyState<T=T>> {
 impl<T: StateContract> AnyReadState for Box<dyn AnyState<T=T>> {
     type T = T;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         self.deref().value_dyn()
     }
 }
 
 impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, Self::T> {
         self.deref_mut().value_dyn_mut()
     }
 
@@ -78,7 +78,7 @@ impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
 }
 
 impl<T> State for T where T: AnyState + Clone + IntoState<Self::T> {
-    fn value_mut(&mut self) -> ValueRefMut<Self::T> {
+    fn value_mut(&mut self) -> ValueRefMut<'_, Self::T> {
         self.value_dyn_mut()
     }
 

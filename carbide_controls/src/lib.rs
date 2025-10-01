@@ -60,6 +60,7 @@ mod selectable;
 mod labelled;
 pub mod button;
 mod slider;
+pub mod context_menu;
 
 pub type EnabledState = KeyState<EnabledKey>;
 

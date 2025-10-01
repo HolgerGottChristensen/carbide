@@ -197,6 +197,6 @@ pub trait InnerRenderContext {
     fn mask_in(&mut self);
     fn mask_end(&mut self);
 
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension, env: &mut Environment) -> Layer;
+    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension, env: &mut Environment) -> Layer<'_>;
     fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect);
 }

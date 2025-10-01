@@ -271,7 +271,7 @@ macro_rules! tuple_state {
             MAP: Fn($(&$type),*) -> TO + Clone + 'static
         > AnyReadState for $read_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
-            fn value_dyn(&self) -> ValueRef<TO> {
+            fn value_dyn(&self) -> ValueRef<'_, TO> {
                 let val = (self.map)($(&*self.$name.value()),*);
                 ValueRef::Owned(val)
             }
@@ -286,7 +286,7 @@ macro_rules! tuple_state {
             REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyReadState for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             type T = TO;
-            fn value_dyn(&self) -> ValueRef<TO> {
+            fn value_dyn(&self) -> ValueRef<'_, TO> {
                 let val = (self.map)($(&*self.$name.value()),*);
                 ValueRef::Owned(val)
             }
@@ -301,7 +301,7 @@ macro_rules! tuple_state {
             REPLACE: Fn(&TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyReadState for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
             type T = TO;
-            fn value_dyn(&self) -> ValueRef<TO> {
+            fn value_dyn(&self) -> ValueRef<'_, TO> {
                 (self.map)($(&*self.$name.value()),*, &mut *self.value.borrow_mut());
                 self.value.borrow()
             }
@@ -315,7 +315,7 @@ macro_rules! tuple_state {
             MAP: Fn(&mut Environment, $(&$type),*) -> TO + Clone + 'static
         > AnyReadState for $env_map_name<MAP, $($type),*, TO, $($type2),*> {
             type T = TO;
-            fn value_dyn(&self) -> ValueRef<TO> {
+            fn value_dyn(&self) -> ValueRef<'_, TO> {
                 ValueRef::Borrow(&self.value)
             }
         }
@@ -328,7 +328,7 @@ macro_rules! tuple_state {
             MAP: Fn($(&$type),*) -> TO + Clone + 'static,
             REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyState for $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
-            fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
+            fn value_dyn_mut(&mut self) -> ValueRefMut<'_, TO> {
                 // Get the current value
                 let val = (self.map)($(&*self.$name.value()),*);
 
@@ -358,7 +358,7 @@ macro_rules! tuple_state {
             MAP: Fn($(&$type),*, &mut TO) + Clone + 'static,
             REPLACE: Fn(&TO, $(ValueRefMut<$type>),*) + Clone + 'static,
         > AnyState for $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
-            fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
+            fn value_dyn_mut(&mut self) -> ValueRefMut<'_, TO> {
                 // Get the current value
                 (self.map)($(&*self.$name.value()),*, &mut self.value.borrow_mut());
 

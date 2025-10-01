@@ -109,7 +109,7 @@ where
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     type T = U;
-    fn value_dyn(&self) -> ValueRef<U> {
+    fn value_dyn(&self) -> ValueRef<'_, U> {
         let index = self.index_state.value().deref().clone();
         ValueRef::map(self.indexable_state.value(), |a| &a[index])
     }
@@ -124,7 +124,7 @@ where
     ST: State<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<U> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, U> {
         let index = self.index_state.value().deref().clone();
         ValueRefMut::map(self.indexable_state.value_mut(), |a| &mut a[index])
     }

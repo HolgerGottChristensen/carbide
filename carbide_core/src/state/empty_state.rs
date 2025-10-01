@@ -9,13 +9,13 @@ impl<T: StateContract> StateSync for EmptyState<T> {}
 
 impl<T: StateContract> AnyReadState for EmptyState<T> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         unimplemented!("You can not get a value from an empty state");
     }
 }
 
 impl<T: StateContract> AnyState for EmptyState<T> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, Self::T> {
         unimplemented!("You can not get a mutable value from an empty state");
     }
 

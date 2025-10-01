@@ -1,18 +1,16 @@
 use crate::animation::AnimationManager;
 use crate::draw::path::PathBuilder;
-use crate::draw::{Color, CompositeDrawShape, DrawShape};
+use crate::draw::stroke::{LineCap, LineJoin, StrokeDashCap, StrokeDashMode, StrokeDashPattern, StrokeOptions};
 use crate::draw::{Alignment, Angle, Dimension, Position, Scalar};
+use crate::draw::{Color, DrawShape};
+use crate::environment::Environment;
 use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
-use crate::widget::{AnyShape, ShapeStyle};
-use crate::environment::Environment;
-use crate::widget::WidgetId;
-use std::fmt::{Debug, Formatter};
-use crate::draw::DrawOptions;
-use crate::draw::stroke::{LineCap, StrokeDashCap, StrokeDashMode, StrokeDashPattern, LineJoin, StrokeOptions};
 use crate::text::text_wrap::Wrap;
+use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
+use crate::widget::ShapeStyle;
+use std::fmt::{Debug, Formatter};
 
 pub struct CanvasContext<'a, 'b, 'c: 'b> {
     render_context: &'a mut RenderContext<'b, 'c>,

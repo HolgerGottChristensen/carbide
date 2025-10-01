@@ -56,6 +56,11 @@ pub trait EnvironmentKeyable: Debug + 'static {
     }
 }
 
+enum EnvironmentValue<'a> {
+    Value(&'a dyn AnyDebug),
+    ValueMut(&'a mut dyn AnyDebug)
+}
+
 /// # Environment
 ///
 /// The environment contains scoped state at for a given widget, that can be provided
@@ -72,9 +77,9 @@ pub trait EnvironmentKeyable: Debug + 'static {
 /// It is not possible to access the value from the outer environment in the inner environment.
 ///
 /// ## Mutability and immutability
-/// The environment contains both immutable and mutable values. These are stored, inserted and
-/// retrieved separately. This has an effect on scoping, since a value can be inserted with the
-/// same key in both the immutable values and mutable values.
+/// The environment contains both immutable and mutable values. When storing a mutable value
+/// you are allowed to read it both as immutable and mutable. But if you insert an immutable
+/// value and you try to receive it mutably, the framework will return an error.
 ///
 /// ## Lookup
 /// The environment has very fast lookup, since the keys for the environments are generated at
@@ -82,8 +87,7 @@ pub trait EnvironmentKeyable: Debug + 'static {
 /// the keys hashes are generated at compile time, and are generated with using a good hashing
 /// algorithm, collisions should never occur.
 pub struct Environment<'a> {
-    data: HashMap<TypeId, &'a dyn AnyDebug, BuildTypeIdHasher>,
-    data_mut: HashMap<TypeId, &'a mut dyn AnyDebug, BuildTypeIdHasher>,
+    data: HashMap<TypeId, EnvironmentValue<'a>, BuildTypeIdHasher>,
     _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
 }
 
@@ -94,7 +98,6 @@ impl<'a> Environment<'a> {
     pub fn new() -> Self {
         Environment {
             data: HashMap::with_hasher(BuildTypeIdHasher::default()),
-            data_mut: HashMap::with_hasher(BuildTypeIdHasher::default()),
             _marker: Default::default(),
         }
     }
@@ -102,23 +105,24 @@ impl<'a> Environment<'a> {
 
 impl<'a> Environment<'a> {
     /// Get a value from the environment by the *key* type. The *key* must implement `EnvironmentKey`.
-    /// The value is retrieved from the immutable part of the environment. Only values inserted
-    /// in the immutable part of the environment can be retrieved by this method.
+    /// The value is retrieved from the immutable part of the environment.
     ///
-    /// If the value does not exist in the immutable part of the environment, `None` will be returned.
+    /// If the value does not exist as part of the environment, `None` will be returned.
     pub fn get<K: EnvironmentKey + ?Sized>(&self) -> Option<&K::Value> {
         let id = TypeId::of::<K>();
 
         Option::map(self.data.get(&id), |value| {
-            value.downcast_ref()
+            match value {
+                EnvironmentValue::Value(value1) => value1.downcast_ref(),
+                EnvironmentValue::ValueMut(value2) => value2.downcast_ref(),
+            }
         }).flatten()
     }
 
     /// Get a mutable value from the environment by the *key* type. The *key* must implement `EnvironmentKey`.
-    /// The mutable value is retrieved from the mutable part of the environment. Only values
-    /// inserted into the mutable part of the environment can be retrieved by this method.
+    /// Only mutable values inserted into the environment can be retrieved by this method.
     ///
-    /// If the value does not exist in the mutable part of the environment, `None` will be returned.
+    /// If the value does not exist in the environment or was not added as mutable, `None` will be returned.
     ///
     /// WARNING: It is unsafe to mem swap the reference returned by this function. This is because the
     /// value you are extracting and swapping with have a lifetime that has been artificially shortened
@@ -127,8 +131,11 @@ impl<'a> Environment<'a> {
     pub fn get_mut<K: EnvironmentKey + ?Sized>(&mut self) -> Option<&mut K::Value> {
         let id = TypeId::of::<K>();
 
-        Option::map(self.data_mut.get_mut(&id), |value| {
-            value.downcast_mut()
+        Option::map(self.data.get_mut(&id), |value| {
+            match value {
+                EnvironmentValue::Value(_) => None,
+                EnvironmentValue::ValueMut(value2) => value2.downcast_mut(),
+            }
         }).flatten()
     }
 
@@ -153,7 +160,7 @@ impl<'a> Environment<'a> {
         // and thus making sure it does not escape.
         let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
-        transmuted.data.insert(id, v);
+        transmuted.data.insert(id, EnvironmentValue::Value(v));
 
         f(transmuted);
 
@@ -169,7 +176,7 @@ impl<'a> Environment<'a> {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.
-        let old = self.data_mut.remove(&id);
+        let old = self.data.remove(&id);
 
         // SAFETY: The transmuted map has a shorter lifetime. The map is
         // only used and accessed in the scope of the closure. We insert the
@@ -179,14 +186,14 @@ impl<'a> Environment<'a> {
         // and thus making sure it does not escape.
         let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
-        transmuted.data_mut.insert(id, v);
+        transmuted.data.insert(id, EnvironmentValue::ValueMut(v));
 
         f(transmuted);
 
         if let Some(old) = old {
-            transmuted.data_mut.insert(id, old);
+            transmuted.data.insert(id, old);
         } else {
-            transmuted.data_mut.remove(&id);
+            transmuted.data.remove(&id);
         }
     }
 }
@@ -198,14 +205,14 @@ impl Environment<'static> {
     pub fn insert<K: EnvironmentKey + ?Sized>(&mut self, v: &'static K::Value) {
         let id = TypeId::of::<K>();
 
-        self.data.insert(id, v);
+        self.data.insert(id, EnvironmentValue::Value(v));
     }
 }
 
 impl<'a> Environment<'a> {
 
-    pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(&K::Value, &mut Environment)) {
-        let id = TypeId::of::<K>();
+    pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, _f: impl FnOnce(&K::Value, &mut Environment)) {
+        /*let id = TypeId::of::<K>();
 
         let value = self.data.remove(&id);
 
@@ -217,7 +224,9 @@ impl<'a> Environment<'a> {
 
         if let Some(val) = value {
             self.data.insert(id, val);
-        }
+        }*/
+
+        todo!()
     }
 }
 

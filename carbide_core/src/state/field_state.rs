@@ -57,14 +57,14 @@ impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> StateSync for Fie
 
 impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> AnyReadState for FieldState<S, FROM, TO> {
     type T = TO;
-    fn value_dyn(&self) -> ValueRef<TO> {
+    fn value_dyn(&self) -> ValueRef<'_, TO> {
         let map = self.map;
         ValueRef::map(self.state.value(), |a| map(a))
     }
 }
 
 impl<S: State<T=FROM>, FROM: StateContract, TO: StateContract> AnyState for FieldState<S, FROM, TO> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<TO> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, TO> {
         let map_mut = self.map_mut;
         ValueRefMut::map(self.state.value_mut(), move |a| map_mut(a))
     }

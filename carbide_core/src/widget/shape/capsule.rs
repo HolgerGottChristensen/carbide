@@ -1,16 +1,12 @@
-use crate::draw::{DrawOptions, DrawShape};
-use carbide_macro::carbide_default_builder2;
-
-use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, CompositeDrawShape, Position};
-use crate::draw::fill::FillOptions;
-use crate::draw::stroke::StrokeAlignment;
+use crate::draw::DrawShape;
+use crate::draw::{Color, CompositeDrawShape, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::render::{Render, RenderContext, Style};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
-use crate::widget::shape::{AnyShape};
+use crate::widget::shape::AnyShape;
 use crate::widget::types::ShapeStyle;
+use crate::widget::{Blur, CommonWidget, Widget, WidgetId, WidgetSync, ZStack};
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -25,7 +21,6 @@ pub struct Capsule<S, F> where S: ReadState<T=Style> + Clone, F: ReadState<T=Sty
 }
 
 impl Capsule<Style, Style> {
-    #[carbide_default_builder2]
     pub fn new() -> Capsule<impl ReadState<T=Style>, impl ReadState<T=Style>> {
         Capsule {
             id: WidgetId::new(),

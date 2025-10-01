@@ -1,5 +1,5 @@
 use crate::draw::DrawShape;
-use crate::draw::{Color, Dimension, CompositeDrawShape, Position, DrawOptions};
+use crate::draw::{Color, Dimension, CompositeDrawShape, Position};
 use crate::environment::EnvironmentColor;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};

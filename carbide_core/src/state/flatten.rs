@@ -34,7 +34,7 @@ impl<T: StateContract, S: ReadState<T=T>, SS: ReadState<T=S>> StateSync for Flat
 
 impl<T: StateContract, S: ReadState<T=T>, SS: ReadState<T=S>> AnyReadState for FlattenedReadState<T, S, SS> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         self.current.as_ref().unwrap().value()
     }
 }

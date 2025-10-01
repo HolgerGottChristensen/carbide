@@ -38,7 +38,7 @@ impl<T: StateContract> StateSync for GlobalState<T> {
 
 impl<T: StateContract> AnyReadState for GlobalState<T> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         ValueRef::Locked(
             RwLockReadGuard::map(self.inner_value.read(), |a| a)
         )
@@ -46,7 +46,7 @@ impl<T: StateContract> AnyReadState for GlobalState<T> {
 }
 
 impl<T: StateContract> AnyState for GlobalState<T> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, T> {
         ValueRefMut::Locked(
             Some(RwLockWriteGuard::map(self.inner_value.write(), |a| a))
         )

@@ -1,12 +1,8 @@
-use crate::draw::DrawOptions;
-use crate::CommonWidgetImpl;
-use crate::widget::{CommonWidget};
-use carbide_macro::carbide_default_builder2;
-
-use crate::draw::{Dimension, CompositeDrawShape, Position};
 use crate::common::flags::WidgetFlag;
+use crate::draw::{CompositeDrawShape, Dimension, Position};
 use crate::scene::AnyScene;
-use crate::widget::{AnyShape, Widget, WidgetId};
+use crate::widget::{AnyShape, Widget, WidgetId, CommonWidget};
+use crate::CommonWidgetImpl;
 
 #[derive(Clone, Debug, Widget)]
 pub struct Empty {
@@ -16,7 +12,6 @@ pub struct Empty {
 }
 
 impl Empty {
-    #[carbide_default_builder2]
     pub fn new() ->Self {
         Empty {
             id: WidgetId::new(),

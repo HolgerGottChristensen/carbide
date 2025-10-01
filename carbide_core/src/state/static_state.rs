@@ -37,13 +37,13 @@ impl<T: StateContract> StateSync for StaticState<T> {
 
 impl<T: StateContract> AnyReadState for StaticState<T> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         self.inner.borrow()
     }
 }
 
 impl<T: StateContract> AnyState for StaticState<T> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, T> {
         self.inner.borrow_mut()
     }
 

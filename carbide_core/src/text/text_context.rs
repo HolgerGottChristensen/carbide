@@ -4,7 +4,6 @@ use image::DynamicImage;
 use crate::text::TextStyle;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
-use crate::render::InnerRenderContext;
 use crate::text::glyph::Glyph;
 
 pub trait TextContext {

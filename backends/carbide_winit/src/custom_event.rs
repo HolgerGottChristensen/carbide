@@ -1,5 +1,4 @@
 use accesskit_winit::Event;
-use std::any::TypeId;
 
 #[derive(Debug)]
 pub enum CustomEvent {

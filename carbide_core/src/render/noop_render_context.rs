@@ -1,11 +1,11 @@
-use cgmath::Matrix4;
-use carbide::environment::Environment;
-use crate::draw::DrawShape;
 use crate::draw::stroke::StrokeDashPattern;
-use crate::draw::{Color, Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageOptions, Rect};
+use crate::draw::DrawShape;
+use crate::draw::{Color, CompositeDrawShape, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Rect};
 use crate::render::{InnerRenderContext, Layer, LayerId, NoopLayer};
 use crate::text::{TextContext, TextId};
-use crate::widget::{AnyShape, ImageFilter};
+use crate::widget::ImageFilter;
+use crate::environment::Environment;
+use cgmath::Matrix4;
 
 pub struct NoopRenderContext;
 
@@ -30,7 +30,7 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_stencil(&mut self) {}
 
-    fn shape(&mut self, shape: DrawShape, option: DrawOptions) {}
+    fn shape(&mut self, _shape: DrawShape, _option: DrawOptions) {}
 
     fn style(&mut self, _style: DrawStyle) {}
     fn pop_style(&mut self) {}
@@ -52,7 +52,7 @@ impl InnerRenderContext for NoopRenderContext {
     fn mask_in(&mut self) {}
     fn mask_end(&mut self) {}
 
-    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension, _env: &mut Environment) -> Layer {
+    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension, _env: &mut Environment) -> Layer<'_> {
         static LAYER: NoopLayer = NoopLayer;
         Layer {
             inner: &LAYER,

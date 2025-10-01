@@ -32,7 +32,7 @@ where K::Output: Clone {
 impl<K: EnvironmentKeyable, S: ReadState<T=K>> AnyReadState for KeyableState<K, S>
 where K::Output: Clone {
     type T = K::Output;
-    fn value_dyn(&self) -> ValueRef<K::Output> {
+    fn value_dyn(&self) -> ValueRef<'_, K::Output> {
         ValueRef::Owned(self.current.clone())
     }
 }

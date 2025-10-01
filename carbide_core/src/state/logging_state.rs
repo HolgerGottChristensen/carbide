@@ -13,7 +13,7 @@ impl LoggingState<(), ()> {
 
 impl<T: StateContract, TState: State<T=T> + Clone + 'static> AnyReadState for LoggingState<T, TState> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         self.0.value()
     }
 }
@@ -25,7 +25,7 @@ impl<T: StateContract, TState: State<T=T> + Clone + 'static> StateSync for Loggi
 }
 
 impl<T: StateContract, TState: State<T=T> + Clone + 'static> AnyState for LoggingState<T, TState> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, T> {
         println!("Retrieved value mut");
         self.0.value_mut()
     }

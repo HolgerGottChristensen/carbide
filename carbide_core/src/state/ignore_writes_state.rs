@@ -21,7 +21,7 @@ impl<T: StateContract, TState: ReadState<T=T> + 'static> IgnoreWritesState<T, TS
 
 impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyReadState for IgnoreWritesState<T, TState> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         self.0.value()
     }
 }
@@ -33,7 +33,7 @@ impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> StateSync for I
 }
 
 impl<T: StateContract, TState: ReadState<T=T> + Clone + 'static> AnyState for IgnoreWritesState<T, TState> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, T> {
         ValueRefMut::Read(self.value())
     }
 

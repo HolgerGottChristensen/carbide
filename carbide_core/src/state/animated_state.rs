@@ -114,7 +114,7 @@ impl StateSync for AnimatedState {
 
 impl AnyReadState for AnimatedState {
     type T = f64;
-    fn value_dyn(&self) -> ValueRef<f64> {
+    fn value_dyn(&self) -> ValueRef<'_, f64> {
         ValueRef::Borrow(&self.percent)
     }
 }

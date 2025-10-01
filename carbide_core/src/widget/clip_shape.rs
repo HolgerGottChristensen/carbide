@@ -12,7 +12,7 @@ use crate::draw::{Alignment, CompositeDrawShape, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::widget::{
-    AnyShape, AnyWidget, CommonWidget, Empty, ShapeStyle, Widget, WidgetId, WidgetSync,
+    AnyShape, AnyWidget, CommonWidget, Empty, Widget, WidgetId, WidgetSync,
 };
 use crate::CommonWidgetImpl;
 
@@ -109,62 +109,62 @@ impl InnerRenderContext for ShapeRenderCapture {
         self.shape.push((shape, option));
     }
 
-    fn transform(&mut self, transform: Matrix4<f32>) {}
+    fn transform(&mut self, _transform: Matrix4<f32>) {}
 
     fn pop_transform(&mut self) {}
 
     fn color_filter(
         &mut self,
-        hue_rotation: f32,
-        saturation_shift: f32,
-        luminance_shift: f32,
-        color_invert: bool,
+        _hue_rotation: f32,
+        _saturation_shift: f32,
+        _luminance_shift: f32,
+        _color_invert: bool,
     ) {
     }
 
     fn pop_color_filter(&mut self) {}
 
-    fn clip(&mut self, bounding_box: Rect) {}
+    fn clip(&mut self, _bounding_box: Rect) {}
 
     fn pop_clip(&mut self) {}
 
-    fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect) {}
+    fn filter(&mut self, _filter: &ImageFilter, _bounding_box: Rect) {}
 
     fn filter2d(
         &mut self,
-        filter1: &ImageFilter,
-        bounding_box1: Rect,
-        filter2: &ImageFilter,
-        bounding_box2: Rect,
+        _filter1: &ImageFilter,
+        _bounding_box1: Rect,
+        _filter2: &ImageFilter,
+        _bounding_box2: Rect,
     ) {
     }
 
-    fn stencil(&mut self, shape: CompositeDrawShape) {}
+    fn stencil(&mut self, _shape: CompositeDrawShape) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn style(&mut self, style: DrawStyle) {}
+    fn style(&mut self, _style: DrawStyle) {}
 
     fn pop_style(&mut self) {}
 
-    fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>) {}
+    fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
 
     fn pop_stroke_dash_pattern(&mut self) {}
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions) {}
+    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn TextContext) {}
+    fn text(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 
     fn filter_new(&mut self) {}
 
-    fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool) {}
+    fn filter_new_pop(&mut self, _filter: &ImageFilter, _color: Color, _post_draw: bool) {}
 
     fn filter_new_pop2d(
         &mut self,
-        filter: &ImageFilter,
-        filter2: &ImageFilter,
-        color: Color,
-        post_draw: bool,
+        _filter: &ImageFilter,
+        _filter2: &ImageFilter,
+        _color: Color,
+        _post_draw: bool,
     ) {
     }
 
@@ -174,9 +174,9 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn mask_end(&mut self) {}
 
-    fn layer(&mut self, layer_id: LayerId, dimensions: Dimension, env: &mut Environment) -> Layer {
+    fn layer(&mut self, _layer_id: LayerId, _dimensions: Dimension, _env: &mut Environment) -> Layer<'_> {
         todo!()
     }
 
-    fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {}
+    fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
 }

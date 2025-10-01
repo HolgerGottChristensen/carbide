@@ -26,7 +26,7 @@ impl<K: EnvironmentKey> StateSync for KeyState<K> where K::Value: Clone {
 
 impl<K: EnvironmentKey> AnyReadState for KeyState<K> where K::Value: Clone {
     type T = K::Value;
-    fn value_dyn(&self) -> ValueRef<K::Value> {
+    fn value_dyn(&self) -> ValueRef<'_, K::Value> {
         ValueRef::Owned(self.current.clone())
     }
 }

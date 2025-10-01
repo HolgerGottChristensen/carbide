@@ -222,7 +222,7 @@ impl<T: State<T=f64> + Clone> StateSync for Fixity<T> {
 impl<T: State<T=f64> + Clone> AnyReadState for Fixity<T> {
     type T = f64;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         match self {
             Fixity::Expand(s) => ValueRef::Borrow(s),
             Fixity::Fit(s) => ValueRef::Borrow(s),
@@ -232,7 +232,7 @@ impl<T: State<T=f64> + Clone> AnyReadState for Fixity<T> {
 }
 
 impl<T: State<T=f64> + Clone> AnyState for Fixity<T> {
-    fn value_dyn_mut(&mut self) -> ValueRefMut<Self::T> {
+    fn value_dyn_mut(&mut self) -> ValueRefMut<'_, Self::T> {
         todo!()
     }
 

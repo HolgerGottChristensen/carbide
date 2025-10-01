@@ -111,7 +111,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync 
 
 impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> AnyReadState for TransitionState<T, S> {
     type T = T;
-    fn value_dyn(&self) -> ValueRef<T> {
+    fn value_dyn(&self) -> ValueRef<'_, T> {
         if !self.initialized.load(Ordering::Relaxed) {
             self.initialized.store(true, Ordering::Relaxed);
             *self.value.borrow_mut() = self.inner.value().clone();

@@ -1,17 +1,12 @@
-use std::fmt::{Debug, Formatter};
-use dyn_clone::DynClone;
-use crate::draw::{CompositeDrawShape, DrawShape};
 use crate::draw::stroke::StrokeAlignment;
-use crate::widget::AnyShape;
-use carbide_macro::carbide_default_builder2;
-
-use crate::CommonWidgetImpl;
-use crate::draw::{Color, Dimension, DrawStyle, Position, Rect};
+use crate::draw::DrawShape;
 use crate::draw::stroke::StrokeOptions;
+use crate::draw::{Color, Dimension, DrawStyle, Position, Rect};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{CommonWidget, Empty, Rectangle, Shape, Widget, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
+use crate::CommonWidgetImpl;
 
 /// A basic, non-interactive rectangle shape widget.
 #[derive(Debug, Clone, Widget)]
@@ -29,7 +24,6 @@ pub struct Border<W, C> where
 }
 
 impl Border<Empty, Color> {
-    #[carbide_default_builder2]
     pub fn new<W: Widget>(child: W) -> Border<W, Color> {
         Border {
             id: WidgetId::new(),

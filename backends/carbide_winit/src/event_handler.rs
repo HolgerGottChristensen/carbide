@@ -15,7 +15,6 @@ use carbide_core::draw::{Dimension, ImageContext, Position, Scalar};
 use carbide_core::environment::{Environment};
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, OtherEventHandler, WindowEventContext};
 use carbide_core::focus::{FocusContext, FocusManager, Refocus};
-use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::text::TextContext;
@@ -288,7 +287,7 @@ impl NewEventHandler {
                 }
                 RequestRedraw::True
             },
-            WindowEvent::ThemeChanged(theme) => {
+            WindowEvent::ThemeChanged(_theme) => {
                 println!("Theme changed!");
 
                 for scene in scenes.iter_mut() {
@@ -508,7 +507,7 @@ impl NewEventHandler {
                     is_consumed: &mut false,
                 });
             }
-            CustomEvent::Accessibility(accesskit_winit::Event { window_id, window_event}) => {
+            CustomEvent::Accessibility(accesskit_winit::Event { window_event, .. }) => {
                 println!("Accessibility Event: {:#?}", window_event);
                 match window_event {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
@@ -757,9 +756,9 @@ impl NewEventHandler {
             return RequestRedraw::False;
         }
 
-        if let Some(position) = env.get_mut::<MousePositionKey>() {
+        /*if let Some(position) = env.get_mut::<MousePositionKey>() {
             *position = self.mouse_position;
-        }
+        }*/
 
         let delta_xy = self.mouse_position - last_mouse_xy;
 
