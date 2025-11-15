@@ -19,5 +19,5 @@ fn main() {
 
     application.launch();*/
 
-    ContextMenuStyle::open(&AutomaticStyle, &Button::new("", closure!(|_| {})))
+    //ContextMenuStyle::open(&AutomaticStyle, &Button::new("", closure!(|_| {})))
 }

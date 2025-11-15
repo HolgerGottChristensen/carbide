@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide_core::state::{IntoReadState, ReadState};
 use chrono::{DateTime, FixedOffset, TimeZone};
-use fluent::types::{FluentDateTimeOptions, FluentNumberOptions};
+use fluent_for_carbide::types::{FluentDateTimeOptions, FluentNumberOptions};
 use carbide_core::impl_state_value;
 
 pub trait Args: Debug + Clone + 'static {

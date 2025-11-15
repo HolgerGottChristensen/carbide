@@ -11,8 +11,8 @@ authors = [
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
-fluent = { path = "../../../Repositories/fluent-rs/fluent" }
-intl-memoizer = { path = "../../../Repositories/fluent-rs/intl-memoizer" }
+fluent_for_carbide = "0.16.0"
+intl-memoizer_for_carbide = "0.5.1"
 lazy_static = "1.4.0"
 icu = "1.2.0"
 walkdir.workspace = true

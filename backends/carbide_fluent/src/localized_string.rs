@@ -4,8 +4,8 @@ use crate::localizable::Localizable;
 use crate::{locale, LANGUAGES};
 use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, ReadState, StateSync, ValueRef};
-use fluent::types::{FluentDateTime, FluentNumber};
-use fluent::FluentArgs;
+use fluent_for_carbide::types::{FluentDateTime, FluentNumber};
+use fluent_for_carbide::FluentArgs;
 use icu::locid::Locale;
 use std::fmt::Debug;
 

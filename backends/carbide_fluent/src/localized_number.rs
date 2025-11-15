@@ -3,16 +3,16 @@ use crate::localizable::Localizable;
 use crate::locale;
 use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, IntoReadState, ReadState, StateSync, ValueRef, ValueState};
-use fluent::types::FluentNumberOptions;
+use fluent_for_carbide::types::FluentNumberOptions;
 use icu::locid::Locale;
 use std::fmt::Debug;
 
-pub type Number = fluent::types::FluentNumber;
-pub type NumberStyle = fluent::types::FluentNumberStyle;
-pub type NumberNotation = fluent::types::FluentNumberNotation;
-pub type CurrencyDisplayStyle = fluent::types::FluentNumberCurrencyDisplayStyle;
-pub type NumberGrouping = fluent::types::FluentNumberGrouping;
-pub type RoundingMode = fluent::types::FluentNumberRoundingMode;
+pub type Number = fluent_for_carbide::types::FluentNumber;
+pub type NumberStyle = fluent_for_carbide::types::FluentNumberStyle;
+pub type NumberNotation = fluent_for_carbide::types::FluentNumberNotation;
+pub type CurrencyDisplayStyle = fluent_for_carbide::types::FluentNumberCurrencyDisplayStyle;
+pub type NumberGrouping = fluent_for_carbide::types::FluentNumberGrouping;
+pub type RoundingMode = fluent_for_carbide::types::FluentNumberRoundingMode;
 
 #[derive(Debug, Clone)]
 pub struct LocalizedNumber<V, S, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11>

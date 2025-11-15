@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
 
-use fluent::FluentResource;
+use fluent_for_carbide::FluentResource;
 use icu::locid::Locale;
 use lazy_static::lazy_static;
 use walkdir::WalkDir;
@@ -27,7 +27,7 @@ mod localized_datetime;
 mod localized_number;
 
 
-type Bundle = fluent::bundle::FluentBundle<FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>;
+type Bundle = fluent_for_carbide::bundle::FluentBundle<FluentResource, intl_memoizer_for_carbide::concurrent::IntlLangMemoizer>;
 
 lazy_static!(
     static ref LANGUAGES: HashMap<Locale, Bundle> = {
@@ -50,7 +50,7 @@ fn load_languages() -> Result<HashMap<Locale, Bundle>, io::Error> {
                 if let Some(name) = path.file_name() {
                     if let Some(name) = name.to_str() {
                         let langid = Locale::from_str(name).expect("Parsing failed.");
-                        let mut bundle = fluent::bundle::FluentBundle::new_concurrent(vec![langid.clone()]);
+                        let mut bundle = fluent_for_carbide::bundle::FluentBundle::new_concurrent(vec![langid.clone()]);
 
                         for entry in WalkDir::new(path) {
                             if let Ok(entry) = entry {

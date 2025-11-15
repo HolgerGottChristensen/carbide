@@ -4,13 +4,13 @@ use crate::locale;
 use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, IntoReadState, ReadState, StateSync, ValueRef, ValueState};
 use chrono::{DateTime, FixedOffset};
-use fluent::types::{FluentDateTime, FluentDateTimeOptions};
+use fluent_for_carbide::types::{FluentDateTime, FluentDateTimeOptions};
 use icu::locid::Locale;
 use std::fmt::Debug;
 
-pub type DateStyle = fluent::types::FluentDateStyle;
-pub type TimeStyle = fluent::types::FluentTimeStyle;
-pub type TimezoneStyle = fluent::types::FluentTimezoneStyle;
+pub type DateStyle = fluent_for_carbide::types::FluentDateStyle;
+pub type TimeStyle = fluent_for_carbide::types::FluentTimeStyle;
+pub type TimezoneStyle = fluent_for_carbide::types::FluentTimezoneStyle;
 
 #[derive(Debug, Clone)]
 pub struct LocalizedDateTime<S, D, T, Tz> where S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle> {
