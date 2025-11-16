@@ -19,6 +19,8 @@ description = "A crate that includes the other carbide crates and where features
 default = ["carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
 controls = ["carbide_controls", "carbide_wgpu/controls"]
 media = ["carbide_media"]
+chart = ["carbide_chart"]
+dialogs = ["carbide_dialogs"]
 i18n = ["carbide_fluent"]
 3d = ["carbide_3d", "carbide_wgpu_3d"]
 
@@ -31,6 +33,8 @@ carbide_3d = { path = "../carbide_3d", optional = true }
 carbide_wgpu_3d = { path = "../backends/carbide_wgpu_3d", optional = true }
 carbide_media = { path = "../carbide_media", optional = true }
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true}
+carbide_chart = { path = "../carbide_chart", optional = true}
+carbide_dialogs = { path = "../carbide_dialogs", optional = true}
 
 [dev-dependencies]
 carbide_controls = { path = "../carbide_controls" }

@@ -3,6 +3,7 @@ name = "carbide_windows"
 version.workspace = true
 repository.workspace = true
 edition.workspace = true
+publish = false
 authors = [
     "Holger Gott Christensen",
 ]
