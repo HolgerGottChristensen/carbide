@@ -3,8 +3,8 @@ use carbide::environment::EnvironmentColor;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, Map1, Map2, Map3};
 use carbide::widget::{AnyWidget, Capsule, Circle, IfElse, Rectangle, RoundedRectangle, WidgetExt};
+use crate::slider::SliderSteppingType;
 use crate::slider::style::SliderStyle;
-use crate::SliderSteppingType;
 
 #[derive(Copy, Clone, Debug)]
 pub struct UnstyledStyle;

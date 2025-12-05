@@ -1,7 +1,7 @@
-use crate::slider::SliderStepping;
+use crate::slider::{SliderStepping, SliderSteppingType, SliderStyle};
 use crate::slider::SliderValue;
 use crate::slider::SliderStyleKey;
-use crate::{EnabledState, SliderSteppingType, SliderStyle};
+use crate::{EnabledState};
 use carbide_core::draw::{AutomaticStyle, Dimension, Position};
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;

@@ -15,6 +15,7 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
 carbide_macro = { path = "../carbide_macro" }
+carbide_dialogs.workspace = true
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
 carbide_core = { path = "../carbide_core" }
 copypasta = "0.8.1"

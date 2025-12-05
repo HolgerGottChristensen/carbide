@@ -1,5 +1,4 @@
 use crate::slider::style::SliderStyle;
-use crate::SliderSteppingType;
 use carbide::closure;
 use carbide::color::TRANSPARENT;
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
@@ -8,6 +7,7 @@ use carbide::state::{AnyReadState, Map1, Map2};
 use carbide::widget::canvas::{Canvas, CanvasContext};
 use carbide::widget::{AnyWidget, Capsule, RoundedRectangle, WidgetExt};
 use carbide_macro::ui;
+use crate::slider::SliderSteppingType;
 
 #[derive(Copy, Clone, Debug)]
 pub struct PlainStyle;

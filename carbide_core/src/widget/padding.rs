@@ -1,5 +1,3 @@
-use carbide_macro::carbide_default_builder2;
-
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
@@ -17,7 +15,6 @@ pub struct Padding<W, E> where W: Widget, E: ReadState<T=EdgeInsets> {
 }
 
 impl Padding<Empty, EdgeInsets> {
-    #[carbide_default_builder2]
     pub fn new<W: Widget, E: IntoReadState<EdgeInsets>>(edge_insets: E, child: W) -> Padding<W, E::Output> {
         Padding {
             id: WidgetId::new(),

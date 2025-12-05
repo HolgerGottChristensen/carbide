@@ -130,12 +130,12 @@ macro_rules! impl_slider_value {
             }
         }
 
-        impl carbide_core::state::ConvertIntoRead<$crate::SliderStepping<$typ>> for $typ {
-            type Output<G: carbide_core::state::AnyReadState<T=Self> + Clone> = carbide_core::state::RMap1<fn(&$typ)->$crate::SliderStepping<$typ>, $typ, $crate::SliderStepping<$typ>, G>;
+        impl carbide_core::state::ConvertIntoRead<$crate::slider::SliderStepping<$typ>> for $typ {
+            type Output<G: carbide_core::state::AnyReadState<T=Self> + Clone> = carbide_core::state::RMap1<fn(&$typ)->$crate::slider::SliderStepping<$typ>, $typ, $crate::slider::SliderStepping<$typ>, G>;
 
             fn convert<F: carbide_core::state::AnyReadState<T=$typ> + Clone>(f: F) -> Self::Output<F> {
                 carbide_core::state::Map1::read_map(f, |c| {
-                    $crate::SliderStepping::Stepped(c.clone())
+                    $crate::slider::SliderStepping::Stepped(c.clone())
                 })
             }
         }

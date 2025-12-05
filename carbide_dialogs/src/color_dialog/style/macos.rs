@@ -44,6 +44,7 @@ impl ColorDialogStyle for MacOSNativeColorDialogStyle {
 
         let panel = unsafe { NSColorPanel::sharedColorPanel(main_thead_marker) };
 
+        //panel.close();
         unsafe { panel.setColor(&initial_color) };
         unsafe { panel.setContinuous(true) };
         unsafe { panel.setShowsAlpha(*show_alpha.value()) };
@@ -94,7 +95,7 @@ impl ColorDialogReceiver {
 
     fn color_changed(color: &NSColor) {
         println!("Called: {:?}", color);
-        let converted_color = unsafe { color.colorUsingColorSpace(&NSColorSpace::genericRGBColorSpace()) }
+        let converted_color = unsafe { color.colorUsingColorSpace(&NSColorSpace::sRGBColorSpace()) }
             .expect("The color to be representable in generic RGB color space");
 
         COLOR.with_borrow_mut(|state| unsafe {

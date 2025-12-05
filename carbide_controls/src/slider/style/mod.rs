@@ -10,7 +10,7 @@ use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnySequence, AnyWidget};
 pub use plain::PlainStyle;
 pub use unstyled::UnstyledStyle;
-use crate::SliderSteppingType;
+use crate::slider::SliderSteppingType;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct SliderStyleKey;

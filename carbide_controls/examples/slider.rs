@@ -1,5 +1,6 @@
-use carbide_controls::{ControlsExt, Slider, SliderStepping, UnstyledStyle};
-use carbide_controls::SliderStepping::SmoothStepped;
+use carbide_controls::ControlsExt;
+use carbide_controls::slider::{Slider, UnstyledStyle};
+use carbide_controls::slider::SliderStepping::SmoothStepped;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;

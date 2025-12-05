@@ -144,7 +144,7 @@ impl NavigationStack<NavigationKey> {
 }
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> NavigationStack<K> {
-    fn with(&mut self, env: &mut Environment, f: impl FnOnce(&mut Environment, &mut Box<dyn AnyWidget>)) {
+    fn with_navigation_manager(&mut self, env: &mut Environment, f: impl FnOnce(&mut Environment, &mut Box<dyn AnyWidget>)) {
         env.with_mut::<K>(&mut self.navigation_manager, |env| {
             f(env, &mut self.current)
         });
@@ -185,7 +185,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> NavigationStack<K> {
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Initialize for NavigationStack<K> {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_initialization(&mut InitializationContext {
                 env,
             })
@@ -195,7 +195,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Initialize for Navigati
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Update for NavigationStack<K> {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_update(&mut UpdateContext {
                 text: ctx.text,
                 image: ctx.image,
@@ -207,7 +207,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Update for NavigationSt
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> MouseEventHandler for NavigationStack<K> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_mouse_event(event, &mut MouseEventContext {
                 text: ctx.text,
                 image: ctx.image,
@@ -222,7 +222,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> MouseEventHandler for N
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> KeyboardEventHandler for NavigationStack<K> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_keyboard_event(event, &mut KeyboardEventContext {
                 text: ctx.text,
                 image: ctx.image,
@@ -237,7 +237,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> KeyboardEventHandler fo
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> OtherEventHandler for NavigationStack<K> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_other_event(event, &mut OtherEventContext {
                 text: ctx.text,
                 image: ctx.image,
@@ -251,7 +251,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> OtherEventHandler for N
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> WindowEventHandler for NavigationStack<K> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_window_event(event, &mut WindowEventContext {
                 text: ctx.text,
                 image: ctx.image,
@@ -265,7 +265,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> WindowEventHandler for 
 
 impl<K: EnvironmentKey<Value=NavigationManager> + Clone> AccessibilityEventHandler for NavigationStack<K> {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
-        self.with(ctx.env, |env, child| {
+        self.with_navigation_manager(ctx.env, |env, child| {
             child.process_accessibility_event(event, &mut AccessibilityEventContext {
                 env,
             })

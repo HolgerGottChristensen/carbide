@@ -45,6 +45,7 @@ bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 carbide_derive = { path = "carbide_derive", version = "0.72.0" }
 carbide_macro = { path = "carbide_macro", version = "0.72.0" }
+carbide_dialogs = { path = "carbide_dialogs", version = "0.72.0" }
 cgmath = { version = "0.18", features = ["mint"] }
 chrono = "0.4"
 console_error_panic_hook = "0.1.7"

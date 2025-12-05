@@ -7,7 +7,7 @@ Carbide is an attempt to create an easy-to-use, 2D library written entirely in R
 
 Carbide is an experimental Rust GUI Framework. The main focuses of the Carbide project are simplicity and composability. It is inspired by current attempts at creating desktop UI, such as SwiftUI, Flutter and Qt.
 
-Carbide is a fork of the earlier repository conrod (which is still being worked on and maintained). Since the fork, almost all the code has been rewritten, so the two
+Carbide is a fork of the earlier repository called conrod (which is no longer maintained). Since the fork, almost all the code has been rewritten, so the two
 are not really comparable anymore.
 
 The project differentiates itself from other attempts (druid, egui, iced, ...) by using the mindset of SwiftUI layouting

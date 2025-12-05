@@ -6,11 +6,12 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::IntoReadState;
 use carbide_core::widget::{AnyWidget, EdgeInsets, HStack, Rectangle, Text, WidgetExt};
 
-use crate::{EnabledKey, Help, SliderStyle};
+use crate::{EnabledKey, Help};
 use crate::button::{ButtonStyle, ButtonStyleKey};
+use crate::color_picker::{ColorPickerStyle, ColorPickerStyleKey};
 use crate::labelled::Labelled;
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
-use crate::slider::SliderStyleKey;
+use crate::slider::{SliderStyle, SliderStyleKey};
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
 
 type Enabled<C, K, V> = EnvUpdatingNew2<C, K, V>;
@@ -44,6 +45,10 @@ pub trait ControlsExt: WidgetExt {
 
     fn button_style(self, value: impl ButtonStyle + 'static) -> impl Widget {
         EnvUpdatingNew::<Self, ButtonStyleKey>::new(Box::new(value) as Box<dyn ButtonStyle>, self)
+    }
+
+    fn color_picker_style(self, value: impl ColorPickerStyle + 'static) -> impl Widget {
+        EnvUpdatingNew::<Self, ColorPickerStyleKey>::new(Box::new(value) as Box<dyn ColorPickerStyle>, self)
     }
 
     fn slider_style(self, value: impl SliderStyle + 'static) -> impl Widget {
