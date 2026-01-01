@@ -1,4 +1,5 @@
 use crate::open_dialog::style::OpenDialogStyle;
+#[cfg(target_os = "macos")]
 use crate::save_dialog::style::macos::MacOSNativeSaveDialogStyle;
 use crate::{FileType, NativeStyle};
 use carbide::asynchronous::AsyncContext;
@@ -9,6 +10,7 @@ use oneshot::RecvError;
 use std::fmt::Debug;
 use std::path::PathBuf;
 
+#[cfg(target_os = "macos")]
 mod macos;
 
 #[derive(Debug, Copy, Clone)]
@@ -30,9 +32,17 @@ impl SaveDialogStyle for AutomaticStyle {
     }
 }
 
+#[cfg(target_os = "macos")]
 impl SaveDialogStyle for NativeStyle {
     fn open(&self, title: Option<String>, message: Option<String>, prompt: Option<String>, default_file_name: Option<String>, show_hidden_files: bool, path: Option<PathBuf>, file_types: &[FileType], f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, env: &mut Environment) {
         MacOSNativeSaveDialogStyle.open(title, message, prompt, default_file_name, show_hidden_files, path, file_types, f, env)
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+impl SaveDialogStyle for NativeStyle {
+    fn open(&self, title: Option<String>, message: Option<String>, prompt: Option<String>, default_file_name: Option<String>, show_hidden_files: bool, path: Option<PathBuf>, file_types: &[FileType], f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, env: &mut Environment) {
+        todo!()
     }
 }
 

@@ -54,7 +54,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
-            msaa: WgpuMsaa::X1
+            msaa: WgpuMsaa::X4
         }
     }
 }

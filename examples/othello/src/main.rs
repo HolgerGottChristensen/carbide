@@ -18,7 +18,7 @@ fn main() {
 
     let score = Map1::read_map(game.clone(), |g| g.score());
 
-    let score_text = Map1::read_map(score, |s| format!("{:?}", s));
+    let score_text = Map1::read_map(score, |s| format!("Red: {}, Green: {}", s.black, s.white));
 
     let player_indicator_color = Map1::read_map(current_player, |c| {
         match c {

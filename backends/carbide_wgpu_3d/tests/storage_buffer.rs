@@ -1,5 +1,5 @@
 use encase::{ArrayLength, ShaderType, StorageBuffer};
-use carbide_core::render::matrix::Vector2;
+use carbide_core::math::Vector2;
 
 #[derive(ShaderType)]
 struct Positions {

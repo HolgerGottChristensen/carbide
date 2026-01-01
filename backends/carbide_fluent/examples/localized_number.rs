@@ -1,7 +1,8 @@
 use icu::locid::locale;
 
-use carbide_controls::{ControlsExt, Slider};
+use carbide_controls::{ControlsExt};
 use carbide_controls::picker::Picker;
+use carbide_controls::slider::Slider;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::LocalState;

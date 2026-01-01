@@ -15,8 +15,8 @@ pub enum Player {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Score {
-    black: u32,
-    white: u32,
+    pub black: u32,
+    pub white: u32,
 }
 
 #[derive(Debug, Clone, Copy)]

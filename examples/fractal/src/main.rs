@@ -14,7 +14,7 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "Fractal clock example",
+            "Fractal clock - Carbide",
             Dimension::new(600.0, 600.0),
             Canvas::new(FractalClock {
                 color: WHITE,

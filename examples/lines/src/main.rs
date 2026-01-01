@@ -2,8 +2,9 @@ use std::cmp::Ordering;
 
 use carbide::{closure, lens, ui};
 use carbide::{Application, Window};
-use carbide::controls::{ControlsExt, Slider, TextInput};
+use carbide::controls::{ControlsExt, TextInput};
 use carbide::controls::button::{BorderedProminentStyle, Button};
+use carbide::controls::slider::Slider;
 use carbide::draw::{Dimension, Position, Scalar};
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State};

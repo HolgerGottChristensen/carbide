@@ -12,7 +12,7 @@ use carbide::asynchronous::get_event_sink;
 use carbide::color::ColorExt;
 use carbide::draw::{ImageId, ImageMode, ImageOptions};
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
-use carbide::event::{CoreEvent, MouseEvent, MouseEventContext, MouseEventHandler};
+use carbide::event::{CoreEvent, ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
 use carbide::render::{Render, RenderContext};
 use carbide::widget::*;
@@ -53,7 +53,6 @@ pub struct Mandelbrot {
     jobs: Vec<(ImageRenderJobInfo, Rc<Receiver<(DynamicImage, ImageId)>>)>,
 
     images: HashMap<(i32, i32, u32), (ImageId, ImageRenderJobInfo)>,
-    spawned: bool,
 
     offset: Position,
     rotation: f64,
@@ -67,7 +66,6 @@ impl Mandelbrot {
             dimension: Default::default(),
             jobs: vec![],
             images: HashMap::new(),
-            spawned: false,
             offset: Position::origin(),
             rotation: 0.0,
         }
@@ -174,17 +172,7 @@ impl Render for Mandelbrot {
                     });
                 }
             }
-
-            /*this.style(DrawStyle::Color(WHITE.alpha(0.2)), |this| {
-                this.rect(Rect::new(
-                    self.position,
-                    self.dimension
-                ))
-            })*/
-
         });
-
-
     }
 }
 
@@ -196,6 +184,9 @@ impl MouseEventHandler for Mandelbrot {
             }
             MouseEvent::Rotation(delta, _, _) => {
                 //self.rotation -= delta;
+            }
+            MouseEvent::Drag { button: MouseButton::Left, modifiers: ModifierKey::EMPTY, delta_xy, ..  } => {
+                self.offset += delta_xy;
             }
             _ => ()
         }

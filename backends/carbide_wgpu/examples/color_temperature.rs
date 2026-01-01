@@ -1,4 +1,4 @@
-use carbide_controls::Slider;
+use carbide_controls::slider::Slider;
 use carbide_core::color::Color;
 use carbide_core::draw::{Dimension};
 use carbide_core::state::{LocalState, Map1};

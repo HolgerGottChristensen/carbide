@@ -188,9 +188,21 @@ impl AddAssign<Position> for Position {
     }
 }
 
+impl AddAssign<&Position> for Position {
+    fn add_assign(&mut self, rhs: &Position) {
+        *self = *self + *rhs;
+    }
+}
+
 impl SubAssign<Position> for Position {
     fn sub_assign(&mut self, rhs: Position) {
         *self = *self - rhs;
+    }
+}
+
+impl SubAssign<&Position> for Position {
+    fn sub_assign(&mut self, rhs: &Position) {
+        *self = *self - *rhs;
     }
 }
 
