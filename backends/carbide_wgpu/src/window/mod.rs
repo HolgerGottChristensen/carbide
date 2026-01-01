@@ -37,7 +37,8 @@ impl Window<String, Empty> {
         let child = carbide_controls::controls_overlay(child);
 
         let child = ZStack::new((
-            Rectangle::new().fill(EnvironmentColor::SystemBackground),
+            Rectangle::new()
+                .fill(EnvironmentColor::SystemBackground),
             child
         ));
 
@@ -53,7 +54,7 @@ impl Window<String, Empty> {
             position: Default::default(),
             dimension,
             child,
-            msaa: WgpuMsaa::X4
+            msaa: WgpuMsaa::X1
         }
     }
 }

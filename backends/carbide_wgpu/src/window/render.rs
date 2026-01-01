@@ -28,7 +28,7 @@ use std::collections::HashMap;
 use log::info;
 use typed_arena::Arena;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, LoadOp, Operations, Queue, RenderPassDepthStencilAttachment, RenderPipeline, StoreOp, SurfaceConfiguration, SurfaceTexture, Texture, TextureFormat, TextureUsages, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, ImageCopyTexture, LoadOp, Operations, Queue, RenderPassDepthStencilAttachment, RenderPipeline, StoreOp, SurfaceConfiguration, SurfaceTexture, TexelCopyTextureInfo, Texture, TextureFormat, TextureUsages, TextureView};
 use carbide_core::environment::Environment;
 use carbide_core::math::Matrix4;
 use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
@@ -499,13 +499,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
                     if initial_copy {
                         encoder.copy_texture_to_texture(
-                            ImageCopyTexture {
+                            TexelCopyTextureInfo {
                                 texture: &self.targets[target_id].texture,
                                 mip_level: 0,
                                 origin: Default::default(),
                                 aspect: Default::default(),
                             },
-                            ImageCopyTexture {
+                            TexelCopyTextureInfo {
                                 texture: &self.targets[source_id].texture,
                                 mip_level: 0,
                                 origin: Default::default(),
@@ -521,7 +521,10 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
                     let (color_op, stencil_op, depth_op) = render_pass_ops(RenderPassOps::Middle);
 
-                    let (view, resolve_target) = self.msaa_texture_view.as_ref().map(|a| (a, Some(&self.targets[target_id].view))).unwrap_or((&self.targets[target_id].view, None));
+                    let (view, resolve_target) = self.msaa_texture_view
+                        .as_ref()
+                        .map(|a| (a, Some(&self.targets[target_id].view)))
+                        .unwrap_or((&self.targets[target_id].view, None));
 
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,

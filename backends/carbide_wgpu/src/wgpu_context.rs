@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use dashmap::DashMap;
 use log::{error, info};
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Instance, PipelineLayout, Queue, RenderPipeline, Sampler, ShaderModule, Texture, TextureFormat};
+use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Features, Instance, PipelineLayout, Queue, RenderPipeline, Sampler, ShaderModule, Texture, TextureFormat};
 use carbide_core::draw::ImageId;
 use carbide_core::environment::EnvironmentKey;
 use carbide_core::widget::FilterId;
@@ -67,7 +67,8 @@ impl WgpuContext {
         let (device, queue) = adapter.request_device(
             &wgpu::DeviceDescriptor {
                 label: Some("carbide_device"),
-                required_features: Default::default(),
+                // Required for multiple layer textures, where we clear the same allocated texture using intermediate steps.
+                required_features: Features::CLEAR_TEXTURE,
                 required_limits: limits,
                 memory_hints: Default::default(),
                 trace: Default::default(),

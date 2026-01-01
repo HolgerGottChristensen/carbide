@@ -155,7 +155,7 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment: type_map,
+            environment,
             text_context,
             event_loop,
             event_sink
@@ -167,7 +167,7 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment: type_map,
+            environment,
             text_context,
             animation_manager: AnimationManager::new(),
             focus_manager: FocusManager::new(),

@@ -94,14 +94,18 @@ impl TargetStates {
 
     /// Get the index of the next free target and a bool indicating if the target needs clearing.
     fn get(&mut self) -> (usize, bool) {
-        if let Some((index, target)) = self.inner.iter_mut().enumerate().filter(|(_, a)| **a != Used).next() {
-            let needs_free = *target == Free;
-            *target = Used;
-            (index, needs_free)
-        } else {
-            self.inner.push(Used);
-            (self.inner.len() - 1, false)
-        }
+        if let Some((index, target)) = self.inner
+            .iter_mut()
+            .enumerate()
+            .filter(|(_, a)| **a != Used)
+            .next() {
+                let needs_free = *target == Free;
+                *target = Used;
+                (index, needs_free)
+            } else {
+                self.inner.push(Used);
+                (self.inner.len() - 1, false)
+            }
     }
 
     fn free(&mut self, index: usize) {
@@ -956,6 +960,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         self.filters.entry(filter.id).or_insert_with(|| filter.clone());
         self.current_frame_filters.insert(filter.id);
+
         self.filters.entry(filter2.id).or_insert_with(|| filter2.clone());
         self.current_frame_filters.insert(filter2.id);
 
