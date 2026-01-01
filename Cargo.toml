@@ -27,7 +27,6 @@ members = [
     "carbide_3d",
     "carbide_chart",
     "carbide_dialogs",
-    "backends/carbide_tesellation_cache",
 ]
 
 [workspace.package]
