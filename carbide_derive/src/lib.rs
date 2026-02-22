@@ -41,9 +41,9 @@ fn impl_derive(
     let ast = syn::parse(input).unwrap();
 
     // Build the implementation.
-    let gen = generate_derive(&ast);
+    let r#gen = generate_derive(&ast);
     // Return the generated impl.
-    gen.into()
+    r#gen.into()
 }
 
 #[proc_macro]

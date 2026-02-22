@@ -8,7 +8,7 @@
     clippy::needless_pass_by_ref_mut,
 )]
 #[cfg(any(feature = "full", feature = "derive"))]
-use crate::gen::helper::fold::*;
+use crate::r#gen::helper::fold::*;
 use crate::*;
 use proc_macro2::Span;
 #[cfg(feature = "full")]

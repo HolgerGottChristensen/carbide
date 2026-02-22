@@ -19,7 +19,6 @@ include = [
 ]
 keywords = ["macros", "syn"]
 license = "MIT OR Apache-2.0"
-rust-version = "1.56"
 
 [features]
 default = ["derive", "parsing", "printing", "clone-impls", "proc-macro"]

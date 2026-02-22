@@ -1,3 +1,5 @@
+use std::any::{Any, TypeId};
+use carbide::automatic_style::AutomaticStyle;
 use crate::event::{WindowEvent, WindowEventContext};
 use carbide_macro::carbide_default_builder2;
 
@@ -8,7 +10,9 @@ use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, Mous
 use crate::common::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
+use crate::state::{LocalState, ReadState, State, StateExtNew};
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
+use crate::widget::scroll::style::{HorizontalScrollBarStyleKey, VerticalScrollBarStyleKey};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
@@ -20,18 +24,21 @@ pub struct Scroll<W> where W: Widget {
     dimension: Dimension,
     scroll_offset: Position,
     scroll_directions: ScrollDirection,
-    scrollbar_horizontal: Box<dyn AnyWidget>,
-    scrollbar_vertical: Box<dyn AnyWidget>,
-    drag_started_on_vertical_scrollbar: bool,
-    drag_started_on_horizontal_scrollbar: bool,
-    vertical_scrollbar_hovered: bool,
-    horizontal_scrollbar_hovered: bool,
-    scrollbar_horizontal_background: Box<dyn AnyWidget>,
-    scrollbar_vertical_background: Box<dyn AnyWidget>,
+
+    horizontal_id: TypeId,
+    horizontal_thumb: Box<dyn AnyWidget>,
+    horizontal_background: Box<dyn AnyWidget>,
+    horizontal_background_hovered: LocalState<bool>,
+    horizontal_dragging: LocalState<bool>,
+
+    vertical_id: TypeId,
+    vertical_thumb: Box<dyn AnyWidget>,
+    vertical_background: Box<dyn AnyWidget>,
+    vertical_background_hovered: LocalState<bool>,
+    vertical_dragging: LocalState<bool>,
 }
 
 impl Scroll<Empty> {
-    #[carbide_default_builder2]
     pub fn new<W: Widget>(child: W) -> Scroll<W> {
         Scroll {
             id: WidgetId::new(),
@@ -40,30 +47,18 @@ impl Scroll<Empty> {
             dimension: Dimension::new(0.0, 0.0),
             scroll_offset: Position::new(0.0, 0.0),
             scroll_directions: ScrollDirection::Both,
-            scrollbar_horizontal: Capsule::new()
-                .fill(EnvironmentColor::ThinLight)
-                .stroke(EnvironmentColor::ThinDark)
-                .stroke_style(1.0)
-                .frame(100.0, 8.0)
-                .boxed(),
-            scrollbar_vertical: Capsule::new()
-                .fill(EnvironmentColor::ThinLight)
-                .stroke(EnvironmentColor::ThinDark)
-                .stroke_style(1.0)
-                .frame(8.0, 100.0)
-                .boxed(),
-            drag_started_on_vertical_scrollbar: false,
-            drag_started_on_horizontal_scrollbar: false,
-            vertical_scrollbar_hovered: false,
-            horizontal_scrollbar_hovered: false,
-            scrollbar_horizontal_background: Rectangle::new()
-                .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
-                .frame(100.0, 10.0)
-                .boxed(),
-            scrollbar_vertical_background: Rectangle::new()
-                .fill(Color::Rgba(0.0, 0.0, 0.0, 0.5))
-                .frame(10.0, 100.0)
-                .boxed(),
+
+            horizontal_id: TypeId::of::<u8>(),
+            horizontal_thumb: Rectangle::new().fill(EnvironmentColor::Red).frame(8.0, 8.0).boxed(),
+            horizontal_background: Rectangle::new().fill(EnvironmentColor::Yellow).frame(10.0, 10.0).boxed(),
+            horizontal_background_hovered: LocalState::new(false),
+            horizontal_dragging: LocalState::new(false),
+
+            vertical_id: TypeId::of::<u8>(),
+            vertical_thumb: Rectangle::new().fill(EnvironmentColor::Green).frame(8.0, 8.0).boxed(),
+            vertical_background: Rectangle::new().fill(EnvironmentColor::Blue).frame(10.0, 10.0).boxed(),
+            vertical_background_hovered: LocalState::new(false),
+            vertical_dragging: LocalState::new(false),
         }
     }
 }
@@ -142,22 +137,21 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                 }
             }
             MouseEvent::Release { .. } => {
-                self.drag_started_on_vertical_scrollbar = false;
-                self.drag_started_on_horizontal_scrollbar = false;
+                *self.vertical_dragging.value_mut() = false;
+                *self.horizontal_dragging.value_mut() = false;
             }
             MouseEvent::Move { to, .. } => {
-                self.vertical_scrollbar_hovered = self.scrollbar_vertical_background.is_inside(*to);
-                self.horizontal_scrollbar_hovered =
-                    self.scrollbar_horizontal_background.is_inside(*to);
+                *self.vertical_background_hovered.value_mut() = self.vertical_background.is_inside(*to);
+                *self.horizontal_background_hovered.value_mut() = self.horizontal_background.is_inside(*to);
             }
             MouseEvent::Press { button: MouseButton::Left, position: point, .. } => {
-                if self.scrollbar_vertical_background.is_inside(*point)
-                    && !self.scrollbar_vertical.is_inside(*point)
+                if self.vertical_background.is_inside(*point)
+                    && !self.vertical_thumb.is_inside(*point)
                 {
                     let offset_multiplier = self.child.height() / self.height();
 
                     let middle_of_scrollbar =
-                        self.scrollbar_vertical.y() + self.scrollbar_vertical.height() / 2.0;
+                        self.vertical_thumb.y() + self.vertical_thumb.height() / 2.0;
 
                     let delta = point.y - middle_of_scrollbar;
 
@@ -166,13 +160,13 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                     self.keep_y_within_bounds();
                 }
 
-                if self.scrollbar_horizontal_background.is_inside(*point)
-                    && !self.scrollbar_horizontal.is_inside(*point)
+                if self.horizontal_background.is_inside(*point)
+                    && !self.horizontal_thumb.is_inside(*point)
                 {
                     let offset_multiplier = self.child.width() / self.width();
 
                     let middle_of_scrollbar =
-                        self.scrollbar_horizontal.x() + self.scrollbar_horizontal.width() / 2.0;
+                        self.horizontal_thumb.x() + self.horizontal_thumb.width() / 2.0;
 
                     let delta = point.x - middle_of_scrollbar;
 
@@ -187,9 +181,9 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                 delta_xy,
                 ..
             } => {
-                if !self.drag_started_on_vertical_scrollbar {
-                    if self.scrollbar_vertical.is_inside(*origin) {
-                        self.drag_started_on_vertical_scrollbar = true;
+                if !*self.vertical_dragging.value() {
+                    if self.vertical_thumb.is_inside(*origin) {
+                        *self.vertical_dragging.value_mut() = true;
                     }
                 } else {
                     if self.is_inside(Position::new(self.x(), to.y)) {
@@ -205,9 +199,9 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
                     }
                 }
 
-                if !self.drag_started_on_horizontal_scrollbar {
-                    if self.scrollbar_horizontal.is_inside(*origin) {
-                        self.drag_started_on_horizontal_scrollbar = true;
+                if !*self.horizontal_dragging.value() {
+                    if self.horizontal_thumb.is_inside(*origin) {
+                        *self.horizontal_dragging.value_mut() = true;
                     }
                 } else {
                     if self.is_inside(Position::new(to.x, self.y())) {
@@ -243,6 +237,24 @@ impl<W: Widget> Layout for Scroll<W> {
 
         self.dimension = requested_size;
 
+        let vertical_style = ctx.env.get::<VerticalScrollBarStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+
+        if vertical_style.key() != self.vertical_id {
+            self.vertical_thumb = vertical_style.thumb(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
+            self.vertical_background = vertical_style.background(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
+            self.vertical_id = vertical_style.key();
+            println!("Updated vertical");
+        }
+
+        let horizontal_style = ctx.env.get::<HorizontalScrollBarStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+
+        if horizontal_style.key() != self.horizontal_id {
+            self.horizontal_thumb = horizontal_style.thumb(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
+            self.horizontal_background = horizontal_style.background(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
+            self.horizontal_id = horizontal_style.key();
+            println!("Updated horizontal");
+        }
+
         if self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Vertical
         {
@@ -251,7 +263,7 @@ impl<W: Widget> Layout for Scroll<W> {
             let horizontal_height = if self.scroll_directions == ScrollDirection::Both
                 && self.child.width() > self.width()
             {
-                self.scrollbar_horizontal.height()
+                self.horizontal_thumb.height()
             } else {
                 0.0
             };
@@ -260,12 +272,12 @@ impl<W: Widget> Layout for Scroll<W> {
             let height = (max_height - min_height) * percent_height.min(1.0) + min_height
                 - horizontal_height;
 
-            self.scrollbar_vertical.set_height(height);
-            self.scrollbar_vertical.calculate_size(requested_size, ctx);
+            self.vertical_thumb.set_height(height);
+            self.vertical_thumb.calculate_size(requested_size, ctx);
 
-            self.scrollbar_vertical_background
+            self.vertical_background
                 .set_height(requested_size.height);
-            self.scrollbar_vertical_background
+            self.vertical_background
                 .calculate_size(requested_size, ctx);
         }
 
@@ -277,7 +289,7 @@ impl<W: Widget> Layout for Scroll<W> {
             let vertical_width = if self.scroll_directions == ScrollDirection::Both
                 && self.child.height() > self.height()
             {
-                self.scrollbar_vertical.width()
+                self.vertical_thumb.width()
             } else {
                 0.0
             };
@@ -287,12 +299,14 @@ impl<W: Widget> Layout for Scroll<W> {
             let width =
                 (max_width - min_width) * percent_width.min(1.0) + min_width - vertical_width;
 
-            self.scrollbar_horizontal.set_width(width);
-            self.scrollbar_horizontal
+            self.horizontal_thumb
+                .set_width(width);
+            self.horizontal_thumb
                 .calculate_size(requested_size, ctx);
-            self.scrollbar_horizontal_background
+
+            self.horizontal_background
                 .set_width(requested_size.width);
-            self.scrollbar_horizontal_background
+            self.horizontal_background
                 .calculate_size(requested_size, ctx);
         }
 
@@ -313,13 +327,13 @@ impl<W: Widget> Layout for Scroll<W> {
         ));
 
         // Position scrollbars
-        self.scrollbar_vertical.set_position(
+        self.vertical_thumb.set_position(
             self.position()
-                + Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0),
+                + Position::new(self.dimension.width - self.vertical_thumb.width(), 0.0),
         );
-        self.scrollbar_vertical_background.set_position(
+        self.vertical_background.set_position(
             self.position()
-                + Position::new(self.dimension.width - self.scrollbar_vertical.width(), 0.0),
+                + Position::new(self.dimension.width - self.vertical_background.width(), 0.0),
         );
 
         let scroll_vertical_percent = if self.child.height() - self.height() != 0.0 {
@@ -331,32 +345,32 @@ impl<W: Widget> Layout for Scroll<W> {
         let horizontal_height = if self.scroll_directions == ScrollDirection::Both
             && self.child.width() > self.width()
         {
-            self.scrollbar_horizontal.height()
+            self.horizontal_thumb.height()
         } else {
             0.0
         };
 
-        self.scrollbar_vertical.set_position(
-            self.scrollbar_vertical.position()
+        self.vertical_thumb.set_position(
+            self.vertical_thumb.position()
                 + Position::new(
                     0.0,
-                    -(self.height() - horizontal_height - self.scrollbar_vertical.height())
+                    -(self.height() - horizontal_height - self.vertical_thumb.height())
                         * scroll_vertical_percent,
                 ),
         );
 
-        self.scrollbar_horizontal.set_position(
+        self.horizontal_thumb.set_position(
             self.position()
                 + Position::new(
                     0.0,
-                    self.dimension.height - self.scrollbar_horizontal.height(),
+                    self.dimension.height - self.horizontal_thumb.height(),
                 ),
         );
-        self.scrollbar_horizontal_background.set_position(
+        self.horizontal_background.set_position(
             self.position()
                 + Position::new(
                     0.0,
-                    self.dimension.height - self.scrollbar_horizontal.height(),
+                    self.dimension.height - self.horizontal_background.height(),
                 ),
         );
 
@@ -369,24 +383,24 @@ impl<W: Widget> Layout for Scroll<W> {
         let vertical_width = if self.scroll_directions == ScrollDirection::Both
             && self.child.height() > self.height()
         {
-            self.scrollbar_vertical.width()
+            self.vertical_thumb.width()
         } else {
             0.0
         };
 
-        self.scrollbar_horizontal.set_position(
-            self.scrollbar_horizontal.position()
+        self.horizontal_thumb.set_position(
+            self.horizontal_thumb.position()
                 + Position::new(
-                    (self.width() - vertical_width - self.scrollbar_horizontal.width())
+                    (self.width() - vertical_width - self.horizontal_thumb.width())
                         * scroll_horizontal_percent,
                     0.0,
                 ),
         );
 
-        self.scrollbar_vertical.position_children(ctx);
-        self.scrollbar_horizontal.position_children(ctx);
-        self.scrollbar_vertical_background.position_children(ctx);
-        self.scrollbar_horizontal_background.position_children(ctx);
+        self.vertical_thumb.position_children(ctx);
+        self.horizontal_thumb.position_children(ctx);
+        self.vertical_background.position_children(ctx);
+        self.horizontal_background.position_children(ctx);
         self.child.position_children(ctx);
     }
 }
@@ -472,23 +486,16 @@ impl<W: Widget> Render for Scroll<W> {
             || self.scroll_directions == ScrollDirection::Vertical)
             && self.child.height() > self.height()
         {
-            if self.vertical_scrollbar_hovered || self.drag_started_on_vertical_scrollbar {
-                self.scrollbar_vertical_background
-                    .render(context);
-            }
-
-            self.scrollbar_vertical.render(context);
+            self.vertical_background.render(context);
+            self.vertical_thumb.render(context);
         }
 
         if (self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Horizontal)
             && self.child.width() > self.width()
         {
-            if self.horizontal_scrollbar_hovered || self.drag_started_on_horizontal_scrollbar {
-                self.scrollbar_horizontal_background.render(context);
-            }
-
-            self.scrollbar_horizontal.render(context);
+            self.horizontal_background.render(context);
+            self.horizontal_thumb.render(context);
         }
     }
 }

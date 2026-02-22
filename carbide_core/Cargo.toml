@@ -12,7 +12,6 @@ license = "MIT OR Apache-2.0"
 readme = "../README.md"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
-resolver = "2"
 
 [package.metadata.docs.rs]
 all-features = true

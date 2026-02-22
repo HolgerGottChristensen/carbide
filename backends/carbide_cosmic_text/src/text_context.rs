@@ -92,7 +92,7 @@ impl TextContext {
 
 impl InnerTextContext for TextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
-        let (ref mut buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
+        let (buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
 
@@ -191,7 +191,7 @@ impl InnerTextContext for TextContext {
     }
 
     fn render(&mut self, id: TextId, f: &mut dyn FnMut(&Glyph)) {
-        let (ref mut buffer, metadata) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
+        let (buffer, metadata) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         // Inspect the output runs
         for run in buffer.layout_runs() {
@@ -250,7 +250,7 @@ impl InnerTextContext for TextContext {
     }
 
     fn hit(&self, id: TextId, position: Position) -> (usize, usize) {
-        let (ref buffer, meta) = self.map.get(&id).unwrap();
+        let (buffer, meta) = self.map.get(&id).unwrap();
 
         let hit = buffer.hit(position.x as f32, position.y as f32);
 
@@ -270,7 +270,7 @@ impl InnerTextContext for TextContext {
     }
 
     fn position_of(&self, id: TextId, line: usize, index: usize) -> Position {
-        let (ref buffer, meta) = self.map.get(&id).unwrap();
+        let (buffer, meta) = self.map.get(&id).unwrap();
 
         let byte_offset = meta.text
             .grapheme_indices(true)

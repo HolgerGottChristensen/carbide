@@ -1,4 +1,5 @@
 use cgmath::Matrix4;
+use carbide::widget::EnvUpdatingNew;
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
@@ -14,11 +15,13 @@ use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
 use crate::event;
 use crate::text::text_wrap::{TextWrapKey, Wrap};
-use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Scroll, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager};
+use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
 use crate::widget::keyboard_shortcut::KeyboardShortcut;
 use crate::widget::luminance::Luminance;
 use crate::widget::OnChange;
+use crate::widget::scroll::Scroll;
+use crate::widget::scroll::style::{HorizontalScrollBarStyleKey, ScrollBarStyle, VerticalScrollBarStyleKey};
 use crate::widget::Widget;
 
 
@@ -139,8 +142,8 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         ClipShape::new(self, RoundedRectangle::new(radius).fill(Style::Color(RED)).stroke(Style::Color(RED)))
     }
 
-    fn hidden(self) -> Hidden<Self> {
-        Hidden::new(self)
+    fn hidden<H: IntoReadState<bool>>(self, hide: H) -> Hidden<Self, H::Output> {
+        Hidden::new(self, hide)
     }
 
     fn offset<X: IntoReadState<f64>, Y: IntoReadState<f64>>(self, offset_x: X, offset_y: Y) -> Offset<X::Output, Y::Output, Self> {
@@ -230,5 +233,13 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
 
     fn keyboard_shortcut(self, key: impl Into<event::Key>, modifier_key: ModifierKey) -> KeyboardShortcut<Self> {
         KeyboardShortcut::new(self, key, modifier_key)
+    }
+
+    fn vertical_scroll_style(self, value: impl ScrollBarStyle) -> impl Widget {
+        EnvUpdatingNew::<Self, VerticalScrollBarStyleKey>::new(Box::new(value) as Box<dyn ScrollBarStyle>, self)
+    }
+
+    fn horizontal_scroll_style(self, value: impl ScrollBarStyle) -> impl Widget {
+        EnvUpdatingNew::<Self, HorizontalScrollBarStyleKey>::new(Box::new(value) as Box<dyn ScrollBarStyle>, self)
     }
 }

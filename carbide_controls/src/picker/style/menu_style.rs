@@ -27,7 +27,7 @@ pub struct MenuStyle;
 
 impl MenuStyle {
     fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
-        let mark = Self::mark(&enabled);
+        let mark = Self::mark(enabled.clone());
 
         let content = Self::content(enabled.clone(), model.clone(), picker_selection_type);
 
@@ -112,7 +112,7 @@ impl MenuStyle {
         )).spacing(8.0)
     }
 
-    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget {
+    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget + use<> {
         let selection = item.selection().boxed();
 
         let hovered = Map2::map(hovered, ValueState::new(item.id()), |hovered, id| {
@@ -144,10 +144,10 @@ impl MenuStyle {
         MenuStyleItemBase::new(visual, selection, hovered.as_dyn(), event_id)
     }
 
-    fn mark(enabled: &Box<dyn AnyReadState<T=bool>>) -> impl Widget {
-        let arrows = Self::arrows(&enabled);
+    fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget {
+        let arrows = Self::arrows(enabled.clone());
 
-        let mark_color = Map3::read_map(enabled.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::TertiarySystemFill.color(), |enabled, color, disabled_color| {
+        let mark_color = Map3::read_map(enabled, EnvironmentColor::Accent.color(), EnvironmentColor::TertiarySystemFill.color(), |enabled, color, disabled_color| {
             if *enabled {
                 Style::Gradient(Gradient::linear(
                     vec![color.lightened(0.05), *color],
@@ -207,8 +207,8 @@ impl MenuStyle {
         content
     }
 
-    fn arrows(enabled: &Box<dyn AnyReadState<T=bool>>) -> impl Widget {
-        let mark_color = Map1::read_map(enabled.clone(), |enabled| {
+    fn arrows(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget {
+        let mark_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
             } else {

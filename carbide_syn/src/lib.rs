@@ -493,7 +493,7 @@ mod verbatim;
 #[cfg(all(feature = "parsing", feature = "full"))]
 mod whitespace;
 
-mod gen {
+mod r#gen {
     /// Syntax tree traversal to transform the nodes of an owned syntax tree.
     ///
     /// Each method of the [`Fold`] trait is a hook that can be overridden to
@@ -812,7 +812,7 @@ mod gen {
     #[path = "../helper.rs"]
     mod helper;
 }
-pub use crate::gen::*;
+pub use crate::r#gen::*;
 
 // Not public API.
 #[doc(hidden)]

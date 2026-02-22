@@ -122,7 +122,7 @@ impl Tesselator {
         builder.build()
     }
 
-    pub fn fill(&mut self, draw_shape: DrawShape, options: carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> {
+    pub fn fill(&mut self, draw_shape: DrawShape, options: carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> + use<> {
 
         let path = self.path(draw_shape);
 
@@ -164,7 +164,7 @@ impl Tesselator {
         triangles.into_iter()
     }
 
-    pub fn stroke(&mut self, draw_shape: DrawShape, options: carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> {
+    pub fn stroke(&mut self, draw_shape: DrawShape, options: carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> + use<> {
         let path = self.path(draw_shape);
 
         #[derive(Debug, Copy, Clone, PartialEq)]
