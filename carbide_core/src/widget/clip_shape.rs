@@ -32,7 +32,6 @@ where
 }
 
 impl ClipShape<Empty, Empty> {
-    #[carbide_default_builder2]
     pub fn new<C: Widget, S: AnyShape + AnyWidget + Clone>(child: C, shape: S) -> ClipShape<C, S> {
         ClipShape {
             id: WidgetId::new(),

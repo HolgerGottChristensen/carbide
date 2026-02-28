@@ -17,5 +17,6 @@ pub enum DrawShape {
     RoundedRectangle(Rect, CornerRadii),
     Circle(Position, Scalar),
     Ellipse(Rect),
+    Line(Position, Position),
     Path(Path),
 }

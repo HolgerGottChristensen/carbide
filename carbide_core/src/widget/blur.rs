@@ -20,8 +20,6 @@ pub struct Blur {
 }
 
 impl Blur {
-
-    #[carbide_default_builder2]
     pub fn gaussian(sigma: f32) -> Self {
         Blur {
             id: WidgetId::new(),

@@ -1,5 +1,3 @@
-use carbide_macro::carbide_default_builder2;
-
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
@@ -33,7 +31,6 @@ pub struct Background<F, B> where
 }
 
 impl Background<Empty, Empty> {
-    #[carbide_default_builder2]
     pub fn new<F: Widget, B: Widget>(child: F, background: B) -> Background<F, B> {
         Background {
             id: WidgetId::new(),

@@ -35,7 +35,6 @@ pub struct Image<Id, C> where Id: ReadState<T=Option<ImageId>>, C: ReadState<T=S
 }
 
 impl Image<Option<ImageId>, Style> {
-    #[carbide_default_builder2]
     pub fn new<Id: IntoReadState<Option<ImageId>>>(id: Id) -> Image<Id::Output, Style> {
         Image {
             id: WidgetId::new(),

@@ -31,6 +31,10 @@ impl Position {
         Position::new(0.0, 0.0)
     }
 
+    pub const fn zero() -> Position {
+        Position::origin()
+    }
+
     /// Get a new position that takes the min x position from the two positions and uses it as
     /// its x, and the minimum y position of the two positions and uses it as its y.
     pub fn min(&self, other: &Position) -> Position {

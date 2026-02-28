@@ -1,5 +1,6 @@
 use std::any::{Any, TypeId};
 use carbide::automatic_style::AutomaticStyle;
+use carbide::cursor::MouseCursor;
 use crate::event::{WindowEvent, WindowEventContext};
 use carbide_macro::carbide_default_builder2;
 
@@ -174,6 +175,14 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
 
                     self.keep_x_within_bounds();
                 }
+
+                if self.vertical_thumb.is_inside(*point) {
+                    *self.vertical_dragging.value_mut() = true;
+                }
+
+                if self.horizontal_thumb.is_inside(*point) {
+                    *self.horizontal_dragging.value_mut() = true;
+                }
             }
             MouseEvent::Drag {
                 origin,
@@ -243,7 +252,6 @@ impl<W: Widget> Layout for Scroll<W> {
             self.vertical_thumb = vertical_style.thumb(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
             self.vertical_background = vertical_style.background(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
             self.vertical_id = vertical_style.key();
-            println!("Updated vertical");
         }
 
         let horizontal_style = ctx.env.get::<HorizontalScrollBarStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
@@ -252,7 +260,6 @@ impl<W: Widget> Layout for Scroll<W> {
             self.horizontal_thumb = horizontal_style.thumb(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
             self.horizontal_background = horizontal_style.background(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
             self.horizontal_id = horizontal_style.key();
-            println!("Updated horizontal");
         }
 
         if self.scroll_directions == ScrollDirection::Both
@@ -479,23 +486,33 @@ impl<W: Widget> CommonWidget for Scroll<W> {
 }
 
 impl<W: Widget> Render for Scroll<W> {
-    fn render(&mut self, context: &mut RenderContext) {
-        self.child.render(context);
+    fn render(&mut self, ctx: &mut RenderContext) {
+        self.child.render(ctx);
+
+        if *self.vertical_dragging.value() || *self.horizontal_dragging.value() {
+            if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
+                *env_cursor = MouseCursor::Grabbing;
+            }
+        } else if *self.vertical_background_hovered.value() || *self.horizontal_background_hovered.value() {
+            if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
+                *env_cursor = MouseCursor::Pointer;
+            }
+        }
 
         if (self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Vertical)
             && self.child.height() > self.height()
         {
-            self.vertical_background.render(context);
-            self.vertical_thumb.render(context);
+            self.vertical_background.render(ctx);
+            self.vertical_thumb.render(ctx);
         }
 
         if (self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Horizontal)
             && self.child.width() > self.width()
         {
-            self.horizontal_background.render(context);
-            self.horizontal_thumb.render(context);
+            self.horizontal_background.render(ctx);
+            self.horizontal_thumb.render(ctx);
         }
     }
 }

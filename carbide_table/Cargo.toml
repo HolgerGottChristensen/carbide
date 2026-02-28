@@ -1,0 +1,12 @@
+[package]
+name = "carbide_table"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+carbide_core = { path = "../carbide_core" }
+
+[dev-dependencies]
+carbide_wgpu = { path = "../backends/carbide_wgpu" }

@@ -1,3 +1,4 @@
+use lyon::geom::LineSegment;
 use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeTessellator, VertexBuffers};
 use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{LineJoin, Path, Winding};
@@ -80,7 +81,11 @@ impl Tesselator {
             }
             DrawShape::Ellipse(rect) => {
                 let center = rect.center();
-                builder.add_ellipse(point(center.x as f32, center.y as f32), vector(rect.width() as f32 / 2.0, rect.height() as f32 / 2.0), Angle::degrees(0.0), Winding::Positive);
+                builder.add_ellipse(
+                    point(center.x as f32, center.y as f32),
+                    vector(rect.width() as f32 / 2.0, rect.height() as f32 / 2.0),
+                    Angle::degrees(0.0), Winding::Positive
+                );
             }
             DrawShape::Path(path) => {
                 let mut builder = Path::builder().with_svg();
@@ -116,6 +121,12 @@ impl Tesselator {
                 }
 
                 return builder.build();
+            }
+            DrawShape::Line(from, to) => {
+                builder.add_line_segment(&LineSegment {
+                    from: point(from.x as f32, from.y as f32),
+                    to: point(to.x as f32, to.y as f32)
+                });
             }
         }
 
