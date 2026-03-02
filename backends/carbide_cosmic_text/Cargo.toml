@@ -11,6 +11,7 @@ authors = [
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
+carbide_cache = { path = "../carbide_cache" }
 fxhash = "0.2.1"
 cosmic-text = "0.10.0"
 swash = "0.1.8"

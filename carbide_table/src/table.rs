@@ -1,4 +1,4 @@
-use carbide::color::{BLACK, BLUE, GREEN, LIGHT_BLUE, LIGHT_BROWN, LIGHT_GREEN, LIGHT_PURPLE, LIGHT_YELLOW, ORANGE, PURPLE, RED, WHITE, YELLOW};
+use carbide::color::{BLACK, BLUE, DARK_GREEN, DARK_ORANGE, DARK_PURPLE, DARK_YELLOW, GREEN, LIGHT_BLUE, LIGHT_BROWN, LIGHT_GREEN, LIGHT_PURPLE, LIGHT_YELLOW, ORANGE, PURPLE, RED, WHITE, YELLOW};
 use carbide::draw::fill::FillOptions;
 use carbide::draw::{DrawOptions, DrawShape, DrawStyle, Rect, Scalar};
 use carbide_core::draw::{Dimension, Position};
@@ -11,6 +11,7 @@ use std::fmt::Debug;
 use carbide::draw::stroke::StrokeOptions;
 use carbide::math::{Matrix4, Vector3};
 use carbide::state::{LocalState, ReadState, State};
+use carbide::text::{FontWeight, TextStyle};
 use crate::size_collection::SizeCollection;
 
 #[derive(Clone, Debug, Widget)]
@@ -117,7 +118,9 @@ impl Render for Table {
                             )),
                             DrawOptions::Fill(FillOptions::default()),
                         );
-                    })
+                    });
+
+                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(cumulative_width + 3.0, cumulative_height + 4.0), None);
                 }
             }
 
@@ -195,14 +198,16 @@ impl Render for Table {
 
                     let position = Position::new(cummulative_width, frozen_cummulative_height + offset_y);
 
-                    let color = if (row as u32 + col) % 2 == 0 { YELLOW } else { GREEN };
+                    let color = if (row as u32 + col) % 2 == 0 { DARK_YELLOW } else { DARK_GREEN };
 
                     ctx.style(DrawStyle::Color(color), |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(width, *height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
-                    })
+                    });
+
+                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(cummulative_width + 3.0, frozen_cummulative_height + offset_y + 4.0), None);
                 }
 
                 frozen_cummulative_height += *height;
@@ -281,14 +286,17 @@ impl Render for Table {
 
                     let position = Position::new(frozen_cummulative_width + offset_x, cummulative_height);
 
-                    let color = if (row + col as u32) % 2 == 0 { YELLOW } else { GREEN };
+                    let color = if (row + col as u32) % 2 == 0 { DARK_YELLOW } else { DARK_GREEN };
 
                     ctx.style(DrawStyle::Color(color), |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(*width, height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
-                    })
+                    });
+
+                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(frozen_cummulative_width + offset_x + 3.0, cummulative_height + 4.0), None);
+
                 }
 
                 frozen_cummulative_width += *width;
@@ -364,7 +372,7 @@ impl Render for Table {
 
                     let position = Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y);
 
-                    let color = if (row + col) % 2 == 0 { PURPLE } else { ORANGE };;
+                    let color = if (row + col) % 2 == 0 { DARK_PURPLE } else { DARK_ORANGE };;
 
                     frozen_cummulative_width += *width;
 
@@ -373,7 +381,13 @@ impl Render for Table {
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(*width, *height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
-                    })
+                    });
+
+                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle {
+                        font_weight: FontWeight::Bold,
+                        ..TextStyle::default()
+                    }, Position::new(position.x + 3.0, position.y + 4.0), None);
+
                 }
 
                 frozen_cummulative_width = 0.0;

@@ -17,7 +17,7 @@ use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
-use carbide_core::text::{TextContext, TextId};
+use carbide_core::text::{TextContext, TextId, TextStyle};
 use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
@@ -869,7 +869,22 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw_image(Some(WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
     }
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn TextContext) {
+    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {
+        if self.skip_rendering {
+            return;
+        }
+
+        ctx.render_new(text, style, position, requested_size, env, &mut |glyph| {
+            let mode = match glyph.mode {
+                GlyphRenderMode::Plain => MODE_TEXT,
+                GlyphRenderMode::Colored => MODE_TEXT_COLOR,
+            };
+
+            self.draw_image(None, glyph.bounding_box, glyph.texture_coords, mode);
+        });
+    }
+
+    fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext) {
         if self.skip_rendering {
             return;
         }

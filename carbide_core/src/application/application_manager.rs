@@ -1,10 +1,14 @@
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use smallvec::SmallVec;
 use crate::scene::{Scene, SceneId};
 use crate::environment::{Environment, EnvironmentKey};
 use crate::scene::{AnyScene, SceneSequence};
 
+static FRAME: AtomicU32 = AtomicU32::new(0);
+
 #[derive(Debug)]
 pub struct ApplicationManager {
+    application_frame: u32,
     close: bool,
     dismiss_scenes: SmallVec<[SceneId; 1]>,
     add_scenes: SmallVec<[Box<dyn AnyScene>; 1]>,
@@ -13,10 +17,21 @@ pub struct ApplicationManager {
 impl ApplicationManager {
     pub fn new() -> ApplicationManager {
         ApplicationManager {
+            application_frame: 0,
             close: false,
             dismiss_scenes: Default::default(),
             add_scenes: Default::default(),
         }
+    }
+
+    pub fn application_frame() -> u32 {
+        FRAME.load(Ordering::Relaxed)
+    }
+
+    pub fn begin_frame(&mut self) {
+        FRAME.fetch_add(1, Ordering::Relaxed);
+        self.add_scenes.clear();
+        self.dismiss_scenes.clear();
     }
 
     pub fn close(&mut self) {

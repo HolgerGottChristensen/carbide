@@ -1,0 +1,9 @@
+[package]
+name = "carbide_cache"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+carbide_core = { path = "../../carbide_core" }

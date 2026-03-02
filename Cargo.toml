@@ -27,7 +27,7 @@ members = [
     "carbide_3d",
     "carbide_chart",
     "carbide_dialogs",
-    "carbide_table",
+    "carbide_table", "backends/carbide_cache",
 ]
 
 [workspace.package]

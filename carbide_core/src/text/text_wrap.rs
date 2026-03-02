@@ -5,7 +5,7 @@ use carbide_derive::StateValue;
 use crate::environment::EnvironmentKey;
 
 /// The way in which text should wrap around the width.
-#[derive(Copy, Clone, Debug, PartialEq, StateValue)]
+#[derive(Copy, Clone, Debug, PartialEq, StateValue, Eq, Hash)]
 pub enum Wrap {
     /// Wrap at the first character that exceeds the width.
     Character,

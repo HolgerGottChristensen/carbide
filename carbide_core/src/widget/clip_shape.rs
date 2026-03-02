@@ -7,7 +7,7 @@ use crate::text::{TextContext, TextId};
 use crate::widget::ImageFilter;
 use carbide_macro::carbide_default_builder2;
 use cgmath::Matrix4;
-
+use carbide::text::TextStyle;
 use crate::draw::{Alignment, CompositeDrawShape, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
@@ -152,7 +152,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn image(&mut self, _id: ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
-    fn text(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
+    fn text_old(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 
     fn filter_new(&mut self) {}
 
@@ -178,4 +178,6 @@ impl InnerRenderContext for ShapeRenderCapture {
     }
 
     fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
+
+    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {}
 }

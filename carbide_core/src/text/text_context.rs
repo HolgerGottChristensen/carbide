@@ -7,6 +7,28 @@ use crate::environment::Environment;
 use crate::text::glyph::Glyph;
 
 pub trait TextContext {
+    /// Calculate the size of a given piece of text based on a requested size.
+    /// The returned size will be based on the style, and the text to be rendered,
+    /// along with the requested size.
+    fn calculate_size_new(
+        &mut self,
+        text: &str,
+        style: &TextStyle,
+        requested_size: Option<Dimension>,
+        env: &mut Environment
+    ) -> Dimension;
+
+    /// Render a piece of text at a given position with a requested size and style.
+    fn render_new(
+        &mut self,
+        text: &str,
+        style: &TextStyle,
+        position: Position,
+        requested_size: Option<Dimension>,
+        env: &mut Environment,
+        f: &mut dyn FnMut(&Glyph)
+    );
+
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension;
 
     fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment);
@@ -35,6 +57,14 @@ pub trait TextContext {
 pub struct NOOPTextContext;
 
 impl TextContext for NOOPTextContext {
+    fn calculate_size_new(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>, env: &mut Environment) -> Dimension {
+        unimplemented!()
+    }
+
+    fn render_new(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, f: &mut dyn FnMut(&Glyph)) {
+        unimplemented!()
+    }
+
     fn calculate_size(&mut self, _id: TextId, _requested_size: Dimension, _env: &mut Environment) -> Dimension {
         unimplemented!()
     }

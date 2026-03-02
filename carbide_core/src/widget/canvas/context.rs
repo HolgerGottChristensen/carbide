@@ -350,7 +350,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
 
         let style = self.current_state.fill_color.convert(position + self.position, size);
         self.render_context.style(style, |render_context| {
-            render_context.text(text_id);
+            render_context.text_old(text_id);
         });
 
         self.render_context.text.remove(text_id);

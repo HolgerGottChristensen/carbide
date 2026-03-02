@@ -47,7 +47,7 @@ where
 }
 
 impl Text<String, u32, Style, FontStyle, FontWeight, Wrap> {
-    #[carbide_default_builder2]
+
     pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Style>, FontStyle, FontWeight, WrapState> {
         let text = text.into_read_state();
 
@@ -204,7 +204,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
 
     /// Take a given text element and make it render with an underline
     pub fn underline(mut self) -> Self {
-        self.text_decoration = TextDecoration::Underline(vec![]);
+        //self.text_decoration = TextDecoration::Underline(vec![]);
         self
     }
 
@@ -240,7 +240,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         let default_color = self.color.value();
 
         context.style(default_color.convert(self.position, self.dimension), |context| {
-            context.text(self.text_id);
+            context.text_old(self.text_id);
         });
     }
 }

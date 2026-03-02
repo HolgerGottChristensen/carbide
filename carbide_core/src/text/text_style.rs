@@ -24,3 +24,18 @@ pub struct TextStyle {
     pub color: Option<Color>,
     pub wrap: Wrap,
 }
+
+impl Default for TextStyle {
+    fn default() -> Self {
+        TextStyle {
+            family: "Noto Sans".to_string(),
+            font_size: 13,
+            line_height: 1.2,
+            font_style: FontStyle::Normal,
+            font_weight: FontWeight::Normal,
+            text_decoration: TextDecoration::None,
+            color: None,
+            wrap: Wrap::None,
+        }
+    }
+}

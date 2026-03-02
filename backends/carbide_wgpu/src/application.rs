@@ -23,7 +23,7 @@ use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContext as _;
 use carbide_core::widget::WidgetId;
-use carbide_cosmic_text::text_context::TextContext;
+use carbide_cosmic_text::text_context::CosmicTextContext;
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;
 use carbide_winit::event::WindowEvent;
@@ -51,7 +51,7 @@ pub struct Application {
 
     event_handler: NewEventHandler,
     environment: Environment<'static>,
-    text_context: TextContext,
+    text_context: CosmicTextContext,
     event_loop: EventLoop<CustomEvent>,
     event_sink: Arc<dyn EventSink>,
 }
@@ -81,7 +81,7 @@ impl Application {
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
             environment: Environment::new(),
-            text_context: TextContext::new(),
+            text_context: CosmicTextContext::new(),
             event_loop,
             event_sink,
         }
@@ -170,6 +170,7 @@ impl Application {
             environment,
             text_context,
             animation_manager: AnimationManager::new(),
+            application_manager: ApplicationManager::new(),
             focus_manager: FocusManager::new(),
             event_sink,
             wgpu_context,
@@ -200,8 +201,9 @@ pub struct RunningApplication {
     scenes: Scenes,
     event_handler: NewEventHandler,
     environment: Environment<'static>,
-    text_context: TextContext,
+    text_context: CosmicTextContext,
     animation_manager: AnimationManager,
+    application_manager: ApplicationManager,
     focus_manager: FocusManager,
     event_sink: Arc<dyn EventSink>,
 
@@ -220,8 +222,8 @@ impl RunningApplication {
         println!("Redraw was requested, but no root scenes have the ability to request redraw.");
     }
 
-    fn handle_post_event(&mut self, event_loop: &ActiveEventLoop, request: &mut RequestRedraw, application_manager: &mut ApplicationManager) {
-        if application_manager.close_requested() {
+    fn handle_post_event(&mut self, event_loop: &ActiveEventLoop, request: &mut RequestRedraw) {
+        if self.application_manager.close_requested() {
             event_loop.exit();
         }
 
@@ -232,7 +234,7 @@ impl RunningApplication {
                         env,
                     };
 
-                    for mut scene in application_manager.scenes_to_add().drain(..) {
+                    for mut scene in self.application_manager.scenes_to_add().drain(..) {
                         scene.process_initialization(&mut ctx);
                         self.scenes.push(scene);
                     }
@@ -240,12 +242,16 @@ impl RunningApplication {
             })
         });
 
-        for scene in application_manager.scenes_to_dismiss() {
+        for scene in self.application_manager.scenes_to_dismiss() {
             self.scenes.retain(|a| a.id() != *scene);
         }
 
         if self.scenes.iter().filter(|a| !a.is_daemon()).count() == 0 {
             event_loop.exit();
+        }
+
+        if ApplicationManager::application_frame() % 60 == 0 {
+            self.text_context.sweep()
         }
 
         match request {
@@ -279,17 +285,17 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: CustomEvent) {
+        self.application_manager.begin_frame();
+
         let mut request = RequestRedraw::False;
 
         self.animation_manager.update_frame_time();
-
-        let mut application_manager = ApplicationManager::new();
 
         let mouse_position = self.event_handler.mouse_position();
 
         self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
             env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
+                env.with_mut::<ApplicationManager>(&mut self.application_manager, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
                         env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
@@ -305,21 +311,21 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             })
         });
 
-        self.handle_post_event(event_loop, &mut request, &mut application_manager);
+        self.handle_post_event(event_loop, &mut request);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
+        self.application_manager.begin_frame();
+
         let mut request = RequestRedraw::False;
 
         self.animation_manager.update_frame_time();
-
-        let mut application_manager = ApplicationManager::new();
 
         let mouse_position = self.event_handler.mouse_position();
 
         self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
             env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                env.with_mut::<ApplicationManager>(&mut application_manager, |env| {
+                env.with_mut::<ApplicationManager>(&mut self.application_manager, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
                         env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
@@ -333,7 +339,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             })
         });
 
-        self.handle_post_event(event_loop, &mut request, &mut application_manager);
+        self.handle_post_event(event_loop, &mut request);
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {

@@ -13,13 +13,18 @@ use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::scene::SceneManager;
-use carbide_core::text::TextStyle;
-use carbide_core::text::{FontStyle, TextContext as InnerTextContext, TextId};
+use carbide_core::text::{TextContext, TextStyle};
+use carbide_core::text::{FontStyle, TextId};
 use unicode_segmentation::UnicodeSegmentation;
+use carbide_cache::Cache;
+use carbide_core::application::ApplicationManager;
+use carbide_core::color::ColorExt;
 use carbide_core::text::text_wrap::Wrap;
 use carbide_core::text::glyph::{Glyph, GlyphRenderMode};
+use crate::text_cache::{CachableTextStyle, TextEntry, TextKey};
 
-pub struct TextContext {
+pub struct CosmicTextContext {
+    cache: Cache<TextKey, TextEntry>,
     map: FxHashMap<TextId, (Buffer, Metadata)>,
     font_system: FontSystem,
     atlas: TextureAtlas,
@@ -27,8 +32,8 @@ pub struct TextContext {
     scale_context: ScaleContext,
 }
 
-impl TextContext {
-    pub fn new() -> TextContext {
+impl CosmicTextContext {
+    pub fn new() -> CosmicTextContext {
 
         let mut system = FontSystem::new();
 
@@ -45,12 +50,17 @@ impl TextContext {
             }
         }
 
-        TextContext {
+        CosmicTextContext {
+            cache: Cache::new(),
             map: Default::default(),
             font_system: system,
             atlas: TextureAtlas::new(1024, 1024),
             scale_context: ScaleContext::new(),
         }
+    }
+
+    pub fn sweep(&mut self) {
+        self.cache.sweep();
     }
 
     fn partial_glyph_offset(index: usize, layout_run: &LayoutRun) -> (usize, Scalar) {
@@ -88,9 +98,213 @@ impl TextContext {
             }
         }
     }
+
+    fn enqueue_glyphs(scale_context: &mut ScaleContext, texture_atlas: &mut TextureAtlas, font_system: &mut FontSystem, scale_factor: Scalar, mut buffer: &mut Buffer) -> Dimension {
+        let mut width: f32 = 0.0;
+        let mut height: f32 = 0.0;
+
+        for run in buffer.layout_runs() {
+            width = width.max(run.line_w);
+            height = height.max(run.line_top + buffer.metrics().line_height);
+
+            for glyph in run.glyphs.iter() {
+                let physical_glyph = glyph.physical((0., 0.), scale_factor as f32);
+
+                texture_atlas.enqueue(AtlasId::Glyph(physical_glyph.cache_key), || {
+                    let image = swash_image(font_system, scale_context, physical_glyph.cache_key);
+
+                    image.map(|image| {
+                        let dynamic = match image.content {
+                            Content::Mask => {
+                                DynamicImage::ImageLuma8(GrayImage::from_raw(image.placement.width, image.placement.height, image.data).unwrap())
+                            }
+                            Content::SubpixelMask => todo!(),
+                            Content::Color => {
+                                DynamicImage::ImageRgba8(RgbaImage::from_raw(image.placement.width, image.placement.height, image.data).unwrap())
+                            }
+                        };
+
+                        (dynamic, image.placement.top, image.placement.left)
+                    })
+                })
+            }
+        }
+
+        texture_atlas.process_queued();
+
+        let dimension = Dimension::new(width as f64, height as f64);
+        dimension
+    }
 }
 
-impl InnerTextContext for TextContext {
+impl TextContext for CosmicTextContext {
+    fn calculate_size_new(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>, env: &mut Environment) -> Dimension {
+        let scale_factor = env.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
+        let width = requested_size.map(|x| x.width as f32).unwrap_or(f32::MAX);
+
+        let cache_key = TextKey {
+            text: text.to_string(),
+            style: CachableTextStyle {
+                family: style.family.clone(),
+                font_size: style.font_size.clone(),
+                line_height: style.line_height.to_bits(),
+                font_style: style.font_style.clone(),
+                font_weight: style.font_weight.clone(),
+                text_decoration: style.text_decoration.clone(),
+                color: style.color.map(|color| {
+                    let fsa = color.to_fsa();
+                    (fsa[0].to_bits(), fsa[1].to_bits(), fsa[2].to_bits(), fsa[3].to_bits())
+                }),
+                wrap: style.wrap.clone(),
+            },
+            width: width.to_bits(),
+            scale_factor: scale_factor.to_bits(),
+        };
+
+        if let Some(entry) = self.cache.get(&cache_key) {
+            entry.dimension
+        } else {
+            let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
+
+            {
+                let mut buffer = buffer.borrow_with(&mut self.font_system);
+
+                let attributes = Attrs::new()
+                    .family(Family::Name(&style.family))
+                    .style(convert_style(style))
+                    .weight(convert_weight(style));
+
+                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_wrap(convert_wrap(style));
+                buffer.set_size(width, f32::MAX);
+            }
+
+            let mut width: f32 = 0.0;
+            let mut height: f32 = 0.0;
+
+            for run in buffer.layout_runs() {
+                width = width.max(run.line_w);
+                height = height.max(run.line_top + buffer.metrics().line_height);
+            }
+
+            let dimension = Dimension::new(width as f64, height as f64);
+
+            self.cache.insert(cache_key, TextEntry {
+                buffer,
+                dimension,
+                atlas_enqueued: false,
+            });
+
+            dimension
+        }
+    }
+
+    fn render_new(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, f: &mut dyn FnMut(&Glyph)) {
+        let scale_factor = env.get_mut::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
+        let width = requested_size.map(|x| x.width as f32).unwrap_or(f32::MAX);
+
+        let position = position.tolerance(1.0 / scale_factor);
+
+        let cache_key = TextKey {
+            text: text.to_string(),
+            style: CachableTextStyle {
+                family: style.family.clone(),
+                font_size: style.font_size.clone(),
+                line_height: style.line_height.to_bits(),
+                font_style: style.font_style.clone(),
+                font_weight: style.font_weight.clone(),
+                text_decoration: style.text_decoration.clone(),
+                color: style.color.map(|color| {
+                    let fsa = color.to_fsa();
+                    (fsa[0].to_bits(), fsa[1].to_bits(), fsa[2].to_bits(), fsa[3].to_bits())
+                }),
+                wrap: style.wrap.clone(),
+            },
+            width: width.to_bits(),
+            scale_factor: scale_factor.to_bits(),
+        };
+
+        let entry = if let Some(entry) = self.cache.get_mut(&cache_key) {
+            if !entry.atlas_enqueued {
+                let dimension = Self::enqueue_glyphs(&mut self.scale_context, &mut self.atlas, &mut self.font_system, scale_factor, &mut entry.buffer);
+                entry.dimension = dimension;
+                entry.atlas_enqueued = true;
+            }
+
+            entry
+        } else {
+            let mut buffer = Buffer::new(&mut self.font_system, Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
+
+            {
+                let mut buffer = buffer.borrow_with(&mut self.font_system);
+
+                let attributes = Attrs::new()
+                    .family(Family::Name(&style.family))
+                    .style(convert_style(style))
+                    .weight(convert_weight(style));
+
+                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_wrap(convert_wrap(style));
+                buffer.set_size(width, f32::MAX);
+            }
+
+            let dimension = Self::enqueue_glyphs(&mut self.scale_context, &mut self.atlas, &mut self.font_system, scale_factor, &mut buffer);
+
+            self.cache.insert(cache_key.clone(), TextEntry {
+                buffer,
+                dimension,
+                atlas_enqueued: true,
+            });
+
+            self.cache.get(&cache_key).unwrap()
+        };
+
+        // Inspect the output runs
+        for run in entry.buffer.layout_runs() {
+            /*ctx.style(DrawStyle::Color(RED));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_y as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
+            ctx.pop_style();
+
+            ctx.style(DrawStyle::Color(YELLOW));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
+            ctx.pop_style();
+
+            ctx.style(DrawStyle::Color(LIGHT_GREEN));
+            ctx.rect(Rect::new(Position::new(0.0, run.line_top as f64 + buffer.metrics().line_height as f64), Dimension::new(run.line_w as f64, 1.0 / metadata.scale_factor)) + metadata.position);
+            ctx.pop_style();*/
+
+            for glyph in run.glyphs.iter() {
+                //println!("{:#?}", glyph);
+                let physical_glyph = glyph.physical((0., 0.), scale_factor as f32);
+
+                let book = self.atlas.book(&AtlasId::Glyph(physical_glyph.cache_key));
+
+                if let Some(book) = book {
+                    let bb = Rect::new(
+                        Position::new(physical_glyph.x as f64 + book.left as f64, run.line_y as f64 * scale_factor + physical_glyph.y as f64 - book.top as f64),
+                        Dimension::new(book.width as f64, book.height as f64)
+                    ) / scale_factor + position;
+
+                    /*ctx.style(DrawStyle::Color(LIGHT_RED));
+                    ctx.rect(bb);
+                    ctx.pop_style();*/
+
+                    f(&Glyph {
+                        bounding_box: bb,
+                        texture_coords: book.tex_coords,
+                        mode: if book.has_color { GlyphRenderMode::Colored } else { GlyphRenderMode::Plain }
+                    });
+                }
+            }
+        }
+    }
+
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
@@ -135,7 +349,7 @@ impl InnerTextContext for TextContext {
     }
 
     fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
-        let scale_factor = env.get_mut::<SceneManager>()
+        let scale_factor = env.get::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);
 

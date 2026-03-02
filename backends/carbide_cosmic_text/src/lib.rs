@@ -4,5 +4,6 @@ pub mod text_context;
 //pub mod text_span;
 //pub mod glyph;
 //pub mod font;
-pub mod font_family;
+//pub mod font_family;
 mod metadata;
+mod text_cache;

@@ -1,6 +1,8 @@
+use carbide::draw::Position;
+use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;
-use crate::draw::{CompositeDrawShape, Dimension, DrawOptions, DrawShape, DrawStyle, ImageContext, ImageId, ImageOptions, Rect};
+use crate::draw::{CompositeDrawShape, Dimension, DrawOptions, DrawShape, DrawStyle, ImageContext, ImageId, ImageOptions, Rect, Scalar};
 use crate::math::Matrix4;
 
 use crate::environment::Environment;
@@ -88,8 +90,12 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.image(id, bounding_box, options.into());
     }
 
-    pub fn text(&mut self, text: TextId) {
-        self.render.text(text, self.text);
+    pub fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>) {
+        self.render.text(text, style, position, requested_size, self.env, self.text)
+    }
+
+    pub fn text_old(&mut self, text: TextId) {
+        self.render.text_old(text, self.text);
     }
 
     pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
@@ -187,7 +193,8 @@ pub trait InnerRenderContext {
 
     fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions);
 
-    fn text(&mut self, text: TextId, ctx: &mut dyn TextContext);
+    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext);
+    fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext);
 
     fn filter_new(&mut self);
     fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool);
