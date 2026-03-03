@@ -94,6 +94,10 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.text(text, style, position, requested_size, self.env, self.text)
     }
 
+    pub fn measure_text(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>) -> Dimension {
+        self.text.calculate_size_new(text, style, requested_size, self.env)
+    }
+
     pub fn text_old(&mut self, text: TextId) {
         self.render.text_old(text, self.text);
     }

@@ -1,6 +1,10 @@
-use carbide::color::{BLACK, BLUE, DARK_GREEN, DARK_ORANGE, DARK_PURPLE, DARK_YELLOW, GREEN, LIGHT_BLUE, LIGHT_BROWN, LIGHT_GREEN, LIGHT_PURPLE, LIGHT_YELLOW, ORANGE, PURPLE, RED, WHITE, YELLOW};
+use crate::size_collection::SizeCollection;
+use crate::style::{SpreadsheetStyle, TableStyle};
 use carbide::draw::fill::FillOptions;
-use carbide::draw::{DrawOptions, DrawShape, DrawStyle, Rect, Scalar};
+use carbide::draw::stroke::StrokeOptions;
+use carbide::draw::{DrawOptions, DrawShape, Rect, Scalar};
+use carbide::math::{Matrix4, Vector3};
+use carbide::state::{LocalState, ReadState, State};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::layout::{Layout, LayoutContext};
@@ -8,41 +12,40 @@ use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
 use carbide_core::CommonWidgetImpl;
 use std::fmt::Debug;
-use carbide::draw::stroke::StrokeOptions;
-use carbide::math::{Matrix4, Vector3};
-use carbide::state::{LocalState, ReadState, State};
-use carbide::text::{FontWeight, TextStyle};
-use crate::size_collection::SizeCollection;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(MouseEvent, Render, Layout)]
-pub struct Table {
+pub struct Table<S> where S: TableStyle + Clone {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
     offset: LocalState<Position>,
+
+    style: S,
+
     widths: Vec<f64>,
     heights: Vec<f64>,
-    frozen_columns: LocalState<usize>,
-    frozen_rows: LocalState<usize>,
 }
 
-impl Table {
-    pub fn new() -> Table {
+impl Table<SpreadsheetStyle> {
+    pub fn new() -> Table<SpreadsheetStyle> {
         Table {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             offset: LocalState::new(Position::origin()),
-            widths: vec![80.0; 40],
-            heights: vec![25.0; 40],
-            frozen_columns: LocalState::new(1),
-            frozen_rows: LocalState::new(1),
+            widths: vec![100.0; 40],
+            heights: vec![21.0; 100],
+
+            style: SpreadsheetStyle {
+                frozen_columns: LocalState::new(1),
+                frozen_rows: LocalState::new(1),
+            }
         }
     }
 }
 
-impl MouseEventHandler for Table {
+impl<S: TableStyle + Clone> MouseEventHandler for Table<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll { x, y, mouse_position, .. } => {
@@ -67,14 +70,14 @@ impl MouseEventHandler for Table {
     }
 }
 
-impl Layout for Table {
+impl<S: TableStyle + Clone> Layout for Table<S> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.set_dimension(requested_size);
         requested_size
     }
 }
 
-impl Render for Table {
+impl<S: TableStyle + Clone> Render for Table<S> {
     fn render(&mut self, ctx: &mut RenderContext) {
         let offset_x = self.offset.value().x;
         let offset_y = self.offset.value().y;
@@ -82,8 +85,8 @@ impl Render for Table {
         let scroll_x = self.position.x - offset_x;
         let scroll_y = self.position.y - offset_y;
 
-        let frozen_columns = *self.frozen_columns.value();
-        let frozen_rows = *self.frozen_rows.value();
+        let frozen_columns = self.style.frozen_columns();
+        let frozen_rows = self.style.frozen_rows();
 
         let has_frozen_columns = frozen_columns > 0;
         let has_frozen_rows = frozen_rows > 0;
@@ -108,9 +111,9 @@ impl Render for Table {
                         continue;
                     }
 
-                    let color = if (row + col) % 2 == 0 { RED } else { BLUE };
+                    let cell = self.style.cell(col, row);
 
-                    ctx.style(DrawStyle::Color(color), |ctx| {
+                    ctx.style(cell.draw_style, |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(
                                 Position::new(cumulative_width, cumulative_height),
@@ -120,7 +123,18 @@ impl Render for Table {
                         );
                     });
 
-                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(cumulative_width + 3.0, cumulative_height + 4.0), None);
+
+
+                    if let Some(text) = &cell.text {
+                        let text_dimensions = ctx.measure_text(text, &cell.text_style, None);
+
+                        let position = Position::new(
+                            cumulative_width + width / 2.0 - text_dimensions.width / 2.0,
+                            cumulative_height + height / 2.0 - text_dimensions.height / 2.0
+                        );
+
+                        ctx.text(text, &cell.text_style, position, None);
+                    }
                 }
             }
 
@@ -135,7 +149,9 @@ impl Render for Table {
                         continue;
                     }
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    let cell_borders = self.style.cell_border(row, col);
+
+                    ctx.style(cell_borders.left.style, |ctx| {
                         if first_column && !has_frozen_columns {
                             first_column = false;
 
@@ -144,36 +160,40 @@ impl Render for Table {
                                     Position::new(cummulative_width, cummulative_height),
                                     Position::new(cummulative_width, cummulative_height + height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.left.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.right.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(cummulative_width + width, cummulative_height),
                                 Position::new(cummulative_width + width, cummulative_height + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.right.width)),
                         );
                     });
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    ctx.style(cell_borders.top.style, |ctx| {
                         if first_row && !has_frozen_rows {
                             ctx.shape(
                                 DrawShape::Line(
                                     Position::new(cummulative_width, cummulative_height),
                                     Position::new(cummulative_width + width, cummulative_height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.top.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.bottom.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(cummulative_width, cummulative_height + height),
                                 Position::new(cummulative_width + width, cummulative_height + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.bottom.width)),
                         );
                     });
                 }
@@ -198,16 +218,18 @@ impl Render for Table {
 
                     let position = Position::new(cummulative_width, frozen_cummulative_height + offset_y);
 
-                    let color = if (row as u32 + col) % 2 == 0 { DARK_YELLOW } else { DARK_GREEN };
+                    let cell = self.style.cell(col, row as u32);
 
-                    ctx.style(DrawStyle::Color(color), |ctx| {
+                    ctx.style(cell.draw_style, |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(width, *height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
                     });
 
-                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(cummulative_width + 3.0, frozen_cummulative_height + offset_y + 4.0), None);
+                    if let Some(text) = &cell.text {
+                        ctx.text(text, &cell.text_style, Position::new(cummulative_width + 3.0, frozen_cummulative_height + offset_y + 4.0), None);
+                    }
                 }
 
                 frozen_cummulative_height += *height;
@@ -225,7 +247,9 @@ impl Render for Table {
                         continue;
                     }
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    let cell_borders = self.style.cell_border(row as u32, col);
+
+                    ctx.style(cell_borders.left.style, |ctx| {
                         if first_column && !has_frozen_columns {
                             first_column = false;
 
@@ -234,36 +258,40 @@ impl Render for Table {
                                     Position::new(cummulative_width, frozen_cummulative_height + offset_y),
                                     Position::new(cummulative_width, frozen_cummulative_height + offset_y + height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.left.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.right.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(cummulative_width + width, frozen_cummulative_height + offset_y),
                                 Position::new(cummulative_width + width, frozen_cummulative_height + offset_y + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.right.width)),
                         );
                     });
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    ctx.style(cell_borders.top.style, |ctx| {
                         if first_row {
                             ctx.shape(
                                 DrawShape::Line(
                                     Position::new(cummulative_width, frozen_cummulative_height + offset_y),
                                     Position::new(cummulative_width + width, frozen_cummulative_height + offset_y)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.top.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.bottom.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(cummulative_width, frozen_cummulative_height + offset_y + height),
                                 Position::new(cummulative_width + width, frozen_cummulative_height + offset_y + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.bottom.width)),
                         );
                     });
                 }
@@ -286,16 +314,18 @@ impl Render for Table {
 
                     let position = Position::new(frozen_cummulative_width + offset_x, cummulative_height);
 
-                    let color = if (row + col as u32) % 2 == 0 { DARK_YELLOW } else { DARK_GREEN };
+                    let cell = self.style.cell(col as u32, row);
 
-                    ctx.style(DrawStyle::Color(color), |ctx| {
+                    ctx.style(cell.draw_style, |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(*width, height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
                     });
 
-                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle::default(), Position::new(frozen_cummulative_width + offset_x + 3.0, cummulative_height + 4.0), None);
+                    if let Some(text) = &cell.text {
+                        ctx.text(text, &cell.text_style, Position::new(frozen_cummulative_width + offset_x + 3.0, cummulative_height + 4.0), None);
+                    }
 
                 }
 
@@ -314,7 +344,9 @@ impl Render for Table {
                         continue;
                     }
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    let cell_borders = self.style.cell_border(row, col as u32);
+
+                    ctx.style(cell_borders.left.style, |ctx| {
                         if first_column {
                             first_column = false;
 
@@ -323,36 +355,40 @@ impl Render for Table {
                                     Position::new(frozen_cummulative_width + offset_x, cummulative_height),
                                     Position::new(frozen_cummulative_width + offset_x, cummulative_height + height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.left.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.right.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(frozen_cummulative_width + offset_x + width, cummulative_height),
                                 Position::new(frozen_cummulative_width + offset_x + width, cummulative_height + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.right.width)),
                         );
                     });
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    ctx.style(cell_borders.top.style, |ctx| {
                         if first_row && !has_frozen_rows {
                             ctx.shape(
                                 DrawShape::Line(
                                     Position::new(frozen_cummulative_width + offset_x, cummulative_height),
                                     Position::new(frozen_cummulative_width + offset_x + width, cummulative_height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.top.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.bottom.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(frozen_cummulative_width + offset_x, cummulative_height + height),
                                 Position::new(frozen_cummulative_width + offset_x + width, cummulative_height + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.bottom.width)),
                         );
                     });
                 }
@@ -372,21 +408,20 @@ impl Render for Table {
 
                     let position = Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y);
 
-                    let color = if (row + col) % 2 == 0 { DARK_PURPLE } else { DARK_ORANGE };;
+                    let cell = self.style.cell(col as u32, row as u32);
 
                     frozen_cummulative_width += *width;
 
-                    ctx.style(DrawStyle::Color(color), |ctx| {
+                    ctx.style(cell.draw_style, |ctx| {
                         ctx.shape(
                             DrawShape::Rectangle(Rect::new(position, Dimension::new(*width, *height))),
                             DrawOptions::Fill(FillOptions::default()),
                         );
                     });
 
-                    ctx.text(&format!("C{}:R{}", col, row), &TextStyle {
-                        font_weight: FontWeight::Bold,
-                        ..TextStyle::default()
-                    }, Position::new(position.x + 3.0, position.y + 4.0), None);
+                    if let Some(text) = &cell.text {
+                        ctx.text(text, &cell.text_style, Position::new(position.x + 3.0, position.y + 4.0), None);
+                    }
 
                 }
 
@@ -402,7 +437,9 @@ impl Render for Table {
             for (row, height) in self.heights[0..frozen_rows].iter().enumerate() {
                 for (col, width) in self.widths[0..frozen_columns].iter().enumerate() {
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    let cell_borders = self.style.cell_border(row as u32, col as u32);
+
+                    ctx.style(cell_borders.left.style, |ctx| {
                         if first_column {
                             first_column = false;
 
@@ -411,36 +448,40 @@ impl Render for Table {
                                     Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y),
                                     Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y + height)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.left.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.right.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(frozen_cummulative_width + offset_x + width, frozen_cummulative_height + offset_y),
                                 Position::new(frozen_cummulative_width + offset_x + width, frozen_cummulative_height + offset_y + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.right.width)),
                         );
                     });
 
-                    ctx.style(DrawStyle::Color(WHITE), |ctx| {
+                    ctx.style(cell_borders.top.style, |ctx| {
                         if first_row {
                             ctx.shape(
                                 DrawShape::Line(
                                     Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y),
                                     Position::new(frozen_cummulative_width + offset_x + width, frozen_cummulative_height + offset_y)
                                 ),
-                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                                DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.top.width)),
                             );
                         }
+                    });
 
+                    ctx.style(cell_borders.bottom.style, |ctx| {
                         ctx.shape(
                             DrawShape::Line(
                                 Position::new(frozen_cummulative_width + offset_x, frozen_cummulative_height + offset_y + height),
                                 Position::new(frozen_cummulative_width + offset_x + width, frozen_cummulative_height + offset_y + height)
                             ),
-                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(1.0)),
+                            DrawOptions::Stroke(StrokeOptions::default().with_stroke_width(cell_borders.bottom.width)),
                         );
                     });
 
@@ -457,6 +498,6 @@ impl Render for Table {
     }
 }
 
-impl CommonWidget for Table {
+impl<S: TableStyle + Clone> CommonWidget for Table<S> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }

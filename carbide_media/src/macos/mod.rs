@@ -18,7 +18,7 @@ pub use video::*;
 // bindgen --objc-extern-crate --generate-block AVFoundation.h  -o bindings.rs -- -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks -x objective-c
 
 #[link(name = "AVFoundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub static AVAudioSessionCategoryPlayback: id;
     pub fn CVPixelBufferGetWidth(theString: id) -> usize;
     pub fn CVPixelBufferGetBytesPerRow(theString: id) -> usize;
@@ -32,14 +32,14 @@ extern "C" {
 }
 
 #[link(name = "CoreMedia", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub fn CMTimeGetSeconds(time: CMTime) -> f64;
     pub fn CMTimeMakeWithSeconds(seconds: f64, preferredTimescale: i32) -> CMTime;
 
     pub static kCMTimeIndefinite: CMTime;
 }
 
-extern "C" {
+unsafe extern "C" {
     pub static NSKeyValueChangeKindKey: id;
     pub static NSKeyValueChangeNotificationIsPriorKey: id;
     pub static NSKeyValueChangeNewKey: id;

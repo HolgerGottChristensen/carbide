@@ -7,8 +7,7 @@ use carbide::controls::ControlsExt;
 use carbide::environment::EnvironmentFontSize::LargeTitle;
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let counter = LocalState::new(0);
 

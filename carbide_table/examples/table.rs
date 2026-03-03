@@ -12,8 +12,8 @@ fn main() {
             "Table example - Carbide",
             Dimension::new(600.0, 600.0),
             Table::new()
-                .border()
-                .padding(50.0)
+                //.border()
+                //.padding(50.0)
 
         )
     );
