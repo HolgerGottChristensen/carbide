@@ -1,27 +1,25 @@
 use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashImage, Weight};
 use fxhash::FxHashMap;
 use std::path::PathBuf;
-use include_dir::{include_dir, Dir};
 use swash::scale::image::Content;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
 use swash::zeno::{Format, Vector};
 
 use crate::atlas::texture_atlas::{AtlasId, TextureAtlas};
 use crate::metadata::Metadata;
-use carbide_core::draw::{Dimension, ImageId, ImageMode, ImageOptions, Position, Rect, Scalar};
+use crate::text_cache::{CachableTextStyle, TextEntry, TextKey};
+use carbide_cache::Cache;
+use carbide_core::color::ColorExt;
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
 use carbide_core::render::InnerRenderContext;
 use carbide_core::scene::SceneManager;
-use carbide_core::text::{TextContext, TextStyle};
-use carbide_core::text::{FontStyle, TextId};
-use unicode_segmentation::UnicodeSegmentation;
-use carbide_cache::Cache;
-use carbide_core::application::ApplicationManager;
-use carbide_core::color::ColorExt;
-use carbide_core::text::text_wrap::Wrap;
 use carbide_core::text::glyph::{Glyph, GlyphRenderMode};
-use crate::text_cache::{CachableTextStyle, TextEntry, TextKey};
+use carbide_core::text::text_wrap::Wrap;
+use carbide_core::text::{FontStyle, TextId};
+use carbide_core::text::{TextContext, TextStyle};
+use unicode_segmentation::UnicodeSegmentation;
 
 pub struct CosmicTextContext {
     cache: Cache<TextKey, TextEntry>,
@@ -177,9 +175,9 @@ impl TextContext for CosmicTextContext {
                     .style(convert_style(style))
                     .weight(convert_weight(style));
 
-                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_text(text, &attributes, Shaping::Advanced, None);
                 buffer.set_wrap(convert_wrap(style));
-                buffer.set_size(width, f32::MAX);
+                buffer.set_size(Some(width), None);
             }
 
             let mut width: f32 = 0.0;
@@ -249,9 +247,9 @@ impl TextContext for CosmicTextContext {
                     .style(convert_style(style))
                     .weight(convert_weight(style));
 
-                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_text(text, &attributes, Shaping::Advanced, None);
                 buffer.set_wrap(convert_wrap(style));
-                buffer.set_size(width, f32::MAX);
+                buffer.set_size(Some(width), None);
             }
 
             let dimension = Self::enqueue_glyphs(&mut self.scale_context, &mut self.atlas, &mut self.font_system, scale_factor, &mut buffer);
@@ -308,7 +306,7 @@ impl TextContext for CosmicTextContext {
     fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
         let (buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
-        buffer.set_size(&mut self.font_system, requested_size.width as f32, f32::MAX);
+        buffer.set_size(&mut self.font_system, Some(requested_size.width as f32), None);
 
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
@@ -375,7 +373,7 @@ impl TextContext for CosmicTextContext {
                     .style(convert_style(style))
                     .weight(convert_weight(style));
 
-                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_text(text, &attributes, Shaping::Advanced, None);
                 buffer.set_wrap(convert_wrap(style));
                 buffer.set_metrics(Metrics::new(style.font_size as f32, style.font_size as f32 * style.line_height as f32));
             }
@@ -390,7 +388,7 @@ impl TextContext for CosmicTextContext {
                     .style(convert_style(style))
                     .weight(convert_weight(style));
 
-                buffer.set_text(text, attributes, Shaping::Advanced);
+                buffer.set_text(text, &attributes, Shaping::Advanced, None);
                 buffer.set_wrap(convert_wrap(style));
             }
 
@@ -539,7 +537,7 @@ fn swash_image(
     context: &mut ScaleContext,
     cache_key: cosmic_text::CacheKey,
 ) -> Option<SwashImage> {
-    let font = match font_system.get_font(cache_key.font_id) {
+    let font = match font_system.get_font(cache_key.font_id, cache_key.font_weight) {
         Some(some) => some,
         None => {
             return None;

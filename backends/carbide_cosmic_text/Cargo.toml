@@ -13,7 +13,7 @@ authors = [
 carbide_core = { path = "../../carbide_core" }
 carbide_cache = { path = "../carbide_cache" }
 fxhash = "0.2.1"
-cosmic-text = "0.10.0"
-swash = "0.1.8"
+cosmic-text = "0.18.2"
+swash = "0.2.6"
 unicode-segmentation = "1.7.1"
 include_dir = { workspace = true, features = ["glob"]}
