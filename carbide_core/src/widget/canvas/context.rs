@@ -314,8 +314,6 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
     }
 
     pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
-        let text_id = TextId::new();
-
         let text_style = TextStyle {
             family: "Noto Sans".to_string(),
             font_size: 14,
@@ -327,8 +325,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             wrap: Wrap::Character,
         };
 
-        self.render_context.text.update(text_id, text, &text_style);
-        let size = self.render_context.text.calculate_size(text_id, Dimension::new(Scalar::MAX, Scalar::MAX), self.render_context.env);
+        let size = self.render_context.measure_text(text, &text_style, None);
 
         let position = match self.current_state.text_alignment {
             Alignment::TopLeading => Position::new(x, y),
@@ -346,14 +343,10 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             Alignment::Custom(px, py) => Position::new(x - size.width * px, y - size.height * py),
         };
 
-        self.render_context.text.calculate_position(text_id, position + self.position, self.render_context.env);
-
         let style = self.current_state.fill_color.convert(position + self.position, size);
         self.render_context.style(style, |render_context| {
-            render_context.text_old(text_id);
+            render_context.text(text, &text_style, position + self.position, None);
         });
-
-        self.render_context.text.remove(text_id);
     }
 }
 

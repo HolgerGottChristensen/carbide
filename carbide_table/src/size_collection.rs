@@ -4,7 +4,7 @@ pub trait SizeCollection {
     fn iter_range(&self, from: Scalar, to: Scalar) -> impl Iterator<Item=(Scalar, Scalar, u32)>;
 }
 
-impl SizeCollection for Vec<f64> {
+impl SizeCollection for &[f64] {
     fn iter_range(&self, from: Scalar, to: Scalar) -> impl Iterator<Item=(Scalar, Scalar, u32)> {
         VecRangeIter::new(self, from, to)
     }
@@ -15,11 +15,11 @@ struct VecRangeIter<'a> {
     max: f64,
     current: f64,
     current_index: usize,
-    collection: &'a Vec<f64>
+    collection: &'a [f64]
 }
 
 impl VecRangeIter<'_> {
-    fn new(vec: &Vec<f64>, from: f64, to: f64) -> VecRangeIter {
+    fn new(vec: &[f64], from: f64, to: f64) -> VecRangeIter {
         let mut current = 0.0;
         let mut current_index = 0;
 
