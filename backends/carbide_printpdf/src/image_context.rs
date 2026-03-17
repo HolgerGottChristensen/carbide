@@ -13,13 +13,13 @@ thread_local! {
 pub struct PDFImageContext;
 
 impl ImageContext for PDFImageContext {
-    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
+    fn exist(&self, id: &ImageId, env: &mut Environment) -> bool {
         IMAGES.with(|images| {
             images.borrow().contains_key(id)
         })
     }
 
-    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
+    fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics {
         IMAGES.with(|images| {
             let borrow = images.borrow();
             let (_, width, height) = borrow.get(id)?;
@@ -28,7 +28,7 @@ impl ImageContext for PDFImageContext {
         })
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
+    fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
         IMAGES.with(|images| {
             let width = texture.width;
             let height = texture.height;

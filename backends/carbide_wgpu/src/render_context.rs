@@ -8,14 +8,14 @@ use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::wgpu_render_target::WgpuRenderTarget;
 use crate::wgpu_vertex::WgpuVertex;
-use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
+use crate::{WgpuContext, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
-use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape};
+use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape, ImageIdFormat};
 use carbide_core::environment::Environment;
-use carbide_core::math::{Matrix4, SquareMatrix};
-use carbide_core::render::{InnerRenderContext, Layer, LayerId};
+use carbide_core::math::{Matrix4, SquareMatrix, Vector3};
+use carbide_core::render::{InnerRenderContext, Layer, LayerId, RenderInstruction};
 use carbide_core::text::glyph::GlyphRenderMode;
 use carbide_core::text::{TextContext, TextId, TextStyle};
 use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
@@ -267,7 +267,7 @@ impl WGPURenderContext {
         }
     }
 
-    fn draw_image(&mut self, id: Option<WGPUBindGroup>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
+    fn draw_raster_image(&mut self, id: Option<WGPUBindGroup>, bounding_box: Rect, source_rect: Rect, mut mode: u32) {
         if self.skip_rendering {
             return;
         }
@@ -370,7 +370,7 @@ impl WGPURenderContext {
         }
     }
 
-    fn add_clip_shape_vertices(&mut self, shape: DrawShape, options: DrawOptions) {
+    fn add_clip_shape_vertices(&mut self, shape: &DrawShape, options: &DrawOptions) {
         match options {
             DrawOptions::Fill(options) => {
                 let triangles = self.tesselator.fill(shape, options);
@@ -556,7 +556,7 @@ impl WGPURenderContext {
 }
 
 impl InnerRenderContext for WGPURenderContext {
-    fn transform(&mut self, transform: Matrix4<f32>) {
+    fn transform(&mut self, transform: &Matrix4<f32>) {
         let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
 
         let new_uniform = Uniform {
@@ -778,7 +778,7 @@ impl InnerRenderContext for WGPURenderContext {
 
         let start = self.vertices.len();
 
-        match shape {
+        match &shape {
             CompositeDrawShape::Zero => {}
             CompositeDrawShape::One(shape, options) => {
                 self.add_clip_shape_vertices(shape, options);
@@ -809,7 +809,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn shape(&mut self, shape: DrawShape, options: DrawOptions) {
+    fn shape(&mut self, shape: &DrawShape, options: &DrawOptions) {
         if self.skip_rendering {
             return;
         }
@@ -826,7 +826,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn style(&mut self, style: DrawStyle) {
+    fn style(&mut self, style: &DrawStyle) {
         match style {
             DrawStyle::Color(color) => {
                 let color = color.gamma_srgb_to_linear()
@@ -836,7 +836,7 @@ impl InnerRenderContext for WGPURenderContext {
                 self.style_stack.push(WGPUStyle::Color(color));
             }
             DrawStyle::Gradient(g) => {
-                self.style_stack.push(WGPUStyle::Gradient(WgpuGradient::convert(&g)))
+                self.style_stack.push(WGPUStyle::Gradient(WgpuGradient::convert(g)))
             }
             DrawStyle::MultiGradient(_) => {
                 todo!()
@@ -857,16 +857,20 @@ impl InnerRenderContext for WGPURenderContext {
         self.stroke_dash_stack.pop();
     }
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions) {
+    fn raster_image(&mut self, id: &ImageId, bounding_box: Rect, options: ImageOptions) {
+        match id.format() {
+            ImageIdFormat::Raster => {
+                let source_rect = options.source_rect.unwrap_or_else(|| Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)));
 
-        let source_rect = options.source_rect.unwrap_or_else(|| Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)));
+                let mode = match options.mode {
+                    ImageMode::Image => MODE_IMAGE,
+                    ImageMode::Icon => MODE_ICON,
+                };
 
-        let mode = match options.mode {
-            ImageMode::Image => MODE_IMAGE,
-            ImageMode::Icon => MODE_ICON,
-        };
-
-        self.draw_image(Some(WGPUBindGroup::Image(id)), bounding_box, source_rect, mode)
+                self.draw_raster_image(Some(WGPUBindGroup::Image(id.clone())), bounding_box, source_rect, mode)
+            }
+            _ => ()
+        }
     }
 
     fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {
@@ -880,7 +884,7 @@ impl InnerRenderContext for WGPURenderContext {
                 GlyphRenderMode::Colored => MODE_TEXT_COLOR,
             };
 
-            self.draw_image(None, glyph.bounding_box, glyph.texture_coords, mode);
+            self.draw_raster_image(None, glyph.bounding_box, glyph.texture_coords, mode);
         });
     }
 
@@ -895,7 +899,7 @@ impl InnerRenderContext for WGPURenderContext {
                 GlyphRenderMode::Colored => MODE_TEXT_COLOR,
             };
 
-            self.draw_image(None, glyph.bounding_box, glyph.texture_coords, mode);
+            self.draw_raster_image(None, glyph.bounding_box, glyph.texture_coords, mode);
         });
     }
 
@@ -1099,6 +1103,6 @@ impl InnerRenderContext for WGPURenderContext {
     fn render_layer(&mut self, layer_id: LayerId, bounding_box: Rect) {
         let bind_group = WGPUBindGroup::Layer(layer_id);
 
-        self.draw_image(Some(bind_group), bounding_box, Rect::from_corners(Position::new(0.0, 0.0), Position::new(1.0, 1.0)), MODE_IMAGE)
+        self.draw_raster_image(Some(bind_group), bounding_box, Rect::from_corners(Position::new(0.0, 0.0), Position::new(1.0, 1.0)), MODE_IMAGE)
     }
 }

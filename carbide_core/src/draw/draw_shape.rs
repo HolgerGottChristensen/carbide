@@ -12,10 +12,10 @@ pub enum CompositeDrawShape {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DrawShape {
-    Rectangle(Rect),
+    Rectangle(Rect), // TODO: Could be rectangle with radii 0.0
     Capsule(Rect),
     RoundedRectangle(Rect, CornerRadii),
-    Circle(Position, Scalar),
+    Circle(Position, Scalar), // TODO: Could be Ellipse with both radii the same
     Ellipse(Rect),
     Line(Position, Position),
     Path(Path),

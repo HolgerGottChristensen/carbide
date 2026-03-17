@@ -27,12 +27,15 @@ members = [
     "carbide_3d",
     "carbide_chart",
     "carbide_dialogs",
-    "carbide_table", "backends/carbide_cache",
+    "carbide_table",
+    "backends/carbide_cache",
+    "backends/carbide_usvg",
 ]
 
 [workspace.package]
 version = "0.72.0"
 edition = "2024"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
 authors = [
     "Holger Gott Christensen"
@@ -46,6 +49,7 @@ bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 carbide_derive = { path = "carbide_derive", version = "0.72.0" }
 carbide_macro = { path = "carbide_macro", version = "0.72.0" }
 carbide_dialogs = { path = "carbide_dialogs", version = "0.72.0" }
+carbide_usvg = { path = "backends/carbide_usvg", version = "0.72.0" }
 cgmath = { version = "0.18", features = ["mint"] }
 chrono = "0.4"
 console_error_panic_hook = "0.1.7"
@@ -63,6 +67,7 @@ rand = { version = "0.10.0" }
 raw-window-handle = "0.5"
 smallvec = "1.13.2"
 typed-arena = "2.0.2"
+url = "2.5.8"
 walkdir = "2.4.0"
 web-time = "1.1.0"
 wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }

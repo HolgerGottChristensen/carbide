@@ -24,7 +24,7 @@ impl Tesselator {
 
 
 
-    fn path(&mut self, draw_shape: DrawShape) -> Path {
+    fn path(&mut self, draw_shape: &DrawShape) -> Path {
         let mut builder = Path::builder();
 
         match draw_shape {
@@ -77,7 +77,7 @@ impl Tesselator {
                 );
             }
             DrawShape::Circle(center, radius) => {
-                builder.add_circle(point(center.x as f32, center.y as f32), radius as f32, Winding::Positive);
+                builder.add_circle(point(center.x as f32, center.y as f32), *radius as f32, Winding::Positive);
             }
             DrawShape::Ellipse(rect) => {
                 let center = rect.center();
@@ -90,7 +90,7 @@ impl Tesselator {
             DrawShape::Path(path) => {
                 let mut builder = Path::builder().with_svg();
 
-                for instruction in path.instructions {
+                for instruction in &path.instructions {
                     match instruction {
                         PathInstruction::MoveTo { to } => {
                             builder.move_to(point(to.x as f32, to.y as f32));
@@ -133,7 +133,7 @@ impl Tesselator {
         builder.build()
     }
 
-    pub fn fill(&mut self, draw_shape: DrawShape, options: carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> + use<> {
+    pub fn fill(&mut self, draw_shape: &DrawShape, options: &carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> + use<> {
 
         let path = self.path(draw_shape);
 
@@ -175,7 +175,7 @@ impl Tesselator {
         triangles.into_iter()
     }
 
-    pub fn stroke(&mut self, draw_shape: DrawShape, options: carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> + use<> {
+    pub fn stroke(&mut self, draw_shape: &DrawShape, options: &carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> + use<> {
         let path = self.path(draw_shape);
 
         #[derive(Debug, Copy, Clone, PartialEq)]

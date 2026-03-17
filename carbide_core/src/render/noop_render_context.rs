@@ -12,7 +12,7 @@ use carbide::text::TextStyle;
 pub struct NoopRenderContext;
 
 impl InnerRenderContext for NoopRenderContext {
-    fn transform(&mut self, _transform: Matrix4<f32>) {}
+    fn transform(&mut self, _transform: &Matrix4<f32>) {}
 
     fn pop_transform(&mut self) {}
 
@@ -32,15 +32,15 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn pop_stencil(&mut self) {}
 
-    fn shape(&mut self, _shape: DrawShape, _option: DrawOptions) {}
+    fn shape(&mut self, _shape: &DrawShape, _option: &DrawOptions) {}
 
-    fn style(&mut self, _style: DrawStyle) {}
+    fn style(&mut self, _style: &DrawStyle) {}
     fn pop_style(&mut self) {}
 
     fn stroke_dash_pattern(&mut self, _pattern: Option<StrokeDashPattern>) {}
     fn pop_stroke_dash_pattern(&mut self) {}
 
-    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _options: ImageOptions) {}
+    fn raster_image(&mut self, _id: &ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
     fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {}
 

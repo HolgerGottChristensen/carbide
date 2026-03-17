@@ -30,6 +30,8 @@ smallvec.workspace = true
 indexmap.workspace = true
 cgmath.workspace = true
 web-time.workspace = true
+url.workspace = true
+carbide_usvg.workspace = true
 
 accesskit.workspace = true
 image.workspace = true

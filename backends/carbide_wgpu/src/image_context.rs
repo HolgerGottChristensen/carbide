@@ -1,30 +1,60 @@
-use carbide_core::draw::{ImageContext, ImageId, Texture, TextureFormat};
+use std::rc::Rc;
+use carbide_core::draw::{Dimension, ImageContext, ImageId, ImageIdFormat, ImageMetrics, Texture, TextureFormat};
 use wgpu::{BindGroup, BindGroupLayout, Device, Queue};
 use carbide_core::environment::Environment;
+use carbide_core::render::{RenderInstruction, RenderInstructionCache};
 use crate::wgpu_context::WgpuContext;
 
 pub struct WGPUImageContext;
 
 impl ImageContext for WGPUImageContext {
-    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
-        wgpu_context.bind_groups.contains_key(id)
+    fn exist(&self, id: &ImageId, env: &mut Environment) -> bool {
+        match id.format() {
+            ImageIdFormat::Unknown => false,
+            ImageIdFormat::Raster => {
+                let wgpu_context = env.get::<WgpuContext>().unwrap();
+                wgpu_context.bind_groups.contains_key(id)
+            }
+            ImageIdFormat::Vector => {
+                let cache = env.get::<RenderInstructionCache>().unwrap();
+                cache.contains_key(id)
+            }
+        }
     }
 
-    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
-
-        wgpu_context.bind_groups.get(id)
-            .map(|group| {
-                (group.width, group.height)
-            })
+    fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics {
+        match id.format() {
+            ImageIdFormat::Unknown => ImageMetrics::Unknown,
+            ImageIdFormat::Raster => {
+                let wgpu_context = env.get::<WgpuContext>().unwrap();
+                wgpu_context.bind_groups.get(id)
+                    .map(|group| {
+                        ImageMetrics::Raster { width: group.width, height: group.height}
+                    }).unwrap_or(ImageMetrics::Unknown)
+            }
+            ImageIdFormat::Vector => {
+                let cache = env.get::<RenderInstructionCache>().unwrap();
+                cache
+                    .get(id)
+                    .map(|vector| ImageMetrics::Vector { dimension: vector.0 })
+                    .unwrap_or(ImageMetrics::Unknown)
+            }
+        }
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
+    fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
         let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
 
         let bind_group = create_bind_group(&wgpu_context.device, &wgpu_context.queue, texture, &wgpu_context.texture_bind_group_layout);
-        wgpu_context.bind_groups.insert(id, bind_group);
+        wgpu_context.bind_groups.insert(id.clone(), bind_group);
+
+        true
+    }
+
+    fn update_vector(&mut self, id: &ImageId, description: Vec<RenderInstruction>, size: Dimension, env: &mut Environment) -> bool {
+        let cache = env.get_mut::<RenderInstructionCache>().unwrap();
+
+        cache.insert(id.clone(), Rc::new((size, description)));
 
         true
     }

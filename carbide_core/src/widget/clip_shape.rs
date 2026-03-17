@@ -104,11 +104,11 @@ struct ShapeRenderCapture {
 }
 
 impl InnerRenderContext for ShapeRenderCapture {
-    fn shape(&mut self, shape: DrawShape, option: DrawOptions) {
-        self.shape.push((shape, option));
+    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions) {
+        self.shape.push((shape.clone(), option.clone()));
     }
 
-    fn transform(&mut self, _transform: Matrix4<f32>) {}
+    fn transform(&mut self, _transform: &Matrix4<f32>) {}
 
     fn pop_transform(&mut self) {}
 
@@ -142,7 +142,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn pop_stencil(&mut self) {}
 
-    fn style(&mut self, _style: DrawStyle) {}
+    fn style(&mut self, _style: &DrawStyle) {}
 
     fn pop_style(&mut self) {}
 
@@ -150,7 +150,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn pop_stroke_dash_pattern(&mut self) {}
 
-    fn image(&mut self, _id: ImageId, _bounding_box: Rect, _options: ImageOptions) {}
+    fn raster_image(&mut self, _id: &ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
     fn text_old(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 

@@ -1,4 +1,6 @@
-use carbide::draw::Position;
+use cgmath::Vector3;
+use carbide::draw::{ImageIdFormat, Position};
+use carbide::render::RenderInstruction;
 use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;
@@ -7,6 +9,8 @@ use crate::math::Matrix4;
 
 use crate::environment::Environment;
 use crate::render::layer::{Layer, LayerId};
+use crate::render::render_instruction_cache::RenderInstructionCache;
+use crate::state::ReadState;
 use crate::text::{TextContext, TextId};
 use crate::widget::ImageFilter;
 
@@ -25,7 +29,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     /// instructions of the nested context. This can be used to apply all affine
     /// transformations.
     pub fn transform<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, transform: Matrix4<f32>, f: F) -> R {
-        self.render.transform(transform);
+        self.render.transform(&transform);
         let res = f(self);
         self.render.pop_transform();
         res
@@ -69,11 +73,11 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
     ///
     pub fn shape(&mut self, shape: impl Into<DrawShape>, options: impl Into<DrawOptions>) {
-        self.render.shape(shape.into(), options.into());
+        self.render.shape(&shape.into(), &options.into());
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: impl Into<DrawStyle>, f: F) -> R {
-        self.render.style(style.into());
+        self.render.style(&style.into());
         let res = f(self);
         self.render.pop_style();
         res
@@ -86,8 +90,46 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    pub fn image(&mut self, id: ImageId, bounding_box: Rect, options: impl Into<ImageOptions>) {
-        self.render.image(id, bounding_box, options.into());
+    pub fn image(&mut self, id: &ImageId, bounding_box: Rect, options: impl Into<ImageOptions>) {
+        match id.format() {
+            ImageIdFormat::Unknown => {}
+            ImageIdFormat::Raster => {
+                self.render.raster_image(id, bounding_box, options.into());
+            }
+            ImageIdFormat::Vector => {
+                let instructions = self.env
+                    .get::<RenderInstructionCache>()
+                    .and_then(|a| a.get(id).cloned())
+                    .unwrap();
+
+                self.render.transform(&Matrix4::from_translation(Vector3::new(bounding_box.position.x as f32, bounding_box.position.y as f32, 0.0)));
+
+                for instruction in &*instructions.1 {
+                    match instruction {
+                        RenderInstruction::Shape { shape, options } => {
+                            self.render.shape(shape, options);
+                        }
+                        RenderInstruction::PushStyle { style } => {
+                            let mut temp = style.clone();
+                            temp.sync(self.env);
+                            self.render.style(&temp.value().convert(bounding_box.position, bounding_box.dimension));
+                        }
+                        RenderInstruction::PopStyle => {
+                            self.render.pop_style();
+                        }
+                        RenderInstruction::PushTransform { transform } => {
+                            self.render.transform(transform)
+                        }
+                        RenderInstruction::PopTransform => {
+                            self.render.pop_transform()
+                        }
+                    }
+                }
+
+                self.render.pop_transform();
+            }
+        }
+
     }
 
     pub fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>) {
@@ -171,7 +213,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 }
 
 pub trait InnerRenderContext {
-    fn transform(&mut self, transform: Matrix4<f32>);
+    fn transform(&mut self, transform: &Matrix4<f32>);
     fn pop_transform(&mut self);
 
     fn color_filter(&mut self, hue_rotation: f32, saturation_shift: f32, luminance_shift: f32, color_invert: bool);
@@ -186,16 +228,16 @@ pub trait InnerRenderContext {
     fn stencil(&mut self, shape: CompositeDrawShape);
     fn pop_stencil(&mut self);
 
-    fn shape(&mut self, shape: DrawShape, option: DrawOptions);
+    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions);
 
     // TODO: Consider making it take a reference to Style
-    fn style(&mut self, style: DrawStyle);
+    fn style(&mut self, style: &DrawStyle);
     fn pop_style(&mut self);
 
     fn stroke_dash_pattern(&mut self, pattern: Option<StrokeDashPattern>);
     fn pop_stroke_dash_pattern(&mut self);
 
-    fn image(&mut self, id: ImageId, bounding_box: Rect, options: ImageOptions);
+    fn raster_image(&mut self, id: &ImageId, bounding_box: Rect, options: ImageOptions);
 
     fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext);
     fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext);
