@@ -16,6 +16,7 @@ use carbide::widget::Image;
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ImageId {
     None,
+    System(String, ImageIdFormat),
     Local(Arc<PathBuf>, ImageIdFormat),
     Remote(Arc<Url>, ImageIdFormat),
     InMemory(u32, ImageIdFormat)
@@ -34,6 +35,10 @@ impl ImageId {
         into.into()
     }
 
+    pub fn system(name: String, format: ImageIdFormat) -> Self {
+        ImageId::System(name, format)
+    }
+
     pub fn temp(format: ImageIdFormat) -> Self {
         static COUNTER: AtomicU32 = AtomicU32::new(0);
         let value = COUNTER.fetch_add(1, Ordering::Relaxed);
@@ -46,6 +51,7 @@ impl ImageId {
             ImageId::Local(_, format) => *format,
             ImageId::Remote(_, format) => *format,
             ImageId::InMemory(_, format) => *format,
+            ImageId::System(_, format) => *format,
         }
     }
 }

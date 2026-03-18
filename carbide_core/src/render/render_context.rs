@@ -1,6 +1,6 @@
 use cgmath::Vector3;
 use carbide::draw::{ImageIdFormat, Position};
-use carbide::render::RenderInstruction;
+use carbide::render::{RenderInstruction, RenderInstructionValue, Style};
 use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;
@@ -110,9 +110,18 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
                             self.render.shape(shape, options);
                         }
                         RenderInstruction::PushStyle { style } => {
-                            let mut temp = style.clone();
-                            temp.sync(self.env);
-                            self.render.style(&temp.value().convert(bounding_box.position, bounding_box.dimension));
+                            let res = match style {
+                                RenderInstructionValue::Constant(c) => {
+                                    c.convert(bounding_box.position, bounding_box.dimension)
+                                }
+                                RenderInstructionValue::Variable(v) => {
+                                    let mut temp = v.clone();
+                                    temp.sync(self.env);
+                                    temp.value().convert(bounding_box.position, bounding_box.dimension)
+                                }
+                            };
+
+                            self.render.style(&res);
                         }
                         RenderInstruction::PopStyle => {
                             self.render.pop_style();

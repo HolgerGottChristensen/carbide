@@ -24,12 +24,6 @@ pub struct StrokeOptions {
     /// Default value: `StrokeOptions::DEFAULT_LINE_WIDTH`.
     pub stroke_width: Scalar,
 
-    /// See the SVG specification.
-    ///
-    /// Must be greater than or equal to 1.0.
-    /// Default value: `StrokeOptions::DEFAULT_MITER_LIMIT`.
-    pub miter_limit: Scalar,
-
     /// How the stroke should be aligned.
     pub stroke_alignment: StrokeAlignment,
 }
@@ -47,7 +41,6 @@ impl StrokeOptions {
         end_cap: Self::DEFAULT_LINE_CAP,
         stroke_join: Self::DEFAULT_LINE_JOIN,
         stroke_width: Self::DEFAULT_LINE_WIDTH,
-        miter_limit: Self::DEFAULT_MITER_LIMIT,
         stroke_alignment: Self::DEFAULT_ALIGNMENT,
     };
 
@@ -85,13 +78,6 @@ impl StrokeOptions {
     #[inline]
     pub const fn with_alignment(mut self, alignment: StrokeAlignment) -> Self {
         self.stroke_alignment = alignment;
-        self
-    }
-
-    #[inline]
-    pub fn with_miter_limit(mut self, limit: Scalar) -> Self {
-        assert!(limit >= Self::MINIMUM_MITER_LIMIT);
-        self.miter_limit = limit;
         self
     }
 }

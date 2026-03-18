@@ -16,7 +16,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::draw::{Dimension, ImageId};
+use carbide_core::draw::{Dimension, ImageId, SystemImageManager};
 use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::event::EventSink;
 use carbide_core::focus::FocusManager;
@@ -28,6 +28,8 @@ use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContext as _;
 use carbide_core::widget::WidgetId;
 use carbide_cosmic_text::text_context::CosmicTextContext;
+#[cfg(feature = "icons")]
+use carbide_icons::{SYSTEM_IMAGE_MANAGER};
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;
 use carbide_winit::event::WindowEvent;
@@ -80,11 +82,16 @@ impl Application {
 
         let event_sink = Arc::new(ProxyEventLoop(event_loop.create_proxy()));
 
+        let mut environment = Environment::new();
+
+        #[cfg(feature = "icons")]
+        environment.insert::<SystemImageManager>(&SYSTEM_IMAGE_MANAGER);
+
         Application {
             id: WidgetId::new(),
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
-            environment: Environment::new(),
+            environment,
             text_context: CosmicTextContext::new(),
             event_loop,
             event_sink,

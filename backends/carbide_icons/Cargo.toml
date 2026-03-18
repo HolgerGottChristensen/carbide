@@ -1,0 +1,22 @@
+[package]
+name = "carbide_icons"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+include_dir.workspace = true
+
+[dev-dependencies]
+carbide_core.workspace = true
+carbide_wgpu = { workspace = true, features = ["icons"] }
+
+[features]
+default = ["lucide"]
+lucide = []
+
+[[example]]
+name = "lucide"
+required-features = ["lucide"]

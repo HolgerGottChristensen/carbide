@@ -199,11 +199,17 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             }
         }
 
+        let join_style = match self.current_state.join_style {
+            LineJoin::Miter => LineJoin::Miter,
+            LineJoin::MiterClip { .. } => LineJoin::MiterClip { miter_limit: self.current_state.miter_limit },
+            LineJoin::Round => LineJoin::Round,
+            LineJoin::Bevel => LineJoin::Bevel
+        };
+
         let stroke_options = StrokeOptions::default()
             .with_stroke_cap(self.current_state.cap_style)
             .with_stroke_width(self.current_state.line_width)
-            .with_miter_limit(self.current_state.miter_limit)
-            .with_stroke_join(self.current_state.join_style);
+            .with_stroke_join(join_style);
 
         let dashes = self.current_state.dash_pattern.as_ref().map(|pattern: &Vec<f64>| {
             StrokeDashPattern {

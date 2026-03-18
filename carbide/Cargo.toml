@@ -14,7 +14,6 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 description = "A crate that includes the other carbide crates and where features can be selected"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-
 [features]
 default = ["carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
 controls = ["carbide_controls", "carbide_wgpu/controls"]
@@ -23,6 +22,7 @@ chart = ["carbide_chart"]
 dialogs = ["carbide_dialogs"]
 i18n = ["carbide_fluent"]
 3d = ["carbide_3d", "carbide_wgpu_3d"]
+icons = ["carbide_wgpu/icons", "carbide_icons"]
 
 [dependencies]
 carbide_core = { path = "../carbide_core" }
@@ -35,6 +35,7 @@ carbide_media = { path = "../carbide_media", optional = true }
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
 carbide_chart = { path = "../carbide_chart", optional = true }
 carbide_dialogs = { path = "../carbide_dialogs", optional = true }
+carbide_icons = { path = "../backends/carbide_icons", optional = true }
 
 [dev-dependencies]
 carbide_controls = { path = "../carbide_controls" }

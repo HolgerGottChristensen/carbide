@@ -1,36 +1,30 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
-use std::fs::File;
-use std::io::{BufReader, Read};
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use accesskit::{Node, Point, Role, Size};
-use cgmath::{Matrix4, Vector3};
-use url::Url;
-use carbide::draw::{DrawOptions, DrawShape, DrawStyle};
-use carbide::draw::fill::FillOptions;
-use carbide::draw::stroke::{LineCap, LineJoin};
-use carbide::render::RenderInstruction;
-use crate::accessibility::AccessibilityContext;
-use crate::scene::SceneManager;
-use carbide_macro::carbide_default_builder2;
-use carbide_usvg::{Document, Options, Paint, PaintOrder, Tree};
-use carbide_usvg::tiny_skia_path::PathSegment;
 use crate::accessibility::Accessibility;
-use crate::color::{BLUE, RED};
-use crate::CommonWidgetImpl;
-use crate::draw::{Dimension, ImageId, ImageIdFormat, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat};
+use crate::accessibility::AccessibilityContext;
+use crate::color::{rgb, rgb_bytes, BLUE};
 use crate::draw::path::PathInstruction;
 use crate::draw::pre_multiply::PreMultiply;
-use crate::draw::stroke::StrokeOptions;
+use crate::draw::stroke::{LineCap, LineJoin, StrokeOptions};
+use crate::draw::{Dimension, ImageId, ImageIdFormat, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat, DrawOptions, DrawShape, SystemImageManager};
 use crate::environment::EnvironmentColor;
 use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
-use crate::render::{Render, Style, RenderContext};
-use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
-use crate::widget::{Widget, WidgetId, CommonWidget, WidgetSync, CornerRadii};
+use crate::render::{Render, RenderContext, RenderInstruction, RenderInstructionValue, Style};
+use crate::scene::SceneManager;
+use crate::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew};
 use crate::widget::types::ScaleMode;
+use crate::widget::{CommonWidget, Widget, WidgetId, WidgetSync};
+use crate::CommonWidgetImpl;
+use accesskit::{Node, Point, Role, Size};
+use carbide_usvg::tiny_skia_path::PathSegment;
+use carbide_usvg::{Document, Fill, Group, Options, Paint, PaintOrder, Stroke, Tree};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::path::PathBuf;
+use std::sync::Arc;
+use url::Url;
+use crate::draw::fill::FillOptions;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -66,6 +60,21 @@ impl Image<ImageId, Style> {
             resizeable: false,
             decorative: false,
             src_rect: None,
+        }
+    }
+
+    pub fn system<Name: IntoReadState<String>>(name: Name) -> Image<impl ReadState<T=ImageId>, impl ReadState<T=Style>> {
+        Image {
+            id: WidgetId::new(),
+            image_id: name.into_read_state().map(|a| ImageId::system(a.clone(), ImageIdFormat::Vector)),
+            src_rect: None,
+            color: Some(EnvironmentColor::Label.style()),
+            mode: ImageMode::Icon,
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(0.0, 0.0),
+            scale_mode: ScaleMode::Fit,
+            resizeable: false,
+            decorative: false
         }
     }
 
@@ -153,6 +162,28 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     Self::load_remote_raster(ctx, url);
                 }
             }
+            (ImageId::System(name, ..), ImageIdFormat::Vector) => {
+                if !ctx.image.exist(image_id, ctx.env) {
+                    let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
+
+                    let bytes = system_provider(name).unwrap();
+
+                    let string = str::from_utf8(bytes).unwrap();
+
+                    let options = Options::default();
+                    let doc = Document::from_str(string, &options);
+                    let tree = doc.to_tree(&options);
+
+                    let description = self.construct_render_instructions(&tree);
+
+                    ctx.image.update_vector(
+                        image_id,
+                        description,
+                        Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
+                        ctx.env
+                    );
+                }
+            }
             (ImageId::Local(path, ..), ImageIdFormat::Vector) => {
                 if !ctx.image.exist(image_id, ctx.env) {
                     let full_path = if path.is_relative() {
@@ -165,62 +196,15 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                         path.to_path_buf()
                     };
 
-
                     let mut file = BufReader::new(File::open(full_path).unwrap());
-
                     let mut string = String::new();
-                    file.read_to_string(&mut string);
+                    file.read_to_string(&mut string).unwrap();
 
                     let options = Options::default();
-
                     let doc = Document::from_str(&string, &options);
-
                     let tree = doc.to_tree(&options);
 
-                    println!("{:?}", doc);
-                    println!("{:#?}", tree);
-
-                    let mut description = vec![];
-
-                    for child in tree.root().children() {
-                        match child {
-                            carbide_usvg::Node::Group(_) => {}
-                            carbide_usvg::Node::Path(p) => {
-                                let mut path_instructions = vec![];
-
-                                for segment in p.data().segments() {
-                                    match segment {
-                                        PathSegment::MoveTo(point) => path_instructions.push(PathInstruction::MoveTo { to: Position::new(point.x as f64 * 2.0, point.y as f64 * 2.0) }),
-                                        PathSegment::LineTo(point) => path_instructions.push(PathInstruction::LineTo { to: Position::new(point.x as f64 * 2.0, point.y as f64 * 2.0) }),
-                                        PathSegment::QuadTo(ctrl, point) => path_instructions.push(PathInstruction::QuadraticBezierTo { ctrl: Position::new(ctrl.x as f64 * 2.0, ctrl.y as f64 * 2.0), to: Position::new(point.x as f64 * 2.0, point.y as f64 * 2.0) }),
-                                        PathSegment::CubicTo(ctrl1, ctrl2, point) => path_instructions.push(PathInstruction::CubicBezierTo { ctrl1: Position::new(ctrl1.x as f64 * 2.0, ctrl1.y as f64 * 2.0), ctrl2: Position::new(ctrl2.x as f64 * 2.0, ctrl2.y as f64 * 2.0), to: Position::new(point.x as f64 * 2.0, point.y as f64 * 2.0) }),
-                                        PathSegment::Close => path_instructions.push(PathInstruction::Close),
-                                    }
-                                }
-
-                                if let Some(s) = p.stroke() {
-                                    let style = match s.paint() {
-                                        Paint::CurrentColor => self.color.as_ref().map(|a| a.as_dyn_read()).unwrap_or(Style::Color(BLUE).as_dyn_read()),
-                                        Paint::Color(_) => Style::Color(BLUE).as_dyn_read(),
-                                        Paint::LinearGradient(_) => Style::Color(BLUE).as_dyn_read(),
-                                        Paint::RadialGradient(_) => Style::Color(BLUE).as_dyn_read(),
-                                        Paint::Pattern(_) => Style::Color(BLUE).as_dyn_read()
-                                    };
-
-                                    description.push(RenderInstruction::PushStyle { style });
-
-                                    description.push(RenderInstruction::Shape {
-                                        shape: DrawShape::Path(crate::draw::path::Path { instructions: path_instructions }),
-                                        options: DrawOptions::Stroke(StrokeOptions::default().with_stroke_cap(LineCap::Round).with_stroke_join(LineJoin::Round).with_stroke_width(4.0))
-                                    });
-
-                                    description.push(RenderInstruction::PopStyle);
-                                }
-                            }
-                            carbide_usvg::Node::Image(_) => {}
-                            carbide_usvg::Node::Text(_) => {}
-                        }
-                    }
+                    let description = self.construct_render_instructions(&tree);
 
                     ctx.image.update_vector(
                         &ImageId::Local(path.clone(), ImageIdFormat::Vector),
@@ -277,17 +261,146 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
 }
 
 impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
+    fn construct_render_instructions(&self, tree: &Tree) -> Vec<RenderInstruction> {
+        let mut description = vec![];
+
+        self.render_instructions_from_group(tree.root(), &mut description);
+
+        description
+    }
+
+    fn render_instructions_from_group(&self, group: &Group, description: &mut Vec<RenderInstruction>) {
+        for child in group.children() {
+            self.render_instructions_from_node(child, description)
+        }
+    }
+
+    fn render_instructions_from_path(&self, path: &carbide_usvg::Path, description: &mut Vec<RenderInstruction>) {
+        let mut path_instructions = vec![];
+
+        for segment in path.data().segments() {
+            match segment {
+                PathSegment::MoveTo(point) => path_instructions.push(PathInstruction::MoveTo {
+                    to: Position::new(point.x as f64, point.y as f64)
+                }),
+                PathSegment::LineTo(point) => path_instructions.push(PathInstruction::LineTo {
+                    to: Position::new(point.x as f64, point.y as f64)
+                }),
+                PathSegment::QuadTo(ctrl, point) => path_instructions.push(PathInstruction::QuadraticBezierTo {
+                    ctrl: Position::new(ctrl.x as f64, ctrl.y as f64),
+                    to: Position::new(point.x as f64, point.y as f64)
+                }),
+                PathSegment::CubicTo(ctrl1, ctrl2, point) => path_instructions.push(PathInstruction::CubicBezierTo {
+                    ctrl1: Position::new(ctrl1.x as f64, ctrl1.y as f64),
+                    ctrl2: Position::new(ctrl2.x as f64, ctrl2.y as f64),
+                    to: Position::new(point.x as f64, point.y as f64)
+                }),
+                PathSegment::Close => path_instructions.push(PathInstruction::Close),
+            }
+        }
+
+        match path.paint_order() {
+            PaintOrder::FillAndStroke => {
+                if let Some(fill) = path.fill() {
+                    self.fill_path(description, &path_instructions, fill);
+                }
+                if let Some(stroke) = path.stroke() {
+                    self.stroke_path(description, &path_instructions, stroke);
+                }
+            }
+            PaintOrder::StrokeAndFill => {
+                if let Some(stroke) = path.stroke() {
+                    self.stroke_path(description, &path_instructions, stroke);
+                }
+                if let Some(fill) = path.fill() {
+                    self.fill_path(description, &path_instructions, fill);
+                }
+            }
+        }
+    }
+
+    fn fill_path(&self, description: &mut Vec<RenderInstruction>, mut path_instructions: &Vec<PathInstruction>, fill: &Fill) {
+        let style = match fill.paint() {
+            Paint::CurrentColor => self.color.as_ref()
+                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
+                .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
+            Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
+            Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
+            Paint::RadialGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
+            Paint::Pattern(_) => RenderInstructionValue::Constant(Style::Color(BLUE))
+        };
+
+        description.push(RenderInstruction::PushStyle { style });
+
+        description.push(RenderInstruction::Shape {
+            shape: DrawShape::Path(crate::draw::path::Path { instructions: path_instructions.clone() }),
+            options: DrawOptions::Fill(FillOptions::default())
+        });
+
+        description.push(RenderInstruction::PopStyle);
+    }
+
+    fn stroke_path(&self, description: &mut Vec<RenderInstruction>, mut path_instructions: &Vec<PathInstruction>, stroke: &Stroke) {
+        let style = match stroke.paint() {
+            Paint::CurrentColor => self.color.as_ref()
+                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
+                .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
+            Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
+            Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
+            Paint::RadialGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
+            Paint::Pattern(_) => RenderInstructionValue::Constant(Style::Color(BLUE))
+        };
+
+        let cap = match stroke.linecap() {
+            carbide_usvg::LineCap::Butt => LineCap::Butt,
+            carbide_usvg::LineCap::Round => LineCap::Round,
+            carbide_usvg::LineCap::Square => LineCap::Square
+        };
+
+        let join = match stroke.linejoin() {
+            carbide_usvg::LineJoin::Miter => LineJoin::Miter,
+            carbide_usvg::LineJoin::MiterClip => LineJoin::MiterClip { miter_limit: stroke.miterlimit().get() as Scalar },
+            carbide_usvg::LineJoin::Round => LineJoin::Round,
+            carbide_usvg::LineJoin::Bevel => LineJoin::Bevel,
+        };
+
+
+        description.push(RenderInstruction::PushStyle { style });
+
+        description.push(RenderInstruction::Shape {
+            shape: DrawShape::Path(crate::draw::path::Path { instructions: path_instructions.clone() }),
+            options: DrawOptions::Stroke(StrokeOptions::default()
+                .with_stroke_cap(cap)
+                .with_stroke_join(join)
+                .with_stroke_width(stroke.width().get() as Scalar)
+            )
+        });
+
+        description.push(RenderInstruction::PopStyle);
+    }
+
+    fn render_instructions_from_node(&self, node: &carbide_usvg::Node, description: &mut Vec<RenderInstruction>) {
+        match node {
+            carbide_usvg::Node::Group(g) => self.render_instructions_from_group(g, description),
+            carbide_usvg::Node::Path(p) => self.render_instructions_from_path(p, description),
+            carbide_usvg::Node::Image(_) => {}
+            carbide_usvg::Node::Text(_) => {}
+        }
+    }
+}
+
+impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
     fn load_remote_raster(ctx: &mut LayoutContext, url: &Url) {
         todo!("Load image from url: {}", url);
     }
 
-    fn load_local_raster(ctx: &mut LayoutContext, path: &PathBuf) {
+    fn load_local_raster(ctx: &mut LayoutContext, path: &Arc<PathBuf>) {
         let full_path = if path.is_relative() {
             let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
                 .for_folder("assets")
                 .unwrap();
 
-            assets.join(path)
+            assets.join(&**path)
         } else {
             path.to_path_buf()
         };
@@ -304,7 +417,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
             data: &image.to_rgba8().into_raw(),
         };
 
-        ctx.image.update_texture(&ImageId::Local(Arc::new(path.clone()), ImageIdFormat::Raster), texture, ctx.env);
+        ctx.image.update_texture(&ImageId::Local(path.clone(), ImageIdFormat::Raster), texture, ctx.env);
     }
 }
 
