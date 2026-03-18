@@ -406,7 +406,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
         };
 
         let image = image::open(&full_path)
-            .expect("Couldn't load image")
+            .expect(&format!("Couldn't load image: {}", full_path.display()))
             .pre_multiplied();
 
         let texture = Texture {

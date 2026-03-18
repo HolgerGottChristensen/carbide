@@ -17,7 +17,7 @@ description = "A crate that includes the other carbide crates and where features
 [features]
 default = ["carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
 controls = ["carbide_controls", "carbide_wgpu/controls"]
-media = ["carbide_media"]
+media = ["carbide_media", "icons"]
 chart = ["carbide_chart"]
 dialogs = ["carbide_dialogs"]
 i18n = ["carbide_fluent"]

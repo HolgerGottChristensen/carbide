@@ -6,7 +6,7 @@ use cocoa::base::{id, nil};
 use cocoa::foundation::{NSArray, NSAutoreleasePool, NSDictionary, NSString};
 use objc::{msg_send, class, sel, sel_impl};
 use carbide::animation::AnimationManager;
-use carbide::draw::{ImageMode, ImageOptions};
+use carbide::draw::{ImageMetrics, ImageMode, ImageOptions};
 use carbide::environment::Environment;
 use carbide::event::{EventSink, NoopEventSink};
 use carbide::layout::LayoutContext;
@@ -27,14 +27,14 @@ pub type VideoId = ImageId;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout)]
-pub struct Video<Id> where Id: ReadState<T=Option<ImageId>> + Clone {
+pub struct Video<Id> where Id: ReadState<T=ImageId> + Clone {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
 
     /// The unique identifier for the image that will be drawn.
     #[state] video_id_state: Id,
-    video_id: Option<VideoId>,
+    video_id: VideoId,
     #[state] playing: Box<dyn AnyReadState<T=bool>>,
     #[state] rate: Box<dyn AnyReadState<T=f64>>,
     #[state] volume: Box<dyn AnyReadState<T=f64>>,
@@ -88,14 +88,14 @@ impl Drop for NativePlayer {
     }
 }
 
-impl Video<Option<VideoId>> {
-    pub fn new<Id: IntoReadState<Option<VideoId>>>(id: Id) -> Video<Id::Output> {
+impl Video<VideoId> {
+    pub fn new<Id: IntoReadState<VideoId>>(id: Id) -> Video<Id::Output> {
         Video {
             id: WidgetId::new(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(0.0, 0.0),
             video_id_state: id.into_read_state(),
-            video_id: None,
+            video_id: VideoId::None,
             playing: LocalState::new(true).as_dyn_read(),
             rate: LocalState::new(1.0).as_dyn_read(),
             volume: LocalState::new(1.0).as_dyn_read(),
@@ -112,7 +112,7 @@ impl Video<Option<VideoId>> {
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
+impl<Id: ReadState<T=ImageId> + Clone> Layout for Video<Id> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
 
         if &*self.video_id_state.value() != &self.video_id {
@@ -126,17 +126,19 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
         self.update_frame(ctx);
 
 
-        let information = self.video_id.as_ref().and_then(|id| {
-            let (width, height) = ctx.image.metrics(id, ctx.env)?;
+        let (width, height) = match ctx.image.metrics(&self.video_id, ctx.env) {
+            ImageMetrics::Unknown => (100, 100),
+            ImageMetrics::Raster { width, height } => (width, height),
+            ImageMetrics::Vector { .. } => (100, 100),
+        };
 
-            let mut scale_factor = 1.0;
+        let mut scale_factor = 1.0;
 
-            SceneManager::get(ctx.env, |manager| {
-                scale_factor = manager.scale_factor();
-            });
+        SceneManager::get(ctx.env, |manager| {
+            scale_factor = manager.scale_factor();
+        });
 
-            Some(Dimension::new(width as Scalar, height as Scalar) / scale_factor)
-        }).unwrap_or(Dimension::new(100.0, 100.0));
+        let information = Dimension::new(width as Scalar, height as Scalar) / scale_factor;
 
         if !self.resizeable {
             self.dimension = information;
@@ -169,7 +171,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Layout for Video<Id> {
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
+impl<Id: ReadState<T=ImageId> + Clone> Video<Id> {
     pub fn playing<P: IntoReadState<bool>>(mut self, playing: P) -> Self {
         self.playing = playing.into_read_state().as_dyn_read();
         self
@@ -304,7 +306,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                     let address = CVPixelBufferGetBaseAddress(buffer);
                     //println!("address: {:?}", address);
 
-                    ctx.image.update_texture(self.video_id.clone().unwrap(), Texture {
+                    ctx.image.update_texture(&self.video_id, Texture {
                         width: width as u32,
                         height: height as u32,
                         bytes_per_row: bytes_per_row as u32,
@@ -324,92 +326,99 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
         // add observer
         // [object_to_observe addObserver:observer forKeyPath:string options:o context:nil]
 
-        if let Some(image_id) = &*self.video_id_state.value() {
-            let path = image_id.as_ref();
+        let image_id = &*self.video_id_state.value();
 
-            unsafe {
-                let string: id = NSString::alloc(nil).init_str(path.as_os_str().to_str().unwrap()).autorelease();
-                let url: id = if path.is_file() {
-                    msg_send![class!(NSURL), fileURLWithPath:string]
-                } else {
-                    msg_send![class!(NSURL), URLWithString:string]
-                };
+        let path = match image_id {
+            ImageId::None => None,
+            ImageId::System(_, _) => None,
+            ImageId::Local(path, _) => Some(&*path),
+            ImageId::Remote(_, _) => None,
+            ImageId::InMemory(_, _) => None,
+        }.unwrap();
 
-                let player_item: id = msg_send![class!(AVPlayerItem), playerItemWithURL:url];
-                let player: id = msg_send![class!(AVPlayer), playerWithPlayerItem:player_item];
-                let player_output: id = msg_send![class!(AVPlayerItemVideoOutput), alloc];
+        unsafe {
+            let string: id = NSString::alloc(nil).init_str(path.as_os_str().to_str().unwrap()).autorelease();
+            let url: id = if path.is_file() {
+                msg_send![class!(NSURL), fileURLWithPath:string]
+            } else {
+                msg_send![class!(NSURL), URLWithString:string]
+            };
 
-                let duration = self.duration.clone();
-                let buffering = self.buffering.clone();
+            let player_item: id = msg_send![class!(AVPlayerItem), playerItemWithURL:url];
+            let player: id = msg_send![class!(AVPlayer), playerWithPlayerItem:player_item];
+            let player_output: id = msg_send![class!(AVPlayerItemVideoOutput), alloc];
 
-                let sink = if let Some(sink) = env.get::<dyn EventSink>().cloned() {
-                    sink
-                } else {
-                    Arc::new(NoopEventSink)
-                };
+            let duration = self.duration.clone();
+            let buffering = self.buffering.clone();
 
-                let listener = listener(move |key_path, map| {
-                    let mut duration = duration.clone();
-                    let mut buffering = buffering.clone();
-                    //println!("KeyPath: {key_path}, Map: {map:?}");
+            let sink = if let Some(sink) = env.get::<dyn EventSink>().cloned() {
+                sink
+            } else {
+                Arc::new(NoopEventSink)
+            };
 
-                    match key_path.as_str() {
-                        "status" => {
-                            if let Some(i) = map.get(&NSKeyValueChangeKey::New) {
-                                let val: i64 = msg_send![*i, integerValue];
-                                if val == 2 {
-                                    dbg!(val);
-                                    let error: id = msg_send![player_item, error];
-                                    dbg!(error);
-                                    dbg!(error == nil);
+            let listener = listener(move |key_path, map| {
+                let mut duration = duration.clone();
+                let mut buffering = buffering.clone();
+                //println!("KeyPath: {key_path}, Map: {map:?}");
 
-                                    let error_msg: id = msg_send![error, localizedDescription];
+                match key_path.as_str() {
+                    "status" => {
+                        if let Some(i) = map.get(&NSKeyValueChangeKey::New) {
+                            let val: i64 = msg_send![*i, integerValue];
+                            if val == 2 {
+                                dbg!(val);
+                                let error: id = msg_send![player_item, error];
+                                dbg!(error);
+                                dbg!(error == nil);
 
-                                    let error_msg = unsafe {
-                                        let slice = std::slice::from_raw_parts(error_msg.UTF8String() as *const _, error_msg.len());
-                                        let result = std::str::from_utf8_unchecked(slice);
-                                        result.to_string()
-                                    };
+                                let error_msg: id = msg_send![error, localizedDescription];
 
-                                    println!("{:?}", error_msg);
-                                }
+                                let error_msg = unsafe {
+                                    let slice = std::slice::from_raw_parts(error_msg.UTF8String() as *const _, error_msg.len());
+                                    let result = std::str::from_utf8_unchecked(slice);
+                                    result.to_string()
+                                };
 
-                                let item_duration: CMTime = msg_send![player_item, duration];
-                                if !item_duration.flags.contains(CMTimeFlags::Indefinite) {
-                                    duration.set_value(Some(Duration::from(item_duration)));
-                                }
-                                println!("Duration: {:?}", duration.value());
-                                sink.send(CoreEvent::Async);
+                                println!("{:?}", error_msg);
                             }
-                        }
-                        "playbackBufferEmpty" => {
-                            if !*buffering.value() {
-                                buffering.set_value(true);
-                                sink.send(CoreEvent::Async);
+
+                            let item_duration: CMTime = msg_send![player_item, duration];
+                            if !item_duration.flags.contains(CMTimeFlags::Indefinite) {
+                                duration.set_value(Some(Duration::from(item_duration)));
                             }
+                            println!("Duration: {:?}", duration.value());
+                            sink.send(CoreEvent::Async);
                         }
-                        "playbackLikelyToKeepUp" => {
-                            if *buffering.value() {
-                                buffering.set_value(false);
-                                sink.send(CoreEvent::Async);
-                            }
-                        }
-                        "playbackBufferFull" => {
-                            if *buffering.value() {
-                                buffering.set_value(false);
-                                sink.send(CoreEvent::Async);
-                            }
-                        }
-                        _ => unreachable!()
                     }
-                });
+                    "playbackBufferEmpty" => {
+                        if !*buffering.value() {
+                            buffering.set_value(true);
+                            sink.send(CoreEvent::Async);
+                        }
+                    }
+                    "playbackLikelyToKeepUp" => {
+                        if *buffering.value() {
+                            buffering.set_value(false);
+                            sink.send(CoreEvent::Async);
+                        }
+                    }
+                    "playbackBufferFull" => {
+                        if *buffering.value() {
+                            buffering.set_value(false);
+                            sink.send(CoreEvent::Async);
+                        }
+                    }
+                    _ => unreachable!()
+                }
+            });
 
-                let keyPath: id = NSString::alloc(nil).init_str("status").autorelease();
-                let keyPath2: id = NSString::alloc(nil).init_str("playbackBufferEmpty").autorelease();
-                let keyPath3: id = NSString::alloc(nil).init_str("playbackLikelyToKeepUp").autorelease();
-                let keyPath4: id = NSString::alloc(nil).init_str("playbackBufferFull").autorelease();
+            let keyPath: id = NSString::alloc(nil).init_str("status").autorelease();
+            let keyPath2: id = NSString::alloc(nil).init_str("playbackBufferEmpty").autorelease();
+            let keyPath3: id = NSString::alloc(nil).init_str("playbackLikelyToKeepUp").autorelease();
+            let keyPath4: id = NSString::alloc(nil).init_str("playbackBufferFull").autorelease();
 
-                let _: () = msg_send![
+            let _: () = msg_send![
                         player_item,
                         addObserver:listener
                         forKeyPath:keyPath
@@ -417,7 +426,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                         context:nil
                     ];
 
-                let _: () = msg_send![
+            let _: () = msg_send![
                         player_item,
                         addObserver:listener
                         forKeyPath:keyPath2
@@ -425,7 +434,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                         context:nil
                     ];
 
-                let _: () = msg_send![
+            let _: () = msg_send![
                         player_item,
                         addObserver:listener
                         forKeyPath:keyPath3
@@ -433,7 +442,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                         context:nil
                     ];
 
-                let _: () = msg_send![
+            let _: () = msg_send![
                         player_item,
                         addObserver:listener
                         forKeyPath:keyPath4
@@ -441,38 +450,37 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Video<Id> {
                         context:nil
                     ];
 
-                let keys = vec![kCVPixelBufferPixelFormatTypeKey];
-                let int: ::std::os::raw::c_uint = 1111970369; // Magic number for BGRA format
-                let number: id = msg_send![class!(NSNumber), numberWithUnsignedInt:int];
-                let objects = vec![number];
+            let keys = vec![kCVPixelBufferPixelFormatTypeKey];
+            let int: ::std::os::raw::c_uint = 1111970369; // Magic number for BGRA format
+            let number: id = msg_send![class!(NSNumber), numberWithUnsignedInt:int];
+            let objects = vec![number];
 
-                let keys_array = NSArray::arrayWithObjects(nil, &keys);
-                let objs_array = NSArray::arrayWithObjects(nil, &objects);
+            let keys_array = NSArray::arrayWithObjects(nil, &keys);
+            let objs_array = NSArray::arrayWithObjects(nil, &objects);
 
-                let dict: id = NSDictionary::dictionaryWithObjects_forKeys_(nil, objs_array, keys_array);
+            let dict: id = NSDictionary::dictionaryWithObjects_forKeys_(nil, objs_array, keys_array);
 
-                let _: () = msg_send![player_output, initWithPixelBufferAttributes:dict];
-                let _: () = msg_send![player_item, addOutput:player_output];
+            let _: () = msg_send![player_output, initWithPixelBufferAttributes:dict];
+            let _: () = msg_send![player_item, addOutput:player_output];
 
 
-                self.buffering.set_value(true);
-                self.duration.set_value(None);
-                self.current_time.set_value(Duration::new(0, 0));
-                self.last_current_time = Duration::new(0, 0);
-                self.player = Some(NativePlayer::new(player, player_item, player_output, listener))
-            }
+            self.buffering.set_value(true);
+            self.duration.set_value(None);
+            self.current_time.set_value(Duration::new(0, 0));
+            self.last_current_time = Duration::new(0, 0);
+            self.player = Some(NativePlayer::new(player, player_item, player_output, listener))
         }
 
         self.video_id = self.video_id_state.value().clone();
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
+impl<Id: ReadState<T=ImageId> + Clone> Render for Video<Id> {
     fn render(&mut self, context: &mut RenderContext) {
-        if let Some(id) = &self.video_id {
-            if context.image.exist(id, context.env) {
+        if self.video_id != VideoId::None {
+            if context.image.exist(&self.video_id, context.env) {
                 context.image(
-                    id.clone(),
+                    &self.video_id,
                     Rect::new(self.position, self.dimension),
                     ImageOptions { source_rect: Some(Rect::from_corners(Position::new(0.0, 1.0), Position::new(1.0, 0.0))), mode: ImageMode::Image }
                 );
@@ -481,7 +489,7 @@ impl<Id: ReadState<T=Option<ImageId>> + Clone> Render for Video<Id> {
     }
 }
 
-impl<Id: ReadState<T=Option<ImageId>> + Clone> CommonWidget for Video<Id> {
+impl<Id: ReadState<T=ImageId> + Clone> CommonWidget for Video<Id> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 

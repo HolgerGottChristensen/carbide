@@ -21,7 +21,7 @@ const SKIP_ICON_SIZE: f64 = 32.0;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout, Render, MouseEvent, KeyboardEvent)]
-pub struct VideoPlayer<Id> where Id: ReadState<T=Option<VideoId>> + Clone {
+pub struct VideoPlayer<Id> where Id: ReadState<T=VideoId> + Clone {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -37,8 +37,8 @@ pub struct VideoPlayer<Id> where Id: ReadState<T=Option<VideoId>> + Clone {
     #[state] buffering: Box<dyn AnyState<T=bool>>,
 }
 
-impl VideoPlayer<Option<VideoId>> {
-    pub fn new<Id: IntoReadState<Option<VideoId>>>(id: Id) -> VideoPlayer<Id::Output> {
+impl VideoPlayer<VideoId> {
+    pub fn new<Id: IntoReadState<VideoId>>(id: Id) -> VideoPlayer<Id::Output> {
 
         let duration = LocalState::new(None);
         let current_time = LocalState::new(Duration::new(0, 0));
@@ -69,33 +69,33 @@ impl VideoPlayer<Option<VideoId>> {
         let playing_play = playing.clone();
         let playing_pause = playing.clone();
 
-        let play_button = Image::new("icons/play-fill.png")
-            .scaled_to_fit()
+        let play_button = Image::system("play")
+            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut playing = playing_play.clone();
                 playing.set_value(true);
-            })
-            .frame(ICON_SIZE, ICON_SIZE);
+            });
+            //.frame(ICON_SIZE, ICON_SIZE);
 
-        let pause_button = Image::new("icons/pause-fill.png")
-            .scaled_to_fit()
+        let pause_button = Image::system("pause")
+            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut playing = playing_pause.clone();
                 playing.set_value(false);
-            })
-            .frame(ICON_SIZE, ICON_SIZE);
+            });
+            //.frame(ICON_SIZE, ICON_SIZE);
 
-        let forward_button = Image::new("icons/forward-10-fill.png")
-            .scaled_to_fit()
+        let forward_button = Image::system("rotate.cw")
+            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut current_time = current_time_forward.clone();
                 let current = *current_time.value();
                 current_time.set_value(current + Duration::new(10, 0));
-            })
-            .frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
+            });
+            //.frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
 
-        let replay_button = Image::new("icons/replay-10-fill.png")
-            .scaled_to_fit()
+        let replay_button = Image::system("rotate.ccw")
+            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut current_time = current_time_replay.clone();
                 let current = *current_time.value();
@@ -104,12 +104,14 @@ impl VideoPlayer<Option<VideoId>> {
                 } else {
                     current_time.set_value(Duration::new(0, 0));
                 }
-            })
-            .frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
+            });
+            //.frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
 
         let video_overlay = ZStack::new((
-            Rectangle::new().fill(BLACK.with_opacity(0.3)),
+            Rectangle::new().fill(BLACK.with_opacity(0.4)),
             HStack::new((
+                Spacer::new(),
+                Spacer::new(),
                 Spacer::new(),
                 replay_button,
                 Spacer::new(),
@@ -117,11 +119,13 @@ impl VideoPlayer<Option<VideoId>> {
                     .when_true(ProgressView::new().size(ICON_SIZE))
                     .when_false(
                         IfElse::new(playing.clone())
-                        .when_true(pause_button)
-                        .when_false(play_button)
+                            .when_true(pause_button)
+                            .when_false(play_button)
                     ),
                 Spacer::new(),
                 forward_button,
+                Spacer::new(),
+                Spacer::new(),
                 Spacer::new(),
             )),
             VStack::new((
@@ -159,7 +163,7 @@ impl VideoPlayer<Option<VideoId>> {
     }
 }
 
-impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer<Id> {
+impl<Id: ReadState<T=VideoId> + Clone> MouseEventHandler for VideoPlayer<Id> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !matches!(event, MouseEvent::Left | MouseEvent::Entered) {
             self.video_overlay_visible = self.is_inside(event.get_current_mouse_position());
@@ -178,7 +182,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> MouseEventHandler for VideoPlayer
     }
 }
 
-impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPlayer<Id> {
+impl<Id: ReadState<T=VideoId> + Clone> KeyboardEventHandler for VideoPlayer<Id> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         match event {
             KeyboardEvent::Press { key: Key::ArrowLeft, .. } => {
@@ -199,7 +203,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> KeyboardEventHandler for VideoPla
 }
 
 
-impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
+impl<Id: ReadState<T=VideoId> + Clone> Layout for VideoPlayer<Id> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let res = self.video.calculate_size(requested_size, ctx);
         self.video_overlay.calculate_size(res, ctx);
@@ -221,7 +225,7 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Layout for VideoPlayer<Id> {
     }
 }
 
-impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
+impl<Id: ReadState<T=VideoId> + Clone> Render for VideoPlayer<Id> {
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
         self.video.render(context);
@@ -232,6 +236,6 @@ impl<Id: ReadState<T=Option<VideoId>> + Clone> Render for VideoPlayer<Id> {
     }
 }
 
-impl<Id: ReadState<T=Option<VideoId>> + Clone> CommonWidget for VideoPlayer<Id> {
+impl<Id: ReadState<T=VideoId> + Clone> CommonWidget for VideoPlayer<Id> {
     CommonWidgetImpl!(self, child: self.video, position: self.position, dimension: self.dimension, flexibility: 10);
 }

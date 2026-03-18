@@ -22,8 +22,7 @@ mod article;
 mod item;
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let news_articles: LocalState<Option<Vec<Article>>> = LocalState::new(None);
     let selected_id: LocalState<Option<u64>> = LocalState::new(None);
@@ -91,13 +90,13 @@ fn main() {
             )),
             HStack::new((
                 Text::new(timestamp),
-                Image::new_icon("icons/thumb-up-line.png")
+                Image::system("thumbs.up")
                     .resizeable()
                     .frame(16.0, 16.0)
                     .accent_color(EnvironmentColor::SecondaryLabel),
                 Text::new(lens!(article.score))
                     .custom_flexibility(3),
-                Image::new_icon("icons/chat-1-line.png")
+                Image::system("message.circle")
                     .resizeable()
                     .frame(16.0, 16.0)
                     .accent_color(EnvironmentColor::SecondaryLabel),
