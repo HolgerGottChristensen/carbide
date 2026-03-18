@@ -21,7 +21,7 @@ use carbide_core::text::{TextContext, TextId, TextStyle};
 use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
-use carbide_lyon::Tesselator;
+use carbide_lyon::{LyonScalar, Tesselator};
 use crate::wgpu_dashes::WgpuDashes;
 
 #[derive(Debug)]
@@ -343,6 +343,10 @@ impl WGPURenderContext {
 
     fn push_command(&mut self, command: RenderPassCommand) {
         if let Some(RenderPass::Normal { commands, .. }) = self.render_pass.last_mut() {
+            // Dont send multiple uniform commands in a row, avoiding unnecessary bindings swaps.
+            if let Some(RenderPassCommand::Uniform {..}) = commands.last() && let RenderPassCommand::Uniform {..} = command {
+                commands.pop();
+            }
             commands.push(command);
         } else {
             self.render_pass.push(RenderPass::Normal { commands: vec![
@@ -813,6 +817,14 @@ impl InnerRenderContext for WGPURenderContext {
         if self.skip_rendering {
             return;
         }
+
+        let (latest_uniform, _) = &self.uniform_stack[self.uniform_stack.len() - 1];
+
+        let multiplier = latest_uniform.transform[0][0]
+            .max(latest_uniform.transform[1][1]);
+
+        // Cap the tolerance to the div epsilon on lyon
+        self.tesselator.tolerance_multiplier = multiplier.max(1.0);
 
         match options {
             DrawOptions::Fill(options) => {

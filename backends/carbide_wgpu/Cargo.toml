@@ -44,8 +44,9 @@ core-graphics = "0.22.0"
 foreign-types = "0.3.2"
 
 [dev-dependencies]
-carbide_wgpu = { path = "../carbide_wgpu", features = ["controls"] }
+carbide_wgpu = { path = "../carbide_wgpu", features = ["controls", "icons"] }
 carbide_winit = { path = "../carbide_winit" }
+carbide_icons = { workspace = true, features = ["lucide"] }
 
 carbide_controls = { path = "../../carbide_controls" }
 carbide_macro = { path = "../../carbide_macro" }

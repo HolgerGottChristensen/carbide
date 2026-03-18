@@ -14,9 +14,19 @@ carbide_core.workspace = true
 carbide_wgpu = { workspace = true, features = ["icons"] }
 
 [features]
-default = ["lucide"]
+default = []
 lucide = []
+tabler = []
+remix = []
 
 [[example]]
 name = "lucide"
 required-features = ["lucide"]
+
+[[example]]
+name = "remix"
+required-features = ["remix"]
+
+[[example]]
+name = "tabler"
+required-features = ["tabler"]

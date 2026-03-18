@@ -22,7 +22,7 @@ chart = ["carbide_chart"]
 dialogs = ["carbide_dialogs"]
 i18n = ["carbide_fluent"]
 3d = ["carbide_3d", "carbide_wgpu_3d"]
-icons = ["carbide_wgpu/icons", "carbide_icons"]
+icons = ["carbide_icons", "carbide_wgpu/icons", "carbide_icons/lucide"]
 
 [dependencies]
 carbide_core = { path = "../carbide_core" }

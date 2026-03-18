@@ -1,5 +1,5 @@
 use cgmath::Vector3;
-use carbide::draw::{ImageIdFormat, Position};
+use carbide::draw::{ImageIdFormat, ImageMetrics, Position};
 use carbide::render::{RenderInstruction, RenderInstructionValue, Style};
 use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
@@ -102,7 +102,20 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
                     .and_then(|a| a.get(id).cloned())
                     .unwrap();
 
-                self.render.transform(&Matrix4::from_translation(Vector3::new(bounding_box.position.x as f32, bounding_box.position.y as f32, 0.0)));
+                let metrics = match self.image.metrics(id, self.env) {
+                    ImageMetrics::Unknown => Dimension::new(100.0, 100.0),
+                    ImageMetrics::Raster { width, height } => Dimension::new(width as Scalar, height as Scalar),
+                    ImageMetrics::Vector { dimension } => dimension,
+                };
+
+                let scale_x = bounding_box.dimension.width / metrics.width;
+                let scale_y = bounding_box.dimension.height / metrics.height;
+
+                let scale_matrix = Matrix4::from_nonuniform_scale(scale_x as f32, scale_y as f32, 1.0);
+
+                let translation_matrix = Matrix4::from_translation(Vector3::new(bounding_box.position.x as f32, bounding_box.position.y as f32, 0.0));
+
+                self.render.transform(&(translation_matrix * scale_matrix));
 
                 for instruction in &*instructions.1 {
                     match instruction {

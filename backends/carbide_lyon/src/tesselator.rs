@@ -14,12 +14,12 @@ const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;
 
 #[derive(Debug)]
 pub struct Tesselator {
-
+    pub tolerance_multiplier: f32
 }
 
 impl Tesselator {
     pub fn new() -> Tesselator {
-        Tesselator {}
+        Tesselator { tolerance_multiplier: 1.0 }
     }
 
 
@@ -147,7 +147,8 @@ impl Tesselator {
         };
 
         let fill_options = FillOptions::default()
-            .with_fill_rule(fill_rule);
+            .with_fill_rule(fill_rule)
+            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / self.tolerance_multiplier);
 
         {
             // Compute the tessellation.
@@ -228,7 +229,8 @@ impl Tesselator {
             .with_alignment(stroke_alignment)
             .with_start_cap(start_cap)
             .with_end_cap(end_cap)
-            .with_line_join(join);
+            .with_line_join(join)
+            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / self.tolerance_multiplier);
 
         let stroke_options = if let Some(miter) = miter {
             stroke_options.with_miter_limit(miter as f32)

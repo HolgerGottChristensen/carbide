@@ -18,8 +18,8 @@ carbide_derive = { path = "../carbide_derive" }
 carbide_core = { path = "../carbide_core" }
 objc = "0.2.7"
 cocoa = "0.25.0"
-lazy_static = "*"
 bitflags = "2.4.0"
 
 [dev-dependencies]
-carbide_wgpu = { path = "../backends/carbide_wgpu", features = ["icons"] }
+carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_icons = { workspace = true, features = ["lucide"] }

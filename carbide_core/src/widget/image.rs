@@ -23,6 +23,7 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
 use std::sync::Arc;
+use cgmath::{Matrix4, Vector4};
 use url::Url;
 use crate::draw::fill::FillOptions;
 
@@ -166,9 +167,11 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                 if !ctx.image.exist(image_id, ctx.env) {
                     let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
 
-                    let bytes = system_provider(name).unwrap();
-
-                    let string = str::from_utf8(bytes).unwrap();
+                    let string = system_provider(name).map(|b| str::from_utf8(b).unwrap())
+                        .unwrap_or_else(|| {
+                            println!("Could not load system image: {}", name);
+                            MISSING_SVG
+                        });
 
                     let options = Options::default();
                     let doc = Document::from_str(string, &options);
@@ -270,9 +273,23 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
     }
 
     fn render_instructions_from_group(&self, group: &Group, description: &mut Vec<RenderInstruction>) {
+
+        let group_transform = group.transform();
+
+        let matrix = Matrix4::from_cols(
+            Vector4::new(group_transform.sx, group_transform.ky, 0.0, 0.0),
+            Vector4::new(group_transform.kx, group_transform.sy, 0.0, 0.0),
+            Vector4::new(0.0, 0.0, 1.0, 0.0),
+            Vector4::new(group_transform.tx, group_transform.ty, 0.0, 1.0)
+        );
+
+        description.push(RenderInstruction::PushTransform { transform: matrix });
+
         for child in group.children() {
             self.render_instructions_from_node(child, description)
         }
+
+        description.push(RenderInstruction::PopTransform);
     }
 
     fn render_instructions_from_path(&self, path: &carbide_usvg::Path, description: &mut Vec<RenderInstruction>) {
@@ -509,3 +526,24 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Accessibility for Image<Id
 impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> CommonWidget for Image<Id, C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
+
+static MISSING_SVG: &'static str = r#"
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+        <line x1="2" x2="22" y1="2" y2="22" />
+        <path d="M10.41 10.41a2 2 0 1 1-2.83-2.83" />
+        <line x1="13.5" x2="6" y1="13.5" y2="21" />
+        <line x1="18" x2="21" y1="12" y2="15" />
+        <path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59" />
+        <path d="M21 15V5a2 2 0 0 0-2-2H9" />
+    </svg>
+"#;

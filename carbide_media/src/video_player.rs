@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use carbide_core::time::*;
 use carbide::color::ColorExt;
-use carbide::widget::WidgetSync;
+use carbide::widget::{CrossAxisAlignment, WidgetSync};
 
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;
@@ -70,32 +70,29 @@ impl VideoPlayer<VideoId> {
         let playing_pause = playing.clone();
 
         let play_button = Image::system("play")
-            //.scaled_to_fit()
+            .resizeable()
             .on_click(move |_| {
                 let mut playing = playing_play.clone();
                 playing.set_value(true);
-            });
-            //.frame(ICON_SIZE, ICON_SIZE);
+            })
+            .frame(ICON_SIZE, ICON_SIZE);
 
         let pause_button = Image::system("pause")
-            //.scaled_to_fit()
+            .resizeable()
             .on_click(move |_| {
                 let mut playing = playing_pause.clone();
                 playing.set_value(false);
-            });
-            //.frame(ICON_SIZE, ICON_SIZE);
+            })
+            .frame(ICON_SIZE, ICON_SIZE);
 
         let forward_button = Image::system("rotate.cw")
-            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut current_time = current_time_forward.clone();
                 let current = *current_time.value();
                 current_time.set_value(current + Duration::new(10, 0));
             });
-            //.frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
 
         let replay_button = Image::system("rotate.ccw")
-            //.scaled_to_fit()
             .on_click(move |_| {
                 let mut current_time = current_time_replay.clone();
                 let current = *current_time.value();
@@ -105,7 +102,6 @@ impl VideoPlayer<VideoId> {
                     current_time.set_value(Duration::new(0, 0));
                 }
             });
-            //.frame(SKIP_ICON_SIZE, SKIP_ICON_SIZE);
 
         let video_overlay = ZStack::new((
             Rectangle::new().fill(BLACK.with_opacity(0.4)),

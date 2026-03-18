@@ -8,7 +8,7 @@ fn main() {
     let mut application = Application::new();
 
     application.set_scene(Window::new(
-        "Image SVG example - Carbide",
+        "Lucide example - Carbide",
         Dimension::new(800.0, 600.0),
         Scroll::new(VGrid::new(ForEach::new(all_icon_names(), |name: Box<dyn AnyState<T=String>>, _| ZStack::new((
             Rectangle::new(),
