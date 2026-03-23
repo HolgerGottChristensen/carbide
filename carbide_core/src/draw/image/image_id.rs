@@ -1,12 +1,10 @@
-use std::ffi::OsStr;
-use std::os::macos::raw::stat;
+use crate::draw::image::image_format::ImageFormat;
 use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
-use url::{ParseError, Url};
-use carbide::widget::Image;
+use std::sync::Arc;
+use url::Url;
 
 /// Unique image identifier.
 ///
@@ -16,17 +14,10 @@ use carbide::widget::Image;
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ImageId {
     None,
-    System(String, ImageIdFormat),
-    Local(Arc<PathBuf>, ImageIdFormat),
-    Remote(Arc<Url>, ImageIdFormat),
-    InMemory(u32, ImageIdFormat)
-}
-
-#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum ImageIdFormat {
-    Unknown,
-    Raster,
-    Vector
+    System(String, ImageFormat),
+    Local(Arc<PathBuf>, ImageFormat),
+    Remote(Arc<Url>, ImageFormat),
+    InMemory(u32, ImageFormat)
 }
 
 impl ImageId {
@@ -35,19 +26,19 @@ impl ImageId {
         into.into()
     }
 
-    pub fn system(name: String, format: ImageIdFormat) -> Self {
+    pub fn system(name: String, format: ImageFormat) -> Self {
         ImageId::System(name, format)
     }
 
-    pub fn temp(format: ImageIdFormat) -> Self {
+    pub fn temp(format: ImageFormat) -> Self {
         static COUNTER: AtomicU32 = AtomicU32::new(0);
         let value = COUNTER.fetch_add(1, Ordering::Relaxed);
         ImageId::InMemory(value, format)
     }
 
-    pub fn format(&self) -> ImageIdFormat {
+    pub fn format(&self) -> ImageFormat {
         match self {
-            ImageId::None => ImageIdFormat::Unknown,
+            ImageId::None => ImageFormat::Unknown,
             ImageId::Local(_, format) => *format,
             ImageId::Remote(_, format) => *format,
             ImageId::InMemory(_, format) => *format,
@@ -96,9 +87,8 @@ impl IntoImageId for &'static str {
         match Url::parse(self) {
             Ok(url) if url.scheme() == "file" => {
                 let format = match url.path().split('.').last() {
-                    None => ImageIdFormat::Raster,
-                    Some(ext) if ext == "svg" => ImageIdFormat::Vector,
-                    Some(_) => ImageIdFormat::Raster,
+                    None => ImageFormat::Unknown,
+                    Some(ext) => ImageFormat::from_extension(ext),
                 };
 
                 ImageId::Local(
@@ -108,18 +98,16 @@ impl IntoImageId for &'static str {
             }
             Ok(url) => {
                 let format = match url.path().split('.').last() {
-                    None => ImageIdFormat::Raster,
-                    Some(ext) if ext == "svg" => ImageIdFormat::Vector,
-                    Some(_) => ImageIdFormat::Raster,
+                    None => ImageFormat::Unknown,
+                    Some(ext) => ImageFormat::from_extension(ext),
                 };
 
                 ImageId::Remote(Arc::new(url), format)
             }
             Err(_) => {
                 let format = match self.split('.').last() {
-                    None => ImageIdFormat::Raster,
-                    Some(ext) if ext == "svg" => ImageIdFormat::Vector,
-                    Some(_) => ImageIdFormat::Raster,
+                    None => ImageFormat::Unknown,
+                    Some(ext) => ImageFormat::from_extension(ext),
                 };
                 ImageId::Local(Arc::new(PathBuf::from_str(self).unwrap()), format)
             }
@@ -130,9 +118,8 @@ impl IntoImageId for &'static str {
 impl IntoImageId for PathBuf {
     fn into(self) -> ImageId {
         let format = match self.extension() {
-            None => ImageIdFormat::Raster,
-            Some(ext) if ext == "svg" => ImageIdFormat::Vector,
-            Some(_) => ImageIdFormat::Raster,
+            None => ImageFormat::Unknown,
+            Some(ext) => ImageFormat::from_extension(ext.to_str().unwrap()),
         };
 
         ImageId::Local(Arc::new(self), format)

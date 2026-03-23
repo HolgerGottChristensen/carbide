@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use carbide_core::draw::{Dimension, ImageContext, ImageId, ImageIdFormat, ImageMetrics, Texture, TextureFormat};
+use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, ImageMetrics, Texture, TextureFormat};
 use wgpu::{BindGroup, BindGroupLayout, Device, Queue};
 use carbide_core::environment::Environment;
 use carbide_core::render::{RenderInstruction, RenderInstructionCache};
@@ -10,34 +10,34 @@ pub struct WGPUImageContext;
 impl ImageContext for WGPUImageContext {
     fn exist(&self, id: &ImageId, env: &mut Environment) -> bool {
         match id.format() {
-            ImageIdFormat::Unknown => false,
-            ImageIdFormat::Raster => {
-                let wgpu_context = env.get::<WgpuContext>().unwrap();
-                wgpu_context.bind_groups.contains_key(id)
-            }
-            ImageIdFormat::Vector => {
+            ImageFormat::Unknown => false,
+            ImageFormat::Svg => {
                 let cache = env.get::<RenderInstructionCache>().unwrap();
                 cache.contains_key(id)
+            }
+            _ => {
+                let wgpu_context = env.get::<WgpuContext>().unwrap();
+                wgpu_context.bind_groups.contains_key(id)
             }
         }
     }
 
     fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics {
         match id.format() {
-            ImageIdFormat::Unknown => ImageMetrics::Unknown,
-            ImageIdFormat::Raster => {
-                let wgpu_context = env.get::<WgpuContext>().unwrap();
-                wgpu_context.bind_groups.get(id)
-                    .map(|group| {
-                        ImageMetrics::Raster { width: group.width, height: group.height}
-                    }).unwrap_or(ImageMetrics::Unknown)
-            }
-            ImageIdFormat::Vector => {
+            ImageFormat::Unknown => ImageMetrics::Unknown,
+            ImageFormat::Svg => {
                 let cache = env.get::<RenderInstructionCache>().unwrap();
                 cache
                     .get(id)
                     .map(|vector| ImageMetrics::Vector { dimension: vector.0 })
                     .unwrap_or(ImageMetrics::Unknown)
+            }
+            _ => {
+                let wgpu_context = env.get::<WgpuContext>().unwrap();
+                wgpu_context.bind_groups.get(id)
+                    .map(|group| {
+                        ImageMetrics::Raster { width: group.width, height: group.height}
+                    }).unwrap_or(ImageMetrics::Unknown)
             }
         }
     }

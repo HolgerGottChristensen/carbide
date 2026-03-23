@@ -1,5 +1,5 @@
 use carbide_core::draw::Dimension;
-use carbide_core::widget::{Rectangle, WidgetExt};
+use carbide_core::widget::WidgetExt;
 use carbide_table::Table;
 use carbide_wgpu::{Application, Window};
 

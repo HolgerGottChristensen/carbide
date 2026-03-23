@@ -6,7 +6,7 @@ use crate::color::{rgb, rgb_bytes, BLUE};
 use crate::draw::path::PathInstruction;
 use crate::draw::pre_multiply::PreMultiply;
 use crate::draw::stroke::{LineCap, LineJoin, StrokeOptions};
-use crate::draw::{Dimension, ImageId, ImageIdFormat, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat, DrawOptions, DrawShape, SystemImageManager};
+use crate::draw::{Dimension, ImageId, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat, DrawOptions, DrawShape, SystemImageManager};
 use crate::environment::EnvironmentColor;
 use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
@@ -24,7 +24,11 @@ use std::io::{BufReader, Read};
 use std::path::PathBuf;
 use std::sync::Arc;
 use cgmath::{Matrix4, Vector4};
+use gif::{ColorOutput, Decoder};
+use image::codecs::gif::GifDecoder;
+use image::ImageDecoder;
 use url::Url;
+use carbide::draw::ImageFormat;
 use crate::draw::fill::FillOptions;
 
 /// A primitive and basic widget for drawing an `Image`.
@@ -32,12 +36,14 @@ use crate::draw::fill::FillOptions;
 #[carbide_exclude(Render, Layout, Accessibility)]
 pub struct Image<Id, C> where Id: ReadState<T=ImageId>, C: ReadState<T=Style> {
     #[id] id: WidgetId,
+    position: Position,
+    dimension: Dimension,
+
     /// The unique identifier for the image that will be drawn.
     #[state] image_id: Id,
 
     mode: ImageMode,
-    position: Position,
-    dimension: Dimension,
+
     scale_mode: ScaleMode,
     resizeable: bool,
     decorative: bool,
@@ -67,7 +73,7 @@ impl Image<ImageId, Style> {
     pub fn system<Name: IntoReadState<String>>(name: Name) -> Image<impl ReadState<T=ImageId>, impl ReadState<T=Style>> {
         Image {
             id: WidgetId::new(),
-            image_id: name.into_read_state().map(|a| ImageId::system(a.clone(), ImageIdFormat::Vector)),
+            image_id: name.into_read_state().map(|a| ImageId::system(a.clone(), ImageFormat::Svg)),
             src_rect: None,
             color: Some(EnvironmentColor::Label.style()),
             mode: ImageMode::Icon,
@@ -153,41 +159,33 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
 
         // If we have a raster image, but we have not yet loaded it into the context
         match (image_id, image_id.format()) {
-            (ImageId::Local(path, ..), ImageIdFormat::Raster) => {
+            (ImageId::Local(path, ..), ImageFormat::Gif) => {
                 if !ctx.image.exist(image_id, ctx.env) {
-                    Self::load_local_raster(ctx, path);
+                    let full_path = if path.is_relative() {
+                        let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
+                            .for_folder("assets")
+                            .unwrap();
+
+                        assets.join(path.as_ref())
+                    } else {
+                        path.to_path_buf()
+                    };
+
+                    /*let mut file = BufReader::new(File::open(full_path).unwrap());
+
+                    let mut decoder = gif::DecodeOptions::new();
+                    decoder.set_color_output(ColorOutput::RGBA);
+                    let mut decoder = Decoder::new(file).unwrap();
+
+                    let mut screen = gif_dispose::Screen::new_decoder(&decoder);
+
+                    while let Some(frame) = decoder.read_next_frame()? {
+                        screen.blit_frame(&frame)?;
+                        //screen.pixels_rgba() // that's the frame now in RGBA format
+                    }*/
                 }
             }
-            (ImageId::Remote(url, ..), ImageIdFormat::Raster) => {
-                if !ctx.image.exist(image_id, ctx.env) {
-                    Self::load_remote_raster(ctx, url);
-                }
-            }
-            (ImageId::System(name, ..), ImageIdFormat::Vector) => {
-                if !ctx.image.exist(image_id, ctx.env) {
-                    let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
-
-                    let string = system_provider(name).map(|b| str::from_utf8(b).unwrap())
-                        .unwrap_or_else(|| {
-                            println!("Could not load system image: {}", name);
-                            MISSING_SVG
-                        });
-
-                    let options = Options::default();
-                    let doc = Document::from_str(string, &options);
-                    let tree = doc.to_tree(&options);
-
-                    let description = self.construct_render_instructions(&tree);
-
-                    ctx.image.update_vector(
-                        image_id,
-                        description,
-                        Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
-                        ctx.env
-                    );
-                }
-            }
-            (ImageId::Local(path, ..), ImageIdFormat::Vector) => {
+            (ImageId::Local(path, ..), ImageFormat::Svg) => {
                 if !ctx.image.exist(image_id, ctx.env) {
                     let full_path = if path.is_relative() {
                         let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
@@ -210,13 +208,69 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     let description = self.construct_render_instructions(&tree);
 
                     ctx.image.update_vector(
-                        &ImageId::Local(path.clone(), ImageIdFormat::Vector),
+                        image_id,
                         description,
                         Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
                         ctx.env
                     );
                 }
 
+            }
+            (ImageId::Local(path, ..), _) => {
+                if !ctx.image.exist(image_id, ctx.env) {
+                    let full_path = if path.is_relative() {
+                        let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
+                            .for_folder("assets")
+                            .unwrap();
+
+                        assets.join(&**path)
+                    } else {
+                        path.to_path_buf()
+                    };
+
+                    let image = image::open(&full_path)
+                        .expect(&format!("Couldn't load image: {}", full_path.display()))
+                        .pre_multiplied();
+
+                    let texture = Texture {
+                        width: image.width(),
+                        height: image.height(),
+                        bytes_per_row: image.width() * 4,
+                        format: TextureFormat::RGBA8,
+                        data: &image.to_rgba8().into_raw(),
+                    };
+
+                    ctx.image.update_texture(image_id, texture, ctx.env);
+                }
+            }
+            (ImageId::Remote(url, ..), _) => {
+                if !ctx.image.exist(image_id, ctx.env) {
+                    Self::load_remote_raster(ctx, url);
+                }
+            }
+            (ImageId::System(name, ..), _) => {
+                if !ctx.image.exist(image_id, ctx.env) {
+                    let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
+
+                    let string = system_provider(name).map(|b| str::from_utf8(b).unwrap())
+                        .unwrap_or_else(|| {
+                            println!("Could not load system image: {}", name);
+                            MISSING_SVG
+                        });
+
+                    let options = Options::default();
+                    let doc = Document::from_str(string, &options);
+                    let tree = doc.to_tree(&options);
+
+                    let description = self.construct_render_instructions(&tree);
+
+                    ctx.image.update_vector(
+                        image_id,
+                        description,
+                        Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
+                        ctx.env
+                    );
+                }
             }
             _ => {}
         }
@@ -412,29 +466,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
     }
 
     fn load_local_raster(ctx: &mut LayoutContext, path: &Arc<PathBuf>) {
-        let full_path = if path.is_relative() {
-            let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
-                .for_folder("assets")
-                .unwrap();
 
-            assets.join(&**path)
-        } else {
-            path.to_path_buf()
-        };
-
-        let image = image::open(&full_path)
-            .expect(&format!("Couldn't load image: {}", full_path.display()))
-            .pre_multiplied();
-
-        let texture = Texture {
-            width: image.width(),
-            height: image.height(),
-            bytes_per_row: image.width() * 4,
-            format: TextureFormat::RGBA8,
-            data: &image.to_rgba8().into_raw(),
-        };
-
-        ctx.image.update_texture(&ImageId::Local(path.clone(), ImageIdFormat::Raster), texture, ctx.env);
     }
 }
 

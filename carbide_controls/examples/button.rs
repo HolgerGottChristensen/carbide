@@ -36,20 +36,26 @@ fn main() {
 
             HStack::new((
                 Button::new(
-                    Image::new_icon("icons/chat-1-line.png")
+                    Image::system("message-circle")
+                        .resizeable()
+                        .padding(5.0)
                         .accessibility_label("Add 1"),
                     closure!(|_| {})
                 )
                     .button_style(BorderedProminentStyle)
                     .frame(32.0, 32.0),
                 Button::new(
-                    Image::new_icon("icons/chat-1-line.png")
+                    Image::system("message-circle")
+                        .resizeable()
+                        .padding(5.0)
                         .accessibility_label("Subtract 1"),
                     closure!(|_| {})
                 )
                     .frame(32.0, 32.0),
                 Button::new(
-                    Image::new_icon("icons/chat-1-line.png")
+                    Image::system("message-circle")
+                        .resizeable()
+                        .padding(5.0)
                         .accessibility_label("Disabled"),
                     closure!(|_| {})
                 )

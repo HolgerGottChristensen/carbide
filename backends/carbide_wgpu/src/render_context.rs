@@ -12,7 +12,7 @@ use crate::{WgpuContext, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_F
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
-use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape, ImageIdFormat};
+use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix, Vector3};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId, RenderInstruction};
@@ -870,19 +870,14 @@ impl InnerRenderContext for WGPURenderContext {
     }
 
     fn raster_image(&mut self, id: &ImageId, bounding_box: Rect, options: ImageOptions) {
-        match id.format() {
-            ImageIdFormat::Raster => {
-                let source_rect = options.source_rect.unwrap_or_else(|| Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)));
+        let source_rect = options.source_rect.unwrap_or_else(|| Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)));
 
-                let mode = match options.mode {
-                    ImageMode::Image => MODE_IMAGE,
-                    ImageMode::Icon => MODE_ICON,
-                };
+        let mode = match options.mode {
+            ImageMode::Image => MODE_IMAGE,
+            ImageMode::Icon => MODE_ICON,
+        };
 
-                self.draw_raster_image(Some(WGPUBindGroup::Image(id.clone())), bounding_box, source_rect, mode)
-            }
-            _ => ()
-        }
+        self.draw_raster_image(Some(WGPUBindGroup::Image(id.clone())), bounding_box, source_rect, mode)
     }
 
     fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {

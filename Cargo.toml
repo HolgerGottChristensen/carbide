@@ -37,6 +37,7 @@ version = "0.72.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/HolgerGottChristensen/carbide.git"
+homepage = "https://github.com/HolgerGottChristensen/carbide"
 authors = [
     "Holger Gott Christensen"
 ]

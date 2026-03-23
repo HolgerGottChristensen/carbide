@@ -28,6 +28,7 @@ indexmap.workspace = true
 
 [dev-dependencies]
 env_logger = "0.7"
-carbide_wgpu = { path = "../backends/carbide_wgpu", features = ["controls"] }
+carbide_wgpu = { workspace = true, features = ["controls", "icons"] }
+carbide_icons = { workspace = true, features = ["lucide"] }
 futures = "0.3"
 assert_matches = "1.5.0"

@@ -1,4 +1,5 @@
 pub use image_id::*;
+pub use image_format::*;
 pub use image_metrics::*;
 pub use image_map::*;
 pub use image_mode::*;
@@ -14,4 +15,5 @@ mod image_options;
 pub mod image_information;
 mod image_metrics;
 mod system_image_manager;
+mod image_format;
 

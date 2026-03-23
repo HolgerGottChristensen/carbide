@@ -1,10 +1,10 @@
 use cgmath::Vector3;
-use carbide::draw::{ImageIdFormat, ImageMetrics, Position};
+use carbide::draw::{ImageMetrics, Position};
 use carbide::render::{RenderInstruction, RenderInstructionValue, Style};
 use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;
-use crate::draw::{CompositeDrawShape, Dimension, DrawOptions, DrawShape, DrawStyle, ImageContext, ImageId, ImageOptions, Rect, Scalar};
+use crate::draw::{CompositeDrawShape, Dimension, DrawOptions, DrawShape, DrawStyle, ImageContext, ImageFormat, ImageId, ImageOptions, Rect, Scalar};
 use crate::math::Matrix4;
 
 use crate::environment::Environment;
@@ -92,11 +92,8 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
     pub fn image(&mut self, id: &ImageId, bounding_box: Rect, options: impl Into<ImageOptions>) {
         match id.format() {
-            ImageIdFormat::Unknown => {}
-            ImageIdFormat::Raster => {
-                self.render.raster_image(id, bounding_box, options.into());
-            }
-            ImageIdFormat::Vector => {
+            ImageFormat::Unknown => {}
+            ImageFormat::Svg => {
                 let instructions = self.env
                     .get::<RenderInstructionCache>()
                     .and_then(|a| a.get(id).cloned())
@@ -149,6 +146,9 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
                 }
 
                 self.render.pop_transform();
+            }
+            _ => {
+                self.render.raster_image(id, bounding_box, options.into());
             }
         }
 
