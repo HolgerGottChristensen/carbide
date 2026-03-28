@@ -74,7 +74,7 @@ impl<
 }
 
 impl<
-    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: SelectableWidget,
     D: carbide::widget::foreach_widget::Delegate<T, O>

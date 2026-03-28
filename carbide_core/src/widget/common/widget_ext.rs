@@ -154,6 +154,7 @@ pub trait WidgetExt: AnyWidget + Clone + Sized {
         Absolute::new(x, y, self)
     }
 
+    // TODO: Allow aspect ratio that are not dimension, but for example scalar instead
     fn aspect_ratio<D: IntoReadState<Dimension>>(self, ratio: D) -> AspectRatio<D::Output, ContentMode, Self> {
         AspectRatio::new(ratio, self)
     }

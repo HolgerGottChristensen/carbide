@@ -19,7 +19,9 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
     }
 }
 
-impl<W: Widget, S: State<T=bool>> Identifiable<WidgetId> for PickerItem<W, S> {
+impl<W: Widget, S: State<T=bool>> Identifiable for PickerItem<W, S> {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.inner.id()
     }

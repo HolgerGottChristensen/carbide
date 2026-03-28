@@ -1,11 +1,7 @@
+use std::hash::Hash;
 use carbide::state::StateContract;
 
-pub trait Identifiable<I: StateContract + PartialEq> {
-    fn id(&self) -> I;
-}
-
-impl<T: StateContract + PartialEq> Identifiable<T> for T {
-    fn id(&self) -> T {
-        self.clone()
-    }
+pub trait Identifiable {
+    type Id: Hash + Eq;
+    fn id(&self) -> Self::Id;
 }

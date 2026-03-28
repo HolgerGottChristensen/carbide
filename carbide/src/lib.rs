@@ -13,7 +13,9 @@ pub mod controls {
 }
 
 #[cfg(feature = "carbide_3d")]
-pub use carbide_3d::*;
+pub mod d3 {
+    pub use carbide_3d::*;
+}
 
 #[cfg(feature = "carbide_chart")]
 pub mod chart {

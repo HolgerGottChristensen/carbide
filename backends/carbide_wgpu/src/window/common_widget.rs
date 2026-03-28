@@ -5,7 +5,9 @@ use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 
 
-impl<T: ReadState<T=String>, C: Widget> Identifiable<WidgetId> for Window<T, C> {
+impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         match self {
             Window::UnInitialized { id, .. } => *id,

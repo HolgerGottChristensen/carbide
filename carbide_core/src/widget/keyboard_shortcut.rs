@@ -76,7 +76,9 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
     }
 }
 
-impl<C: Widget> Identifiable<WidgetId> for KeyboardShortcut<C> {
+impl<C: Widget> Identifiable for KeyboardShortcut<C> {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.child.id()
     }

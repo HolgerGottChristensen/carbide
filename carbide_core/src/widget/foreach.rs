@@ -1,3 +1,6 @@
+mod random_access_collection;
+mod random_access_collection_state;
+
 use carbide_macro::carbide_default_builder2;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
@@ -95,7 +98,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
         ForEachWidget::new(of, identity)
     }
 
-    pub fn custom_widget<Item: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
+    pub fn custom_widget<Item: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
         ForEachWidget::new(of, with)
     }
 

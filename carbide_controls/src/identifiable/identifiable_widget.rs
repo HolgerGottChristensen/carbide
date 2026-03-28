@@ -78,7 +78,7 @@ impl<
 
 impl<
     G: StateContract + PartialEq,
-    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: IdentifiableWidget<G>,
     D: carbide::widget::foreach_widget::Delegate<T, O>

@@ -1,5 +1,5 @@
 use crate::draw::image::image_format::ImageFormat;
-use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
+use crate::state::{AnyReadState, ConvertIntoRead, Map1, RMap1, ReadState};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -58,13 +58,10 @@ impl Default for ImageId {
 // ---------------------------------------------------
 
 impl ConvertIntoRead<ImageId> for &'static str {
-    type Output<G: AnyReadState<T=Self> + Clone> = RMap1<fn(&&'static str)-> ImageId, &'static str,  ImageId, G>;
+    type Output<G: AnyReadState<T=Self> + Clone> = ImageId;
 
     fn convert<F: AnyReadState<T=Self> + Clone>(f: F) -> Self::Output<F> {
-        Map1::read_map(f, |c| {
-            // TODO: Dont create new imageid and theirby parsing and creating arc every read.
-            ImageId::new(*c)
-        })
+        ImageId::new(*f.value())
     }
 }
 

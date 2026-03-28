@@ -26,7 +26,9 @@ impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiable
     }
 }
 
-impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable<WidgetId> for Tagged<T, S, C> {
+impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> Identifiable for Tagged<T, S, C> {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.child.id()
     }

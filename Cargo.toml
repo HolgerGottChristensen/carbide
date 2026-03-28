@@ -29,7 +29,7 @@ members = [
     "carbide_dialogs",
     "carbide_table",
     "backends/carbide_cache",
-    "backends/carbide_usvg", "backends/carbide_icons",
+    "backends/carbide_usvg", "backends/carbide_icons", "carbide_studio",
 ]
 
 [workspace.package]
@@ -54,6 +54,7 @@ carbide_icons = { path = "backends/carbide_icons", version = "0.72.0" }
 carbide_usvg = { path = "backends/carbide_usvg", version = "0.72.0" }
 carbide_core = { path = "carbide_core", version = "0.72.0" }
 carbide_wgpu = { path = "backends/carbide_wgpu", version = "0.72.0" }
+carbide = { path = "carbide", version = "0.72.0" }
 cgmath = { version = "0.18", features = ["mint"] }
 chrono = "0.4"
 console_error_panic_hook = "0.1.7"
@@ -75,5 +76,5 @@ url = "2.5.8"
 walkdir = "2.4.0"
 web-time = "1.1.0"
 wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
-winit = { version = "0.30", features = ["rwh_05"] }
+winit = { version = "0.30.13", features = ["rwh_05"] }
 

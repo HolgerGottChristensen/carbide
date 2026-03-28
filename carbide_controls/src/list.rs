@@ -114,7 +114,7 @@ impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: Stat
     pub fn selectable<I2: StateContract + PartialEq + Eq + Hash>(
         self,
         selection: impl Into<ListSelection<I2>>,
-    ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2, impl Widget> where T: Identifiable<I2> {
+    ) -> List<T, M, Box<dyn AnyWidget>, SelectableListDelegate<T, M, W, U, I2>, I2, impl Widget> where T: Identifiable<Id=I2> {
         let selection = selection.into();
 
         let new_delegate = SelectableListDelegate {
@@ -419,7 +419,7 @@ impl<T: StateContract> Into<ListSelection<T>> for LocalState<HashSet<T>> {
 
 #[derive(Clone)]
 pub struct SelectableListDelegate<T, M, W, U, I> where
-    T: StateContract + Identifiable<I>,
+    T: StateContract + Identifiable<Id=I>,
     M: State<T=Vec<T>>,
     W: Widget,
     U: Delegate<T, W>,
@@ -432,7 +432,7 @@ pub struct SelectableListDelegate<T, M, W, U, I> where
     phantom: PhantomData<W>,
 }
 
-impl<T: StateContract + Identifiable<I>, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq + Eq + Hash> Delegate<T, Box<dyn AnyWidget>> for SelectableListDelegate<T, M, W, U, I> {
+impl<T: StateContract + Identifiable<Id=I>, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq + Eq + Hash> Delegate<T, Box<dyn AnyWidget>> for SelectableListDelegate<T, M, W, U, I> {
     fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> Box<dyn AnyWidget> {
         let selection = self.selection.clone();
         let last_index_clicked = self.last_index_clicked.clone();

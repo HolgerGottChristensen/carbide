@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
 use dyn_clone::{clone_box, DynClone};
@@ -60,7 +61,9 @@ impl AnyWidget for Box<dyn AnyWidget> {
 
 impl WidgetExt for Box<dyn AnyWidget> {}
 
-impl<T: AnyWidget + ?Sized + Identifiable<WidgetId>> Identifiable<WidgetId> for Box<T> {
+impl<T: AnyWidget + ?Sized> Identifiable for Box<T> {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.deref().id()
     }

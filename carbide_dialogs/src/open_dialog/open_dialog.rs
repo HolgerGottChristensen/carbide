@@ -125,7 +125,9 @@ impl OpenDialog {
     }
 }
 
-impl Identifiable<WidgetId> for OpenDialog {
+impl Identifiable for OpenDialog {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.id
     }

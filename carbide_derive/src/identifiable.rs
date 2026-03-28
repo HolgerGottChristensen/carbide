@@ -44,8 +44,9 @@ pub fn impl_identifiable(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     quote! {
         #[automatically_derived]
-        impl #generics carbide::identifiable::Identifiable<#ty> for #struct_ident #generics #wheres {
-            fn id(&self) -> #ty {
+        impl #generics carbide::identifiable::Identifiable for #struct_ident #generics #wheres {
+            type Id = #ty;
+            fn id(&self) -> Self::Id {
                 self.#id_ident
             }
         }

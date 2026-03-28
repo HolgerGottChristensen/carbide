@@ -187,7 +187,7 @@ macro_rules! tuple_sequence_impl {
 #[allow(non_snake_case)]
 #[allow(unused_parens)]
 impl<
-    T: ?Sized + Identifiable<WidgetId> + WidgetSync + DynClone + 'static,
+    T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static,
     W: Sequence<T>,
     O: SelectableWidget,
     D: Delegate<T, O>

@@ -1,4 +1,5 @@
 pub use list::*;
+pub use list_new::*;
 pub use plain::*;
 pub use text_input::*;
 pub use controls_ext::*;
@@ -61,6 +62,7 @@ pub mod button;
 pub mod slider;
 pub mod context_menu;
 pub mod color_picker;
+mod list_new;
 
 pub type EnabledState = KeyState<EnabledKey>;
 

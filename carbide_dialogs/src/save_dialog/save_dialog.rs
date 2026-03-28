@@ -110,7 +110,9 @@ impl SaveDialog {
     }
 }
 
-impl Identifiable<WidgetId> for SaveDialog {
+impl Identifiable for SaveDialog {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.id
     }

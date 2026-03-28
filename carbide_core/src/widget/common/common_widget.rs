@@ -7,7 +7,7 @@ use crate::focus::Focus;
 use crate::identifiable::Identifiable;
 use crate::widget::AnyWidget;
 
-pub trait CommonWidget: Identifiable<WidgetId> {
+pub trait CommonWidget: Identifiable<Id=WidgetId> {
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::EMPTY
     }
@@ -147,6 +147,44 @@ macro_rules! CommonWidgetImpl {
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
 
+    ($self:ident, child: [$($child:expr),+] $(, $($rest:tt)*)?) => {
+        #[allow(unused_imports)]
+        fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
+
+            $($child.foreach(f);)+
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_mut<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
+            $($child.foreach_mut(f);)+
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
+            // TODO: Rev here does not actually reverse
+            $($child.foreach_rev(f);)+
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_direct<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
+            $($child.foreach_direct(f);)+
+        }
+
+        #[allow(unused_imports)]
+        fn foreach_child_direct_rev<'a>(&'a mut $self, f: &mut dyn FnMut(&'a mut dyn $crate::widget::AnyWidget)) {
+            use $crate::widget::AnySequence;
+            // TODO: Rev here does not actually reverse
+            $($child.foreach_direct_rev(f);)+
+
+        }
+
+        $(CommonWidgetImpl!($self, $($rest)*);)?
+    };
+
     ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
         #[allow(unused_imports)]
         fn foreach_child<'a>(&'a $self, f: &mut dyn FnMut(&'a dyn $crate::widget::AnyWidget)) {
@@ -180,6 +218,7 @@ macro_rules! CommonWidgetImpl {
 
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
+
 
     ($self:ident, position: $position:expr $(, $($rest:tt)*)?) => {
         fn position(&$self) -> $crate::draw::Position {
