@@ -14,12 +14,13 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{LocalState, ReadState, State, StateExtNew};
 use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
+use crate::widget::properties::WidgetKindSimple;
 use crate::widget::scroll::style::{HorizontalScrollBarStyleKey, VerticalScrollBarStyleKey};
 use crate::widget::types::ScrollDirection;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, MouseEvent, WindowEvent, Layout)]
-pub struct Scroll<W> where W: Widget {
+pub struct Scroll<W> where W: Widget<Kind=WidgetKindSimple> {
     #[id] id: WidgetId,
     child: W,
     position: Position,
@@ -41,7 +42,7 @@ pub struct Scroll<W> where W: Widget {
 }
 
 impl Scroll<Empty> {
-    pub fn new<W: Widget>(child: W) -> Scroll<W> {
+    pub fn new<W: Widget<Kind=WidgetKindSimple>>(child: W) -> Scroll<W> {
         Scroll {
             id: WidgetId::new(),
             child,
@@ -65,7 +66,7 @@ impl Scroll<Empty> {
     }
 }
 
-impl<W: Widget> Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> Scroll<W> {
     pub fn with_scroll_direction(mut self, scroll_directions: ScrollDirection) -> Self {
         self.scroll_directions = scroll_directions;
         self
@@ -102,7 +103,7 @@ impl<W: Widget> Scroll<W> {
     }
 }
 
-impl<W: Widget> MouseEventHandler for Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> MouseEventHandler for Scroll<W> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {
@@ -231,14 +232,14 @@ impl<W: Widget> MouseEventHandler for Scroll<W> {
     }
 }
 
-impl<W: Widget> WindowEventHandler for Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> WindowEventHandler for Scroll<W> {
     fn handle_window_event(&mut self, _: &WindowEvent, _: &mut WindowEventContext) {
         self.keep_y_within_bounds();
         self.keep_x_within_bounds();
     }
 }
 
-impl<W: Widget> Layout for Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.child.calculate_size(requested_size, ctx);
 
@@ -413,11 +414,11 @@ impl<W: Widget> Layout for Scroll<W> {
     }
 }
 
-impl<W: Widget> CommonWidget for Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> CommonWidget for Scroll<W> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
-impl<W: Widget> Render for Scroll<W> {
+impl<W: Widget<Kind=WidgetKindSimple>> Render for Scroll<W> {
     fn render(&mut self, ctx: &mut RenderContext) {
         self.child.render(ctx);
 

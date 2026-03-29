@@ -116,7 +116,7 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         Padding::new(edge_insets, self)
     }
 
-    fn scroll(self) -> Scroll<Self> {
+    fn scroll(self) -> Scroll<Self> where Self: WidgetProperties<Kind=WidgetKindSimple> {
         Scroll::new(self)
     }
 

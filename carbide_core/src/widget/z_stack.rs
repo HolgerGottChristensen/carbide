@@ -20,8 +20,6 @@ pub struct ZStack<W> where W: Sequence
 }
 
 impl<W: Sequence> ZStack<W> {
-
-    #[carbide_default_builder2]
     pub fn new(children: W) -> Self {
         ZStack {
             id: WidgetId::new(),

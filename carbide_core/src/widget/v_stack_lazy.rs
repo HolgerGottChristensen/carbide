@@ -1,0 +1,181 @@
+use std::collections::HashMap;
+use smallvec::SmallVec;
+use crate::CommonWidgetImpl;
+use crate::draw::{Dimension, Position, Scalar};
+use crate::layout::{calculate_size_vstack, Layout, LayoutContext, position_children_vstack};
+use crate::widget::{CommonWidget, CrossAxisAlignment, Widget, WidgetId, Sequence, AnyWidget};
+
+#[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Layout)]
+pub struct LazyVStack<W> where W: Sequence
+{
+    #[id] id: WidgetId,
+    children: W,
+    position: Position,
+    dimension: Dimension,
+    spacing: Scalar,
+    cross_axis_alignment: CrossAxisAlignment,
+
+    child_height_estimate: Option<Scalar>,
+    child_heights: HashMap<WidgetId, Scalar>,
+
+    current_indices: SmallVec<[usize; 32]>
+}
+
+impl<W: Sequence> LazyVStack<W> {
+    pub fn new(children: W) -> LazyVStack<W> {
+        LazyVStack {
+            id: WidgetId::new(),
+            children,
+            position: Position::new(0.0, 0.0),
+            dimension: Dimension::new(100.0, 100.0),
+            spacing: 0.0,
+            cross_axis_alignment: CrossAxisAlignment::Center,
+            child_height_estimate: None,
+            child_heights: Default::default(),
+            current_indices: Default::default(),
+        }
+    }
+
+    pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
+        self.cross_axis_alignment = alignment;
+        self
+    }
+
+    pub fn spacing(mut self, spacing: f64) -> Self {
+        self.spacing = spacing;
+        self
+    }
+}
+
+impl<W: Sequence> Layout for LazyVStack<W> {
+    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        let child_count = self.children.count();
+
+        // If there are no children, we default to height 0.0
+        if child_count == 0 {
+            self.dimension = Dimension::new(requested_size.width, 0.0);
+        }
+
+        let mut height_estimate = if let Some(height_estimate) = self.child_height_estimate {
+            height_estimate
+        } else {
+            // Calculate height estimate based on the first N children
+            let child = self.children.index_mut(0);
+            let chosen_size = child.calculate_size(requested_size, ctx);
+
+            self.child_heights.insert(child.id(), chosen_size.height);
+
+            self.child_height_estimate = Some(chosen_size.height);
+            chosen_size.height
+        };
+
+        let offset = 0.0;
+
+        let mut cummulated_y = 0.0;
+
+
+        self.current_indices.clear();
+        // Determine which widget is expected at the current offset
+        // This is a best guess, but can both be too low and too high.
+        let mut index = (offset / height_estimate.max(1.0)).floor().max(0.0) as usize;
+
+        loop {
+            self.current_indices.push(index);
+
+            let child = self.children.index_mut(index);
+
+            // We set the relative offset of the child here. This is then offset in position_children.
+            child.set_y(cummulated_y);
+
+            let chosen_size = child.calculate_size(requested_size, ctx);
+
+            let child_id = child.id();
+
+            if !self.child_heights.contains_key(&child_id) {
+                height_estimate = (height_estimate * self.child_heights.len() as Scalar + chosen_size.height) / (self.child_heights.len() + 1) as Scalar;
+            }
+
+            // TODO: Update height estimate when children are changing sizes dynamically
+            self.child_heights.insert(child.id(), chosen_size.height);
+
+            if cummulated_y + chosen_size.height - offset > requested_size.height {
+                break
+            }
+
+            index += 1;
+            cummulated_y += chosen_size.height;
+        }
+
+
+        self.child_height_estimate = Some(height_estimate);
+
+        // We only estimate the height, and always use the requested width
+        let total_height_estimate = height_estimate * child_count as Scalar
+            + self.spacing * child_count.saturating_sub(1) as Scalar;
+
+        self.dimension = Dimension::new(requested_size.width, total_height_estimate);
+
+        self.dimension
+    }
+
+    fn position_children(&mut self, ctx: &mut LayoutContext) {
+        let x = self.x();
+        let y = self.y();
+        let width = self.width();
+
+        for current_index in &self.current_indices {
+            let child = self.children.index_mut(*current_index);
+            child.set_y(child.y() + y);
+
+            match self.cross_axis_alignment {
+                CrossAxisAlignment::Start => child.set_x(x),
+                CrossAxisAlignment::Center => child.set_x(width / 2.0 - child.width() / 2.0 + x),
+                CrossAxisAlignment::End => child.set_x(x + width - child.width())
+            }
+
+            child.position_children(ctx);
+        }
+    }
+}
+
+impl<W: Sequence> CommonWidget for LazyVStack<W> {
+    CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
+
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        self.children.index(index)
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.children.index_mut(index)
+    }
+
+    fn child_count(&self) -> usize {
+        self.children.count()
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
+        todo!()
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        for current_index in &self.current_indices {
+            let child = self.children.index_mut(*current_index);
+            f(child)
+        }
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
+
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.children.foreach_direct(&mut |child| {
+            f(child)
+        })
+    }
+
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
+}
