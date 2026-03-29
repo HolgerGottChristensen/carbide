@@ -70,7 +70,7 @@ impl<W: Sequence> Layout for LazyVStack<W> {
             chosen_size.height
         };
 
-        let offset = 0.0;
+        let offset = -self.y();
 
         let mut cummulated_y = 0.0;
 
@@ -78,15 +78,24 @@ impl<W: Sequence> Layout for LazyVStack<W> {
         self.current_indices.clear();
         // Determine which widget is expected at the current offset
         // This is a best guess, but can both be too low and too high.
-        let mut index = (offset / height_estimate.max(1.0)).floor().max(0.0) as usize;
+        let estimate_for_index = height_estimate.max(1.0) + self.spacing;
+        let mut index = (offset / estimate_for_index).floor().max(0.0) as usize;
+
+        let estimated_start_y = index as Scalar * estimate_for_index;
+
+        let bla = estimated_start_y - offset;
 
         loop {
+            if index == child_count {
+                break
+            }
+
             self.current_indices.push(index);
 
             let child = self.children.index_mut(index);
 
             // We set the relative offset of the child here. This is then offset in position_children.
-            child.set_y(cummulated_y);
+            child.set_y(cummulated_y + estimated_start_y);
 
             let chosen_size = child.calculate_size(requested_size, ctx);
 
@@ -99,14 +108,13 @@ impl<W: Sequence> Layout for LazyVStack<W> {
             // TODO: Update height estimate when children are changing sizes dynamically
             self.child_heights.insert(child.id(), chosen_size.height);
 
-            if cummulated_y + chosen_size.height - offset > requested_size.height {
+            if cummulated_y + chosen_size.height > requested_size.height - bla - self.spacing {
                 break
             }
 
             index += 1;
-            cummulated_y += chosen_size.height;
+            cummulated_y += chosen_size.height + self.spacing;
         }
-
 
         self.child_height_estimate = Some(height_estimate);
 

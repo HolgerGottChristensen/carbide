@@ -241,6 +241,8 @@ impl<W: Widget<Kind=WidgetKindSimple>> WindowEventHandler for Scroll<W> {
 
 impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        self.child.set_x(self.scroll_offset.x);
+        self.child.set_y(self.scroll_offset.y);
         self.child.calculate_size(requested_size, ctx);
 
         self.keep_y_within_bounds();

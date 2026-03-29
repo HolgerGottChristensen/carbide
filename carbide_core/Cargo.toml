@@ -33,6 +33,7 @@ parking_lot.workspace = true
 smallvec.workspace = true
 url.workspace = true
 web-time.workspace = true
+dashmap.workspace = true
 
 accesskit.workspace = true
 image.workspace = true

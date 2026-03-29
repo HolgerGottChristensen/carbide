@@ -37,7 +37,7 @@ impl Delegate<Vec<()>, (), Empty> for EmptyDelegate {
 
 
 #[derive(Widget)]
-#[carbide_exclude(StateSync, Properties)]
+#[carbide_exclude(Properties)]
 pub struct ForEach<T, M, U, W>
 where
     T: StateContract + Identifiable,
@@ -84,39 +84,32 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty> {
     }
 }
 
-impl<T, M, U, W> WidgetSync for ForEach<T, M, U, W>
-    where
-        T: StateContract + Identifiable,
-        M: RandomAccessCollection<T>,
-        W: Widget,
-        U: Delegate<M, T, W>,
+impl<T, M, U, W> ForEach<T, M, U, W>
+where
+    T: StateContract + Identifiable,
+    M: RandomAccessCollection<T>,
+    W: Widget,
+    U: Delegate<M, T, W>,
 {
-    fn sync(&mut self, env: &mut Environment) {
-        for index in self.model.indices() {
-            let id = self.model.id(index.clone());
+    fn ensure_exist(&mut self, index: M::Idx) {
+        let id = self.model.id(index.clone());
 
-            if let Some(i) = self.indices.get_mut(&id) {
-                *i.value_mut() = index.clone();
-            } else {
-                self.indices.insert(id.clone(), LocalState::new(index.clone()));
-            }
+        if let Some(i) = self.indices.get_mut(&id) {
+            *i.value_mut() = index.clone();
+        } else {
+            self.indices.insert(id.clone(), LocalState::new(index.clone()));
+        }
 
-            if self.widgets.get(&id).is_none() {
-                let item = self.model.index(index);
-                let i = self.indices.get(&id).unwrap();
+        if self.widgets.get(&id).is_none() {
+            let item = self.model.index(index);
+            let i = self.indices.get(&id).unwrap();
 
-                let mut new = self.delegate.call(item, Box::new(i.clone()));
+            let new = self.delegate.call(item, Box::new(i.clone()));
 
-                new.process_initialization(&mut InitializationContext {
-                    env,
-                });
-
-                self.widgets.insert(id, new);
-            }
+            self.widgets.insert(id, new);
         }
     }
 }
-
 
 impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
 
@@ -125,8 +118,11 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 
     fn child(&self, index: usize) -> &dyn AnyWidget {
-        if W::Kind::kind() == Kind::Simple {
-            let id = self.model.id(self.model.index_from_offset(index));
+        /*if W::Kind::kind() == Kind::Simple {
+            let idx = self.model.index_from_offset(index);
+            self.ensure_exist(idx.clone());
+            let id = self.model.id(idx);
+
             self.widgets.get(&id).unwrap()
         } else {
             let mut current_index = self.model.start_index();
@@ -135,6 +131,8 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
             while current_index < end_index {
                 let id = self.model.id(current_index.clone());
+
+                self.ensure_exist(current_index.clone());
 
                 let child = self.widgets.get(&id).unwrap();
 
@@ -160,12 +158,17 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             }
 
             panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.child_count());
-        }
+        }*/
+
+        todo!()
     }
 
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         if W::Kind::kind() == Kind::Simple {
-            let id = self.model.id(self.model.index_from_offset(index));
+            let idx = self.model.index_from_offset(index);
+            self.ensure_exist(idx.clone());
+            let id = self.model.id(idx);
+
             self.widgets.get_mut(&id).unwrap()
         } else {
             let mut current_index = self.model.start_index();
@@ -175,6 +178,8 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
             while current_index < end_index {
                 let id = self.model.id(current_index.clone());
+
+                self.ensure_exist(current_index.clone());
 
                 let child = self.widgets.get(&id).unwrap();
 
@@ -223,13 +228,15 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         if W::Kind::kind() == Kind::Simple {
             self.model.len()
         } else {
-            let mut current_index = self.model.start_index();
+            /*let mut current_index = self.model.start_index();
             let end_index = self.model.end_index();
 
             let mut count = 0;
 
             while current_index < end_index {
                 let id = self.model.id(current_index.clone());
+
+                self.ensure_exist(current_index.clone());
 
                 let child = self.widgets.get(&id).unwrap();
 
@@ -244,16 +251,19 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
                 current_index = self.model.next_index(current_index);
             }
 
-            count
+            count*/
+            todo!()
         }
     }
 
     fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        let mut current_index = self.model.start_index();
+        /*let mut current_index = self.model.start_index();
         let end_index = self.model.end_index();
 
         while current_index < end_index {
             let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
 
             let widget = self.widgets.get(&id).unwrap();
 
@@ -266,7 +276,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             }
 
             current_index = self.model.next_index(current_index);
-        }
+        }*/
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -275,6 +285,8 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
         while current_index < end_index {
             let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
 
             let widget = self.widgets.get_mut(&id).unwrap();
 
@@ -304,6 +316,8 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         loop {
             let id = self.model.id(current_index.clone());
 
+            self.ensure_exist(current_index.clone());
+
             let widget = self.widgets.get_mut(&id).unwrap();
 
             if widget.is_ignore() {
@@ -323,19 +337,22 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 
     fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        let mut current_index = self.model.start_index();
+        /*let mut current_index = self.model.start_index();
         let end_index = self.model.end_index();
 
         while current_index < end_index {
             let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
+
             f(self.widgets.get_mut(&id).unwrap());
 
             current_index = self.model.next_index(current_index);
-        }
+        }*/
     }
 
     fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        // If the end and start indices are equal, there are no elements in the collection
+        /*// If the end and start indices are equal, there are no elements in the collection
         if self.model.len() == 0 {
             return;
         }
@@ -347,6 +364,9 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
         loop {
             let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
+
             f(self.widgets.get_mut(&id).unwrap());
 
             if current_index == start_index {
@@ -354,7 +374,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             }
 
             current_index = self.model.next_index(current_index);
-        }
+        }*/
     }
 
     fn position(&self) -> Position {
