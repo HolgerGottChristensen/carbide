@@ -16,7 +16,7 @@ use crate::ModifierWidgetImpl;
 use crate::widget::{WidgetId};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(StateSync)]
+#[carbide_derive(StateSync, Kind)]
 pub struct ThemeManager<C> where C: Widget {
     child: C,
     light: Vec<(EnvironmentColor, Color)>,

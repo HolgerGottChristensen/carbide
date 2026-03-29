@@ -20,7 +20,7 @@ use crate::identifiable::Identifiable;
 use crate::widget::{WidgetId};
 
 #[derive(Debug, Widget)]
-#[carbide_derive(StateSync)]
+#[carbide_derive(StateSync, Kind)]
 pub struct EnvUpdatingNew<C, K> where C: Widget, K: EnvironmentKey, K::Value: Clone {
     child: C,
     key: PhantomData<K>,

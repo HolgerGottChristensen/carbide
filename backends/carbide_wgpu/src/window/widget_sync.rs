@@ -6,7 +6,8 @@ use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::lifecycle::{Update, UpdateContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::state::ReadState;
-use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetSync};
+use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetProperties, WidgetSync};
+use carbide_core::widget::properties::{WidgetKindDynamic, WidgetKindSimple};
 
 impl<T: ReadState<T=String>, C: Widget> WidgetSync for Window<T, C> {}
 
@@ -37,6 +38,10 @@ impl<T: ReadState<T=String>, C: Widget> AnyWidget for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> WidgetExt for Window<T, C> {}
+
+impl<T: ReadState<T=String>, C: Widget> WidgetProperties for Window<T, C> {
+    type Kind = WidgetKindSimple;
+}
 
 impl<T: ReadState<T=String>, C: Widget> AnyScene for Window<T, C> {
     /// Request the window to redraw next frame

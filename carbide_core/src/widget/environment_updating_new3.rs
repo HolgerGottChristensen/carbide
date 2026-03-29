@@ -19,7 +19,7 @@ use crate::identifiable::Identifiable;
 use crate::state::ReadState;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(StateSync)]
+#[carbide_derive(StateSync, Kind)]
 pub struct EnvUpdatingNew3<C, K, V> where C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>, K::Output: Clone {
     child: C,
     key: K,

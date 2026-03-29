@@ -1,5 +1,5 @@
 use cgmath::Matrix4;
-use carbide::widget::EnvUpdatingNew;
+use carbide::widget::{EnvUpdatingNew, WidgetProperties};
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect};
@@ -29,8 +29,8 @@ pub(crate) type AccentColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
 pub(crate) type ForegroundColor<C, K, V> = EnvUpdatingNew2<C, K, V>;
 pub(crate) type Wrapped<C, K, V> = EnvUpdatingNew2<C, K, V>;
 
+pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
 
-pub trait WidgetExt: AnyWidget + Clone + Sized {
     /// Surround the widget with a frame. The frame is a widget that has fixed width, height or both.
     /// The frame takes two parameters. Both parameters take f64 state. This means you can pass
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.

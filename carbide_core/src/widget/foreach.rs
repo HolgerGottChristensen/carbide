@@ -6,11 +6,12 @@ use crate::lifecycle::InitializationContext;
 use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetSync};
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use crate::widget::properties::WidgetKind;
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
     fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> O;
@@ -39,7 +40,7 @@ where
     T: StateContract + Identifiable,
     M: RandomAccessCollection<T>,
     W: Widget,
-    U: Delegate<M, T, W>
+    U: Delegate<M, T, W>,
 {
     #[id] id: WidgetId,
 
@@ -134,7 +135,6 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     fn child(&self, index: usize) -> &dyn AnyWidget {
         let mut current_index = self.model.start_index();
         let end_index = self.model.end_index();
-
         let mut passed = 0;
 
         while current_index < end_index {
@@ -171,6 +171,8 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         let end_index = self.model.end_index();
 
         let mut passed = 0;
+
+        dbg!(W::Kind::kind());
 
         while current_index < end_index {
             let id = self.model.id(current_index.clone());
@@ -288,7 +290,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
 impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Debug for ForEach<T, M, U, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ForEach")
+        f.debug_struct("ForEach32")
             .field("model", &self.model)
             .field("children", &self.widgets)
             .finish()

@@ -21,7 +21,7 @@ use crate::widget::{WidgetId};
 use crate::state::ReadState;
 
 #[derive(Debug, Widget)]
-#[carbide_derive(StateSync)]
+#[carbide_derive(StateSync, Kind)]
 pub struct EnvUpdatingNew2<C, K, V> where C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>, K::Value: Clone {
     child: C,
     key: PhantomData<K>,

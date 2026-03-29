@@ -3,8 +3,9 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
+use carbide::widget::properties::WidgetKindDynamic;
 
 pub trait AnySelectableWidget: AnyWidget {
     fn selection(&self) -> &dyn AnyState<T=bool>;
@@ -18,9 +19,9 @@ pub trait AnySelectableWidget: AnyWidget {
 
 dyn_clone::clone_trait_object!(AnySelectableWidget);
 
-pub trait SelectableWidget: AnySelectableWidget + WidgetExt + Clone {}
+pub trait SelectableWidget: AnySelectableWidget + WidgetExt + WidgetProperties + Clone {}
 
-impl<W> SelectableWidget for W where W: AnySelectableWidget + WidgetExt + Clone {}
+impl<W> SelectableWidget for W where W: AnySelectableWidget + WidgetProperties + WidgetExt + Clone {}
 
 impl AnySelectableWidget for Box<dyn AnySelectableWidget> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
@@ -28,8 +29,10 @@ impl AnySelectableWidget for Box<dyn AnySelectableWidget> {
     }
 }
 
-impl WidgetExt for Box<dyn AnySelectableWidget> {
+impl WidgetExt for Box<dyn AnySelectableWidget> {}
 
+impl WidgetProperties for Box<dyn AnySelectableWidget> {
+    type Kind = WidgetKindDynamic;
 }
 
 impl AnyWidget for Box<dyn AnySelectableWidget> {

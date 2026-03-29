@@ -3,8 +3,9 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
+use carbide::widget::properties::WidgetKindDynamic;
 
 pub trait AnyIdentifiableWidget<T>: AnyWidget
 where T: StateContract + PartialEq {
@@ -19,9 +20,9 @@ where T: StateContract + PartialEq {
 
 dyn_clone::clone_trait_object!(<T> AnyIdentifiableWidget<T>);
 
-pub trait IdentifiableWidget<T>: AnyIdentifiableWidget<T> + WidgetExt + Clone where T: StateContract + PartialEq  {}
+pub trait IdentifiableWidget<T>: AnyIdentifiableWidget<T> + WidgetExt + WidgetProperties + Clone where T: StateContract + PartialEq  {}
 
-impl<T: StateContract + PartialEq, W> IdentifiableWidget<T> for W where W: AnyIdentifiableWidget<T> + WidgetExt + Clone {}
+impl<T: StateContract + PartialEq, W> IdentifiableWidget<T> for W where W: AnyIdentifiableWidget<T> + WidgetExt + WidgetProperties + Clone {}
 
 impl<T: StateContract + PartialEq> AnyIdentifiableWidget<T> for Box<dyn AnyIdentifiableWidget<T>> {
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
@@ -29,8 +30,9 @@ impl<T: StateContract + PartialEq> AnyIdentifiableWidget<T> for Box<dyn AnyIdent
     }
 }
 
-impl<T: StateContract + PartialEq> WidgetExt for Box<dyn AnyIdentifiableWidget<T>> {
-
+impl<T: StateContract + PartialEq> WidgetExt for Box<dyn AnyIdentifiableWidget<T>> {}
+impl<T: StateContract + PartialEq> WidgetProperties for Box<dyn AnyIdentifiableWidget<T>> {
+    type Kind = WidgetKindDynamic;
 }
 
 impl<T: StateContract + PartialEq> AnyWidget for Box<dyn AnyIdentifiableWidget<T>> {

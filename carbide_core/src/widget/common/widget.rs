@@ -17,6 +17,8 @@ use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::common::widget_properties::WidgetProperties;
+use crate::widget::properties::WidgetKindDynamic;
 
 pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {
     fn as_widget(&self) -> &dyn AnyWidget;
@@ -31,9 +33,9 @@ impl dyn AnyWidget {
 
 dyn_clone::clone_trait_object!(AnyWidget);
 
-pub trait Widget: AnyWidget + WidgetExt + Clone + private::Sealed {}
+pub trait Widget: AnyWidget + WidgetExt + WidgetProperties + Clone + private::Sealed {}
 
-impl<T> Widget for T where T: AnyWidget + WidgetExt + Clone {}
+impl<T> Widget for T where T: AnyWidget + WidgetExt + WidgetProperties + Clone {}
 
 mod private {
     use crate::widget::AnyWidget;
@@ -59,7 +61,11 @@ impl AnyWidget for Box<dyn AnyWidget> {
     }
 }
 
-impl WidgetExt for Box<dyn AnyWidget> {}
+impl WidgetProperties for Box<dyn AnyWidget> {
+    type Kind = WidgetKindDynamic;
+}
+
+impl WidgetExt for Box<dyn AnyWidget> { }
 
 impl<T: AnyWidget + ?Sized> Identifiable for Box<T> {
     type Id = WidgetId;
