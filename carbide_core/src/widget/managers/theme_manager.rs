@@ -11,12 +11,12 @@ use crate::layout::{Layout, LayoutContext};
 use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget};
+use crate::widget::{CommonWidget, Widget, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use crate::widget::{WidgetId};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(StateSync, Kind)]
+#[carbide_derive(StateSync)]
 pub struct ThemeManager<C> where C: Widget {
     child: C,
     light: Vec<(EnvironmentColor, Color)>,
@@ -135,6 +135,10 @@ impl<C: Widget> ThemeManager<C> {
             ],
         }
     }
+}
+
+impl<C: Widget> WidgetProperties for ThemeManager<C> {
+    type Kind = C::Kind;
 }
 
 impl<C: Widget> Layout for ThemeManager<C> {

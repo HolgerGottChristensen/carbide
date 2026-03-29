@@ -8,12 +8,12 @@ use crate::layout::{Layout, LayoutContext};
 use crate::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget};
+use crate::widget::{CommonWidget, Widget, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use crate::widget::{WidgetId};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(StateSync, Kind)]
+#[carbide_derive(StateSync)]
 pub struct FontSizeManager<C> where C: Widget {
     child: C,
     sizes: Vec<(EnvironmentFontSize, u32)>,
@@ -39,6 +39,11 @@ impl<C: Widget> FontSizeManager<C> {
         }
     }
 }
+
+impl<C: Widget> WidgetProperties for FontSizeManager<C> {
+    type Kind = C::Kind;
+}
+
 
 impl<C: Widget> Layout for FontSizeManager<C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {

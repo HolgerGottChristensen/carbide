@@ -30,7 +30,7 @@ pub enum DeriveType {
     Initialize,
     Accessibility,
 
-    Kind,
+    Properties,
 }
 
 impl DeriveType {
@@ -49,7 +49,7 @@ impl DeriveType {
         set.insert(DeriveType::Initialize);
         set.insert(DeriveType::Accessibility);
         set.insert(DeriveType::Id);
-        set.insert(DeriveType::Kind);
+        set.insert(DeriveType::Properties);
         set
     }
 
@@ -67,7 +67,7 @@ impl DeriveType {
             "Update" => DeriveType::Update,
             "Initialize" => DeriveType::Initialize,
             "Accessibility" => DeriveType::Accessibility,
-            "Kind" => DeriveType::Kind,
+            "Properties" => DeriveType::Properties,
             _ => panic!("Could not match with any of the derive types."),
         }
     }
@@ -94,12 +94,12 @@ impl DeriveType {
             DeriveType::Update => update_token_stream(ident, generics, wheres),
             DeriveType::Accessibility => accessibility_token_stream(ident, generics, wheres),
             DeriveType::Initialize => initialize_token_stream(ident, generics, wheres),
-            DeriveType::Kind => widget_kind_token_stream(ident, generics, wheres),
+            DeriveType::Properties => widget_properties_token_stream(ident, generics, wheres),
         }
     }
 }
 
-fn widget_kind_token_stream(
+fn widget_properties_token_stream(
     ident: &Ident,
     generics: &Generics,
     wheres: &Option<WhereClause>,

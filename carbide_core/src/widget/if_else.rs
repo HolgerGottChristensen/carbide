@@ -3,7 +3,8 @@ use carbide_macro::carbide_default_builder2;
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
 use crate::state::ReadState;
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId, WidgetProperties};
+use crate::widget::properties::WidgetKindProxy;
 
 /// # If-Else Widget
 ///
@@ -18,7 +19,9 @@ use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
 ///     .when_false(Rectangle::new().fill(EnvironmentColor::Red));
 /// ```
 /// In the above a green rectangle will be displayed, since the state is a constant true.
+// TODO: It could be possible to make this type generic over the WidgetKind, and allow it to be simple when its true and false branch widgets are.
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Properties)]
 pub struct IfElse<T, F, S> where
     T: Widget,
     F: Widget,
@@ -33,7 +36,6 @@ pub struct IfElse<T, F, S> where
 }
 
 impl IfElse<Empty, Empty, bool> {
-    #[carbide_default_builder2]
     pub fn new<S: ReadState<T=bool> + Clone + 'static>(predicate: S) -> IfElse<Empty, Empty, S> {
         IfElse {
             id: WidgetId::new(),
@@ -287,4 +289,8 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
     fn set_dimension(&mut self, dimension: Dimension) {
         self.dimension = dimension
     }
+}
+
+impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> WidgetProperties for IfElse<T, F, S> {
+    type Kind = WidgetKindProxy;
 }

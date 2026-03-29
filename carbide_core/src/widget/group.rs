@@ -1,9 +1,10 @@
 use crate::common::flags::WidgetFlag;
-use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Sequence, Widget, WidgetId, WidgetProperties};
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use crate::widget::properties::WidgetKindProxy;
 
 pub trait GroupDelegate<T: ?Sized + AnyWidget, I: Sequence<T>, U: ?Sized + AnyWidget, O: Sequence<U>>: Clone + 'static {
     fn call(&self, sequence: I) -> O;
@@ -16,6 +17,7 @@ impl<K, T: ?Sized + AnyWidget, I: Sequence<T>, U: ?Sized + AnyWidget, O: Sequenc
 }
 
 #[derive(Widget)]
+#[carbide_exclude(Properties)]
 pub struct Group<W, T>
 where
     T: ?Sized + AnyWidget,
@@ -106,6 +108,10 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
     fn set_dimension(&mut self, _: Dimension) {
         unreachable!()
     }
+}
+
+impl<T: ?Sized + AnyWidget, W: Sequence<T>> WidgetProperties for Group<W, T> {
+    type Kind = WidgetKindProxy;
 }
 
 impl<T: ?Sized + AnyWidget, W: Sequence<T>> Debug for Group<W, T> {

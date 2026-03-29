@@ -12,14 +12,14 @@ use crate::lifecycle::{InitializationContext, UpdateContext};
 use crate::lifecycle::{Initialize, Update};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget, WidgetId};
+use crate::widget::{CommonWidget, Widget, WidgetId, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use crate::identifiable::Identifiable;
 use crate::state::ReadState;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_derive(StateSync, Kind)]
+#[carbide_derive(StateSync)]
 pub struct EnvUpdatingNew3<C, K, V> where C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>, K::Output: Clone {
     child: C,
     key: K,
@@ -35,6 +35,11 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> EnvUpd
         }
     }
 }
+
+impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> WidgetProperties for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
+    type Kind = C::Kind;
+}
+
 
 impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Layout for EnvUpdatingNew3<C, K, V> where K::Output: Clone {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {

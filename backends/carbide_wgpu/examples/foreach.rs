@@ -1,4 +1,4 @@
-use carbide_core::color::ColorExt;
+use carbide_core::color::{ColorExt, RED};
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::environment::*;
 use carbide_core::state::{AnyReadState, ReadState, State};
@@ -37,6 +37,7 @@ fn main() {
                 Rectangle::new()
                     .fill(Color::random())
                     .frame(100.0, 50.0)
+                    .accent_color(RED)
             })
         ).spacing(10.0),
     ));

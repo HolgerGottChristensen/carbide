@@ -7,13 +7,13 @@ use crate::lifecycle::InitializationContext;
 use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use carbide::widget::properties::Kind;
-use crate::widget::properties::WidgetKind;
+use crate::widget::properties::{WidgetKind, WidgetKindProxy};
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
     fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> O;
@@ -36,7 +36,7 @@ impl Delegate<Vec<()>, (), Empty> for EmptyDelegate {
 
 
 #[derive(Widget)]
-#[carbide_exclude(StateSync)]
+#[carbide_exclude(StateSync, Properties)]
 pub struct ForEach<T, M, U, W>
 where
     T: StateContract + Identifiable,
@@ -303,6 +303,16 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     fn set_dimension(&mut self, dimension: Dimension) {
         unimplemented!()
     }
+}
+
+impl<T, M, U, W> WidgetProperties for ForEach<T, M, U, W>
+where
+    T: StateContract + Identifiable,
+    M: RandomAccessCollection<T>,
+    W: Widget,
+    U: Delegate<M, T, W>,
+{
+    type Kind = WidgetKindProxy;
 }
 
 impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Debug for ForEach<T, M, U, W> {

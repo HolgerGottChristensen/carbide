@@ -12,7 +12,7 @@ use crate::lifecycle::{InitializationContext, UpdateContext};
 use crate::lifecycle::{Initialize, Update};
 use crate::render::Render;
 use crate::render::RenderContext;
-use crate::widget::{CommonWidget, Widget};
+use crate::widget::{CommonWidget, Widget, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -21,11 +21,15 @@ use crate::widget::{WidgetId};
 use crate::state::ReadState;
 
 #[derive(Debug, Widget)]
-#[carbide_derive(StateSync, Kind)]
+#[carbide_derive(StateSync)]
 pub struct EnvUpdatingNew2<C, K, V> where C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>, K::Value: Clone {
     child: C,
     key: PhantomData<K>,
     value: V,
+}
+
+impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> WidgetProperties for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+    type Kind = C::Kind;
 }
 
 impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Clone for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
