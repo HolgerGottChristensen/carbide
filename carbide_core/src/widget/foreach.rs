@@ -7,12 +7,13 @@ use crate::lifecycle::InitializationContext;
 use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use carbide::widget::properties::Kind;
+use crate::random_access_collection::RandomAccessCollection;
 use crate::widget::properties::{WidgetKind, WidgetKindProxy};
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
@@ -66,18 +67,6 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty> {
             phantom: PhantomData::default()
         }
     }
-
-    /*pub fn new_read<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, IgnoreWritesState<Vec<T>, M>, U, W> {
-        ForEach {
-            id: WidgetId::new(),
-            position: Position::default(),
-            dimension: Dimension::default(),
-            model: model.into_read_state().ignore_writes(),
-            delegate,
-            children: vec![],
-            phantom: PhantomData::default()
-        }
-    }*/
 
     pub fn widget<Sequence: ForEachSequence, Output: Widget, Delegate: ForEachChildDelegate<dyn AnyWidget, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, dyn AnyWidget> {
         ForEachWidget::new(of, with)
@@ -260,32 +249,112 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 
     fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        for index in self.model.indices() {
-            let id = self.model.id(index);
-            f(self.widgets.get(&id).unwrap())
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let widget = self.widgets.get(&id).unwrap();
+
+            if widget.is_ignore() {
+
+            } else if widget.is_proxy() {
+                widget.foreach_child(f);
+            } else {
+                f(widget);
+            }
+
+            current_index = self.model.next_index(current_index);
         }
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for index in self.model.indices() {
-            let id = self.model.id(index);
-            f(self.widgets.get_mut(&id).unwrap())
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let widget = self.widgets.get_mut(&id).unwrap();
+
+            if widget.is_ignore() {
+
+            } else if widget.is_proxy() {
+                widget.foreach_child_mut(f);
+            } else {
+                f(widget);
+            }
+
+            current_index = self.model.next_index(current_index);
         }
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        todo!()
+        // If the end and start indices are equal, there are no elements in the collection
+        if self.model.len() == 0 {
+            return;
+        }
+
+        let mut current_index = self.model.end_index();
+        let start_index = self.model.start_index();
+
+        current_index = self.model.prev_index(current_index);
+
+        loop {
+            let id = self.model.id(current_index.clone());
+
+            let widget = self.widgets.get_mut(&id).unwrap();
+
+            if widget.is_ignore() {
+
+            } else if widget.is_proxy() {
+                widget.foreach_child_rev(f);
+            } else {
+                f(widget);
+            }
+
+            if current_index == start_index {
+                break;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
     }
 
     fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for index in self.model.indices() {
-            let id = self.model.id(index);
-            f(self.widgets.get_mut(&id).unwrap())
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+            f(self.widgets.get_mut(&id).unwrap());
+
+            current_index = self.model.next_index(current_index);
         }
     }
 
     fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        todo!()
+        // If the end and start indices are equal, there are no elements in the collection
+        if self.model.len() == 0 {
+            return;
+        }
+
+        let mut current_index = self.model.end_index();
+        let start_index = self.model.start_index();
+
+        current_index = self.model.prev_index(current_index);
+
+        loop {
+            let id = self.model.id(current_index.clone());
+            f(self.widgets.get_mut(&id).unwrap());
+
+            if current_index == start_index {
+                break;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
     }
 
     fn position(&self) -> Position {

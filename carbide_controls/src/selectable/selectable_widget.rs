@@ -3,7 +3,8 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use carbide::random_access_collection::RandomAccessCollection;
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
 use carbide::widget::properties::WidgetKindDynamic;
 

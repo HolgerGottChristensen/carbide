@@ -3,7 +3,7 @@ pub trait WidgetProperties {
     type Kind: WidgetKind;
 }
 
-pub trait WidgetKind: sealed::Sealed {
+pub trait WidgetKind: sealed::Sealed + 'static {
     fn kind() -> Kind;
 }
 

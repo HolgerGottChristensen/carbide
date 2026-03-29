@@ -1,7 +1,7 @@
-use std::ops::{Deref, Index, Range};
 use carbide::identifiable::Identifiable;
 use carbide::state::{IndexState, LocalState, ReadState, StateContract};
-use crate::state::{State, ValueRef};
+use std::ops::{Index, IndexMut, Range};
+use crate::state::AnyState;
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of
 /// getting the next index.
@@ -33,6 +33,7 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
 
     /// Provided an index, get the next index.
     fn next_index(&self, idx: Self::Idx) -> Self::Idx;
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx;
 }
 
 impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
@@ -82,6 +83,11 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {
         idx + 1
     }
+
+    #[inline(always)]
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        idx.saturating_sub(1)
+    }
 }
 
 impl RandomAccessCollection<u32> for Range<u32> {
@@ -130,19 +136,24 @@ impl RandomAccessCollection<u32> for Range<u32> {
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {
         idx + 1
     }
+
+    #[inline(always)]
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        idx.saturating_sub(1)
+    }
 }
 
 impl<T: StateContract + 'static, A: RandomAccessCollection<T>> RandomAccessCollection<T> for LocalState<A>
 where
-    A: Index<A::Idx, Output = T>,
+    A: Index<A::Idx, Output = T> + IndexMut<A::Idx, Output = T>,
     <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
 {
     type Idx = A::Idx;
     type Indices = A::Indices;
-    type Item<'a> = IndexState<A, T, A::Idx, LocalState<A>, A::Idx>;
+    type Item<'a> = Box<dyn AnyState<T=T>>;
 
     fn index(&self, index: Self::Idx) -> Self::Item<'_> {
-        IndexState::new(self.clone(), index)
+        Box::new(IndexState::new(self.clone(), index))
     }
 
     fn id(&self, index: Self::Idx) -> T::Id
@@ -174,5 +185,9 @@ where
 
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {
         self.value().next_index(idx)
+    }
+
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().prev_index(idx)
     }
 }

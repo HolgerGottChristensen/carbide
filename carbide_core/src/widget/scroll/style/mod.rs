@@ -47,13 +47,12 @@ impl ScrollBarStyle for AutomaticStyle {
             .when_true(Capsule::new()
                 .fill(EnvironmentColor::RegularLight)
                 .stroke(EnvironmentColor::RegularDark)
-                .stroke_style(1.0)
-                .frame(8.0, 8.0))
+                .stroke_style(1.0))
             .when_false(Capsule::new()
                 .fill(EnvironmentColor::ThinLight)
                 .stroke(EnvironmentColor::ThinDark)
-                .stroke_style(1.0)
-                .frame(8.0, 8.0))
+                .stroke_style(1.0))
+            .frame(8.0, 8.0)
             .boxed()
     }
 
