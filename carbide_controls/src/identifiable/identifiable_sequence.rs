@@ -4,7 +4,19 @@ use carbide::state::StateContract;
 use carbide::widget::{AnySequence, Content};
 
 impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+    fn index(&self, index: usize) -> &dyn AnyIdentifiableWidget<T> {
+        todo!()
+    }
+
+    fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+        todo!()
+    }
+
+    fn count(&self) -> usize {
+        todo!()
+    }
+
+    fn foreach(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>)) {
         for element in self {
             if element.is_ignore() {
                 continue;
@@ -19,7 +31,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in self {
             if element.is_ignore() {
                 continue;
@@ -34,7 +46,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in &mut self.iter_mut().rev() {
             if element.is_ignore() {
                 continue;
@@ -49,13 +61,13 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         }
     }
 
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in &mut self.iter_mut() {
             f(element);
         }
     }
 
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in &mut self.iter_mut().rev() {
             f(element);
         }
@@ -63,7 +75,19 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
 }
 
 impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn AnyIdentifiableWidget<T>> for Content<W> {
-    fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+    fn index(&self, index: usize) -> &dyn AnyIdentifiableWidget<T> {
+        todo!()
+    }
+
+    fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+        todo!()
+    }
+
+    fn count(&self) -> usize {
+        todo!()
+    }
+
+    fn foreach(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter().take(self.1) {
             if element.is_ignore() {
                 continue;
@@ -78,7 +102,7 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             if element.is_ignore() {
                 continue;
@@ -93,7 +117,7 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter_mut().take(self.1).rev() {
             if element.is_ignore() {
                 continue;
@@ -108,13 +132,13 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         }
     }
 
-    fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             f(element);
         }
     }
 
-    fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter_mut().take(self.1).rev() {
             f(element);
         }
@@ -126,7 +150,19 @@ macro_rules! tuple_sequence_impl {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
         impl<T: StateContract + PartialEq, $($generic: IdentifiableWidget<T>),*> AnySequence<dyn AnyIdentifiableWidget<T>> for ($($generic),*) {
-            fn foreach<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {
+            fn index(&self, index: usize) -> &dyn AnyIdentifiableWidget<T> {
+                todo!()
+            }
+
+            fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+                todo!()
+            }
+
+            fn count(&self) -> usize {
+                todo!()
+            }
+
+            fn foreach(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
@@ -139,7 +175,7 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {
@@ -152,7 +188,7 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     if $generic.is_ignore() {
@@ -165,14 +201,14 @@ macro_rules! tuple_sequence_impl {
                 )*
             }
 
-            fn foreach_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
                 let ($($generic),*) = self;
                 $(
                     f($generic);
                 )*
             }
 
-            fn foreach_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
                 let reverse!([$($generic)*]) = self;
                 $(
                     f($generic);

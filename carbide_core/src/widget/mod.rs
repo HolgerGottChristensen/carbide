@@ -24,6 +24,7 @@ pub use self::filter::*;
 pub use self::flag::*;
 pub use self::flexibility::*;
 pub use self::foreach::*;
+pub use self::for_each::*;
 pub use self::frame::*;
 pub use self::geometry_reader::*;
 pub use self::h_grid::*;
@@ -72,7 +73,7 @@ mod empty;
 mod filter;
 mod flag;
 mod flexibility;
-mod foreach;
+mod for_each;
 mod frame;
 mod geometry_reader;
 mod h_grid;
@@ -112,6 +113,7 @@ mod environment_updating_new3;
 pub mod managers;
 pub mod foreach_widget;
 mod keyboard_shortcut;
+mod foreach;
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32, u64);

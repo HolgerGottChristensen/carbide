@@ -40,10 +40,13 @@ impl<W: Sequence> ZStack<W> {
 
 impl<W: Sequence> Layout for ZStack<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        let mut children_flexibility: SmallVec<[(u32, &mut dyn AnyWidget); 5]> = smallvec![];
+        let mut children_flexibility: SmallVec<[(u32, usize); 5]> = smallvec![];
 
-        self.foreach_child_mut(&mut |child| {
-            children_flexibility.push((child.flexibility(), child));
+        let mut index = 0;
+
+        self.foreach_child(&mut |child| {
+            children_flexibility.push((child.flexibility(), index));
+            index += 1;
         });
 
         children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
@@ -52,7 +55,9 @@ impl<W: Sequence> Layout for ZStack<W> {
         let mut max_width = 0.0;
         let mut max_height = 0.0;
 
-        for (_, child) in children_flexibility {
+        for (_, child_index) in children_flexibility {
+            let child = self.child_mut(child_index);
+
             let new_requested_size = Dimension::new(
                 requested_size.width.max(max_width),
                 requested_size.height.max(max_height),

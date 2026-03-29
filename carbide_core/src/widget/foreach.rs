@@ -1,28 +1,23 @@
-mod random_access_collection;
-mod random_access_collection_state;
-
-use carbide_macro::carbide_default_builder2;
+use crate::common::flags::WidgetFlag;
+use crate::draw::{Dimension, Position};
+use crate::environment::Environment;
+use crate::identifiable::Identifiable;
+use crate::lifecycle::InitializationContext;
+use crate::state::{AnyReadState, LocalState, State, StateContract};
+use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
+use crate::widget::foreach_widget::ForEachWidget;
+use crate::widget::{AnyWidget, CommonWidget, Empty, RandomAccessCollection, Sequence as ForEachSequence, Widget, WidgetId, WidgetSync};
 use dyn_clone::DynClone;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 
-use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
-use crate::common::flags::WidgetFlag;
-use crate::state::{AnyReadState, AnyState, IgnoreWritesState, IndexState, IntoReadState, IntoState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew, ValueState};
-use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
-use crate::widget::foreach_widget::ForEachWidget;
-use crate::widget::{AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetId, WidgetSync};
-use crate::CommonWidgetImpl;
-use crate::identifiable::Identifiable;
-use crate::lifecycle::InitializationContext;
-
-pub trait Delegate<T: StateContract, O: Widget>: Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O;
+pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
+    fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> O;
 }
 
-impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn AnyState<T=T>>, Box<dyn AnyReadState<T=usize>>) -> O + Clone + 'static {
-    fn call(&self, item: Box<dyn AnyState<T=T>>, index: Box<dyn AnyReadState<T=usize>>) -> O {
+impl<M: RandomAccessCollection<T>, T: StateContract, K, O: Widget> Delegate<M, T, O> for K where K: Fn(M::Item<'_>, Box<dyn AnyReadState<T=M::Idx>>) -> O + Clone + 'static {
+    fn call<'b>(&self, item: M::Item<'b>, index: Box<dyn AnyReadState<T=M::Idx>>) -> O {
         self(item, index)
     }
 }
@@ -30,51 +25,46 @@ impl<T: StateContract, K, O: Widget> Delegate<T, O> for K where K: Fn(Box<dyn An
 #[derive(Clone)]
 pub struct EmptyDelegate;
 
-impl Delegate<(), Empty> for EmptyDelegate {
-    fn call(&self, _: Box<dyn AnyState<T=()>>, _: Box<dyn AnyReadState<T=usize>>) -> Empty {
+impl Delegate<Vec<()>, (), Empty> for EmptyDelegate {
+    fn call(&self, _: &(), _: Box<dyn AnyReadState<T=usize>>) -> Empty {
         Empty::new()
     }
 }
 
 
-#[derive(Clone, Widget)]
+#[derive(Widget)]
 #[carbide_exclude(StateSync)]
-pub struct ForEach<T, M, U, W, I>
+pub struct ForEach<T, M, U, W>
 where
-    T: StateContract,
-    M: State<T=Vec<T>>,
+    T: StateContract + Identifiable,
+    M: RandomAccessCollection<T>,
     W: Widget,
-    U: Delegate<T, W>,
-    I: ReadState<T=usize>
+    U: Delegate<M, T, W>
 {
     #[id] id: WidgetId,
-    position: Position,
-    dimension: Dimension,
 
-    #[state] model: M,
+    model: M,
     delegate: U,
 
-    pub children: Vec<W>,
-    #[state] index_offset: I,
+    widgets: HashMap<T::Id, W>,
+    indices: HashMap<T::Id, LocalState<M::Idx>>,
+
     phantom: PhantomData<T>,
 }
 
-impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
-    #[carbide_default_builder2]
-    pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, M::Output, U, W, usize> {
+impl ForEach<(), Vec<()>, EmptyDelegate, Empty> {
+    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>>(model: M, delegate: U) -> ForEach<T, M, U, W> {
         ForEach {
             id: WidgetId::new(),
-            position: Position::default(),
-            dimension: Dimension::default(),
-            model: model.into_state(),
+            model,
             delegate,
-            children: vec![],
-            index_offset: 0,
+            widgets: HashMap::new(),
+            indices: HashMap::new(),
             phantom: PhantomData::default()
         }
     }
 
-    pub fn new_read<T: StateContract, M: IntoReadState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, IgnoreWritesState<Vec<T>, M::Output>, U, W, usize> {
+    /*pub fn new_read<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> ForEach<T, IgnoreWritesState<Vec<T>, M>, U, W> {
         ForEach {
             id: WidgetId::new(),
             position: Position::default(),
@@ -82,10 +72,9 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
             model: model.into_read_state().ignore_writes(),
             delegate,
             children: vec![],
-            index_offset: 0,
             phantom: PhantomData::default()
         }
-    }
+    }*/
 
     pub fn widget<Sequence: ForEachSequence, Output: Widget, Delegate: ForEachChildDelegate<dyn AnyWidget, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, dyn AnyWidget> {
         ForEachWidget::new(of, with)
@@ -101,74 +90,220 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, usize> {
     pub fn custom_widget<Item: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, Sequence: ForEachSequence<Item>, Output: Widget, Delegate: ForEachChildDelegate<Item, Output>>(of: Sequence, with: Delegate) -> ForEachWidget<Sequence, Output, Delegate, Item> {
         ForEachWidget::new(of, with)
     }
-
-    /*pub fn id_state(mut self, state: Box<dyn State<T, GS>>) -> Box<Self> {
-        self.id_state = state;
-        Box::new(self)
-    }
-
-    pub fn index_state(mut self, state: Box<dyn State<usize, GS>>) -> Box<Self> {
-        self.index_state = state;
-        Box::new(self)
-    }
-
-    pub fn index_offset(mut self, state: Box<dyn State<usize, GS>>) -> Box<Self> {
-        self.index_offset = state;
-        Box::new(self)
-    }*/
 }
 
-impl<T, M, U, W, I> WidgetSync for ForEach<T, M, U, W, I>
+impl<T, M, U, W> WidgetSync for ForEach<T, M, U, W>
     where
-        T: StateContract,
-        M: State<T=Vec<T>>,
+        T: StateContract + Identifiable,
+        M: RandomAccessCollection<T>,
         W: Widget,
-        U: Delegate<T, W>,
-        I: ReadState<T=usize>
+        U: Delegate<M, T, W>,
 {
     fn sync(&mut self, env: &mut Environment) {
-        self.model.sync(env);
-        self.index_offset.sync(env);
+        for index in self.model.indices() {
+            let id = self.model.id(index.clone());
 
-        if self.model.value().len() < self.children.len() {
-            // Remove the excess elements
-            let number_to_remove = self.children.len() - self.model.value().len();
-            for _ in 0..number_to_remove {
-                self.children.pop();
+            if let Some(i) = self.indices.get_mut(&id) {
+                *i.value_mut() = index.clone();
+            } else {
+                self.indices.insert(id.clone(), LocalState::new(index.clone()));
             }
-        } else if self.model.value().len() > self.children.len() {
-            // Insert the missing elements
-            let number_to_insert = self.model.value().len() - self.children.len();
 
-            for _ in 0..number_to_insert {
-                let index = self.children.len();
+            if self.widgets.get(&id).is_none() {
+                let item = self.model.index(index);
+                let i = self.indices.get(&id).unwrap();
 
-                let index_state = ValueState::new(index).as_dyn_read();
+                let mut new = self.delegate.call(item, Box::new(i.clone()));
 
-                let item_state = IndexState::new(self.model.clone(), index);
-
-                let mut widget = self.delegate.call(item_state.as_dyn(), index_state);
-
-                widget.process_initialization(&mut InitializationContext {
-                    env: env,
+                new.process_initialization(&mut InitializationContext {
+                    env,
                 });
 
-                self.children.push(widget);
+                self.widgets.insert(id, new);
+            }
+        }
+    }
+}
+
+impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
+
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::PROXY
+    }
+
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        let mut passed = 0;
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let child = self.widgets.get(&id).unwrap();
+
+            if child.is_ignore() {
+
+            } else if child.is_proxy() {
+                let child_count = child.child_count();
+
+                if index < passed + child_count {
+                    return child.child(index - passed);
+                }
+
+                passed += child_count;
+            } else {
+                if passed == index {
+                    return child;
+                }
+
+                passed += 1;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
+
+        panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.child_count());
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        let mut passed = 0;
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let child = self.widgets.get(&id).unwrap();
+
+            if child.is_ignore() {
+
+            } else if child.is_proxy() {
+                let child_count = child.child_count();
+
+                if index < passed + child_count {
+                    break;
+                }
+
+                passed += child_count;
+            } else {
+                if passed == index {
+                    break;
+                }
+
+                passed += 1;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
+
+        if current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let child = self.widgets.get_mut(&id).unwrap();
+
+            if child.is_ignore() {
+
+            } else if child.is_proxy() {
+                return child.child_mut(index - passed);
+            } else {
+                return child;
             }
         }
 
+        panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
+    }
 
+    fn child_count(&self) -> usize {
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        let mut count = 0;
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            let child = self.widgets.get(&id).unwrap();
+
+            if child.is_ignore() {
+
+            } else if child.is_proxy() {
+                count += child.child_count();
+            } else {
+                count += 1;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
+
+        count
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
+        for index in self.model.indices() {
+            let id = self.model.id(index);
+            f(self.widgets.get(&id).unwrap())
+        }
+    }
+
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        for index in self.model.indices() {
+            let id = self.model.id(index);
+            f(self.widgets.get_mut(&id).unwrap())
+        }
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
+
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        for index in self.model.indices() {
+            let id = self.model.id(index);
+            f(self.widgets.get_mut(&id).unwrap())
+        }
+    }
+
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
+
+    fn position(&self) -> Position {
+        unimplemented!()
+    }
+
+    fn set_position(&mut self, position: Position) {
+        unimplemented!()
+    }
+
+    fn dimension(&self) -> Dimension {
+        unimplemented!()
+    }
+
+    fn set_dimension(&mut self, dimension: Dimension) {
+        unimplemented!()
     }
 }
 
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> CommonWidget for ForEach<T, M, U, W, I> {
-    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flag: WidgetFlag::PROXY);
-}
-
-impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: ReadState<T=usize>> Debug for ForEach<T, M, U, W, I> {
+impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Debug for ForEach<T, M, U, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
-            .field("children", &self.children)
+            .field("model", &self.model)
+            .field("children", &self.widgets)
             .finish()
+    }
+}
+
+impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Clone for ForEach<T, M, U, W> {
+    fn clone(&self) -> Self {
+        ForEach {
+            id: WidgetId::new(),
+            model: self.model.clone(),
+            delegate: self.delegate.clone(),
+            widgets: HashMap::new(),
+            indices: HashMap::new(),
+            phantom: Default::default(),
+        }
     }
 }

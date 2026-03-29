@@ -7,4 +7,4 @@ pub mod any_debug;
 pub mod automatic_style;
 pub mod identifiable;
 
-pub use carbide_derive::Identifiable;
+pub use carbide_derive::Id;

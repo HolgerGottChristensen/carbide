@@ -155,17 +155,19 @@ fn calculate_size_stack(
     );
 
 
-    let mut children_flexibility_using_max_val: SmallVec<[(u32, &mut dyn AnyWidget); 10]> = smallvec![];
-    let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 10]> = smallvec![];
+    let mut children_flexibility_using_max_val: SmallVec<[(u32, usize); 10]> = smallvec![];
+    let mut children_flexibility_rest: SmallVec<[(u32, usize); 10]> = smallvec![];
 
+    let mut idx = 0;
     widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {
             if child.flag().contains(WidgetFlag::USEMAXCROSSAXIS) {
-                children_flexibility_using_max_val.push((child.flexibility(), child));
+                children_flexibility_using_max_val.push((child.flexibility(), idx));
             } else {
-                children_flexibility_rest.push((child.flexibility(), child));
+                children_flexibility_rest.push((child.flexibility(), idx));
             }
         }
+        idx += 1;
     });
 
     children_flexibility_using_max_val.sort_by(|(a, _), (b, _)| b.cmp(&a));
@@ -175,7 +177,9 @@ fn calculate_size_stack(
 
     let mut total_main_axis = 0.0;
 
-    for (_, child) in children_flexibility_rest {
+    for (_, child_index) in children_flexibility_rest {
+        let child = widget.child_mut(child_index);
+
         let size_for_child = dimension(
             main_axis(size_for_children) / child_count as f64,
             cross_axis(size_for_children),
@@ -197,7 +201,9 @@ fn calculate_size_stack(
         total_main_axis += main_axis(chosen_size);
     }
 
-    for (_, child) in children_flexibility_using_max_val {
+    for (_, child_index) in children_flexibility_using_max_val {
+        let child = widget.child_mut(child_index);
+
         let size_for_child = dimension(
             main_axis(size_for_children) / child_count as f64,
             max_cross_axis,

@@ -3,18 +3,18 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Sequence, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, RandomAccessCollection, Sequence, WidgetExt, WidgetId, WidgetSync};
 use carbide::widget::foreach_widget::ForEachWidget;
 
 pub trait AnyIdentifiableWidget<T>: AnyWidget
 where T: StateContract + PartialEq {
     fn identifier(&self) -> &dyn AnyReadState<T=T>;
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<T>)) {}
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>)) {}
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
 }
 
 dyn_clone::clone_trait_object!(<T> AnyIdentifiableWidget<T>);
@@ -45,34 +45,33 @@ impl<T: StateContract + PartialEq> AnyWidget for Box<dyn AnyIdentifiableWidget<T
 
 impl<
     G: StateContract + PartialEq,
-    T: StateContract,
-    M: State<T=Vec<T>>,
+    T: StateContract + Identifiable,
+    M: RandomAccessCollection<T>,
     W: IdentifiableWidget<G>,
-    U: Delegate<T, W>,
-    I: ReadState<T=usize>> AnyIdentifiableWidget<G> for ForEach<T, M, U, W, I> {
+    U: Delegate<M, T, W>> AnyIdentifiableWidget<G> for ForEach<T, M, U, W> {
 
     fn identifier(&self) -> &dyn AnyReadState<T=G> {
         todo!()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<G>)) {
-        (self.children).foreach(f);
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.children).foreach(f);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
-        (self.children).foreach_mut(f);
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.children).foreach_mut(f);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
-        (self.children).foreach_rev(f);
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.children).foreach_rev(f);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
-        (self.children).foreach_direct(f);
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.children).foreach_direct(f);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
-        (self.children).foreach_direct_rev(f);
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.children).foreach_direct_rev(f);
     }
 }
 
@@ -88,23 +87,23 @@ impl<
         todo!()
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyIdentifiableWidget<G>)) {
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<G>)) {
         (self.content).foreach(f);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         (self.content).foreach_mut(f);
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         (self.content).foreach_rev(f);
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         (self.content).foreach_direct(f);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyIdentifiableWidget<G>)) {
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         (self.content).foreach_direct_rev(f);
     }
 }

@@ -18,7 +18,19 @@ impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        todo!()
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        todo!()
+    }
+
+    fn child_count(&self) -> usize {
+        todo!()
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
         let child = match &self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &initialized.child,
@@ -37,7 +49,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         f(child);
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let child = match self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &mut initialized.child,
@@ -54,7 +66,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         }
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let child = match self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &mut initialized.child,
@@ -71,7 +83,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         }
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let child = match self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &mut initialized.child,
@@ -81,7 +93,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         f(child);
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let child = match self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &mut initialized.child,

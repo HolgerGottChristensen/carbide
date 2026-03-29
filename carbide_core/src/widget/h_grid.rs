@@ -117,10 +117,12 @@ impl<W: Sequence> Layout for HGrid<W> {
             }
         }
 
-        let mut children_flexibility_rest: SmallVec<[(u32, &mut dyn AnyWidget); 25]> = smallvec![];
+        let mut children_flexibility_rest: SmallVec<[(u32, usize); 25]> = smallvec![];
 
+        let mut idx = 0;
         self.children.foreach_mut(&mut |child| {
-            children_flexibility_rest.push((child.flexibility(), child));
+            children_flexibility_rest.push((child.flexibility(), idx));
+            idx += 1;
         });
 
         let mut remaining_columns = f64::ceil(children_flexibility_rest.len() as f64 / self.calculated_heights.len() as f64) as usize;
@@ -133,7 +135,8 @@ impl<W: Sequence> Layout for HGrid<W> {
 
         remaining_columns += 1;
 
-        for (_, widget) in children_flexibility_rest {
+        for (_, child_index) in children_flexibility_rest {
+            let child = self.children.index_mut(child_index);
             if counter == 0 {
                 remaining_width = (remaining_width - max_width).max(0.0);
                 total_width += max_width;
@@ -146,7 +149,7 @@ impl<W: Sequence> Layout for HGrid<W> {
                 self.calculated_heights[counter]
             );
 
-            let actual_size = (*widget).calculate_size(for_child, ctx);
+            let actual_size = child.calculate_size(for_child, ctx);
 
             max_width = max_width.max(actual_size.width);
 

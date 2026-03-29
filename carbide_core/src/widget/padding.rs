@@ -1,3 +1,4 @@
+use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
@@ -27,60 +28,7 @@ impl Padding<Empty, EdgeInsets> {
 }
 
 impl<W: Widget, E: ReadState<T=EdgeInsets>> CommonWidget for Padding<W, E> {
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child(f);
-            return;
-        }
-
-        f(&self.child);
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_rev(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
+    CommonWidgetImpl!(self, child: self.child, position: self.position);
 
     fn dimension(&self) -> Dimension {
         Dimension::new(self.dimension.width.abs(), self.dimension.height.abs())

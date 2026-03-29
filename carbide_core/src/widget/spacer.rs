@@ -62,15 +62,27 @@ impl CommonWidget for Spacer {
         }
     }
 
-    fn foreach_child<'a>(&'a self, _f: &mut dyn FnMut(&'a dyn AnyWidget)) {}
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        panic!("Spacers do not have children. Index out of bounds: {}", index)
+    }
 
-    fn foreach_child_mut<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        panic!("Spacers do not have children. Index out of bounds: {}", index)
+    }
 
-    fn foreach_child_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn child_count(&self) -> usize {
+        0
+    }
 
-    fn foreach_child_direct<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_child(&self, _f: &mut dyn FnMut(&dyn AnyWidget)) {}
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, _f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {}
+    fn foreach_child_mut(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
+
+    fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
+
+    fn foreach_child_direct(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
+
+    fn foreach_child_direct_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
 
 
     fn position(&self) -> Position {

@@ -27,7 +27,7 @@ pub fn derive_state_value(input: TokenStream) -> TokenStream {
     impl_derive(input, state_value::impl_state_value)
 }
 
-#[proc_macro_derive(Identifiable, attributes(id))]
+#[proc_macro_derive(Id, attributes(id))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     impl_derive(input, identifiable::impl_identifiable)
 }

@@ -224,23 +224,47 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        let leading_count = self.leading.child_count();
+
+        if index < leading_count {
+            self.leading.index(index)
+        } else {
+            self.trailing.index(index - leading_count)
+        }
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        let leading_count = self.leading.child_count();
+
+        if index < leading_count {
+            self.leading.index_mut(index)
+        } else {
+            self.trailing.index_mut(index - leading_count)
+        }
+    }
+
+    fn child_count(&self) -> usize {
+        self.leading.child_count() + self.trailing.child_count()
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
         self.leading.foreach(f);
         self.trailing.foreach(f);
     }
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_mut(f);
         self.trailing.foreach_mut(f);
     }
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_rev(f);
         self.trailing.foreach_rev(f);
     }
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_direct(f);
         self.trailing.foreach_direct(f);
     }
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_direct_rev(f);
         self.trailing.foreach_direct_rev(f);
     }

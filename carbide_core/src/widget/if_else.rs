@@ -76,7 +76,109 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         WidgetFlag::PROXY
     }
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        if *self.predicate.value() {
+            if self.when_true.is_ignore() {
+                panic!("The child is ignore, and thus can not be indexed.");
+            }
+
+            if self.when_true.is_proxy() {
+                // Pass the index directly to the proxy child.
+                return self.when_true.child(index);
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            // We thus expect the index to be 0, otherwise we panic.
+            if index != 0 {
+                panic!("The index was not within the correct bounds.")
+            }
+
+            &self.when_true
+        } else {
+            if self.when_false.is_ignore() {
+                panic!("The child is ignore, and thus can not be indexed.");
+            }
+
+            if self.when_false.is_proxy() {
+                // Pass the index directly to the proxy child.
+                return self.when_false.child(index);
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            // We thus expect the index to be 0, otherwise we panic.
+            if index != 0 {
+                panic!("The index was not within the correct bounds.")
+            }
+
+            &self.when_false
+        }
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        if *self.predicate.value() {
+            if self.when_true.is_ignore() {
+                panic!("The child is ignore, and thus can not be indexed.");
+            }
+
+            if self.when_true.is_proxy() {
+                // Pass the index directly to the proxy child.
+                return self.when_true.child_mut(index);
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            // We thus expect the index to be 0, otherwise we panic.
+            if index != 0 {
+                panic!("The index was not within the correct bounds.")
+            }
+
+            &mut self.when_true
+        } else {
+            if self.when_false.is_ignore() {
+                panic!("The child is ignore, and thus can not be indexed.");
+            }
+
+            if self.when_false.is_proxy() {
+                // Pass the index directly to the proxy child.
+                return self.when_false.child_mut(index);
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            // We thus expect the index to be 0, otherwise we panic.
+            if index != 0 {
+                panic!("The index was not within the correct bounds.")
+            }
+
+            &mut self.when_false
+        }
+    }
+
+    fn child_count(&self) -> usize {
+        if *self.predicate.value() {
+            if self.when_true.is_ignore() {
+                return 0;
+            }
+
+            if self.when_true.is_proxy() {
+                return self.when_true.child_count();
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            1
+        } else {
+            if self.when_false.is_ignore() {
+                return 0;
+            }
+
+            if self.when_false.is_proxy() {
+                return self.when_false.child_count();
+            }
+
+            // If the child is neither an ignore nor a proxy, we have only a single child.
+            1
+        }
+    }
+
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -102,7 +204,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         }
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -128,7 +230,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         }
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
@@ -154,7 +256,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         }
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             f(&mut self.when_true)
         } else {
@@ -162,7 +264,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static> CommonWidget 
         }
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             f(&mut self.when_true)
         } else {

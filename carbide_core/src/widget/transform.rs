@@ -1,7 +1,7 @@
 use cgmath::{Deg, Matrix4, Vector3};
 
 use carbide_macro::carbide_default_builder2;
-
+use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, Map1, ReadState, RMap1};
@@ -86,68 +86,7 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Transform<W, M> {
 }
 
 impl<W: Widget, M: ReadState<T=Matrix4<f32>>> CommonWidget for Transform<W, M> {
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child(f);
-            return;
-        }
-
-        f(&self.child);
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_rev(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {

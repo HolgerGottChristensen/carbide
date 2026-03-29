@@ -9,6 +9,7 @@ use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, WindowEventHandler};
 use crate::common::flags::WidgetFlag;
+use crate::CommonWidgetImpl;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{LocalState, ReadState, State, StateExtNew};
@@ -413,76 +414,7 @@ impl<W: Widget> Layout for Scroll<W> {
 }
 
 impl<W: Widget> CommonWidget for Scroll<W> {
-    fn flag(&self) -> WidgetFlag {
-        WidgetFlag::EMPTY
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child(f);
-            return;
-        }
-
-        f(&self.child);
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_mut(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        if self.child.is_ignore() {
-            return;
-        }
-
-        if self.child.is_proxy() {
-            self.child.foreach_child_rev(f);
-            return;
-        }
-
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
-        f(&mut self.child);
-    }
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        0
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
 }
 
 impl<W: Widget> Render for Scroll<W> {

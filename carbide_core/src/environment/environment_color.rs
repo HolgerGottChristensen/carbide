@@ -1,9 +1,11 @@
+use carbide_derive::Id;
 use crate::draw::Color;
 use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable};
+use crate::identifiable::Identifiable;
 use crate::render::Style;
 use crate::state::*;
 
-#[derive(Hash, Eq, PartialEq, Clone, Debug, Copy)]
+#[derive(Hash, Eq, PartialEq, Clone, Debug, Copy, Id)]
 pub enum EnvironmentColor {
     Blue,
     Green,
