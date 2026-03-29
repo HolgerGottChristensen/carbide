@@ -6,13 +6,14 @@ use crate::environment::{Environment};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State, ValueRef, ValueRefMut};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
+use crate::widget::properties::WidgetKindSimple;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
 pub struct Frame<W, H, C> where
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget
+    C: Widget<Kind=WidgetKindSimple>
 {
     #[id] id: WidgetId,
     child: C,
@@ -22,8 +23,7 @@ pub struct Frame<W, H, C> where
 }
 
 impl Frame<f64, f64, Empty> {
-    #[carbide_default_builder2]
-    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget>(
+    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget<Kind=WidgetKindSimple>>(
         width: W,
         height: H,
         child: C,
@@ -38,7 +38,7 @@ impl Frame<f64, f64, Empty> {
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> Frame<W, H, C> {
     /// Note: This disconnects from the existing width value
     pub fn expand_width(self) -> Frame<f64, H, C> {
         Frame {
@@ -84,8 +84,45 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
-    CommonWidgetImpl!(self, child: self.child, position: self.position);
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> CommonWidget for Frame<W, H, C> {
+    CommonWidgetImpl!(self, position: self.position);
+
+    fn child(&self, i: usize) -> &dyn AnyWidget {
+        debug_assert_eq!(i, 0);
+
+        &self.child
+    }
+
+    fn child_mut(&mut self, i: usize) -> &mut dyn AnyWidget {
+        debug_assert_eq!(i, 0);
+
+        &mut self.child
+    }
+
+    fn child_count(&self) -> usize {
+        1
+    }
+
+    #[allow(unused_imports)]
+    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
+        f(&self.child)
+    }
+    #[allow(unused_imports)]
+    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        f(&mut self.child)
+    }
+    #[allow(unused_imports)]
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        f(&mut self.child)
+    }
+    #[allow(unused_imports)]
+    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        f(&mut self.child)
+    }
+    #[allow(unused_imports)]
+    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        f(&mut self.child)
+    }
 
     fn flexibility(&self) -> u32 {
         if let Fixity::Expand(_) = self.width {
@@ -107,7 +144,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> Layout for Frame<W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let fixed_height = matches!(&self.height, Fixity::Fixed(_));
         let height = *self.height.value();

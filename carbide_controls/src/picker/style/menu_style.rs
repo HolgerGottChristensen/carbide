@@ -21,6 +21,7 @@ use std::fmt::Debug;
 use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::draw::stroke::LineCap;
 use carbide::text::text_wrap::Wrap;
+use carbide::widget::Rectangle;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
@@ -131,7 +132,7 @@ impl MenuStyle {
             }
         });
 
-        let visual = HStack::new((
+        /*let visual = HStack::new((
             item.as_widget()
                 .boxed()
                 .frame_fixed_height(22.0)
@@ -141,7 +142,10 @@ impl MenuStyle {
         )).background(RoundedRectangle::new(4.0).fill(background_color))
             .boxed();
 
-        MenuStyleItemBase::new(visual, selection, hovered.as_dyn(), event_id)
+        MenuStyleItemBase::new(visual, selection, hovered.as_dyn(), event_id)*/
+
+        todo!();
+        Rectangle::new()
     }
 
     fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget {

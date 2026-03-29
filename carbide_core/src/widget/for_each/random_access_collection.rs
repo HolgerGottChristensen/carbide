@@ -29,6 +29,8 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
     /// can be used for getting a value.
     fn end_index(&self) -> Self::Idx;
 
+    fn index_from_offset(&self, index: usize) -> Self::Idx;
+
     /// Provided an index, get the next index.
     fn next_index(&self, idx: Self::Idx) -> Self::Idx;
 }
@@ -38,10 +40,12 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
     type Indices = Range<usize>;
     type Item<'a> = &'a T;
 
+    #[inline(always)]
     fn index(&self, index: Self::Idx) -> Self::Item<'_> {
         &self[index]
     }
 
+    #[inline(always)]
     fn id(&self, index: Self::Idx) -> T::Id
     where
         T: Identifiable
@@ -49,23 +53,32 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
         self[index].id()
     }
 
-
+    #[inline(always)]
     fn start_index(&self) -> Self::Idx {
         0
     }
 
+    #[inline(always)]
     fn indices(&self) -> Self::Indices {
         0..self.len()
     }
 
+    #[inline(always)]
     fn len(&self) -> usize {
         self.len()
     }
 
+    #[inline(always)]
     fn end_index(&self) -> Self::Idx {
         self.len()
     }
 
+    #[inline(always)]
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        index
+    }
+
+    #[inline(always)]
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {
         idx + 1
     }
@@ -77,33 +90,43 @@ impl RandomAccessCollection<u32> for Range<u32> {
 
     type Item<'a> = u32;
 
+    #[inline(always)]
     fn index(&self, index: Self::Idx) -> u32 {
         index
     }
 
+    #[inline(always)]
     fn id(&self, index: Self::Idx) -> <u32 as Identifiable>::Id
-    where
-        u32: Identifiable
     {
         index
     }
 
+    #[inline(always)]
     fn start_index(&self) -> Self::Idx {
         self.start
     }
 
+    #[inline(always)]
     fn indices(&self) -> Self::Indices {
         self.start..self.end
     }
 
+    #[inline(always)]
     fn len(&self) -> usize {
         ExactSizeIterator::len(self)
     }
 
+    #[inline(always)]
     fn end_index(&self) -> Self::Idx {
         self.end
     }
 
+    #[inline(always)]
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        index as u32
+    }
+
+    #[inline(always)]
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {
         idx + 1
     }
@@ -143,6 +166,10 @@ where
 
     fn end_index(&self) -> Self::Idx {
         self.value().end_index()
+    }
+
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        self.value().index_from_offset(index)
     }
 
     fn next_index(&self, idx: Self::Idx) -> Self::Idx {

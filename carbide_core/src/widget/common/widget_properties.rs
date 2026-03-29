@@ -7,7 +7,7 @@ pub trait WidgetKind: sealed::Sealed {
     fn kind() -> Kind;
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Kind {
     Ignore,
     Simple,

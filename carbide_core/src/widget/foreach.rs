@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use crate::common::flags::WidgetFlag;
 use crate::draw::{Dimension, Position};
 use crate::environment::Environment;
@@ -11,6 +12,7 @@ use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use carbide::widget::properties::Kind;
 use crate::widget::properties::WidgetKind;
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
@@ -126,6 +128,7 @@ impl<T, M, U, W> WidgetSync for ForEach<T, M, U, W>
     }
 }
 
+
 impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
 
     fn flag(&self) -> WidgetFlag {
@@ -133,113 +136,127 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 
     fn child(&self, index: usize) -> &dyn AnyWidget {
-        let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
-        let mut passed = 0;
+        if W::Kind::kind() == Kind::Simple {
+            let id = self.model.id(self.model.index_from_offset(index));
+            self.widgets.get(&id).unwrap()
+        } else {
+            let mut current_index = self.model.start_index();
+            let end_index = self.model.end_index();
+            let mut passed = 0;
 
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
+            while current_index < end_index {
+                let id = self.model.id(current_index.clone());
 
-            let child = self.widgets.get(&id).unwrap();
+                let child = self.widgets.get(&id).unwrap();
 
-            if child.is_ignore() {
+                if child.is_ignore() {
 
-            } else if child.is_proxy() {
-                let child_count = child.child_count();
+                } else if child.is_proxy() {
+                    let child_count = child.child_count();
 
-                if index < passed + child_count {
-                    return child.child(index - passed);
+                    if index < passed + child_count {
+                        return child.child(index - passed);
+                    }
+
+                    passed += child_count;
+                } else {
+                    if passed == index {
+                        return child;
+                    }
+
+                    passed += 1;
                 }
 
-                passed += child_count;
-            } else {
-                if passed == index {
-                    return child;
-                }
-
-                passed += 1;
+                current_index = self.model.next_index(current_index);
             }
 
-            current_index = self.model.next_index(current_index);
+            panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.child_count());
         }
-
-        panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.child_count());
     }
 
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
+        if W::Kind::kind() == Kind::Simple {
+            let id = self.model.id(self.model.index_from_offset(index));
+            self.widgets.get_mut(&id).unwrap()
+        } else {
+            let mut current_index = self.model.start_index();
+            let end_index = self.model.end_index();
 
-        let mut passed = 0;
+            let mut passed = 0;
 
-        dbg!(W::Kind::kind());
+            while current_index < end_index {
+                let id = self.model.id(current_index.clone());
 
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
+                let child = self.widgets.get(&id).unwrap();
 
-            let child = self.widgets.get(&id).unwrap();
+                if child.is_ignore() {
 
-            if child.is_ignore() {
+                } else if child.is_proxy() {
+                    let child_count = child.child_count();
 
-            } else if child.is_proxy() {
-                let child_count = child.child_count();
+                    if index < passed + child_count {
+                        break;
+                    }
 
-                if index < passed + child_count {
-                    break;
+                    passed += child_count;
+                } else {
+                    if passed == index {
+                        break;
+                    }
+
+                    passed += 1;
                 }
 
-                passed += child_count;
-            } else {
-                if passed == index {
-                    break;
+                current_index = self.model.next_index(current_index);
+            }
+
+            if current_index < end_index {
+                let id = self.model.id(current_index.clone());
+
+                let child = self.widgets.get_mut(&id).unwrap();
+
+                if child.is_ignore() {
+
+                } else if child.is_proxy() {
+                    return child.child_mut(index - passed);
+                } else {
+                    return child;
                 }
-
-                passed += 1;
             }
 
-            current_index = self.model.next_index(current_index);
+            panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
         }
-
-        if current_index < end_index {
-            let id = self.model.id(current_index.clone());
-
-            let child = self.widgets.get_mut(&id).unwrap();
-
-            if child.is_ignore() {
-
-            } else if child.is_proxy() {
-                return child.child_mut(index - passed);
-            } else {
-                return child;
-            }
-        }
-
-        panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
     }
 
     fn child_count(&self) -> usize {
-        let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
+        // We can special case when the widget is of kind simple, since we will know the count
+        // of children produced, will be equal to the model.
+        if W::Kind::kind() == Kind::Simple {
+            self.model.len()
+        } else {
+            let mut current_index = self.model.start_index();
+            let end_index = self.model.end_index();
 
-        let mut count = 0;
+            let mut count = 0;
 
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
+            while current_index < end_index {
+                let id = self.model.id(current_index.clone());
 
-            let child = self.widgets.get(&id).unwrap();
+                let child = self.widgets.get(&id).unwrap();
 
-            if child.is_ignore() {
+                if child.is_ignore() {
 
-            } else if child.is_proxy() {
-                count += child.child_count();
-            } else {
-                count += 1;
+                } else if child.is_proxy() {
+                    count += child.child_count();
+                } else {
+                    count += 1;
+                }
+
+                current_index = self.model.next_index(current_index);
             }
 
-            current_index = self.model.next_index(current_index);
+            count
         }
-
-        count
     }
 
     fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
