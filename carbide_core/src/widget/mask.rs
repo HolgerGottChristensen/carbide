@@ -8,7 +8,7 @@ use crate::render::{Render, RenderContext};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout, StateSync)]
+#[carbide_exclude(Render, Layout, Sync)]
 pub struct Mask<M, W>
 where
     M: Widget,

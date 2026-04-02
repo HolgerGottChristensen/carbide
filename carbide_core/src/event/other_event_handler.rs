@@ -17,10 +17,8 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
     fn handle_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {}
 
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
-        //if ctx.env.is_event_current() {
-            self.sync(ctx.env);
-            self.handle_other_event(event, ctx);
-        //}
+        self.sync(ctx.env);
+        self.handle_other_event(event, ctx);
 
         self.foreach_child_direct(&mut |child| {
             child.process_other_event(event, ctx);

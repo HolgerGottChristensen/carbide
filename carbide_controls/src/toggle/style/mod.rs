@@ -12,6 +12,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use carbide::accessibility::Role;
 use carbide::draw::AutomaticStyle;
+use carbide::widget::WidgetStyle;
 pub use switch_style::*;
 use crate::toggle::ToggleValue;
 
@@ -22,7 +23,7 @@ impl EnvironmentKey for ToggleStyleKey {
     type Value = Box<dyn ToggleStyle>;
 }
 
-pub trait ToggleStyle: Debug + DynClone + 'static {
+pub trait ToggleStyle: WidgetStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, value: Box<dyn AnyState<T=ToggleValue>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>) -> Box<dyn AnyWidget>;
 
     fn toggle_role(&self) -> Role;

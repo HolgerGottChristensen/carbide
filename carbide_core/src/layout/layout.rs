@@ -12,21 +12,15 @@ pub trait Layout: CommonWidget {
     /// The default behavior is to calculate the size of the first child and return that as the
     /// chosen size. If no child are present, the widget will choose the requested size.
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+        if self.child_count() != 0 {
+            let chosen = self.child_mut(0).calculate_size(requested_size, ctx);
 
-        let mut chosen = requested_size;
-        let mut first = true;
-
-        self.foreach_child_mut(&mut |child| {
-            if !first {
-                return;
-            }
-            chosen = child.calculate_size(requested_size, ctx);
-
-            first = false;
-        });
-
-        self.set_dimension(chosen);
-        chosen
+            self.set_dimension(chosen);
+            chosen
+        } else {
+            self.set_dimension(requested_size);
+            requested_size
+        }
     }
 
     /// This method positions the children of the widget. When positioning, we use the alignment of
@@ -38,18 +32,11 @@ pub trait Layout: CommonWidget {
         let position = self.position();
         let dimension = self.dimension();
 
-        let mut first = true;
-
-        self.foreach_child_mut(&mut |child| {
-            if !first {
-                return;
-            }
-
+        if self.child_count() != 0 {
+            let child = self.child_mut(0);
             child.set_position(positioning.position(position, dimension, child.dimension()));
             child.position_children(ctx);
-
-            first = false;
-        });
+        }
     }
 }
 

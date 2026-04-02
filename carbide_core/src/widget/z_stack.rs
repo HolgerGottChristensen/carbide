@@ -1,10 +1,13 @@
 use smallvec::{SmallVec, smallvec};
-
+use carbide::cursor::MouseCursor;
+use carbide::render::RenderContext;
+use carbide::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Alignment};
 use crate::layout::{Layout, LayoutContext};
+use crate::render::Render;
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, Sequence};
 
 /// A basic, non-interactive rectangle shape widget.

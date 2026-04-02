@@ -10,7 +10,7 @@ use carbide::state::AnyReadState;
 use carbide::widget::{AnyWidget, Capsule, Rectangle};
 use crate::draw::DebugStyle;
 use crate::state::Map2;
-use crate::widget::{IfElse, Widget, WidgetExt};
+use crate::widget::{IfElse, Widget, WidgetExt, WidgetStyle};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct VerticalScrollBarStyleKey;
@@ -26,12 +26,7 @@ impl EnvironmentKey for HorizontalScrollBarStyleKey {
     type Value = Box<dyn ScrollBarStyle>;
 }
 
-pub trait ScrollBarStyle: Debug + DynClone + 'static {
-
-    fn key(&self) -> TypeId {
-        TypeId::of::<Self>()
-    }
-
+pub trait ScrollBarStyle: WidgetStyle {
     fn thumb(&self, dragging: Box<dyn AnyReadState<T=bool>>, hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;
 
     fn background(&self, dragging: Box<dyn AnyReadState<T=bool>>, hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget>;

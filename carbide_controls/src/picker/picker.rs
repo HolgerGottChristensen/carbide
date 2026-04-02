@@ -1,6 +1,9 @@
+use std::any::TypeId;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use carbide::draw::AutomaticStyle;
+use carbide::environment::Environment;
+use carbide::widget::{WidgetStyle, WidgetSync};
 use crate::identifiable::AnyIdentifiableWidget;
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
@@ -15,7 +18,7 @@ use carbide_core::CommonWidgetImpl;
 use crate::picker::picker_item::PickerItem;
 
 #[derive(Clone, Widget, Debug)]
-#[carbide_exclude(Initialize)]
+#[carbide_exclude(Sync)]
 pub struct Picker<T, F, M, E, L, S>
 where
     T: StateContract + PartialEq,
@@ -30,12 +33,14 @@ where
     dimension: Dimension,
 
     child: Box<dyn AnyWidget>,
+    style_id: TypeId,
+
     model: M,
 
-    #[state] focus: F,
-    #[state] enabled: E,
-    #[state] selected: S,
-    #[state] label: L,
+    focus: F,
+    enabled: E,
+    selected: S,
+    label: L,
     phantom_data: PhantomData<T>,
 }
 
@@ -51,6 +56,7 @@ impl<
             position: Default::default(),
             dimension: Default::default(),
             child: Rectangle::new().boxed(),
+            style_id: TypeId::of::<()>(),
             model,
             focus,
             enabled: EnabledState::new(true),
@@ -68,27 +74,37 @@ impl<
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
     S: PickerSelection<T>
-> Initialize for Picker<T, F, M, E, L, S> {
-    fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
-        let selected_for_closure = self.selected.clone();
+> WidgetSync for Picker<T, F, M, E, L, S> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.focus.sync(env);
+        self.enabled.sync(env);
+        self.selected.sync(env);
+        self.label.sync(env);
 
-        let foreach = ForEach::custom_widget(
-            self.model.clone(),
-            move |widget: &dyn AnyIdentifiableWidget<T>| {
-                let selected = selected_for_closure.clone();
+        let style = env.get::<PickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
-                let selected_state = selected.selection(widget);
+        if style.key() != self.style_id {
+            self.style_id = style.key();
 
-                PickerItem {
-                    selection: selected_state,
-                    inner: widget.as_widget().boxed(),
+            let selected_for_closure = self.selected.clone();
+
+            let foreach = ForEach::custom_widget(
+                self.model.clone(),
+                move |widget: &dyn AnyIdentifiableWidget<T>| {
+                    let selected = selected_for_closure.clone();
+
+                    let selected_state = selected.selection(widget);
+
+                    PickerItem {
+                        selection: selected_state,
+                        inner: widget.as_widget().boxed(),
+                    }
                 }
-            }
-        );
+            );
 
-        let selection_type = self.selected.selection_type();
-        self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
+            let selection_type = self.selected.selection_type();
+            self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
+        }
     }
 }
 

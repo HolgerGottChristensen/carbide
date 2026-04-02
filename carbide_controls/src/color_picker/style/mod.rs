@@ -7,7 +7,7 @@ use carbide::draw::Color;
 use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
-use carbide::widget::AnyWidget;
+use carbide::widget::{AnyWidget, WidgetStyle};
 use crate::button::ButtonStyle;
 
 pub use plain::PlainStyle;
@@ -19,7 +19,7 @@ impl EnvironmentKey for ColorPickerStyleKey {
     type Value = Box<dyn ColorPickerStyle>;
 }
 
-pub trait ColorPickerStyle: Debug + DynClone {
+pub trait ColorPickerStyle: WidgetStyle {
     fn create(
         &self,
         label: Box<dyn AnyWidget>,

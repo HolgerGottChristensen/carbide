@@ -20,7 +20,7 @@ impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(&T) -> O + Clone 
 }
 
 #[derive(Widget)]
-#[carbide_exclude(StateSync)]
+#[carbide_exclude(Sync)]
 pub struct ForEachWidget<W, O, D, T>
 where
     T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static,

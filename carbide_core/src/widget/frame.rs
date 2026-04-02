@@ -13,7 +13,7 @@ use crate::widget::properties::WidgetKindSimple;
 pub struct Frame<W, H, C> where
     W: State<T=f64>,
     H: State<T=f64>,
-    C: Widget<Kind=WidgetKindSimple>
+    C: Widget
 {
     #[id] id: WidgetId,
     child: C,
@@ -23,7 +23,7 @@ pub struct Frame<W, H, C> where
 }
 
 impl Frame<f64, f64, Empty> {
-    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget<Kind=WidgetKindSimple>>(
+    pub fn new<W: IntoState<f64>, H: IntoState<f64>, C: Widget>(
         width: W,
         height: H,
         child: C,
@@ -38,7 +38,7 @@ impl Frame<f64, f64, Empty> {
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> Frame<W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
     /// Note: This disconnects from the existing width value
     pub fn expand_width(self) -> Frame<f64, H, C> {
         Frame {
@@ -84,7 +84,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> Frame<W
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> CommonWidget for Frame<W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
     CommonWidgetImpl!(self, position: self.position);
 
     fn child(&self, i: usize) -> &dyn AnyWidget {
@@ -144,7 +144,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> CommonW
     }
 }
 
-impl<W: State<T=f64>, H: State<T=f64>, C: Widget<Kind=WidgetKindSimple>> Layout for Frame<W, H, C> {
+impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let fixed_height = matches!(&self.height, Fixity::Fixed(_));
         let height = *self.height.value();

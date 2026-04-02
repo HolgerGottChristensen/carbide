@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::{ToggleAction, ToggleStyle, ToggleStyleKey};
 use crate::{EnabledState};
@@ -8,13 +9,15 @@ use carbide_core::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetStyle, WidgetSync};
 use carbide::CommonWidgetImpl;
 use smallvec::SmallVec;
+use carbide::environment::Environment;
 use carbide::identifiable::Identifiable;
+use crate::slider::SliderStyleKey;
 
 #[derive(Clone, Debug, Widget)]
-#[carbide_exclude(Initialize, Accessibility, AccessibilityEvent)]
+#[carbide_exclude(Sync, Accessibility, AccessibilityEvent)]
 pub struct Toggle<F, V, E, L> where
     F: State<T=Focus>,
     V: State<T=ToggleValue>,
@@ -25,11 +28,12 @@ pub struct Toggle<F, V, E, L> where
     position: Position,
     dimension: Dimension,
     child: Box<dyn AnyWidget>,
+    style_id: TypeId,
     role: Role,
-    #[state] focus: F,
-    #[state] enabled: E,
-    #[state] value: V,
-    #[state] label: L,
+    focus: F,
+    enabled: E,
+    value: V,
+    label: L,
 }
 
 impl Toggle<LocalState<Focus>, ToggleValue, EnabledState, String> {
@@ -43,6 +47,7 @@ impl Toggle<LocalState<Focus>, ToggleValue, EnabledState, String> {
             position: Default::default(),
             dimension: Default::default(),
             child: Empty::new().boxed(),
+            style_id: TypeId::of::<()>(),
             role: Default::default(),
             focus: focus_state,
             enabled: enabled_state,
@@ -52,14 +57,19 @@ impl Toggle<LocalState<Focus>, ToggleValue, EnabledState, String> {
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadState<T=String>> Initialize for Toggle<F, V, E, L> {
-    fn initialize(&mut self, ctx: &mut InitializationContext) {
-        if let Some(style) = ctx.env.get::<ToggleStyleKey>() {
+impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadState<T=String>> WidgetSync for Toggle<F, V, E, L> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.focus.sync(env);
+        self.enabled.sync(env);
+        self.value.sync(env);
+        self.label.sync(env);
+
+        let style = env.get::<ToggleStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+
+        if style.key() != self.style_id {
+            self.style_id = style.key();
             self.child = style.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
             self.role = style.toggle_role();
-        } else {
-            self.child = AutomaticStyle.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
-            self.role = AutomaticStyle.toggle_role();
         }
     }
 }

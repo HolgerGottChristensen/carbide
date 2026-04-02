@@ -8,7 +8,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
-use carbide::widget::{AnyWidget, Widget};
+use carbide::widget::{AnyWidget, Widget, WidgetStyle};
 pub use plain::PlainStyle;
 pub use plain_prominent::PlainProminentStyle;
 pub use bordered::BorderedStyle;
@@ -22,7 +22,7 @@ impl EnvironmentKey for ButtonStyleKey {
     type Value = Box<dyn ButtonStyle>;
 }
 
-pub trait ButtonStyle: Debug + DynClone {
+pub trait ButtonStyle: WidgetStyle {
     fn create(
         &self,
         label: Box<dyn AnyWidget>,

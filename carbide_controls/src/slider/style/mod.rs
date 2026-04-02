@@ -7,7 +7,7 @@ use carbide::draw::AutomaticStyle;
 use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
-use carbide::widget::{AnySequence, AnyWidget};
+use carbide::widget::{AnySequence, AnyWidget, WidgetStyle};
 pub use plain::PlainStyle;
 pub use unstyled::UnstyledStyle;
 use crate::slider::SliderSteppingType;
@@ -19,7 +19,7 @@ impl EnvironmentKey for SliderStyleKey {
     type Value = Box<dyn SliderStyle>;
 }
 
-pub trait SliderStyle: Debug + DynClone {
+pub trait SliderStyle: WidgetStyle {
     fn create_thumb(
         &self,
         focus: Box<dyn AnyReadState<T=Focus>>,

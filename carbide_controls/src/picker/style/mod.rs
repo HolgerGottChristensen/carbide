@@ -11,7 +11,7 @@ use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, Identifiab
 use carbide::environment::EnvironmentKey;
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, ReadStateExtNew, State, StateContract, StateExtNew};
-use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt};
+use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt, WidgetStyle};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use carbide::draw::AutomaticStyle;
@@ -24,7 +24,7 @@ impl EnvironmentKey for PickerStyleKey {
     type Value = Box<dyn PickerStyle>;
 }
 
-pub trait PickerStyle: Debug + DynClone {
+pub trait PickerStyle: WidgetStyle {
     fn create(
         &self,
         focus: Box<dyn AnyState<T=Focus>>,

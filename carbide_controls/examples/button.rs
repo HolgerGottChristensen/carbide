@@ -36,24 +36,24 @@ fn main() {
 
             HStack::new((
                 Button::new(
-                    Image::system("message-circle")
+                    Image::system("circle-plus")
                         .resizeable()
                         .padding(5.0)
                         .accessibility_label("Add 1"),
-                    closure!(|_| {})
+                    closure!(|_| { *$counter_state += 1; })
                 )
                     .button_style(BorderedProminentStyle)
                     .frame(32.0, 32.0),
                 Button::new(
-                    Image::system("message-circle")
+                    Image::system("circle-minus")
                         .resizeable()
                         .padding(5.0)
                         .accessibility_label("Subtract 1"),
-                    closure!(|_| {})
+                    closure!(|_| { *$counter_state -= 1; })
                 )
                     .frame(32.0, 32.0),
                 Button::new(
-                    Image::system("message-circle")
+                    Image::system("circle-dashed")
                         .resizeable()
                         .padding(5.0)
                         .accessibility_label("Disabled"),

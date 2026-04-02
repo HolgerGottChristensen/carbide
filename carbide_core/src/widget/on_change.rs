@@ -13,7 +13,7 @@ impl<I, T: StateContract> Changed<T> for I where I: Fn(Option<&T>, &T) + Clone +
 
 /// https://www.hackingwithswift.com/quick-start/swiftui/how-to-run-some-code-when-state-changes-using-onchange
 #[derive(Clone, Widget)]
-#[carbide_exclude(StateSync)]
+#[carbide_exclude(Sync)]
 pub struct OnChange<W, T, S, F> where
     W: Widget,
     T: StateContract + PartialEq,

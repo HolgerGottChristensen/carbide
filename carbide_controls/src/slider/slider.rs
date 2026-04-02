@@ -1,3 +1,6 @@
+use std::any::TypeId;
+use carbide::environment::Environment;
+use carbide::widget::{WidgetStyle, WidgetSync};
 use crate::slider::{SliderStepping, SliderSteppingType, SliderStyle};
 use crate::slider::SliderValue;
 use crate::slider::SliderStyleKey;
@@ -17,7 +20,7 @@ const SMOOTH_VALUE_INCREMENT: f64 = 0.05;
 const SMOOTH_VALUE_SMALL_INCREMENT: f64 = 0.01;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Render, Initialize)]
+#[carbide_exclude(Layout, MouseEvent, KeyboardEvent, Render, Sync)]
 pub struct Slider<Value, F, T, Start, End, StepMode, Enabled> where
     Value: SliderValue,
     F: State<T=Focus>,
@@ -30,15 +33,16 @@ pub struct Slider<Value, F, T, Start, End, StepMode, Enabled> where
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
-    #[state] focus: F,
-    #[state] enabled: Enabled,
+    style_id: TypeId,
+    focus: F,
+    enabled: Enabled,
     dragging: bool,
 
-    #[state] state: T,
-    #[state] percent: Box<dyn AnyState<T=f64>>,
-    #[state] start: Start,
-    #[state] end: End,
-    #[state] steps: StepMode,
+    state: T,
+    percent: Box<dyn AnyState<T=f64>>,
+    start: Start,
+    end: End,
+    steps: StepMode,
 
     thumb: Box<dyn AnyWidget>,
     track: Box<dyn AnyWidget>,
@@ -149,6 +153,7 @@ impl<
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
+            style_id: TypeId::of::<()>(),
             focus,
             enabled,
             dragging: false,
@@ -331,25 +336,38 @@ impl<
     E: ReadState<T=V>,
     P: ReadState<T=SliderStepping<V>>,
     En: ReadState<T=bool>,
-> Initialize for Slider<V, F, St, S, E, P, En> {
-    fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env.get::<SliderStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+> WidgetSync for Slider<V, F, St, S, E, P, En> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.focus.sync(env);
+        self.enabled.sync(env);
+        self.state.sync(env);
+        self.percent.sync(env);
+        self.start.sync(env);
+        self.end.sync(env);
+        self.steps.sync(env);
 
-        let stepping_type = Map1::read_map(self.steps.clone(), |a| {
-            match *a {
-                SliderStepping::Smooth => SliderSteppingType::Smooth,
-                SliderStepping::Stepped(_) => SliderSteppingType::Stepped,
-                SliderStepping::SmoothStepped(_) => SliderSteppingType::SmoothStepped,
-            }
-        });
+        let style = env.get::<SliderStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
-        let thumb = style.create_thumb(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
-        let track = style.create_track(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
-        let background = style.create_background(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
 
-        self.thumb = thumb;
-        self.track = track;
-        self.background = background;
+        if style.key() != self.style_id {
+            self.style_id = style.key();
+
+            let stepping_type = Map1::read_map(self.steps.clone(), |a| {
+                match *a {
+                    SliderStepping::Smooth => SliderSteppingType::Smooth,
+                    SliderStepping::Stepped(_) => SliderSteppingType::Stepped,
+                    SliderStepping::SmoothStepped(_) => SliderSteppingType::SmoothStepped,
+                }
+            });
+
+            let thumb = style.create_thumb(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
+            let track = style.create_track(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
+            let background = style.create_background(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
+
+            self.thumb = thumb;
+            self.track = track;
+            self.background = background;
+        }
     }
 }
 

@@ -240,11 +240,51 @@ impl<W: Widget> AnySequence for Content<W> {
     }
 
     fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        todo!()
+        let mut passed = 0;
+
+        for (_, element) in self.0.iter_mut().take(self.1) {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                let child_count = element.child_count();
+
+                if index < passed + child_count {
+                    return element.child_mut(index - passed);
+                }
+
+                passed += child_count;
+
+                continue;
+            }
+
+            if index == passed {
+                return element;
+            }
+
+            passed += 1;
+        }
+
+        panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
     }
 
     fn count(&self) -> usize {
-        todo!()
+        let mut count = 0;
+        for (_, element) in self.0.iter().take(self.1) {
+            if element.is_ignore() {
+                continue;
+            }
+
+            if element.is_proxy() {
+                count += element.child_count();
+                continue;
+            }
+
+            count += 1;
+        }
+
+        count
     }
 
     fn foreach(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {

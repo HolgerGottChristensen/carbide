@@ -1,3 +1,4 @@
+use std::any::TypeId;
 use carbide::accessibility::{Accessibility, AccessibilityContext};
 use carbide::color::RED;
 use carbide_core::cursor::MouseCursor;
@@ -12,12 +13,12 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{LocalState, ReadState};
 use carbide_core::widget::*;
 use std::fmt::{Debug, Formatter};
-
+use carbide::environment::Environment;
 use crate::button::style::ButtonStyleKey;
 use crate::{EnabledState};
 
 #[derive(Clone, Widget)]
-#[carbide_exclude(Accessibility, Initialize)]
+#[carbide_exclude(Accessibility, Sync)]
 pub struct Button<F, A, E, H, P, L> where
     F: State<T=Focus>,
     A: Action + Clone + 'static,
@@ -31,10 +32,12 @@ pub struct Button<F, A, E, H, P, L> where
     dimension: Dimension,
 
     child: Box<dyn AnyWidget>,
+    style_id: TypeId,
+
     action: A,
     label: L,
 
-    #[state] focus: F,
+    #[state] focused: F,
     #[state] enabled: E,
     #[state] hovered: H,
     #[state] pressed: P,
@@ -49,9 +52,10 @@ impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool
             position: Default::default(),
             dimension: Default::default(),
             child: Box::new(Rectangle::new().fill(RED)),
+            style_id: TypeId::of::<()>(),
             action,
             label: label.into_widget(),
-            focus: LocalState::new(Focus::Unfocused),
+            focused: LocalState::new(Focus::Unfocused),
             enabled: EnabledState::new(true),
             hovered: LocalState::new(false),
             pressed: LocalState::new(false),
@@ -67,9 +71,10 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
             position: self.position,
             dimension: self.dimension,
             child: self.child,
+            style_id: self.style_id,
             action: self.action,
             label: self.label,
-            focus: self.focus,
+            focused: self.focused,
             enabled: self.enabled,
             hovered: hovered.into_state(),
             pressed: self.pressed,
@@ -83,9 +88,10 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
             position: self.position,
             dimension: self.dimension,
             child: self.child,
+            style_id: self.style_id,
             action: self.action,
             label: self.label,
-            focus: self.focus,
+            focused: self.focused,
             enabled: self.enabled,
             hovered: self.hovered,
             pressed: pressed.into_state(),
@@ -99,13 +105,53 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
     }
 }
 
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> WidgetSync for Button<F, A, E, H, P, L> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.focused.sync(env);
+        self.enabled.sync(env);
+        self.hovered.sync(env);
+        self.pressed.sync(env);
+
+        let style = env.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+
+        if style.key() != self.style_id {
+            self.style_id = style.key();
+
+            let inner = style.create(
+                self.label.clone().boxed(),
+                self.focused.as_dyn_read(),
+                self.enabled.as_dyn_read(),
+                self.hovered.as_dyn_read(),
+                self.pressed.as_dyn_read()
+            );
+
+            self.child = MouseArea::new(inner)
+                .custom_on_click(ButtonAction {
+                    action: self.action.clone(),
+                    focus: self.focused.clone(),
+                    enabled: self.enabled.clone(),
+                })
+                .custom_on_click_outside(ButtonOutsideAction {
+                    action: self.action.clone(),
+                    focus: self.focused.clone(),
+                    enabled: self.enabled.clone(),
+                })
+                .focused(self.focused.clone())
+                .pressed(self.pressed.clone())
+                .hovered(self.hovered.clone())
+                .hover_cursor(self.cursor)
+                .boxed();
+        }
+    }
+}
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> CommonWidget for Button<F, A, E, H, P, L> {
-    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }
 
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Accessibility for Button<F, A, E, H, P, L> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        self.enabled.sync(ctx.env);
+        self.sync(ctx.env);
+
         let enabled = *self.enabled.value();
 
         self.child.process_accessibility(&mut AccessibilityContext {
@@ -122,39 +168,15 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Initialize for Button<F, A, E, H, P, L> {
-    fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env.get::<ButtonStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
-
-        let inner = style.create(self.label.clone().boxed(), self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read());
-
-        self.child = MouseArea::new(inner)
-            .custom_on_click(ButtonAction {
-                action: self.action.clone(),
-                focus: self.focus.clone(),
-                enabled: self.enabled.clone(),
-            })
-            .custom_on_click_outside(ButtonOutsideAction {
-                action: self.action.clone(),
-                focus: self.focus.clone(),
-                enabled: self.enabled.clone(),
-            })
-            .focused(self.focus.clone())
-            .pressed(self.pressed.clone())
-            .hovered(self.hovered.clone())
-            .hover_cursor(self.cursor)
-            .boxed();
-    }
-}
-
 impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Debug for Button<F, A, E, H, P, L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PlainButton")
+        f.debug_struct("Button")
             .field("id", &self.id)
             .field("position", &self.position)
             .field("dimension", &self.dimension)
-            .field("focus", &self.focus)
+            .field("focus", &self.focused)
             .field("child", &self.child)
+            .field("enabled", &self.enabled)
             .finish()
     }
 }

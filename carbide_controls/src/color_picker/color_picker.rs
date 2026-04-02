@@ -1,18 +1,20 @@
+use std::any::TypeId;
 use carbide::automatic_style::AutomaticStyle;
 use crate::{EnabledState};
 use carbide::color::RED;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position};
+use carbide::environment::Environment;
 use carbide::flags::WidgetFlag;
 use carbide::focus::Focus;
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, IntoWidget, MouseArea, Rectangle, Widget, WidgetId};
+use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, IntoWidget, MouseArea, Rectangle, Widget, WidgetId, WidgetStyle, WidgetSync};
 use crate::button::{Button, ButtonStyleKey};
 use crate::color_picker::ColorPickerStyleKey;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Initialize)]
+#[carbide_exclude(Sync)]
 pub struct ColorPicker<F, V, E, H, P, L> where
     F: State<T=Focus>,
     V: State<T=Color>,
@@ -26,13 +28,14 @@ pub struct ColorPicker<F, V, E, H, P, L> where
     dimension: Dimension,
 
     child: Box<dyn AnyWidget>,
+    style_id: TypeId,
     state: V,
     label: L,
 
-    #[state] focus: F,
-    #[state] enabled: E,
-    #[state] hovered: H,
-    #[state] pressed: P,
+    focused: F,
+    enabled: E,
+    hovered: H,
+    pressed: P,
 }
 
 impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bool>, Empty> {
@@ -42,9 +45,10 @@ impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bo
             position: Default::default(),
             dimension: Default::default(),
             child: Box::new(Rectangle::new().fill(RED)),
+            style_id: TypeId::of::<()>(),
             state: value.into_state(),
             label: label.into_widget(),
-            focus: LocalState::new(Focus::Unfocused),
+            focused: LocalState::new(Focus::Unfocused),
             enabled: EnabledState::new(true),
             hovered: LocalState::new(false),
             pressed: LocalState::new(false),
@@ -52,33 +56,22 @@ impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bo
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Initialize for ColorPicker<F, V, E, H, P, L> {
-    fn initialize(&mut self, ctx: &mut InitializationContext) {
-        let style = ctx.env.get::<ColorPickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> WidgetSync for ColorPicker<F, V, E, H, P, L> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.focused.sync(env);
+        self.enabled.sync(env);
+        self.hovered.sync(env);
+        self.pressed.sync(env);
 
-        let inner = style.create(self.label.clone().boxed(), self.focus.as_dyn(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read(), self.state.as_dyn());
+        let style = env.get::<ColorPickerStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
-        /*self.child = MouseArea::new(inner)
-            .custom_on_click(crate::button::button::ButtonAction {
-                action: self.action.clone(),
-                focus: self.focus.clone(),
-                enabled: self.enabled.clone(),
-            })
-            .custom_on_click_outside(crate::button::button::ButtonOutsideAction {
-                action: self.action.clone(),
-                focus: self.focus.clone(),
-                enabled: self.enabled.clone(),
-            })
-            .focused(self.focus.clone())
-            .pressed(self.pressed.clone())
-            .hovered(self.hovered.clone())
-            .hover_cursor(self.cursor)
-            .boxed();*/
-
-        self.child = inner;
+        if style.key() != self.style_id {
+            self.style_id = style.key();
+            self.child = style.create(self.label.clone().boxed(), self.focused.as_dyn(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read(), self.state.as_dyn());
+        }
     }
 }
 
 impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> CommonWidget for ColorPicker<F, V, E, H, P, L> {
-    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focus);
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }

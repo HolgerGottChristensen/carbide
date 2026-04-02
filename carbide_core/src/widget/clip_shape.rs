@@ -17,7 +17,7 @@ use crate::widget::{
 use crate::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Layout, StateSync)]
+#[carbide_exclude(Render, Layout, Sync)]
 pub struct ClipShape<C, S>
 where
     C: Widget,

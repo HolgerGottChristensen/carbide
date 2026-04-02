@@ -13,7 +13,7 @@ pub enum DeriveType {
     AccessibilityEvent,
 
     // StateSync
-    StateSync,
+    WidgetSync,
     Id,
 
     // Render
@@ -41,7 +41,7 @@ impl DeriveType {
         set.insert(DeriveType::WindowEvent);
         set.insert(DeriveType::OtherEvent);
         set.insert(DeriveType::AccessibilityEvent);
-        set.insert(DeriveType::StateSync);
+        set.insert(DeriveType::WidgetSync);
         set.insert(DeriveType::Render);
         set.insert(DeriveType::Focusable);
         set.insert(DeriveType::Layout);
@@ -60,7 +60,7 @@ impl DeriveType {
             "WindowEvent" => DeriveType::WindowEvent,
             "OtherEvent" => DeriveType::OtherEvent,
             "AccessibilityEvent" => DeriveType::AccessibilityEvent,
-            "StateSync" => DeriveType::StateSync,
+            "Sync" => DeriveType::WidgetSync,
             "Render" => DeriveType::Render,
             "Focusable" => DeriveType::Focusable,
             "Layout" => DeriveType::Layout,
@@ -86,7 +86,7 @@ impl DeriveType {
             DeriveType::WindowEvent => window_event_token_stream(ident, generics, wheres),
             DeriveType::OtherEvent => other_event_token_stream(ident, generics, wheres),
             DeriveType::AccessibilityEvent => accessibility_event_token_stream(ident, generics, wheres),
-            DeriveType::StateSync => state_sync_token_stream(ident, generics, wheres, state_idents),
+            DeriveType::WidgetSync => widget_sync_token_stream(ident, generics, wheres, state_idents),
             DeriveType::Id => id_token_stream(ident, generics, wheres, id_idents),
             DeriveType::Render => render_token_stream(ident, generics, wheres),
             DeriveType::Focusable => focusable_token_stream(ident, generics, wheres),
@@ -167,7 +167,7 @@ fn accessibility_event_token_stream(
     }
 }
 
-fn state_sync_token_stream(
+fn widget_sync_token_stream(
     ident: &Ident,
     generics: &Generics,
     wheres: &Option<WhereClause>,
