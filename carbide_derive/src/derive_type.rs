@@ -9,6 +9,7 @@ pub enum DeriveType {
     MouseEvent,
     KeyboardEvent,
     WindowEvent,
+    ApplicationEvent,
     OtherEvent,
     AccessibilityEvent,
 
@@ -39,6 +40,7 @@ impl DeriveType {
         set.insert(DeriveType::MouseEvent);
         set.insert(DeriveType::KeyboardEvent);
         set.insert(DeriveType::WindowEvent);
+        set.insert(DeriveType::ApplicationEvent);
         set.insert(DeriveType::OtherEvent);
         set.insert(DeriveType::AccessibilityEvent);
         set.insert(DeriveType::WidgetSync);
@@ -58,6 +60,7 @@ impl DeriveType {
             "MouseEvent" => DeriveType::MouseEvent,
             "KeyboardEvent" => DeriveType::KeyboardEvent,
             "WindowEvent" => DeriveType::WindowEvent,
+            "ApplicationEvent" => DeriveType::ApplicationEvent,
             "OtherEvent" => DeriveType::OtherEvent,
             "AccessibilityEvent" => DeriveType::AccessibilityEvent,
             "Sync" => DeriveType::WidgetSync,
@@ -84,6 +87,7 @@ impl DeriveType {
             DeriveType::MouseEvent => mouse_event_token_stream(ident, generics, wheres),
             DeriveType::KeyboardEvent => keyboard_event_token_stream(ident, generics, wheres),
             DeriveType::WindowEvent => window_event_token_stream(ident, generics, wheres),
+            DeriveType::ApplicationEvent => application_event_token_stream(ident, generics, wheres),
             DeriveType::OtherEvent => other_event_token_stream(ident, generics, wheres),
             DeriveType::AccessibilityEvent => accessibility_event_token_stream(ident, generics, wheres),
             DeriveType::WidgetSync => widget_sync_token_stream(ident, generics, wheres, state_idents),
@@ -131,6 +135,17 @@ fn keyboard_event_token_stream(
     quote! {
         #[automatically_derived]
         impl #generics carbide::event::KeyboardEventHandler for #ident #generics #wheres {}
+    }
+}
+
+fn application_event_token_stream(
+    ident: &Ident,
+    generics: &Generics,
+    wheres: &Option<WhereClause>,
+) -> TokenStream {
+    quote! {
+        #[automatically_derived]
+        impl #generics carbide::event::ApplicationEventHandler for #ident #generics #wheres {}
     }
 }
 

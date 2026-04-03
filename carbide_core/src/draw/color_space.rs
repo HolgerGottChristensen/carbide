@@ -1,6 +1,6 @@
+use carbide_derive::Id;
 
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Id, Eq, Hash)]
 pub enum ColorSpace {
     Linear,
     OkLAB,

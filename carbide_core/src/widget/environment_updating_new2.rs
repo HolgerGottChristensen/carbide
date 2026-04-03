@@ -2,7 +2,7 @@ use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
 use crate::draw::Dimension;
 use crate::environment::EnvironmentKey;
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, ApplicationEventHandler, ApplicationEvent, ApplicationEventContext};
 use crate::event::{AccessibilityEventHandler, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use crate::focus::FocusContext;
 use crate::focus::Focusable;
@@ -140,6 +140,20 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> WindowEventHandler 
                 env: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
+            })
+        })
+    }
+}
+
+impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> ApplicationEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        self.value.sync(ctx.env);
+
+        ctx.env.with::<K>(&*self.value.value(), |inner| {
+            self.child.process_application_event(event, &mut ApplicationEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: inner,
             })
         })
     }

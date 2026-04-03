@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use smallvec::SmallVec;
 use crate::scene::{Scene, SceneId};
 use crate::environment::{Environment, EnvironmentKey};
+use crate::event::ApplicationEvent;
 use crate::scene::{AnyScene, SceneSequence};
 
 static FRAME: AtomicU32 = AtomicU32::new(0);

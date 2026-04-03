@@ -4,7 +4,7 @@ use crate::draw::theme::Theme;
 use crate::draw::Color;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColor, EnvironmentKeyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler, ApplicationEventHandler, ApplicationEventContext, ApplicationEvent};
 use crate::focus::{FocusContext, Focusable};
 use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
@@ -259,6 +259,25 @@ impl<C: Widget> WindowEventHandler for ThemeManager<C> {
                 env: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
+            })
+        })
+    }
+}
+
+impl<C: Widget> ApplicationEventHandler for ThemeManager<C> {
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        let theme = ctx.env.get::<Theme>().cloned().unwrap_or_default();
+
+        let values = match theme {
+            Theme::Light => &self.light,
+            Theme::Dark => &self.dark
+        };
+
+        EnvironmentColor::with_all(values, ctx.env, |inner| {
+            self.child.process_application_event(event, &mut ApplicationEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: inner,
             })
         })
     }

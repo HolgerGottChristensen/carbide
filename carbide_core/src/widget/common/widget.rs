@@ -3,9 +3,10 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
 use dyn_clone::{clone_box, DynClone};
+use carbide::event::ApplicationEventHandler;
 use crate::accessibility::AccessibilityContext;
 use crate::environment::Environment;
-use crate::event::{AccessibilityEvent, AccessibilityEventContext};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, ApplicationEvent, ApplicationEventContext};
 use crate::lifecycle::InitializationContext;
 use crate::accessibility::Accessibility;
 use crate::draw::{Alignment, Dimension, Position};
@@ -172,6 +173,16 @@ impl<T: AnyWidget + ?Sized> WindowEventHandler for Box<T> {
 
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.deref_mut().process_window_event(event, ctx)
+    }
+}
+
+impl<T: AnyWidget + ?Sized> ApplicationEventHandler for Box<T> {
+    fn handle_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        self.deref_mut().handle_application_event(event, ctx)
+    }
+
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        self.deref_mut().process_application_event(event, ctx)
     }
 }
 

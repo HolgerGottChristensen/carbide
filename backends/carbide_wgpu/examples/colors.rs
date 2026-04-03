@@ -1,13 +1,12 @@
 use carbide_core::color::ColorExt;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
-use carbide_core::state::{AnyState, ReadState};
+use carbide_core::state::ReadState;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let colors1 = vec![
         EnvironmentColor::Accent,
@@ -56,18 +55,22 @@ fn main() {
         Dimension::new(800.0, 700.0),
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Label.color().invert()),
-            HStack::new(ForEach::new(vec![colors1, colors2, colors3], |item, index| {
-                VStack::new(ForEach::new(item, |item: Box<dyn AnyState<T=EnvironmentColor>>, index| {
-                    HStack::new((
-                        Text::new(format!("{:?}", *item.value())),
-                        Rectangle::new()
-                            .fill(item)
-                            .stroke(EnvironmentColor::Label)
-                            .stroke_style(1.0)
-                            .frame(100.0, 30.0)
-                    ))
-                })).cross_axis_alignment(CrossAxisAlignment::End)
-            })).cross_axis_alignment(CrossAxisAlignment::Start)
+            HStack::new(
+                ForEach::new(vec![colors1, colors2, colors3], |item: &Vec<EnvironmentColor>, index| {
+                    VStack::new(
+                        ForEach::new(item.clone(), |item: &EnvironmentColor, index| {
+                            HStack::new((
+                                Text::new(format!("{:?}", *item.value())),
+                                Rectangle::new()
+                                    .fill(item.clone())
+                                    .stroke(EnvironmentColor::Label)
+                                    .stroke_style(1.0)
+                                    .frame(100.0, 30.0)
+                            ))
+                        })
+                    ).cross_axis_alignment(CrossAxisAlignment::End)
+                })
+            ).cross_axis_alignment(CrossAxisAlignment::Start)
         ))
     ));
 

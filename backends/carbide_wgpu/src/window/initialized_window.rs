@@ -1,21 +1,23 @@
-use std::sync::Arc;
 use crate::application::Scenes;
-use crate::wgpu_msaa::WgpuMsaa;
 use crate::render_context::WGPURenderContext;
+use crate::wgpu_msaa::WgpuMsaa;
 use crate::WgpuRenderTarget;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;
-use carbide_core::draw::{Dimension, Position, Scalar};
+use carbide_core::draw::{Dimension, NOOPImageContext, Position, Scalar};
 use carbide_core::environment::Environment;
+use carbide_core::event::{WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::lifecycle::InitializationContext;
+use carbide_core::math::Matrix4;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
-use carbide_core::widget::{CommonWidget, Widget};
+use carbide_core::text::NOOPTextContext;
+use carbide_core::widget::Widget;
 use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
 use carbide_winit::WindowHandleKey;
+use std::sync::Arc;
 use wgpu::{BindGroup, Buffer, RenderPipeline, Surface, SurfaceConfiguration, TextureView};
-use carbide_core::math::Matrix4;
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) id: SceneId,
@@ -100,12 +102,17 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             println!("Here");
             self.close(env);
         } else {
-            let mut ctx = InitializationContext {
-                env,
-            };
-
             for mut scene in scene_manager.scenes_to_add().drain(..) {
-                scene.process_initialization(&mut ctx);
+                scene.process_initialization(&mut InitializationContext {
+                    env,
+                });
+                scene.process_window_event(&WindowEvent::Initialize, &mut WindowEventContext {
+                    text: &mut NOOPTextContext,
+                    image: &mut NOOPImageContext,
+                    env,
+                    is_current: &false, // todo
+                    window_id: &0, // todo
+                });
                 self.scenes.push(scene);
             }
 

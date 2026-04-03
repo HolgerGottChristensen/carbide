@@ -30,3 +30,11 @@ impl_identifiable!(
     u128, i128,
     usize, isize
 );
+
+impl<T> Identifiable for Vec<T> where T: Identifiable + Clone + Debug + Eq + Hash {
+    type Id = Vec<T::Id>;
+
+    fn id(&self) -> Self::Id {
+        self.iter().map(|a| a.id()).collect()
+    }
+}

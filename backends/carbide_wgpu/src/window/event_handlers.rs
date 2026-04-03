@@ -1,5 +1,5 @@
 use crate::window::Window;
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, ApplicationEvent, ApplicationEventContext, ApplicationEventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
 use carbide_winit::dpi::LogicalSize;
@@ -103,6 +103,30 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                     }
 
                     initialized.child.process_other_event(event, new_ctx);
+                })
+            }
+            Window::UnInitialized { .. } => {}
+            Window::Failed => {}
+        }
+    }
+}
+
+impl<T: ReadState<T=String>, C: Widget> ApplicationEventHandler for Window<T, C> {
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        match self {
+            Window::Initialized(initialized) => {
+                initialized.with_env(ctx.env, |env, initialized| {
+                    let new_ctx = &mut ApplicationEventContext {
+                        text: ctx.text,
+                        image: ctx.image,
+                        env
+                    };
+
+                    for scene in &mut initialized.scenes {
+                        scene.process_application_event(event, new_ctx);
+                    }
+
+                    initialized.child.process_application_event(event, new_ctx);
                 })
             }
             Window::UnInitialized { .. } => {}

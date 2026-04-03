@@ -1,7 +1,6 @@
-use carbide_core::color::{ColorExt, RED};
+use carbide_core::color::ColorExt;
 use carbide_core::draw::{Color, Dimension};
-use carbide_core::environment::*;
-use carbide_core::state::{AnyReadState, AnyState, IndexState, LocalState, ReadState, State};
+use carbide_core::state::Map1;
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -10,12 +9,16 @@ fn main() {
 
     application.set_scene(Window::new(
         "ForEach nested example - Carbide",
-        Dimension::new(600.0, 450.0),
+        Dimension::new(350.0, 600.0),
         VStack::new(
             ForEach::new(0..3, |a, b| {
-                ForEach::new(0..2, |c, d| {
+                let group_color = Color::random();
+
+                ForEach::new(0..3, move |c, d| {
+                    let element_color = Map1::read_map(d, move |d| group_color.lightened(*d as f32 / 7.0));
+
                     Rectangle::new()
-                        .fill(Color::random())
+                        .fill(element_color)
                         .frame(100.0, 50.0)
                 })
             })

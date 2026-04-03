@@ -18,7 +18,7 @@ use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
 use carbide_core::draw::{Dimension, ImageId, SystemImageManager};
 use carbide_core::environment::{Environment, EnvironmentKey};
-use carbide_core::event::EventSink;
+use carbide_core::event::{ApplicationEvent, ApplicationEventContext, ApplicationEventHandler, EventSink, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::FocusManager;
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::locate_folder;
@@ -184,6 +184,7 @@ impl Application {
             application_manager: ApplicationManager::new(),
             focus_manager: FocusManager::new(),
             event_sink,
+            latest_application_event: None,
             wgpu_context,
             render_instruction_cache: HashMap::new(),
         };
@@ -218,6 +219,7 @@ pub struct RunningApplication {
     application_manager: ApplicationManager,
     focus_manager: FocusManager,
     event_sink: Arc<dyn EventSink>,
+    latest_application_event: Option<ApplicationEvent>,
 
     wgpu_context: WgpuContext,
     render_instruction_cache: HashMap<ImageId, Rc<(Dimension, Vec<RenderInstruction>)>>
@@ -244,12 +246,22 @@ impl RunningApplication {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                     env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                        let mut ctx = InitializationContext {
-                            env,
-                        };
-
                         for mut scene in self.application_manager.scenes_to_add().drain(..) {
-                            scene.process_initialization(&mut ctx);
+                            // If the application is currently in the running state (meaning resumed), we can initialize the
+                            // scene immediately. If the application is not in the running state, the windows will first be initialized
+                            // when the application event Resumed is sent.
+                            if self.latest_application_event == Some(ApplicationEvent::Resumed) {
+                                scene.process_window_event(&carbide_core::event::WindowEvent::Initialize, &mut WindowEventContext {
+                                    text: &mut self.text_context,
+                                    image: &mut WGPUImageContext,
+                                    env,
+                                    is_current: &false, // todo
+                                    window_id: &0, // todo
+                                })
+                            }
+                            scene.process_initialization(&mut InitializationContext {
+                                env,
+                            });
                             self.scenes.push(scene);
                         }
                     })
@@ -286,15 +298,21 @@ impl RunningApplication {
 
 impl ApplicationHandler<CustomEvent> for RunningApplication {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        self.latest_application_event = Some(ApplicationEvent::Resumed);
+
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
                     env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                        for scene in &mut self.scenes {
-                            scene.process_initialization(&mut InitializationContext {
-                                env,
-                            });
-                        }
+                        env.with::<ActiveEventLoopKey>(event_loop, |env| {
+                            self.event_handler.resumed_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+
+                            for scene in &mut self.scenes {
+                                scene.process_initialization(&mut InitializationContext {
+                                    env,
+                                });
+                            }
+                        })
                     })
                 })
             })
@@ -364,10 +382,34 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
-        info!("Suspended");
+        self.latest_application_event = Some(ApplicationEvent::Suspended);
+
+        self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
+            env.with::<dyn EventSink>(&self.event_sink, |env| {
+                env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
+                    env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                        env.with::<ActiveEventLoopKey>(event_loop, |env| {
+                            self.event_handler.suspended_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                        })
+                    })
+                })
+            })
+        })
     }
 
     fn exiting(&mut self, event_loop: &ActiveEventLoop) {
-        info!("Exiting");
+        self.latest_application_event = Some(ApplicationEvent::Exited);
+
+        self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
+            env.with::<dyn EventSink>(&self.event_sink, |env| {
+                env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
+                    env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                        env.with::<ActiveEventLoopKey>(event_loop, |env| {
+                            self.event_handler.exited_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                        })
+                    })
+                })
+            })
+        })
     }
 }

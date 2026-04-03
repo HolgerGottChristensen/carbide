@@ -1,7 +1,7 @@
 use crate::accessibility::{Accessibility, AccessibilityContext};
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentFontSize, EnvironmentKeyable};
-use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use crate::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, OtherEvent, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler, ApplicationEventHandler, ApplicationEvent, ApplicationEventContext};
 use crate::focus::{FocusContext, Focusable};
 use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
@@ -121,6 +121,18 @@ impl<C: Widget> WindowEventHandler for FontSizeManager<C> {
                 env: inner,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
+            })
+        })
+    }
+}
+
+impl<C: Widget> ApplicationEventHandler for FontSizeManager<C> {
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
+            self.child.process_application_event(event, &mut ApplicationEventContext {
+                text: ctx.text,
+                image: ctx.image,
+                env: inner
             })
         })
     }

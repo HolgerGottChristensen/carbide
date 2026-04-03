@@ -13,7 +13,7 @@ use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::asynchronous::{AsyncContext, check_tasks};
 use carbide_core::draw::{Dimension, ImageContext, Position, Scalar};
 use carbide_core::environment::{Environment};
-use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, OtherEventHandler, WindowEventContext};
+use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, ApplicationEvent, ApplicationEventContext, EventId, KeyboardEvent, KeyboardEventContext, ModifierKey, MouseEvent, MouseEventContext, OtherEvent, OtherEventContext, OtherEventHandler, WindowEventContext};
 use carbide_core::focus::{FocusContext, FocusManager, Refocus};
 use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::scene::AnyScene;
@@ -149,6 +149,36 @@ impl NewEventHandler {
                     }
                 }
             }
+        }
+    }
+
+    pub fn resumed_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], text_context: &'a mut impl TextContext, image_context: &'a mut impl ImageContext, env: &mut Environment) {
+        for scene in scenes.iter_mut() {
+            scene.process_application_event(&ApplicationEvent::Resumed, &mut ApplicationEventContext {
+                text: text_context,
+                image: image_context,
+                env
+            });
+        }
+    }
+
+    pub fn suspended_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], text_context: &'a mut impl TextContext, image_context: &'a mut impl ImageContext, env: &mut Environment) {
+        for scene in scenes.iter_mut() {
+            scene.process_application_event(&ApplicationEvent::Suspended, &mut ApplicationEventContext {
+                text: text_context,
+                image: image_context,
+                env
+            });
+        }
+    }
+
+    pub fn exited_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], text_context: &'a mut impl TextContext, image_context: &'a mut impl ImageContext, env: &mut Environment) {
+        for scene in scenes.iter_mut() {
+            scene.process_application_event(&ApplicationEvent::Exited, &mut ApplicationEventContext {
+                text: text_context,
+                image: image_context,
+                env
+            });
         }
     }
 

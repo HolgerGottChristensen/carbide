@@ -31,6 +31,7 @@ pub struct WindowEventContext<'a, 'b: 'a> {
 
 #[derive(Clone, Debug)]
 pub enum WindowEvent {
+    Initialize,
     Resize(Dimension),
     Moved(Position),
     Focus,
@@ -39,10 +40,4 @@ pub enum WindowEvent {
     CloseRequested,
     ScaleFactorChanged(Scalar),
     ThemeChanged
-}
-
-#[derive(Clone, Debug)]
-pub enum Theme {
-    Light,
-    Dark
 }
