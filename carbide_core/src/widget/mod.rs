@@ -29,6 +29,7 @@ pub use self::geometry_reader::*;
 pub use self::h_grid::*;
 pub use self::h_split::*;
 pub use self::h_stack::*;
+pub use self::h_stack_lazy::*;
 pub use self::hidden::*;
 pub use self::hue_rotation::*;
 pub use self::if_else::*;
@@ -114,6 +115,7 @@ pub mod foreach_widget;
 mod keyboard_shortcut;
 mod foreach;
 mod v_stack_lazy;
+mod h_stack_lazy;
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32, u64);

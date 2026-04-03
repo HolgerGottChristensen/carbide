@@ -7,15 +7,17 @@ fn main() {
 
     application.set_scene(
         Window::new(
-            "LazyVStack - Carbide",
+            "LazyHStack - Carbide",
             Dimension::new(600.0, 600.0),
             Scroll::new(
-                LazyVStack::new(
+                LazyHStack::new(
                     ForEach::new(0..1_000_000_000, |_, idx| {
                         ZStack::new((
                             Rectangle::new(),
                             Text::new(idx)
-                        )).frame_fixed_height(20.0)
+                                .rotation_effect(-90.0)
+                                .frame_fixed_width(20.0)
+                        )).frame_fixed_width(20.0)
                     })
                 ).spacing(3.0)
             )
