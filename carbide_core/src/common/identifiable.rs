@@ -31,6 +31,15 @@ impl_identifiable!(
     usize, isize
 );
 
+impl Identifiable for String
+{
+    type Id = String;
+
+    fn id(&self) -> Self::Id {
+        self.clone()
+    }
+}
+
 impl<T> Identifiable for Vec<T> where T: Identifiable + Clone + Debug + Eq + Hash {
     type Id = Vec<T::Id>;
 

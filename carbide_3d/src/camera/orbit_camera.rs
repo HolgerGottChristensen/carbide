@@ -8,7 +8,7 @@ use dolly::rig::CameraRig;
 use carbide::animation::AnimationManager;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
-use carbide::event::{AccessibilityEventHandler, EventHandler, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
+use carbide::event::{AccessibilityEventHandler, ApplicationEventHandler, EventHandler, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use carbide::focus::Focusable;
 use carbide::identifiable::Identifiable;
 use carbide::lifecycle::{Update, UpdateContext};
@@ -64,7 +64,9 @@ impl CommonWidget for OrbitCamera {
     }
 }
 
-impl Identifiable<WidgetId> for OrbitCamera {
+impl Identifiable for OrbitCamera {
+    type Id = WidgetId;
+
     fn id(&self) -> WidgetId {
         self.id
     }
@@ -101,6 +103,8 @@ impl KeyboardEventHandler for OrbitCamera {
 impl WindowEventHandler for OrbitCamera {}
 
 impl AccessibilityEventHandler for OrbitCamera {}
+
+impl ApplicationEventHandler for OrbitCamera {}
 
 impl OtherEventHandler for OrbitCamera {}
 

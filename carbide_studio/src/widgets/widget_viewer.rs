@@ -2,7 +2,7 @@ use carbide::accessibility::{Accessibility, AccessibilityContext};
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Alignment, Dimension, Position};
 use carbide::environment::Environment;
-use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
+use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, ApplicationEvent, ApplicationEventContext, ApplicationEventHandler, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide::focus::{FocusContext, Focusable};
 use carbide::identifiable::Identifiable;
 use carbide::layout::{Layout, LayoutContext};
@@ -63,7 +63,7 @@ impl CommonWidget for WidgetViewer {
         unimplemented!()
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         unimplemented!()
     }
 }
@@ -159,6 +159,12 @@ impl Update for WidgetViewer {
 impl OtherEventHandler for WidgetViewer {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
 
+    }
+}
+
+impl ApplicationEventHandler for WidgetViewer {
+    fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
+        
     }
 }
 

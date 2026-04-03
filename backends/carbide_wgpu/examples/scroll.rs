@@ -13,8 +13,7 @@ fn main() {
                 .resizeable()
                 .scaled_to_fill()
                 .clip()
-                .frame(500.0, 500.0)
-                .boxed(),
+                .frame(500.0, 500.0),
         )
             .clip()
             .frame(250.0, 250.0)

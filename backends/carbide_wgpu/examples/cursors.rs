@@ -52,11 +52,11 @@ fn main() {
         MouseCursor::RowResize,
     ];
 
-    fn delegate(item: impl State<T=MouseCursor>, _: impl ReadState<T=usize>) -> impl Widget {
-        Button::new(format!("{:?}", *item.value()), closure!(|_|{}))
-            .cursor(item.value().clone())
+    let delegate = |item: &MouseCursor, _| {
+        Button::new(format!("{:?}", *item), closure!(|_|{}))
+            .cursor(item.clone())
             .frame(100.0, 22.0)
-    }
+    };
 
     application.set_scene(Window::new(
         "Cursors example - Carbide",

@@ -8,12 +8,12 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    fn delegate(child: &dyn AnyIdentifiableWidget<u32>) -> impl Widget {
+    let delegate = |child: &dyn AnyIdentifiableWidget<u32>| {
         HStack::new((
             Text::new(child.identifier().boxed()),
             child.as_widget().boxed(),
         )).padding(10.0).border()
-    }
+    };
 
     application.set_scene(Window::new(
         "ForEach Widget example - Carbide",
@@ -23,8 +23,8 @@ fn main() {
                 Text::new("Test").tag(10u32),
                 Text::new("Test").tag(11u32),
 
-                ForEach::new(vec![12u32, 13u32], |a, b| {
-                    Text::new("Test").tag_state(a)
+                ForEach::new(vec![12u32, 13u32], |a: &u32, b| {
+                    Text::new("Test").tag_state(*a)
                 })
             ),
             delegate,
