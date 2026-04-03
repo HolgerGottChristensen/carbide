@@ -1,5 +1,4 @@
 use carbide::CommonWidgetImpl;
-use carbide::controls::List;
 use carbide::draw::{Dimension, Position};
 use carbide::state::{LocalState, Map1};
 use carbide::widget::{AnyWidget, CommonWidget, Text, Widget, WidgetExt, WidgetId};

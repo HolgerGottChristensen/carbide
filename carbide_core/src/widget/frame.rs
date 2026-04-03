@@ -99,7 +99,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C
         &mut self.child
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         1
     }
 

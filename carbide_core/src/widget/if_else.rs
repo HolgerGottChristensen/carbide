@@ -288,7 +288,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
         }
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return 0;

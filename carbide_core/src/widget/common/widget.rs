@@ -140,8 +140,8 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
         self.deref_mut().child_mut(index)
     }
 
-    fn child_count(&self) -> usize {
-        self.deref().child_count()
+    fn child_count(&mut self) -> usize {
+        self.deref_mut().child_count()
     }
 }
 

@@ -56,11 +56,10 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
     }
 
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        //self.sequence.index_mut(index)
-        todo!()
+        self.sequence.index_mut(index).as_widget_mut()
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         self.sequence.count()
     }
 

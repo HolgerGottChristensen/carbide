@@ -14,7 +14,7 @@ impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
         todo!()
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         todo!()
     }
 
@@ -85,7 +85,7 @@ impl<W: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Content<W> {
         todo!()
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         todo!()
     }
 
@@ -160,7 +160,7 @@ macro_rules! tuple_sequence_impl {
                 todo!()
             }
 
-            fn count(&self) -> usize {
+            fn count(&mut self) -> usize {
                 todo!()
             }
 
@@ -236,7 +236,7 @@ impl<
         todo!()
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         todo!()
     }
 

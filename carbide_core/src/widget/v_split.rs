@@ -221,13 +221,15 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
 
 impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
     fn child(&self, index: usize) -> &dyn AnyWidget {
-        let leading_count = self.leading.child_count();
+        /*let leading_count = self.leading.child_count();
 
         if index < leading_count {
             self.leading.index(index)
         } else {
             self.trailing.index(index - leading_count)
-        }
+        }*/
+
+        todo!()
     }
 
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
@@ -240,7 +242,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
         }
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         self.leading.child_count() + self.trailing.child_count()
     }
 

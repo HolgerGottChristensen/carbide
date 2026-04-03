@@ -158,7 +158,7 @@ impl<W: Sequence> CommonWidget for LazyHStack<W> {
         self.children.index_mut(index)
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         self.children.count()
     }
 

@@ -12,7 +12,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         todo!()
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         todo!()
     }
 
@@ -83,7 +83,7 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         todo!()
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         todo!()
     }
 
@@ -158,7 +158,7 @@ macro_rules! tuple_sequence_impl {
                 todo!()
             }
 
-            fn count(&self) -> usize {
+            fn count(&mut self) -> usize {
                 todo!()
             }
 

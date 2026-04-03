@@ -1,20 +1,17 @@
-use std::cmp::PartialEq;
 use crate::common::flags::WidgetFlag;
 use crate::draw::{Dimension, Position};
-use crate::environment::Environment;
 use crate::identifiable::Identifiable;
-use crate::lifecycle::InitializationContext;
+use crate::random_access_collection::RandomAccessCollection;
 use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
+use crate::widget::properties::{WidgetKind, WidgetKindProxy};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use carbide::widget::properties::Kind;
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
-use carbide::widget::properties::Kind;
-use crate::random_access_collection::RandomAccessCollection;
-use crate::widget::properties::{WidgetKind, WidgetKindProxy};
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
     fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> O;
@@ -181,7 +178,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
                 self.ensure_exist(current_index.clone());
 
-                let child = self.widgets.get(&id).unwrap();
+                let child = self.widgets.get_mut(&id).unwrap();
 
                 if child.is_ignore() {
 
@@ -222,13 +219,13 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         }
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         // We can special case when the widget is of kind simple, since we will know the count
         // of children produced, will be equal to the model.
         if W::Kind::kind() == Kind::Simple {
             self.model.len()
         } else {
-            /*let mut current_index = self.model.start_index();
+            let mut current_index = self.model.start_index();
             let end_index = self.model.end_index();
 
             let mut count = 0;
@@ -238,7 +235,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
                 self.ensure_exist(current_index.clone());
 
-                let child = self.widgets.get(&id).unwrap();
+                let child = self.widgets.get_mut(&id).unwrap();
 
                 if child.is_ignore() {
 
@@ -251,8 +248,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
                 current_index = self.model.next_index(current_index);
             }
 
-            count*/
-            todo!()
+            count
         }
     }
 

@@ -120,7 +120,7 @@ fn calculate_size_stack(
 ) {
     let mut child_count: u32 = 0;
 
-    widget.foreach_child(&mut |child| {
+    widget.foreach_child_mut(&mut |child| {
         if !child.is_spacer() {
             child_count += 1;
         }

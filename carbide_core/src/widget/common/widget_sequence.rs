@@ -21,7 +21,7 @@ pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Siz
 
     fn index(&self, index: usize) -> &T;
     fn index_mut(&mut self, index: usize) -> &mut T;
-    fn count(&self) -> usize;
+    fn count(&mut self) -> usize;
 
     fn foreach(&self, f: &mut dyn FnMut(&T));
     fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut T));
@@ -45,8 +45,8 @@ impl<T: ?Sized + 'static> AnySequence<T> for Box<dyn AnySequence<T>> {
         self.deref_mut().index_mut(index)
     }
 
-    fn count(&self) -> usize {
-        self.deref().count()
+    fn count(&mut self) -> usize {
+        self.deref_mut().count()
     }
 
     fn foreach(&self, f: &mut dyn FnMut(&T)) {
@@ -79,7 +79,7 @@ impl<T: ?Sized> AnySequence<T> for () {
         panic!("Index out of bounds of empty sequence")
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         0
     }
 
@@ -99,33 +99,7 @@ impl<T: ?Sized> AnySequence<T> for () {
 
 impl<W: Widget> AnySequence for Vec<W> {
     fn index(&self, index: usize) -> &dyn AnyWidget {
-        let mut passed = 0;
-
-        for element in self {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                let child_count = element.child_count();
-
-                if index < passed + child_count {
-                    return element.child(index - passed);
-                }
-
-                passed += child_count;
-
-                continue;
-            }
-
-            if index == passed {
-                return element;
-            }
-
-            passed += 1;
-        }
-
-        panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.count());
+       todo!()
     }
 
     fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
@@ -158,7 +132,7 @@ impl<W: Widget> AnySequence for Vec<W> {
         panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         let mut count = 0;
         for element in self {
             if element.is_ignore() {
@@ -269,9 +243,9 @@ impl<W: Widget> AnySequence for Content<W> {
         panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
     }
 
-    fn count(&self) -> usize {
+    fn count(&mut self) -> usize {
         let mut count = 0;
-        for (_, element) in self.0.iter().take(self.1) {
+        for (_, element) in self.0.iter_mut().take(self.1) {
             if element.is_ignore() {
                 continue;
             }
@@ -352,7 +326,7 @@ macro_rules! tuple_sequence_impl {
         impl<$($generic: Widget),*> AnySequence for ($($generic),*) {
 
             fn index(&self, index: usize) -> &dyn AnyWidget {
-                let ($($generic),*) = self;
+                /*let ($($generic),*) = self;
 
                 let mut passed = 0;
 
@@ -373,9 +347,10 @@ macro_rules! tuple_sequence_impl {
 
                         passed += 1;
                     }
-                )*
+                )**/
 
-                panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.count());
+                //panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.count());
+                todo!()
             }
 
             fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
@@ -407,7 +382,7 @@ macro_rules! tuple_sequence_impl {
                 panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
             }
 
-            fn count(&self) -> usize {
+            fn count(&mut self) -> usize {
                 let ($($generic),*) = self;
 
                 let mut count = 0;

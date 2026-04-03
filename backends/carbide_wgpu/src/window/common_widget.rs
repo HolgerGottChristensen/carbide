@@ -26,7 +26,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         todo!()
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         todo!()
     }
 

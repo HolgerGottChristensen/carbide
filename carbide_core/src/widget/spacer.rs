@@ -70,7 +70,7 @@ impl CommonWidget for Spacer {
         panic!("Spacers do not have children. Index out of bounds: {}", index)
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         0
     }
 

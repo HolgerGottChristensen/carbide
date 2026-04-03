@@ -9,7 +9,8 @@ use carbide::layout::{Layout, LayoutContext};
 use carbide::lifecycle::{InitializationContext, Initialize, Update, UpdateContext};
 use carbide::render::{Render, RenderContext};
 use carbide::state::{LocalState, ReadState, State};
-use carbide::widget::{AnySequence, AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide::widget::{AnySequence, AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetProperties};
+use carbide::widget::properties::WidgetKindSimple;
 
 #[derive(Clone, Debug)]
 pub struct WidgetViewer {
@@ -34,23 +35,35 @@ impl WidgetViewer {
 impl CommonWidget for WidgetViewer {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension);
 
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyWidget)) {
+    fn foreach_child(& self, f: &mut dyn FnMut(& dyn AnyWidget)) {
         unimplemented!()
     }
 
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_mut(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
         unimplemented!()
     }
 
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_rev(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
         unimplemented!()
     }
 
-    fn foreach_child_direct<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
         unimplemented!()
     }
 
-    fn foreach_child_direct_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyWidget)) {
+    fn foreach_child_direct_rev(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
+        unimplemented!()
+    }
+
+    fn child(&self, index: usize) -> &dyn AnyWidget {
+        unimplemented!()
+    }
+
+    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+        unimplemented!()
+    }
+
+    fn child_count(&self) -> usize {
         unimplemented!()
     }
 }
@@ -73,8 +86,10 @@ impl Accessibility for WidgetViewer {
     }
 }
 
-impl Identifiable<WidgetId> for WidgetViewer {
-    fn id(&self) -> WidgetId { self.id }
+impl Identifiable for WidgetViewer {
+    type Id = WidgetId;
+
+    fn id(&self) -> Self::Id { self.id }
 }
 
 impl AccessibilityEventHandler for WidgetViewer {
@@ -151,5 +166,7 @@ impl AnyWidget for WidgetViewer {
     fn as_widget(&self) -> &dyn AnyWidget { self }
     fn as_widget_mut(&mut self) -> &mut dyn AnyWidget { self }
 }
+
+impl WidgetProperties for WidgetViewer { type Kind = WidgetKindSimple; }
 
 impl WidgetExt for WidgetViewer {}

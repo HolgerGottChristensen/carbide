@@ -295,7 +295,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         panic!("Widget do not have children. Index out of bounds: {}", index)
     }
 
-    fn child_count(&self) -> usize {
+    fn child_count(&mut self) -> usize {
         0
     }
 

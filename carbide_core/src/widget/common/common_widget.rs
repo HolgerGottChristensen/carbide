@@ -40,7 +40,7 @@ pub trait CommonWidget: Identifiable<Id=WidgetId> {
     /// Get the total number of logical children.
     ///
     /// Implementations of this should focus on being efficient, and O(1), but it is not guaranteed.
-    fn child_count(&self) -> usize;
+    fn child_count(&mut self) -> usize;
 
     fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget));
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget));
@@ -154,7 +154,7 @@ macro_rules! CommonWidgetImpl {
         fn child_mut(&mut $self, index: usize) -> &mut dyn $crate::widget::AnyWidget {
             panic!("Widget does not have children. Index out of bounds: {}", index)
         }
-        fn child_count(&$self) -> usize {
+        fn child_count(&mut $self) -> usize {
             0
         }
 
@@ -171,6 +171,10 @@ macro_rules! CommonWidgetImpl {
 
         fn child(&$self, _i: usize) -> &dyn $crate::widget::AnyWidget { todo!() }
         fn child_mut(&mut $self, _i: usize) -> &mut dyn $crate::widget::AnyWidget { todo!() }
+
+        fn child_count(&mut $self) -> usize {
+            $($child.count() + )+ 0
+        }
 
         #[allow(unused_imports)]
         fn foreach_child(&$self, f: &mut dyn FnMut(&dyn $crate::widget::AnyWidget)) {
@@ -219,7 +223,7 @@ macro_rules! CommonWidgetImpl {
             use $crate::widget::AnySequence;
             $child.index_mut(i)
         }
-        fn child_count(&$self) -> usize {
+        fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
             $child.count()
         }
@@ -374,7 +378,7 @@ macro_rules! ModifierWidgetImpl {
             use $crate::widget::AnySequence;
             $child.index_mut(i)
         }
-        fn child_count(&$self) -> usize {
+        fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
             $child.count()
         }
