@@ -1,3 +1,5 @@
+use carbide_controls::button::{BorderedProminentStyle, Button};
+use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
@@ -13,11 +15,11 @@ fn main() {
 
     let text = Text::new(counter.clone()).font_size(EnvironmentFontSize::LargeTitle);
 
-    let button = MouseArea::new(Rectangle::new().fill(EnvironmentColor::Yellow))
-        .on_click(closure!(|_| {
+    let button = Button::new("Increase counter", closure!(|_| {
             *$counter += 1;
         }))
-        .frame(100.0, 30.0);
+        .button_style(BorderedProminentStyle)
+        .frame(130.0, 26.0);
 
     application.set_scenes((
         Window::new("Multiple windows example 1 - Carbide", Dimension::new(300.0, 200.0), text),

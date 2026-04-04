@@ -72,8 +72,6 @@ impl<W: Sequence> Layout for LazyVStack<W> {
 
         let offset = -self.y();
 
-        dbg!(offset);
-
         let mut cummulated_y = 0.0;
 
 

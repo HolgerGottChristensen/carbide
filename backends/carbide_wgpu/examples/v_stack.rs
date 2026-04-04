@@ -12,75 +12,40 @@ fn main() {
             Dimension::new(600.0, 600.0),
             HStack::new((
                 VStack::new((
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                )).spacing(10.0)
-                    .border(),
+                    Rectangle::new().frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
+                )).spacing(10.0).border(),
                 VStack::new((
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                )).spacing(10.0)
-                    .border(),
+                    Rectangle::new().frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
+                )).spacing(10.0).border(),
                 VStack::new((
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                )).spacing(10.0)
-                    .border(),
+                    Rectangle::new().frame(50.0, 50.0),
+                )).spacing(10.0).border(),
                 VStack::new((
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                )).spacing(10.0)
-                    .border(),
+                )).spacing(10.0).border(),
                 VStack::new((
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
+                    Rectangle::new().frame(50.0, 50.0),
                     Spacer::new(),
-                    Rectangle::new()
-                        .fill(EnvironmentColor::Accent)
-                        .frame(50.0, 50.0),
-                )).spacing(10.0)
-                    .border(),
+                    Rectangle::new().frame(50.0, 50.0),
+                )).spacing(10.0).border(),
             )).spacing(20.0).padding(50.0)
         )
     );

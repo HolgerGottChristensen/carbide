@@ -6,13 +6,12 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
+    let mut application = Application::new();
+
     let progress = AnimatedState::linear()
         .repeat()
         .duration(Duration::from_secs(5))
         .range(0.0, 1.0);
-
-    let mut application = Application::new()
-        .with_asset_fonts();
 
     application.set_scene(Window::new(
         "Progress bar example - Carbide",

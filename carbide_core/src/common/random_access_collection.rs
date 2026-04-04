@@ -1,6 +1,6 @@
 use carbide::identifiable::Identifiable;
 use carbide::state::{IndexState, LocalState, ReadState, StateContract};
-use std::ops::{Index, IndexMut, Range};
+use std::ops::{Index, IndexMut, Range, RangeFrom};
 use crate::state::AnyState;
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of

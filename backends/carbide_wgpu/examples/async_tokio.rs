@@ -21,7 +21,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let image_id = LocalState::new(None);
+    let image_id = LocalState::new(ImageId::None);
     let image_id_for_async = image_id.clone();
 
     async fn hello() -> f64 {
@@ -75,8 +75,8 @@ fn main() {
             data: &image.to_rgba8().into_raw(),
         };
 
-        ctx.image.update_texture(id.clone(), texture, ctx.env);
-        image_id_for_async.clone().set_value(Some(id));
+        ctx.image.update_texture(&id, texture, ctx.env);
+        image_id_for_async.clone().set_value(id);
     });
 
     task.clone().start();

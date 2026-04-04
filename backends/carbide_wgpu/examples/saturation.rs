@@ -7,8 +7,7 @@ use carbide_core::time::*;
 use carbide_core::draw::gradient::Gradient;
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let shift = AnimatedState::custom(linear)
         .repeat_alternate()

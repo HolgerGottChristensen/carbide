@@ -6,13 +6,11 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
+    let mut application = Application::new();
+
     let width1 = LocalState::new(0.1);
     let percent = LocalState::new(0.1);
     let width2 = LocalState::new(0.1);
-
-    let mut application = Application::new()
-        .with_asset_fonts();
-
 
     application.set_scene(Window::new(
         "HSplit example - Carbide",

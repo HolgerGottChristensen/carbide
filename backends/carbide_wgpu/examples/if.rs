@@ -2,21 +2,27 @@ use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
+use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_macro::ui;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new().with_asset_fonts();
+    let mut application = Application::new();
 
     let condition = LocalState::new(false);
 
     let widget = ui!(if condition {
-        Rectangle::new().fill(EnvironmentColor::Blue)
+        ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::Green),
+            Text::new("True").font_size(EnvironmentFontSize::LargeTitle)
+        ))
     } else {
-        Rectangle::new().fill(EnvironmentColor::Red)
+        ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::Red),
+            Text::new("False").font_size(EnvironmentFontSize::LargeTitle)
+        ))
     });
 
     application.set_scene(Window::new(

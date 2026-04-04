@@ -10,11 +10,12 @@ fn main() {
         "Icon example - Carbide",
         Dimension::new(400.0, 600.0),
         VStack::new((
-            Image::new_icon("images/rust.png")
-                .foreground_color(EnvironmentColor::Accent),
+            Image::new_icon("images/rust.png"),
             Rectangle::new()
                 .frame(50.0, 50.0),
-        )).accent_color(EnvironmentColor::Green),
+            Image::system("ambulance")
+        )).foreground_color(EnvironmentColor::Accent)
+            .accent_color(EnvironmentColor::Green),
     ));
 
     application.launch();

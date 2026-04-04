@@ -8,8 +8,7 @@ use carbide_wgpu::{Application, Window};
 use carbide_core::time::*;
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let offset = LocalState::new(-120.0);
 

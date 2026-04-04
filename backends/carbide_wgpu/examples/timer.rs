@@ -12,9 +12,7 @@ use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
-
+    let mut application = Application::new();
 
     let mut counter = Arc::new(AtomicUsize::new(0));
     let counter2 = counter.clone();

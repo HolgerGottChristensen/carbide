@@ -6,8 +6,7 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
     let rotation = AnimatedState::custom(ease_in_out)
         .duration(Duration::new(5, 0))

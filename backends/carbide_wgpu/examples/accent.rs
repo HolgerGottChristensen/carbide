@@ -10,7 +10,7 @@ fn main() {
     application.set_scene(
         Window::new(
             "Accent example - Carbide",
-            Dimension::new(600.0, 600.0),
+            Dimension::new(200.0, 200.0),
             VStack::new((
                 Rectangle::new()
                     .frame(100.0, 30.0),

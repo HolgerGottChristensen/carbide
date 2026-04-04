@@ -56,6 +56,8 @@ fn main() {
         Rectangle::new()
             .fill(EnvironmentColor::Accent)
             .frame(new_state2, 50.0),
+        Text::new("The top rectangle changes color on each redraw."),
+        Text::new("The widths are changed asynchronously."),
     ))
         .accent_color(EnvironmentColor::Red);
 
