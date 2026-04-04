@@ -11,7 +11,7 @@ pub trait Update: CommonWidget + WidgetSync {
         self.sync(ctx.env);
         self.update(ctx);
 
-        self.foreach_child_direct(&mut |child| {
+        self.foreach_child_mut(&mut |child| {
             child.process_update(ctx);
         });
     }

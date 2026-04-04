@@ -62,10 +62,6 @@ impl CommonWidget for Spacer {
         }
     }
 
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        panic!("Spacers do not have children. Index out of bounds: {}", index)
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         panic!("Spacers do not have children. Index out of bounds: {}", index)
     }
@@ -74,16 +70,9 @@ impl CommonWidget for Spacer {
         0
     }
 
-    fn foreach_child(&self, _f: &mut dyn FnMut(&dyn AnyWidget)) {}
-
     fn foreach_child_mut(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
 
     fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn foreach_child_direct(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn foreach_child_direct_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
 
     fn position(&self) -> Position {
         self.position

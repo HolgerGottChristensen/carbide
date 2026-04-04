@@ -51,22 +51,12 @@ impl<T: ?Sized + AnyWidget, I: Sequence<T>> Group<I, T> {
 impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
     CommonWidgetImpl!(self, flag: WidgetFlag::PROXY);
 
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        todo!()
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         self.sequence.index_mut(index).as_widget_mut()
     }
 
     fn child_count(&mut self) -> usize {
         self.sequence.count()
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        self.sequence.foreach(&mut |child| {
-            f(child.as_widget())
-        });
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -77,18 +67,6 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.sequence.foreach_rev(&mut |child| {
-            f(child.as_widget_mut())
-        });
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.sequence.foreach_direct(&mut |child| {
-            f(child.as_widget_mut())
-        });
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.sequence.foreach_direct_rev(&mut |child| {
             f(child.as_widget_mut())
         });
     }

@@ -18,35 +18,12 @@ impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        todo!()
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         todo!()
     }
 
     fn child_count(&mut self) -> usize {
         todo!()
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        let child = match &self {
-            Window::UnInitialized { child, .. } => child,
-            Window::Initialized(initialized) => &initialized.child,
-            Window::Failed => panic!("Failed")
-        };
-
-        if child.is_ignore() {
-            return;
-        }
-
-        if child.is_proxy() {
-            child.foreach_child(f);
-            return;
-        }
-
-        f(child);
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -81,26 +58,6 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
             child.foreach_child_rev(f);
             return;
         }
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        let child = match self {
-            Window::UnInitialized { child, .. } => child,
-            Window::Initialized(initialized) => &mut initialized.child,
-            Window::Failed => panic!("Failed")
-        };
-
-        f(child);
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        let child = match self {
-            Window::UnInitialized { child, .. } => child,
-            Window::Initialized(initialized) => &mut initialized.child,
-            Window::Failed => panic!("Failed")
-        };
-
-        f(child);
     }
 
     fn position(&self) -> Position {

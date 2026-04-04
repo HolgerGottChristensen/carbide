@@ -27,11 +27,6 @@ pub trait CommonWidget: Identifiable<Id=WidgetId> {
         self.flag() == WidgetFlag::SPACER
     }
 
-    /// Get a reference to the logical child at the given index. Panics if the index is out of bounds.
-    ///
-    /// Implementations of this should focus on being efficient, and O(1), but it is not guaranteed.
-    fn child(&self, index: usize) -> &dyn AnyWidget;
-
     /// Get a mutable reference to the logical child at the given index. Panics if the index is out of bounds.
     ///
     /// Implementations of this should focus on being efficient, and O(1), but it is not guaranteed.
@@ -42,12 +37,8 @@ pub trait CommonWidget: Identifiable<Id=WidgetId> {
     /// Implementations of this should focus on being efficient, and O(1), but it is not guaranteed.
     fn child_count(&mut self) -> usize;
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget));
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget));
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget));
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget));
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget));
-
 
 
     fn position(&self) -> Position;
@@ -74,17 +65,13 @@ pub trait CommonWidget: Identifiable<Id=WidgetId> {
     /// when laying out in a vertical or horizontal stack. The least flexible are processed first.
     /// If not overwritten, the default behavior is to either use the first child's flexibility or
     /// if no child are present, be 0.
-    fn flexibility(&self) -> u32 {
-        let mut is_first = true;
-        let mut flexibility = 0;
+    fn flexibility(&mut self) -> u32 {
 
-        self.foreach_child(&mut |s| {
-            if !is_first { return }
-            flexibility = s.flexibility();
-            is_first = false;
-        });
+        if self.child_count() != 0 {
+            return self.child_mut(0).flexibility()
+        }
 
-        flexibility
+        0
     }
 
     fn x(&self) -> Scalar {
@@ -148,9 +135,6 @@ pub trait CommonWidget: Identifiable<Id=WidgetId> {
 #[macro_export]
 macro_rules! CommonWidgetImpl {
     ($self:ident, child: () $(, $($rest:tt)*)?) => {
-        fn child(&$self, index: usize) -> &dyn $crate::widget::AnyWidget {
-            panic!("Widget does not have children. Index out of bounds: {}", index)
-        }
         fn child_mut(&mut $self, index: usize) -> &mut dyn $crate::widget::AnyWidget {
             panic!("Widget does not have children. Index out of bounds: {}", index)
         }
@@ -158,29 +142,35 @@ macro_rules! CommonWidgetImpl {
             0
         }
 
-        fn foreach_child(&$self, _f: &mut dyn FnMut(&dyn $crate::widget::AnyWidget)) {}
         fn foreach_child_mut(&mut $self, _f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {}
         fn foreach_child_rev(&mut $self, _f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {}
-        fn foreach_child_direct(&mut $self, _f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {}
-        fn foreach_child_direct_rev(&mut $self, _f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {}
 
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
 
     ($self:ident, child: [$($child:expr),+] $(, $($rest:tt)*)?) => {
+        #[allow(unused_imports)]
+        fn child_mut(&mut $self, i: usize) -> &mut dyn $crate::widget::AnyWidget {
+            use $crate::widget::AnySequence;
+            let mut passed = 0;
 
-        fn child(&$self, _i: usize) -> &dyn $crate::widget::AnyWidget { todo!() }
-        fn child_mut(&mut $self, _i: usize) -> &mut dyn $crate::widget::AnyWidget { todo!() }
+            $(
+                let child_count = $child.count();
 
-        fn child_count(&mut $self) -> usize {
-            $($child.count() + )+ 0
+                if i < passed + child_count {
+                    $child.index_mut(i - passed)
+                }
+
+                passed += child_count;
+            )+
+
+            panic!("Index out of bounds")
         }
 
         #[allow(unused_imports)]
-        fn foreach_child(&$self, f: &mut dyn FnMut(&dyn $crate::widget::AnyWidget)) {
+        fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
-
-            $($child.foreach(f);)+
+            $($child.count() + )+ 0
         }
 
         #[allow(unused_imports)]
@@ -196,29 +186,11 @@ macro_rules! CommonWidgetImpl {
             $($child.foreach_rev(f);)+
         }
 
-        #[allow(unused_imports)]
-        fn foreach_child_direct(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $($child.foreach_direct(f);)+
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child_direct_rev(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            // TODO: Rev here does not actually reverse
-            $($child.foreach_direct_rev(f);)+
-
-        }
-
         $(CommonWidgetImpl!($self, $($rest)*);)?
     };
 
     ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
 
-        fn child(&$self, i: usize) -> &dyn $crate::widget::AnyWidget {
-            use $crate::widget::AnySequence;
-            $child.index(i)
-        }
         fn child_mut(&mut $self, i: usize) -> &mut dyn $crate::widget::AnyWidget {
             use $crate::widget::AnySequence;
             $child.index_mut(i)
@@ -226,12 +198,6 @@ macro_rules! CommonWidgetImpl {
         fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
             $child.count()
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child(&$self, f: &mut dyn FnMut(&dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach(f);
         }
 
         #[allow(unused_imports)]
@@ -244,18 +210,6 @@ macro_rules! CommonWidgetImpl {
         fn foreach_child_rev(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
             use $crate::widget::AnySequence;
             $child.foreach_rev(f);
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child_direct(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach_direct(f);
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child_direct_rev(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach_direct_rev(f);
         }
 
         $(CommonWidgetImpl!($self, $($rest)*);)?
@@ -295,7 +249,7 @@ macro_rules! CommonWidgetImpl {
     };
 
     ($self:ident, flexibility: $flexibility:expr $(, $($rest:tt)*)?) => {
-        fn flexibility(&$self) -> u32 {
+        fn flexibility(&mut $self) -> u32 {
             $flexibility
         }
 
@@ -358,7 +312,7 @@ macro_rules! ModifierWidgetImpl {
             $child.alignment()
         }
 
-        fn flexibility(&$self) -> u32 {
+        fn flexibility(&mut $self) -> u32 {
             $child.flexibility()
         }
 
@@ -370,10 +324,6 @@ macro_rules! ModifierWidgetImpl {
             $child.set_dimension(dimension);
         }
 
-        fn child(&$self, i: usize) -> &dyn $crate::widget::AnyWidget {
-            use $crate::widget::AnySequence;
-            $child.index(i)
-        }
         fn child_mut(&mut $self, i: usize) -> &mut dyn $crate::widget::AnyWidget {
             use $crate::widget::AnySequence;
             $child.index_mut(i)
@@ -381,12 +331,6 @@ macro_rules! ModifierWidgetImpl {
         fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
             $child.count()
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child(&$self, f: &mut dyn FnMut(&dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach(f);
         }
 
         #[allow(unused_imports)]
@@ -399,18 +343,6 @@ macro_rules! ModifierWidgetImpl {
         fn foreach_child_rev(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
             use $crate::widget::AnySequence;
             $child.foreach_rev(f);
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child_direct(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach_direct(f);
-        }
-
-        #[allow(unused_imports)]
-        fn foreach_child_direct_rev(&mut $self, f: &mut dyn FnMut(&mut dyn $crate::widget::AnyWidget)) {
-            use $crate::widget::AnySequence;
-            $child.foreach_direct_rev(f);
         }
     }
 }

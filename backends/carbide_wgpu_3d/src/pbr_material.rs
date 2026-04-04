@@ -101,7 +101,7 @@ impl WgpuPbrMaterial {
 
 fn load_image(id: &ImageId, env: &mut Environment) {
     if !ImageContext3d.texture_exist(id, env) {
-        let path = if id.is_relative() {
+        /*let path = if id.is_relative() {
             let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
                 .for_folder("assets")
                 .unwrap();
@@ -123,7 +123,9 @@ fn load_image(id: &ImageId, env: &mut Environment) {
             data: &image.to_rgba8().into_raw(),
         };
 
-        ImageContext3d.update_texture(id.clone(), texture, env);
+        ImageContext3d.update_texture(id.clone(), texture, env);*/
+
+        todo!()
     }
 }
 

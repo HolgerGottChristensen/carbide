@@ -120,7 +120,7 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
         };
 
         // Process the accessibility of the children
-        self.foreach_child_direct(&mut |child | {
+        self.foreach_child_mut(&mut |child | {
             child.process_accessibility(&mut child_ctx);
         });
 

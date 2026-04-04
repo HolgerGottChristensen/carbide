@@ -223,7 +223,7 @@ fn calculate_size_stack(
 
     let mut spacer_count = 0.0;
 
-    widget.foreach_child(&mut |child| {
+    widget.foreach_child_mut(&mut |child| {
         if child.is_spacer() {
             spacer_count += 1.0;
         }

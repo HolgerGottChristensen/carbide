@@ -13,6 +13,7 @@ use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use accesskit::{Node, Point, Rect, Role, Size};
 use carbide_macro::carbide_default_builder2;
 use std::fmt::Debug;
+use crate::CommonWidgetImpl;
 use crate::identifiable::Identifiable;
 
 /// Displays some given text centered within a rectangular area.
@@ -287,47 +288,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
 }
 
 impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> CommonWidget for Text<T, S, C, FS, FW, W> {
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        panic!("Widget do not have children. Index out of bounds: {}", index)
-    }
-
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        panic!("Widget do not have children. Index out of bounds: {}", index)
-    }
-
-    fn child_count(&mut self) -> usize {
-        0
-    }
-
-    fn foreach_child(&self, _f: &mut dyn FnMut(&dyn AnyWidget)) {}
-
-    fn foreach_child_mut(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn foreach_child_direct(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn foreach_child_direct_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {}
-
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn set_position(&mut self, position: Position) {
-        self.position = position;
-    }
-
-    fn flexibility(&self) -> u32 {
-        2
-    }
-
-    fn dimension(&self) -> Dimension {
-        self.dimension
-    }
-
-    fn set_dimension(&mut self, dimension: Dimension) {
-        self.dimension = dimension
-    }
+    CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: (), flexibility: 2);
 }
 
 pub trait TextWidget: AnyWidget {

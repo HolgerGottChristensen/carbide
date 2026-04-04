@@ -150,20 +150,12 @@ impl<W: Sequence> Layout for LazyHStack<W> {
 impl<W: Sequence> CommonWidget for LazyHStack<W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
 
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        self.children.index(index)
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         self.children.index_mut(index)
     }
 
     fn child_count(&mut self) -> usize {
         self.children.count()
-    }
-
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        todo!()
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -174,16 +166,6 @@ impl<W: Sequence> CommonWidget for LazyHStack<W> {
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        todo!()
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.children.foreach_direct(&mut |child| {
-            f(child)
-        })
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         todo!()
     }
 }

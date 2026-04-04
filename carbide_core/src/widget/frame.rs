@@ -87,12 +87,6 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
 impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
     CommonWidgetImpl!(self, position: self.position);
 
-    fn child(&self, i: usize) -> &dyn AnyWidget {
-        debug_assert_eq!(i, 0);
-
-        &self.child
-    }
-
     fn child_mut(&mut self, i: usize) -> &mut dyn AnyWidget {
         debug_assert_eq!(i, 0);
 
@@ -104,10 +98,6 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C
     }
 
     #[allow(unused_imports)]
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        f(&self.child)
-    }
-    #[allow(unused_imports)]
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         f(&mut self.child)
     }
@@ -115,16 +105,8 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         f(&mut self.child)
     }
-    #[allow(unused_imports)]
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        f(&mut self.child)
-    }
-    #[allow(unused_imports)]
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        f(&mut self.child)
-    }
 
-    fn flexibility(&self) -> u32 {
+    fn flexibility(&mut self) -> u32 {
         if let Fixity::Expand(_) = self.width {
             8
         } else if let Fixity::Expand(_) = self.height {

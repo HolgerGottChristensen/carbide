@@ -220,18 +220,6 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        /*let leading_count = self.leading.child_count();
-
-        if index < leading_count {
-            self.leading.index(index)
-        } else {
-            self.trailing.index(index - leading_count)
-        }*/
-
-        todo!()
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         let leading_count = self.leading.child_count();
 
@@ -246,10 +234,6 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
         self.leading.child_count() + self.trailing.child_count()
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        self.leading.foreach(f);
-        self.trailing.foreach(f);
-    }
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_mut(f);
         self.trailing.foreach_mut(f);
@@ -258,14 +242,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for VSplit<S, L, T> {
         self.leading.foreach_rev(f);
         self.trailing.foreach_rev(f);
     }
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.leading.foreach_direct(f);
-        self.trailing.foreach_direct(f);
-    }
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.leading.foreach_direct_rev(f);
-        self.trailing.foreach_direct_rev(f);
-    }
+
     fn position(&self) -> Position {
         self.position
     }

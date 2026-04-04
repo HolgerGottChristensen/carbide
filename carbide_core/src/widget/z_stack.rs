@@ -45,7 +45,7 @@ impl<W: Sequence> Layout for ZStack<W> {
 
         let mut index = 0;
 
-        self.foreach_child(&mut |child| {
+        self.foreach_child_mut(&mut |child| {
             children_flexibility.push((child.flexibility(), index));
             index += 1;
         });

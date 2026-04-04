@@ -25,7 +25,7 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
             self.handle_keyboard_event(event, ctx);
         }
 
-        self.foreach_child_direct(&mut |child| {
+        self.foreach_child_mut(&mut |child| {
             child.process_keyboard_event(event, ctx);
         });
     }

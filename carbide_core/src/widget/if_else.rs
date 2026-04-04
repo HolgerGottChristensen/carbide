@@ -212,44 +212,6 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
         WidgetFlag::PROXY
     }
 
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        if *self.predicate.value() {
-            if self.when_true.is_ignore() {
-                panic!("The child is ignore, and thus can not be indexed.");
-            }
-
-            if self.when_true.is_proxy() {
-                // Pass the index directly to the proxy child.
-                return self.when_true.child(index);
-            }
-
-            // If the child is neither an ignore nor a proxy, we have only a single child.
-            // We thus expect the index to be 0, otherwise we panic.
-            if index != 0 {
-                panic!("The index was not within the correct bounds.")
-            }
-
-            &self.when_true
-        } else {
-            if self.when_false.is_ignore() {
-                panic!("The child is ignore, and thus can not be indexed.");
-            }
-
-            if self.when_false.is_proxy() {
-                // Pass the index directly to the proxy child.
-                return self.when_false.child(index);
-            }
-
-            // If the child is neither an ignore nor a proxy, we have only a single child.
-            // We thus expect the index to be 0, otherwise we panic.
-            if index != 0 {
-                panic!("The index was not within the correct bounds.")
-            }
-
-            &self.when_false
-        }
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
@@ -314,32 +276,6 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
         }
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        if *self.predicate.value() {
-            if self.when_true.is_ignore() {
-                return;
-            }
-
-            if self.when_true.is_proxy() {
-                self.when_true.foreach_child(f);
-                return;
-            }
-
-            f(&self.when_true)
-        } else {
-            if self.when_false.is_ignore() {
-                return;
-            }
-
-            if self.when_false.is_proxy() {
-                self.when_false.foreach_child(f);
-                return;
-            }
-
-            f(&self.when_false)
-        }
-    }
-
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
@@ -388,22 +324,6 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
                 return;
             }
 
-            f(&mut self.when_false)
-        }
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        if *self.predicate.value() {
-            f(&mut self.when_true)
-        } else {
-            f(&mut self.when_false)
-        }
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        if *self.predicate.value() {
-            f(&mut self.when_true)
-        } else {
             f(&mut self.when_false)
         }
     }

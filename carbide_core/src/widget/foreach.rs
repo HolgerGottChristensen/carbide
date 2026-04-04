@@ -114,52 +114,6 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         WidgetFlag::PROXY
     }
 
-    fn child(&self, index: usize) -> &dyn AnyWidget {
-        /*if W::Kind::kind() == Kind::Simple {
-            let idx = self.model.index_from_offset(index);
-            self.ensure_exist(idx.clone());
-            let id = self.model.id(idx);
-
-            self.widgets.get(&id).unwrap()
-        } else {
-            let mut current_index = self.model.start_index();
-            let end_index = self.model.end_index();
-            let mut passed = 0;
-
-            while current_index < end_index {
-                let id = self.model.id(current_index.clone());
-
-                self.ensure_exist(current_index.clone());
-
-                let child = self.widgets.get(&id).unwrap();
-
-                if child.is_ignore() {
-
-                } else if child.is_proxy() {
-                    let child_count = child.child_count();
-
-                    if index < passed + child_count {
-                        return child.child(index - passed);
-                    }
-
-                    passed += child_count;
-                } else {
-                    if passed == index {
-                        return child;
-                    }
-
-                    passed += 1;
-                }
-
-                current_index = self.model.next_index(current_index);
-            }
-
-            panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.child_count());
-        }*/
-
-        todo!()
-    }
-
     fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         if W::Kind::kind() == Kind::Simple {
             let idx = self.model.index_from_offset(index);
@@ -252,29 +206,6 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         }
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        /*let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
-
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
-
-            self.ensure_exist(current_index.clone());
-
-            let widget = self.widgets.get(&id).unwrap();
-
-            if widget.is_ignore() {
-
-            } else if widget.is_proxy() {
-                widget.foreach_child(f);
-            } else {
-                f(widget);
-            }
-
-            current_index = self.model.next_index(current_index);
-        }*/
-    }
-
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let mut current_index = self.model.start_index();
         let end_index = self.model.end_index();
@@ -330,47 +261,6 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
 
             current_index = self.model.next_index(current_index);
         }
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        /*let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
-
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
-
-            self.ensure_exist(current_index.clone());
-
-            f(self.widgets.get_mut(&id).unwrap());
-
-            current_index = self.model.next_index(current_index);
-        }*/
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        /*// If the end and start indices are equal, there are no elements in the collection
-        if self.model.len() == 0 {
-            return;
-        }
-
-        let mut current_index = self.model.end_index();
-        let start_index = self.model.start_index();
-
-        current_index = self.model.prev_index(current_index);
-
-        loop {
-            let id = self.model.id(current_index.clone());
-
-            self.ensure_exist(current_index.clone());
-
-            f(self.widgets.get_mut(&id).unwrap());
-
-            if current_index == start_index {
-                break;
-            }
-
-            current_index = self.model.next_index(current_index);
-        }*/
     }
 
     fn position(&self) -> Position {

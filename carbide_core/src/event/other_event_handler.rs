@@ -20,7 +20,7 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
         self.sync(ctx.env);
         self.handle_other_event(event, ctx);
 
-        self.foreach_child_direct(&mut |child| {
+        self.foreach_child_mut(&mut |child| {
             child.process_other_event(event, ctx);
         });
     }

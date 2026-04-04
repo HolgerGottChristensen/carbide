@@ -7,27 +7,25 @@ use crate::widget::{AnyWidget, Content, Widget};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {
-        let s = clone_box(self);
+        /*let mut s = clone_box(self);
 
         Map1::read_map(0, move |_| {
             let mut count = 0;
-            s.foreach(&mut |_| {
+            s.foreach_mut(&mut |_| {
                 count += 1;
             });
 
             count
-        }).as_dyn_read()
+        }).as_dyn_read()*/
+
+        todo!()
     }
 
-    fn index(&self, index: usize) -> &T;
     fn index_mut(&mut self, index: usize) -> &mut T;
     fn count(&mut self) -> usize;
 
-    fn foreach(&self, f: &mut dyn FnMut(&T));
     fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut T));
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut T));
-    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut T));
-    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut T));
 }
 
 clone_trait_object!(<T: ?Sized> AnySequence<T>);
@@ -37,20 +35,12 @@ pub trait Sequence<T=dyn AnyWidget>: AnySequence<T> + Clone where T: ?Sized {}
 impl<T: ?Sized, W> Sequence<T> for W where W: AnySequence<T> + Clone {}
 
 impl<T: ?Sized + 'static> AnySequence<T> for Box<dyn AnySequence<T>> {
-    fn index(&self, index: usize) -> &T {
-        self.deref().index(index)
-    }
-
     fn index_mut(&mut self, index: usize) -> &mut T {
         self.deref_mut().index_mut(index)
     }
 
     fn count(&mut self) -> usize {
         self.deref_mut().count()
-    }
-
-    fn foreach(&self, f: &mut dyn FnMut(&T)) {
-        self.deref().foreach(f)
     }
 
     fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut T)) {
@@ -60,21 +50,9 @@ impl<T: ?Sized + 'static> AnySequence<T> for Box<dyn AnySequence<T>> {
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut T)) {
         self.deref_mut().foreach_rev(f)
     }
-
-    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut T)) {
-        self.deref_mut().foreach_direct(f)
-    }
-
-    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut T)) {
-        self.deref_mut().foreach_direct_rev(f)
-    }
 }
 
 impl<T: ?Sized> AnySequence<T> for () {
-    fn index(&self, index: usize) -> &T {
-        panic!("Index out of bounds of empty sequence")
-    }
-
     fn index_mut(&mut self, index: usize) -> &mut T {
         panic!("Index out of bounds of empty sequence")
     }
@@ -90,18 +68,11 @@ impl<T: ?Sized> AnySequence<T> for () {
         ValueState::new(0).as_dyn()
     }
 
-    fn foreach(&self, _f: &mut dyn FnMut(&T)) {}
     fn foreach_mut(&mut self, _f: &mut dyn FnMut(&mut T)) {}
     fn foreach_rev(&mut self, _f: &mut dyn FnMut(&mut T)) {}
-    fn foreach_direct(&mut self, _f: &mut dyn FnMut(&mut T)) {}
-    fn foreach_direct_rev(&mut self, _f: &mut dyn FnMut(&mut T)) {}
 }
 
 impl<W: Widget> AnySequence for Vec<W> {
-    fn index(&self, index: usize) -> &dyn AnyWidget {
-       todo!()
-    }
-
     fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         let mut passed = 0;
 
@@ -150,21 +121,6 @@ impl<W: Widget> AnySequence for Vec<W> {
         count
     }
 
-    fn foreach(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        for element in self {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                element.foreach_child(f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-
     fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         for element in self {
             if element.is_ignore() {
@@ -194,25 +150,9 @@ impl<W: Widget> AnySequence for Vec<W> {
             f(element);
         }
     }
-
-    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for element in &mut self.iter_mut() {
-            f(element);
-        }
-    }
-
-    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for element in &mut self.iter_mut().rev() {
-            f(element);
-        }
-    }
 }
 
 impl<W: Widget> AnySequence for Content<W> {
-    fn index(&self, index: usize) -> &dyn AnyWidget {
-        todo!()
-    }
-
     fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
         let mut passed = 0;
 
@@ -261,21 +201,6 @@ impl<W: Widget> AnySequence for Content<W> {
         count
     }
 
-    fn foreach(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-        for (_, element) in self.0.iter().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                element.foreach_child(f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-
     fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             if element.is_ignore() {
@@ -305,18 +230,6 @@ impl<W: Widget> AnySequence for Content<W> {
             f(element);
         }
     }
-
-    fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            f(element);
-        }
-    }
-
-    fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1).rev() {
-            f(element);
-        }
-    }
 }
 
 macro_rules! tuple_sequence_impl {
@@ -324,35 +237,6 @@ macro_rules! tuple_sequence_impl {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
         impl<$($generic: Widget),*> AnySequence for ($($generic),*) {
-
-            fn index(&self, index: usize) -> &dyn AnyWidget {
-                /*let ($($generic),*) = self;
-
-                let mut passed = 0;
-
-                $(
-                    if $generic.is_ignore() {
-
-                    } else if $generic.is_proxy() {
-                        let child_count = $generic.child_count();
-                        if index < passed + child_count {
-                            return $generic.child(index - passed);
-                        }
-
-                        passed += child_count;
-                    } else {
-                        if index == passed {
-                            return $generic;
-                        }
-
-                        passed += 1;
-                    }
-                )**/
-
-                //panic!("Index out of bounds. Index: {}, Passed: {}, Count: {}", index, passed, self.count());
-                todo!()
-            }
-
             fn index_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
                 let ($($generic),*) = self;
 
@@ -400,19 +284,6 @@ macro_rules! tuple_sequence_impl {
                 count
             }
 
-            fn foreach(&self, f: &mut dyn FnMut(&dyn AnyWidget)) {
-                let ($($generic),*) = self;
-                $(
-                    if $generic.is_ignore() {
-
-                    } else if $generic.is_proxy() {
-                        $generic.foreach_child(f);
-                    } else {
-                        f($generic);
-                    }
-                )*
-            }
-
             fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
                 let ($($generic),*) = self;
                 $(
@@ -436,20 +307,6 @@ macro_rules! tuple_sequence_impl {
                     } else {
                         f($generic);
                     }
-                )*
-            }
-
-            fn foreach_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-                let ($($generic),*) = self;
-                $(
-                    f($generic);
-                )*
-            }
-
-            fn foreach_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-                let reverse!([$($generic)*]) = self;
-                $(
-                    f($generic);
                 )*
             }
         }

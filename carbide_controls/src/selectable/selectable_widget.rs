@@ -87,23 +87,11 @@ impl<
         todo!()
     }
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnySelectableWidget)) {
-        (self.content).foreach(f);
-    }
-
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
         (self.content).foreach_mut(f);
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
         (self.content).foreach_rev(f);
-    }
-
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        (self.content).foreach_direct(f);
-    }
-
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        (self.content).foreach_direct_rev(f);
     }
 }

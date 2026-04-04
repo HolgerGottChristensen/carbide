@@ -33,7 +33,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
                 self.set_focus(Focus::Unfocused);
             }
         } else {
-            self.foreach_child_direct(&mut |child| {
+            self.foreach_child_mut(&mut |child| {
                 child.process_focus_request(ctx);
             });
         }
@@ -56,7 +56,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
                 self.set_focus(Focus::Unfocused);
             }
         } else {
-            self.foreach_child_direct(&mut |child| {
+            self.foreach_child_mut(&mut |child| {
                 child.process_focus_next(ctx);
             });
         }
@@ -79,7 +79,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
                 self.set_focus(Focus::Unfocused);
             }
         } else {
-            self.foreach_child_direct_rev(&mut |child| {
+            self.foreach_child_rev(&mut |child| {
                 child.process_focus_previous(ctx);
             });
         }
