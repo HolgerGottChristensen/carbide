@@ -1100,7 +1100,10 @@ impl<
                     self.set_focus(Focus::Unfocused);
                 }
             }
-            MouseEvent::Press { position, modifiers: ModifierKey::EMPTY, .. } if enabled => self.text_click(position, ctx),
+            MouseEvent::Press { position, modifiers: ModifierKey::EMPTY, .. } if enabled => {
+                println!("{:#?}", event);
+                self.text_click(position, ctx)
+            },
             MouseEvent::Release { .. } => {
                 self.current_offset_speed = None;
                 self.last_drag_position = None;

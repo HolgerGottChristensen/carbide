@@ -102,7 +102,7 @@ impl NewEventHandler {
 
                 match focus {
                     Refocus::FocusRequest => {
-                        //println!("Process focus request");
+                        println!("Process focus request");
                         scene.process_focus_request(&mut FocusContext {
                             env,
                             focus_count: &mut 0,
@@ -112,7 +112,7 @@ impl NewEventHandler {
                     Refocus::FocusNext => {
                         let mut count = 0;
 
-                        //println!("Focus next");
+                        println!("Focus next");
                         scene.process_focus_next(&mut FocusContext {
                             env,
                             focus_count: &mut count,
@@ -120,7 +120,7 @@ impl NewEventHandler {
                         });
 
                         if count == 0 {
-                            //println!("Focus next back to first");
+                            println!("Focus next back to first");
                             scene.process_focus_next(&mut FocusContext {
                                 env,
                                 focus_count: &mut 0,
@@ -131,7 +131,7 @@ impl NewEventHandler {
                     Refocus::FocusPrevious => {
                         let mut count = 0;
 
-                        //println!("Focus prev");
+                        println!("Focus prev");
                         scene.process_focus_previous(&mut FocusContext {
                             env,
                             focus_count: &mut count,
@@ -139,7 +139,7 @@ impl NewEventHandler {
                         });
 
                         if count == 0 {
-                            //println!("Focus prev forward to last");
+                            println!("Focus prev forward to last");
                             scene.process_focus_previous(&mut FocusContext {
                                 env,
                                 focus_count: &mut 0,

@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::hash::{BuildHasherDefault, DefaultHasher, Hash, Hasher};
 use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -156,6 +156,12 @@ impl Default for WidgetId {
 }
 
 impl Debug for WidgetId {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
+
+impl Display for WidgetId {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "#{}", self.0)
     }

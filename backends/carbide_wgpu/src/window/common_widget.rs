@@ -41,6 +41,8 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
             child.foreach_child(f);
             return;
         }
+
+        f(child)
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -58,6 +60,8 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
             child.foreach_child_rev(f);
             return;
         }
+
+        f(child)
     }
 
     fn position(&self) -> Position {

@@ -26,6 +26,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
         self.sync(ctx.env);
 
         if self.is_focusable() {
+            println!("Is focusable: {}", self.id());
             if self.get_focus() == Focus::FocusRequested {
                 *ctx.focus_count += 1;
                 self.set_focus(Focus::Focused);
@@ -34,6 +35,7 @@ pub trait Focusable: CommonWidget + WidgetSync {
             }
         } else {
             self.foreach_child(&mut |child| {
+                println!("Focus request: {}", child.id());
                 child.process_focus_request(ctx);
             });
         }
