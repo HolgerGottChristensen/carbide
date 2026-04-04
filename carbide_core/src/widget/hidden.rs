@@ -46,7 +46,7 @@ impl<W: Widget, S: ReadState<T=bool>> Render for Hidden<W, S> {
         self.sync(ctx.env);
 
         if !*self.state.value() {
-            self.foreach_child_mut(&mut |child| {
+            self.foreach_child(&mut |child| {
                 child.render(ctx);
             });
         }

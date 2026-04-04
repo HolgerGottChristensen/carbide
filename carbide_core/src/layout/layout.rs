@@ -13,7 +13,7 @@ pub trait Layout: CommonWidget {
     /// chosen size. If no child are present, the widget will choose the requested size.
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         if self.child_count() != 0 {
-            let chosen = self.child_mut(0).calculate_size(requested_size, ctx);
+            let chosen = self.child(0).calculate_size(requested_size, ctx);
 
             self.set_dimension(chosen);
             chosen
@@ -33,7 +33,7 @@ pub trait Layout: CommonWidget {
         let dimension = self.dimension();
 
         if self.child_count() != 0 {
-            let child = self.child_mut(0);
+            let child = self.child(0);
             child.set_position(positioning.position(position, dimension, child.dimension()));
             child.position_children(ctx);
         }

@@ -51,16 +51,16 @@ impl<T: ?Sized + AnyWidget, I: Sequence<T>> Group<I, T> {
 impl<T: ?Sized + AnyWidget, W: Sequence<T>> CommonWidget for Group<W, T> {
     CommonWidgetImpl!(self, flag: WidgetFlag::PROXY);
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        self.sequence.index_mut(index).as_widget_mut()
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.sequence.index(index).as_widget_mut()
     }
 
     fn child_count(&mut self) -> usize {
         self.sequence.count()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.sequence.foreach_mut(&mut |child| {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.sequence.foreach(&mut |child| {
             f(child.as_widget_mut())
         });
     }

@@ -66,12 +66,12 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
         // Set the initial index to 0
         let mut index = 0;
 
-        self.sequence.foreach_mut(&mut |child| {
+        self.sequence.foreach(&mut |child| {
             child.sync(env);
         });
 
         // For each child of the widget
-        self.sequence.foreach_mut(&mut |child| {
+        self.sequence.foreach(&mut |child| {
             let id = child.id();
 
             // If the map already contains the key

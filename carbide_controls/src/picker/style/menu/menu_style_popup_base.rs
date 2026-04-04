@@ -66,13 +66,13 @@ impl KeyboardEventHandler for MenuStylePopupBase {
 
         let id = *self.hovered.value();
 
-        self.model.foreach_mut(&mut |child| {
+        self.model.foreach(&mut |child| {
             child.sync(ctx.env);
         });
 
         if event == PopupButtonKeyCommand::Select {
             if id != WidgetId::default() {
-                self.model.foreach_mut(&mut |selectable| {
+                self.model.foreach(&mut |selectable| {
                     if selectable.as_widget().id() == id {
                         let mut state = clone_box(selectable.selection());
                         let prev = *state.value();
@@ -88,7 +88,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             let mut next = id == WidgetId::default();
             let mut already_moved = false;
 
-            self.model.foreach_mut(&mut |selectable| {
+            self.model.foreach(&mut |selectable| {
                 if already_moved { return; }
 
                 let selectable_id = selectable.as_widget().id();
@@ -103,7 +103,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             });
 
             if !already_moved {
-                self.model.foreach_mut(&mut |selectable| {
+                self.model.foreach(&mut |selectable| {
                     if already_moved { return; }
 
                     self.hovered.set_value_dyn(selectable.as_widget().id());

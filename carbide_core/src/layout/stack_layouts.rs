@@ -120,7 +120,7 @@ fn calculate_size_stack(
 ) {
     let mut child_count: u32 = 0;
 
-    widget.foreach_child_mut(&mut |child| {
+    widget.foreach_child(&mut |child| {
         if !child.is_spacer() {
             child_count += 1;
         }
@@ -159,7 +159,7 @@ fn calculate_size_stack(
     let mut children_flexibility_rest: SmallVec<[(u32, usize); 10]> = smallvec![];
 
     let mut idx = 0;
-    widget.foreach_child_mut(&mut |child| {
+    widget.foreach_child(&mut |child| {
         if !child.is_spacer() {
             if child.flag().contains(WidgetFlag::USEMAXCROSSAXIS) {
                 children_flexibility_using_max_val.push((child.flexibility(), idx));
@@ -178,7 +178,7 @@ fn calculate_size_stack(
     let mut total_main_axis = 0.0;
 
     for (_, child_index) in children_flexibility_rest {
-        let child = widget.child_mut(child_index);
+        let child = widget.child(child_index);
 
         let size_for_child = dimension(
             main_axis(size_for_children) / child_count as f64,
@@ -202,7 +202,7 @@ fn calculate_size_stack(
     }
 
     for (_, child_index) in children_flexibility_using_max_val {
-        let child = widget.child_mut(child_index);
+        let child = widget.child(child_index);
 
         let size_for_child = dimension(
             main_axis(size_for_children) / child_count as f64,
@@ -223,7 +223,7 @@ fn calculate_size_stack(
 
     let mut spacer_count = 0.0;
 
-    widget.foreach_child_mut(&mut |child| {
+    widget.foreach_child(&mut |child| {
         if child.is_spacer() {
             spacer_count += 1.0;
         }
@@ -233,7 +233,7 @@ fn calculate_size_stack(
 
     let request_dimension = dimension(rest_space / spacer_count, 0.0);
 
-    widget.foreach_child_mut(&mut |child| {
+    widget.foreach_child(&mut |child| {
         if child.is_spacer() {
             let chosen_size = child.calculate_size(request_dimension, ctx);
             total_main_axis += main_axis(chosen_size);
@@ -260,7 +260,7 @@ fn position_children_stack(
     let position = widget.position();
     let dimension = widget.dimension();
 
-    widget.foreach_child_mut(&mut |child| {
+    widget.foreach_child(&mut |child| {
         let cross = match alignment {
             CrossAxisAlignment::Start => cross_axis_position(position),
             CrossAxisAlignment::Center => {

@@ -14,7 +14,7 @@ pub trait AccessibilityEventHandler: CommonWidget + WidgetSync + Focusable {
             self.sync(ctx.env);
             self.handle_accessibility_event(event, ctx);
         } else {
-            self.foreach_child_mut(&mut |child| {
+            self.foreach_child(&mut |child| {
                 child.process_accessibility_event(event, ctx);
             });
         }

@@ -45,7 +45,7 @@ impl<W: Sequence> Layout for ZStack<W> {
 
         let mut index = 0;
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             children_flexibility.push((child.flexibility(), index));
             index += 1;
         });
@@ -57,7 +57,7 @@ impl<W: Sequence> Layout for ZStack<W> {
         let mut max_height = 0.0;
 
         for (_, child_index) in children_flexibility {
-            let child = self.child_mut(child_index);
+            let child = self.child(child_index);
 
             let new_requested_size = Dimension::new(
                 requested_size.width.max(max_width),
@@ -83,7 +83,7 @@ impl<W: Sequence> Layout for ZStack<W> {
         let position = self.position;
         let dimension = self.dimension;
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             child.set_position(alignment.position(position, dimension, child.dimension()));
             child.position_children(ctx);
         });

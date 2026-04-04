@@ -120,7 +120,7 @@ impl<W: Sequence> Layout for HGrid<W> {
         let mut children_flexibility_rest: SmallVec<[(u32, usize); 25]> = smallvec![];
 
         let mut idx = 0;
-        self.children.foreach_mut(&mut |child| {
+        self.children.foreach(&mut |child| {
             children_flexibility_rest.push((child.flexibility(), idx));
             idx += 1;
         });
@@ -136,7 +136,7 @@ impl<W: Sequence> Layout for HGrid<W> {
         remaining_columns += 1;
 
         for (_, child_index) in children_flexibility_rest {
-            let child = self.children.index_mut(child_index);
+            let child = self.children.index(child_index);
             if counter == 0 {
                 remaining_width = (remaining_width - max_width).max(0.0);
                 total_width += max_width;
@@ -171,7 +171,7 @@ impl<W: Sequence> Layout for HGrid<W> {
         let row_count = self.calculated_heights.len();
         let mut max_column_width = 0.0;
 
-        self.children.foreach_mut(&mut |child| {
+        self.children.foreach(&mut |child| {
             if row_index == 0 {
                 current_y = self.position.y;
                 current_x += max_column_width + self.spacing.width;

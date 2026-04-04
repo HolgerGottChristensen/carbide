@@ -18,7 +18,7 @@ impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
         todo!()
     }
 
@@ -26,7 +26,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         todo!()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let child = match self {
             Window::UnInitialized { child, .. } => child,
             Window::Initialized(initialized) => &mut initialized.child,
@@ -38,7 +38,7 @@ impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
         }
 
         if child.is_proxy() {
-            child.foreach_child_mut(f);
+            child.foreach_child(f);
             return;
         }
     }

@@ -78,7 +78,7 @@ impl<W: Widget> Render for Clip<W> {
         }
 
         ctx.clip(Rect::new(self.position, self.dimension), |this| {
-            self.foreach_child_mut(&mut |child| {
+            self.foreach_child(&mut |child| {
                 child.render(this);
             });
         })

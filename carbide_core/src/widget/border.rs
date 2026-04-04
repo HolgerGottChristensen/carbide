@@ -105,7 +105,7 @@ impl<W: Widget, C: ReadState<T=Color>> Render for Border<W, C> {
 
         let rect = Rect::new(self.position, self.dimension);
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             child.render(context);
         });
 

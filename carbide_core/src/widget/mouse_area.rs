@@ -385,7 +385,7 @@ impl<
         };
 
         // Process the accessibility of the children
-        self.foreach_child_mut(&mut |child | {
+        self.foreach_child(&mut |child | {
             child.process_accessibility(&mut child_ctx);
         });
 

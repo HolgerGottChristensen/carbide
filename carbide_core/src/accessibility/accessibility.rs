@@ -89,7 +89,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
             };
 
             // Process the accessibility of the children
-            self.foreach_child_mut(&mut |child | {
+            self.foreach_child(&mut |child | {
                 child.process_accessibility(&mut child_ctx);
             });
 
@@ -108,7 +108,7 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
             ctx.children.push(self.id());
         } else {
             // Delegate the accessibility to the children
-            self.foreach_child_mut(&mut |child | {
+            self.foreach_child(&mut |child | {
                 child.process_accessibility(ctx);
             })
         }

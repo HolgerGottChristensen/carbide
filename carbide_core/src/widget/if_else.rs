@@ -212,7 +212,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
         WidgetFlag::PROXY
     }
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 panic!("The child is ignore, and thus can not be indexed.");
@@ -220,7 +220,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
 
             if self.when_true.is_proxy() {
                 // Pass the index directly to the proxy child.
-                return self.when_true.child_mut(index);
+                return self.when_true.child(index);
             }
 
             // If the child is neither an ignore nor a proxy, we have only a single child.
@@ -237,7 +237,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
 
             if self.when_false.is_proxy() {
                 // Pass the index directly to the proxy child.
-                return self.when_false.child_mut(index);
+                return self.when_false.child(index);
             }
 
             // If the child is neither an ignore nor a proxy, we have only a single child.
@@ -276,14 +276,14 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
         }
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         if *self.predicate.value() {
             if self.when_true.is_ignore() {
                 return;
             }
 
             if self.when_true.is_proxy() {
-                self.when_true.foreach_child_mut(f);
+                self.when_true.foreach_child(f);
                 return;
             }
 
@@ -294,7 +294,7 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
             }
 
             if self.when_false.is_proxy() {
-                self.when_false.foreach_child_mut(f);
+                self.when_false.foreach_child(f);
                 return;
             }
 

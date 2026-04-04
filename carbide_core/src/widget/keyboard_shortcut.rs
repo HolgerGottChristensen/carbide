@@ -48,7 +48,7 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         if let Some(pressed) = event.value::<ShortcutPressed>() {
             if pressed.0 == self.id() {
-                self.foreach_child_mut(&mut |child| {
+                self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
                         text: ctx.text,
                         image: ctx.image,
@@ -62,7 +62,7 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
 
         if let Some(released) = event.value::<ShortcutReleased>() {
             if released.0 == self.id() {
-                self.foreach_child_mut(&mut |child| {
+                self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
                         text: ctx.text,
                         image: ctx.image,

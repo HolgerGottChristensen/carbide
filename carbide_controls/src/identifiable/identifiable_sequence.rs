@@ -4,8 +4,7 @@ use carbide::state::StateContract;
 use carbide::widget::{AnySequence, Content};
 
 impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
-
-    fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+    fn index(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
         todo!()
     }
 
@@ -13,7 +12,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
         todo!()
     }
 
-    fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in self {
             if element.is_ignore() {
                 continue;
@@ -45,7 +44,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
 }
 
 impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn AnyIdentifiableWidget<T>> for Content<W> {
-    fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+    fn index(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
         todo!()
     }
 
@@ -53,7 +52,7 @@ impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn Any
         todo!()
     }
 
-    fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for (_, element) in self.0.iter_mut().take(self.1) {
             if element.is_ignore() {
                 continue;
@@ -89,7 +88,7 @@ macro_rules! tuple_sequence_impl {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
         impl<T: StateContract + PartialEq, $($generic: IdentifiableWidget<T>),*> AnySequence<dyn AnyIdentifiableWidget<T>> for ($($generic),*) {
-            fn index_mut(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+            fn index(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
                 todo!()
             }
 
@@ -97,7 +96,7 @@ macro_rules! tuple_sequence_impl {
                 todo!()
             }
 
-            fn foreach_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+            fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
                 let ($($generic),*) = self;
                 $(
                     if $generic.is_ignore() {

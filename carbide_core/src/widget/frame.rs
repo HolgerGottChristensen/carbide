@@ -87,7 +87,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
 impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C> {
     CommonWidgetImpl!(self, position: self.position);
 
-    fn child_mut(&mut self, i: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, i: usize) -> &mut dyn AnyWidget {
         debug_assert_eq!(i, 0);
 
         &mut self.child
@@ -98,7 +98,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> CommonWidget for Frame<W, H, C
     }
 
     #[allow(unused_imports)]
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         f(&mut self.child)
     }
     #[allow(unused_imports)]

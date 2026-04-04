@@ -61,7 +61,7 @@ impl<W: Sequence> Layout for LazyVStack<W> {
             height_estimate
         } else {
             // Calculate height estimate based on the first N children
-            let child = self.children.index_mut(0);
+            let child = self.children.index(0);
             let chosen_size = child.calculate_size(requested_size, ctx);
 
             self.child_heights.insert(child.id(), chosen_size.height);
@@ -94,7 +94,7 @@ impl<W: Sequence> Layout for LazyVStack<W> {
 
             self.current_indices.push(index);
 
-            let child = self.children.index_mut(index);
+            let child = self.children.index(index);
 
             // We set the relative offset of the child here. This is then offset in position_children.
             child.set_y(cummulated_y + estimated_start_y);
@@ -135,7 +135,7 @@ impl<W: Sequence> Layout for LazyVStack<W> {
         let width = self.width();
 
         for current_index in &self.current_indices {
-            let child = self.children.index_mut(*current_index);
+            let child = self.children.index(*current_index);
             child.set_y(child.y() + y);
 
             match self.cross_axis_alignment {
@@ -152,17 +152,17 @@ impl<W: Sequence> Layout for LazyVStack<W> {
 impl<W: Sequence> CommonWidget for LazyVStack<W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        self.children.index_mut(index)
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.children.index(index)
     }
 
     fn child_count(&mut self) -> usize {
         self.children.count()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         for current_index in &self.current_indices {
-            let child = self.children.index_mut(*current_index);
+            let child = self.children.index(*current_index);
             f(child)
         }
     }

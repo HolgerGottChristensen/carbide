@@ -85,8 +85,8 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
         self.deref().alignment()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.deref_mut().foreach_child_mut(f)
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.deref_mut().foreach_child(f)
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
@@ -121,8 +121,8 @@ impl<T: AnyWidget + ?Sized> CommonWidget for Box<T> {
         self.deref_mut().set_dimension(dimension)
     }
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
-        self.deref_mut().child_mut(index)
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.deref_mut().child(index)
     }
 
     fn child_count(&mut self) -> usize {

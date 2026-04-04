@@ -13,7 +13,7 @@ pub trait WindowEventHandler: CommonWidget + WidgetSync {
             self.handle_window_event(event, ctx);
         }
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             child.process_window_event(event, ctx);
         });
     }

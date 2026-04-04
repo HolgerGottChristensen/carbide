@@ -13,7 +13,7 @@ pub trait Render: CommonWidget + WidgetSync {
             }
         }
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             child.render(ctx);
         });
     }

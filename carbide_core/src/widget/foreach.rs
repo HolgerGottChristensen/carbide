@@ -114,7 +114,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         WidgetFlag::PROXY
     }
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
         if W::Kind::kind() == Kind::Simple {
             let idx = self.model.index_from_offset(index);
             self.ensure_exist(idx.clone());
@@ -163,7 +163,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
                 if child.is_ignore() {
 
                 } else if child.is_proxy() {
-                    return child.child_mut(index - passed);
+                    return child.child(index - passed);
                 } else {
                     return child;
                 }
@@ -206,7 +206,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         }
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         let mut current_index = self.model.start_index();
         let end_index = self.model.end_index();
 
@@ -220,7 +220,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             if widget.is_ignore() {
 
             } else if widget.is_proxy() {
-                widget.foreach_child_mut(f);
+                widget.foreach_child(f);
             } else {
                 f(widget);
             }

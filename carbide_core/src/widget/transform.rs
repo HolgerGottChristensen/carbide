@@ -165,7 +165,7 @@ impl<W: Widget, M: ReadState<T=Matrix4<f32>>> Render for Transform<W, M> {
         };
 
         context.transform(new_transform, |this| {
-            self.foreach_child_mut(&mut |child| {
+            self.foreach_child(&mut |child| {
                 child.render(this);
             });
         })

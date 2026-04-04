@@ -9,7 +9,7 @@ pub trait Initialize: CommonWidget + WidgetSync {
         self.sync(ctx.env);
         self.initialize(ctx);
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             child.process_initialization(ctx);
         });
     }

@@ -79,7 +79,7 @@ impl<
     }
 
     fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
-        (self.content).foreach_mut(f);
+        (self.content).foreach(f);
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {

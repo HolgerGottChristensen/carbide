@@ -39,7 +39,7 @@ impl CommonWidget for WidgetViewer {
         unimplemented!()
     }
 
-    fn foreach_child_mut(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
+    fn foreach_child(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
         unimplemented!()
     }
 
@@ -59,7 +59,7 @@ impl CommonWidget for WidgetViewer {
         unimplemented!()
     }
 
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
         unimplemented!()
     }
 

@@ -207,7 +207,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
 
         let mut main_axis_offset = 0.0;
 
-        self.foreach_child_mut(&mut |child| {
+        self.foreach_child(&mut |child| {
             let cross = match alignment {
                 CrossAxisAlignment::Start => position.y,
                 CrossAxisAlignment::Center => {
@@ -224,13 +224,13 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
 }
 
 impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
-    fn child_mut(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
         let leading_count = self.leading.child_count();
 
         if index < leading_count {
-            self.leading.index_mut(index)
+            self.leading.index(index)
         } else {
-            self.trailing.index_mut(index - leading_count)
+            self.trailing.index(index - leading_count)
         }
     }
 
@@ -238,9 +238,9 @@ impl<S: State<T=f64>, L: Widget, T: Widget> CommonWidget for HSplit<S, L, T> {
         self.leading.child_count() + self.trailing.child_count()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        self.leading.foreach_mut(f);
-        self.trailing.foreach_mut(f);
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.leading.foreach(f);
+        self.trailing.foreach(f);
     }
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         self.leading.foreach_rev(f);
