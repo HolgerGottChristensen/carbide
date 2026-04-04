@@ -43,8 +43,8 @@ authors = [
 ]
 
 [workspace.dependencies]
-accesskit = "0.17.1"
-accesskit_winit = "0.23.1"
+accesskit = "0.24.0"
+accesskit_winit = "0.32.2"
 bitflags = "2.4.0"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
 carbide_derive = { path = "carbide_derive", version = "0.72.0" }

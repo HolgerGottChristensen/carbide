@@ -1,5 +1,5 @@
 use crate::Window;
-use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
+use accesskit::{Node, NodeId, Role, Tree, TreeId, TreeUpdate};
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
 use carbide_core::state::ReadState;
 use carbide_core::widget::{Widget, WidgetId};
@@ -19,10 +19,10 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
                                 nodes: vec![],
                                 tree: Some(Tree {
                                     root: NodeId(id.as_u32() as u64),
-                                    app_name: None,
                                     toolkit_name: Some("Carbide".to_string()),
                                     toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
                                 }),
+                                tree_id: TreeId::ROOT,
                                 focus: NodeId(id.as_u32() as u64),
                             };
 

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ops::{Add, AddAssign};
-use accesskit::{NodeId, TreeUpdate};
+use accesskit::{NodeId, TreeId, TreeUpdate};
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalPosition};
@@ -243,6 +243,7 @@ impl NewEventHandler {
                         nodes: &mut TreeUpdate {
                             nodes: vec![],
                             tree: None,
+                            tree_id: TreeId::ROOT,
                             focus: NodeId(id.as_u32() as u64),
                         },
                         parent_id: None,
@@ -546,6 +547,7 @@ impl NewEventHandler {
                             nodes: &mut TreeUpdate {
                                 nodes: vec![],
                                 tree: None,
+                                tree_id: TreeId::ROOT,
                                 focus: NodeId(id.as_u32() as u64),
                             },
                             parent_id: None,
@@ -560,7 +562,7 @@ impl NewEventHandler {
                     accesskit_winit::WindowEvent::ActionRequested(request) => {
                         target.process_accessibility_event(&AccessibilityEvent {
                             action: request.action,
-                            target: WidgetId::from_u32(request.target.0 as u32),
+                            target: WidgetId::from_u32(request.target_node.0 as u32),
                             data: &request.data,
                         }, &mut AccessibilityEventContext {
                             env,
