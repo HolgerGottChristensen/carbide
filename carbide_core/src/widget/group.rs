@@ -28,7 +28,7 @@ where
     phantom_data: PhantomData<T>,
 }
 
-impl<T: ?Sized + AnyWidget, I: Sequence<T>> Group<I, T> {
+impl<I: Sequence<dyn AnyWidget>> Group<I, dyn AnyWidget> {
     pub fn new(sequence: I) -> Self {
         Group {
             id: WidgetId::new(),
@@ -37,7 +37,7 @@ impl<T: ?Sized + AnyWidget, I: Sequence<T>> Group<I, T> {
         }
     }
 
-    pub fn sequence<U: ?Sized + AnyWidget, O: Sequence<U>, D: GroupDelegate<T, I, U, O>>(sequence: I, delegate: D) -> Group<O, U> {
+    pub fn sequence<U: ?Sized + AnyWidget, O: Sequence<U>, D: GroupDelegate<dyn AnyWidget, I, U, O>>(sequence: I, delegate: D) -> Group<O, U> {
         let output_sequence = delegate.call(sequence);
 
         Group {

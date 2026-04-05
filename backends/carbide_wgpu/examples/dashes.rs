@@ -187,8 +187,15 @@ fn main() {
                                 Text::new("TriangleOut").tag(StrokeDashCap::TriangleOut),
                             )),
                         )),
-                        Slider::new(line_width, 1.0, 50.0).step(1.0),
-                        Slider::new(moving_speed, -2.0, 2.0),
+                        HStack::new((
+                            Text::new("Line width:"),
+                            Slider::new(line_width.clone(), 1.0, 50.0).step(1.0),
+                            Text::new(line_width).frame_fixed_width(30.0).fit_height(),
+                        )),
+                        HStack::new((
+                            Text::new("Dash speed:"),
+                            Slider::new(moving_speed, -2.0, 2.0)
+                        )),
                         Toggle::new("Moving", moving),
                         Toggle::new("Dash", dash),
                         TextInput::new(dash_pattern_input),
