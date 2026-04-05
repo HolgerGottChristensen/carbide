@@ -1,6 +1,6 @@
 use crate::identifiable::{AnyIdentifiableWidget};
 use carbide::state::{AnyReadState, IntoReadState, ReadState, StateContract};
-use carbide::widget::{CommonWidget, Empty, IntoWidget, Widget, WidgetId};
+use carbide::widget::{AnySequence, CommonWidget, Empty, IntoWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
 use std::fmt::Debug;
 use carbide::identifiable::Identifiable;
@@ -23,6 +23,22 @@ impl Tagged<u32, u32, Empty> {
 impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiableWidget<T> for Tagged<T, S, C> {
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
         &self.tag
+    }
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+        todo!()//self.child.index(index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        todo!()//self.child.count()
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()//self.child.foreach(f)
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+        todo!()//self.child.foreach_rev(f)
     }
 }
 

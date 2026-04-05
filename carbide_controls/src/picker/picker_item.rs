@@ -17,6 +17,14 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         &self.selection
     }
+
+    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget {
+        panic!("This widget can not have any selectable widget children")
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
 }
 
 impl<W: Widget, S: State<T=bool>> Identifiable for PickerItem<W, S> {

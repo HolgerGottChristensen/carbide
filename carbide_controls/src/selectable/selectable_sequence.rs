@@ -2,7 +2,7 @@ use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
 use crate::identifiable::{AnySelectableWidget, SelectableWidget};
 use carbide::reverse;
-use carbide::widget::{AnySequence, Content, Sequence, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, Sequence, WidgetId, WidgetSync};
 use carbide::widget::foreach_widget::{Delegate, ForEachWidget};
 
 impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
@@ -21,7 +21,7 @@ impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
             }
 
             if element.is_proxy() {
-                AnySelectableWidget::foreach_child_mut(element, f);
+                AnySelectableWidget::foreach_child(element, f);
                 continue;
             }
 
@@ -31,46 +31,6 @@ impl<S: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Vec<S> {
 
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
         for element in &mut self.iter_mut().rev() {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                AnySelectableWidget::foreach_child_rev(element, f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-}
-
-impl<W: SelectableWidget> AnySequence<dyn AnySelectableWidget> for Content<W> {
-    fn index(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
-        todo!()
-    }
-
-    fn count(&mut self) -> usize {
-        todo!()
-    }
-
-    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                AnySelectableWidget::foreach_child_mut(element, f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-
-    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1).rev() {
             if element.is_ignore() {
                 continue;
             }
@@ -104,7 +64,7 @@ macro_rules! tuple_sequence_impl {
                     if $generic.is_ignore() {
 
                     } else if $generic.is_proxy() {
-                        AnySelectableWidget::foreach_child_mut($generic, f);
+                        AnySelectableWidget::foreach_child($generic, f);
                     } else {
                         f($generic);
                     }
@@ -144,11 +104,11 @@ impl<
     }
 
     fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        AnySelectableWidget::foreach_child_mut(self, f);
+        todo!()//AnySelectableWidget::foreach_child(self, f);
     }
 
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
-        AnySelectableWidget::foreach_child_rev(self, f);
+        todo!()//AnySelectableWidget::foreach_child_rev(self, f);
     }
 }
 
@@ -164,3 +124,22 @@ tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);
+
+
+impl AnySequence<dyn AnySelectableWidget> for dyn AnySelectableWidget {
+    fn index(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
+        todo!()
+    }
+
+    fn count(&mut self) -> usize {
+        todo!()
+    }
+
+    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
+        todo!()
+    }
+
+    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
+        todo!()
+    }
+}

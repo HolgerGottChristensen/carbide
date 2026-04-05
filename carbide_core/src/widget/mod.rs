@@ -167,23 +167,4 @@ impl Display for WidgetId {
     }
 }
 
-pub type BuildWidgetIdHasher = BuildHasherDefault<WidgetIdHasher>;
-
-#[derive(Default, Clone, Copy, Debug)]
-pub struct WidgetIdHasher(u64);
-
-impl Hasher for WidgetIdHasher {
-    fn finish(&self) -> u64 {
-        self.0
-    }
-
-    fn write(&mut self, _: &[u8]) {
-        unreachable!("The hasher is only used with TypeId and it uses write_u64")
-    }
-
-    fn write_u64(&mut self, i: u64) {
-        self.0 = i;
-    }
-}
-
 pub type ColoredPoint = (Position, crate::color::Rgba);

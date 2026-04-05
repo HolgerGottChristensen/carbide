@@ -1,6 +1,6 @@
 use carbide::state::{AnyReadState, ReadState, State, StateContract};
 use std::fmt::Debug;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
@@ -12,11 +12,11 @@ pub trait AnyIdentifiableWidget<T>: AnyWidget
 where T: StateContract + PartialEq {
     fn identifier(&self) -> &dyn AnyReadState<T=T>;
 
-    fn foreach_child(&self, f: &mut dyn FnMut(&dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_direct(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
-    fn foreach_child_direct_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {}
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T>;
+    fn child_count(&mut self) -> usize;
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>));
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>));
 }
 
 dyn_clone::clone_trait_object!(<T> AnyIdentifiableWidget<T>);
@@ -28,6 +28,22 @@ impl<T: StateContract + PartialEq, W> IdentifiableWidget<T> for W where W: AnyId
 impl<T: StateContract + PartialEq> AnyIdentifiableWidget<T> for Box<dyn AnyIdentifiableWidget<T>> {
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
         self.deref().identifier()
+    }
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+        AnyIdentifiableWidget::child(self.deref_mut(), index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        AnyIdentifiableWidget::child_count(self.deref_mut())
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+        AnyIdentifiableWidget::foreach_child(self.deref_mut(), f)
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+        AnyIdentifiableWidget::foreach_child_rev(self.deref_mut(), f)
     }
 }
 
@@ -57,7 +73,15 @@ impl<
         todo!()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<G> {
+        todo!()
+    }
+
+    fn child_count(&mut self) -> usize {
+        todo!()
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         todo!()//(self.children).foreach_mut(f);
     }
 
@@ -78,11 +102,19 @@ impl<
         todo!()
     }
 
-    fn foreach_child_mut(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
-        (self.content).foreach(f);
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<G> {
+        todo!()//self.content.index(index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        todo!()//AnySequence::<>::count(&mut self.content)
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
+        todo!()//(self.content).foreach(f);
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
-        (self.content).foreach_rev(f);
+        todo!()//(self.content).foreach_rev(f);
     }
 }

@@ -5,7 +5,6 @@ pub use widget_ext::*;
 pub use widget_sequence::*;
 pub use widget_sync::WidgetSync;
 pub use widget_style::WidgetStyle;
-pub use content::*;
 pub use widget_properties::WidgetProperties;
 
 pub mod properties {
@@ -25,6 +24,5 @@ mod widget_ext;
 mod widget_sequence;
 mod into_widget;
 mod widget_sync;
-mod content;
 mod widget_properties;
 mod widget_style;

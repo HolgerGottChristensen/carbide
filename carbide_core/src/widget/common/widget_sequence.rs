@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use dyn_clone::{clone_box, clone_trait_object, DynClone};
 use crate::state::{AnyReadState, StateExtNew, ValueState};
 use crate::state::{Map1, ReadStateExtNew};
-use crate::widget::{AnyWidget, Content, Widget};
+use crate::widget::{AnyWidget, Widget};
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {
@@ -138,86 +138,6 @@ impl<W: Widget> AnySequence for Vec<W> {
 
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         for element in &mut self.iter_mut().rev() {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                element.foreach_child_rev(f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-}
-
-impl<W: Widget> AnySequence for Content<W> {
-    fn index(&mut self, index: usize) -> &mut dyn AnyWidget {
-        let mut passed = 0;
-
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                let child_count = element.child_count();
-
-                if index < passed + child_count {
-                    return element.child(index - passed);
-                }
-
-                passed += child_count;
-
-                continue;
-            }
-
-            if index == passed {
-                return element;
-            }
-
-            passed += 1;
-        }
-
-        panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
-    }
-
-    fn count(&mut self) -> usize {
-        let mut count = 0;
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                count += element.child_count();
-                continue;
-            }
-
-            count += 1;
-        }
-
-        count
-    }
-
-    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                element.foreach_child(f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-
-    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        for (_, element) in self.0.iter_mut().take(self.1).rev() {
             if element.is_ignore() {
                 continue;
             }

@@ -6,7 +6,7 @@ use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
 use crate::widget::properties::{WidgetKind, WidgetKindProxy};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use crate::widget::{AnySequence, AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::properties::Kind;
 use dyn_clone::DynClone;
 use std::collections::HashMap;
@@ -108,19 +108,18 @@ where
     }
 }
 
-impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
+trait ForeachFrom<T> {
+    fn fff(value: &mut T) -> &mut Self;
+}
 
-    fn flag(&self) -> WidgetFlag {
-        WidgetFlag::PROXY
-    }
-
-    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> ForEach<T, M, U, W> {
+    pub fn child<A: ?Sized>(&mut self, index: usize) -> &mut A where W: AnySequence<A> {
         if W::Kind::kind() == Kind::Simple {
             let idx = self.model.index_from_offset(index);
             self.ensure_exist(idx.clone());
             let id = self.model.id(idx);
 
-            self.widgets.get_mut(&id).unwrap()
+            <W as AnySequence<A>>::index(self.widgets.get_mut(&id).unwrap(), 0)
         } else {
             let mut current_index = self.model.start_index();
             let end_index = self.model.end_index();
@@ -137,7 +136,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
                 if child.is_ignore() {
 
                 } else if child.is_proxy() {
-                    let child_count = child.child_count();
+                    let child_count = child.count();
 
                     if index < passed + child_count {
                         break;
@@ -163,14 +162,70 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
                 if child.is_ignore() {
 
                 } else if child.is_proxy() {
-                    return child.child(index - passed);
+                    return <W as AnySequence<A>>::index(child, index - passed);
                 } else {
-                    return child;
+                    return <W as AnySequence<A>>::index(child, 0);
                 }
             }
 
             panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
         }
+    }
+
+    pub fn foreach_child<A: ?Sized>(&mut self, f: &mut dyn FnMut(&mut A)) where W: AnySequence<A> {
+        let mut current_index = self.model.start_index();
+        let end_index = self.model.end_index();
+
+        while current_index < end_index {
+            let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
+
+            let widget = self.widgets.get_mut(&id).unwrap();
+
+            <W as AnySequence<A>>::foreach(widget, f);
+
+            current_index = self.model.next_index(current_index);
+        }
+    }
+
+    pub fn foreach_child_rev<A: ?Sized>(&mut self, f: &mut dyn FnMut(&mut A)) where W: AnySequence<A> {
+        // If the end and start indices are equal, there are no elements in the collection
+        if self.model.len() == 0 {
+            return;
+        }
+
+        let mut current_index = self.model.end_index();
+        let start_index = self.model.start_index();
+
+        current_index = self.model.prev_index(current_index);
+
+        loop {
+            let id = self.model.id(current_index.clone());
+
+            self.ensure_exist(current_index.clone());
+
+            let widget = self.widgets.get_mut(&id).unwrap();
+
+            <W as AnySequence<A>>::foreach_rev(widget, f);
+
+            if current_index == start_index {
+                break;
+            }
+
+            current_index = self.model.next_index(current_index);
+        }
+    }
+}
+
+impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
+
+    fn flag(&self) -> WidgetFlag {
+        WidgetFlag::PROXY
+    }
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.child::<dyn AnyWidget>(index)
     }
 
     fn child_count(&mut self) -> usize {
@@ -207,60 +262,11 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        let mut current_index = self.model.start_index();
-        let end_index = self.model.end_index();
-
-        while current_index < end_index {
-            let id = self.model.id(current_index.clone());
-
-            self.ensure_exist(current_index.clone());
-
-            let widget = self.widgets.get_mut(&id).unwrap();
-
-            if widget.is_ignore() {
-
-            } else if widget.is_proxy() {
-                widget.foreach_child(f);
-            } else {
-                f(widget);
-            }
-
-            current_index = self.model.next_index(current_index);
-        }
+        self.foreach_child::<dyn AnyWidget>(f)
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
-        // If the end and start indices are equal, there are no elements in the collection
-        if self.model.len() == 0 {
-            return;
-        }
-
-        let mut current_index = self.model.end_index();
-        let start_index = self.model.start_index();
-
-        current_index = self.model.prev_index(current_index);
-
-        loop {
-            let id = self.model.id(current_index.clone());
-
-            self.ensure_exist(current_index.clone());
-
-            let widget = self.widgets.get_mut(&id).unwrap();
-
-            if widget.is_ignore() {
-
-            } else if widget.is_proxy() {
-                widget.foreach_child_rev(f);
-            } else {
-                f(widget);
-            }
-
-            if current_index == start_index {
-                break;
-            }
-
-            current_index = self.model.next_index(current_index);
-        }
+        self.foreach_child_rev::<dyn AnyWidget>(f)
     }
 
     fn position(&self) -> Position {
@@ -292,7 +298,7 @@ where
 
 impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Debug for ForEach<T, M, U, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ForEach32")
+        f.debug_struct("ForEach")
             .field("model", &self.model)
             .field("children", &self.widgets)
             .finish()

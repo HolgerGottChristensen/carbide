@@ -1,15 +1,15 @@
 use crate::identifiable::{AnyIdentifiableWidget, IdentifiableWidget};
 use carbide::reverse;
 use carbide::state::StateContract;
-use carbide::widget::{AnySequence, Content};
+use carbide::widget::{AnySequence};
 
 impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn AnyIdentifiableWidget<T>> for Vec<S> {
     fn index(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
-        todo!()
+        todo!()//AnyIdentifiableWidget::child(self, index)
     }
 
     fn count(&mut self) -> usize {
-        todo!()
+        todo!()//AnyIdentifiableWidget::child_count(self)
     }
 
     fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
@@ -19,7 +19,7 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
             }
 
             if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_mut(element, f);
+                AnyIdentifiableWidget::foreach_child(element, f);
                 continue;
             }
 
@@ -29,46 +29,6 @@ impl<T: PartialEq + StateContract, S: IdentifiableWidget<T>> AnySequence<dyn Any
 
     fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         for element in &mut self.iter_mut().rev() {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_rev(element, f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-}
-
-impl<W: IdentifiableWidget<T>, T: StateContract + PartialEq> AnySequence<dyn AnyIdentifiableWidget<T>> for Content<W> {
-    fn index(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
-        todo!()
-    }
-
-    fn count(&mut self) -> usize {
-        todo!()
-    }
-
-    fn foreach(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
-        for (_, element) in self.0.iter_mut().take(self.1) {
-            if element.is_ignore() {
-                continue;
-            }
-
-            if element.is_proxy() {
-                AnyIdentifiableWidget::foreach_child_mut(element, f);
-                continue;
-            }
-
-            f(element);
-        }
-    }
-
-    fn foreach_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
-        for (_, element) in self.0.iter_mut().take(self.1).rev() {
             if element.is_ignore() {
                 continue;
             }
@@ -102,7 +62,7 @@ macro_rules! tuple_sequence_impl {
                     if $generic.is_ignore() {
 
                     } else if $generic.is_proxy() {
-                        AnyIdentifiableWidget::foreach_child_mut($generic, f);
+                        AnyIdentifiableWidget::foreach_child($generic, f);
                     } else {
                         f($generic);
                     }

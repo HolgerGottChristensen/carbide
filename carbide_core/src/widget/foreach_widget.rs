@@ -1,11 +1,18 @@
+use std::collections::HashMap;
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
-use crate::widget::{CommonWidget, Content, Sequence, Widget, WidgetId, WidgetSync};
+use crate::widget::{AnySequence, CommonWidget, Sequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 use crate::environment::Environment;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
+use fxhash::FxBuildHasher;
+use indexmap::IndexMap;
+use carbide::random_access_collection::RandomAccessCollection;
+use carbide::state::StateContract;
+use carbide::widget::{AnyWidget, ForEach, WidgetProperties};
+use carbide::widget::properties::WidgetKindProxy;
 use crate::identifiable::Identifiable;
 use crate::lifecycle::InitializationContext;
 
@@ -20,7 +27,7 @@ impl<K, O: Widget, T: ?Sized> Delegate<T, O> for K where K: Fn(&T) -> O + Clone 
 }
 
 #[derive(Widget)]
-#[carbide_exclude(Sync)]
+#[carbide_exclude(Properties)]
 pub struct ForEachWidget<W, O, D, T>
 where
     T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static,
@@ -32,7 +39,7 @@ where
 
     sequence: W,
     delegate: D,
-    pub content: Content<O>,
+    content: HashMap<WidgetId, O, FxBuildHasher>,
     phantom_data: PhantomData<T>,
 }
 
@@ -60,57 +67,69 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
     }
 }
 
+impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
+    pub fn child<A: ?Sized>(&mut self, index: usize) -> &mut A where O: AnySequence<A> {
+        let inner = self.sequence.index(index);
+        let id = inner.id();
 
-impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetSync for ForEachWidget<W, O, D, T> {
-    fn sync(&mut self, env: &mut Environment) {
-        // Set the initial index to 0
-        let mut index = 0;
+        if !self.content.contains_key(&id) {
+            self.content.insert(id, self.delegate.call(inner));
+        }
 
-        self.sequence.foreach(&mut |child| {
-            child.sync(env);
-        });
+        let widget = self.content.get_mut(&id)
+            .expect("The widget with the id to be inserted in the statement above");
 
-        // For each child of the widget
-        self.sequence.foreach(&mut |child| {
-            let id = child.id();
+        // This is some type magic because i cant constrain O to implement A
+        <O as AnySequence<A>>::index(widget, 0)
+    }
 
-            // If the map already contains the key
-            if let Some(current) = self.content.0.get_index_of(&id) {
+    pub fn foreach_child<A: ?Sized>(&mut self, f: &mut dyn FnMut(&mut A)) where O: AnySequence<A> {
+        self.sequence.foreach(&mut |inner_child| {
+            let id = inner_child.id();
 
-                if current == index {
-                    // The content is already at the correct position.
-                    index += 1;
-                } else if current < index {
-                    // If the content exist, but it is currently before the index,
-                    // it means two children with the same id exist of the widget.
-                    // Skip incrementing the index, and don't move it.
-                } else {
-                    // Move the content at current, to index
-                    self.content.0.move_index(current, index);
-                    index += 1;
-                }
-            } else {
-                // Calculate the resulting widget, using the delegate
-                let mut result = self.delegate.call(child);
-
-                // Initialize the widget.
-                result.process_initialization(&mut InitializationContext {
-                    env: env,
-                });
-
-                // Insert the result at the index
-                self.content.0.insert_before(index, id, result);
-                // Increment the index
-                index += 1;
+            if !self.content.contains_key(&id) {
+                self.content.insert(id, self.delegate.call(inner_child));
             }
-        });
 
-        self.content.1 = index;
+            let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
+
+            f(<O as AnySequence<A>>::index(widget, 0))
+        })
+    }
+
+    pub fn foreach_child_rev<A: ?Sized>(&mut self, f: &mut dyn FnMut(&mut A)) where O: AnySequence<A> {
+        self.sequence.foreach_rev(&mut |inner_child| {
+            let id = inner_child.id();
+
+            if !self.content.contains_key(&id) {
+                self.content.insert(id, self.delegate.call(inner_child));
+            }
+
+            let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
+
+            f(<O as AnySequence<A>>::index(widget, 0))
+        })
     }
 }
 
 impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> CommonWidget for ForEachWidget<W, O, D, T> {
-    CommonWidgetImpl!(self, flag: WidgetFlag::PROXY, child: self.content);
+    CommonWidgetImpl!(self, flag: WidgetFlag::PROXY);
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.child::<dyn AnyWidget>(index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        self.sequence.count()
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.foreach_child::<dyn AnyWidget>(f)
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        self.foreach_child_rev::<dyn AnyWidget>(f)
+    }
 
     fn position(&self) -> Position {
         unimplemented!()
@@ -127,6 +146,11 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
     fn set_dimension(&mut self, _: Dimension) {
         unimplemented!()
     }
+}
+
+impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> WidgetProperties for  ForEachWidget<W, O, D, T>
+{
+    type Kind = WidgetKindProxy;
 }
 
 impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
