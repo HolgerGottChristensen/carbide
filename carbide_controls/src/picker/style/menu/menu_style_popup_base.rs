@@ -48,7 +48,7 @@ impl MouseEventHandler for MenuStylePopupBase {
 
 impl KeyboardEventHandler for MenuStylePopupBase {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        if !*self.enabled.value() {
+        /*if !*self.enabled.value() {
             OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             });
@@ -66,7 +66,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
 
         let id = *self.hovered.value();
 
-        self.model.foreach(&mut |child| {
+        self.model.foreach(&mut |child: &mut dyn AnyWidget| {
             child.sync(ctx.env);
         });
 
@@ -136,7 +136,8 @@ impl KeyboardEventHandler for MenuStylePopupBase {
                     already_moved = true;
                 })
             }
-        }
+        }*/
+        todo!()
     }
 }
 

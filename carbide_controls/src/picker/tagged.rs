@@ -29,10 +29,6 @@ impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiable
         todo!()//self.child.index(index)
     }
 
-    fn child_count(&mut self) -> usize {
-        todo!()//self.child.count()
-    }
-
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
         todo!()//self.child.foreach(f)
     }

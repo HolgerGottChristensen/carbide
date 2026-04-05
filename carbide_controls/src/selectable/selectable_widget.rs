@@ -1,17 +1,16 @@
-use carbide::state::{AnyState, ReadState, State, StateContract};
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
-use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use carbide::state::{AnyState, StateContract};
 use carbide::widget::foreach_widget::ForEachWidget;
 use carbide::widget::properties::WidgetKindDynamic;
+use carbide::widget::{AnySequence, AnyWidget, Delegate, ForEach, Sequence, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use dyn_clone::DynClone;
+use std::ops::{Deref, DerefMut};
 
 pub trait AnySelectableWidget: AnyWidget {
     fn selection(&self) -> &dyn AnyState<T=bool>;
 
-    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget;
+    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget;
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget));
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget));
 }
@@ -27,7 +26,7 @@ impl AnySelectableWidget for Box<dyn AnySelectableWidget> {
         self.deref().selection()
     }
 
-    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
         AnySelectableWidget::child(self.deref_mut(), index)
     }
 
@@ -66,7 +65,7 @@ impl<
         unreachable!("When iterating selectable widgets, we should never return proxy widgets, and thus, this should never be called")
     }
 
-    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
         self.child::<dyn AnySelectableWidget>(index)
     }
 
@@ -89,7 +88,7 @@ impl<
         unreachable!("When iterating selectable widgets, we should never return proxy widgets, and thus, this should never be called")
     }
 
-    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
         self.child::<dyn AnySelectableWidget>(index)
     }
 

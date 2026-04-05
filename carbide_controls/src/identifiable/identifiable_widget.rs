@@ -13,8 +13,6 @@ where T: StateContract + PartialEq {
     fn identifier(&self) -> &dyn AnyReadState<T=T>;
 
     fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T>;
-    fn child_count(&mut self) -> usize;
-
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>));
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>));
 }
@@ -32,10 +30,6 @@ impl<T: StateContract + PartialEq> AnyIdentifiableWidget<T> for Box<dyn AnyIdent
 
     fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
         AnyIdentifiableWidget::child(self.deref_mut(), index)
-    }
-
-    fn child_count(&mut self) -> usize {
-        AnyIdentifiableWidget::child_count(self.deref_mut())
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
@@ -77,10 +71,6 @@ impl<
         todo!()
     }
 
-    fn child_count(&mut self) -> usize {
-        todo!()
-    }
-
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {
         todo!()//(self.children).foreach_mut(f);
     }
@@ -104,10 +94,6 @@ impl<
 
     fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<G> {
         todo!()//self.content.index(index)
-    }
-
-    fn child_count(&mut self) -> usize {
-        todo!()//AnySequence::<>::count(&mut self.content)
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<G>)) {

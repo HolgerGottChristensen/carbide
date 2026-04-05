@@ -83,7 +83,7 @@ impl SegmentedStyle {
 
 impl PickerStyle for SegmentedStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
-        let radio_group = HStack::new(
+        /*let radio_group = HStack::new(
             ForEach::custom_widget(
                 model,
                 move |w: &dyn AnySelectableWidget| {
@@ -103,6 +103,8 @@ impl PickerStyle for SegmentedStyle {
             radio_group
         )).spacing(8.0);
 
-        labelled.boxed()
+        labelled.boxed()*/
+
+        todo!()
     }
 }

@@ -169,7 +169,9 @@ macro_rules! CommonWidgetImpl {
         #[allow(unused_imports)]
         fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
-            $($child.count() + )+ 0
+            use $crate::widget::AnyWidget;
+
+            $(AnySequence::<dyn AnyWidget>::count(&mut $child) + )+ 0
         }
 
         #[allow(unused_imports)]
@@ -196,7 +198,8 @@ macro_rules! CommonWidgetImpl {
         }
         fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
-            $child.count()
+            use $crate::widget::AnyWidget;
+            AnySequence::<dyn AnyWidget>::count(&mut $child)
         }
 
         #[allow(unused_imports)]
@@ -329,7 +332,8 @@ macro_rules! ModifierWidgetImpl {
         }
         fn child_count(&mut $self) -> usize {
             use $crate::widget::AnySequence;
-            $child.count()
+            use $crate::widget::AnyWidget;
+            AnySequence::<dyn AnyWidget>::count(&mut $child)
         }
 
         #[allow(unused_imports)]

@@ -1,3 +1,4 @@
+use std::any::type_name;
 use std::collections::HashMap;
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
@@ -15,6 +16,7 @@ use carbide::widget::{AnyWidget, ForEach, WidgetProperties};
 use carbide::widget::properties::WidgetKindProxy;
 use crate::identifiable::Identifiable;
 use crate::lifecycle::InitializationContext;
+use crate::widget::properties::{Kind, WidgetKind};
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {
     fn call(&self, child: &T) -> O;
@@ -93,7 +95,11 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
 
             let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
 
-            f(<O as AnySequence<A>>::index(widget, 0))
+            if widget.is_ignore() { } else if widget.is_proxy() {
+                <O as AnySequence<A>>::foreach(widget, f)
+            } else {
+                f(<O as AnySequence<A>>::index(widget, 0))
+            }
         })
     }
 
@@ -107,7 +113,11 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
 
             let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
 
-            f(<O as AnySequence<A>>::index(widget, 0))
+            if widget.is_ignore() { } else if widget.is_proxy() {
+                <O as AnySequence<A>>::foreach_rev(widget, f)
+            } else {
+                f(<O as AnySequence<A>>::index(widget, 0))
+            }
         })
     }
 }
@@ -120,7 +130,25 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
     }
 
     fn child_count(&mut self) -> usize {
-        self.sequence.count()
+        if O::Kind::kind() == Kind::Simple {
+            self.sequence.count()
+        } else {
+            let mut count = 0;
+
+            self.sequence.foreach(&mut |inner_child| {
+                let id = inner_child.id();
+
+                if !self.content.contains_key(&id) {
+                    self.content.insert(id, self.delegate.call(inner_child));
+                }
+
+                let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
+
+                count += widget.child_count();
+            });
+
+            count
+        }
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {

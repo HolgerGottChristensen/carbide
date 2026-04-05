@@ -35,6 +35,7 @@ impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
     CommonWidgetImpl!(self, child: self.child);
 
     fn flag(&self) -> WidgetFlag {
+        dbg!(*self.flags.value());
         *self.flags.value()
     }
 

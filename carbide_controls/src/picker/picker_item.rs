@@ -18,7 +18,7 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
         &self.selection
     }
 
-    fn child(&mut self, index: usize) -> &dyn AnySelectableWidget {
+    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
         panic!("This widget can not have any selectable widget children")
     }
 

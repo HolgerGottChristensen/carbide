@@ -35,7 +35,7 @@ impl<W: Widget> CommonWidget for Filter<W> {
 impl<W: Widget> Render for Filter<W> {
     fn render(&mut self, context: &mut RenderContext) {
         context.filter(&self.filter, Rect::new(self.position, self.dimension), |this| {
-            self.child.foreach(&mut |child| {
+            self.child.foreach(&mut |child: &mut dyn AnyWidget| {
                 child.render(this);
             });
         });
