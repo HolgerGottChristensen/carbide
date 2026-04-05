@@ -71,18 +71,70 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
 
 impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> ForEachWidget<W, O, D, T> {
     pub fn child<A: ?Sized>(&mut self, index: usize) -> &mut A where O: AnySequence<A> {
-        let inner = self.sequence.index(index);
-        let id = inner.id();
+        if O::Kind::kind() == Kind::Simple {
+            let inner = self.sequence.index(index);
+            let id = inner.id();
 
-        if !self.content.contains_key(&id) {
-            self.content.insert(id, self.delegate.call(inner));
+            if !self.content.contains_key(&id) {
+                self.content.insert(id, self.delegate.call(inner));
+            }
+
+            let widget = self.content.get_mut(&id)
+                .expect("The widget with the id to be inserted in the statement above");
+
+            // This is some type magic because i cant constrain O to implement A
+            <O as AnySequence<A>>::index(widget, 0)
+        } else {
+            let mut current_sequence_index = 0;
+
+            let mut passed = 0;
+            let mut inner_passed = 0;
+
+            while passed <= index {
+                let inner = self.sequence.index(current_sequence_index);
+                let id = inner.id();
+
+                if !self.content.contains_key(&id) {
+                    self.content.insert(id, self.delegate.call(inner));
+                }
+
+                let widget = self.content.get_mut(&id)
+                    .expect("The widget with the id to be inserted in the statement above");
+
+                if widget.is_ignore() {} else if widget.is_proxy() {
+                    let child_count = widget.count();
+
+                    if index < passed + child_count {
+                        inner_passed = index - passed;
+                        break;
+                    }
+
+                    passed += child_count;
+                } else {
+                    if passed == index {
+                        inner_passed = 0;
+                        break
+                    }
+
+                    passed += 1;
+                }
+
+                current_sequence_index += 1;
+            }
+
+            if passed <= index {
+
+                let inner = self.sequence.index(current_sequence_index);
+                let id = inner.id();
+
+                let widget = self.content.get_mut(&id)
+                    .expect("The widget with the id to be inserted in the statement above");
+
+                return <O as AnySequence<A>>::index(widget, inner_passed);
+            }
+
+            panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
         }
-
-        let widget = self.content.get_mut(&id)
-            .expect("The widget with the id to be inserted in the statement above");
-
-        // This is some type magic because i cant constrain O to implement A
-        <O as AnySequence<A>>::index(widget, 0)
     }
 
     pub fn foreach_child<A: ?Sized>(&mut self, f: &mut dyn FnMut(&mut A)) where O: AnySequence<A> {
@@ -144,7 +196,7 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
 
                 let widget = self.content.get_mut(&id).expect("The widget with the id to be inserted in the statement above");
 
-                count += widget.child_count();
+                count += <O as AnySequence<dyn AnyWidget>>::count(widget);
             });
 
             count
@@ -183,7 +235,7 @@ impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W:
 
 impl<T: ?Sized + Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static, W: Sequence<T>, O: Widget, D: Delegate<T, O>> Debug for ForEachWidget<W, O, D, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ForEachChild")
+        f.debug_struct("ForEachWidget")
             .field("content", &self.content)
             .finish()
     }

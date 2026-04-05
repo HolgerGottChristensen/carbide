@@ -1,5 +1,5 @@
 use crate::state::ReadState;
-use crate::widget::CommonWidget;
+use crate::widget::{CommonWidget, WidgetProperties};
 
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
@@ -7,8 +7,10 @@ use crate::state::IntoReadState;
 use crate::widget::{Empty, IntoWidget, Widget, WidgetId};
 use crate::CommonWidgetImpl;
 use crate::identifiable::Identifiable;
+use crate::widget::properties::{Kind, WidgetKindDynamic};
 
 #[derive(Debug, Clone, Widget)]
+#[carbide_exclude(Properties)]
 pub struct Flagged<C, F> where C: Widget, F: ReadState<T=WidgetFlag> {
     child: C,
     flags: F,
@@ -31,11 +33,15 @@ impl<C: Widget, F: ReadState<T=WidgetFlag>> Identifiable for Flagged<C, F> {
     }
 }
 
+impl<C: Widget, F: ReadState<T=WidgetFlag>> WidgetProperties for Flagged<C, F> {
+    type Kind = WidgetKindDynamic;
+}
+
+
 impl<C: Widget, F: ReadState<T=WidgetFlag>> CommonWidget for Flagged<C, F> {
     CommonWidgetImpl!(self, child: self.child);
 
     fn flag(&self) -> WidgetFlag {
-        dbg!(*self.flags.value());
         *self.flags.value()
     }
 

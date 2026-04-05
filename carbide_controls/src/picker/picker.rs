@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::{type_name, TypeId};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use carbide::draw::AutomaticStyle;
@@ -25,7 +25,7 @@ where
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>,
+    M: Sequence<dyn AnyIdentifiableWidget<T=T>>,
     S: PickerSelection<T>
 {
     #[id] id: WidgetId,
@@ -46,7 +46,7 @@ where
 
 impl<
     T: StateContract + PartialEq,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>,
+    M: Sequence<dyn AnyIdentifiableWidget<T=T>>,
 > Picker<T, LocalState<Focus>, M, EnabledState, String, LocalState<T>> {
     pub fn new<L: IntoReadState<String>, S: PickerSelection<T>>(label: L, selection: S, model: M) -> Picker<T, LocalState<Focus>, M, EnabledState, L::Output, S> {
         let focus = LocalState::new(Focus::Unfocused);
@@ -70,7 +70,7 @@ impl<
 impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>,
+    M: Sequence<dyn AnyIdentifiableWidget<T=T>>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
     S: PickerSelection<T>
@@ -90,7 +90,7 @@ impl<
 
             let foreach = ForEach::custom_widget(
                 self.model.clone(),
-                move |widget: &dyn AnyIdentifiableWidget<T>| {
+                move |widget: &dyn AnyIdentifiableWidget<T=T>| {
                     let selected = selected_for_closure.clone();
 
                     let selected_state = selected.selection(widget);
@@ -111,7 +111,7 @@ impl<
 impl<
     T: StateContract + PartialEq,
     F: State<T=Focus>,
-    M: Sequence<dyn AnyIdentifiableWidget<T>>,
+    M: Sequence<dyn AnyIdentifiableWidget<T=T>>,
     E: ReadState<T=bool>,
     L: ReadState<T=String>,
     S: PickerSelection<T>

@@ -132,21 +132,6 @@ fn calculate_size_stack(
     // This will be 0 if there are no children, or one child
     // It will be 1 if there are two non spacer children.
 
-    /*let mut last_was_non_spacer = false;
-    let mut is_first = true;
-    let mut number_of_spaces = 0;
-
-    widget.foreach_child(&mut |child| {
-        if !is_first {
-            if last_was_non_spacer {
-                number_of_spaces += 1;
-            }
-        }
-
-        last_was_non_spacer = !child.is_spacer();
-        is_first = false;
-    });*/
-
     let spacing_total = number_of_spaces as f64 * spacing;
 
     let mut size_for_children = dimension(

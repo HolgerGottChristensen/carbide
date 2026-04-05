@@ -6,7 +6,7 @@ use std::hash::Hash;
 
 pub trait PickerSelection<T>: StateSync + Clone + Debug + 'static where T: StateContract {
     fn selection_type(&self) -> PickerSelectionType;
-    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T>) -> Box<dyn AnyState<T=bool>>;
+    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T=T>) -> Box<dyn AnyState<T=bool>>;
 }
 
 impl<T: StateContract + PartialEq> PickerSelection<T> for LocalState<T> {
@@ -14,7 +14,7 @@ impl<T: StateContract + PartialEq> PickerSelection<T> for LocalState<T> {
         PickerSelectionType::Single
     }
 
-    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T>) -> Box<dyn AnyState<T=bool>> {
+    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T=T>) -> Box<dyn AnyState<T=bool>> {
         Map2::map(
             widget.identifier().boxed().ignore_writes(),
             self.clone(),
@@ -35,7 +35,7 @@ impl<T: StateContract + PartialEq> PickerSelection<T> for LocalState<Option<T>> 
         PickerSelectionType::Optional
     }
 
-    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T>) -> Box<dyn AnyState<T=bool>> {
+    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T=T>) -> Box<dyn AnyState<T=bool>> {
         Map2::map(
             widget.identifier().boxed().ignore_writes(),
             self.clone(),
@@ -58,7 +58,7 @@ impl<T: StateContract + PartialEq + Eq + Hash> PickerSelection<T> for LocalState
         PickerSelectionType::Multi
     }
 
-    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T>) -> Box<dyn AnyState<T=bool>> {
+    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T=T>) -> Box<dyn AnyState<T=bool>> {
         Map2::map(
             widget.identifier().boxed().ignore_writes(),
             self.clone(),
@@ -81,7 +81,7 @@ impl<T: StateContract + Ord> PickerSelection<T> for LocalState<BTreeSet<T>> {
         PickerSelectionType::Multi
     }
 
-    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T>) -> Box<dyn AnyState<T=bool>> {
+    fn selection(&self, widget: &dyn AnyIdentifiableWidget<T=T>) -> Box<dyn AnyState<T=bool>> {
         Map2::map(
             widget.identifier().boxed().ignore_writes(),
             self.clone(),

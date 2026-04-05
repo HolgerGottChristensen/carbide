@@ -20,20 +20,21 @@ impl Tagged<u32, u32, Empty> {
     }
 }
 
-impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiableWidget<T> for Tagged<T, S, C> {
+impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiableWidget for Tagged<T, S, C> {
+    type T = T;
     fn identifier(&self) -> &dyn AnyReadState<T=T> {
         &self.tag
     }
 
-    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T> {
+    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T=Self::T> {
         todo!()//self.child.index(index)
     }
 
-    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
         todo!()//self.child.foreach(f)
     }
 
-    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T>)) {
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
         todo!()//self.child.foreach_rev(f)
     }
 }

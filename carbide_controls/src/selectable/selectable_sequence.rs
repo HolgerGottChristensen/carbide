@@ -157,7 +157,7 @@ macro_rules! tuple_sequence_impl {
     };
 }
 
-tuple_sequence_impl!(W1);
+//tuple_sequence_impl!(W1);
 tuple_sequence_impl!(W1, W2);
 tuple_sequence_impl!(W1, W2, W3);
 tuple_sequence_impl!(W1, W2, W3, W4);
@@ -169,3 +169,62 @@ tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
 tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);
+
+#[allow(non_snake_case)]
+#[allow(unused_parens)]
+impl<W1: SelectableWidget> ReverseAnySequence<(   W1   )> for dyn AnySelectableWidget {
+    fn index(value: &mut (   W1   ), index: usize) -> &mut dyn AnySelectableWidget {
+        let (   W1   ) = value;
+
+        let mut passed = 0;
+
+        if W1.is_ignore() {} else if W1.is_proxy() {
+            let child_count = W1.child_count();
+            if index < passed + child_count {
+                return AnySelectableWidget::child(W1, index - passed);
+            }
+
+            passed += child_count;
+        } else {
+            if index == passed {
+                return W1;
+            }
+
+            passed += 1;
+        }
+
+        panic!("Index out of bounds. Index: {}, Passed: {}", index, passed);
+    }
+
+    fn count(value: &mut (   W1   )) -> usize {
+        let (   W1   ) = value;
+
+        let mut count = 0;
+
+        if W1.is_ignore() {} else if W1.is_proxy() {
+            count += W1.child_count();
+        } else {
+            count += 1;
+        }
+
+        count
+    }
+
+    fn foreach(value: &mut (   W1   ), f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
+        let (   W1   ) = value;
+        if W1.is_ignore() {} else if W1.is_proxy() {
+            AnySelectableWidget::foreach_child(W1, f);
+        } else {
+            f(W1);
+        }
+    }
+
+    fn foreach_rev(value: &mut (   W1   ), f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {
+        let (   W1    ) = value;
+        if W1.is_ignore() {} else if W1.is_proxy() {
+            AnySelectableWidget::foreach_child_rev(W1, f);
+        } else {
+            f(W1);
+        }
+    }
+}
