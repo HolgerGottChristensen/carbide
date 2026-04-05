@@ -112,7 +112,7 @@ impl InlineStyle {
 
 impl PickerStyle for InlineStyle {
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
-        /*let radio_group = VStack::new(
+        let radio_group = VStack::new(
             ForEach::custom_widget(
                 model,
                 move |w: &dyn AnySelectableWidget| {
@@ -127,8 +127,6 @@ impl PickerStyle for InlineStyle {
         )).cross_axis_alignment(CrossAxisAlignment::Start)
             .spacing(8.0);
 
-        labelled.boxed()*/
-
-        todo!()
+        labelled.boxed()
     }
 }
