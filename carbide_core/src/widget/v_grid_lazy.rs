@@ -1,34 +1,22 @@
-use std::collections::HashMap;
-use smallvec::{SmallVec, smallvec};
-use carbide::widget::CrossAxisAlignment;
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, Sequence};
-
-#[derive(Debug, Clone)]
-pub enum VGridColumn {
-    Fixed(f64),
-    Adaptive(f64),
-    Flexible,
-    MinMax {
-        minimum: f64,
-        maximum: f64,
-    }
-}
+use crate::widget::{AnyWidget, CommonWidget, GridItem, Sequence, Widget, WidgetId};
+use crate::CommonWidgetImpl;
+use smallvec::{SmallVec, ToSmallVec};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct VGrid<W> where W: Sequence
+pub struct LazyVGrid<W> where W: Sequence
 {
     #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
     spacing: Dimension,
-    columns: Vec<VGridColumn>,
+    columns: SmallVec<[GridItem; 8]>,
 
-    calculated_widths: Vec<f64>,
+    calculated_widths: SmallVec<[f64; 8]>,
 
     child_height_estimate: Option<Scalar>,
     child_heights: HashMap<WidgetId, Scalar>,
@@ -36,16 +24,16 @@ pub struct VGrid<W> where W: Sequence
     current_indices: SmallVec<[usize; 32]>
 }
 
-impl<W: Sequence> VGrid<W> {
-    pub fn new(children: W, columns: Vec<VGridColumn>) -> VGrid<W> {
-        VGrid {
+impl<W: Sequence> LazyVGrid<W> {
+    pub fn new(columns: Vec<GridItem>, children: W) -> LazyVGrid<W> {
+        LazyVGrid {
             id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: Dimension::new(10.0, 10.0),
-            columns,
-            calculated_widths: vec![],
+            columns: columns.to_smallvec(),
+            calculated_widths: SmallVec::new(),
             child_height_estimate: None,
             child_heights: Default::default(),
             current_indices: Default::default(),
@@ -58,7 +46,7 @@ impl<W: Sequence> VGrid<W> {
     }
 }
 
-impl<W: Sequence> Layout for VGrid<W> {
+impl<W: Sequence> Layout for LazyVGrid<W> {
 
     // https://www.objc.io/blog/2020/11/23/grid-layout/
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
@@ -81,21 +69,21 @@ impl<W: Sequence> Layout for VGrid<W> {
 
         // Subtract all the fixed columns
         remaining_width = remaining_width - self.columns.iter().filter_map(|col| match col {
-            VGridColumn::Fixed(width) => Some(*width),
-            VGridColumn::Adaptive(_) => None,
-            VGridColumn::Flexible => None,
-            VGridColumn::MinMax { .. } => None,
+            GridItem::Fixed(width) => Some(*width),
+            GridItem::Adaptive(_) => None,
+            GridItem::Flexible => None,
+            GridItem::MinMax { .. } => None,
         }).sum::<f64>();
 
-        let mut number_of_remaining_cols = self.columns.iter().filter(|a| !matches!(a, VGridColumn::Fixed(_))).count();
+        let mut number_of_remaining_cols = self.columns.iter().filter(|a| !matches!(a, GridItem::Fixed(_))).count();
 
         // Iterate each remaining column in order
         for column in &self.columns {
             match column {
-                VGridColumn::Fixed(w) => {
+                GridItem::Fixed(w) => {
                     self.calculated_widths.push(*w);
                 }
-                VGridColumn::Adaptive(w) => {
+                GridItem::Adaptive(w) => {
                     let mut proposed_width = remaining_width / number_of_remaining_cols as Scalar;
                     remaining_width -= proposed_width;
 
@@ -119,13 +107,13 @@ impl<W: Sequence> Layout for VGrid<W> {
 
                     number_of_remaining_cols -= 1;
                 }
-                VGridColumn::Flexible => {
+                GridItem::Flexible => {
                     let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
                     self.calculated_widths.push(proposed_width);
                     remaining_width -= proposed_width;
                     number_of_remaining_cols -= 1;
                 }
-                VGridColumn::MinMax { minimum, maximum } => {
+                GridItem::MinMax { minimum, maximum } => {
                     let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
                     if proposed_width < *minimum {
                         self.calculated_widths.push(*minimum);
@@ -244,7 +232,7 @@ impl<W: Sequence> Layout for VGrid<W> {
     }
 }
 
-impl<W: Sequence> CommonWidget for VGrid<W> {
+impl<W: Sequence> CommonWidget for LazyVGrid<W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
 
     fn child(&mut self, index: usize) -> &mut dyn AnyWidget {

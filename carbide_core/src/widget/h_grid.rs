@@ -14,12 +14,12 @@ pub struct LazyHGrid<W> where W: Sequence
     position: Position,
     dimension: Dimension,
     spacing: Dimension,
-    columns: SmallVec<[GridItem; 8]>,
+    rows: SmallVec<[GridItem; 8]>,
 
-    calculated_widths: SmallVec<[f64; 8]>,
+    calculated_heights: SmallVec<[f64; 8]>,
 
-    child_height_estimate: Option<Scalar>,
-    child_heights: HashMap<WidgetId, Scalar>,
+    child_width_estimate: Option<Scalar>,
+    child_widths: HashMap<WidgetId, Scalar>,
 
     current_indices: SmallVec<[usize; 32]>
 }
@@ -32,10 +32,10 @@ impl<W: Sequence> LazyHGrid<W> {
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: Dimension::new(10.0, 10.0),
-            columns: columns.to_smallvec(),
-            calculated_widths: SmallVec::new(),
-            child_height_estimate: None,
-            child_heights: Default::default(),
+            rows: columns.to_smallvec(),
+            calculated_heights: SmallVec::new(),
+            child_width_estimate: None,
+            child_widths: Default::default(),
             current_indices: Default::default(),
         }
     }
@@ -50,122 +50,122 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
 
     // https://www.objc.io/blog/2020/11/23/grid-layout/
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.calculated_widths.clear();
+        self.calculated_heights.clear();
 
         let child_count = self.children.count();
 
         // If there are no children, we default to height 0.0
         if child_count == 0 {
             self.current_indices.clear();
-            self.dimension = Dimension::new(requested_size.width, 0.0);
+            self.dimension = Dimension::new(0.0, requested_size.height);
         }
 
-        let total_width = requested_size.width;
+        let total_heights = requested_size.height;
 
-        let mut remaining_width = total_width;
+        let mut remaining_height = total_heights;
 
         // Subtract the spacings between the grid columns
-        remaining_width = remaining_width - self.columns.len().saturating_sub(1) as f64 * self.spacing.width;
+        remaining_height = remaining_height - self.rows.len().saturating_sub(1) as f64 * self.spacing.height;
 
         // Subtract all the fixed columns
-        remaining_width = remaining_width - self.columns.iter().filter_map(|col| match col {
-            GridItem::Fixed(width) => Some(*width),
+        remaining_height = remaining_height - self.rows.iter().filter_map(|row| match row {
+            GridItem::Fixed(height) => Some(*height),
             GridItem::Adaptive(_) => None,
             GridItem::Flexible => None,
             GridItem::MinMax { .. } => None,
         }).sum::<f64>();
 
-        let mut number_of_remaining_cols = self.columns.iter().filter(|a| !matches!(a, GridItem::Fixed(_))).count();
+        let mut number_of_remaining_rows = self.rows.iter().filter(|a| !matches!(a, GridItem::Fixed(_))).count();
 
         // Iterate each remaining column in order
-        for column in &self.columns {
-            match column {
+        for row in &self.rows {
+            match row {
                 GridItem::Fixed(w) => {
-                    self.calculated_widths.push(*w);
+                    self.calculated_heights.push(*w);
                 }
                 GridItem::Adaptive(w) => {
-                    let mut proposed_width = remaining_width / number_of_remaining_cols as Scalar;
-                    remaining_width -= proposed_width;
+                    let mut proposed_height = remaining_height / number_of_remaining_rows as Scalar;
+                    remaining_height -= proposed_height;
 
-                    let mut proposed_width2 = proposed_width;
-                    let mut column_count = 1;
+                    let mut proposed_height2 = proposed_height;
+                    let mut row_count = 1;
                     let mut spacing_count = 0;
-                    proposed_width2 -= *w;
+                    proposed_height2 -= *w;
 
-                    while proposed_width2 > self.spacing.width + *w {
-                        proposed_width2 -= *w;
-                        proposed_width2 -= self.spacing.width;
-                        column_count += 1;
+                    while proposed_height2 > self.spacing.height + *w {
+                        proposed_height2 -= *w;
+                        proposed_height2 -= self.spacing.height;
+                        row_count += 1;
                         spacing_count += 1;
                     }
 
-                    proposed_width -= spacing_count as f64 * self.spacing.width;
+                    proposed_height -= spacing_count as f64 * self.spacing.width;
 
-                    for _ in 0..column_count {
-                        self.calculated_widths.push(proposed_width / column_count as f64);
+                    for _ in 0..row_count {
+                        self.calculated_heights.push(proposed_height / row_count as f64);
                     }
 
-                    number_of_remaining_cols -= 1;
+                    number_of_remaining_rows -= 1;
                 }
                 GridItem::Flexible => {
-                    let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
-                    self.calculated_widths.push(proposed_width);
-                    remaining_width -= proposed_width;
-                    number_of_remaining_cols -= 1;
+                    let proposed_height = remaining_height / number_of_remaining_rows as Scalar;
+                    self.calculated_heights.push(proposed_height);
+                    remaining_height -= proposed_height;
+                    number_of_remaining_rows -= 1;
                 }
                 GridItem::MinMax { minimum, maximum } => {
-                    let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
-                    if proposed_width < *minimum {
-                        self.calculated_widths.push(*minimum);
-                        remaining_width -= *minimum;
-                    } else if proposed_width > *maximum {
-                        self.calculated_widths.push(*maximum);
-                        remaining_width -= *maximum;
+                    let proposed_height = remaining_height / number_of_remaining_rows as Scalar;
+                    if proposed_height < *minimum {
+                        self.calculated_heights.push(*minimum);
+                        remaining_height -= *minimum;
+                    } else if proposed_height > *maximum {
+                        self.calculated_heights.push(*maximum);
+                        remaining_height -= *maximum;
                     } else {
-                        self.calculated_widths.push(proposed_width);
-                        remaining_width -= proposed_width;
+                        self.calculated_heights.push(proposed_height);
+                        remaining_height -= proposed_height;
                     }
 
-                    number_of_remaining_cols -= 1;
+                    number_of_remaining_rows -= 1;
                 }
             }
         }
 
-        let row_count = (child_count as Scalar / self.calculated_widths.len() as Scalar).ceil() as usize;
+        let column_count = (child_count as Scalar / self.calculated_heights.len() as Scalar).ceil() as usize;
 
         // Extract or calculate initial height estimate
-        let mut height_estimate = if let Some(height_estimate) = self.child_height_estimate {
-            height_estimate
+        let mut width_estimate = if let Some(width_estimate) = self.child_width_estimate {
+            width_estimate
         } else {
             // Calculate height estimate based on the first N children
             let child = self.children.index(0);
             let chosen_size = child.calculate_size(requested_size, ctx);
 
-            self.child_heights.insert(child.id(), chosen_size.height);
+            self.child_widths.insert(child.id(), chosen_size.width);
 
-            self.child_height_estimate = Some(chosen_size.height);
-            chosen_size.height
+            self.child_width_estimate = Some(chosen_size.width);
+            chosen_size.width
         };
 
-        let offset = -self.y();
+        let offset = -self.x();
 
-        let mut cummulated_y = 0.0;
+        let mut cummulated_x = 0.0;
 
         self.current_indices.clear();
 
-        let estimate_for_row = height_estimate.max(1.0) + self.spacing.height;
-        let mut row = (offset / estimate_for_row).floor().max(0.0) as usize;
+        let estimate_for_column = width_estimate.max(1.0) + self.spacing.width;
+        let mut column = (offset / estimate_for_column).floor().max(0.0) as usize;
 
-        let estimated_start_y = row as Scalar * estimate_for_row;
+        let estimated_start_x = column as Scalar * estimate_for_column;
 
-        let bla = estimated_start_y - offset;
+        let bla = estimated_start_x - offset;
 
         'outer: loop {
-            let mut current_row_height: Scalar = 0.0;
-            let mut cummulated_x = 0.0;
+            let mut current_column_width: Scalar = 0.0;
+            let mut cummulated_y = 0.0;
 
-            for row_offset in 0..self.calculated_widths.len() {
-                let index = row * self.calculated_widths.len() + row_offset;
+            for column_offset in 0..self.calculated_heights.len() {
+                let index = column * self.calculated_heights.len() + column_offset;
 
                 if index == child_count {
                     break 'outer
@@ -176,44 +176,44 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
                 let child = self.children.index(index);
 
                 // We set the relative offset of the child here. This is then offset in position_children.
-                child.set_y(cummulated_y + estimated_start_y);
-                child.set_x(cummulated_x);
+                child.set_y(cummulated_y);
+                child.set_x(cummulated_x + estimated_start_x);
 
                 let for_child = Dimension::new(
-                    self.calculated_widths[row_offset],
-                    requested_size.height
+                    requested_size.width,
+                    self.calculated_heights[column_offset],
                 );
 
                 let chosen_size = child.calculate_size(for_child, ctx);
 
                 let child_id = child.id();
 
-                if !self.child_heights.contains_key(&child_id) {
-                    height_estimate = (height_estimate * self.child_heights.len() as Scalar + chosen_size.height) / (self.child_heights.len() + 1) as Scalar;
+                if !self.child_widths.contains_key(&child_id) {
+                    width_estimate = (width_estimate * self.child_widths.len() as Scalar + chosen_size.width) / (self.child_widths.len() + 1) as Scalar;
                 }
 
                 // TODO: Update height estimate when children are changing sizes dynamically
-                self.child_heights.insert(child.id(), chosen_size.height);
+                self.child_widths.insert(child.id(), chosen_size.width);
 
-                current_row_height = current_row_height.max(chosen_size.height);
-                cummulated_x += self.calculated_widths[row_offset] + self.spacing.width;
+                current_column_width = current_column_width.max(chosen_size.width);
+                cummulated_y += self.calculated_heights[column_offset] + self.spacing.height;
             }
 
-            if cummulated_y + current_row_height > requested_size.height - bla - self.spacing.height {
+            if cummulated_x + current_column_width > requested_size.width - bla - self.spacing.width {
                 break
             }
 
-            cummulated_y += current_row_height + self.spacing.height;
-            row += 1;
+            cummulated_x += current_column_width + self.spacing.width;
+            column += 1;
         }
 
-        self.child_height_estimate = Some(height_estimate);
+        self.child_width_estimate = Some(width_estimate);
 
         // We only estimate the height, and always use the requested width
-        let total_height_estimate = height_estimate * row_count as Scalar
-            + self.spacing.height * row_count.saturating_sub(1) as Scalar;
+        let total_width_estimate = width_estimate * column_count as Scalar
+            + self.spacing.width * column_count.saturating_sub(1) as Scalar;
 
-        self.dimension = Dimension::new(requested_size.width, total_height_estimate);
+        self.dimension = Dimension::new(total_width_estimate, requested_size.height);
 
         self.dimension
     }

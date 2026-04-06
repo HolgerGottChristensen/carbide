@@ -10,15 +10,15 @@ fn main() {
     application.set_scene(
         Window::new(
             "HGrid - Carbide",
-            Dimension::new(700.0, 700.0),
-            HGrid::new(ForEach::new(0x1f600..=0x1f64f, |val, idx| unsafe {
+            Dimension::new(750.0, 750.0),
+            LazyHGrid::new(vec![
+                GridItem::Adaptive(80.0)
+            ], ForEach::new(0x1f600..=0x1f64f, |val, idx| unsafe {
                 ZStack::new((
                     RoundedRectangle::new(5.0),
                     Text::new(Map1::read_map(val, |c| char::from_u32_unchecked(*c))).font_size(EnvironmentFontSize::LargeTitle),
                 )).frame_fixed_width(60.0)
-            }), vec![
-                HGridRow::Adaptive(80.0)
-            ]).padding(10.0),
+            })).padding(10.0),
         )
     );
 

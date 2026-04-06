@@ -7,6 +7,7 @@ pub use scale_mode::*;
 pub use scroll_direction::*;
 pub use shape_style::*;
 pub use split_type::*;
+pub use grid_item::*;
 
 mod blur_type;
 mod corner_radii;
@@ -17,3 +18,4 @@ mod scale_mode;
 mod scroll_direction;
 mod shape_style;
 mod split_type;
+mod grid_item;
