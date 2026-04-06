@@ -35,18 +35,17 @@ impl<T: ?Sized, U: Debug + Clone + 'static> AnySequence<T> for U where T: Revers
 
 pub trait AnySequence<T=dyn AnyWidget>: Debug + DynClone + 'static where T: ?Sized {
     fn len(&self) -> Box<dyn AnyReadState<T=usize>> where Self: Clone {
-        /*let mut s = clone_box(self);
+        let mut s = self.clone();
 
         Map1::read_map(0, move |_| {
+            let mut s = s.clone();
             let mut count = 0;
-            s.foreach_mut(&mut |_| {
+            s.foreach(&mut |_: &mut T| {
                 count += 1;
             });
 
             count
-        }).as_dyn_read()*/
-
-        todo!()
+        }).as_dyn_read()
     }
 
     fn index(&mut self, index: usize) -> &mut T;
