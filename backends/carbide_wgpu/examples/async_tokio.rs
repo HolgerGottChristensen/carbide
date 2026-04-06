@@ -4,7 +4,7 @@ use tokio::time::{sleep, Duration};
 
 use carbide_core::asynchronous::Task;
 use carbide_core::color::{GREEN, RED};
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Dimension, ImageFormat};
 use carbide_core::draw::ImageId;
 use carbide_core::draw::Texture;
 use carbide_core::draw::TextureFormat;
@@ -65,7 +65,7 @@ fn main() {
         let image = carbide_core::image::load_from_memory(&data).unwrap();
         image
     }, move |image, ctx| {
-        let id = ImageId::new(PathBuf::new().join("ImageIdForAsyncImage"));
+        let id = ImageId::temp(ImageFormat::Png);
 
         let texture = Texture {
             width: image.width(),
