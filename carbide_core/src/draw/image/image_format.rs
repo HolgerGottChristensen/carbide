@@ -79,7 +79,7 @@ impl ImageFormat {
             "pbm" | "pam" | "ppm" | "pgm" | "pnm" => ImageFormat::Pnm,
             "ff" => ImageFormat::Farbfeld,
             "qoi" => ImageFormat::Qoi,
-            _ => ImageFormat::Unknown,
+            _ => ImageFormat::Png, // fall back to png "texture"
         }
     }
 }

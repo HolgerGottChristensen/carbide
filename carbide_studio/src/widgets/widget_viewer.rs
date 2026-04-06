@@ -35,27 +35,11 @@ impl WidgetViewer {
 impl CommonWidget for WidgetViewer {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension);
 
-    fn foreach_child(& self, f: &mut dyn FnMut(& dyn AnyWidget)) {
-        unimplemented!()
-    }
-
-    fn foreach_child(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         unimplemented!()
     }
 
     fn foreach_child_rev(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
-        unimplemented!()
-    }
-
-    fn foreach_child_direct(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
-        unimplemented!()
-    }
-
-    fn foreach_child_direct_rev(& mut self, f: &mut dyn FnMut(& mut dyn AnyWidget)) {
-        unimplemented!()
-    }
-
-    fn child(&self, index: usize) -> &dyn AnyWidget {
         unimplemented!()
     }
 

@@ -9,7 +9,7 @@ fn main() {
     fn delegate(sequence: impl Sequence) -> impl Sequence {
         (
             Rectangle::new().fill(EnvironmentColor::Green).frame(100.0, 50.0),
-            Text::new(sequence.len()).font_size(EnvironmentFontSize::LargeTitle),
+            Text::new(sequence.len_state()).font_size(EnvironmentFontSize::LargeTitle),
             ForEach::identity(sequence)
         )
     }

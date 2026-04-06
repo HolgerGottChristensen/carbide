@@ -40,7 +40,7 @@ impl Identifiable for String
     }
 }
 
-impl<T> Identifiable for Vec<T> where T: Identifiable + Clone + Debug + Eq + Hash {
+impl<T> Identifiable for Vec<T> where T: Identifiable + Clone + Debug {
     type Id = Vec<T::Id>;
 
     fn id(&self) -> Self::Id {

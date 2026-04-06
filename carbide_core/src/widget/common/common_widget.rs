@@ -154,10 +154,10 @@ macro_rules! CommonWidgetImpl {
             let mut passed = 0;
 
             $(
-                let child_count = $child.count();
+                let child_count = AnySequence::<dyn AnyWidget>::count(&mut $child);
 
                 if i < passed + child_count {
-                    $child.index(i - passed)
+                    return $child.index(i - passed);
                 }
 
                 passed += child_count;

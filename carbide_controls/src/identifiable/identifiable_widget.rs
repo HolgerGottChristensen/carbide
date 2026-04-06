@@ -70,15 +70,15 @@ impl<
     }
 
     fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T=G> {
-        todo!()
+        self.child::<dyn AnyIdentifiableWidget<T=G>>(index)
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=G>)) {
-        todo!()//(self.children).foreach_mut(f);
+        self.foreach_child::<dyn AnyIdentifiableWidget<T=G>>(f)
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=G>)) {
-        todo!()//(self.children).foreach_rev(f);
+        self.foreach_child_rev::<dyn AnyIdentifiableWidget<T=G>>(f)
     }
 }
 
@@ -95,14 +95,14 @@ impl<
     }
 
     fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T=G> {
-        todo!()//self.content.index(index)
+        self.child::<dyn AnyIdentifiableWidget<T=G>>(index)
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=G>)) {
-        todo!()//(self.content).foreach(f);
+        self.foreach_child::<dyn AnyIdentifiableWidget<T=G>>(f)
     }
 
     fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=G>)) {
-        todo!()//(self.content).foreach_rev(f);
+        self.foreach_child_rev::<dyn AnyIdentifiableWidget<T=G>>(f)
     }
 }

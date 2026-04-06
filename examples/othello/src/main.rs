@@ -1,10 +1,10 @@
 use carbide::draw::Dimension;
 use carbide::environment::EnvironmentColor;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, ReadState, State};
-use carbide::widget::{AnyWidget, ForEach, HStack, Rectangle, Text, LazyVGrid, GridItem, VStack, Widget, WidgetExt};
+use carbide::widget::{AnyWidget, ForEach, HStack, Rectangle, Text, LazyVGrid, GridItem, VStack, Widget, WidgetExt, Scroll};
 use carbide::{lens, ui, Application, Window};
 
-use crate::game_state::{BoardPosition, GameState, Player, Tile};
+use crate::game_state::{BoardPosition, GameState, Player, Tile, TileInfo};
 
 mod game_state;
 
@@ -37,16 +37,16 @@ fn main() {
                 Rectangle::new().fill(player_indicator_color).frame(20.0, 20.0),
                 Text::new(score_text),
             )),
-            LazyVGrid::new(
+            Scroll::new(LazyVGrid::new(
                 vec![
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
-                    GridItem::Flexible { minimum: 0.0, maximum: f64::MAX },
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
+                    GridItem::Flexible,
                 ],
                 ForEach::new(rows, move |row, idx: Box<dyn AnyReadState<T=usize>>| {
                     let game_for_delegate = game_for_delegate.clone();
@@ -55,19 +55,20 @@ fn main() {
                         let idx = idx.clone();
                         let game_for_delegate = game_for_delegate.clone();
 
-                        ui!(match item {
-                            Tile::Empty => {
+                        let info = lens!(item.info);
+                        ui!(match info {
+                            TileInfo::Empty => {
                                 Rectangle::new().fill(EnvironmentColor::Gray)
                                     .on_click(move |_| {
                                         game_for_delegate.clone().value_mut().place(BoardPosition {x: *index.value(), y: *idx.value()});
                                     })
                             },
-                            Tile::Filled(Player::Black) => Rectangle::new().fill(EnvironmentColor::Red),
-                            Tile::Filled(Player::White) => Rectangle::new().fill(EnvironmentColor::Green),
-                        })
+                            TileInfo::Filled(Player::Black) => Rectangle::new().fill(EnvironmentColor::Red),
+                            TileInfo::Filled(Player::White) => Rectangle::new().fill(EnvironmentColor::Green),
+                        }).aspect_ratio(Dimension::new(1.0, 1.0))
                     })
                 })
-            )
+            ).border())
         ))
             .padding(10.0)
     ));

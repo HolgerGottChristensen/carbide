@@ -19,7 +19,7 @@ where
     T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
-    ST: State<T=T> + Clone + 'static,
+    ST: ReadState<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static,
 {
     /// The state that is evaluated whenever trying to get the index within the vec.
@@ -36,7 +36,7 @@ impl IndexState<Vec<()>, (), usize, Vec<()>, usize> {
         T: StateContract + Index<Idx, Output=U>,
         U: StateContract,
         Idx: StateContract,
-        ST: State<T=T> + Clone + 'static,
+        ST: ReadState<T=T> + Clone + 'static,
         SIdx: ReadState<T=Idx> + Clone + 'static
     {
         IndexState {
@@ -88,7 +88,7 @@ where
     T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
-    ST: State<T=T> + Clone + 'static,
+    ST: ReadState<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     fn sync(&mut self, env: &mut Environment) -> bool {
@@ -105,7 +105,7 @@ where
     T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
-    ST: State<T=T> + Clone + 'static,
+    ST: ReadState<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     type T = U;
@@ -139,7 +139,7 @@ where
     T: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
-    ST: State<T=T> + Clone + 'static,
+    ST: ReadState<T=T> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -156,7 +156,7 @@ where
     V: StateContract + Index<Idx, Output=U>,
     U: StateContract,
     Idx: StateContract,
-    ST: State<T=V> + Clone + 'static,
+    ST: ReadState<T=V> + Clone + 'static,
     SIdx: ReadState<T=Idx> + Clone + 'static
 {
     // Can be simplified once this is stabilized: https://github.com/rust-lang/rust/issues/63063

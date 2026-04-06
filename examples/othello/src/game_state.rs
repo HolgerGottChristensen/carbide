@@ -1,8 +1,26 @@
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, Index, IndexMut, Not};
+use std::sync::atomic::{AtomicU32, Ordering};
+use carbide::Id;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Tile {
+#[derive(Debug, Clone, Eq, PartialEq, Id)]
+pub struct Tile {
+    #[id] pub id: u32,
+    pub info: TileInfo
+}
+
+impl Tile {
+    fn new() -> Tile {
+        static COUNTER: AtomicU32 = AtomicU32::new(0);
+        Tile {
+            id: COUNTER.fetch_add(1, Ordering::Relaxed),
+            info: TileInfo::Empty
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum TileInfo {
     Empty,
     Filled(Player)
 }
@@ -70,12 +88,12 @@ impl IndexMut<BoardPosition> for GameState {
 
 impl GameState {
     pub fn new(radius: usize) -> GameState {
-        let mut board = vec![vec![Tile::Empty; radius*2]; radius*2];
+        let mut board = vec![vec![Tile::new(); radius*2]; radius*2];
 
-        board[radius-1][radius-1] = Tile::Filled(Player::White);
-        board[radius][radius] = Tile::Filled(Player::White);
-        board[radius-1][radius] = Tile::Filled(Player::Black);
-        board[radius][radius-1] = Tile::Filled(Player::Black);
+        board[radius-1][radius-1].info = TileInfo::Filled(Player::White);
+        board[radius][radius].info = TileInfo::Filled(Player::White);
+        board[radius-1][radius].info = TileInfo::Filled(Player::Black);
+        board[radius][radius-1].info = TileInfo::Filled(Player::Black);
 
         GameState {
             board,
@@ -90,10 +108,10 @@ impl GameState {
 
         for row in &self.board {
             for item in row {
-                match item {
-                    Tile::Empty => {}
-                    Tile::Filled(Player::Black) => black += 1,
-                    Tile::Filled(Player::White) => white += 1,
+                match item.info {
+                    TileInfo::Empty => {}
+                    TileInfo::Filled(Player::Black) => black += 1,
+                    TileInfo::Filled(Player::White) => white += 1,
                 }
             }
         }
@@ -109,7 +127,7 @@ impl GameState {
 
         for (y, row) in self.board.iter().enumerate() {
             for (x, item) in row.iter().enumerate() {
-                if matches!(item, Tile::Empty) {
+                if matches!(item.info, TileInfo::Empty) {
                     empty_positions.push(BoardPosition { x, y });
                 }
             }
@@ -143,7 +161,7 @@ impl GameState {
             return false;
         }
 
-        if matches!(self[pos], Tile::Filled(_)) {
+        if matches!(self[pos].info, TileInfo::Filled(_)) {
             return false;
         }
 
@@ -159,7 +177,7 @@ impl GameState {
             return false;
         }
 
-        self[pos] = Tile::Filled(current);
+        self[pos].info = TileInfo::Filled(current);
         self.current_player = !self.current_player;
 
         true
@@ -175,23 +193,23 @@ impl GameState {
             return false;
         }
 
-        match self[current] {
-            Tile::Empty => {
+        match self[current].info {
+            TileInfo::Empty => {
                 false
             }
-            Tile::Filled(p) if p == opponent => {
+            TileInfo::Filled(p) if p == opponent => {
                 let should_capture = self.capture(current, x, y, check, false);
 
                 if should_capture {
                     if !check {
-                        self[current] = Tile::Filled(!p);
+                        self[current].info = TileInfo::Filled(!p);
                     }
                     true
                 } else {
                     false
                 }
             }
-            Tile::Filled(_) => {
+            TileInfo::Filled(_) => {
                 !top
             }
         }
@@ -204,10 +222,10 @@ impl Display for GameState {
 
         for row in &self.board {
             for item in row {
-                match item {
-                    Tile::Empty => s.push('E'),
-                    Tile::Filled(Player::Black) => s.push('B'),
-                    Tile::Filled(Player::White) => s.push('W'),
+                match item.info {
+                    TileInfo::Empty => s.push('E'),
+                    TileInfo::Filled(Player::Black) => s.push('B'),
+                    TileInfo::Filled(Player::White) => s.push('W'),
                 }
                 s.push(' ');
             }

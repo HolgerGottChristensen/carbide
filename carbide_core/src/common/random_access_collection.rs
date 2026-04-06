@@ -1,7 +1,7 @@
 use carbide::identifiable::Identifiable;
-use carbide::state::{IndexState, LocalState, ReadState, StateContract};
+use carbide::state::{IndexState, LocalState, ReadState, State, StateContract};
 use std::ops::{Index, IndexMut, Range, RangeFrom, RangeInclusive};
-use crate::state::AnyState;
+use crate::state::{AnyReadState, AnyState, FieldState};
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of
 /// getting the next index.
@@ -204,6 +204,153 @@ where
     type Idx = A::Idx;
     type Indices = A::Indices;
     type Item<'a> = Box<dyn AnyState<T=T>>;
+
+    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+        Box::new(IndexState::new(self.clone(), index))
+    }
+
+    fn id(&self, index: Self::Idx) -> T::Id
+    where
+        T: Identifiable
+    {
+        self.value().id(index)
+    }
+
+    fn start_index(&self) -> Self::Idx {
+        self.value().start_index()
+    }
+
+    fn indices(&self) -> Self::Indices {
+        self.value().indices()
+    }
+
+    fn len(&self) -> usize {
+        self.value().len()
+    }
+
+    fn end_index(&self) -> Self::Idx {
+        self.value().end_index()
+    }
+
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        self.value().index_from_offset(index)
+    }
+
+    fn next_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().next_index(idx)
+    }
+
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().prev_index(idx)
+    }
+}
+
+impl<S: State<T=FROM>, FROM: StateContract, T: StateContract + 'static, A: RandomAccessCollection<T>> RandomAccessCollection<T> for FieldState<S, FROM, A>
+where
+    A: Index<A::Idx, Output = T> + IndexMut<A::Idx, Output = T>,
+    <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
+{
+    type Idx = A::Idx;
+    type Indices = A::Indices;
+    type Item<'a> = Box<dyn AnyState<T=T>>;
+
+    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+        Box::new(IndexState::new(self.clone(), index))
+    }
+
+    fn id(&self, index: Self::Idx) -> T::Id
+    where
+        T: Identifiable
+    {
+        self.value().id(index)
+    }
+
+    fn start_index(&self) -> Self::Idx {
+        self.value().start_index()
+    }
+
+    fn indices(&self) -> Self::Indices {
+        self.value().indices()
+    }
+
+    fn len(&self) -> usize {
+        self.value().len()
+    }
+
+    fn end_index(&self) -> Self::Idx {
+        self.value().end_index()
+    }
+
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        self.value().index_from_offset(index)
+    }
+
+    fn next_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().next_index(idx)
+    }
+
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().prev_index(idx)
+    }
+}
+
+impl<T: StateContract + 'static, A: RandomAccessCollection<T>> RandomAccessCollection<T> for Box<dyn AnyState<T=A>>
+where
+    A: Index<A::Idx, Output = T> + IndexMut<A::Idx, Output = T>,
+    <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
+{
+    type Idx = A::Idx;
+    type Indices = A::Indices;
+    type Item<'a> = Box<dyn AnyState<T=T>>;
+
+    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+        Box::new(IndexState::new(self.clone(), index))
+    }
+
+    fn id(&self, index: Self::Idx) -> T::Id
+    where
+        T: Identifiable
+    {
+        self.value().id(index)
+    }
+
+    fn start_index(&self) -> Self::Idx {
+        self.value().start_index()
+    }
+
+    fn indices(&self) -> Self::Indices {
+        self.value().indices()
+    }
+
+    fn len(&self) -> usize {
+        self.value().len()
+    }
+
+    fn end_index(&self) -> Self::Idx {
+        self.value().end_index()
+    }
+
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        self.value().index_from_offset(index)
+    }
+
+    fn next_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().next_index(idx)
+    }
+
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        self.value().prev_index(idx)
+    }
+}
+
+impl<T: StateContract + 'static, A: RandomAccessCollection<T>> RandomAccessCollection<T> for Box<dyn AnyReadState<T=A>>
+where
+    A: Index<A::Idx, Output = T>,
+    <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
+{
+    type Idx = A::Idx;
+    type Indices = A::Indices;
+    type Item<'a> = Box<dyn AnyReadState<T=T>>;
 
     fn index(&self, index: Self::Idx) -> Self::Item<'_> {
         Box::new(IndexState::new(self.clone(), index))

@@ -5,10 +5,9 @@ use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
-    let delegate = |child: &dyn AnyIdentifiableWidget<u32>| {
+    let delegate = |child: &dyn AnyIdentifiableWidget<T=u32>| {
         HStack::new((
             Text::new(child.identifier().boxed()),
             child.as_widget().boxed(),

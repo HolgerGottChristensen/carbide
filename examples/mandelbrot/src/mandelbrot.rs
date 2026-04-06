@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use carbide::asynchronous::get_event_sink;
 use carbide::color::ColorExt;
-use carbide::draw::{ImageId, ImageMode, ImageOptions};
+use carbide::draw::{ImageFormat, ImageId, ImageMode, ImageOptions};
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::event::{CoreEvent, ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};
@@ -78,7 +78,7 @@ impl Render for Mandelbrot {
         self.jobs.retain(|(job, receiver)| {
             match receiver.try_recv() {
                 Ok((image, id)) => {
-                    context.image.update_texture(id.clone(), Texture {
+                    context.image.update_texture(&id, Texture {
                         width: image.width(),
                         height: image.height(),
                         bytes_per_row: image.width() * 4,
@@ -128,7 +128,7 @@ impl Render for Mandelbrot {
                     ),
                 };
 
-                let id = ImageId::new(PathBuf::from(Uuid::new_v4().to_string()));
+                let id = ImageId::temp(ImageFormat::Png);
                 let id2 = id.clone();
 
                 let sink = get_event_sink();
@@ -159,9 +159,9 @@ impl Render for Mandelbrot {
             for x in start_tile_x..end_tile_x {
                 for y in start_tile_y..end_tile_y {
                     self.images.get(&(x, y, 0)).map(|(id, info)| {
-                        if this.image.texture_exist(id, this.env) {
+                        if this.image.exist(id, this.env) {
                             this.image(
-                                id.clone(),
+                                id,
                                 Rect::new(
                                     Position::new(info.x as Scalar, info.y as Scalar),
                                     Dimension::new(info.width as Scalar, info.height as Scalar),
