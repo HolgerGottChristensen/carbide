@@ -1,4 +1,4 @@
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Dimension, Scalar};
 use carbide_core::state::AnyState;
 use carbide_core::widget::*;
 use carbide_icons::all_icon_names;
@@ -18,9 +18,9 @@ fn main() {
             )).cross_axis_alignment(CrossAxisAlignment::Center)
                 .spacing(3.0)
                 .padding(10.0)
-        ))), vec![
-            VGridColumn::Adaptive(130.0)
-        ]).spacing(Dimension::new(5.0, 5.0))).padding(10.0),
+        )).frame_fixed_height(70.0)), vec![
+            VGridColumn::Adaptive(250.0),
+        ]).spacing(Dimension::new(5.0, 5.0))).clip().padding(10.0),
     ));
 
     application.launch();

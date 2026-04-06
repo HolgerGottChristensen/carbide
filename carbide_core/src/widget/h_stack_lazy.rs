@@ -54,6 +54,7 @@ impl<W: Sequence> Layout for LazyHStack<W> {
 
         // If there are no children, we default to width 0.0
         if child_count == 0 {
+            self.current_indices.clear();
             self.dimension = Dimension::new(0.0, requested_size.height);
         }
 

@@ -10,17 +10,17 @@ fn main() {
     application.set_scene(Window::new(
         "Tabler example - Carbide",
         Dimension::new(800.0, 600.0),
-        Scroll::new(VGrid::new(ForEach::new(all_icon_names(), |name: Box<dyn AnyState<T=String>>, _| ZStack::new((
+        Scroll::new(VGrid::new(ForEach::new(all_icon_names(), |name: &String, _| ZStack::new((
             Rectangle::new(),
             VStack::new((
                 Image::system(name.clone()),
-                Text::new(name)
+                Text::new(name.clone())
             )).cross_axis_alignment(CrossAxisAlignment::Center)
                 .spacing(3.0)
                 .padding(10.0)
-        ))), vec![
-            VGridColumn::Adaptive(130.0)
-        ]).spacing(Dimension::new(5.0, 5.0))).padding(10.0)
+        )).frame_fixed_height(70.0)), vec![
+            VGridColumn::Adaptive(250.0),
+        ]).spacing(Dimension::new(5.0, 5.0))).clip().padding(10.0),
     ));
 
     application.launch();

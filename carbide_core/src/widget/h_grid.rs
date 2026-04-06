@@ -135,8 +135,12 @@ impl<W: Sequence> Layout for HGrid<W> {
 
         remaining_columns += 1;
 
+        dbg!(&children_flexibility_rest);
+
         for (_, child_index) in children_flexibility_rest {
+            dbg!(child_index);
             let child = self.children.index(child_index);
+
             if counter == 0 {
                 remaining_width = (remaining_width - max_width).max(0.0);
                 total_width += max_width;
@@ -149,6 +153,7 @@ impl<W: Sequence> Layout for HGrid<W> {
                 self.calculated_heights[counter]
             );
 
+            dbg!(child.id());
             let actual_size = child.calculate_size(for_child, ctx);
 
             max_width = max_width.max(actual_size.width);
@@ -183,6 +188,7 @@ impl<W: Sequence> Layout for HGrid<W> {
                 current_y
             ));
 
+            dbg!(child.id());
             child.position_children(ctx);
 
             max_column_width = max_column_width.max(child.width());

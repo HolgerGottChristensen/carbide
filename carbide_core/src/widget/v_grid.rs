@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use smallvec::{SmallVec, smallvec};
-
+use carbide::widget::CrossAxisAlignment;
 use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
@@ -9,7 +10,8 @@ use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, Sequence};
 pub enum VGridColumn {
     Fixed(f64),
     Adaptive(f64),
-    Flexible {
+    Flexible,
+    MinMax {
         minimum: f64,
         maximum: f64,
     }
@@ -25,7 +27,13 @@ pub struct VGrid<W> where W: Sequence
     dimension: Dimension,
     spacing: Dimension,
     columns: Vec<VGridColumn>,
+
     calculated_widths: Vec<f64>,
+
+    child_height_estimate: Option<Scalar>,
+    child_heights: HashMap<WidgetId, Scalar>,
+
+    current_indices: SmallVec<[usize; 32]>
 }
 
 impl<W: Sequence> VGrid<W> {
@@ -38,6 +46,9 @@ impl<W: Sequence> VGrid<W> {
             spacing: Dimension::new(10.0, 10.0),
             columns,
             calculated_widths: vec![],
+            child_height_estimate: None,
+            child_heights: Default::default(),
+            current_indices: Default::default(),
         }
     }
 
@@ -53,6 +64,14 @@ impl<W: Sequence> Layout for VGrid<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.calculated_widths.clear();
 
+        let child_count = self.children.count();
+
+        // If there are no children, we default to height 0.0
+        if child_count == 0 {
+            self.current_indices.clear();
+            self.dimension = Dimension::new(requested_size.width, 0.0);
+        }
+
         let total_width = requested_size.width;
 
         let mut remaining_width = total_width;
@@ -64,7 +83,8 @@ impl<W: Sequence> Layout for VGrid<W> {
         remaining_width = remaining_width - self.columns.iter().filter_map(|col| match col {
             VGridColumn::Fixed(width) => Some(*width),
             VGridColumn::Adaptive(_) => None,
-            VGridColumn::Flexible { .. } => None,
+            VGridColumn::Flexible => None,
+            VGridColumn::MinMax { .. } => None,
         }).sum::<f64>();
 
         let mut number_of_remaining_cols = self.columns.iter().filter(|a| !matches!(a, VGridColumn::Fixed(_))).count();
@@ -99,7 +119,13 @@ impl<W: Sequence> Layout for VGrid<W> {
 
                     number_of_remaining_cols -= 1;
                 }
-                VGridColumn::Flexible { minimum, maximum } => {
+                VGridColumn::Flexible => {
+                    let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
+                    self.calculated_widths.push(proposed_width);
+                    remaining_width -= proposed_width;
+                    number_of_remaining_cols -= 1;
+                }
+                VGridColumn::MinMax { minimum, maximum } => {
                     let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
                     if proposed_width < *minimum {
                         self.calculated_widths.push(*minimum);
@@ -115,85 +141,128 @@ impl<W: Sequence> Layout for VGrid<W> {
                     number_of_remaining_cols -= 1;
                 }
             }
-
-
         }
 
-        //
+        let row_count = (child_count as Scalar / self.calculated_widths.len() as Scalar).ceil() as usize;
 
-        let mut children_flexibility_rest: SmallVec<[(u32, usize); 25]> = smallvec![];
+        // Extract or calculate initial height estimate
+        let mut height_estimate = if let Some(height_estimate) = self.child_height_estimate {
+            height_estimate
+        } else {
+            // Calculate height estimate based on the first N children
+            let child = self.children.index(0);
+            let chosen_size = child.calculate_size(requested_size, ctx);
 
-        let mut idx = 0;
-        self.children.foreach(&mut |child| {
-            children_flexibility_rest.push((child.flexibility(), idx));
-            idx += 1;
-        });
+            self.child_heights.insert(child.id(), chosen_size.height);
 
-        let mut remaining_rows = f64::ceil(children_flexibility_rest.len() as f64 / self.calculated_widths.len() as f64) as usize;
+            self.child_height_estimate = Some(chosen_size.height);
+            chosen_size.height
+        };
 
-        let mut counter = 0;
-        let mut remaining_height = requested_size.height - self.spacing.height * (remaining_rows - 1) as f64;
-        let mut max_height = 0.0;
-        let mut total_height = self.spacing.height * (remaining_rows - 1) as f64;
+        let offset = -self.y();
 
-        remaining_rows += 1;
+        let mut cummulated_y = 0.0;
 
-        for (_, child_index) in children_flexibility_rest {
-            let child = self.children.index(child_index);
-            if counter == 0 {
-                remaining_height = (remaining_height - max_height).max(0.0);
-                total_height += max_height;
-                max_height = 0.0;
-                remaining_rows -= 1;
+        self.current_indices.clear();
+
+        let estimate_for_row = height_estimate.max(1.0) + self.spacing.height;
+        let mut row = (offset / estimate_for_row).floor().max(0.0) as usize;
+
+        let estimated_start_y = row as Scalar * estimate_for_row;
+
+        let bla = estimated_start_y - offset;
+
+        'outer: loop {
+            let mut current_row_height: Scalar = 0.0;
+            let mut cummulated_x = 0.0;
+
+            for row_offset in 0..self.calculated_widths.len() {
+                let index = row * self.calculated_widths.len() + row_offset;
+
+                if index == child_count {
+                    break 'outer
+                }
+
+                self.current_indices.push(index);
+
+                let child = self.children.index(index);
+
+                // We set the relative offset of the child here. This is then offset in position_children.
+                child.set_y(cummulated_y + estimated_start_y);
+                child.set_x(cummulated_x);
+
+                let for_child = Dimension::new(
+                    self.calculated_widths[row_offset],
+                    requested_size.height
+                );
+
+                let chosen_size = child.calculate_size(for_child, ctx);
+
+                let child_id = child.id();
+
+                if !self.child_heights.contains_key(&child_id) {
+                    height_estimate = (height_estimate * self.child_heights.len() as Scalar + chosen_size.height) / (self.child_heights.len() + 1) as Scalar;
+                }
+
+                // TODO: Update height estimate when children are changing sizes dynamically
+                self.child_heights.insert(child.id(), chosen_size.height);
+
+                current_row_height = current_row_height.max(chosen_size.height);
+                cummulated_x += self.calculated_widths[row_offset] + self.spacing.width;
             }
 
-            let for_child = Dimension::new(
-                self.calculated_widths[counter],
-                max_height.max(remaining_height / remaining_rows as f64)
-            );
+            if cummulated_y + current_row_height > requested_size.height - bla - self.spacing.height {
+                break
+            }
 
-            let actual_size = child.calculate_size(for_child, ctx);
-
-            max_height = max_height.max(actual_size.height);
-
-            counter = (counter + 1) % self.calculated_widths.len();
+            cummulated_y += current_row_height + self.spacing.height;
+            row += 1;
         }
 
-        self.dimension = Dimension::new(
-            self.calculated_widths.iter().sum::<f64>() + (self.calculated_widths.len() - 1) as f64 * self.spacing.width,
-            total_height + max_height,
-        );
+        self.child_height_estimate = Some(height_estimate);
+
+        // We only estimate the height, and always use the requested width
+        let total_height_estimate = height_estimate * row_count as Scalar
+            + self.spacing.height * row_count.saturating_sub(1) as Scalar;
+
+        self.dimension = Dimension::new(requested_size.width, total_height_estimate);
 
         self.dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let mut current_x = self.position.x;
-        let mut current_y = self.position.y - self.spacing.height;
-        let mut column_index = 0;
-        let column_count = self.calculated_widths.len();
-        let mut max_row_height = 0.0;
+        let x = self.x();
+        let y = self.y();
 
-        self.children.foreach(&mut |child| {
-            if column_index == 0 {
-                current_x = self.position.x;
-                current_y += max_row_height + self.spacing.height;
-                max_row_height = 0.0;
-            }
-            child.set_position(Position::new(
-                current_x,
-                current_y
-            ));
+        for current_index in &self.current_indices {
+            let child = self.children.index(*current_index);
+            child.set_y(child.y() + y);
+            child.set_x(child.x() + x);
 
             child.position_children(ctx);
-
-            max_row_height = max_row_height.max(child.height());
-            current_x += self.calculated_widths[column_index] + self.spacing.width;
-            column_index = (column_index + 1) % column_count;
-        })
+        }
     }
 }
 
 impl<W: Sequence> CommonWidget for VGrid<W> {
-    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+    CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.children.index(index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        self.children.count()
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        for current_index in &self.current_indices {
+            let child = self.children.index(*current_index);
+            f(child)
+        }
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
 }

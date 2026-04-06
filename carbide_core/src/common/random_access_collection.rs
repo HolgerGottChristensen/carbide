@@ -1,6 +1,6 @@
 use carbide::identifiable::Identifiable;
 use carbide::state::{IndexState, LocalState, ReadState, StateContract};
-use std::ops::{Index, IndexMut, Range, RangeFrom};
+use std::ops::{Index, IndexMut, Range, RangeFrom, RangeInclusive};
 use crate::state::AnyState;
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of
@@ -98,7 +98,7 @@ impl RandomAccessCollection<u32> for Range<u32> {
 
     #[inline(always)]
     fn index(&self, index: Self::Idx) -> u32 {
-        index
+        self.start + index
     }
 
     #[inline(always)]
@@ -109,7 +109,7 @@ impl RandomAccessCollection<u32> for Range<u32> {
 
     #[inline(always)]
     fn start_index(&self) -> Self::Idx {
-        self.start
+        0
     }
 
     #[inline(always)]
@@ -119,12 +119,65 @@ impl RandomAccessCollection<u32> for Range<u32> {
 
     #[inline(always)]
     fn len(&self) -> usize {
-        ExactSizeIterator::len(self)
+        self.clone().count()
     }
 
     #[inline(always)]
     fn end_index(&self) -> Self::Idx {
-        self.end
+        RandomAccessCollection::len(self) as u32
+    }
+
+    #[inline(always)]
+    fn index_from_offset(&self, index: usize) -> Self::Idx {
+        index as u32
+    }
+
+    #[inline(always)]
+    fn next_index(&self, idx: Self::Idx) -> Self::Idx {
+        idx + 1
+    }
+
+    #[inline(always)]
+    fn prev_index(&self, idx: Self::Idx) -> Self::Idx {
+        idx.saturating_sub(1)
+    }
+}
+
+impl RandomAccessCollection<u32> for RangeInclusive<u32> {
+    type Idx = u32;
+    type Indices = RangeInclusive<u32>;
+
+    type Item<'a> = u32;
+
+    #[inline(always)]
+    fn index(&self, index: Self::Idx) -> u32 {
+        self.start() + index
+    }
+
+    #[inline(always)]
+    fn id(&self, index: Self::Idx) -> <u32 as Identifiable>::Id
+    {
+        index
+    }
+
+    #[inline(always)]
+    fn start_index(&self) -> Self::Idx {
+        0
+    }
+
+    #[inline(always)]
+    fn indices(&self) -> Self::Indices {
+        *self.start()..=*self.end()
+    }
+
+    #[inline(always)]
+    fn len(&self) -> usize {
+        self.clone().count()
+    }
+
+    #[inline(always)]
+    fn end_index(&self) -> Self::Idx {
+        self.len() as u32
     }
 
     #[inline(always)]

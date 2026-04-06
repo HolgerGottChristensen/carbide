@@ -54,6 +54,7 @@ impl<W: Sequence> Layout for LazyVStack<W> {
 
         // If there are no children, we default to height 0.0
         if child_count == 0 {
+            self.current_indices.clear();
             self.dimension = Dimension::new(requested_size.width, 0.0);
         }
 
