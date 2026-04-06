@@ -1,43 +1,42 @@
-use smallvec::{SmallVec, smallvec};
-
-use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position, Scalar};
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, Sequence};
-
-#[derive(Debug, Clone)]
-pub enum HGridRow {
-    Fixed(f64),
-    Adaptive(f64),
-    Flexible {
-        minimum: f64,
-        maximum: f64,
-    }
-}
+use crate::widget::{AnyWidget, CommonWidget, GridItem, Sequence, Widget, WidgetId};
+use crate::CommonWidgetImpl;
+use smallvec::{SmallVec, ToSmallVec};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
-pub struct HGrid<W> where W: Sequence
+pub struct LazyHGrid<W> where W: Sequence
 {
     #[id] id: WidgetId,
     children: W,
     position: Position,
     dimension: Dimension,
     spacing: Dimension,
-    rows: Vec<HGridRow>,
-    calculated_heights: Vec<f64>,
+    columns: SmallVec<[GridItem; 8]>,
+
+    calculated_widths: SmallVec<[f64; 8]>,
+
+    child_height_estimate: Option<Scalar>,
+    child_heights: HashMap<WidgetId, Scalar>,
+
+    current_indices: SmallVec<[usize; 32]>
 }
 
-impl<W: Sequence> HGrid<W> {
-    pub fn new(children: W, columns: Vec<HGridRow>) -> HGrid<W> {
-        HGrid {
+impl<W: Sequence> LazyHGrid<W> {
+    pub fn new(columns: Vec<GridItem>, children: W) -> LazyHGrid<W> {
+        LazyHGrid {
             id: WidgetId::new(),
             children,
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
             spacing: Dimension::new(10.0, 10.0),
-            rows: columns,
-            calculated_heights: vec![],
+            columns: columns.to_smallvec(),
+            calculated_widths: SmallVec::new(),
+            child_height_estimate: None,
+            child_heights: Default::default(),
+            current_indices: Default::default(),
         }
     }
 
@@ -47,157 +46,211 @@ impl<W: Sequence> HGrid<W> {
     }
 }
 
-impl<W: Sequence> Layout for HGrid<W> {
+impl<W: Sequence> Layout for LazyHGrid<W> {
 
     // https://www.objc.io/blog/2020/11/23/grid-layout/
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.calculated_heights.clear();
+        self.calculated_widths.clear();
 
-        let total_height = requested_size.height;
+        let child_count = self.children.count();
 
-        let mut remaining_height = total_height;
+        // If there are no children, we default to height 0.0
+        if child_count == 0 {
+            self.current_indices.clear();
+            self.dimension = Dimension::new(requested_size.width, 0.0);
+        }
+
+        let total_width = requested_size.width;
+
+        let mut remaining_width = total_width;
 
         // Subtract the spacings between the grid columns
-        remaining_height = remaining_height - self.rows.len().saturating_sub(1) as f64 * self.spacing.height;
+        remaining_width = remaining_width - self.columns.len().saturating_sub(1) as f64 * self.spacing.width;
 
         // Subtract all the fixed columns
-        remaining_height = remaining_height - self.rows.iter().filter_map(|row| match row {
-            HGridRow::Fixed(height) => Some(*height),
-            HGridRow::Adaptive(_) => None,
-            HGridRow::Flexible { .. } => None,
+        remaining_width = remaining_width - self.columns.iter().filter_map(|col| match col {
+            GridItem::Fixed(width) => Some(*width),
+            GridItem::Adaptive(_) => None,
+            GridItem::Flexible => None,
+            GridItem::MinMax { .. } => None,
         }).sum::<f64>();
 
-        let mut number_of_remaining_rows = self.rows.iter().filter(|a| !matches!(a, HGridRow::Fixed(_))).count();
+        let mut number_of_remaining_cols = self.columns.iter().filter(|a| !matches!(a, GridItem::Fixed(_))).count();
 
         // Iterate each remaining column in order
-        for row in &self.rows {
-            match row {
-                HGridRow::Fixed(h) => {
-                    self.calculated_heights.push(*h);
+        for column in &self.columns {
+            match column {
+                GridItem::Fixed(w) => {
+                    self.calculated_widths.push(*w);
                 }
-                HGridRow::Adaptive(h) => {
-                    let mut proposed_height = remaining_height / number_of_remaining_rows as Scalar;
-                    remaining_height -= proposed_height;
+                GridItem::Adaptive(w) => {
+                    let mut proposed_width = remaining_width / number_of_remaining_cols as Scalar;
+                    remaining_width -= proposed_width;
 
-                    let mut proposed_height2 = proposed_height;
-                    let mut row_count = 1;
+                    let mut proposed_width2 = proposed_width;
+                    let mut column_count = 1;
                     let mut spacing_count = 0;
-                    proposed_height2 -= *h;
+                    proposed_width2 -= *w;
 
-                    while proposed_height2 > self.spacing.height + *h {
-                        proposed_height2 -= *h;
-                        proposed_height2 -= self.spacing.height;
-                        row_count += 1;
+                    while proposed_width2 > self.spacing.width + *w {
+                        proposed_width2 -= *w;
+                        proposed_width2 -= self.spacing.width;
+                        column_count += 1;
                         spacing_count += 1;
                     }
 
-                    proposed_height -= spacing_count as f64 * self.spacing.height;
+                    proposed_width -= spacing_count as f64 * self.spacing.width;
 
-                    for _ in 0..row_count {
-                        self.calculated_heights.push(proposed_height / row_count as f64);
+                    for _ in 0..column_count {
+                        self.calculated_widths.push(proposed_width / column_count as f64);
                     }
 
-                    number_of_remaining_rows -= 1;
+                    number_of_remaining_cols -= 1;
                 }
-                HGridRow::Flexible { minimum, maximum } => {
-                    let proposed_height = remaining_height / number_of_remaining_rows as Scalar;
-                    if proposed_height < *minimum {
-                        self.calculated_heights.push(*minimum);
-                        remaining_height -= *minimum;
-                    } else if proposed_height > *maximum {
-                        self.calculated_heights.push(*maximum);
-                        remaining_height -= *maximum;
+                GridItem::Flexible => {
+                    let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
+                    self.calculated_widths.push(proposed_width);
+                    remaining_width -= proposed_width;
+                    number_of_remaining_cols -= 1;
+                }
+                GridItem::MinMax { minimum, maximum } => {
+                    let proposed_width = remaining_width / number_of_remaining_cols as Scalar;
+                    if proposed_width < *minimum {
+                        self.calculated_widths.push(*minimum);
+                        remaining_width -= *minimum;
+                    } else if proposed_width > *maximum {
+                        self.calculated_widths.push(*maximum);
+                        remaining_width -= *maximum;
                     } else {
-                        self.calculated_heights.push(proposed_height);
-                        remaining_height -= proposed_height;
+                        self.calculated_widths.push(proposed_width);
+                        remaining_width -= proposed_width;
                     }
 
-                    number_of_remaining_rows -= 1;
+                    number_of_remaining_cols -= 1;
                 }
             }
         }
 
-        let mut children_flexibility_rest: SmallVec<[(u32, usize); 25]> = smallvec![];
+        let row_count = (child_count as Scalar / self.calculated_widths.len() as Scalar).ceil() as usize;
 
-        let mut idx = 0;
-        self.children.foreach(&mut |child| {
-            children_flexibility_rest.push((child.flexibility(), idx));
-            idx += 1;
-        });
+        // Extract or calculate initial height estimate
+        let mut height_estimate = if let Some(height_estimate) = self.child_height_estimate {
+            height_estimate
+        } else {
+            // Calculate height estimate based on the first N children
+            let child = self.children.index(0);
+            let chosen_size = child.calculate_size(requested_size, ctx);
 
-        let mut remaining_columns = f64::ceil(children_flexibility_rest.len() as f64 / self.calculated_heights.len() as f64) as usize;
+            self.child_heights.insert(child.id(), chosen_size.height);
 
+            self.child_height_estimate = Some(chosen_size.height);
+            chosen_size.height
+        };
 
-        let mut counter = 0;
-        let mut remaining_width = requested_size.width - self.spacing.width * (remaining_columns - 1) as f64;
-        let mut max_width = 0.0;
-        let mut total_width = self.spacing.width * (remaining_columns - 1) as f64;
+        let offset = -self.y();
 
-        remaining_columns += 1;
+        let mut cummulated_y = 0.0;
 
-        dbg!(&children_flexibility_rest);
+        self.current_indices.clear();
 
-        for (_, child_index) in children_flexibility_rest {
-            dbg!(child_index);
-            let child = self.children.index(child_index);
+        let estimate_for_row = height_estimate.max(1.0) + self.spacing.height;
+        let mut row = (offset / estimate_for_row).floor().max(0.0) as usize;
 
-            if counter == 0 {
-                remaining_width = (remaining_width - max_width).max(0.0);
-                total_width += max_width;
-                max_width = 0.0;
-                remaining_columns -= 1;
+        let estimated_start_y = row as Scalar * estimate_for_row;
+
+        let bla = estimated_start_y - offset;
+
+        'outer: loop {
+            let mut current_row_height: Scalar = 0.0;
+            let mut cummulated_x = 0.0;
+
+            for row_offset in 0..self.calculated_widths.len() {
+                let index = row * self.calculated_widths.len() + row_offset;
+
+                if index == child_count {
+                    break 'outer
+                }
+
+                self.current_indices.push(index);
+
+                let child = self.children.index(index);
+
+                // We set the relative offset of the child here. This is then offset in position_children.
+                child.set_y(cummulated_y + estimated_start_y);
+                child.set_x(cummulated_x);
+
+                let for_child = Dimension::new(
+                    self.calculated_widths[row_offset],
+                    requested_size.height
+                );
+
+                let chosen_size = child.calculate_size(for_child, ctx);
+
+                let child_id = child.id();
+
+                if !self.child_heights.contains_key(&child_id) {
+                    height_estimate = (height_estimate * self.child_heights.len() as Scalar + chosen_size.height) / (self.child_heights.len() + 1) as Scalar;
+                }
+
+                // TODO: Update height estimate when children are changing sizes dynamically
+                self.child_heights.insert(child.id(), chosen_size.height);
+
+                current_row_height = current_row_height.max(chosen_size.height);
+                cummulated_x += self.calculated_widths[row_offset] + self.spacing.width;
             }
 
-            let for_child = Dimension::new(
-                max_width.max(remaining_width / remaining_columns as f64),
-                self.calculated_heights[counter]
-            );
+            if cummulated_y + current_row_height > requested_size.height - bla - self.spacing.height {
+                break
+            }
 
-            dbg!(child.id());
-            let actual_size = child.calculate_size(for_child, ctx);
-
-            max_width = max_width.max(actual_size.width);
-
-            counter = (counter + 1) % self.calculated_heights.len();
+            cummulated_y += current_row_height + self.spacing.height;
+            row += 1;
         }
 
-        self.dimension = Dimension::new(
-            total_width + max_width,
-            self.calculated_heights.iter().sum::<f64>() + (self.calculated_heights.len() - 1) as f64 * self.spacing.height,
-        );
+        self.child_height_estimate = Some(height_estimate);
+
+        // We only estimate the height, and always use the requested width
+        let total_height_estimate = height_estimate * row_count as Scalar
+            + self.spacing.height * row_count.saturating_sub(1) as Scalar;
+
+        self.dimension = Dimension::new(requested_size.width, total_height_estimate);
 
         self.dimension
     }
 
     fn position_children(&mut self, ctx: &mut LayoutContext) {
-        let mut current_y = self.position.y;
-        let mut current_x = self.position.x - self.spacing.width;
-        let mut row_index = 0;
-        let row_count = self.calculated_heights.len();
-        let mut max_column_width = 0.0;
+        let x = self.x();
+        let y = self.y();
 
-        self.children.foreach(&mut |child| {
-            if row_index == 0 {
-                current_y = self.position.y;
-                current_x += max_column_width + self.spacing.width;
-                max_column_width = 0.0;
-            }
+        for current_index in &self.current_indices {
+            let child = self.children.index(*current_index);
+            child.set_y(child.y() + y);
+            child.set_x(child.x() + x);
 
-            child.set_position(Position::new(
-                current_x,
-                current_y
-            ));
-
-            dbg!(child.id());
             child.position_children(ctx);
-
-            max_column_width = max_column_width.max(child.width());
-            current_y += self.calculated_heights[row_index] + self.spacing.height;
-            row_index = (row_index + 1) % row_count;
-        })
+        }
     }
 }
 
-impl<W: Sequence> CommonWidget for HGrid<W> {
-    CommonWidgetImpl!(self, child: self.children, position: self.position, dimension: self.dimension, flexibility: 1);
+impl<W: Sequence> CommonWidget for LazyHGrid<W> {
+    CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, flexibility: 1);
+
+    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+        self.children.index(index)
+    }
+
+    fn child_count(&mut self) -> usize {
+        self.children.count()
+    }
+
+    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        for current_index in &self.current_indices {
+            let child = self.children.index(*current_index);
+            f(child)
+        }
+    }
+
+    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        todo!()
+    }
 }
