@@ -225,7 +225,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: crate::draw::Rect, ctx: &mut LayoutContext) {
         let scale_factor = ctx.env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);

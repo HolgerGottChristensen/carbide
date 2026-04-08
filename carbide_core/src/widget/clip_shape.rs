@@ -58,7 +58,7 @@ impl<C: Widget, S: AnyShape + AnyWidget + Clone> Layout for ClipShape<C, S> {
         requested_size
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = self.dimension;
 
@@ -73,8 +73,8 @@ impl<C: Widget, S: AnyShape + AnyWidget + Clone> Layout for ClipShape<C, S> {
             self.shape.dimension(),
         ));
 
-        self.child.position_children(ctx);
-        self.shape.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
+        self.shape.position_children(bounding_box, ctx);
     }
 }
 

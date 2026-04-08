@@ -4,6 +4,7 @@ use crate::widget::{AnyWidget, CommonWidget, GridItem, Sequence, Widget, WidgetI
 use crate::CommonWidgetImpl;
 use smallvec::{SmallVec, ToSmallVec};
 use std::collections::HashMap;
+use carbide::draw::Rect;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
@@ -218,7 +219,7 @@ impl<W: Sequence> Layout for LazyVGrid<W> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let x = self.x();
         let y = self.y();
 
@@ -227,7 +228,7 @@ impl<W: Sequence> Layout for LazyVGrid<W> {
             child.set_y(child.y() + y);
             child.set_x(child.x() + x);
 
-            child.position_children(ctx);
+            child.position_children(bounding_box, ctx);
         }
     }
 }

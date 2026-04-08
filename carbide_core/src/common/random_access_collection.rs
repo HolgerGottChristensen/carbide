@@ -1,7 +1,7 @@
 use carbide::identifiable::Identifiable;
 use carbide::state::{IndexState, LocalState, ReadState, State, StateContract};
-use std::ops::{Index, IndexMut, Range, RangeFrom, RangeInclusive};
-use crate::state::{AnyReadState, AnyState, FieldState};
+use std::ops::{Deref, Index, IndexMut, Range, RangeFrom, RangeInclusive};
+use crate::state::{AnyReadState, AnyState, FieldState, Functor};
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of
 /// getting the next index.
@@ -17,6 +17,7 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
     fn index(&self, index: Self::Idx) -> Self::Item<'_>;
 
     fn id(&self, index: Self::Idx) -> T::Id where T: Identifiable;
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R;
 
     /// Get the first index of the collection. If the collection is empty, this will return the
     /// same as the end index.
@@ -52,6 +53,10 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
         T: Identifiable
     {
         self[index].id()
+    }
+
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
+        f(&self[index])
     }
 
     #[inline(always)]
@@ -107,6 +112,10 @@ impl RandomAccessCollection<u32> for Range<u32> {
         index
     }
 
+    fn map<R>(&self, index: Self::Idx, f: fn(&u32)->R) -> R {
+        f(&index)
+    }
+
     #[inline(always)]
     fn start_index(&self) -> Self::Idx {
         0
@@ -158,6 +167,10 @@ impl RandomAccessCollection<u32> for RangeInclusive<u32> {
     fn id(&self, index: Self::Idx) -> <u32 as Identifiable>::Id
     {
         index
+    }
+
+    fn map<R>(&self, index: Self::Idx, f: fn(&u32)->R) -> R {
+        f(&index)
     }
 
     #[inline(always)]
@@ -216,6 +229,10 @@ where
         self.value().id(index)
     }
 
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
+        self.value().map(index, f)
+    }
+
     fn start_index(&self) -> Self::Idx {
         self.value().start_index()
     }
@@ -263,6 +280,10 @@ where
         T: Identifiable
     {
         self.value().id(index)
+    }
+
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
+        self.value().map(index, f)
     }
 
     fn start_index(&self) -> Self::Idx {
@@ -314,6 +335,10 @@ where
         self.value().id(index)
     }
 
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
+        self.value().map(index, f)
+    }
+
     fn start_index(&self) -> Self::Idx {
         self.value().start_index()
     }
@@ -361,6 +386,10 @@ where
         T: Identifiable
     {
         self.value().id(index)
+    }
+
+    fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
+        self.value().map(index, f)
     }
 
     fn start_index(&self) -> Self::Idx {

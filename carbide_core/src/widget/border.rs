@@ -72,7 +72,7 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let border_width = self.border_width as f64;
         let alignment = self.alignment();
         let position = Position::new(self.x() + border_width, self.y() + border_width);
@@ -82,7 +82,7 @@ impl<W: Widget, C: ReadState<T=Color>> Layout for Border<W, C> {
         );
 
         self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

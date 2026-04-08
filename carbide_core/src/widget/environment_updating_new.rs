@@ -16,6 +16,7 @@ use crate::widget::{CommonWidget, Widget, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use carbide::draw::Rect;
 use carbide::event::{ApplicationEvent, ApplicationEventContext};
 use crate::identifiable::Identifiable;
 use crate::widget::{WidgetId};
@@ -67,18 +68,19 @@ impl<C: Widget, K: EnvironmentKey> Layout for EnvUpdatingNew<C, K> where K::Valu
         response
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
         ctx.env.with::<K>(&self.value,|inner| {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env: inner,
-            })
+            self.child.position_children(
+                bounding_box, &mut LayoutContext {
+                                text: ctx.text,
+                                image: ctx.image,
+                                env: inner,
+                            })
         })
     }
 }

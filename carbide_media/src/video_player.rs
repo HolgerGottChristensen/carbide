@@ -1,6 +1,7 @@
 use std::ops::Deref;
 use carbide_core::time::*;
 use carbide::color::ColorExt;
+use carbide::draw::Rect;
 use carbide::widget::{CrossAxisAlignment, WidgetSync};
 
 use carbide_core::color::BLACK;
@@ -208,7 +209,7 @@ impl<Id: ReadState<T=VideoId> + Clone> Layout for VideoPlayer<Id> {
         res
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
@@ -216,8 +217,8 @@ impl<Id: ReadState<T=VideoId> + Clone> Layout for VideoPlayer<Id> {
         self.video.set_position(alignment.position(position, dimension, self.video.dimension()));
         self.video_overlay.set_position(alignment.position(position, dimension, self.video_overlay.dimension()));
 
-        self.video.position_children(ctx);
-        self.video_overlay.position_children(ctx);
+        self.video.position_children(, ctx);
+        self.video_overlay.position_children(, ctx);
     }
 }
 

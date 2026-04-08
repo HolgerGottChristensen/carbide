@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use carbide::draw::Rect;
 use crate::environment::Environment;
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, WindowEvent, WindowEventContext};
 use crate::lifecycle::InitializationContext;
@@ -252,17 +253,17 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Layout for Over
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
         self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
 
         if let Some(overlay) = &mut self.overlay {
             overlay.set_position(alignment.position(position, dimension, overlay.dimension()));
-            overlay.position_children(ctx);
+            overlay.position_children(bounding_box, ctx);
         }
     }
 }

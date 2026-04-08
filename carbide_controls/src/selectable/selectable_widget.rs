@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+use std::hash::Hash;
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
 use carbide::state::{AnyState, StateContract};
@@ -56,11 +58,12 @@ impl AnyWidget for Box<dyn AnySelectableWidget> {
 }
 
 impl<
-    T: StateContract + Identifiable,
+    T: StateContract,
     M: RandomAccessCollection<T>,
     W: SelectableWidget + AnySequence<dyn AnySelectableWidget>,
     U: Delegate<M, T, W>,
-> AnySelectableWidget for ForEach<T, M, U, W> {
+    Id: Hash + Eq + Clone + Debug + 'static
+> AnySelectableWidget for ForEach<T, M, U, W, Id> {
     fn selection(&self) -> &dyn AnyState<T=bool> {
         unreachable!("When iterating selectable widgets, we should never return proxy widgets, and thus, this should never be called")
     }

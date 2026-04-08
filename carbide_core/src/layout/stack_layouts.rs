@@ -1,5 +1,5 @@
 use smallvec::{SmallVec, smallvec};
-use crate::draw::{Dimension, Position};
+use crate::draw::{Dimension, Position, Rect};
 use crate::common::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
 use crate::widget::{CrossAxisAlignment, AnyWidget};
@@ -25,6 +25,7 @@ pub(crate) fn position_children_vstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
+    bounding_box: Rect,
     ctx: &mut LayoutContext
 ) {
     position_children_stack(
@@ -36,6 +37,7 @@ pub(crate) fn position_children_vstack(
         y_x,
         cross_axis_alignment,
         spacing,
+        bounding_box,
         ctx,
     );
 }
@@ -61,6 +63,7 @@ pub(crate) fn position_children_hstack(
     widget: &mut dyn Layout,
     spacing: f64,
     cross_axis_alignment: CrossAxisAlignment,
+    bounding_box: Rect,
     ctx: &mut LayoutContext
 ) {
     position_children_stack(
@@ -72,6 +75,7 @@ pub(crate) fn position_children_hstack(
         x_y,
         cross_axis_alignment,
         spacing,
+        bounding_box,
         ctx,
     );
 }
@@ -237,6 +241,7 @@ fn position_children_stack(
     position_from_main_and_cross: fn(f64, f64) -> Position,
     cross_axis_alignment: CrossAxisAlignment,
     spacing: f64,
+    bounding_box: Rect,
     ctx: &mut LayoutContext,
 ) {
     let alignment = cross_axis_alignment;
@@ -268,6 +273,6 @@ fn position_children_stack(
         }
 
         main_axis_offset += main_axis_dimension(child.dimension());
-        child.position_children(ctx);
+        child.position_children(bounding_box, ctx);
     });
 }

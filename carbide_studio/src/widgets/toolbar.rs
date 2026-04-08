@@ -1,5 +1,5 @@
 use carbide::CommonWidgetImpl;
-use carbide::draw::{Alignment, Dimension, Position};
+use carbide::draw::{Alignment, Dimension, Position, Rect};
 use carbide::environment::EnvironmentColor::Green;
 use carbide::layout::{Layout, LayoutContext};
 use carbide::render::{Render, RenderContext};
@@ -44,12 +44,12 @@ impl Layout for Toolbar {
         requested_size
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         self.bar.set_position(self.position);
-        self.bar.position_children(ctx);
+        self.bar.position_children(, ctx);
 
         self.child.set_position(Position::new(self.position.x, self.position.y + self.bar.height()));
-        self.child.position_children(ctx);
+        self.child.position_children(, ctx);
     }
 }
 

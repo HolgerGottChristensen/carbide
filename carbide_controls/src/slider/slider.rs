@@ -1,4 +1,5 @@
 use std::any::TypeId;
+use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide::widget::{WidgetStyle, WidgetSync};
 use crate::slider::{SliderStepping, SliderSteppingType, SliderStyle};
@@ -300,7 +301,7 @@ impl<
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let percent = self.percent.value().max(0.0).min(1.0);
         let position = self.position();
 
@@ -322,9 +323,9 @@ impl<
         self.track.set_position(Position::new(position.x, track_y));
         self.thumb.set_position(Position::new(thumb_x, thumb_y));
 
-        self.background.position_children(ctx);
-        self.track.position_children(ctx);
-        self.thumb.position_children(ctx);
+        self.background.position_children(bounding_box, ctx);
+        self.track.position_children(bounding_box, ctx);
+        self.thumb.position_children(bounding_box, ctx);
     }
 }
 

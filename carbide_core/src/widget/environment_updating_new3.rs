@@ -15,6 +15,7 @@ use crate::render::RenderContext;
 use crate::widget::{CommonWidget, Widget, WidgetId, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
+use carbide::draw::Rect;
 use carbide::event::{ApplicationEvent, ApplicationEventContext};
 use crate::identifiable::Identifiable;
 use crate::state::ReadState;
@@ -59,7 +60,7 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Layout
         response
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         self.value.sync(ctx.env);
 
         let alignment = self.alignment();
@@ -68,11 +69,12 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Layout
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env: inner,
-            })
+            self.child.position_children(
+                bounding_box, &mut LayoutContext {
+                                text: ctx.text,
+                                image: ctx.image,
+                                env: inner,
+                            })
         })
     }
 }

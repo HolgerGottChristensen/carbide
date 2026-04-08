@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use carbide::render::{Render, RenderContext};
 use carbide::widget::ZStack;
 use carbide_macro::carbide_default_builder2;
@@ -216,10 +217,10 @@ impl<W: Sequence> Layout for HStack<W> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let spacing = self.spacing;
         let cross_axis_alignment = self.cross_axis_alignment;
-        position_children_hstack(self, spacing, cross_axis_alignment, ctx)
+        position_children_hstack(self, spacing, cross_axis_alignment, bounding_box, ctx)
     }
 }
 

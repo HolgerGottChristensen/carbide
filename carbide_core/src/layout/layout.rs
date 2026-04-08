@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::draw::{Dimension, ImageContext};
 use crate::environment::{Environment};
 use crate::text::TextContext;
@@ -27,7 +28,7 @@ pub trait Layout: CommonWidget {
     /// the widget to position. The default alignment is Center.
     /// The default behavior is to position the first child using the alignment of the widget. If
     /// no child are present the default is a no-op.
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let positioning = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
@@ -35,7 +36,7 @@ pub trait Layout: CommonWidget {
         if self.child_count() != 0 {
             let child = self.child(0);
             child.set_position(positioning.position(position, dimension, child.dimension()));
-            child.position_children(ctx);
+            child.position_children(bounding_box, ctx);
         }
     }
 }

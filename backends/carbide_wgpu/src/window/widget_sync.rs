@@ -1,6 +1,6 @@
 use crate::window::Window;
 use carbide_core::accessibility::Accessibility;
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Dimension, Rect};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::lifecycle::{Update, UpdateContext};
@@ -18,7 +18,7 @@ impl<T: ReadState<T=String>, C: Widget> Layout for Window<T, C> {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self, _ctx: &mut LayoutContext) {}
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {}
 }
 
 impl<T: ReadState<T=String>, C: Widget> Update for Window<T, C> {

@@ -1,6 +1,6 @@
 use carbide::accessibility::{Accessibility, AccessibilityContext};
 use carbide::CommonWidgetImpl;
-use carbide::draw::{Alignment, Dimension, Position};
+use carbide::draw::{Alignment, Dimension, Position, Rect};
 use carbide::environment::Environment;
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, ApplicationEvent, ApplicationEventContext, ApplicationEventHandler, EventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide::focus::{FocusContext, Focusable};
@@ -107,10 +107,10 @@ impl Layout for WidgetViewer {
         requested_size
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let inner_dimension = self.child.value().dimension();
         self.child.value_mut().set_position(Alignment::Center.position(self.position, self.dimension, inner_dimension));
-        self.child.value_mut().position_children(ctx);
+        self.child.value_mut().position_children(, ctx);
     }
 }
 

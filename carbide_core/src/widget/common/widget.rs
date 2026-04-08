@@ -3,6 +3,7 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
 use dyn_clone::{clone_box, DynClone};
+use carbide::draw::Rect;
 use carbide::event::ApplicationEventHandler;
 use crate::accessibility::AccessibilityContext;
 use crate::environment::Environment;
@@ -235,8 +236,8 @@ impl<T: AnyWidget + ?Sized> Layout for Box<T> {
         self.deref_mut().calculate_size(requested_size, ctx)
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
-        self.deref_mut().position_children(ctx)
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
+        self.deref_mut().position_children(bounding_box, ctx)
     }
 }
 

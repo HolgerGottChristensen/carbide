@@ -4,7 +4,7 @@ use copypasta::{ClipboardContext, ClipboardProvider};
 use unicode_segmentation::UnicodeSegmentation;
 use carbide::animation::AnimationManager;
 use carbide_core::cursor::MouseCursor;
-use carbide::draw::Alignment;
+use carbide::draw::{Alignment, Rect};
 use carbide::environment::Environment;
 use carbide::text::text_wrap::Wrap;
 use carbide_core::CommonWidgetImpl;
@@ -1262,7 +1262,7 @@ impl<
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         // The process of positioning
         // 1. We need to position the text as is, to be able to use the positions of the glyphs.
         //    This also helps if new letters are added since last positioning. All this is
@@ -1274,7 +1274,7 @@ impl<
         let dimension = self.dimension;
 
         self.text_widget.set_position(Alignment::Leading.position(position, dimension, self.text_widget.dimension()));
-        self.text_widget.position_children(ctx);
+        self.text_widget.position_children(bounding_box, ctx);
 
         //println!("Position children called");
         if let Some(speed) = self.current_offset_speed {
@@ -1291,7 +1291,7 @@ impl<
         let dimension = self.dimension;
 
         self.text_widget.set_position(Alignment::Leading.position(position, dimension, self.text_widget.dimension()));
-        self.text_widget.position_children(ctx);
+        self.text_widget.position_children(bounding_box, ctx);
 
         if self.get_focus() == Focus::Focused && *self.enabled.value() {
             let text_id = self.text_widget.text_id();
@@ -1301,17 +1301,17 @@ impl<
                     let x = ctx.text.position_of(text_id, 0, index.index).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(x, self.text_widget.y()));
-                    self.cursor_widget.position_children(ctx);
+                    self.cursor_widget.position_children(bounding_box, ctx);
                 }
                 Cursor::Selection { start, end } => {
                     let end_x = ctx.text.position_of(text_id, 0, end.index).x + self.x() + *self.text_offset.value();
                     let min_x = ctx.text.position_of(text_id, 0, start.index.min(end.index)).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(end_x, self.text_widget.y()));
-                    self.cursor_widget.position_children(ctx);
+                    self.cursor_widget.position_children(bounding_box, ctx);
 
                     self.selection_widget.set_position(Position::new(min_x, self.text_widget.y()));
-                    self.selection_widget.position_children(ctx);
+                    self.selection_widget.position_children(bounding_box, ctx);
                 }
             }
         }

@@ -6,28 +6,28 @@
 // use chrono::{Datelike, Local, Month, NaiveDate, Weekday};
 // use carbide::color::RED;
 // use carbide::math::num_traits::FromPrimitive;
-// use carbide::widget::MouseAreaActionContext;
+// use carbide::widget::{GridItem, LazyVGrid, MouseAreaActionContext};
 // use carbide_core::closure;
 // use carbide_core::CommonWidgetImpl;
 // use carbide_core::draw::{Dimension, Position};
 // use carbide_core::environment::EnvironmentColor;
 // use carbide_core::flags::WidgetFlag;
 // use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew, State, StateExtNew};
-// use carbide_core::widget::{AnyWidget, CommonWidget, ForEach, HStack, Image, Rectangle, Spacer, Text, VGrid, VGridColumn, VStack, Widget, WidgetExt, WidgetId, ZStack};
+// use carbide_core::widget::{AnyWidget, CommonWidget, ForEach, HStack, Image, Rectangle, Spacer, Text, VStack, Widget, WidgetExt, WidgetId, ZStack};
 // use crate::button::{Button, PlainStyle};
 // use crate::ControlsExt;
 //
 // pub trait PlainCalendarHeaderDelegate: Clone + 'static {
-//     fn call(&self, weekday: impl ReadState<T=Weekday>) -> Box<dyn AnyWidget>;
+//     fn call(&self, weekday: &Weekday) -> Box<dyn AnyWidget>;
 // }
 //
-// impl<K> PlainCalendarHeaderDelegate for K where K: Fn(Box<dyn AnyReadState<T=Weekday>>) -> Box<dyn AnyWidget> + Clone + 'static {
-//     fn call(&self, weekday: impl ReadState<T=Weekday>) -> Box<dyn AnyWidget> {
-//         self(weekday.as_dyn_read())
+// impl<K> PlainCalendarHeaderDelegate for K where K: Fn(&Weekday) -> Box<dyn AnyWidget> + Clone + 'static {
+//     fn call(&self, weekday: &Weekday) -> Box<dyn AnyWidget> {
+//         self(weekday)
 //     }
 // }
 //
-// type DefaultPlainCalendarHeaderDelegate = fn(Box<dyn AnyReadState<T=Weekday>>) -> Box<dyn AnyWidget>;
+// type DefaultPlainCalendarHeaderDelegate = fn(&Weekday) -> Box<dyn AnyWidget>;
 //
 //
 // pub trait PlainCalendarTitleDelegate: Clone + 'static {
@@ -122,7 +122,7 @@
 //     item_delegate: I,
 //     hidden_delegate: D,
 //     title_delegate: T,
-//     column: VGridColumn,
+//     column: GridItem,
 // }
 //
 // impl PlainCalendar<DefaultPlainCalendarHeaderDelegate, DefaultPlainCalendarItemDelegate, DefaultPlainCalendarHiddenDelegate, DefaultPlainCalendarTitleDelegate> {
@@ -130,15 +130,15 @@
 //         let month = LocalState::new(Month::from_u32(Local::now().month()).unwrap());
 //         let year = LocalState::new(Local::now().year());
 //         let spacing = Dimension::new(10.0, 10.0);
-//         let column = VGridColumn::Flexible { minimum: 0.0, maximum: f64::MAX };
+//         let column = GridItem::Flexible;
 //
 //         Self::new_internal(month.as_dyn(), year.as_dyn(), selection.into(), spacing, Self::default_header_delegate, Self::default_item_delegate, Self::default_hidden_delegate, column, Self::default_title_delegate)
 //     }
 //
-//     fn default_header_delegate(weekday: impl ReadState<T=Weekday>) -> Box<dyn AnyWidget> {
+//     fn default_header_delegate(weekday: &Weekday) -> Box<dyn AnyWidget> {
 //         ZStack::new((
 //             Rectangle::new().fill(EnvironmentColor::Orange),
-//             Text::new(Map1::read_map(weekday, |d| format!("{}", d))),
+//             Text::new(format!("{}", weekday)),
 //         )).boxed()
 //     }
 //
@@ -213,13 +213,13 @@
 //         Self::new_internal(self.month, self.year, self.selection, self.spacing, self.header_delegate, self.item_delegate, self.hidden_delegate, self.column, title_delegate)
 //     }
 //
-//     pub fn column(self, column: VGridColumn) -> PlainCalendar<H, I, D, T> {
+//     pub fn column(self, column: GridItem) -> PlainCalendar<H, I, D, T> {
 //         Self::new_internal(self.month, self.year, self.selection, self.spacing, self.header_delegate, self.item_delegate, self.hidden_delegate, column, self.title_delegate)
 //     }
 //
-//     fn new_internal<H2: PlainCalendarHeaderDelegate, I2: PlainCalendarItemDelegate, D2: PlainCalendarHiddenDelegate, T2: PlainCalendarTitleDelegate>(month: Box<dyn AnyState<T=Month>>, year: Box<dyn AnyState<T=i32>>, selection: DateSelection, spacing: Dimension, header_delegate: H2, item_delegate: I2, hidden_delegate: D2, column: VGridColumn, title_delegate: T2) -> PlainCalendar<H2, I2, D2, T2> {
+//     fn new_internal<H2: PlainCalendarHeaderDelegate, I2: PlainCalendarItemDelegate, D2: PlainCalendarHiddenDelegate, T2: PlainCalendarTitleDelegate>(month: Box<dyn AnyState<T=Month>>, year: Box<dyn AnyState<T=i32>>, selection: DateSelection, spacing: Dimension, header_delegate: H2, item_delegate: I2, hidden_delegate: D2, column: GridItem, title_delegate: T2) -> PlainCalendar<H2, I2, D2, T2> {
 //         let first_weekday = Map2::read_map(month.clone(), year.clone(), |m, y| {
-//             NaiveDate::from_ymd_opt(*y, m.number_from_month(), 1).unwrap().weekday().num_days_from_monday()
+//             0..NaiveDate::from_ymd_opt(*y, m.number_from_month(), 1).unwrap().weekday().num_days_from_monday()
 //         });
 //
 //         let days_in_month = Map2::read_map(month.clone(), year.clone(), |m, y| {
@@ -239,15 +239,17 @@
 //         let item_delegate_foreach = item_delegate.clone();
 //         let hidden_delegate_foreach = hidden_delegate.clone();
 //
-//         let headers = ForEach::new(vec![Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat, Weekday::Sun], move |day, _| {
+//         let weekdays = vec![Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu, Weekday::Fri, Weekday::Sat, Weekday::Sun];
+//
+//         let headers = ForEach::new_with_id(weekdays, |day| day, move |day, _| {
 //             header_delegate_foreach.call(day)
 //         });
 //
-//         let hidden_offsets = ForEach::new_read(first_weekday, move |_, _| {
+//         let hidden_offsets = ForEach::new(first_weekday.as_dyn_read(), move |_, _| {
 //             hidden_delegate_foreach.call()
 //         });
 //
-//         let dates = ForEach::new_read(days_in_month, move |day: Box<dyn AnyState<T=u32>>, _| {
+//         let dates = ForEach::new(days_in_month, move |day: Box<dyn AnyState<T=u32>>, _| {
 //             let item_delegate_foreach = item_delegate_foreach.clone();
 //
 //             let date = Map3::read_map(year2.clone(), month2.clone(), day.clone(), |y, m, d| {
@@ -337,11 +339,11 @@
 //
 //         let columns = iter::repeat(column.clone()).take(7).collect::<Vec<_>>();
 //
-//         let grid = VGrid::new((
+//         let grid = LazyVGrid::new(columns, (
 //             headers,
 //             hidden_offsets,
 //             dates
-//         ), columns)
+//         ))
 //             .spacing(spacing.clone());
 //
 //         PlainCalendar {

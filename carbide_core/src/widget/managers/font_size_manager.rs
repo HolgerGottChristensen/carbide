@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::accessibility::{Accessibility, AccessibilityContext};
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentFontSize, EnvironmentKeyable};
@@ -60,18 +61,19 @@ impl<C: Widget> Layout for FontSizeManager<C> {
         response
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env: inner,
-            })
+            self.child.position_children(
+                bounding_box, &mut LayoutContext {
+                                text: ctx.text,
+                                image: ctx.image,
+                                env: inner,
+                            })
         })
     }
 }

@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
@@ -58,7 +59,7 @@ impl<F: Widget, B: Widget> Layout for Background<F, B> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position;
         let dimension = self.dimension;
@@ -66,8 +67,8 @@ impl<F: Widget, B: Widget> Layout for Background<F, B> {
         self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.background.set_position(alignment.position(position, dimension, self.background.dimension()));
 
-        self.child.position_children(ctx);
-        self.background.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
+        self.background.position_children(bounding_box, ctx);
     }
 }
 

@@ -1,4 +1,5 @@
 use std::fmt::{Debug};
+use carbide::draw::Rect;
 use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide::mouse_position::MousePositionEnvironmentExt;
@@ -68,13 +69,13 @@ impl<C: Widget> Layout for Help<C> {
         todo!()
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
 
         self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
 
         #[allow(unused_assignments)]
         let mut x = 0.0;
@@ -123,7 +124,7 @@ impl<C: Widget> Layout for Help<C> {
         //y = y.max(0.0).min(ctx.env.current_window_height() - self.help.height());
 
         self.help.set_position(Position::new(x, y));
-        self.help.position_children(ctx);
+        self.help.position_children(bounding_box, ctx);
     }
 }
 

@@ -16,6 +16,7 @@ use crate::widget::{CommonWidget, Widget, WidgetProperties};
 use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use carbide::draw::Rect;
 use crate::identifiable::Identifiable;
 use crate::widget::{WidgetId};
 use crate::state::ReadState;
@@ -69,7 +70,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Layout for EnvUpdat
         response
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         self.value.sync(ctx.env);
 
         let alignment = self.alignment();
@@ -78,11 +79,12 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Layout for EnvUpdat
 
         ctx.env.with::<K>(&*self.value.value(),|inner| {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env: inner,
-            })
+            self.child.position_children(
+                bounding_box, &mut LayoutContext {
+                                text: ctx.text,
+                                image: ctx.image,
+                                env: inner,
+                            })
         })
     }
 }

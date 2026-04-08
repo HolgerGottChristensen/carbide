@@ -1,5 +1,6 @@
 use smallvec::{SmallVec, smallvec};
 use carbide::cursor::MouseCursor;
+use carbide::draw::Rect;
 use carbide::render::RenderContext;
 use carbide::widget::WidgetSync;
 use carbide_macro::carbide_default_builder2;
@@ -78,14 +79,14 @@ impl<W: Sequence> Layout for ZStack<W> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position;
         let dimension = self.dimension;
 
         self.foreach_child(&mut |child| {
             child.set_position(alignment.position(position, dimension, child.dimension()));
-            child.position_children(ctx);
+            child.position_children(bounding_box, ctx);
         });
     }
 }

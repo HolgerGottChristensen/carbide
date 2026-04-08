@@ -81,11 +81,21 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             // Position children
             let alignment = Alignment::Center;
             initialized.child.set_position(alignment.position(Position::new(0.0, 0.0), dimensions, initialized.child.dimension()));
-            initialized.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env,
-            });
+
+            // When we have a window, everything outside that window can be clipped when rendered.
+            let bounding_box = Rect::new(
+                Position::new(0.0, 0.0),
+                dimensions
+            );
+
+            initialized.child.position_children(
+                bounding_box,
+                &mut LayoutContext {
+                    text: ctx.text,
+                    image: ctx.image,
+                    env,
+                }
+            );
 
             // Render the children
             initialized.render_context.start(Rect::new(Position::origin(), dimensions));

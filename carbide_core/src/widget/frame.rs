@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use carbide::draw::Rect;
 use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
@@ -159,12 +160,12 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
         self.dimension()
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
 
         self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

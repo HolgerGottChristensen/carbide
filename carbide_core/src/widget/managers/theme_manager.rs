@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::accessibility::{Accessibility, AccessibilityContext};
 use crate::color::rgba_bytes;
 use crate::draw::theme::Theme;
@@ -163,7 +164,7 @@ impl<C: Widget> Layout for ThemeManager<C> {
         response
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let alignment = self.alignment();
         let position = self.position();
         let dimension = self.dimension();
@@ -177,11 +178,12 @@ impl<C: Widget> Layout for ThemeManager<C> {
 
         EnvironmentColor::with_all(values, ctx.env, |inner| {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
-            self.child.position_children(&mut LayoutContext {
-                text: ctx.text,
-                image: ctx.image,
-                env: inner,
-            })
+            self.child.position_children(
+                bounding_box, &mut LayoutContext {
+                                text: ctx.text,
+                                image: ctx.image,
+                                env: inner,
+                            })
         })
     }
 }

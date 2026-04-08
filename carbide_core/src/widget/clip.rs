@@ -1,5 +1,4 @@
 use crate::scene::SceneManager;
-use carbide_macro::carbide_default_builder2;
 
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position, Rect};
@@ -21,7 +20,6 @@ where
 }
 
 impl Clip<Empty> {
-    #[carbide_default_builder2]
     pub fn new<W: Widget>(child: W) -> Clip<W> {
         Clip {
             id: WidgetId::new(),
@@ -47,6 +45,22 @@ impl<W: Widget> Layout for Clip<W> {
         self.child.calculate_size(requested_size, ctx);
         self.dimension = requested_size;
         requested_size
+    }
+
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
+        let positioning = self.alignment;
+        let position = self.position();
+        let dimension = self.dimension();
+        let inner_bounding_box = self.bounding_box();
+
+        if self.child_count() != 0 {
+            let child = self.child(0);
+            child.set_position(positioning.position(position, dimension, child.dimension()));
+            child.position_children(
+                inner_bounding_box.within_bounding_box(&bounding_box),
+                ctx
+            );
+        }
     }
 }
 
@@ -78,9 +92,9 @@ impl<W: Widget> Render for Clip<W> {
         }
 
         ctx.clip(Rect::new(self.position, self.dimension), |this| {
-            self.foreach_child(&mut |child| {
-                child.render(this);
-            });
-        })
+            if self.child_count() != 0 {
+                self.child(0).render(this);
+            }
+        });
     }
 }

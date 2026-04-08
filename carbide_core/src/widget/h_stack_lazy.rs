@@ -4,6 +4,7 @@ use crate::widget::{AnyWidget, CommonWidget, CrossAxisAlignment, Sequence, Widge
 use crate::CommonWidgetImpl;
 use smallvec::SmallVec;
 use std::collections::HashMap;
+use carbide::draw::Rect;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Layout)]
@@ -128,7 +129,7 @@ impl<W: Sequence> Layout for LazyHStack<W> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let x = self.x();
         let y = self.y();
         let height = self.height();
@@ -143,7 +144,7 @@ impl<W: Sequence> Layout for LazyHStack<W> {
                 CrossAxisAlignment::End => child.set_y(y + height - child.height())
             }
 
-            child.position_children(ctx);
+            child.position_children(bounding_box, ctx);
         }
     }
 }

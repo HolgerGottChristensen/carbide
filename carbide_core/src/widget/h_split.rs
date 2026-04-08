@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use carbide_macro::carbide_default_builder2;
 
 use crate::common::cursor::MouseCursor;
@@ -200,7 +201,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position();
         let dimension = self.dimension();
         let alignment = self.cross_axis_alignment;
@@ -218,7 +219,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for HSplit<S, L, T> {
 
             child.set_position(Position::new(position.x + main_axis_offset, cross));
             main_axis_offset += child.dimension().width;
-            child.position_children(ctx);
+            child.position_children(bounding_box, ctx);
         });
     }
 }

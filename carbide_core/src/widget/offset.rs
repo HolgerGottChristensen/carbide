@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use carbide_macro::carbide_default_builder2;
 
 use crate::draw::{Alignment, Dimension, Position};
@@ -32,7 +33,7 @@ impl Offset<f64, f64, Empty> {
 }
 
 impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y, C> {
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = self.dimension;
 
@@ -45,7 +46,7 @@ impl<X: ReadState<T=f64>, Y: ReadState<T=f64>, C: Widget> Layout for Offset<X, Y
 
         self.child.set_position(child_position);
 
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

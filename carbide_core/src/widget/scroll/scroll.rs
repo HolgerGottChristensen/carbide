@@ -1,6 +1,7 @@
 use std::any::{Any, TypeId};
 use carbide::automatic_style::AutomaticStyle;
 use carbide::cursor::MouseCursor;
+use carbide::draw::Rect;
 use crate::event::{WindowEvent, WindowEventContext};
 use carbide_macro::carbide_default_builder2;
 
@@ -241,8 +242,6 @@ impl<W: Widget<Kind=WidgetKindSimple>> WindowEventHandler for Scroll<W> {
 
 impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        self.child.set_x(self.scroll_offset.x);
-        self.child.set_y(self.scroll_offset.y);
         self.child.calculate_size(requested_size, ctx);
 
         self.keep_y_within_bounds();
@@ -324,7 +323,7 @@ impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
         requested_size
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = self.dimension;
 
@@ -408,11 +407,11 @@ impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
                 ),
         );
 
-        self.vertical_thumb.position_children(ctx);
-        self.horizontal_thumb.position_children(ctx);
-        self.vertical_background.position_children(ctx);
-        self.horizontal_background.position_children(ctx);
-        self.child.position_children(ctx);
+        self.vertical_thumb.position_children(bounding_box, ctx);
+        self.horizontal_thumb.position_children(bounding_box, ctx);
+        self.vertical_background.position_children(bounding_box, ctx);
+        self.horizontal_background.position_children(bounding_box, ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

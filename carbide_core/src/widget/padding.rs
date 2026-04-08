@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
@@ -57,7 +58,7 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
         self.dimension
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let insets = *self.edge_insets.value();
         let position = Position::new(
             self.x() + insets.left,
@@ -69,6 +70,6 @@ impl<W: Widget, E: ReadState<T=EdgeInsets>> Layout for Padding<W, E> {
         );
 
         self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
-        self.child.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }

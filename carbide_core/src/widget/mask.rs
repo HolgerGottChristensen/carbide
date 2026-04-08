@@ -1,3 +1,4 @@
+use carbide::draw::Rect;
 use crate::environment::Environment;
 use carbide_macro::carbide_default_builder2;
 
@@ -49,15 +50,15 @@ impl<M: Widget, W: Widget> Layout for Mask<M, W> {
         requested_size
     }
 
-    fn position_children(&mut self, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = self.dimension;
 
         self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
         self.mask.set_position(Alignment::Center.position(position, dimension, self.mask.dimension()));
 
-        self.child.position_children(ctx);
-        self.mask.position_children(ctx);
+        self.child.position_children(bounding_box, ctx);
+        self.mask.position_children(bounding_box, ctx);
     }
 }
 

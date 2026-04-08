@@ -1,5 +1,6 @@
 use carbide::state::{AnyReadState, ReadState, State, StateContract};
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
 use carbide::identifiable::Identifiable;
@@ -60,10 +61,11 @@ impl<T: StateContract + PartialEq> AnyWidget for Box<dyn AnyIdentifiableWidget<T
 
 impl<
     G: StateContract + PartialEq,
-    T: StateContract + Identifiable,
+    T: StateContract,
     M: RandomAccessCollection<T>,
     W: IdentifiableWidget<T=G>,
-    U: Delegate<M, T, W>> AnyIdentifiableWidget for ForEach<T, M, U, W> {
+    U: Delegate<M, T, W>,
+    Id: Hash + Eq + Clone + Debug + 'static> AnyIdentifiableWidget for ForEach<T, M, U, W, Id> {
     type T = G;
     fn identifier(&self) -> &dyn AnyReadState<T=G> {
         todo!()

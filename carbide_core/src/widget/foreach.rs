@@ -11,6 +11,7 @@ use carbide::widget::properties::Kind;
 use dyn_clone::DynClone;
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::hash::Hash;
 use std::marker::PhantomData;
 
 pub trait Delegate<M: RandomAccessCollection<T>, T: StateContract, O: Widget>: Clone + 'static {
@@ -35,33 +36,48 @@ impl Delegate<Vec<()>, (), Empty> for EmptyDelegate {
 
 #[derive(Widget)]
 #[carbide_exclude(Properties)]
-pub struct ForEach<T, M, U, W>
+pub struct ForEach<T, M, U, W, Id>
 where
-    T: StateContract + Identifiable,
+    T: StateContract,
     M: RandomAccessCollection<T>,
     W: Widget,
     U: Delegate<M, T, W>,
+    Id: Hash + Eq + Clone + Debug + 'static
 {
     #[id] id: WidgetId,
 
     model: M,
     delegate: U,
 
-    widgets: HashMap<T::Id, W>,
-    indices: HashMap<T::Id, LocalState<M::Idx>>,
+    widgets: HashMap<Id, W>,
+    indices: HashMap<Id, LocalState<M::Idx>>,
 
     phantom: PhantomData<T>,
+    ident: fn(&T) -> Id,
 }
 
-impl ForEach<(), Vec<()>, EmptyDelegate, Empty> {
-    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>>(model: M, delegate: U) -> ForEach<T, M, U, W> {
+impl ForEach<(), Vec<()>, EmptyDelegate, Empty, ()> {
+    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>>(model: M, delegate: U) -> ForEach<T, M, U, W, T::Id> {
         ForEach {
             id: WidgetId::new(),
             model,
             delegate,
             widgets: HashMap::new(),
             indices: HashMap::new(),
-            phantom: PhantomData::default()
+            phantom: PhantomData::default(),
+            ident: T::id,
+        }
+    }
+
+    pub fn new_with_id<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>, Id: Hash + Eq + Clone + Debug + 'static>(model: M, id: fn(&T)->Id, delegate: U) -> ForEach<T, M, U, W, Id> {
+        ForEach {
+            id: WidgetId::new(),
+            model,
+            delegate,
+            widgets: HashMap::new(),
+            indices: HashMap::new(),
+            phantom: PhantomData::default(),
+            ident: id,
         }
     }
 
@@ -81,15 +97,16 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty> {
     }
 }
 
-impl<T, M, U, W> ForEach<T, M, U, W>
+impl<T, M, U, W, Id> ForEach<T, M, U, W, Id>
 where
-    T: StateContract + Identifiable,
+    T: StateContract,
     M: RandomAccessCollection<T>,
     W: Widget,
     U: Delegate<M, T, W>,
+    Id: Hash + Eq + Clone + Debug + 'static
 {
     fn ensure_exist(&mut self, index: M::Idx) {
-        let id = self.model.id(index.clone());
+        let id = self.model.map(index.clone(), self.ident);
 
         if let Some(i) = self.indices.get_mut(&id) {
             *i.value_mut() = index.clone();
@@ -108,16 +125,12 @@ where
     }
 }
 
-trait ForeachFrom<T> {
-    fn fff(value: &mut T) -> &mut Self;
-}
-
-impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> ForEach<T, M, U, W> {
+impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>, Id: Hash + Eq + Clone + Debug + 'static> ForEach<T, M, U, W, Id> {
     pub fn child<A: ?Sized>(&mut self, index: usize) -> &mut A where W: AnySequence<A> {
         if W::Kind::kind() == Kind::Simple {
             let idx = self.model.index_from_offset(index);
             self.ensure_exist(idx.clone());
-            let id = self.model.id(idx);
+            let id = self.model.map(idx, self.ident);
 
             <W as AnySequence<A>>::index(self.widgets.get_mut(&id).unwrap(), 0)
         } else {
@@ -127,7 +140,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             let mut passed = 0;
 
             while current_index < end_index {
-                let id = self.model.id(current_index.clone());
+                let id = self.model.map(current_index.clone(), self.ident);
 
                 self.ensure_exist(current_index.clone());
 
@@ -155,7 +168,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             }
 
             if current_index < end_index {
-                let id = self.model.id(current_index.clone());
+                let id = self.model.map(current_index.clone(), self.ident);
 
                 let child = self.widgets.get_mut(&id).unwrap();
 
@@ -177,7 +190,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         let end_index = self.model.end_index();
 
         while current_index < end_index {
-            let id = self.model.id(current_index.clone());
+            let id = self.model.map(current_index.clone(), self.ident);
 
             self.ensure_exist(current_index.clone());
 
@@ -201,7 +214,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
         current_index = self.model.prev_index(current_index);
 
         loop {
-            let id = self.model.id(current_index.clone());
+            let id = self.model.map(current_index.clone(), self.ident);
 
             self.ensure_exist(current_index.clone());
 
@@ -218,8 +231,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 }
 
-impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> CommonWidget for ForEach<T, M, U, W> {
-
+impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>, Id: Hash + Eq + Clone + Debug + 'static> CommonWidget for ForEach<T, M, U, W, Id> {
     fn flag(&self) -> WidgetFlag {
         WidgetFlag::PROXY
     }
@@ -240,7 +252,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             let mut count = 0;
 
             while current_index < end_index {
-                let id = self.model.id(current_index.clone());
+                let id = self.model.map(current_index.clone(), self.ident);
 
                 self.ensure_exist(current_index.clone());
 
@@ -286,17 +298,18 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 }
 
-impl<T, M, U, W> WidgetProperties for ForEach<T, M, U, W>
+impl<T, M, U, W, Id> WidgetProperties for ForEach<T, M, U, W, Id>
 where
-    T: StateContract + Identifiable,
+    T: StateContract,
     M: RandomAccessCollection<T>,
     W: Widget,
     U: Delegate<M, T, W>,
+    Id: Hash + Eq + Clone + Debug + 'static
 {
     type Kind = WidgetKindProxy;
 }
 
-impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Debug for ForEach<T, M, U, W> {
+impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>, Id: Hash + Eq + Clone + Debug + 'static> Debug for ForEach<T, M, U, W, Id> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ForEach")
             .field("model", &self.model)
@@ -305,7 +318,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
     }
 }
 
-impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>> Clone for ForEach<T, M, U, W> {
+impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>, Id: Hash + Eq + Clone + Debug + 'static> Clone for ForEach<T, M, U, W, Id> {
     fn clone(&self) -> Self {
         ForEach {
             id: WidgetId::new(),
@@ -314,6 +327,7 @@ impl<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U
             widgets: HashMap::new(),
             indices: HashMap::new(),
             phantom: Default::default(),
+            ident: self.ident,
         }
     }
 }
