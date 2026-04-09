@@ -91,14 +91,10 @@ impl<W: Widget> Render for Clip<W> {
             return;
         }
 
-        /*ctx.clip(Rect::new(self.position, self.dimension), |this| {
+        ctx.clip(Rect::new(self.position, self.dimension), |this| {
             if self.child_count() != 0 {
                 self.child(0).render(this);
             }
-        });*/
-
-        if self.child_count() != 0 {
-            self.child(0).render(ctx);
-        }
+        });
     }
 }

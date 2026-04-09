@@ -9,7 +9,7 @@ fn main() {
         Window::new(
             "LazyHStack - Carbide",
             Dimension::new(600.0, 600.0),
-            /*Scroll::new(
+            Scroll::new(
                 LazyHStack::new(
                     ForEach::new(0..1_000_000_000, |_, idx| {
                         ZStack::new((
@@ -21,26 +21,6 @@ fn main() {
                     })
                 ).spacing(3.0)
             )
-                .clip()
-                .border()
-                .padding(50.0)*/
-
-
-            LazyHStack::new(
-                ForEach::new(0..20, |_, idx| {
-                    ZStack::new((
-                        Rectangle::new(),
-                        Text::new(idx)
-                            .rotation_effect(-90.0)
-                            .frame_fixed_width(20.0)
-                    )).frame_fixed_width(20.0)
-                })
-            ).spacing(3.0)
-                .border()
-                .scroll()
-                .clip()
-                .frame(200.0, 200.0)
-                .border()
                 .clip()
                 .border()
                 .padding(50.0)
