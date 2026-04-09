@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
@@ -89,7 +90,25 @@ mod private {
 
 
 
+impl<T: StateContract> Ord for Box<dyn AnyReadState<T=T>> where T: Ord {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.value().cmp(&*other.value())
+    }
+}
 
+impl<T: StateContract> PartialOrd for Box<dyn AnyReadState<T=T>> where T: PartialOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.value().partial_cmp(&*other.value())
+    }
+}
+
+impl<T: StateContract> Eq for Box<dyn AnyReadState<T=T>> where T: Eq {}
+
+impl<T: StateContract> PartialEq for Box<dyn AnyReadState<T=T>> where T: PartialEq {
+    fn eq(&self, other: &Self) -> bool {
+        self.value().eq(&*other.value())
+    }
+}
 
 impl<G: StateSync> StateSync for Box<G> {
     fn sync(&mut self, env: &mut Environment) -> bool {

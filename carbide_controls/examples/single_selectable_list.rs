@@ -1,48 +1,34 @@
-use carbide_controls::{List};
+use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{AnyState, LocalState, Map2};
+use carbide_core::state::{AnyState, LocalState, Map1, Map2};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
-    let mut application = Application::new()
-        .with_asset_fonts();
+    let mut application = Application::new();
 
-    let list_model = (1..100)
-        .map(|i| format!("Number {}", i))
-        .collect::<Vec<_>>();
-
-    let list_model_state = LocalState::new(list_model);
-
-    let selected_item: LocalState<Option<String>> = LocalState::new(None);
-    let selected_item_clone = selected_item.clone();
-
-    let delegate = move |item: Box<dyn AnyState<T=String>>, _| -> Box<dyn AnyWidget> {
-        let background_color = Map2::read_map(item.clone(), selected_item_clone.clone(), |item, selected| {
-            if let Some(selected) = selected {
-                if selected == item {
-                    return EnvironmentColor::Blue;
-                }
-            }
-
-            EnvironmentColor::SystemFill
-        });
-
-        ZStack::new((
-            Rectangle::new().fill(background_color),
-            Text::new(item),
-        ))
-            .frame_fixed_height(80.0)
-            .boxed()
-    };
+    let selection = LocalState::new(Some(22));
+    let selection2 = selection.clone();
 
     application.set_scene(Window::new(
         "Single-Selectable List Example - Carbide",
         Dimension::new(400.0, 600.0),
-        List::new(list_model_state, delegate)
-            .selectable(selected_item)
-            .clip()
+        List::new(0..10_000, move |item, _| {
+            let background_color = Map1::read_map(selection2.clone(), move |selection| {
+                if let Some(selected) = selection && *selected == item  {
+                    EnvironmentColor::Blue
+                } else {
+                    EnvironmentColor::SystemFill
+                }
+            });
+
+            ZStack::new((
+                Rectangle::new().fill(background_color),
+                Text::new(item),
+            )).frame_fixed_height(20.0)
+                .tag(item)
+        }).selection(selection)
             .padding(50.0)
     ));
 

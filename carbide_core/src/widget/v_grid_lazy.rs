@@ -241,9 +241,12 @@ impl<W: Sequence> CommonWidget for LazyVGrid<W> {
     }
 
     fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+        let count = self.children.count();
         for current_index in &self.current_indices {
-            let child = self.children.index(*current_index);
-            f(child)
+            if *current_index < count {
+                let child = self.children.index(*current_index);
+                f(child)
+            }
         }
     }
 

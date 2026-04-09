@@ -1,4 +1,4 @@
-use carbide_controls::List;
+use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, ReadState, State};
@@ -11,11 +11,12 @@ fn main() {
     application.set_scene(Window::new(
         "List Example - Carbide",
         Dimension::new(400.0, 600.0),
-        List::new(0..100, |item, _| {
+        List::new(0..10_000, |item, _| {
             ZStack::new((
                 Rectangle::new(),
                 Text::new(item),
-            )).frame_fixed_height(40.0)
+            )).frame_fixed_height(20.0)
+                .tag(item)
         }).padding(50.0)
     ));
 

@@ -1,20 +1,18 @@
 use carbide::identifiable::Identifiable;
 use carbide::state::{IndexState, LocalState, ReadState, State, StateContract};
 use std::ops::{Deref, Index, IndexMut, Range, RangeFrom, RangeInclusive};
-use crate::state::{AnyReadState, AnyState, FieldState, Functor};
+use crate::state::{AnyReadState, AnyState, FieldState, Functor, Map1, Map2, ReadStateExtNew, ValueState};
 
 /// A collection that can be accessed by an index, provides a start index, end index, and a way of
 /// getting the next index.
 pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContract + 'static {
     /// The index of the specific type
     type Idx: PartialOrd + StateContract + 'static;
-    /// An iterator of all the indexes in the collection
-    type Indices: IntoIterator<Item=Self::Idx> + StateContract + 'static;
 
     type Item<'a> where Self: 'a;
 
     /// Get value by index
-    fn index(&self, index: Self::Idx) -> Self::Item<'_>;
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_>;
 
     fn id(&self, index: Self::Idx) -> T::Id where T: Identifiable;
     fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R;
@@ -22,8 +20,6 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
     /// Get the first index of the collection. If the collection is empty, this will return the
     /// same as the end index.
     fn start_index(&self) -> Self::Idx;
-    /// Get an iterator of all the indices in the collection.
-    fn indices(&self) -> Self::Indices;
 
     fn len(&self) -> usize;
     /// Get the end index of the collection. This will be the index one past the last valid index that
@@ -39,12 +35,11 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
 
 impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
     type Idx = usize;
-    type Indices = Range<usize>;
     type Item<'a> = &'a T;
 
     #[inline(always)]
-    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
-        &self[index]
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_> {
+        &self[*index.value()]
     }
 
     #[inline(always)]
@@ -64,10 +59,6 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
         0
     }
 
-    #[inline(always)]
-    fn indices(&self) -> Self::Indices {
-        0..self.len()
-    }
 
     #[inline(always)]
     fn len(&self) -> usize {
@@ -97,13 +88,12 @@ impl<T: StateContract> RandomAccessCollection<T> for Vec<T> {
 
 impl RandomAccessCollection<u32> for Range<u32> {
     type Idx = u32;
-    type Indices = Range<u32>;
 
     type Item<'a> = u32;
 
     #[inline(always)]
-    fn index(&self, index: Self::Idx) -> u32 {
-        self.start + index
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> u32 {
+        self.start + *index.value()
     }
 
     #[inline(always)]
@@ -119,11 +109,6 @@ impl RandomAccessCollection<u32> for Range<u32> {
     #[inline(always)]
     fn start_index(&self) -> Self::Idx {
         0
-    }
-
-    #[inline(always)]
-    fn indices(&self) -> Self::Indices {
-        self.start..self.end
     }
 
     #[inline(always)]
@@ -154,13 +139,12 @@ impl RandomAccessCollection<u32> for Range<u32> {
 
 impl RandomAccessCollection<u32> for RangeInclusive<u32> {
     type Idx = u32;
-    type Indices = RangeInclusive<u32>;
 
     type Item<'a> = u32;
 
     #[inline(always)]
-    fn index(&self, index: Self::Idx) -> u32 {
-        self.start() + index
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> u32 {
+        self.start() + *index.value()
     }
 
     #[inline(always)]
@@ -176,11 +160,6 @@ impl RandomAccessCollection<u32> for RangeInclusive<u32> {
     #[inline(always)]
     fn start_index(&self) -> Self::Idx {
         0
-    }
-
-    #[inline(always)]
-    fn indices(&self) -> Self::Indices {
-        *self.start()..=*self.end()
     }
 
     #[inline(always)]
@@ -215,10 +194,9 @@ where
     <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
 {
     type Idx = A::Idx;
-    type Indices = A::Indices;
     type Item<'a> = Box<dyn AnyState<T=T>>;
 
-    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_> {
         Box::new(IndexState::new(self.clone(), index))
     }
 
@@ -226,7 +204,7 @@ where
     where
         T: Identifiable
     {
-        self.value().id(index)
+        self.value().id(index.value().clone())
     }
 
     fn map<R>(&self, index: Self::Idx, f: fn(&T)->R) -> R {
@@ -235,10 +213,6 @@ where
 
     fn start_index(&self) -> Self::Idx {
         self.value().start_index()
-    }
-
-    fn indices(&self) -> Self::Indices {
-        self.value().indices()
     }
 
     fn len(&self) -> usize {
@@ -268,10 +242,9 @@ where
     <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
 {
     type Idx = A::Idx;
-    type Indices = A::Indices;
     type Item<'a> = Box<dyn AnyState<T=T>>;
 
-    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_> {
         Box::new(IndexState::new(self.clone(), index))
     }
 
@@ -290,9 +263,6 @@ where
         self.value().start_index()
     }
 
-    fn indices(&self) -> Self::Indices {
-        self.value().indices()
-    }
 
     fn len(&self) -> usize {
         self.value().len()
@@ -321,10 +291,9 @@ where
     <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
 {
     type Idx = A::Idx;
-    type Indices = A::Indices;
     type Item<'a> = Box<dyn AnyState<T=T>>;
 
-    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_> {
         Box::new(IndexState::new(self.clone(), index))
     }
 
@@ -341,10 +310,6 @@ where
 
     fn start_index(&self) -> Self::Idx {
         self.value().start_index()
-    }
-
-    fn indices(&self) -> Self::Indices {
-        self.value().indices()
     }
 
     fn len(&self) -> usize {
@@ -374,10 +339,9 @@ where
     <A as RandomAccessCollection<T>>::Idx: ReadState<T=<A as RandomAccessCollection<T>>::Idx>
 {
     type Idx = A::Idx;
-    type Indices = A::Indices;
     type Item<'a> = Box<dyn AnyReadState<T=T>>;
 
-    fn index(&self, index: Self::Idx) -> Self::Item<'_> {
+    fn index(&self, index: impl ReadState<T=Self::Idx>) -> Self::Item<'_> {
         Box::new(IndexState::new(self.clone(), index))
     }
 
@@ -394,10 +358,6 @@ where
 
     fn start_index(&self) -> Self::Idx {
         self.value().start_index()
-    }
-
-    fn indices(&self) -> Self::Indices {
-        self.value().indices()
     }
 
     fn len(&self) -> usize {

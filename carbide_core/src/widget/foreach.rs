@@ -115,7 +115,7 @@ where
         }
 
         if self.widgets.get(&id).is_none() {
-            let item = self.model.index(index);
+            let item = self.model.index(self.indices.get(&id).unwrap().clone());
             let i = self.indices.get(&id).unwrap();
 
             let new = self.delegate.call(item, Box::new(i.clone()));
