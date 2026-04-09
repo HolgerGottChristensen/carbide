@@ -1,7 +1,5 @@
-use carbide_controls::{ControlsExt, List};
+use carbide_controls::List;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -16,7 +14,6 @@ fn main() {
                 Rectangle::new(),
                 Text::new(item),
             )).frame_fixed_height(20.0)
-                .tag(item)
         }).padding(50.0)
     ));
 

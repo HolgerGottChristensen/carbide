@@ -128,8 +128,6 @@ impl<Content: Sequence> List<Content, ()> { // Using () as the type here, we ens
                             } else {
                                 *id.value_mut() = Some(identifier);
                             }
-
-                            dbg!(&selection);
                         }
                         ListSelection::Multi(selections) => {
                             match ctx.modifier_key {

@@ -1,7 +1,7 @@
-use carbide_controls::{ControlsExt, List};
+use carbide_controls::List;
+use carbide_core::color::ColorExt;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{LocalState, ReadState, State};
+use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
@@ -12,16 +12,28 @@ fn main() {
         "List by content Example - Carbide",
         Dimension::new(400.0, 400.0),
         List::new_content((
-            Text::new("Item 0"),
-            Text::new("Item 1"),
-            Text::new("Item 2"),
-            Text::new("Item 3"),
-            Text::new("Item 4"),
-            Text::new("Item 5"),
-            Text::new("Item 6"),
-            Text::new("Item 7"),
-            Text::new("Item 8"),
-            Text::new("Item 9"),
+            ZStack::new((
+                Rectangle::new(),
+                Text::new("0"),
+            )).frame_fixed_height(20.0),
+
+            ZStack::new((
+                Rectangle::new(),
+                Text::new("1"),
+            )).frame_fixed_height(20.0),
+
+            ZStack::new((
+                Rectangle::new(),
+                Text::new("2"),
+            )).frame_fixed_height(20.0),
+
+            ForEach::new(3..30, |i, _| {
+                ZStack::new((
+                    Rectangle::new(),
+                    Text::new(i).color(EnvironmentColor::Label.color().invert())
+                )).frame_fixed_height(20.0)
+                    .accent_color(EnvironmentColor::Orange)
+            })
         ))
             .border()
             .padding(50.0)

@@ -1,14 +1,14 @@
 use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{AnyState, LocalState, Map1, Map2};
+use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 
 fn main() {
     let mut application = Application::new();
 
-    let selection = LocalState::new(Some(22));
+    let selection = LocalState::new(None);
     let selection2 = selection.clone();
 
     application.set_scene(Window::new(

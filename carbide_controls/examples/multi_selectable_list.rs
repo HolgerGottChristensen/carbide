@@ -1,10 +1,10 @@
-use std::collections::HashSet;
 use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::{AnyState, LocalState, Map1, Map2};
+use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
+use std::collections::HashSet;
 
 fn main() {
     let mut application = Application::new();
