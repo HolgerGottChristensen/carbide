@@ -1,83 +1,74 @@
-// use std::cmp::{max, min};
-// use std::collections::HashSet;
-// use std::fmt::{Debug, Formatter};
-// use std::hash::Hash;
-// use std::marker::PhantomData;
-//
-// use carbide::closure;
-// use carbide::draw::Rect;
-// use carbide::identifiable::Identifiable;
-// use carbide::state::{AnyReadState, AnyState, Map1};
-// use carbide::widget::{AnyWidget, MouseArea, MouseAreaActionContext};
-// use carbide::widget::canvas::CanvasContext;
-// use carbide_core::CommonWidgetImpl;
-// use carbide_core::draw::{Dimension, Position};
-// use carbide_core::environment::{EnvironmentColor};
-// use carbide_core::event::ModifierKey;
-// use carbide_core::state::{
-//     LocalState, ReadState, State, StateContract,
-// };
-// use carbide_core::state::IntoState;
-// use carbide_core::widget::{Empty, EmptyDelegate};
-// use carbide_core::widget::{
-//     CommonWidget, Delegate, EdgeInsets, ForEach, HStack, IfElse, Scroll, VStack, Widget,
-//     WidgetExt, WidgetId,
-// };
-// use carbide_core::widget::canvas::Canvas;
-//
-// const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
-//     ModifierKey::SUPER
-// } else {
-//     ModifierKey::CONTROL
-// };
-// const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
-//
-// #[derive(Clone, Widget)]
-// pub struct List<T, M, W, U, I, G>
-// where
-//     T: StateContract,
-//     M: State<T=Vec<T>>,
-//     W: Widget,
-//     U: Delegate<T, W>,
-//     I: StateContract + PartialEq,
-//     G: Widget,
-// {
-//     #[id] id: WidgetId,
-//     position: Position,
-//     dimension: Dimension,
-//
-//     child: Scroll<G>,
-//
-//     #[state] model: M,
-//     delegate: U,
-//     spacing: f64,
-//
-//     selection: Option<ListSelection<I>>, // TODO: should be marked as state right?
-//     #[state] last_index_clicked: LocalState<usize>, // Used to make shift selects
-//     #[allow(unused)]
-//     tree_disclosure: TreeDisclosure,
-//
-//     phantom: PhantomData<T>,
-//     phantom_widget: PhantomData<W>,
-//
-//     /*child: Box<dyn Widget>,
-//     #[state]
-//     model: TState<Vec<T>>,
-//     #[state]
-//     internal_model: TState<Vec<T>>,
-//     #[state]
-//     index_offset: TState<usize>,
-//     #[state]
-//     start_offset: TState<f64>,
-//     #[state]
-//     end_offset: TState<f64>,
-//     item_id_function: Option<fn(&T) -> WidgetId>,
-//     selection: Option<Selection>,
-//     #[state]
-//     last_index_clicked: TState<usize>,
-//     sub_tree_function: Option<fn(TState<T>) -> TState<Option<Vec<T>>>>,
-//     tree_disclosure: TreeDisclosure,*/
-// }
+use std::fmt::{Debug, Formatter};
+use std::marker::PhantomData;
+use carbide::CommonWidgetImpl;
+use carbide::draw::{Dimension, Position};
+use carbide::event::ModifierKey;
+use carbide::identifiable::Identifiable;
+use carbide::random_access_collection::RandomAccessCollection;
+use carbide::state::StateContract;
+use carbide::widget::{AnyWidget, CommonWidget, Delegate, ForEach, LazyVStack, Scroll, Sequence, Widget, WidgetExt, WidgetId};
+
+const MULTI_SELECTION_MODIFIER: ModifierKey = if cfg!(target_os = "macos") {
+    ModifierKey::SUPER
+} else {
+    ModifierKey::CONTROL
+};
+const LIST_SELECTION_MODIFIER: ModifierKey = ModifierKey::SHIFT;
+
+
+#[derive(Clone, Widget)]
+pub struct List<Content>
+where
+    Content: Sequence,
+{
+    #[id] id: WidgetId,
+    position: Position,
+    dimension: Dimension,
+
+    content: Content,
+    child: Box<dyn AnyWidget>,
+
+    spacing: f64,
+
+    //selection: Option<ListSelection<I>>, // TODO: should be marked as state right?
+    //#[state] last_index_clicked: LocalState<usize>, // Used to make shift selects
+
+    //tree_disclosure: TreeDisclosure,
+}
+
+impl List<()> {
+    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>>(model: M, delegate: U) -> List<impl Sequence> {
+        let content = ForEach::new(model, delegate);
+
+        let child = Scroll::new(
+            LazyVStack::new(
+                content.clone()
+            ).spacing(1.0)
+        ).clip();
+
+        List {
+            id: WidgetId::new(),
+            position: Default::default(),
+            dimension: Default::default(),
+            content,
+            child: child.boxed(),
+            spacing: 0.0,
+        }
+    }
+}
+
+impl<Content: Sequence> CommonWidget for List<Content> {
+    CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
+}
+
+impl<Content: Sequence> Debug for List<Content> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("List")
+            .field("child", &self.child)
+            .finish()
+    }
+}
+
 //
 // impl List<(), Vec<()>, Empty, EmptyDelegate, (), Empty> {
 //     pub fn new<T: StateContract, M: IntoState<Vec<T>>, W: Widget, U: Delegate<T, W>>(model: M, delegate: U) -> List<T, M::Output, W, U, (), impl Widget> {
@@ -389,15 +380,7 @@
 //     */
 // }
 //
-// impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> CommonWidget for List<T, M, W, U, I, G> {
-//     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
-// }
-//
-// impl<T: StateContract, M: State<T=Vec<T>>, W: Widget, U: Delegate<T, W>, I: StateContract + PartialEq, G: Widget> Debug for List<T, M, W, U, I, G> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         f.debug_struct("List").field("child", &self.child).finish()
-//     }
-// }
+
 //
 // #[derive(Clone, Debug)]
 // pub enum ListSelection<T: StateContract> {

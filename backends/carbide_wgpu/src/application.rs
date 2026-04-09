@@ -352,9 +352,9 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: WinitWindowId, event: WindowEvent) {
-        if !matches!(event, WindowEvent::CursorMoved { .. } | WindowEvent::RedrawRequested | WindowEvent::TouchpadPressure { .. }) {
-            println!("{:?}", event);
-        }
+        /*if !matches!(event, WindowEvent::CursorMoved { .. } | WindowEvent::RedrawRequested | WindowEvent::TouchpadPressure { .. }) {
+            println!("[{}:{}:{}] {:?}", file!(), line!(), column!(), event);
+        }*/
 
         self.application_manager.begin_frame();
 
