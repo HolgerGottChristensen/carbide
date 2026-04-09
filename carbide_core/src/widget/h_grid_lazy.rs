@@ -21,6 +21,7 @@ pub struct LazyHGrid<W> where W: Sequence
 
     child_width_estimate: Option<Scalar>,
     child_widths: HashMap<WidgetId, Scalar>,
+    requested_width: Scalar,
 
     current_indices: SmallVec<[usize; 32]>
 }
@@ -37,6 +38,7 @@ impl<W: Sequence> LazyHGrid<W> {
             calculated_heights: SmallVec::new(),
             child_width_estimate: None,
             child_widths: Default::default(),
+            requested_width: 0.0,
             current_indices: Default::default(),
         }
     }
@@ -134,10 +136,7 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
 
         let column_count = (child_count as Scalar / self.calculated_heights.len() as Scalar).ceil() as usize;
 
-        // Extract or calculate initial height estimate
-        let mut width_estimate = if let Some(width_estimate) = self.child_width_estimate {
-            width_estimate
-        } else {
+        if self.child_width_estimate.is_none() {
             // Calculate height estimate based on the first N children
             let child = self.children.index(0);
             let chosen_size = child.calculate_size(requested_size, ctx);
@@ -145,25 +144,41 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
             self.child_widths.insert(child.id(), chosen_size.width);
 
             self.child_width_estimate = Some(chosen_size.width);
-            chosen_size.width
-        };
+        }
 
-        let offset = -self.x();
+        // We only estimate the height, and always use the requested width
+        let total_width_estimate = self.child_width_estimate.unwrap() * column_count as Scalar
+            + self.spacing.width * column_count.saturating_sub(1) as Scalar;
 
-        let mut cummulated_x = 0.0;
+        self.dimension = Dimension::new(total_width_estimate, requested_size.height);
+        self.requested_width = requested_size.width;
+
+        self.dimension
+    }
+
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
+        self.current_indices.clear();
+
+        let x = self.x();
+        let y = self.y();
+        let child_count = self.children.count();
+
+        let mut width_estimate = self.child_width_estimate.expect("The child width can not be none after calculate_size");
+
+        let offset = bounding_box.position.x - x;
+
+
 
         self.current_indices.clear();
 
         let estimate_for_column = width_estimate.max(1.0) + self.spacing.width;
         let mut column = (offset / estimate_for_column).floor().max(0.0) as usize;
 
-        let estimated_start_x = column as Scalar * estimate_for_column;
-
-        let bla = estimated_start_x - offset;
+        let mut cummulated_x = column as Scalar * estimate_for_column + x;
 
         'outer: loop {
             let mut current_column_width: Scalar = 0.0;
-            let mut cummulated_y = 0.0;
+            let mut cummulated_y = y;
 
             for column_offset in 0..self.calculated_heights.len() {
                 let index = column * self.calculated_heights.len() + column_offset;
@@ -176,16 +191,16 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
 
                 let child = self.children.index(index);
 
+                let chosen_size = child.calculate_size(Dimension::new(
+                    self.requested_width,
+                    self.calculated_heights[column_offset],
+                ), ctx);
+
                 // We set the relative offset of the child here. This is then offset in position_children.
                 child.set_y(cummulated_y);
-                child.set_x(cummulated_x + estimated_start_x);
+                child.set_x(cummulated_x);
 
-                let for_child = Dimension::new(
-                    requested_size.width,
-                    self.calculated_heights[column_offset],
-                );
-
-                let chosen_size = child.calculate_size(for_child, ctx);
+                child.position_children(bounding_box, ctx);
 
                 let child_id = child.id();
 
@@ -200,7 +215,7 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
                 cummulated_y += self.calculated_heights[column_offset] + self.spacing.height;
             }
 
-            if cummulated_x + current_column_width > requested_size.width - bla - self.spacing.width {
+            if cummulated_x + current_column_width > bounding_box.right() {
                 break
             }
 
@@ -209,27 +224,6 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
         }
 
         self.child_width_estimate = Some(width_estimate);
-
-        // We only estimate the height, and always use the requested width
-        let total_width_estimate = width_estimate * column_count as Scalar
-            + self.spacing.width * column_count.saturating_sub(1) as Scalar;
-
-        self.dimension = Dimension::new(total_width_estimate, requested_size.height);
-
-        self.dimension
-    }
-
-    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
-        let x = self.x();
-        let y = self.y();
-
-        for current_index in &self.current_indices {
-            let child = self.children.index(*current_index);
-            child.set_y(child.y() + y);
-            child.set_x(child.x() + x);
-
-            child.position_children(bounding_box, ctx);
-        }
     }
 }
 
