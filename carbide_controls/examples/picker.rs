@@ -24,15 +24,15 @@ fn main() {
     application.set_scene(Window::new(
         "Picker example - Carbide",
         Dimension::new(400.0, 600.0),
-        Picker::new("Flavor", state3, (
+        Picker::new("Flavor", state, (
             Text::new("Chocolate").tag(Flavor::Chocolate),
             Text::new("Vanilla").tag(Flavor::Vanilla),
             Text::new("Strawberry").tag(Flavor::Strawberry),
         ))
             .padding(40.0)
-            //.picker_style(MenuStyle)
+            .picker_style(MenuStyle)
             //.picker_style(InlineStyle)
-            .picker_style(SegmentedStyle)
+            //.picker_style(SegmentedStyle)
             .accent_color(EnvironmentColor::Orange)
             //.enabled(false)
     ));

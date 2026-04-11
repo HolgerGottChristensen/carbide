@@ -7,6 +7,7 @@ use carbide::state::{AnyReadState, AnyState, ReadState};
 use carbide::widget::{AnySequence, AnyWidget, CommonWidget, OverlayManager, Widget, WidgetId, WidgetSync};
 use crate::ControlsOverlayKey;
 use crate::identifiable::AnySelectableWidget;
+use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::menu::key_command::PopupButtonKeyCommand;
 
 #[derive(Debug, Clone, Widget)]
@@ -48,7 +49,7 @@ impl MouseEventHandler for MenuStylePopupBase {
 
 impl KeyboardEventHandler for MenuStylePopupBase {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        /*if !*self.enabled.value() {
+        if !*self.enabled.value() {
             OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
                 manager.clear()
             });
@@ -66,13 +67,13 @@ impl KeyboardEventHandler for MenuStylePopupBase {
 
         let id = *self.hovered.value();
 
-        self.model.foreach(&mut |child: &mut dyn AnyWidget| {
+        self.model.foreach(&mut |child: &mut dyn AnySelectableWidget| {
             child.sync(ctx.env);
         });
 
         if event == PopupButtonKeyCommand::Select {
             if id != WidgetId::default() {
-                self.model.foreach(&mut |selectable| {
+                self.model.foreach(&mut |selectable: &mut dyn AnySelectableWidget| {
                     if selectable.as_widget().id() == id {
                         let mut state = clone_box(selectable.selection());
                         let prev = *state.value();
@@ -88,7 +89,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             let mut next = id == WidgetId::default();
             let mut already_moved = false;
 
-            self.model.foreach(&mut |selectable| {
+            self.model.foreach(&mut |selectable: &mut dyn AnySelectableWidget| {
                 if already_moved { return; }
 
                 let selectable_id = selectable.as_widget().id();
@@ -103,7 +104,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             });
 
             if !already_moved {
-                self.model.foreach(&mut |selectable| {
+                self.model.foreach(&mut |selectable: &mut dyn AnySelectableWidget| {
                     if already_moved { return; }
 
                     self.hovered.set_value_dyn(selectable.as_widget().id());
@@ -114,7 +115,7 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             let mut next = id == WidgetId::default();
             let mut already_moved = false;
 
-            self.model.foreach_rev(&mut |selectable| {
+            self.model.foreach_rev(&mut |selectable: &mut dyn AnySelectableWidget| {
                 if already_moved { return; }
 
                 let selectable_id = selectable.as_widget().id();
@@ -129,15 +130,14 @@ impl KeyboardEventHandler for MenuStylePopupBase {
             });
 
             if !already_moved {
-                self.model.foreach_rev(&mut |selectable| {
+                self.model.foreach_rev(&mut |selectable: &mut dyn AnySelectableWidget| {
                     if already_moved { return; }
 
                     self.hovered.set_value_dyn(selectable.as_widget().id());
                     already_moved = true;
                 })
             }
-        }*/
-        todo!()
+        }
     }
 }
 

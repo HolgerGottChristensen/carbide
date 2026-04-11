@@ -1,21 +1,19 @@
-use std::any::{type_name, TypeId};
-use std::hash::Hash;
-use std::marker::PhantomData;
-use carbide::draw::AutomaticStyle;
-use carbide::environment::Environment;
-use carbide::widget::{WidgetStyle, WidgetSync};
 use crate::identifiable::AnyIdentifiableWidget;
+use crate::picker::picker_item::PickerItem;
 use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::PickerStyleKey;
 use crate::picker::PickerStyle;
-use crate::{EnabledState};
+use crate::EnabledState;
+use carbide::draw::AutomaticStyle;
+use carbide::environment::Environment;
+use carbide::widget::{WidgetStyle, WidgetSync};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::focus::Focus;
-use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew, State, StateContract, StateExtNew};
-use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Widget, WidgetExt, WidgetId, Sequence, ForEach};
+use carbide_core::widget::{AnyWidget, CommonWidget, ForEach, Rectangle, Sequence, Widget, WidgetExt, WidgetId};
 use carbide_core::CommonWidgetImpl;
-use crate::picker::picker_item::PickerItem;
+use std::any::TypeId;
+use std::marker::PhantomData;
 
 #[derive(Clone, Widget, Debug)]
 #[carbide_exclude(Sync)]
