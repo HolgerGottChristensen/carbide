@@ -44,8 +44,6 @@ pub struct MouseArea<I, O, F, C, H, P> where
 }
 
 impl MouseArea<fn(MouseAreaActionContext), fn(MouseAreaActionContext), Focus, Empty, bool, bool> {
-
-    #[carbide_default_builder2]
     pub fn new<C: Widget>(child: C) -> MouseArea<fn(MouseAreaActionContext), fn(MouseAreaActionContext), Focus, C, bool, bool> {
         MouseArea {
             id: WidgetId::new(),

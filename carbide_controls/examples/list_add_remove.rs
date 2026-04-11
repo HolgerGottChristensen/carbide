@@ -14,7 +14,6 @@ fn main() {
         (1..20).map(|i| format!("Number {}", i)).collect::<Vec<_>>()
     );
 
-
     let add_element = Button::new("Add element", closure!(|_| {
             let len = ($model).len();
             model.push(format!("New element: {}", len + 1));

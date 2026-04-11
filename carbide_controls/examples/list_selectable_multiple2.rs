@@ -1,0 +1,36 @@
+use carbide_controls::List;
+use carbide_core::draw::Dimension;
+use carbide_core::environment::EnvironmentColor;
+use carbide_core::state::{LocalState, Map1};
+use carbide_core::widget::*;
+use carbide_wgpu::{Application, Window};
+use std::collections::HashSet;
+
+fn main() {
+    let mut application = Application::new();
+
+    let selection = LocalState::new(HashSet::new());
+    let selection2 = selection.clone();
+
+    application.set_scene(Window::new(
+        "Multi-Selectable List Example - Carbide",
+        Dimension::new(400.0, 600.0),
+        List::new_selectable(0..10_000, selection, move |item, _| {
+            let background_color = Map1::read_map(selection2.clone(), move |selection| {
+                if selection.contains(&item)  {
+                    EnvironmentColor::Blue
+                } else {
+                    EnvironmentColor::SystemFill
+                }
+            });
+
+            ZStack::new((
+                Rectangle::new().fill(background_color),
+                Text::new(item),
+            )).frame_fixed_height(20.0)
+        })
+            .padding(50.0)
+    ));
+
+    application.launch();
+}

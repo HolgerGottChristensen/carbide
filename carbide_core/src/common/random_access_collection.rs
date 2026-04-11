@@ -7,7 +7,7 @@ use crate::state::{AnyReadState, AnyState, FieldState, Functor, Map1, Map2, Read
 /// getting the next index.
 pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContract + 'static {
     /// The index of the specific type
-    type Idx: PartialOrd + StateContract + 'static;
+    type Idx: Ord + StateContract + 'static;
 
     type Item<'a> where Self: 'a;
 
