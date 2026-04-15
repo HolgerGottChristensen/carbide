@@ -10,6 +10,7 @@ use crate::{EnabledKey, Help};
 use crate::button::{ButtonStyle, ButtonStyleKey};
 use crate::color_picker::{ColorPickerStyle, ColorPickerStyleKey};
 use crate::labelled::Labelled;
+use crate::list::{ListStyle, ListStyleKey};
 use crate::picker::{PickerStyle, PickerStyleKey, Tagged};
 use crate::slider::{SliderStyle, SliderStyleKey};
 use crate::toggle::{ToggleStyle, ToggleStyleKey};
@@ -53,6 +54,10 @@ pub trait ControlsExt: WidgetExt {
 
     fn slider_style(self, value: impl SliderStyle + 'static) -> impl Widget {
         EnvUpdatingNew::<Self, SliderStyleKey>::new(Box::new(value) as Box<dyn SliderStyle>, self)
+    }
+
+    fn list_style(self, value: impl ListStyle + 'static) -> impl Widget {
+        EnvUpdatingNew::<Self, ListStyleKey>::new(Box::new(value) as Box<dyn ListStyle>, self)
     }
 
     fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> {

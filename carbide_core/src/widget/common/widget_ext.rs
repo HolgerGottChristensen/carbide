@@ -2,7 +2,7 @@ use cgmath::Matrix4;
 use carbide::widget::{EnvUpdatingNew, WidgetProperties};
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
-use crate::draw::{Angle, Color, Rect};
+use crate::draw::{Angle, Color, Rect, Scalar};
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, EnvironmentKey, EnvironmentKeyable};
 use crate::event::{KeyboardEventContext, ModifierKey};
@@ -37,6 +37,12 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
     /// constant values like 10, 100.2, varying values like LocalState and AnimationState.
     fn frame<W: IntoState<f64>, H: IntoState<f64>>(self, width: W, height: H) -> Frame<W::Output, H::Output, Self> {
         Frame::new(width, height, self)
+    }
+
+    fn fit(self) -> Frame<Scalar, Scalar, Self> {
+        Frame::new(0.0, 0.0, self)
+            .fit_width()
+            .fit_height()
     }
 
     /// Changes the flexibility of the widget to a custom value. This can be useful when the
@@ -189,7 +195,7 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         MouseArea::new(self).hovered(hovered)
     }
 
-    fn boxed(self) -> Box<dyn AnyWidget> {
+    fn boxed(self) -> Box<dyn AnyWidget> where Self: WidgetProperties<Kind=WidgetKindSimple> {
         Box::new(self)
     }
 

@@ -34,6 +34,10 @@ pub trait EnvironmentKey: Any + Debug + 'static {
     type Value: Any + Debug + 'static;
 }
 
+pub trait EnvironmentKeyDefault: EnvironmentKey {
+    fn default() -> Self::Value;
+}
+
 
 pub trait EnvironmentKeyable: Debug + 'static {
     type Output: Any + Debug + 'static;

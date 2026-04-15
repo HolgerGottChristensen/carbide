@@ -19,6 +19,7 @@ pub struct Frame<W, H, C> where
     #[id] id: WidgetId,
     child: C,
     position: Position,
+    alignment: Alignment,
     #[state] width: Fixity<W>,
     #[state] height: Fixity<H>,
 }
@@ -33,6 +34,7 @@ impl Frame<f64, f64, Empty> {
             id: WidgetId::new(),
             child,
             position: Position::new(0.0, 0.0),
+            alignment: Alignment::Center,
             width: Fixity::Fixed(width.into_state()),
             height: Fixity::Fixed(height.into_state()),
         }
@@ -46,6 +48,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
             id: self.id,
             child: self.child,
             position: self.position,
+            alignment: self.alignment,
             width: Fixity::Expand(10.0),
             height: self.height,
         }
@@ -57,6 +60,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
             id: self.id,
             child: self.child,
             position: self.position,
+            alignment: self.alignment,
             width: self.width,
             height: Fixity::Expand(10.0),
         }
@@ -68,6 +72,7 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
             id: self.id,
             child: self.child,
             position: self.position,
+            alignment: self.alignment,
             width: Fixity::Fit(10.0),
             height: self.height,
         }
@@ -79,8 +84,20 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Frame<W, H, C> {
             id: self.id,
             child: self.child,
             position: self.position,
+            alignment: self.alignment,
             width: self.width,
             height: Fixity::Fit(10.0),
+        }
+    }
+
+    pub fn alignment(self, alignment: Alignment) -> Frame<W, H, C> {
+        Frame {
+            id: self.id,
+            child: self.child,
+            position: self.position,
+            alignment,
+            width: self.width,
+            height: self.height,
         }
     }
 }
@@ -163,8 +180,9 @@ impl<W: State<T=f64>, H: State<T=f64>, C: Widget> Layout for Frame<W, H, C> {
     fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let position = self.position;
         let dimension = Dimension::new(self.width(), self.height());
+        let alignment = self.alignment;
 
-        self.child.set_position(Alignment::Center.position(position, dimension, self.child.dimension()));
+        self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
         self.child.position_children(bounding_box, ctx);
     }
 }

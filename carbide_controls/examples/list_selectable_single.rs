@@ -1,4 +1,5 @@
 use carbide_controls::{ControlsExt, List};
+use carbide_controls::list::PlainStyle;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1};
@@ -30,6 +31,7 @@ fn main() {
                 .tag(item)
         }).selection(selection)
             .padding(50.0)
+            .list_style(PlainStyle(1.0))
     ));
 
     application.launch();

@@ -5,6 +5,7 @@ use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::collections::HashSet;
+use carbide_controls::list::PlainStyle;
 
 fn main() {
     let mut application = Application::new();
@@ -31,6 +32,7 @@ fn main() {
                 .tag(item)
         }).selection(selection)
             .padding(50.0)
+            .list_style(PlainStyle(1.0))
     ));
 
     application.launch();

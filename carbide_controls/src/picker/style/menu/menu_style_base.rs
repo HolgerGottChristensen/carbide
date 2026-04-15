@@ -2,11 +2,12 @@ use crate::picker::style::menu::key_command::PopupButtonKeyCommand;
 use carbide::event::{EventId, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{IntoReadState, IntoState, ReadState, State, StateSync};
-use carbide::widget::{CommonWidget, Empty, IntoWidget, OverlayManager, Widget, WidgetId};
+use carbide::widget::{CommonWidget, Empty, IntoWidget, OverlayManager, Widget, WidgetId, WidgetProperties};
 use carbide::CommonWidgetImpl;
 use std::fmt::{Debug, Formatter};
 use carbide::draw::{Color, Dimension, Position};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
+use carbide::widget::properties::WidgetKindSimple;
 use carbide_core::flags::WidgetFlag;
 use crate::ControlsOverlayKey;
 
@@ -18,7 +19,7 @@ where
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     O: Fn(EventId, Color) -> W + Clone + 'static,
-    W: Widget
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>
 {
     #[id] id: WidgetId,
     position: Position,
@@ -30,7 +31,7 @@ where
 }
 
 impl MenuStyleBase<Empty, Focus, bool, fn(EventId, Color) ->Empty, Empty> {
-    pub fn new<C: IntoWidget, F: IntoState<Focus>, E: IntoReadState<bool>, O: Fn(EventId, Color) -> W + Clone + 'static, W: Widget>(
+    pub fn new<C: IntoWidget, F: IntoState<Focus>, E: IntoReadState<bool>, O: Fn(EventId, Color) -> W + Clone + 'static, W: Widget + WidgetProperties<Kind=WidgetKindSimple>>(
         child: C,
         focus: F,
         enabled: E,
@@ -95,7 +96,7 @@ impl<
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     O: Fn(EventId, Color) -> W + Clone + 'static,
-    W: Widget
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>
 > CommonWidget for MenuStyleBase<C, F, E, O, W> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: self.child, flag: WidgetFlag::FOCUSABLE, focus: self.focus);
 }
@@ -105,7 +106,7 @@ impl<
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     O: Fn(EventId, Color) -> W + Clone + 'static,
-    W: Widget
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>
 > KeyboardEventHandler for MenuStyleBase<C, F, E, O, W> {
     fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         if self.get_focus() != Focus::Focused || !*self.enabled.value() { return; }
@@ -127,7 +128,7 @@ impl<
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     O: Fn(EventId, Color) -> W + Clone + 'static,
-    W: Widget
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>
 > MouseEventHandler for MenuStyleBase<C, F, E, O, W> {
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
@@ -172,7 +173,7 @@ impl<
     F: State<T=Focus>,
     E: ReadState<T=bool>,
     O: Fn(EventId, Color) -> W + Clone + 'static,
-    W: Widget
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>
 > Debug for MenuStyleBase<C, F, E, O, W> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MenuStyleBaseComponent")

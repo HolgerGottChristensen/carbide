@@ -115,6 +115,7 @@ where
         }
 
         if self.widgets.get(&id).is_none() {
+            println!("Creating: {:?}", id);
             let item = self.model.index(self.indices.get(&id).unwrap().clone());
             let i = self.indices.get(&id).unwrap();
 

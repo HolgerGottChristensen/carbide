@@ -14,6 +14,7 @@ use carbide_core::state::{LocalState, ReadState};
 use carbide_core::widget::*;
 use std::fmt::{Debug, Formatter};
 use carbide::environment::Environment;
+use carbide::widget::properties::WidgetKindSimple;
 use crate::button::style::ButtonStyleKey;
 use crate::{EnabledState};
 
@@ -25,7 +26,7 @@ pub struct Button<F, A, E, H, P, L> where
     E: ReadState<T=bool>,
     H: State<T=bool>,
     P: State<T=bool>,
-    L: Widget,
+    L: Widget + WidgetProperties<Kind=WidgetKindSimple>,
 {
     #[id] id: WidgetId,
     position: Position,
@@ -46,7 +47,7 @@ pub struct Button<F, A, E, H, P, L> where
 }
 
 impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool>, LocalState<bool>, Empty> {
-    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<LocalState<Focus>, A, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> {
+    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<LocalState<Focus>, A, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> where L::Output: WidgetProperties<Kind=WidgetKindSimple> {
         Button {
             id: WidgetId::new(),
             position: Default::default(),
@@ -64,7 +65,7 @@ impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Button<F, A, E, H, P, L> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Button<F, A, E, H, P, L> {
     pub fn hovered<H2: IntoState<bool>>(self, hovered: H2) -> Button<F, A, E, H2::Output, P, L> {
         Button {
             id: self.id,
@@ -105,7 +106,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> WidgetSync for Button<F, A, E, H, P, L> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for Button<F, A, E, H, P, L> {
     fn sync(&mut self, env: &mut Environment) {
         self.focused.sync(env);
         self.enabled.sync(env);
@@ -144,11 +145,11 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
         }
     }
 }
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> CommonWidget for Button<F, A, E, H, P, L> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for Button<F, A, E, H, P, L> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Accessibility for Button<F, A, E, H, P, L> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Accessibility for Button<F, A, E, H, P, L> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
 
@@ -168,7 +169,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> Debug for Button<F, A, E, H, P, L> {
+impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Debug for Button<F, A, E, H, P, L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Button")
             .field("id", &self.id)

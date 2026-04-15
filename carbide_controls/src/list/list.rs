@@ -1,18 +1,24 @@
-use crate::identifiable::AnyIdentifiableWidget;
-use crate::list::{IntoSelection, ListSelection, SelectableDelegate, MULTI_SELECTION_MODIFIER};
+use crate::list::style::ListStyleKey;
+use carbide::automatic_style::AutomaticStyle;
+use carbide::color::RED;
 use carbide::draw::{Dimension, Position};
+use carbide::environment::Environment;
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
-use carbide::state::{LocalState, ReadState, State, StateContract};
-use carbide::widget::{AnyWidget, CommonWidget, Delegate, ForEach, LazyVStack, MouseArea, MouseAreaActionContext, Scroll, Sequence, Widget, WidgetExt, WidgetId};
+use carbide::state::{LocalState, StateContract};
+use carbide::widget::{AnySequence, AnyWidget, CommonWidget, Delegate, ForEach, Rectangle, Sequence, Styled, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
 use carbide::CommonWidgetImpl;
+use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
-
+use carbide::widget::properties::WidgetKindSimple;
+use crate::identifiable::AnySelectableWidget;
+use crate::list::{IntoSelection, ListStyle, SelectableDelegate};
 
 #[derive(Clone, Widget)]
+#[carbide_exclude(Sync)]
 pub struct List<Content, SelectionValue>
 where
     Content: Sequence,
@@ -21,36 +27,34 @@ where
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
+    style_id: TypeId,
 
     content: Content,
-    child: Box<dyn AnyWidget>,
+    selectable_content: Option<Box<dyn AnySequence<dyn AnySelectableWidget>>>,
 
-    spacing: f64,
+    child: Box<dyn AnyWidget>,
+    selectable: bool,
 
     phantom_data: PhantomData<SelectionValue>
 }
 
 // Model based creation
 impl List<(), ()> {
-    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T, W>>(
+    pub fn new<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget + WidgetProperties<Kind=WidgetKindSimple>, U: Delegate<M, T, W>>(
         model: M,
         delegate: U
     ) -> List<ForEach<T, M, U, W, <T as Identifiable>::Id>, ()> {
         let content = ForEach::new(model, delegate);
 
-        let child = Scroll::new(
-            LazyVStack::new(
-                content.clone()
-            ).spacing(1.0)
-        ).clip();
-
         List {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
+            style_id: TypeId::of::<()>(),
             content,
-            child: child.boxed(),
-            spacing: 1.0,
+            selectable_content: None,
+            child: Rectangle::new().fill(RED).boxed(),
+            selectable: false,
             phantom_data: Default::default(),
         }
     }
@@ -62,20 +66,16 @@ impl List<(), ()> {
     ) -> List<ForEach<T, M, U, W, Id>, ()> {
         let content = ForEach::new_with_id(model, id, delegate);
 
-        let child = Scroll::new(
-            LazyVStack::new(
-                content.clone()
-            ).spacing(1.0)
-        ).clip();
-
         List {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             content,
-            child: child.boxed(),
-            spacing: 1.0,
+            selectable_content: None,
+            child: Rectangle::new().fill(RED).boxed(),
+            style_id: TypeId::of::<()>(),
             phantom_data: Default::default(),
+            selectable: false,
         }
     }
 
@@ -97,20 +97,16 @@ impl List<(), ()> {
 
         let content = ForEach::new(model, selection_delegate);
 
-        let child = Scroll::new(
-            LazyVStack::new(
-                content.clone()
-            ).spacing(1.0)
-        ).clip();
-
         List {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             content,
-            child: child.boxed(),
-            spacing: 1.0,
+            selectable_content: None, //Some(Box::new(content.clone())),
+            child: Rectangle::new().fill(RED).boxed(),
+            style_id: TypeId::of::<()>(),
             phantom_data: Default::default(),
+            selectable: true,
         }
     }
 
@@ -121,20 +117,16 @@ impl List<(), ()> {
     ) -> List<impl Sequence, Id> {
         let content = ForEach::new_with_id(model, id, delegate);
 
-        let child = Scroll::new(
-            LazyVStack::new(
-                content.clone()
-            ).spacing(1.0)
-        ).clip();
-
         List {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             content,
-            child: child.boxed(),
-            spacing: 1.0,
+            selectable_content: None,
+            child: Rectangle::new().fill(RED).boxed(),
+            style_id: TypeId::of::<()>(),
             phantom_data: Default::default(),
+            selectable: true,
         }
     }
 }
@@ -142,25 +134,21 @@ impl List<(), ()> {
 // Content based creation
 impl List<(), ()> {
     pub fn new_content<Content: Sequence>(content: Content) -> List<Content, ()> {
-        let child = Scroll::new(
-            LazyVStack::new(
-                content.clone()
-            ).spacing(1.0)
-        ).clip();
-
         List {
             id: WidgetId::new(),
             position: Default::default(),
             dimension: Default::default(),
             content,
-            child: child.boxed(),
-            spacing: 1.0,
+            selectable_content: None,
+            child: Rectangle::new().fill(RED).boxed(),
+            style_id: TypeId::of::<()>(),
             phantom_data: Default::default(),
+            selectable: false,
         }
     }
 }
 
-impl<Content: Sequence> List<Content, ()> { // Using () as the type here, we ensure you only can call the .selection() once
+/*impl<Content: Sequence> List<Content, ()> { // Using () as the type here, we ensure you only can call the .selection() once
     pub fn selection<SelectionValue2: StateContract + PartialEq + Hash + Eq>(self, selection: impl IntoSelection<SelectionValue2>) -> List<impl Sequence, SelectionValue2> where Content: Sequence<dyn AnyIdentifiableWidget<T=SelectionValue2>> {
         let selection = selection.convert();
 
@@ -217,7 +205,7 @@ impl<Content: Sequence> List<Content, ()> { // Using () as the type here, we ens
         let child = Scroll::new(
             LazyVStack::new(
                 content.clone()
-            ).spacing(self.spacing)
+            ).spacing(1.0)
         ).clip();
 
         List {
@@ -226,11 +214,11 @@ impl<Content: Sequence> List<Content, ()> { // Using () as the type here, we ens
             dimension: self.dimension,
             content,
             child: child.boxed(),
-            spacing: self.spacing,
+            style_id: TypeId::of::<()>(),
             phantom_data: Default::default(),
         }
     }
-}
+}*/
 
 impl<SelectionValue: StateContract + PartialEq, Content: Sequence> CommonWidget for List<Content, SelectionValue> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
@@ -241,5 +229,29 @@ impl<SelectionValue: StateContract + PartialEq, Content: Sequence> Debug for Lis
         f.debug_struct("List")
             .field("child", &self.child)
             .finish()
+    }
+}
+
+impl<SelectionValue: StateContract + PartialEq, Content: Sequence> WidgetSync for List<Content, SelectionValue> {
+    fn sync(&mut self, env: &mut Environment) {
+        let style = env.get::<ListStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
+
+        if style.key() != self.style_id {
+            self.style_id = style.key();
+
+            if style.requires_row_wrapping() {
+                if let Some(selectable_content) = &self.selectable_content {
+                    self.child = style.base(Box::new(
+                        ForEach::custom_widget(selectable_content.clone(), style.selectable_row())
+                    ));
+                } else {
+                    self.child = style.base(Box::new(
+                        ForEach::widget(self.content.clone(), style.row())
+                    ));
+                }
+            } else {
+                self.child = style.base(Box::new(self.content.clone()));
+            }
+        }
     }
 }

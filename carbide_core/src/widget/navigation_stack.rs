@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use carbide::widget::WidgetProperties;
 use crate::environment::EnvironmentKey;
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::lifecycle::InitializationContext;
@@ -8,6 +9,7 @@ use crate::environment::{Environment};
 use crate::event::{AccessibilityEventHandler, KeyboardEventHandler, MouseEventHandler, OtherEventHandler};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
+use crate::widget::properties::WidgetKindSimple;
 
 #[derive(Debug, Clone)]
 pub struct NavigationManager {
@@ -103,7 +105,7 @@ pub struct NavigationStack<K> where K: EnvironmentKey<Value=NavigationManager> +
 }
 
 impl NavigationStack<NavigationKey> {
-    pub fn new(initial: impl Widget) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
+    pub fn new(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
         NavigationStack::<NavigationKey> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -116,7 +118,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager> + Clone>(initial: impl Widget) -> NavigationStack<K> {
+    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager> + Clone>(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<K> {
         NavigationStack::<K> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -129,7 +131,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_root(initial: impl Widget) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
+    pub fn new_root(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
         NavigationStack::<NavigationRootKey> {
             id: WidgetId::new(),
             position: Default::default(),

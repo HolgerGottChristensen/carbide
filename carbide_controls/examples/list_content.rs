@@ -1,4 +1,5 @@
-use carbide_controls::List;
+use carbide_controls::{ControlsExt, List};
+use carbide_controls::list::PlainStyle;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
@@ -37,6 +38,7 @@ fn main() {
         ))
             .border()
             .padding(50.0)
+            .list_style(PlainStyle(1.0))
     ));
 
     application.launch();

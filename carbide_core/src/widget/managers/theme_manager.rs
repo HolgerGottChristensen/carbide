@@ -111,7 +111,7 @@ impl<C: Widget> ThemeManager<C> {
                 (EnvironmentColor::TertiarySystemFill, rgba_bytes(50, 50, 54, 1.0)),
                 (EnvironmentColor::QuaternarySystemFill, rgba_bytes(44, 44, 48, 1.0)),
                 (EnvironmentColor::OpaqueSeparator, rgba_bytes(61, 61, 65, 1.0)),
-                (EnvironmentColor::Separator, rgba_bytes(255, 255, 255, 0.15)),
+                (EnvironmentColor::Separator, rgba_bytes(255, 255, 255, 0.05)),
                 (EnvironmentColor::Accent, rgba_bytes(10, 132, 255, 1.0)),
                 (EnvironmentColor::LightText, rgba_bytes(0, 0, 0, 1.0)),
                 (EnvironmentColor::DarkText, rgba_bytes(255, 255, 255, 1.0)),

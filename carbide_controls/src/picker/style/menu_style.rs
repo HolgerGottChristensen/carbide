@@ -21,13 +21,14 @@ use std::fmt::Debug;
 use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::draw::stroke::LineCap;
 use carbide::text::text_wrap::Wrap;
-use carbide::widget::Rectangle;
+use carbide::widget::properties::WidgetKindSimple;
+use carbide::widget::{Rectangle, WidgetProperties};
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
 
 impl MenuStyle {
-    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
+    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let mark = Self::mark(enabled.clone());
 
         let content = Self::content(enabled.clone(), model.clone(), picker_selection_type);
@@ -113,7 +114,7 @@ impl MenuStyle {
         )).spacing(8.0)
     }
 
-    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget + use<> {
+    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget + use<> + WidgetProperties<Kind=WidgetKindSimple> {
         let selection = item.selection().boxed();
 
         let hovered = Map2::map(hovered, ValueState::new(item.id()), |hovered, id| {
@@ -146,7 +147,7 @@ impl MenuStyle {
 
     }
 
-    fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget {
+    fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let arrows = Self::arrows(enabled.clone());
 
         let mark_color = Map3::read_map(enabled, EnvironmentColor::Accent.color(), EnvironmentColor::TertiarySystemFill.color(), |enabled, color, disabled_color| {
@@ -174,7 +175,7 @@ impl MenuStyle {
         mark
     }
 
-    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget {
+    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let label_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
@@ -209,7 +210,7 @@ impl MenuStyle {
         content
     }
 
-    fn arrows(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget {
+    fn arrows(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let mark_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText

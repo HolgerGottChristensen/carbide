@@ -1,4 +1,6 @@
 use carbide::draw::gradient::{Gradient, GradientPosition};
+use carbide::widget::properties::WidgetKindSimple;
+use carbide::widget::WidgetProperties;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::toggle::ToggleStyle;
@@ -16,7 +18,7 @@ use carbide_core::widget::{AnyWidget, CornerRadii, EdgeInsets, MouseArea, Rounde
 pub struct ButtonStyle;
 
 impl ButtonStyle {
-    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget {
+    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let pressed = LocalState::new(false);
         let hovered = LocalState::new(false);
 
@@ -31,7 +33,7 @@ impl ButtonStyle {
             .focused(focus.clone())
     }
 
-    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>, pressed: impl ReadState<T=bool>, hovered: impl ReadState<T=bool>) -> impl Widget {
+    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>, pressed: impl ReadState<T=bool>, hovered: impl ReadState<T=bool>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let base_color = Map3::read_map(value.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::SecondarySystemBackground.color(), |value, toggled, untoggled| {
             if *value == ToggleValue::True {
                 *toggled

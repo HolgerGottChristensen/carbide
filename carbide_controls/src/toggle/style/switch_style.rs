@@ -1,3 +1,5 @@
+use carbide::widget::properties::WidgetKindSimple;
+use carbide::widget::WidgetProperties;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::toggle::ToggleStyle;
@@ -14,7 +16,7 @@ use carbide_core::time::*;
 pub struct SwitchStyle;
 
 impl SwitchStyle {
-    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget {
+    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         MouseArea::new(Self::widget(focus.clone(), value.clone(), enabled.clone(), label))
             .custom_on_click(ToggleAction {
                 value,
@@ -24,7 +26,7 @@ impl SwitchStyle {
             .focused(focus.clone())
     }
 
-    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget {
+    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let switch_width = 26.0;
         let knob_diameter = 13.0;
         let transition_duration = Duration::from_secs_f64(0.15);

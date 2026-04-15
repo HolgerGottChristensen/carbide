@@ -9,13 +9,15 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, Map2};
 use carbide_core::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
+use carbide::widget::properties::WidgetKindSimple;
+use carbide::widget::WidgetProperties;
 use crate::identifiable::AnySelectableWidget;
 
 #[derive(Debug, Clone)]
 pub struct InlineStyle;
 
 impl InlineStyle {
-    fn delegate(label: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>, picker_selection_type: PickerSelectionType) -> impl Widget {
+    fn delegate(label: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let component = match picker_selection_type {
@@ -47,7 +49,7 @@ impl InlineStyle {
             .focused(focus)
     }
 
-    fn radio_button(selected: &Box<dyn AnyState<T=bool>>, enabled: &Box<dyn AnyReadState<T=bool>>, focus: &LocalState<Focus>) -> impl Widget {
+    fn radio_button(selected: &Box<dyn AnyState<T=bool>>, enabled: &Box<dyn AnyReadState<T=bool>>, focus: &LocalState<Focus>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
         let background_color = Map2::read_map(
             selected.clone(),
             enabled.clone(),

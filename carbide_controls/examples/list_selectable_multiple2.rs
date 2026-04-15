@@ -1,10 +1,11 @@
-use carbide_controls::List;
+use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use std::collections::HashSet;
+use carbide_controls::list::PlainStyle;
 
 fn main() {
     let mut application = Application::new();
@@ -30,6 +31,7 @@ fn main() {
             )).frame_fixed_height(20.0)
         })
             .padding(50.0)
+            .list_style(PlainStyle(1.0))
     ));
 
     application.launch();

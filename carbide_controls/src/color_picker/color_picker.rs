@@ -9,7 +9,8 @@ use carbide::flags::WidgetFlag;
 use carbide::focus::Focus;
 use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, IntoWidget, MouseArea, Rectangle, Widget, WidgetId, WidgetStyle, WidgetSync};
+use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, IntoWidget, MouseArea, Rectangle, Widget, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
+use carbide::widget::properties::WidgetKindSimple;
 use crate::button::{Button, ButtonStyleKey};
 use crate::color_picker::ColorPickerStyleKey;
 
@@ -21,7 +22,7 @@ pub struct ColorPicker<F, V, E, H, P, L> where
     E: ReadState<T=bool>,
     H: State<T=bool>,
     P: State<T=bool>,
-    L: Widget,
+    L: Widget + WidgetProperties<Kind=WidgetKindSimple>,
 {
     #[id] id: WidgetId,
     position: Position,
@@ -39,7 +40,7 @@ pub struct ColorPicker<F, V, E, H, P, L> where
 }
 
 impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bool>, Empty> {
-    pub fn new<L: IntoWidget, V: IntoState<Color>>(label: L, value: V) -> ColorPicker<LocalState<Focus>, V::Output, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> {
+    pub fn new<L: IntoWidget, V: IntoState<Color>>(label: L, value: V) -> ColorPicker<LocalState<Focus>, V::Output, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> where L::Output:  WidgetProperties<Kind=WidgetKindSimple> {
         ColorPicker {
             id: WidgetId::new(),
             position: Default::default(),
@@ -56,7 +57,7 @@ impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bo
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> WidgetSync for ColorPicker<F, V, E, H, P, L> {
+impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for ColorPicker<F, V, E, H, P, L> {
     fn sync(&mut self, env: &mut Environment) {
         self.focused.sync(env);
         self.enabled.sync(env);
@@ -72,6 +73,6 @@ impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget> CommonWidget for ColorPicker<F, V, E, H, P, L> {
+impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for ColorPicker<F, V, E, H, P, L> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }

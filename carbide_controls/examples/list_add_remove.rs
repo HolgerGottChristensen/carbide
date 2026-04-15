@@ -1,5 +1,6 @@
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::{ControlsExt, List};
+use carbide_controls::list::PlainStyle;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
@@ -59,6 +60,7 @@ fn main() {
             .spacing(10.0)
             .padding(30.0)
             .button_style(BorderedProminentStyle)
+            .list_style(PlainStyle(1.0))
     ));
 
     application.launch();
