@@ -2,6 +2,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 use carbide::widget::AnyWidget;
 use carbide::widget::foreach_widget::Delegate;
 use crate::identifiable::AnySelectableWidget;
+use crate::list::list_row::AnyListRow;
 
 pub trait AnyRowDelegate: DynClone + 'static {
     fn call(&self, child: &dyn AnyWidget) -> Box<dyn AnyWidget>;
@@ -18,8 +19,12 @@ impl Delegate<dyn AnyWidget, Box<dyn AnyWidget>> for RowDelegate {
     }
 }
 
+
+
+
+
 pub trait AnySelectableRowDelegate: DynClone + 'static {
-    fn call(&self, child: &dyn AnySelectableWidget) -> Box<dyn AnyWidget>;
+    fn call(&self, child: &dyn AnyListRow) -> Box<dyn AnyWidget>;
 }
 
 clone_trait_object!(AnySelectableRowDelegate);
@@ -27,8 +32,8 @@ clone_trait_object!(AnySelectableRowDelegate);
 #[derive(Clone)]
 pub struct SelectableRowDelegate(pub Box<dyn AnySelectableRowDelegate>);
 
-impl Delegate<dyn AnySelectableWidget, Box<dyn AnyWidget>> for SelectableRowDelegate {
-    fn call(&self, child: &dyn AnySelectableWidget) -> Box<dyn AnyWidget> {
+impl Delegate<dyn AnyListRow, Box<dyn AnyWidget>> for SelectableRowDelegate {
+    fn call(&self, child: &dyn AnyListRow) -> Box<dyn AnyWidget> {
         self.0.call(child)
     }
 }

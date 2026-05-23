@@ -6,15 +6,17 @@ use std::rc::Rc;
 use carbide::focus::Focus;
 use carbide::random_access_collection::RandomAccessCollection;
 use carbide::state::{AnyReadState, LocalState, ReadState, State, StateContract};
-use carbide::widget::{Delegate, MouseArea, MouseAreaAction, MouseAreaActionContext, Widget};
+use carbide::widget::{Delegate, MouseArea, MouseAreaAction, MouseAreaActionContext, Widget, WidgetProperties};
+use carbide::widget::properties::WidgetKindSimple;
 use crate::list::{ListSelection, MULTI_SELECTION_MODIFIER, LIST_SELECTION_MODIFIER, LIST_SELECTION_AND_MULTI_SELECTION_MODIFIER};
+use crate::list::list_row::ListRow;
 
 #[derive(Clone)]
 pub(crate) struct SelectableDelegate<D, M, T, W, Id> where
     D: Delegate<M, T, W>,
     T: StateContract,
     M: RandomAccessCollection<T>,
-    W: Widget,
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>,
     Id: Hash + Eq + Clone + Debug + 'static
 {
     pub selection: ListSelection<Id>,
@@ -28,37 +30,38 @@ pub(crate) struct SelectableDelegate<D, M, T, W, Id> where
     pub phantom_widget: PhantomData<W>
 }
 
-impl<D, M, T, W, Id> Delegate<M, T, MouseArea<SelectableMouseAreaAction<Id, T, M>, fn(MouseAreaActionContext), Focus, W, bool, bool>> for SelectableDelegate<D, M, T, W, Id>
+impl<D, M, T, W, Id> Delegate<M, T, ListRow<Id, T, M, W>> for SelectableDelegate<D, M, T, W, Id>
 where
     D: Delegate<M, T, W>,
     T: StateContract,
     M: RandomAccessCollection<T>,
-    W: Widget,
+    W: Widget + WidgetProperties<Kind=WidgetKindSimple>,
     Id: Hash + Eq + Clone + Debug + 'static
 {
-    fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> MouseArea<SelectableMouseAreaAction<Id, T, M>, fn(MouseAreaActionContext), Focus, W, bool, bool> {
+    fn call<'a>(&'a self, item: M::Item<'a>, index: Box<dyn AnyReadState<T=M::Idx>>) -> ListRow<Id, T, M, W> {
         let inner_widget = self.inner.call(item, index.clone());
 
-        let action = SelectableMouseAreaAction {
+        ListRow {
             selection: self.selection.clone(),
             ident: self.ident,
             model: self.model.clone(),
             index,
             last_clicked: self.last_clicked.clone(),
-        };
 
-        MouseArea::new(inner_widget)
-            .custom_on_click(action)
+            hovered: LocalState::new(false),
+            pressed: LocalState::new(false),
+            child: inner_widget,
+        }
     }
 }
 
 #[derive(Clone)]
 pub(crate) struct SelectableMouseAreaAction<Id, T, M> where Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessCollection<T> {
-    selection: ListSelection<Id>,
-    ident: fn(&T) -> Id,
-    model: Rc<M>,
-    index: Box<dyn AnyReadState<T=M::Idx>>,
-    last_clicked: LocalState<Option<M::Idx>>,
+    pub(crate) selection: ListSelection<Id>,
+    pub(crate) ident: fn(&T) -> Id,
+    pub(crate) model: Rc<M>,
+    pub(crate) index: Box<dyn AnyReadState<T=M::Idx>>,
+    pub(crate) last_clicked: LocalState<Option<M::Idx>>,
 }
 
 impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessCollection<T>> MouseAreaAction for SelectableMouseAreaAction<Id, T, M> {

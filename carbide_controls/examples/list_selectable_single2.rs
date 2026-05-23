@@ -30,7 +30,7 @@ fn main() {
             )).frame_fixed_height(20.0)
         })
             .padding(50.0)
-            .list_style(PlainStyle(1.0))
+            //.list_style(PlainStyle(1.0))
     ));
 
     application.launch();
