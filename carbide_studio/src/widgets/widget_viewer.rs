@@ -11,6 +11,7 @@ use carbide::render::{Render, RenderContext};
 use carbide::state::{LocalState, ReadState, State};
 use carbide::widget::{AnySequence, AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId, WidgetProperties};
 use carbide::widget::properties::WidgetKindSimple;
+use crate::core::AnyStudioWidget;
 
 #[derive(Clone, Debug)]
 pub struct WidgetViewer {
@@ -18,11 +19,11 @@ pub struct WidgetViewer {
     position: Position,
     dimension: Dimension,
 
-    child: LocalState<Box<dyn AnyWidget>>,
+    child: LocalState<Box<dyn AnyStudioWidget>>,
 }
 
 impl WidgetViewer {
-    pub fn new(child: LocalState<Box<dyn AnyWidget>>) -> WidgetViewer {
+    pub fn new(child: LocalState<Box<dyn AnyStudioWidget>>) -> WidgetViewer {
         WidgetViewer {
             id: WidgetId::new(),
             position: Default::default(),
@@ -110,7 +111,7 @@ impl Layout for WidgetViewer {
     fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         let inner_dimension = self.child.value().dimension();
         self.child.value_mut().set_position(Alignment::Center.position(self.position, self.dimension, inner_dimension));
-        self.child.value_mut().position_children(, ctx);
+        self.child.value_mut().position_children(bounding_box, ctx);
     }
 }
 

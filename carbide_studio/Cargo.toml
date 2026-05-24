@@ -9,3 +9,4 @@ authors.workspace = true
 
 [dependencies]
 carbide = { workspace = true, features = ["controls", "icons"] }
+dyn-clone.workspace = true

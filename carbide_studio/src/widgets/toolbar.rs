@@ -46,10 +46,10 @@ impl Layout for Toolbar {
 
     fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
         self.bar.set_position(self.position);
-        self.bar.position_children(, ctx);
+        self.bar.position_children(bounding_box, ctx);
 
         self.child.set_position(Position::new(self.position.x, self.position.y + self.bar.height()));
-        self.child.position_children(, ctx);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

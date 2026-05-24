@@ -2,6 +2,7 @@ use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
 use carbide::state::{LocalState, Map1};
 use carbide::widget::{AnyWidget, CommonWidget, Text, Widget, WidgetExt, WidgetId};
+use crate::core::any_studio_widget::AnyStudioWidget;
 
 #[derive(Clone, Debug, Widget)]
 pub struct WidgetOutline {
@@ -9,13 +10,13 @@ pub struct WidgetOutline {
     position: Position,
     dimension: Dimension,
 
-    state: LocalState<Box<dyn AnyWidget>>,
+    state: LocalState<Box<dyn AnyStudioWidget>>,
 
     child: Box<dyn AnyWidget>
 }
 
 impl WidgetOutline {
-    pub fn new(state: LocalState<Box<dyn AnyWidget>>) -> WidgetOutline {
+    pub fn new(state: LocalState<Box<dyn AnyStudioWidget>>) -> WidgetOutline {
         WidgetOutline {
             id: WidgetId::new(),
             position: Default::default(),
