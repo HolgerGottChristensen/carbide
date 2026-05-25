@@ -3,8 +3,9 @@ use std::rc::Rc;
 use crate::environment::Environment;
 use crate::state::{
     StateSync, ReadState, State, Functor, IntoReadState, Fn2,
-    StateContract, ValueRef, ValueRefMut, AnyReadState, AnyState, InnerState, ValueCell,
+    StateContract, AnyReadState, AnyState, InnerState, ValueCell,
 };
+use crate::cell::{ValueRef, ValueRefMut};
 
 macro_rules! tuple_state {
     ($struct_name:ident, $map_name:ident, $read_map_name:ident, $env_map_name:ident, $map_name_owned:ident, $($name:ident : $type:ident -> $type2:ident),*) => {

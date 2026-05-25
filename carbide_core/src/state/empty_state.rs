@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
-use crate::state::{StateSync, ValueRefMut};
-use crate::state::{AnyReadState, AnyState, StateContract, ValueRef};
+use crate::cell::{ValueRef, ValueRefMut};
+use crate::state::{StateSync};
+use crate::state::{AnyReadState, AnyState, StateContract};
 
 #[derive(Debug, Copy, Clone)]
 pub struct EmptyState<T>(PhantomData<T>);

@@ -1,5 +1,6 @@
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::environment::{Environment};
-use crate::state::{AnyReadState, AnyState, InnerState, StateSync, ReadState, State, StateContract, ValueCell, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, InnerState, StateSync, ReadState, State, StateContract, ValueCell};
 
 #[derive(Clone)]
 pub struct CachedReadState<T, S> where T: StateContract, S: ReadState<T=T> {

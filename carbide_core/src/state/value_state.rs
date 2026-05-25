@@ -1,9 +1,8 @@
 use std::fmt::{Debug, Formatter};
-
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::state::AnyState;
 use crate::state::StateSync;
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
-use crate::state::{ValueRef, ValueRefMut};
 
 /// # ValueState
 /// Value state is a state that can be used for constants and values that are not shared. When

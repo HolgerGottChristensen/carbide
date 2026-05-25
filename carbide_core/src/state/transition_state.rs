@@ -5,8 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use crate::time::*;
 use crate::animation::AnimationManager;
 use crate::animation::{Animatable, ease_in_out};
+use crate::cell::ValueRef;
 use crate::environment::{Environment};
-use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell, ValueRef};
+use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, StateSync, ReadState, RMap1, StateContract, ValueCell};
 
 #[derive(Clone)]
 pub struct TransitionState<T, S>

@@ -1,6 +1,7 @@
+use crate::cell::ValueRef;
 use crate::environment::{Environment, EnvironmentKeyable};
 use crate::state::ReadState;
-use crate::state::{AnyReadState, StateSync, ValueRef};
+use crate::state::{AnyReadState, StateSync};
 
 #[derive(Debug)]
 pub struct KeyableState<K: EnvironmentKeyable, S: ReadState<T=K>> where K::Output: Clone {

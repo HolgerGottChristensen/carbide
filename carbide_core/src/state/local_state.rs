@@ -1,12 +1,11 @@
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
-
+use crate::cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::AnyState;
 use crate::state::state_sync::StateSync;
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, InnerState, IntoReadState, Map1, ReadState, RMap1, StateContract};
-use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 /// # Local state
 /// The local state is used as a shared state between multiple widgets within the same widget tree.

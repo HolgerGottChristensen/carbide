@@ -1,5 +1,6 @@
+use crate::cell::ValueRef;
 use crate::environment::{Environment};
-use crate::state::{AnyReadState, StateSync, ReadState, StateContract, ValueRef};
+use crate::state::{AnyReadState, StateSync, ReadState, StateContract};
 
 #[derive(Debug, Clone)]
 pub struct FlattenedReadState<T, S, SS>

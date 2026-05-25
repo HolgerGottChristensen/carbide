@@ -1,11 +1,12 @@
 use std::fmt::Debug;
 use carbide::draw::Rect;
 use carbide_macro::carbide_default_builder2;
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::{Environment};
 use crate::layout::{Layout, LayoutContext};
-use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State, ValueRef, ValueRefMut};
+use crate::state::{AnyReadState, AnyState, IntoState, StateSync, ReadState, State};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
 use crate::widget::properties::WidgetKindSimple;
 

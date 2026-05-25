@@ -1,10 +1,9 @@
 use std::fmt::{Debug, Formatter};
-
+use crate::cell::{ValueCell, ValueRef, ValueRefMut};
 use crate::state::state_sync::StateSync;
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, ReadState, StateContract, AnyState, Functor, IntoReadState, RMap1, Fn2, Map1};
-use crate::state::util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 #[derive(Clone)]
 pub struct StaticState<T>

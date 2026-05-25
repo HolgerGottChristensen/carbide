@@ -7,5 +7,6 @@ pub mod any_debug;
 pub mod automatic_style;
 pub mod identifiable;
 pub mod random_access_collection;
+pub mod cell;
 
 pub use carbide_derive::Id;

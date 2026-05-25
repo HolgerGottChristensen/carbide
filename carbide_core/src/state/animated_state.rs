@@ -2,8 +2,8 @@ use std::fmt::Debug;
 
 use crate::animation::animation_curve::linear;
 use crate::animation::{Animatable, AnimationManager};
+use crate::cell::ValueRef;
 use crate::environment::Environment;
-use crate::state::util::value_cell::ValueRef;
 use crate::state::{AnyReadState, RMap1, StateSync};
 use crate::state::Map1;
 use crate::time::*;

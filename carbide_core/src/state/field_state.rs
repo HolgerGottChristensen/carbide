@@ -1,10 +1,10 @@
 use std::fmt::Debug;
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::state::AnyState;
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, StateSync, RMap1, StateContract};
 use crate::state::{ReadState, State};
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 /// # FieldState
 /// The FieldState is a state mapping that should be used to retrieve a field of a struct or enum

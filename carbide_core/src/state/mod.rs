@@ -2,7 +2,6 @@ use std::fmt::Debug;
 use std::rc::Rc;
 
 pub use tuple_state::*;
-pub use util::value_cell::{ValueCell, ValueRef, ValueRefMut};
 
 pub use self::animated_state::*;
 pub use self::cache_state::CachedReadState;
@@ -55,6 +54,7 @@ mod key_state;
 mod keyable_state;
 
 pub use carbide_derive::StateValue;
+use crate::cell::ValueCell;
 
 pub type InnerState<T> = Rc<ValueCell<T>>;
 

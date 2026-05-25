@@ -1,13 +1,12 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
-
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::state::{AnyState, StateSync};
 
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, Fn2, Functor, IntoReadState, Map1, ReadState, RMap1, StateContract};
 use crate::state::state::State;
-use crate::state::util::value_cell::{ValueRef, ValueRefMut};
 
 
 /// # Index state

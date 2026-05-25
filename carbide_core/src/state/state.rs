@@ -1,10 +1,10 @@
 
 use std::ops::{Deref, DerefMut};
 use dyn_clone::clone_box;
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::environment::Environment;
 use crate::state::*;
 use crate::state::ReadState;
-use crate::state::util::value_cell::ValueRefMut;
 
 // ---------------------------------------------------
 //  Definitions

@@ -21,13 +21,13 @@ pub fn impl_state_value(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         }
         impl #generics #crate_name::state::AnyReadState for #struct_ident #generics #wheres {
             type T = #struct_ident #generics;
-            fn value_dyn(&self) -> #crate_name::state::ValueRef<#struct_ident #generics> {
-                #crate_name::state::ValueRef::Borrow(self)
+            fn value_dyn(&self) -> #crate_name::cell::ValueRef<#struct_ident #generics> {
+                #crate_name::cell::ValueRef::Borrow(self)
             }
         }
         impl #generics #crate_name::state::AnyState for #struct_ident #generics #wheres {
-            fn value_dyn_mut(&mut self) -> #crate_name::state::ValueRefMut<#struct_ident #generics> {
-                #crate_name::state::ValueRefMut::Borrow(Some(self))
+            fn value_dyn_mut(&mut self) -> #crate_name::cell::ValueRefMut<#struct_ident #generics> {
+                #crate_name::cell::ValueRefMut::Borrow(Some(self))
             }
 
             fn set_value_dyn(&mut self, value: #struct_ident #generics) {

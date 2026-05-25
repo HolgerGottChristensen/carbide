@@ -7,11 +7,11 @@ use crate::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use crate::focus::Focus;
 use crate::render::Style;
 use crate::state::state_sync::StateSync;
-use crate::state::util::value_cell::ValueRef;
 use crate::state::*;
 use crate::widget::{EdgeInsets};
 use crate::math::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::{clone_box, DynClone};
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::draw::gradient::Gradient;
 // ---------------------------------------------------
 //  Definitions
@@ -150,13 +150,13 @@ macro_rules! impl_state_value {
         }
         impl $crate::state::AnyReadState for $typ {
             type T = $typ;
-            fn value_dyn(&self) -> $crate::state::ValueRef<'_, $typ> {
-                $crate::state::ValueRef::Borrow(self)
+            fn value_dyn(&self) -> $crate::cell::ValueRef<'_, $typ> {
+                $crate::cell::ValueRef::Borrow(self)
             }
         }
         impl $crate::state::AnyState for $typ {
-            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<'_, $typ> {
-                $crate::state::ValueRefMut::Borrow(Some(self))
+            fn value_dyn_mut(&mut self) -> $crate::cell::ValueRefMut<'_, $typ> {
+                $crate::cell::ValueRefMut::Borrow(Some(self))
             }
 
             fn set_value_dyn(&mut self, value: $typ) {
@@ -185,13 +185,13 @@ macro_rules! impl_state_value_generic {
         impl<$($generic $(: $bound $(+ $rest)* )?),*> $crate::state::StateSync for $typ <$($generic),*> {}
         impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyReadState for $typ<$($generic),*> {
             type T = $typ<$($generic),*>;
-            fn value_dyn(&self) -> $crate::state::ValueRef<'_, $typ<$($generic),*>> {
-                $crate::state::ValueRef::Borrow(self)
+            fn value_dyn(&self) -> $crate::cell::ValueRef<'_, $typ<$($generic),*>> {
+                $crate::cell::ValueRef::Borrow(self)
             }
         }
         impl<$($generic: std::fmt::Debug + Clone + 'static $(+ $bound $(+ $rest)* )?),*> $crate::state::AnyState for $typ <$($generic),*> {
-            fn value_dyn_mut(&mut self) -> $crate::state::ValueRefMut<'_, $typ<$($generic),*>> {
-                $crate::state::ValueRefMut::Borrow(Some(self))
+            fn value_dyn_mut(&mut self) -> $crate::cell::ValueRefMut<'_, $typ<$($generic),*>> {
+                $crate::cell::ValueRefMut::Borrow(Some(self))
             }
 
             fn set_value_dyn(&mut self, value: $typ<$($generic),*>) {

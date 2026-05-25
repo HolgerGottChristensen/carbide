@@ -1,4 +1,4 @@
-use carbide::state::ValueRefMut;
+use carbide::cell::ValueRefMut;
 use carbide_core::impl_state_value;
 use carbide_core::state::{AnyReadState, AnyState, ConvertInto, ConvertIntoRead, Map1, RMap1, RWMap1};
 

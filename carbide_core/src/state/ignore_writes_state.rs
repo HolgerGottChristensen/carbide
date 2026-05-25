@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
-
+use crate::cell::{ValueRef, ValueRefMut};
 use crate::environment::{Environment};
 use crate::state::{AnyReadState, AnyState, Fn2, Functor, IntoReadState, Map1, RMap1, StateContract};
-use crate::state::{StateSync, ReadState, ValueRef, ValueRefMut};
+use crate::state::{StateSync, ReadState};
 
 #[derive(Clone, Debug)]
 pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + 'static>(TState, PhantomData<T>);
