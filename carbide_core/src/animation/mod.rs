@@ -8,6 +8,7 @@ mod animatable;
 mod animation;
 pub mod animation_curve;
 mod animation_manager;
+pub mod keyframes;
 
 #[macro_export]
 macro_rules! animate {
