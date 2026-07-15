@@ -80,7 +80,7 @@ impl Alignment {
 
     fn bottom(position: Position, outer: Dimension, inner: Dimension) -> Position {
         Position::new(
-            position.x + outer.width / 2.0,
+            position.x + outer.width / 2.0 - inner.width / 2.0,
             position.y + outer.height - inner.height,
         )
     }
