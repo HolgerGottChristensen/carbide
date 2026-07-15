@@ -1,7 +1,5 @@
 use crate::application::Scenes;
-use crate::render_context::WGPURenderContext;
-use crate::wgpu_msaa::WgpuMsaa;
-use crate::WgpuRenderTarget;
+use crate::offscreen_renderer::OffscreenRenderer;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;
@@ -9,7 +7,6 @@ use carbide_core::draw::{Dimension, NOOPImageContext, Position, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::event::{WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::lifecycle::InitializationContext;
-use carbide_core::math::Matrix4;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
 use carbide_core::text::NOOPTextContext;
@@ -17,7 +14,7 @@ use carbide_core::widget::Widget;
 use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
 use carbide_winit::WindowHandleKey;
 use std::sync::Arc;
-use wgpu::{BindGroup, Buffer, RenderPipeline, Surface, SurfaceConfiguration, TextureView};
+use wgpu::{RenderPipeline, Surface, SurfaceConfiguration};
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) id: SceneId,
@@ -30,18 +27,8 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) surface_configuration: SurfaceConfiguration,
     pub(crate) surface_render_pipeline: RenderPipeline,
 
-    pub(crate) msaa: WgpuMsaa,
-    pub(crate) msaa_texture_view: Option<TextureView>,
-    pub(crate) depth_texture_view: TextureView,
-    pub(crate) texture_size_bind_group: BindGroup,
-    pub(crate) targets: Vec<WgpuRenderTarget>,
-    pub(crate) uniform_bind_group: BindGroup,
-    pub(crate) gradient_buffer: Buffer,
-    pub(crate) dashes_buffer: Buffer,
-    pub(crate) gradient_dashes_bind_group: BindGroup,
-    pub(crate) carbide_to_wgpu_matrix: Matrix4<f32>,
-    pub(crate) vertex_buffer: (Buffer, usize),
-    pub(crate) render_context: WGPURenderContext,
+    pub(crate) offscreen: OffscreenRenderer,
+
     pub(crate) inner: Arc<carbide_winit::window::Window>,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,

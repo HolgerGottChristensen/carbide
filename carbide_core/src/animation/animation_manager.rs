@@ -47,7 +47,14 @@ impl AnimationManager {
     }
 
     pub fn update_frame_time(&mut self) {
-        self.frame_time = Instant::now();
+        self.update_frame_time_at(Instant::now());
+    }
+
+    /// Like [`update_frame_time`](Self::update_frame_time), but takes the current time as an
+    /// explicit parameter instead of reading the system clock. Lets a test harness advance
+    /// animation state by a fixed amount without any real wall-clock delay.
+    pub fn update_frame_time_at(&mut self, now: Instant) {
+        self.frame_time = now;
         self.out_of_band_animations.0.retain(|update_animation| !update_animation(&self.frame_time));
     }
 

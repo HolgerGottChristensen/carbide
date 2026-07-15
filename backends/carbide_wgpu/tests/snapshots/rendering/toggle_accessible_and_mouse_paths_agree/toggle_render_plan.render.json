@@ -1,0 +1,15 @@
+[
+  {
+    "commands": [
+      {
+        "type": "Draw",
+        "vertex_range": [
+          0,
+          384
+        ]
+      }
+    ],
+    "target_index": 0,
+    "type": "Normal"
+  }
+]

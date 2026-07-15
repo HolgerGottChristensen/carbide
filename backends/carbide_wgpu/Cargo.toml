@@ -14,6 +14,8 @@ categories = ["gui"]
 [features]
 controls = ["carbide_controls"]
 icons = ["carbide_icons"]
+# Enables the headless rendering-regression-test fixture (carbide_wgpu::testing).
+testing = ["dep:image", "dep:image-compare", "dep:serde_json", "accesskit/serde"]
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
@@ -34,6 +36,9 @@ dashmap.workspace = true
 accesskit_winit.workspace = true
 accesskit.workspace = true
 smallvec.workspace = true
+image = { workspace = true, optional = true }
+image-compare = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 
 [target.'cfg(target_os="macos")'.dependencies]
@@ -44,7 +49,7 @@ core-graphics = "0.22.0"
 foreign-types = "0.3.2"
 
 [dev-dependencies]
-carbide_wgpu = { workspace = true, features = ["controls", "icons"] }
+carbide_wgpu = { workspace = true, features = ["controls", "icons", "testing"] }
 carbide_winit = { path = "../carbide_winit" }
 carbide_icons = { workspace = true, features = ["lucide"] }
 carbide_controls = { path = "../../carbide_controls" }
@@ -75,3 +80,7 @@ required-features = ["carbide_core/async-std"]
 [[example]]
 name = "async_tokio"
 required-features = ["carbide_core/tokio"]
+
+[[test]]
+name = "rendering"
+required-features = ["testing"]

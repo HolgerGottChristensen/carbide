@@ -1,31 +1,18 @@
 use std::sync::Arc;
 use log::info;
 use crate::application::{ActiveEventLoopKey, EVENT_LOOP_PROXY};
-use crate::bind_groups::{gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
-use crate::wgpu_gradient::WgpuGradient;
-use crate::pipeline::{create_final_render_pipeline, create_pipelines};
-use crate::render_context::WGPURenderContext;
-use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
-use crate::wgpu_vertex::WgpuVertex;
+use crate::offscreen_renderer::OffscreenRenderer;
+use crate::pipeline::create_final_render_pipeline;
 use crate::window::initialized_window::InitializedWindow;
-use crate::window::util::calculate_carbide_to_wgpu_matrix;
 use crate::window::Window;
-use crate::{WgpuRenderTarget};
 use carbide_core::cursor::MouseCursor;
-use carbide_core::draw::{Dimension, DrawGradient};
 use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::ReadState;
-use carbide_core::widget::{CommonWidget, Widget};
+use carbide_core::widget::Widget;
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use carbide_winit::update_scale_factor;
 use carbide_winit::window::{Theme, WindowAttributes};
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{BufferUsages, SurfaceConfiguration, TextureFormat, TextureUsages};
-use carbide_core::draw::color_space::ColorSpace;
-use carbide_core::draw::gradient::{GradientRepeat, GradientType};
-use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
 use crate::wgpu_context::WgpuContext;
-use crate::wgpu_dashes::WgpuDashes;
 
 pub const ZOOM: f32 = 1.0;
 
@@ -98,11 +85,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 window.set_visible(true);
 
                 let size = window.inner_size();
-
-                let pixel_dimensions = Dimension::new(
-                    window.inner_size().width as f64,
-                    window.inner_size().height as f64,
-                );
                 let scale_factor = window.scale_factor();
 
                 let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
@@ -123,73 +105,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     &surface_configuration,
                 );
 
-                let matrix = calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
-
-                let gradient = DrawGradient {
-                    colors: vec![],
-                    ratios: vec![],
-                    gradient_type: GradientType::Linear,
-                    gradient_repeat: GradientRepeat::Clamp,
-                    start: Default::default(),
-                    end: Default::default(),
-                    color_space: ColorSpace::Linear,
-                };
-
-                let gradient = WgpuGradient::convert(&gradient);
-                let gradient_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("carbide_gradient_buffer"),
-                    contents: &*gradient.as_bytes(),
-                    usage: BufferUsages::STORAGE,
-                });
-
-                let dashes = WgpuDashes {
-                    dashes: [1.0; 32],
-                    dash_count: 2,
-                    start_cap: 0,
-                    end_cap: 0,
-                    total_dash_width: 2.0,
-                    dash_offset: 0.0,
-                };
-
-                let dashes_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("carbide_dashes_buffer"),
-                    contents: &*dashes.as_bytes(),
-                    usage: BufferUsages::STORAGE,
-                });
-
-                let gradient_dashed_bind_group = gradient_dashes_bind_group(
-                    &wgpu_context.device,
-                    &wgpu_context.gradient_buffer_bind_group_layout,
-                    &gradient_buffer,
-                    &dashes_buffer
-                );
-
-
-                let uniform_bind_group = uniforms_to_bind_group(
-                    &wgpu_context.device,
-                    &wgpu_context.uniform_bind_group_layout,
-                    matrix,
-                    0.0,
-                    0.0,
-                    0.0,
-                    false
-                );
-
-
-                let texture_size_bind_group = size_to_uniform_bind_group(
-                    &wgpu_context.device,
-                    &wgpu_context.uniform_bind_group_layout2,
-                    pixel_dimensions.width,
-                    pixel_dimensions.height,
-                    scale_factor,
-                );
-
                 info!("{:#?}", surface_configuration);
-
-                if !wgpu_context.pipelines.contains_key(&RENDER_TARGET_FORMAT) {
-                    let pipeline = create_pipelines(wgpu_context, RENDER_TARGET_FORMAT, msaa);
-                    wgpu_context.pipelines.insert(RENDER_TARGET_FORMAT, pipeline);
-                }
 
                 let final_render_pipeline = create_final_render_pipeline(
                     &wgpu_context.device,
@@ -199,18 +115,11 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     surface_configuration.format,
                 );
 
-                let depth_texture_view = create_depth_stencil_texture_view(&wgpu_context.device, size.width, size.height, msaa);
-                let msaa_texture_view = create_msaa_texture_view(&wgpu_context.device, size.width, size.height, msaa);
-
-                let vertex_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
-                    label: Some("carbide_primary_vertex_buffer"),
-                    contents: &[],
-                    usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                });
-
                 update_scale_factor(window.id(), window.scale_factor());
 
                 child.initialize(ctx);
+
+                let offscreen = OffscreenRenderer::new(size, scale_factor, msaa, ctx.env);
 
                 let theme = match window.theme().unwrap_or(Theme::Dark) {
                     Theme::Light => carbide_core::draw::theme::Theme::Light,
@@ -222,20 +131,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     surface,
                     surface_configuration,
                     surface_render_pipeline: final_render_pipeline,
-                    msaa,
-                    msaa_texture_view,
-                    depth_texture_view,
-                    texture_size_bind_group,
-                    targets: vec![
-                        WgpuRenderTarget::new(size.width, size.height, ctx.env)
-                    ],
-                    uniform_bind_group,
-                    gradient_buffer,
-                    dashes_buffer,
-                    gradient_dashes_bind_group: gradient_dashed_bind_group,
-                    carbide_to_wgpu_matrix: matrix,
-                    vertex_buffer: (vertex_buffer, 0),
-                    render_context: WGPURenderContext::new(),
+                    offscreen,
                     inner: window,
                     accessibility_adapter,
                     visible: true,
