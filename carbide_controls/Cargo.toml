@@ -18,7 +18,7 @@ carbide_macro = { path = "../carbide_macro" }
 carbide_dialogs.workspace = true
 carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
 carbide_core = { path = "../carbide_core" }
-copypasta = "0.8.1"
+copypasta.workspace = true
 unicode-segmentation = "1.7.1"
 serde = "1.0.118"
 dyn-clone.workspace = true

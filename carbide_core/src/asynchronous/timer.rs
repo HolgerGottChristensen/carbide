@@ -9,7 +9,7 @@ use crate::asynchronous::EVENT_SINK;
 use crate::event::CoreEvent;
 
 #[derive(Clone)]
-pub struct Timer<T> where T: Fn() + Clone + Send + 'static {
+pub struct Timer<T> where T: FnMut() + Clone + Send + 'static {
     interval: Arc<RwLock<Duration>>,
     repeat: Arc<AtomicBool>,
     triggered: T,
@@ -18,7 +18,7 @@ pub struct Timer<T> where T: Fn() + Clone + Send + 'static {
     channel: Arc<RwLock<Option<Sender<Duration>>>>,
 }
 
-impl<T: Fn() + Clone + Send + 'static> Timer<T> {
+impl<T: FnMut() + Clone + Send + 'static> Timer<T> {
 
     /// Creates a new timer with the trigger
     ///
@@ -53,6 +53,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
 
     /// Start the timer. If the timer is already running this will have no effect.
     pub fn start(self) -> Self {
+        println!("Start timer");
         if self.channel.read().is_some() {
             return self;
         }
@@ -61,7 +62,7 @@ impl<T: Fn() + Clone + Send + 'static> Timer<T> {
 
         self.channel.write().replace(sender);
 
-        let trigger = self.triggered.clone();
+        let mut trigger = self.triggered.clone();
         let repeat = self.repeat.clone();
         let duration = *self.interval.read();
 

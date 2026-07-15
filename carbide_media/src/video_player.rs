@@ -217,8 +217,8 @@ impl<Id: ReadState<T=VideoId> + Clone> Layout for VideoPlayer<Id> {
         self.video.set_position(alignment.position(position, dimension, self.video.dimension()));
         self.video_overlay.set_position(alignment.position(position, dimension, self.video_overlay.dimension()));
 
-        self.video.position_children(, ctx);
-        self.video_overlay.position_children(, ctx);
+        self.video.position_children(bounding_box, ctx);
+        self.video_overlay.position_children(bounding_box, ctx);
     }
 }
 

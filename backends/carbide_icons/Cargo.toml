@@ -12,6 +12,7 @@ include_dir.workspace = true
 [dev-dependencies]
 carbide_core.workspace = true
 carbide_wgpu = { workspace = true, features = ["icons"] }
+copypasta.workspace = true
 
 [features]
 default = []

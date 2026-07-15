@@ -36,27 +36,27 @@ pub trait ControlsExt: WidgetExt {
         EnvUpdatingNew2::<Self, EnabledKey, E::Output>::new(enabled.into_read_state(), self)
     }
 
-    fn toggle_style(self, value: impl ToggleStyle) -> impl Widget {
+    fn toggle_style(self, value: impl ToggleStyle) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, ToggleStyleKey>::new(Box::new(value) as Box<dyn ToggleStyle>, self)
     }
 
-    fn picker_style(self, value: impl PickerStyle + 'static) -> impl Widget {
+    fn picker_style(self, value: impl PickerStyle + 'static) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, PickerStyleKey>::new(Box::new(value) as Box<dyn PickerStyle>, self)
     }
 
-    fn button_style(self, value: impl ButtonStyle + 'static) -> impl Widget {
+    fn button_style(self, value: impl ButtonStyle + 'static) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, ButtonStyleKey>::new(Box::new(value) as Box<dyn ButtonStyle>, self)
     }
 
-    fn color_picker_style(self, value: impl ColorPickerStyle + 'static) -> impl Widget {
+    fn color_picker_style(self, value: impl ColorPickerStyle + 'static) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, ColorPickerStyleKey>::new(Box::new(value) as Box<dyn ColorPickerStyle>, self)
     }
 
-    fn slider_style(self, value: impl SliderStyle + 'static) -> impl Widget {
+    fn slider_style(self, value: impl SliderStyle + 'static) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, SliderStyleKey>::new(Box::new(value) as Box<dyn SliderStyle>, self)
     }
 
-    fn list_style(self, value: impl ListStyle + 'static) -> impl Widget {
+    fn list_style(self, value: impl ListStyle + 'static) -> impl Widget<Kind=Self::Kind> {
         EnvUpdatingNew::<Self, ListStyleKey>::new(Box::new(value) as Box<dyn ListStyle>, self)
     }
 

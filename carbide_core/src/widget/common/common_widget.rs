@@ -1,3 +1,4 @@
+use crate::cell::Ref;
 use crate::draw::Alignment;
 use crate::widget::{WidgetId};
 use crate::common::cursor::MouseCursor;
@@ -9,6 +10,8 @@ use crate::widget::AnyWidget;
 
 // A Logical child is a widget that is not a proxy, meaning if we have a proxy, we must
 // traverse it to get the actual logical children.
+
+pub type WidgetRef<'a> = Ref<'a, dyn AnyWidget>;
 
 pub trait CommonWidget: Identifiable<Id=WidgetId> {
     fn flag(&self) -> WidgetFlag {

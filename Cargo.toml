@@ -59,6 +59,7 @@ cgmath = { version = "0.18", features = ["mint"] }
 chrono = "0.4"
 console_error_panic_hook = "0.1.7"
 console_log = "1"
+copypasta = "0.8.1"
 dashmap = "6.1.0"
 dyn-clone = "1.0.5"
 futures = "0.3"
