@@ -1,6 +1,6 @@
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::{capture, ControlsExt};
-use carbide_core::animation::AnimationManager;
+use carbide_core::animation::{bounce_in_out, ease_in_out, elastic_in_out, AnimationManager};
 use carbide_core::animation::{bounce_out};
 use carbide_core::animation::keyframes::{Keyframes, Repeat, TimelineController, Tracks};
 use carbide_core::color::{Color, BLUE, GREEN, RED};
@@ -30,19 +30,19 @@ fn main() {
                 .fill(color.clone())
                 .frame(60.0, 60.0)
                 .offset(offset_x.clone(), offset_y.clone()),
-            Button::new("Bounce", capture!({offset_x, color}, |ctx: MouseAreaActionContext| {
+            Button::new("Animate", capture!({offset_x, color}, |ctx: MouseAreaActionContext| {
                 let motion = Repeat::counted(Tracks::new()
                     .and(Keyframes::new(offset_x.clone(), -120.0)
                         .to(120.0, Duration::from_millis(600))
-                        .to_with_curve(-0.0, Duration::from_millis(400), bounce_out)
+                        .to_with_curve(-0.0, Duration::from_millis(1000), ease_in_out)
                         .to(-120.0, Duration::from_millis(300)))
                     .and(Keyframes::new(offset_y.clone(), -120.0)
-                        .to_with_curve(-60.0, Duration::from_millis(400), bounce_out)
+                        .to_with_curve(-60.0, Duration::from_millis(1000), ease_in_out)
                         .to(0.0, Duration::from_millis(600))
                         .to(-120.0, Duration::from_millis(300)))
                     .and(Keyframes::new(color.clone(), RED)
                         .to_with_interpolation(BLUE, Duration::from_secs(1), Color::hsla_blend)
-                        .to(GREEN, Duration::from_millis(300))), RepeatMode::Alternate, 2);
+                        .to(GREEN, Duration::from_millis(900))), RepeatMode::Alternate, 2);
 
                 if let Some(manager) = ctx.env.get_mut::<AnimationManager>() {
                     manager.insert_controller(TimelineController::new(motion));
