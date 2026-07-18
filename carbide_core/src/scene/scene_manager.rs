@@ -5,13 +5,14 @@ use crate::scene::{AnyScene, Scene, SceneId};
 use crate::draw::Scalar;
 use crate::environment::Environment;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SceneManager {
     scale_factor: Scalar,
     physical_dimensions: Dimension,
     dismiss: bool,
     add_scenes: SmallVec<[Box<dyn AnyScene>; 1]>,
     close_scenes: SmallVec<[SceneId; 1]>,
+    screenshot_requests: SmallVec<[oneshot::Sender<image::RgbaImage>; 1]>,
 }
 
 impl SceneManager {
@@ -22,6 +23,7 @@ impl SceneManager {
             dismiss: false,
             add_scenes: Default::default(),
             close_scenes: Default::default(),
+            screenshot_requests: Default::default(),
         }
     }
 
@@ -59,6 +61,34 @@ impl SceneManager {
 
     pub fn dismiss_requested(&self) -> bool {
         self.dismiss
+    }
+
+    /// Request a capture of this window's currently-rendered frame (whatever the last
+    /// completed render produced — not a fresh one). The receiver resolves as soon as the
+    /// backend finishes draining requests for this traversal.
+    pub fn take_screenshot(&mut self) -> oneshot::Receiver<image::RgbaImage> {
+        let (sender, receiver) = oneshot::channel();
+        self.screenshot_requests.push(sender);
+        receiver
+    }
+
+    /// Convenience: capture the current frame and write it to `path` as a PNG on a background
+    /// thread (blocking on the receiver there, so this call itself doesn't block the caller).
+    pub fn save_screenshot(&mut self, path: impl AsRef<std::path::Path>) {
+        let receiver = self.take_screenshot();
+        let path = path.as_ref().to_path_buf();
+        std::thread::spawn(move || match receiver.recv() {
+            Ok(image) => if let Err(e) = image.save(&path) {
+                eprintln!("carbide: failed to save screenshot to {}: {}", path.display(), e);
+            },
+            Err(_) => eprintln!("carbide: screenshot request was dropped before it could be fulfilled"),
+        });
+    }
+
+    /// Drained by the backend after rendering a frame; not part of the public API surface
+    /// consumers reach for directly (mirrors `scenes_to_add`/`sub_scenes_to_dismiss`).
+    pub fn screenshot_requests(&mut self) -> &mut SmallVec<[oneshot::Sender<image::RgbaImage>; 1]> {
+        &mut self.screenshot_requests
     }
 
     pub fn get(env: &mut Environment, f: impl FnOnce(&mut SceneManager)) {

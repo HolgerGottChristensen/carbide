@@ -15,7 +15,7 @@ categories = ["gui"]
 controls = ["carbide_controls"]
 icons = ["carbide_icons"]
 # Enables the headless rendering-regression-test fixture (carbide_wgpu::testing).
-testing = ["dep:image", "dep:image-compare", "dep:serde_json", "accesskit/serde"]
+testing = ["dep:image-compare", "dep:serde_json", "accesskit/serde"]
 
 [dependencies]
 carbide_core = { path = "../../carbide_core" }
@@ -36,9 +36,10 @@ dashmap.workspace = true
 accesskit_winit.workspace = true
 accesskit.workspace = true
 smallvec.workspace = true
-image = { workspace = true, optional = true }
+image.workspace = true
 image-compare = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+oneshot = "0.1.3"
 
 
 [target.'cfg(target_os="macos")'.dependencies]

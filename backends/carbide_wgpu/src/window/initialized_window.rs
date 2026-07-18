@@ -1,5 +1,6 @@
 use crate::application::Scenes;
 use crate::offscreen_renderer::OffscreenRenderer;
+use crate::wgpu_context::WgpuContext;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;
@@ -84,6 +85,20 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         });
 
         self.mouse_cursor = cursor;
+
+        let mut screenshot_requests = std::mem::take(scene_manager.screenshot_requests());
+        if !screenshot_requests.is_empty() {
+            let wgpu_context = env.get_mut::<WgpuContext>()
+                .expect("WgpuContext is in scope at every call site that reaches InitializedWindow::with_env");
+            let image = crate::screenshot::capture_texture_to_image(
+                &wgpu_context.device,
+                &wgpu_context.queue,
+                &self.offscreen.targets[0].texture,
+            );
+            for sender in screenshot_requests.drain(..) {
+                let _ = sender.send(image.clone());
+            }
+        }
 
         if scene_manager.dismiss_requested() {
             println!("Here");
