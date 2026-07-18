@@ -2,7 +2,9 @@ use carbide_core::render::InnerLayer;
 use std::fmt::{Debug, Formatter};
 use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 use carbide_core::environment::Environment;
+use crate::textures::create_msaa_texture_view;
 use crate::wgpu_context::WgpuContext;
+use crate::wgpu_msaa::WgpuMsaa;
 
 pub const RENDER_TARGET_FORMAT: TextureFormat = TextureFormat::Bgra8UnormSrgb;
 
@@ -10,10 +12,13 @@ pub struct WgpuRenderTarget {
     pub(crate) texture: Texture,
     pub(crate) view: TextureView,
     pub(crate) bind_group: BindGroup,
+    /// This target's own MSAA scratch texture — `None` at `WgpuMsaa::X1`, where there's no
+    /// separate multisample attachment at all.
+    pub(crate) msaa_view: Option<TextureView>,
 }
 
 impl WgpuRenderTarget {
-    pub(crate) fn new(width: u32, height: u32, env: &mut Environment) -> WgpuRenderTarget {
+    pub(crate) fn new(width: u32, height: u32, msaa: WgpuMsaa, env: &mut Environment) -> WgpuRenderTarget {
         let descriptor = TextureDescriptor {
             label: Some("carbide_render_target_texture"),
             size: Extent3d {
@@ -53,10 +58,13 @@ impl WgpuRenderTarget {
             label: Some("carbide_render_target_bind_group"),
         });
 
+        let msaa_view = create_msaa_texture_view(&wgpu_context.device, width, height, msaa);
+
         WgpuRenderTarget {
             texture,
             view,
             bind_group,
+            msaa_view,
         }
     }
 

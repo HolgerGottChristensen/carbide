@@ -8,6 +8,7 @@ use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::wgpu_render_target::WgpuRenderTarget;
 use crate::wgpu_vertex::WgpuVertex;
+use crate::wgpu_msaa::WgpuMsaa;
 use crate::{WgpuContext, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
 
 use carbide_core::color::{Color, ColorExt, WHITE};
@@ -58,6 +59,7 @@ pub struct WGPURenderContext {
     current_target: usize,
 
     layers: HashMap<LayerId, WgpuRenderTarget>,
+    msaa: WgpuMsaa,
 
     tesselator: Tesselator,
 }
@@ -123,7 +125,7 @@ pub struct Uniform {
 }
 
 impl WGPURenderContext {
-    pub fn new() -> WGPURenderContext {
+    pub fn new(msaa: WgpuMsaa) -> WGPURenderContext {
         WGPURenderContext {
             style_stack: vec![],
             stroke_dash_stack: vec![],
@@ -160,6 +162,7 @@ impl WGPURenderContext {
             current_target: 0,
             current_stroke_dash: None,
             layers: Default::default(),
+            msaa,
             filters: HashMap::new(),
             current_frame_filters: HashSet::new(),
             tesselator: Tesselator::new(),
@@ -1086,7 +1089,7 @@ impl InnerRenderContext for WGPURenderContext {
             let target = self.layers.get_mut(&layer_id).unwrap();
 
             if target.texture.width() != width || target.texture.height() != height {
-                *target = WgpuRenderTarget::new(width, height, env);
+                *target = WgpuRenderTarget::new(width, height, self.msaa, env);
             }
 
             Layer {
@@ -1094,7 +1097,7 @@ impl InnerRenderContext for WGPURenderContext {
                 inner2: target,
             }
         } else {
-            let new_layer = WgpuRenderTarget::new(width, height, env);
+            let new_layer = WgpuRenderTarget::new(width, height, self.msaa, env);
 
             self.layers.insert(layer_id, new_layer);
 

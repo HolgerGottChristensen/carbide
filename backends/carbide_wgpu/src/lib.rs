@@ -47,6 +47,9 @@ pub fn init_logger() {
     }
 
 enum RenderPassOps {
+    /// A target's first pass of the frame — cleared to transparent. Any region that never gets
+    /// drawn to just shows the window's own background underneath (or is transparent, for an
+    /// offscreen target composited by alpha), rather than needing a separate sentinel color.
     Start,
     Middle,
 }
@@ -56,9 +59,9 @@ fn render_pass_ops(ops_type: RenderPassOps) -> (Operations<wgpu::Color>, Operati
         RenderPassOps::Start => Operations {
             load: LoadOp::Clear(wgpu::Color {
                 r: 0.0,
-                g: 1.0,
+                g: 0.0,
                 b: 0.0,
-                a: 1.0,
+                a: 0.0,
             }),
             store: StoreOp::Store,
         },

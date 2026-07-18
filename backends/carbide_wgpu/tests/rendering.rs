@@ -3,7 +3,7 @@ use carbide_core::draw::theme::Theme;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::LocalState;
-use carbide_core::widget::{Rectangle, WidgetExt};
+use carbide_core::widget::{Rectangle, WidgetExt, ZStack};
 use carbide_wgpu::testing::{Harness, WgpuMsaa};
 use carbide_winit::event::MouseButton;
 
@@ -119,4 +119,45 @@ fn set_theme_changes_system_background() {
     harness.snapshot("theme_light_background");
 
     assert_ne!(dark, light, "switching theme should change the resolved SystemBackground color");
+}
+
+fn shadow_widget() -> impl carbide_core::widget::Widget {
+    ZStack::new((
+        Rectangle::new().fill(Color::new_rgba(0, 0, 0, 255)), // black background
+        Rectangle::new()
+            .fill(Color::new_rgba(0, 255, 0, 255)) // green
+            .frame(60.0, 60.0)
+            .shadow(6.0, Color::new_rgba(255, 0, 255, 255), 8, 8), // sigma, magenta color, offset_x, offset_y
+    ))
+}
+
+/// Shadow rendering routes through its own offscreen Gaussian-blur filter pass
+/// (`Shadow::render`, `ImageFilter::gaussian_blur_1d`) rather than sampling the main
+/// multisampled color target directly, so switching MSAA sample count is exactly the kind of
+/// change that could desync the shadow pass from the main pipeline. This renders the same
+/// shadowed rectangle at 1x MSAA; its 4x sibling below renders the identical scene for visual
+/// comparison.
+#[test]
+fn shadow_msaa_1x() {
+    let widget = shadow_widget();
+    let mut harness = Harness::new_with_options(widget, Dimension::new(200.0, 200.0), 1.0, WgpuMsaa::X1);
+    harness.render();
+
+    let center = *harness.pixels().get_pixel(100, 100);
+    assert_eq!(center.0, [0, 255, 0, 255], "rectangle's own fill should be unaffected by its shadow");
+
+    harness.snapshot("shadow_msaa_1x");
+}
+
+/// See `shadow_msaa_1x` — identical scene, rendered at 4x MSAA instead.
+#[test]
+fn shadow_msaa_4x() {
+    let widget = shadow_widget();
+    let mut harness = Harness::new_with_options(widget, Dimension::new(200.0, 200.0), 1.0, WgpuMsaa::X4);
+    harness.render();
+
+    let center = *harness.pixels().get_pixel(100, 100);
+    assert_eq!(center.0, [0, 255, 0, 255], "rectangle's own fill should be unaffected by its shadow");
+
+    harness.snapshot("shadow_msaa_4x");
 }
