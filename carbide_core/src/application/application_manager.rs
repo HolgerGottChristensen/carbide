@@ -65,6 +65,20 @@ impl ApplicationManager {
         &self.dismiss_scenes
     }
 
+    /// Open `url` (or a local file path) with whatever application the OS has registered for
+    /// it — the default browser for an `http(s)://` url, the default mail client for a
+    /// `mailto:` link, the default viewer for a file path, etc. Runs on a background thread so
+    /// it never blocks the calling (UI) thread waiting for the launched application to exit.
+    #[cfg(feature = "open-url")]
+    pub fn open_url(&self, url: impl AsRef<str>) {
+        let url = url.as_ref().to_string();
+        std::thread::spawn(move || {
+            if let Err(e) = open::that(&url) {
+                eprintln!("carbide: failed to open {}: {}", url, e);
+            }
+        });
+    }
+
     pub fn get(env: &mut Environment, f: impl FnOnce(&mut ApplicationManager)) {
         if let Some(manager) = env.get_mut::<ApplicationManager>() {
             f(manager)

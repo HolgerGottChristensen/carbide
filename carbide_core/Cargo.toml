@@ -17,8 +17,12 @@ categories = ["gui"]
 all-features = true
 
 [features]
-default = ["macro"]
+default = ["macro", "open-url"]
 macro = ["carbide_macro"]
+# Enables ApplicationManager::open_url, which shells out to the OS to open a url/path with
+# whatever application is registered for it (default browser, mail client, etc). Opt-out since
+# it pulls in the `open` crate.
+open-url = ["dep:open"]
 
 [dependencies]
 carbide_derive.workspace = true
@@ -42,6 +46,7 @@ futures.workspace = true
 oneshot = "0.1.3"
 gif = "0.14.1"
 gif-dispose = "6.0.0"
+open = { version = "1", optional = true }
 
 async-std = { version = "1.13.0", optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
