@@ -2,6 +2,7 @@ use crate::color::BLACK;
 use crate::CommonWidgetImpl;
 use crate::draw::{Color, Dimension, Position};
 use crate::render::{Render, RenderContext};
+use crate::scene::SceneManager;
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{CommonWidget, Empty, FilterId, ImageFilter, IntoWidget, Widget, WidgetId};
 
@@ -71,12 +72,28 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Render for Shadow<W, C, S, X, Y> {
     fn render(&mut self, context: &mut RenderContext) {
+        // `sigma`/the offset are logical pixels, like every other widget measurement, but the
+        // filter's kernel taps are one-per-*physical*-pixel (see `ImageFilter::gaussian_blur_1d`)
+        // so the blur samples at a resolution that actually matches the screen. Baking in a
+        // logical sigma unchanged would under-sample at higher scale factors (fewer physical
+        // samples spread over a proportionally wider reach), visibly banding the falloff instead
+        // of smoothly widening it -- scaling sigma (and the offset) up by `scale_factor` here
+        // makes `gaussian_blur_1d` generate proportionally *more* taps, not wider gaps between
+        // the same few.
+        let scale_factor = context.env.get_mut::<SceneManager>()
+            .map(|manager| manager.scale_factor())
+            .unwrap_or(1.0) as f32;
+
+        let sigma = *self.sigma.value() as f32 * scale_factor;
+        let offset_x = (*self.offset_x.value() as f32 * scale_factor).round() as i32;
+        let offset_y = (*self.offset_y.value() as f32 * scale_factor).round() as i32;
+
         // filter1 (horizontal pass) and filter2 (vertical pass) are chained: filter2 samples
         // filter1's already-shifted output. Baking the full offset into both would apply it
         // twice (net shift 2x); each pass instead only carries the offset for the axis its own
         // taps vary along, so the two passes together apply it exactly once.
-        let filter1 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), 0);
-        let filter2 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(0, -*self.offset_y.value());
+        let filter1 = ImageFilter::gaussian_blur_1d(sigma).offset(-offset_x, 0);
+        let filter2 = ImageFilter::gaussian_blur_1d(sigma).flipped().offset(0, -offset_y);
 
         context.shadow(&filter1, &filter2, *self.color.value(), |new_context| {
             self.child.render(new_context)

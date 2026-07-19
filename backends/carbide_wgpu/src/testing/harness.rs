@@ -16,7 +16,7 @@ use carbide_core::focus::FocusManager;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::UpdateContext;
 use carbide_core::render::{NoopRenderContext, RenderContext, RenderInstruction, RenderInstructionCache};
-use carbide_core::scene::AnyScene;
+use carbide_core::scene::{AnyScene, SceneManager};
 use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
 use carbide_core::widget::{NavigationStack, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
 use carbide_winit::dpi::{PhysicalPosition, PhysicalSize};
@@ -349,8 +349,18 @@ impl Harness {
             text_context,
             event_handler,
             offscreen,
+            dimension,
+            scale_factor,
             ..
         } = self;
+
+        // Mirrors `InitializedWindow::with_env` (the live-window path) -- widgets that read
+        // `SceneManager::scale_factor()` at render time (e.g. `Shadow::render`, for its filter's
+        // physical-pixel kernel resolution) need to see the *same* scale factor here that this
+        // `Harness` was actually constructed with, not silently fall back to 1.0 because no
+        // `SceneManager` was ever installed.
+        let physical_dimensions = Dimension::new(dimension.width * *scale_factor, dimension.height * *scale_factor);
+        let mut scene_manager = SceneManager::new(*scale_factor, physical_dimensions);
 
         let mut result: Option<R> = None;
 
@@ -358,7 +368,9 @@ impl Harness {
             env.with_mut::<WgpuContext>(wgpu_context, |env| {
                 env.with_mut::<RenderInstructionCache>(render_instruction_cache, |env| {
                     env.with_mut::<FocusManager>(focus_manager, |env| {
-                        result = Some(f(env, scenes, text_context, event_handler, offscreen));
+                        env.with_mut::<SceneManager>(&mut scene_manager, |env| {
+                            result = Some(f(env, scenes, text_context, event_handler, offscreen));
+                        })
                     })
                 })
             })
@@ -526,6 +538,7 @@ impl Harness {
     /// leave for its own callers.
     pub fn accessibility_tree(&mut self) -> Vec<(WidgetId, accesskit::Node)> {
         let dimension = self.dimension;
+        let scale_factor = self.scale_factor;
 
         self.with_env_scope(|env, scenes, text_context, _event_handler, _offscreen| {
             let scene = &mut scenes[0];
@@ -572,7 +585,24 @@ impl Harness {
             });
 
             tree.nodes.into_iter()
-                .map(|(node_id, node)| (WidgetId::from_u32(node_id.0 as u32), node))
+                .map(|(node_id, mut node)| {
+                    // Widget-level accessibility code (e.g. `accessibility.rs`) reports bounds in
+                    // *physical* pixels, since that's what a real OS accessibility API needs to
+                    // position an on-screen focus indicator -- scaling by the now-installed
+                    // `SceneManager`'s `scale_factor`. This testing API's own contract (see
+                    // `mouse_move`'s doc comment) is that everything -- including bounds returned
+                    // here -- stays in the same logical-pixel space as `dimension`, so convert
+                    // back down before handing it to a test.
+                    if let Some(bounds) = node.bounds() {
+                        node.set_bounds(accesskit::Rect {
+                            x0: bounds.x0 / scale_factor,
+                            y0: bounds.y0 / scale_factor,
+                            x1: bounds.x1 / scale_factor,
+                            y1: bounds.y1 / scale_factor,
+                        });
+                    }
+                    (WidgetId::from_u32(node_id.0 as u32), node)
+                })
                 .collect()
         })
     }
@@ -692,6 +722,7 @@ impl Harness {
     /// module (nothing outside this crate can currently name it usefully).
     pub(crate) fn render_instructions(&mut self) -> Vec<crate::render_pass_command::RenderPass> {
         let dimension = self.dimension;
+        let scale_factor = self.scale_factor;
 
         self.with_env_scope(|env, scenes, text_context, _event_handler, offscreen| {
             let scene = &mut scenes[0];
@@ -717,7 +748,7 @@ impl Harness {
                 env,
             });
 
-            offscreen.build_render_passes(scene, dimension, &mut RenderContext {
+            offscreen.build_render_passes(scene, dimension, scale_factor, &mut RenderContext {
                 render: &mut NoopRenderContext,
                 text: text_context,
                 image: &mut WGPUImageContext,

@@ -81,7 +81,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             );
 
             // Render the children into the offscreen draw-call plan
-            render_passes = Some(initialized.offscreen.build_render_passes(&mut initialized.child, dimensions, &mut RenderContext {
+            render_passes = Some(initialized.offscreen.build_render_passes(&mut initialized.child, dimensions, scale_factor, &mut RenderContext {
                 render: &mut NoopRenderContext,
                 text: ctx.text,
                 image: ctx.image,

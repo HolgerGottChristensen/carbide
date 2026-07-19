@@ -147,8 +147,8 @@ impl OffscreenRenderer {
     /// Layout-and-record half of a frame: runs the child's `render()` against the internal
     /// `WGPURenderContext` and returns the resulting draw-call plan. Performs no GPU work at all
     /// (no `CommandEncoder`, no `queue.submit`) — pure CPU-side logic, safe to call standalone.
-    pub(crate) fn build_render_passes(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, ctx: &mut RenderContext) -> Vec<RenderPass> {
-        self.render_context.start(Rect::new(Position::origin(), dimensions));
+    pub(crate) fn build_render_passes(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext) -> Vec<RenderPass> {
+        self.render_context.start(Rect::new(Position::origin(), dimensions), scale_factor);
 
         ctx.text.prepare_render();
 
@@ -163,16 +163,14 @@ impl OffscreenRenderer {
 
         // Most targets (the main one, mask scratch targets) are exactly window-sized, but a
         // shadow/filter scratch target may have been requested with extra `radius_x`/`radius_y`
-        // padding (in logical pixels) so off-screen geometry survives to be sampled by the
-        // filter's blur passes — see `WGPURenderContext::filter_new`. `target_radius` reports
-        // that requirement (converted here to physical pixels); (0, 0) for an ordinary target.
-        let scale_factor = self.size.width as Scalar / dimensions.width.max(1.0);
+        // padding so off-screen geometry survives to be sampled by the filter's blur passes — see
+        // `WGPURenderContext::filter_new`. `target_radius` reports that requirement, already in
+        // physical pixels (filters bake `scale_factor` into their own kernel taps, see
+        // `Shadow::render`); (0, 0) for an ordinary target.
         let target_count = self.render_context.target_count();
 
         for index in 0..target_count {
-            let (radius_x, radius_y) = self.render_context.target_radius(index);
-            let padding_x = (radius_x as Scalar * scale_factor).ceil() as u32;
-            let padding_y = (radius_y as Scalar * scale_factor).ceil() as u32;
+            let (padding_x, padding_y) = self.render_context.target_radius(index);
             let required_width = self.size.width + 2 * padding_x;
             let required_height = self.size.height + 2 * padding_y;
 
@@ -228,7 +226,7 @@ impl OffscreenRenderer {
     /// Convenience combining both halves, used by the live-window path which never needs the
     /// intermediate `Vec<RenderPass>` on its own.
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
-        let render_passes = self.build_render_passes(child, dimensions, ctx);
+        let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
         let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
         self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context, encoder);
@@ -292,6 +290,13 @@ impl OffscreenRenderer {
                 // `WGPURenderContext::filter_new`) -- `texel_size` in the filter shader is derived
                 // from this uniform, so it must match whichever target this specific filter
                 // actually samples from, not always the window's own size.
+                //
+                // This is plain physical pixels, matching the filter's own kernel taps: a
+                // filter's offsets/sigma already have `scale_factor` baked in at the point they're
+                // built (see `Shadow::render`), so `filter`/`texture_size` here are a pure
+                // function of the `ImageFilter`'s own content -- nothing scale-factor-dependent is
+                // smuggled in through this uniform, keeping a filter's bind group correctly
+                // reusable for as long as its `FilterId` is alive.
                 let texture_size = self.render_context.filter_source_target(*filter_id)
                     .map(|index| {
                         let target = &self.targets[index];

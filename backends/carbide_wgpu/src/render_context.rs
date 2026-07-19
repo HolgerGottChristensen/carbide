@@ -13,7 +13,7 @@ use crate::{WgpuContext, MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_F
 
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
-use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape};
+use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix, Vector3};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId, RenderInstruction};
@@ -58,6 +58,11 @@ pub struct WGPURenderContext {
     finished: bool,
     targets: TargetStates,
     window_bounding_box: Rect,
+    // Set once per frame in `start()`. Filter kernel radii (`radius_x`/`radius_y` passed to
+    // `filter_new`) are physical pixels (see `Shadow::render`), but `window_bounding_box` and
+    // everything built from it (`padded_transform`/`padded_bounding_box`) is logical -- this is
+    // what converts between the two.
+    scale_factor: Scalar,
     frame_count: usize,
     skip_rendering: bool,
     masked: bool,
@@ -173,6 +178,7 @@ impl WGPURenderContext {
             vertices: vec![],
             current_bind_group: None,
             window_bounding_box: Rect::default(),
+            scale_factor: 1.0,
             frame_count: 0,
             skip_rendering: false,
             current_gradient: None,
@@ -218,9 +224,13 @@ impl WGPURenderContext {
     /// rasterized across for every *visible* (within-window) output pixel to sample correctly.
     fn padded_bounding_box(&self, radius_x: u32, radius_y: u32) -> Rect {
         let dimension = self.window_bounding_box.dimension;
+        // `radius_x`/`radius_y` are physical pixels (a filter's kernel taps, see `Shadow::render`)
+        // but this rect lives in the same logical space as `window_bounding_box`.
+        let radius_x = radius_x as Scalar / self.scale_factor;
+        let radius_y = radius_y as Scalar / self.scale_factor;
         Rect::new(
-            Position::new(-(radius_x as f64), -(radius_y as f64)),
-            Dimension::new(dimension.width + 2.0 * radius_x as f64, dimension.height + 2.0 * radius_y as f64),
+            Position::new(-radius_x, -radius_y),
+            Dimension::new(dimension.width + 2.0 * radius_x, dimension.height + 2.0 * radius_y),
         )
     }
 
@@ -240,9 +250,14 @@ impl WGPURenderContext {
     /// dimension/scale-factor pairing `OffscreenRenderer` calls it with always cancels).
     fn padded_transform(&self, radius_x: u32, radius_y: u32) -> Matrix4<f32> {
         let window_dimension = self.window_bounding_box.dimension;
+        // `radius_x`/`radius_y` are physical pixels (a filter's kernel taps, see `Shadow::render`)
+        // but the padded canvas this builds a projection for is expressed in the same logical
+        // space as `window_dimension`.
+        let radius_x = radius_x as Scalar / self.scale_factor;
+        let radius_y = radius_y as Scalar / self.scale_factor;
         let padded_dimension = Dimension::new(
-            window_dimension.width + 2.0 * radius_x as f64,
-            window_dimension.height + 2.0 * radius_y as f64,
+            window_dimension.width + 2.0 * radius_x,
+            window_dimension.height + 2.0 * radius_y,
         );
 
         let window_matrix = calculate_carbide_to_wgpu_matrix(window_dimension, 1.0);
@@ -310,10 +325,11 @@ impl WGPURenderContext {
         &self.gradients
     }
 
-    pub fn start(&mut self, window_bounding_box: Rect) {
+    pub fn start(&mut self, window_bounding_box: Rect, scale_factor: Scalar) {
         self.frame_count += 1;
         //println!("Start render frame: {}", self.frame_count);
         self.window_bounding_box = window_bounding_box;
+        self.scale_factor = scale_factor;
         self.clear()
     }
 

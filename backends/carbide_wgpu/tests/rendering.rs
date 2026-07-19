@@ -1,6 +1,6 @@
 use carbide_controls::toggle::{Toggle, ToggleValue};
 use carbide_core::draw::theme::Theme;
-use carbide_core::draw::{Color, Dimension, Position};
+use carbide_core::draw::{Color, Dimension, Position, Scalar};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{Rectangle, WidgetExt, ZStack};
@@ -160,6 +160,42 @@ fn shadow_msaa_4x() {
     assert_eq!(center.0, [0, 255, 0, 255], "rectangle's own fill should be unaffected by its shadow");
 
     harness.snapshot("shadow_msaa_4x");
+}
+
+/// A shadow's blur radius (`sigma`) and offset are specified in *logical* pixels, like every
+/// other widget measurement -- so the shadow's visual size and reach relative to the shape it
+/// belongs to should look identical regardless of the window's `scale_factor`, exactly like the
+/// shape itself does. This renders the same `shadow_widget()` scene at `scale_factor` 1.0 and
+/// 2.0, then samples the shadow's halo at a handful of *logical* positions (mapped to the correct
+/// physical pixel for each render via `* scale_factor`) and checks the two agree.
+#[test]
+fn shadow_blur_radius_is_scale_factor_agnostic() {
+    fn render_at(scale_factor: Scalar, snapshot_name: &str) -> image::RgbaImage {
+        let widget = shadow_widget();
+        let mut harness = Harness::new_with_options(widget, Dimension::new(200.0, 200.0), scale_factor, WgpuMsaa::X1);
+        harness.render();
+        harness.snapshot(snapshot_name);
+        harness.pixels()
+    }
+
+    let pixels_1x = render_at(1.0, "shadow_scale_factor_1x");
+    let pixels_2x = render_at(2.0, "shadow_scale_factor_2x");
+
+    // Logical points in the shadow's halo below-right of the 60x60 rect (offset (8,8)), chosen to
+    // sit on the blur's falloff rather than its fully-saturated interior or its untouched tail, so
+    // a scale-factor-dependent radius shows up as a clear intensity difference rather than both
+    // sides reading as either full or zero.
+    for (logical_x, logical_y) in [(135.0, 135.0), (140.0, 130.0), (130.0, 140.0), (145.0, 145.0), (138.0, 138.0)] {
+        let p1 = *pixels_1x.get_pixel(logical_x as u32, logical_y as u32);
+        let p2 = *pixels_2x.get_pixel((logical_x * 2.0) as u32, (logical_y * 2.0) as u32);
+
+        let diff = (p1.0[0] as i32 - p2.0[0] as i32).abs();
+        assert!(
+            diff < 12,
+            "shadow intensity at logical ({logical_x},{logical_y}) should match regardless of scale_factor, but 1x={:?} vs 2x={:?} (diff={diff})",
+            p1.0, p2.0
+        );
+    }
 }
 
 fn shadow_crossing_border_widget() -> impl carbide_core::widget::Widget {
