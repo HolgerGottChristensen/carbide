@@ -3,7 +3,7 @@ use std::fmt::{Debug, Formatter};
 
 use typed_arena::Arena;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, Queue, RenderPassDepthStencilAttachment, TexelCopyTextureInfo, Texture, TextureView};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, Queue, RenderPassDepthStencilAttachment, TexelCopyTextureInfo, Texture};
 
 use carbide_core::draw::color_space::ColorSpace;
 use carbide_core::draw::gradient::{GradientRepeat, GradientType};
@@ -21,7 +21,6 @@ use crate::pipeline::{create_pipelines, RenderPipelines};
 use crate::render_context::{Uniform, WGPURenderContext};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
 use crate::texture_atlas_command::TextureAtlasCommand;
-use crate::textures::create_depth_stencil_texture_view;
 use crate::wgpu_context::WgpuContext;
 use crate::wgpu_dashes::WgpuDashes;
 use crate::wgpu_gradient::WgpuGradient;
@@ -37,7 +36,6 @@ use crate::{render_pass_ops, RenderPassOps, WgpuRenderTarget};
 pub(crate) struct OffscreenRenderer {
     size: PhysicalSize<u32>,
     msaa: WgpuMsaa,
-    depth_texture_view: TextureView,
     #[allow(dead_code)]
     texture_size_bind_group: BindGroup,
     pub(crate) targets: Vec<WgpuRenderTarget>,
@@ -125,8 +123,6 @@ impl OffscreenRenderer {
             wgpu_context.pipelines.insert(RENDER_TARGET_FORMAT, pipeline);
         }
 
-        let depth_texture_view = create_depth_stencil_texture_view(&wgpu_context.device, size.width, size.height, msaa);
-
         let vertex_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_primary_vertex_buffer"),
             contents: &[],
@@ -136,7 +132,6 @@ impl OffscreenRenderer {
         OffscreenRenderer {
             size,
             msaa,
-            depth_texture_view,
             texture_size_bind_group,
             targets: vec![WgpuRenderTarget::new(size.width, size.height, msaa, env)],
             uniform_bind_group,
@@ -166,10 +161,29 @@ impl OffscreenRenderer {
 
         let render_passes = self.render_context.finish();
 
+        // Most targets (the main one, mask scratch targets) are exactly window-sized, but a
+        // shadow/filter scratch target may have been requested with extra `radius_x`/`radius_y`
+        // padding (in logical pixels) so off-screen geometry survives to be sampled by the
+        // filter's blur passes — see `WGPURenderContext::filter_new`. `target_radius` reports
+        // that requirement (converted here to physical pixels); (0, 0) for an ordinary target.
+        let scale_factor = self.size.width as Scalar / dimensions.width.max(1.0);
         let target_count = self.render_context.target_count();
-        if self.targets.len() < target_count {
-            for _ in self.targets.len()..target_count {
-                self.targets.push(WgpuRenderTarget::new(self.size.width, self.size.height, self.msaa, ctx.env));
+
+        for index in 0..target_count {
+            let (radius_x, radius_y) = self.render_context.target_radius(index);
+            let padding_x = (radius_x as Scalar * scale_factor).ceil() as u32;
+            let padding_y = (radius_y as Scalar * scale_factor).ceil() as u32;
+            let required_width = self.size.width + 2 * padding_x;
+            let required_height = self.size.height + 2 * padding_y;
+
+            if index >= self.targets.len() {
+                self.targets.push(WgpuRenderTarget::new(required_width, required_height, self.msaa, ctx.env));
+            } else {
+                let current_width = self.targets[index].texture.width();
+                let current_height = self.targets[index].texture.height();
+                if current_width < required_width || current_height < required_height {
+                    self.targets[index] = WgpuRenderTarget::new(required_width, required_height, self.msaa, ctx.env);
+                }
             }
         }
 
@@ -229,8 +243,6 @@ impl OffscreenRenderer {
 
         let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
 
-        self.depth_texture_view = create_depth_stencil_texture_view(&wgpu_context.device, new_size.width, new_size.height, self.msaa);
-
         self.texture_size_bind_group = size_to_uniform_bind_group(
             &wgpu_context.device,
             &wgpu_context.uniform_bind_group_layout2,
@@ -275,7 +287,19 @@ impl OffscreenRenderer {
         for (filter_id, filter) in filters {
             if !wgpu_context.filter_bind_groups.contains_key(filter_id) {
                 let mut filter: crate::wgpu_filter::WgpuFilter = filter.clone().into();
-                filter.texture_size = [size.width as f32, size.height as f32];
+
+                // A shadow/filter-scratch source target may be padded larger than the window (see
+                // `WGPURenderContext::filter_new`) -- `texel_size` in the filter shader is derived
+                // from this uniform, so it must match whichever target this specific filter
+                // actually samples from, not always the window's own size.
+                let texture_size = self.render_context.filter_source_target(*filter_id)
+                    .map(|index| {
+                        let target = &self.targets[index];
+                        (target.texture.width() as f32, target.texture.height() as f32)
+                    })
+                    .unwrap_or((size.width as f32, size.height as f32));
+
+                filter.texture_size = [texture_size.0, texture_size.1];
 
                 let filter_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("Filter Buffer"),
@@ -423,7 +447,7 @@ impl OffscreenRenderer {
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
+                            view: &self.targets[index].depth_view,
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
@@ -605,7 +629,7 @@ impl OffscreenRenderer {
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.depth_texture_view,
+                            view: &self.targets[target_id].depth_view,
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),

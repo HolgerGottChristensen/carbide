@@ -71,8 +71,12 @@ impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>,
 
 impl<W: Widget, C: ReadState<T=Color>, S: ReadState<T=f64>, X: ReadState<T=i32>, Y: ReadState<T=i32>> Render for Shadow<W, C, S, X, Y> {
     fn render(&mut self, context: &mut RenderContext) {
-        let filter1 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), -*self.offset_y.value());
-        let filter2 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(-*self.offset_x.value(), -*self.offset_y.value());
+        // filter1 (horizontal pass) and filter2 (vertical pass) are chained: filter2 samples
+        // filter1's already-shifted output. Baking the full offset into both would apply it
+        // twice (net shift 2x); each pass instead only carries the offset for the axis its own
+        // taps vary along, so the two passes together apply it exactly once.
+        let filter1 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).offset(-*self.offset_x.value(), 0);
+        let filter2 = ImageFilter::gaussian_blur_1d(*self.sigma.value() as f32).flipped().offset(0, -*self.offset_y.value());
 
         context.shadow(&filter1, &filter2, *self.color.value(), |new_context| {
             self.child.render(new_context)

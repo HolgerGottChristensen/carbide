@@ -2,7 +2,7 @@ use carbide_controls::toggle::{Toggle, ToggleValue};
 use carbide_core::draw::theme::Theme;
 use carbide_core::draw::{Color, Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
-use carbide_core::state::LocalState;
+use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{Rectangle, WidgetExt, ZStack};
 use carbide_wgpu::testing::{Harness, WgpuMsaa};
 use carbide_winit::event::MouseButton;
@@ -161,3 +161,114 @@ fn shadow_msaa_4x() {
 
     harness.snapshot("shadow_msaa_4x");
 }
+
+fn shadow_crossing_border_widget() -> impl carbide_core::widget::Widget {
+    ZStack::new((
+        Rectangle::new().fill(Color::new_rgba(0, 0, 0, 255)), // black background
+        Rectangle::new()
+            .fill(Color::new_rgba(0, 255, 0, 255)) // green
+            .frame(100.0, 100.0)
+            .offset(90.0, 0.0) // push most of the rect off the right edge of the 200-wide window
+            .shadow(6.0, Color::new_rgba(255, 0, 255, 255), -80, 0), // sigma, magenta, shifted left, back into the window
+    ))
+}
+
+/// Only the rectangle's left 60px (x:140-200) are inside the 200x200 window; the remaining 40px
+/// (x:200-240) fall off-screen to the right. Its shadow is offset -80 in x, shifting the shadow
+/// silhouette left by 80 relative to the rectangle -- far enough that the shadow contribution from
+/// the *off-screen* part of the rectangle should land inside the window, in a region (x:120-140)
+/// not covered by the rectangle's own visible fill (x:140-200).
+///
+/// If shadow rendering only samples the window-sized offscreen texture the shape was rasterized
+/// into (rather than the shape's true, potentially off-screen, geometry), the off-screen 40px of
+/// rectangle never contributes any pixels to the blur, so the shadow silhouette is effectively
+/// clipped to the rectangle's *visible* x:140-200 span before the offset is applied -- meaning
+/// x:120-140 would incorrectly show no shadow at all.
+#[test]
+fn shadow_crossing_window_border() {
+    let widget = shadow_crossing_border_widget();
+    let mut harness = Harness::new(widget, Dimension::new(200.0, 200.0));
+
+    // A shadow's very first `render()` on a freshly constructed `Harness` renders with no
+    // shadow at all (confirmed independently: the existing, non-border-crossing `shadow_widget()`
+    // scene shows pure background in its shadow region after exactly one `render()`, then the
+    // correct blurred shadow from the second `render()` onward) -- a separate, pre-existing
+    // warm-up quirk unrelated to the window-border clipping this test targets. This explicit
+    // `render()` absorbs that first, unrepresentative frame; `snapshot()` (which renders once
+    // more internally) and the `pixels()` read right after it then both reflect the same,
+    // stable frame.
+    harness.render();
+    harness.snapshot("shadow_crossing_window_border");
+    let pixels = harness.pixels();
+
+    let own_fill = *pixels.get_pixel(170, 100);
+    let far_background = *pixels.get_pixel(20, 100);
+    // x:120-140 is uniquely covered by the *true* (unclipped) shadow silhouette but not the
+    // *clipped-at-window-edge* one -- the pixel that distinguishes correct from buggy rendering.
+    let differential = *pixels.get_pixel(130, 100);
+
+    assert_eq!(own_fill.0, [0, 255, 0, 255], "rectangle's own visible fill should be unaffected by its shadow");
+    assert_eq!(far_background.0, [0, 0, 0, 255], "point far from the shadow should remain pure background");
+    assert_ne!(
+        differential.0, [0, 0, 0, 255],
+        "shadow should extend from the off-screen part of the rectangle into this region, but it rendered as pure background -- shadow appears clipped to only the visible part of the shape"
+    );
+}
+
+fn animated_shadow_widget(offset_x: LocalState<i32>) -> impl carbide_core::widget::Widget {
+    ZStack::new((
+        Rectangle::new().fill(Color::new_rgba(0, 0, 0, 255)),
+        Rectangle::new()
+            .fill(Color::new_rgba(0, 255, 0, 255))
+            .frame(60.0, 60.0)
+            .shadow(6.0, Color::new_rgba(255, 0, 255, 255), offset_x, 8),
+    ))
+}
+
+/// A shadow's scratch render target is sized to the largest radius (blur spread + offset) any
+/// frame has ever asked for on that target index (`TargetStates::get` only ever grows the
+/// recorded requirement, since shrinking would need to discard and reallocate a GPU texture every
+/// time an animated value dipped). An `AnimatedState`-driven shadow like the `shadow` example
+/// (sigma/offset continuously oscillating) reuses that same target every frame, so most frames
+/// ask for less padding than the target actually has.
+///
+/// This renders one harness through a large-offset frame (growing the target), then a small
+/// offset (`8`, matching `shadow_widget()`'s convention) matching a second, fresh harness that
+/// never saw a large frame. If the transform used to render into the scratch target isn't rebuilt
+/// from the target's *actual* size after such a shrink, the two should visibly disagree -- the
+/// shrunk-back-down harness's shadow would appear shifted/squished relative to the fresh one,
+/// since it'd still assume the small size while actually rendering into the larger, oversized
+/// texture left over from the large-offset frame.
+#[test]
+fn shadow_target_reused_after_radius_shrink_matches_fresh_render() {
+    let offset_x = LocalState::new(80);
+    let mut harness = Harness::new(animated_shadow_widget(offset_x.clone()), Dimension::new(200.0, 200.0));
+
+    // Warm-up + large-offset frame: absorbs the first-render warm-up quirk (see
+    // shadow_crossing_window_border) and grows the scratch target to accommodate offset=80.
+    harness.render();
+
+    // Shrink back down to the same small offset `shadow_widget()`/`shadow_msaa_1x` use, reusing
+    // the now-oversized target.
+    offset_x.clone().set_value(8);
+    harness.render();
+    harness.snapshot("shadow_target_reused_after_radius_shrink");
+    let pixels = harness.pixels();
+
+    // Reference: a harness that only ever renders with the small offset, so its scratch target
+    // is never grown beyond what offset=8 actually needs.
+    let mut reference_harness = Harness::new(animated_shadow_widget(LocalState::new(8)), Dimension::new(200.0, 200.0));
+    reference_harness.render();
+    reference_harness.render();
+    let reference_pixels = reference_harness.pixels();
+
+    for (x, y) in [(100, 100), (135, 135), (140, 130), (130, 140), (138, 138), (145, 145)] {
+        let actual = *pixels.get_pixel(x, y);
+        let expected = *reference_pixels.get_pixel(x, y);
+        assert_eq!(
+            actual.0, expected.0,
+            "pixel ({x},{y}) after the shadow's offset shrinks back down should match a harness that never saw a larger offset (target reuse must not leave stale sizing/transform state behind)"
+        );
+    }
+}
+
