@@ -35,7 +35,7 @@ fn snapshot_dir(scope: Option<&str>) -> PathBuf {
 }
 
 fn update_requested() -> bool {
-    env::var("UPDATE_SNAPSHOTS").is_ok()
+    env::var("BLESS").is_ok()
 }
 
 /// Below this, on any of the deviation map's R/G/B channels (structure/chroma-U/chroma-V,
@@ -78,16 +78,16 @@ pub(crate) fn compare_and_report(name: &str, actual: &image::RgbaImage, options:
 }
 
 /// The actual comparison logic, taking `dir` and `update` explicitly rather than deriving them
-/// from `CARGO_MANIFEST_DIR` and the `UPDATE_SNAPSHOTS` env var internally (`compare_and_report`
+/// from `CARGO_MANIFEST_DIR` and the `BLESS` env var internally (`compare_and_report`
 /// does that). Split out so unit tests (see `tests` below) can exercise both the "update" and
 /// "compare" branches deterministically against a scratch directory — reading/writing a
 /// process-wide env var from a test would race against every other test in the same binary
-/// running concurrently on another thread, since `UPDATE_SNAPSHOTS` isn't thread-local.
+/// running concurrently on another thread, since `BLESS` isn't thread-local.
 ///
-/// UPDATE_SNAPSHOTS's overwrite (`update == true`) intentionally never reads the old golden's
+/// BLESS's overwrite (`update == true`) intentionally never reads the old golden's
 /// dimensions before overwriting — a widget under test is allowed to legitimately change size
 /// (a layout tweak, a new frame size in the test itself) between one snapshot run and the next,
-/// and running with `UPDATE_SNAPSHOTS=true` after such a change should just accept the new size,
+/// and running with `BLESS=true` after such a change should just accept the new size,
 /// the same as it accepts any other pixel difference, rather than requiring the old golden to be
 /// deleted by hand first.
 /// A prior failing run may have left `.new.png`/`.diff.png` behind. Called both when `update`
@@ -112,7 +112,7 @@ fn compare_and_report_in(dir: &Path, name: &str, actual: &image::RgbaImage, opti
 
     let golden = image::open(&golden_path)
         .map_err(|_| format!(
-            "snapshot {name:?}: no golden image at {} — run with UPDATE_SNAPSHOTS=true to create it",
+            "snapshot {name:?}: no golden image at {} — run with BLESS=true to create it",
             golden_path.display()
         ))?
         .into_rgba8();
@@ -121,7 +121,7 @@ fn compare_and_report_in(dir: &Path, name: &str, actual: &image::RgbaImage, opti
         // No `diff_image` here — `image_compare::rgba_hybrid_compare` (and any other per-pixel
         // comparison) requires matching dimensions, so there's no meaningful magenta/dimmed
         // overlay to produce. Still write `.new.png` so a reviewer can look at the resized output
-        // directly and decide whether to accept it with `UPDATE_SNAPSHOTS=true`.
+        // directly and decide whether to accept it with `BLESS=true`.
         let new_path = dir.join(format!("{name}.new.png"));
         let _ = actual.save(&new_path);
         return Err(format!(
@@ -181,7 +181,7 @@ fn compare_text_and_report_in(dir: &Path, name: &str, actual: &str, kind: &str, 
 
     let golden = std::fs::read_to_string(&golden_path)
         .map_err(|_| format!(
-            "snapshot {name:?}: no golden file at {} — run with UPDATE_SNAPSHOTS=true to create it",
+            "snapshot {name:?}: no golden file at {} — run with BLESS=true to create it",
             golden_path.display()
         ))?;
 
@@ -217,7 +217,7 @@ mod tests {
         image::RgbaImage::from_pixel(width, height, image::Rgba(pixel))
     }
 
-    /// The behavior this test exists to lock in: running with `UPDATE_SNAPSHOTS` set (`update:
+    /// The behavior this test exists to lock in: running with `BLESS` set (`update:
     /// true`) after a widget's rendered size has legitimately changed should just replace the
     /// golden with the new, differently-sized output — not fail, and not require deleting the old
     /// golden by hand first. Without `update`, the same size change is (correctly) still reported
@@ -230,7 +230,7 @@ mod tests {
         let small = solid(4, 4, [10, 20, 30, 255]);
         let big = solid(8, 6, [40, 50, 60, 255]);
 
-        // Seed the initial golden, as if from an earlier `UPDATE_SNAPSHOTS=true` run.
+        // Seed the initial golden, as if from an earlier `BLESS=true` run.
         compare_and_report_in(&dir, "widget", &small, &options, true)
             .expect("seeding the initial golden should succeed");
 
@@ -305,7 +305,7 @@ mod tests {
     }
 
     /// The scenario this test exists to lock in: a test fails once (writing `.new.png`/
-    /// `.diff.png`), and then — with no `UPDATE_SNAPSHOTS` involved at all — the *same* test
+    /// `.diff.png`), and then — with no `BLESS` involved at all — the *same* test
     /// passes on a later run (e.g. a flaky render, or an unrelated code change that happened to
     /// fix the earlier mismatch). The leftover `.new.png`/`.diff.png` from the failing run should
     /// not still be sitting there afterward looking like an unresolved mismatch.
@@ -388,7 +388,7 @@ mod tests {
     }
 
     /// Same scenario as `passing_comparison_cleans_up_stale_new_and_diff_artifacts`, for the
-    /// text/JSON path: fail once, then pass on a later run with no `UPDATE_SNAPSHOTS` involved —
+    /// text/JSON path: fail once, then pass on a later run with no `BLESS` involved —
     /// the stale `.new.json` should be gone afterward.
     #[test]
     fn passing_text_comparison_cleans_up_stale_new_json_artifact() {

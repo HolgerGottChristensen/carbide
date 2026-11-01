@@ -10,7 +10,7 @@ use carbide_winit::event::MouseButton;
 #[test]
 fn rectangle_basic() {
     let widget = Rectangle::new()
-        .fill(EnvironmentColor::Blue)
+        .fill(EnvironmentColor::Red)
         .frame(20.0, 20.0);
 
     let mut harness = Harness::new(widget, Dimension::new(40.0, 40.0));
