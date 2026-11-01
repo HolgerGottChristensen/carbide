@@ -234,7 +234,7 @@ pub struct PDFRenderContext {
         self.pdf_layer_reference.end_text_section();*/
     }
 
-    fn filter_new(&mut self) {
+    fn filter_new(&mut self, radius_x: u32, radius_y: u32) {
         todo!()
     }
 

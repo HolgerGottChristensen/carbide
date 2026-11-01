@@ -189,21 +189,25 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     }
 
     pub fn filter_new<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter: &ImageFilter, f: F) -> R {
-        self.render.filter_new();
+        self.render.filter_new(filter.radius_x(), filter.radius_y());
         let res = f(self);
         self.render.filter_new_pop(filter, WHITE, false);
         res
     }
 
     pub fn filter_new2d<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, filter: &ImageFilter, filter2: &ImageFilter, f: F) -> R {
-        self.render.filter_new();
+        let radius_x = filter.radius_x().max(filter2.radius_x());
+        let radius_y = filter.radius_y().max(filter2.radius_y());
+        self.render.filter_new(radius_x, radius_y);
         let res = f(self);
         self.render.filter_new_pop2d(filter, filter2, WHITE, false);
         res
     }
 
     pub fn shadow<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, id: &ImageFilter, id2: &ImageFilter, color: Color, f: F) -> R {
-        self.render.filter_new();
+        let radius_x = id.radius_x().max(id2.radius_x());
+        let radius_y = id.radius_y().max(id2.radius_y());
+        self.render.filter_new(radius_x, radius_y);
         let res = f(self);
         self.render.filter_new_pop2d(id, id2, color, true);
         res
@@ -264,7 +268,14 @@ pub trait InnerRenderContext {
     fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext);
     fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext);
 
-    fn filter_new(&mut self);
+    /// `radius_x`/`radius_y` are how far (in logical pixels, on each side) the upcoming filter's
+    /// kernel taps can reach — i.e. `ImageFilter::radius_x()`/`radius_y()` of whichever filter(s)
+    /// `filter_new_pop`/`filter_new_pop2d` will be called with. The backend needs this *before*
+    /// the child renders, to size the scratch render target large enough that geometry just
+    /// outside the window still lands somewhere a same-radius blur pass can sample from — without
+    /// it, a shape crossing the window edge would have its off-screen portion silently discarded
+    /// before the filter ever sees it.
+    fn filter_new(&mut self, radius_x: u32, radius_y: u32);
     fn filter_new_pop(&mut self, filter: &ImageFilter, color: Color, post_draw: bool);
     fn filter_new_pop2d(&mut self, filter: &ImageFilter, filter2: &ImageFilter, color: Color, post_draw: bool);
 

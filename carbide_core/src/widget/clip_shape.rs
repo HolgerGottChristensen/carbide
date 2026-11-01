@@ -154,7 +154,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn text_old(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
 
-    fn filter_new(&mut self) {}
+    fn filter_new(&mut self, _radius_x: u32, _radius_y: u32) {}
 
     fn filter_new_pop(&mut self, _filter: &ImageFilter, _color: Color, _post_draw: bool) {}
 

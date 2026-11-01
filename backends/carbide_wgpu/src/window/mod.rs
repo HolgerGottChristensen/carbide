@@ -1,7 +1,7 @@
 mod common_widget;
 mod initialize;
 mod widget_sync;
-mod util;
+pub(crate) mod util;
 mod event_handlers;
 mod render;
 mod initialized_window;
