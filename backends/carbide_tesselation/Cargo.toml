@@ -1,0 +1,12 @@
+[package]
+name = "carbide_tesselation"
+description = "An abstraction over tesselators used to turn carbide shapes into triangles for rendering"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+[dependencies]
+carbide_core.workspace = true

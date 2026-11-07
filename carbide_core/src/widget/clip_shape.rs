@@ -103,7 +103,7 @@ struct ShapeRenderCapture {
 }
 
 impl InnerRenderContext for ShapeRenderCapture {
-    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions) {
+    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions, _env: &mut Environment) {
         self.shape.push((shape.clone(), option.clone()));
     }
 
@@ -137,7 +137,7 @@ impl InnerRenderContext for ShapeRenderCapture {
     ) {
     }
 
-    fn stencil(&mut self, _shape: CompositeDrawShape) {}
+    fn stencil(&mut self, _shape: CompositeDrawShape, _env: &mut Environment) {}
 
     fn pop_stencil(&mut self) {}
 

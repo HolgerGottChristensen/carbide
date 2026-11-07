@@ -20,11 +20,22 @@ use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
 use carbide_core::text::{TextContext, TextId, TextStyle};
 use carbide_core::widget::{FilterId, ImageFilter};
-use carbide_lyon::stroke_vertex::StrokeVertex;
-use carbide_lyon::triangle::Triangle;
-use carbide_lyon::Tesselator;
+use carbide_tesselation::stroke_vertex::StrokeVertex;
+use carbide_tesselation::triangle::Triangle;
+use carbide_tesselation::{Tesselator, TesselatorKey};
 use crate::wgpu_dashes::WgpuDashes;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
+
+/// Look up the tesselator currently in the environment. This is done every time a shape
+/// is tesselated, such that the tesselator can be switched while the application is running,
+/// or scoped to a part of the widget tree using `Environment::with`.
+///
+/// # Panics
+/// If no tesselator has been registered into the environment.
+fn tesselator<'a>(env: &'a Environment) -> &'a dyn Tesselator {
+    &**env.get::<TesselatorKey>()
+        .expect("No tesselator registered in the environment. Register one using TesselatorKey, for example by depending on carbide_lyon.")
+}
 
 #[derive(Debug)]
 pub struct WGPURenderContext {
@@ -71,7 +82,7 @@ pub struct WGPURenderContext {
     layers: HashMap<LayerId, WgpuRenderTarget>,
     msaa: WgpuMsaa,
 
-    tesselator: Tesselator,
+    tolerance_multiplier: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -191,7 +202,7 @@ impl WGPURenderContext {
             filters: HashMap::new(),
             filter_source_target: HashMap::new(),
             current_frame_filters: HashSet::new(),
-            tesselator: Tesselator::new(),
+            tolerance_multiplier: 1.0,
         }
     }
 
@@ -472,10 +483,10 @@ impl WGPURenderContext {
         }
     }
 
-    fn add_clip_shape_vertices(&mut self, shape: &DrawShape, options: &DrawOptions) {
+    fn add_clip_shape_vertices(&mut self, shape: &DrawShape, options: &DrawOptions, tesselator: &dyn Tesselator) {
         match options {
             DrawOptions::Fill(options) => {
-                let triangles = self.tesselator.fill(shape, options);
+                let triangles = tesselator.fill(shape, options, self.tolerance_multiplier).into_iter();
                 self.vertices.extend(
                     triangles
                         .flat_map(|triangle| triangle.0)
@@ -489,7 +500,7 @@ impl WGPURenderContext {
                 );
             }
             DrawOptions::Stroke(options) => {
-                let triangles = self.tesselator.stroke(shape, options);
+                let triangles = tesselator.stroke(shape, options, self.tolerance_multiplier).into_iter();
                 self.vertices.extend(
                     triangles
                         .flat_map(|triangle| triangle.0)
@@ -873,7 +884,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(new_target);
     }
 
-    fn stencil(&mut self, shape: CompositeDrawShape) {
+    fn stencil(&mut self, shape: CompositeDrawShape, env: &mut Environment) {
         if self.skip_rendering {
             return;
         }
@@ -883,11 +894,11 @@ impl InnerRenderContext for WGPURenderContext {
         match &shape {
             CompositeDrawShape::Zero => {}
             CompositeDrawShape::One(shape, options) => {
-                self.add_clip_shape_vertices(shape, options);
+                self.add_clip_shape_vertices(shape, options, tesselator(env));
             }
             CompositeDrawShape::Many(shapes) => {
                 for (shape, options) in shapes {
-                    self.add_clip_shape_vertices(shape, options);
+                    self.add_clip_shape_vertices(shape, options, tesselator(env));
                 }
             }
         }
@@ -911,7 +922,7 @@ impl InnerRenderContext for WGPURenderContext {
         }
     }
 
-    fn shape(&mut self, shape: &DrawShape, options: &DrawOptions) {
+    fn shape(&mut self, shape: &DrawShape, options: &DrawOptions, env: &mut Environment) {
         if self.skip_rendering {
             return;
         }
@@ -922,15 +933,17 @@ impl InnerRenderContext for WGPURenderContext {
             .max(latest_uniform.transform[1][1]);
 
         // Cap the tolerance to the div epsilon on lyon
-        self.tesselator.tolerance_multiplier = multiplier.max(1.0);
+        self.tolerance_multiplier = multiplier.max(1.0);
+
+        let tesselator = tesselator(env);
 
         match options {
             DrawOptions::Fill(options) => {
-                let triangles = self.tesselator.fill(shape, options);
+                let triangles = tesselator.fill(shape, options, self.tolerance_multiplier).into_iter();
                 self.fill(triangles);
             }
             DrawOptions::Stroke(options) => {
-                let triangles = self.tesselator.stroke(shape, options);
+                let triangles = tesselator.stroke(shape, options, self.tolerance_multiplier).into_iter();
                 self.stroke(triangles);
             }
         }

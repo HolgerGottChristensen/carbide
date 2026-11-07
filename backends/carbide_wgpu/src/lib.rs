@@ -2,6 +2,9 @@ use wgpu::{LoadOp, Operations, StoreOp};
 
 extern crate carbide_core as carbide;
 extern crate carbide_wgpu_core;
+// Registers carbide_lyon as the tesselator used to render shapes, using its plugin.
+#[cfg(feature = "lyon")]
+extern crate carbide_lyon;
 
 pub use application::Application;
 use carbide::environment::EnvironmentKey;

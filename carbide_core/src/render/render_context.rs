@@ -51,7 +51,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     /// Stencil the nested rendering to a given shape. When making multiple calls to this function
     /// the stencilling is applied as an intersection between the shapes.
     pub fn stencil<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, shape: impl Into<CompositeDrawShape>, f: F) -> R {
-        self.render.stencil(shape.into());
+        self.render.stencil(shape.into(), self.env);
         let res = f(self);
         self.render.pop_stencil();
         res
@@ -73,7 +73,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
 
     ///
     pub fn shape(&mut self, shape: impl Into<DrawShape>, options: impl Into<DrawOptions>) {
-        self.render.shape(&shape.into(), &options.into());
+        self.render.shape(&shape.into(), &options.into(), self.env);
     }
 
     pub fn style<R, F: FnOnce(&mut RenderContext) -> R>(&mut self, style: impl Into<DrawStyle>, f: F) -> R {
@@ -117,7 +117,7 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
                 for instruction in &*instructions.1 {
                     match instruction {
                         RenderInstruction::Shape { shape, options } => {
-                            self.render.shape(shape, options);
+                            self.render.shape(shape, options, self.env);
                         }
                         RenderInstruction::PushStyle { style } => {
                             let res = match style {
@@ -251,10 +251,10 @@ pub trait InnerRenderContext {
     fn filter(&mut self, filter: &ImageFilter, bounding_box: Rect);
     fn filter2d(&mut self, filter1: &ImageFilter, bounding_box1: Rect, filter2: &ImageFilter, bounding_box2: Rect);
 
-    fn stencil(&mut self, shape: CompositeDrawShape);
+    fn stencil(&mut self, shape: CompositeDrawShape, env: &mut Environment);
     fn pop_stencil(&mut self);
 
-    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions);
+    fn shape(&mut self, shape: &DrawShape, option: &DrawOptions, env: &mut Environment);
 
     // TODO: Consider making it take a reference to Style
     fn style(&mut self, style: &DrawStyle);

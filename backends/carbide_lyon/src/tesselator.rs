@@ -5,26 +5,26 @@ use lyon::path::{LineJoin, Path, Winding};
 use lyon::path::builder::{BorderRadii, SvgPathBuilder};
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
 use carbide_core::draw::{Position, DrawShape, Scalar};
-use crate::stroke_vertex::StrokeVertex;
-use crate::triangle::Triangle;
+use carbide_core::draw::fill::FillOptions as CarbideFillOptions;
+use carbide_core::draw::stroke::StrokeOptions as CarbideStrokeOptions;
+use carbide_tesselation::stroke_vertex::StrokeVertex;
+use carbide_tesselation::triangle::Triangle;
+use carbide_tesselation::Tesselator;
 use lyon::tessellation::{StrokeVertex as LyonStrokeVertex};
 use carbide_core::draw::path::PathInstruction;
 
 const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;
 
-#[derive(Debug)]
-pub struct Tesselator {
-    pub tolerance_multiplier: f32
-}
+/// A [Tesselator] implemented using lyon.
+#[derive(Debug, Default, Copy, Clone)]
+pub struct LyonTesselator;
 
-impl Tesselator {
-    pub fn new() -> Tesselator {
-        Tesselator { tolerance_multiplier: 1.0 }
+impl LyonTesselator {
+    pub fn new() -> LyonTesselator {
+        LyonTesselator
     }
 
-
-
-    fn path(&mut self, draw_shape: &DrawShape) -> Path {
+    fn path(&self, draw_shape: &DrawShape) -> Path {
         let mut builder = Path::builder();
 
         match draw_shape {
@@ -133,7 +133,10 @@ impl Tesselator {
         builder.build()
     }
 
-    pub fn fill(&mut self, draw_shape: &DrawShape, options: &carbide_core::draw::fill::FillOptions) -> impl Iterator<Item=Triangle<Position>> + use<> {
+}
+
+impl Tesselator for LyonTesselator {
+    fn fill(&self, draw_shape: &DrawShape, options: &CarbideFillOptions, tolerance_multiplier: f32) -> Vec<Triangle<Position>> {
 
         let path = self.path(draw_shape);
 
@@ -148,7 +151,7 @@ impl Tesselator {
 
         let fill_options = FillOptions::default()
             .with_fill_rule(fill_rule)
-            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / self.tolerance_multiplier);
+            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / tolerance_multiplier);
 
         {
             // Compute the tessellation.
@@ -171,12 +174,10 @@ impl Tesselator {
 
         let points: Vec<Position> = point_iter.collect();
 
-        let triangles = Triangle::from_point_list(points);
-
-        triangles.into_iter()
+        Triangle::from_point_list(points)
     }
 
-    pub fn stroke(&mut self, draw_shape: &DrawShape, options: &carbide_core::draw::stroke::StrokeOptions) -> impl Iterator<Item=Triangle<StrokeVertex>> + use<> {
+    fn stroke(&self, draw_shape: &DrawShape, options: &CarbideStrokeOptions, tolerance_multiplier: f32) -> Vec<Triangle<StrokeVertex>> {
         let path = self.path(draw_shape);
 
         #[derive(Debug, Copy, Clone, PartialEq)]
@@ -230,7 +231,7 @@ impl Tesselator {
             .with_start_cap(start_cap)
             .with_end_cap(end_cap)
             .with_line_join(join)
-            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / self.tolerance_multiplier);
+            .with_tolerance(FillOptions::DEFAULT_TOLERANCE / tolerance_multiplier);
 
         let stroke_options = if let Some(miter) = miter {
             stroke_options.with_miter_limit(miter as f32)
@@ -323,6 +324,6 @@ impl Tesselator {
                 ])
             }).collect::<Vec<_>>();
 
-        triangles.into_iter()
+        triangles
     }
 }

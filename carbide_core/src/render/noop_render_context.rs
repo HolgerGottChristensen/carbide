@@ -28,11 +28,11 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn filter2d(&mut self, _id1: &ImageFilter, _bounding_box1: Rect, _id2: &ImageFilter, _bounding_box2: Rect) {}
 
-    fn stencil(&mut self, _shape: CompositeDrawShape) {}
+    fn stencil(&mut self, _shape: CompositeDrawShape, _env: &mut Environment) {}
 
     fn pop_stencil(&mut self) {}
 
-    fn shape(&mut self, _shape: &DrawShape, _option: &DrawOptions) {}
+    fn shape(&mut self, _shape: &DrawShape, _option: &DrawOptions, _env: &mut Environment) {}
 
     fn style(&mut self, _style: &DrawStyle) {}
     fn pop_style(&mut self) {}
