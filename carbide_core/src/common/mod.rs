@@ -8,5 +8,6 @@ pub mod automatic_style;
 pub mod identifiable;
 pub mod random_access_collection;
 pub mod cell;
+pub mod plugin;
 
 pub use carbide_derive::Id;

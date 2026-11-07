@@ -2,6 +2,7 @@ use carbide_core::render::InnerLayer;
 use std::fmt::{Debug, Formatter};
 use wgpu::{BindGroup, Extent3d, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView};
 use carbide_core::environment::Environment;
+use carbide_wgpu_core::WgpuContextNew;
 use crate::textures::{create_depth_stencil_texture_view, create_msaa_texture_view};
 use crate::wgpu_context::WgpuContext;
 use crate::wgpu_msaa::WgpuMsaa;
@@ -42,13 +43,16 @@ impl WgpuRenderTarget {
             view_formats: &[],
         };
 
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>();
 
-        let texture = wgpu_context.device.create_texture(&descriptor);
+        let wgpu_context = wgpu_context.unwrap();
+        let wgpu_context_new = wgpu_context_new.unwrap();
+
+        let texture = wgpu_context_new.device.create_texture(&descriptor);
 
         let view = texture.create_view(&Default::default());
 
-        let bind_group = wgpu_context.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bind_group = wgpu_context_new.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &wgpu_context.texture_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -63,8 +67,8 @@ impl WgpuRenderTarget {
             label: Some("carbide_render_target_bind_group"),
         });
 
-        let msaa_view = create_msaa_texture_view(&wgpu_context.device, width, height, msaa);
-        let depth_view = create_depth_stencil_texture_view(&wgpu_context.device, width, height, msaa);
+        let msaa_view = create_msaa_texture_view(&wgpu_context_new.device, width, height, msaa);
+        let depth_view = create_depth_stencil_texture_view(&wgpu_context_new.device, width, height, msaa);
 
         WgpuRenderTarget {
             texture,

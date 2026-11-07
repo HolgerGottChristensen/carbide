@@ -9,6 +9,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
+use carbide_wgpu_core::WgpuContextNew;
 use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
 use carbide_winit::update_scale_factor;
 use carbide_winit::window::{Theme, WindowAttributes};
@@ -87,28 +88,31 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 let size = window.inner_size();
                 let scale_factor = window.scale_factor();
 
-                let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
+                let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>();
 
-                let surface = wgpu_context.instance
+                let wgpu_context = wgpu_context.unwrap();
+                let wgpu_context_new = wgpu_context_new.unwrap();
+
+                let surface = wgpu_context_new.instance
                     .create_surface(window.clone())
                     .unwrap();
 
                 let surface_configuration = surface.get_default_config(
-                    &wgpu_context.adapter,
+                    &wgpu_context_new.adapter,
                     window.inner_size().width,
                     window.inner_size().height
                 ).unwrap();
 
                 // Configure the surface with format, size and usage
                 surface.configure(
-                    &wgpu_context.device,
+                    &wgpu_context_new.device,
                     &surface_configuration,
                 );
 
                 info!("{:#?}", surface_configuration);
 
                 let final_render_pipeline = create_final_render_pipeline(
-                    &wgpu_context.device,
+                    &wgpu_context_new.device,
                     &wgpu_context.texture_bind_group_layout,
                     &wgpu_context.final_render_shader_srgb,
                     &wgpu_context.final_render_shader_linear,

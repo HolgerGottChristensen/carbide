@@ -1,5 +1,5 @@
 use wgpu::{BindGroupLayout, BlendState, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, FragmentState, FrontFace, MultisampleState, PipelineLayout, PrimitiveState, PrimitiveTopology, RenderPipeline, ShaderModule, StencilFaceState, StencilOperation, TextureFormat, VertexState};
-
+use carbide_wgpu_core::WgpuContextNew;
 use crate::wgpu_msaa::WgpuMsaa;
 use crate::wgpu_vertex::WgpuVertex;
 use crate::wgpu_context::WgpuContext;
@@ -61,9 +61,9 @@ pub(crate) enum MaskType {
     RemoveMask,
 }
 
-pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: WgpuMsaa) -> RenderPipelines {
+pub(crate) fn create_pipelines(wgpu_context_new: &WgpuContextNew, wgpu_context: &WgpuContext, preferred_format: TextureFormat, msaa: WgpuMsaa) -> RenderPipelines {
     let render_pipeline_no_mask = create_render_pipeline(
-        &wgpu_context.device,
+        &wgpu_context_new.device,
         &wgpu_context.main_pipeline_layout,
         &wgpu_context.main_shader,
         preferred_format,
@@ -72,7 +72,7 @@ pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: Tex
     );
 
     let render_pipeline_add_mask = create_render_pipeline(
-        &wgpu_context.device,
+        &wgpu_context_new.device,
         &wgpu_context.main_pipeline_layout,
         &wgpu_context.main_shader,
         preferred_format,
@@ -81,7 +81,7 @@ pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: Tex
     );
 
     let render_pipeline_in_mask = create_render_pipeline(
-        &wgpu_context.device,
+        &wgpu_context_new.device,
         &wgpu_context.main_pipeline_layout,
         &wgpu_context.main_shader,
         preferred_format,
@@ -90,7 +90,7 @@ pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: Tex
     );
 
     let render_pipeline_remove_mask = create_render_pipeline(
-        &wgpu_context.device,
+        &wgpu_context_new.device,
         &wgpu_context.main_pipeline_layout,
         &wgpu_context.main_shader,
         preferred_format,
@@ -99,7 +99,7 @@ pub(crate) fn create_pipelines(wgpu_context: &WgpuContext, preferred_format: Tex
     );
 
     let render_pipeline_in_mask_filter = create_render_pipeline(
-        &wgpu_context.device,
+        &wgpu_context_new.device,
         &wgpu_context.filter_pipeline_layout,
         &wgpu_context.filter_shader,
         preferred_format,

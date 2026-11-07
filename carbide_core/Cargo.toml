@@ -38,6 +38,7 @@ smallvec.workspace = true
 url.workspace = true
 web-time.workspace = true
 dashmap.workspace = true
+inventory.workspace = true
 
 accesskit.workspace = true
 image.workspace = true

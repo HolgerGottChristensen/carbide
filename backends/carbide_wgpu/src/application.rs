@@ -10,7 +10,7 @@ use std::sync::{Arc, OnceLock};
 use log::info;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
-
+use carbide::plugin::register_plugins;
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
@@ -166,13 +166,15 @@ impl Application {
             id,
             scenes,
             event_handler,
-            environment,
+            mut environment,
             text_context,
             event_loop,
             event_sink
         } = application;
 
-        let wgpu_context = WgpuContext::new().await;
+        register_plugins(&mut environment).await;
+
+        let wgpu_context = WgpuContext::new(&mut environment).await;
 
         let mut running = RunningApplication {
             id,
@@ -304,15 +306,13 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
                     env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                        env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                            self.event_handler.resumed_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                        self.event_handler.resumed_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
 
-                            for scene in &mut self.scenes {
-                                scene.process_initialization(&mut InitializationContext {
-                                    env,
-                                });
-                            }
-                        })
+                        for scene in &mut self.scenes {
+                            scene.process_initialization(&mut InitializationContext {
+                                env,
+                            });
+                        }
                     })
                 })
             })

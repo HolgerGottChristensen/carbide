@@ -1,21 +1,15 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use wgpu::{Adapter, Device, Instance, LoadOp, Operations, Queue, StoreOp};
+use wgpu::{LoadOp, Operations, StoreOp};
 
-// The `#[derive(Widget)]` macro expands to hardcoded `carbide::...` paths (matching the
-// convention used by `carbide_core` itself via `extern crate self as carbide;`, and by
-// `carbide_controls` the same way) — this alias is what makes that derive usable in
-// `testing::test_scene`.
-#[cfg(feature = "testing")]
 extern crate carbide_core as carbide;
+extern crate carbide_wgpu_core;
 
 pub use application::Application;
-use carbide_core::draw::ImageId;
+use carbide::environment::EnvironmentKey;
 pub use wgpu_render_target::WgpuRenderTarget;
 pub use window::Window;
 
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
-use crate::image_context::BindGroupExtended;
+
 pub use wgpu_context::*;
 
 mod bind_group_layouts;

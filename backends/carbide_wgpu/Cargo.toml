@@ -24,6 +24,7 @@ carbide_lyon = { path = "../carbide_lyon" }
 carbide_controls = { path = "../../carbide_controls", optional = true }
 carbide_cosmic_text = { path = "../carbide_cosmic_text" }
 carbide_icons = { workspace = true, optional = true }
+carbide_wgpu_core.workspace = true
 log = "0.4"
 wgpu.workspace = true
 futures.workspace = true

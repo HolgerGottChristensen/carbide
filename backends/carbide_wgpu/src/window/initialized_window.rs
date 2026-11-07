@@ -16,6 +16,7 @@ use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
 use carbide_winit::WindowHandleKey;
 use std::sync::Arc;
 use wgpu::{RenderPipeline, Surface, SurfaceConfiguration};
+use carbide_wgpu_core::WgpuContextNew;
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) id: SceneId,
@@ -88,7 +89,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let mut screenshot_requests = std::mem::take(scene_manager.screenshot_requests());
         if !screenshot_requests.is_empty() {
-            let wgpu_context = env.get_mut::<WgpuContext>()
+            let wgpu_context = env.get_mut::<WgpuContextNew>()
                 .expect("WgpuContext is in scope at every call site that reaches InitializedWindow::with_env");
             let image = crate::screenshot::capture_texture_to_image(
                 &wgpu_context.device,

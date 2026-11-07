@@ -13,7 +13,9 @@ use carbide_core::widget::Widget;
 use carbide_winit::convert_mouse_cursor;
 use carbide_winit::dpi::PhysicalSize;
 use log::info;
+use carbide::environment::Mut;
 use carbide_core::environment::Environment;
+use carbide_wgpu_core::WgpuContextNew;
 use crate::wgpu_context::WgpuContext;
 
 impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
@@ -102,14 +104,17 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let render_passes = render_passes.expect("with_env always runs its closure exactly once");
 
-        let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
+        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
+
+        let wgpu_context = wgpu_context.unwrap();
+        let wgpu_context_new = wgpu_context_new.unwrap();
 
         if self.visible {
             let cursor = convert_mouse_cursor(self.mouse_cursor);
             self.inner.set_cursor(cursor);
             self.mouse_cursor = MouseCursor::Default;
 
-            match self.render_inner(render_passes, ctx.text, scale_factor, wgpu_context) {
+            match self.render_inner(render_passes, ctx.text, scale_factor, wgpu_context, wgpu_context_new) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {
@@ -167,8 +172,9 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         ctx: &mut dyn TextContext,
         scale_factor: Scalar,
         wgpu_context: &mut WgpuContext,
+        wgpu_context_new: &WgpuContextNew,
     ) -> Result<(), wgpu::SurfaceError> {
-        let mut encoder = wgpu_context.device
+        let mut encoder = wgpu_context_new.device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("carbide_command_encoder"),
             });
@@ -180,7 +186,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.offscreen.execute_render_passes(render_passes, scale_factor, ctx, wgpu_context, &mut encoder);
+        self.offscreen.execute_render_passes(render_passes, scale_factor, ctx, wgpu_context, wgpu_context_new, &mut encoder);
 
         // Render from the texture to the swap chain
         self.render_final_texture_to_swapchain(
@@ -189,7 +195,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         );
 
         // submit will accept anything that implements IntoIter
-        wgpu_context.queue.submit(Some(encoder.finish()));
+        wgpu_context_new.queue.submit(Some(encoder.finish()));
 
         self.inner.pre_present_notify();
 
@@ -207,10 +213,13 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         info!("{:#?}", self.surface_configuration);
 
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>();
+
+        let wgpu_context = wgpu_context.unwrap();
+        let wgpu_context_new = wgpu_context_new.unwrap();
 
         self.surface.configure(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &self.surface_configuration,
         );
     }

@@ -1,0 +1,15 @@
+[package]
+name = "carbide_wgpu_core"
+description = "A crate used to create and manage the shared parts of the 2d and 3d wgpu backends"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+
+[dependencies]
+carbide_core = { path = "../../carbide_core" }
+wgpu.workspace = true
+futures.workspace = true
+log = "0.4"

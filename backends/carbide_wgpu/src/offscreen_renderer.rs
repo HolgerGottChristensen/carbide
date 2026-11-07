@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 use typed_arena::Arena;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, Queue, RenderPassDepthStencilAttachment, TexelCopyTextureInfo, Texture};
-
+use carbide::environment::Mut;
 use carbide_core::draw::color_space::ColorSpace;
 use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 use carbide_core::draw::{Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
@@ -13,6 +13,7 @@ use carbide_core::math::Matrix4;
 use carbide_core::render::RenderContext;
 use carbide_core::text::TextContext;
 use carbide_core::widget::{AnyWidget, FilterId};
+use carbide_wgpu_core::WgpuContextNew;
 use carbide_winit::dpi::PhysicalSize;
 
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
@@ -70,9 +71,11 @@ impl OffscreenRenderer {
         };
         let gradient = WgpuGradient::convert(&gradient);
 
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
+        let wgpu_context = wgpu_context.unwrap();
+        let wgpu_context_new = wgpu_context_new.unwrap();
 
-        let gradient_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
+        let gradient_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_gradient_buffer"),
             contents: &*gradient.as_bytes(),
             usage: BufferUsages::STORAGE,
@@ -87,21 +90,21 @@ impl OffscreenRenderer {
             dash_offset: 0.0,
         };
 
-        let dashes_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
+        let dashes_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_dashes_buffer"),
             contents: &*dashes.as_bytes(),
             usage: BufferUsages::STORAGE,
         });
 
         let gradient_dashed_bind_group = gradient_dashes_bind_group(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &wgpu_context.gradient_buffer_bind_group_layout,
             &gradient_buffer,
             &dashes_buffer,
         );
 
         let uniform_bind_group = uniforms_to_bind_group(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &wgpu_context.uniform_bind_group_layout,
             matrix,
             0.0,
@@ -111,7 +114,7 @@ impl OffscreenRenderer {
         );
 
         let texture_size_bind_group = size_to_uniform_bind_group(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &wgpu_context.uniform_bind_group_layout2,
             pixel_dimensions.width,
             pixel_dimensions.height,
@@ -119,11 +122,11 @@ impl OffscreenRenderer {
         );
 
         if !wgpu_context.pipelines.contains_key(&RENDER_TARGET_FORMAT) {
-            let pipeline = create_pipelines(wgpu_context, RENDER_TARGET_FORMAT, msaa);
+            let pipeline = create_pipelines(wgpu_context_new, wgpu_context, RENDER_TARGET_FORMAT, msaa);
             wgpu_context.pipelines.insert(RENDER_TARGET_FORMAT, pipeline);
         }
 
-        let vertex_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
+        let vertex_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_primary_vertex_buffer"),
             contents: &[],
             usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
@@ -196,21 +199,22 @@ impl OffscreenRenderer {
         scale_factor: Scalar,
         text: &mut dyn TextContext,
         wgpu_context: &mut WgpuContext,
+        wgpu_context_new: &WgpuContextNew,
         encoder: &mut CommandEncoder,
     ) {
         let mut uniform_bind_groups = vec![];
 
-        Self::ensure_vertices_in_buffer(&wgpu_context.device, &wgpu_context.queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
-        Self::ensure_uniforms_in_buffer(&wgpu_context.device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &wgpu_context.uniform_bind_group_layout, &mut uniform_bind_groups);
+        Self::ensure_vertices_in_buffer(&wgpu_context_new.device, &wgpu_context_new.queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
+        Self::ensure_uniforms_in_buffer(&wgpu_context_new.device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &wgpu_context.uniform_bind_group_layout, &mut uniform_bind_groups);
 
-        Self::update_atlas_cache(&wgpu_context.device, encoder, text, &wgpu_context.atlas_cache_texture);
-        self.update_filter_bind_groups(self.size, wgpu_context);
+        Self::update_atlas_cache(&wgpu_context_new.device, encoder, text, &wgpu_context.atlas_cache_texture);
+        self.update_filter_bind_groups(self.size, wgpu_context_new, wgpu_context);
 
         let pipelines = &*wgpu_context.pipelines.get(&RENDER_TARGET_FORMAT).unwrap();
 
         self.process_render_passes(
             render_passes,
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             encoder,
             pipelines,
             &wgpu_context.bind_groups,
@@ -228,8 +232,8 @@ impl OffscreenRenderer {
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
         let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
-        let wgpu_context = ctx.env.get_mut::<WgpuContext>().unwrap();
-        self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context, encoder);
+        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(Mut<WgpuContext>, Mut<WgpuContextNew>)>();
+        self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context.unwrap(), wgpu_context_new.unwrap(), encoder);
     }
 
     pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>, scale_factor: Scalar, env: &mut Environment) {
@@ -239,10 +243,12 @@ impl OffscreenRenderer {
             WgpuRenderTarget::new(new_size.width, new_size.height, self.msaa, env)
         ];
 
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
+        let wgpu_context = wgpu_context.unwrap();
+        let wgpu_context_new = wgpu_context_new.unwrap();
 
         self.texture_size_bind_group = size_to_uniform_bind_group(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &wgpu_context.uniform_bind_group_layout2,
             new_size.width as f64,
             new_size.height as f64,
@@ -254,7 +260,7 @@ impl OffscreenRenderer {
         self.carbide_to_wgpu_matrix = calculate_carbide_to_wgpu_matrix(dimension, scale_factor);
 
         self.uniform_bind_group = uniforms_to_bind_group(
-            &wgpu_context.device,
+            &wgpu_context_new.device,
             &wgpu_context.uniform_bind_group_layout,
             self.carbide_to_wgpu_matrix,
             0.0,
@@ -277,7 +283,7 @@ impl OffscreenRenderer {
         });
     }
 
-    fn update_filter_bind_groups(&self, size: PhysicalSize<u32>, wgpu_context: &mut WgpuContext) {
+    fn update_filter_bind_groups(&self, size: PhysicalSize<u32>, wgpu_context_new: &WgpuContextNew, wgpu_context: &mut WgpuContext) {
         let filters = self.render_context.filters();
 
         wgpu_context.filter_bind_groups.retain(|id, _| filters.contains_key(id));
@@ -306,14 +312,14 @@ impl OffscreenRenderer {
 
                 filter.texture_size = [texture_size.0, texture_size.1];
 
-                let filter_buffer = wgpu_context.device.create_buffer_init(&BufferInitDescriptor {
+                let filter_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("Filter Buffer"),
                     contents: &*filter.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
 
                 let filter_buffer_bind_group = filter_buffer_bind_group(
-                    &wgpu_context.device,
+                    &wgpu_context_new.device,
                     &wgpu_context.filter_buffer_bind_group_layout,
                     &filter_buffer,
                 );

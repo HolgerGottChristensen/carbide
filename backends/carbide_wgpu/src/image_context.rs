@@ -3,6 +3,7 @@ use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, ImageMet
 use wgpu::{BindGroup, BindGroupLayout, Device, Queue};
 use carbide_core::environment::Environment;
 use carbide_core::render::{RenderInstruction, RenderInstructionCache};
+use carbide_wgpu_core::WgpuContextNew;
 use crate::wgpu_context::WgpuContext;
 
 pub struct WGPUImageContext;
@@ -43,9 +44,13 @@ impl ImageContext for WGPUImageContext {
     }
 
     fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
+        let wgpu_context_new = env.get_mut::<WgpuContextNew>().unwrap();
+        let device = wgpu_context_new.device.clone();
+        let queue = wgpu_context_new.queue.clone();
+
         let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
 
-        let bind_group = create_bind_group(&wgpu_context.device, &wgpu_context.queue, texture, &wgpu_context.texture_bind_group_layout);
+        let bind_group = create_bind_group(&device, &queue, texture, &wgpu_context.texture_bind_group_layout);
         wgpu_context.bind_groups.insert(id.clone(), bind_group);
 
         true

@@ -1,6 +1,6 @@
-use std::any::{Any, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::hash::{BuildHasherDefault, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
@@ -60,9 +60,10 @@ pub trait EnvironmentKeyable: Debug + 'static {
     }
 }
 
+#[derive(Debug)]
 enum EnvironmentValue<'a> {
-    Value(&'a dyn AnyDebug),
-    ValueMut(&'a mut dyn AnyDebug)
+    Value(&'static str, &'a dyn AnyDebug),
+    ValueMut(&'static str, &'a mut dyn AnyDebug)
 }
 
 /// # Environment
@@ -95,7 +96,6 @@ pub struct Environment<'a> {
     _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
 }
 
-
 impl<'a> Environment<'a> {
     /// Create a new empty environment.
     /// The environment can only be used in the thread it was created.
@@ -117,8 +117,8 @@ impl<'a> Environment<'a> {
 
         Option::map(self.data.get(&id), |value| {
             match value {
-                EnvironmentValue::Value(value1) => value1.downcast_ref(),
-                EnvironmentValue::ValueMut(value2) => value2.downcast_ref(),
+                EnvironmentValue::Value(_, value1) => value1.downcast_ref(),
+                EnvironmentValue::ValueMut(_, value2) => value2.downcast_ref(),
             }
         }).flatten()
     }
@@ -137,14 +137,35 @@ impl<'a> Environment<'a> {
 
         Option::map(self.data.get_mut(&id), |value| {
             match value {
-                EnvironmentValue::Value(_) => None,
-                EnvironmentValue::ValueMut(value2) => value2.downcast_mut(),
+                EnvironmentValue::Value(_, _) => None,
+                EnvironmentValue::ValueMut(_, value2) => value2.downcast_mut(),
             }
         }).flatten()
     }
 
     pub fn value<K: EnvironmentKeyable>(&self, key: &K) -> Option<K::Output> {
         key.get(self)
+    }
+}
+
+/// Restores the previous value for `id` (or removes the entry) when dropped,
+/// including during unwinding.
+struct RestoreGuard<'b> {
+    env: &'b mut Environment<'b>,
+    id: TypeId,
+    old: Option<EnvironmentValue<'b>>,
+}
+
+impl<'b> Drop for RestoreGuard<'b> {
+    fn drop(&mut self) {
+        match self.old.take() {
+            Some(old) => {
+                self.env.data.insert(self.id, old);
+            }
+            None => {
+                self.env.data.remove(&self.id);
+            }
+        }
     }
 }
 
@@ -164,15 +185,11 @@ impl<'a> Environment<'a> {
         // and thus making sure it does not escape.
         let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
-        transmuted.data.insert(id, EnvironmentValue::Value(v));
+        transmuted.data.insert(id, EnvironmentValue::Value(type_name::<K>(), v));
 
-        f(transmuted);
-
-        if let Some(old) = old {
-            transmuted.data.insert(id, old);
-        } else {
-            transmuted.data.remove(&id);
-        }
+        let mut guard = RestoreGuard { env: transmuted, id, old };
+        f(&mut *guard.env);
+        // `guard` drops here (or during unwinding) and restores the map.
     }
 
     #[allow(unsafe_code)]
@@ -190,15 +207,11 @@ impl<'a> Environment<'a> {
         // and thus making sure it does not escape.
         let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
-        transmuted.data.insert(id, EnvironmentValue::ValueMut(v));
+        transmuted.data.insert(id, EnvironmentValue::ValueMut(type_name::<K>(), v));
 
-        f(transmuted);
-
-        if let Some(old) = old {
-            transmuted.data.insert(id, old);
-        } else {
-            transmuted.data.remove(&id);
-        }
+        let mut guard = RestoreGuard { env: transmuted, id, old };
+        f(&mut *guard.env);
+        // `guard` drops here (or during unwinding) and restores the map.
     }
 }
 
@@ -209,28 +222,93 @@ impl Environment<'static> {
     pub fn insert<K: EnvironmentKey + ?Sized>(&mut self, v: &'static K::Value) {
         let id = TypeId::of::<K>();
 
-        self.data.insert(id, EnvironmentValue::Value(v));
+        self.data.insert(id, EnvironmentValue::Value(type_name::<K>(), v));
+    }
+
+    pub fn insert_mut<K: EnvironmentKey + ?Sized>(&mut self, v: &'static mut K::Value) {
+        let id = TypeId::of::<K>();
+
+        self.data.insert(id, EnvironmentValue::ValueMut(type_name::<K>(), v));
     }
 }
 
 impl<'a> Environment<'a> {
 
-    pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, _f: impl FnOnce(&K::Value, &mut Environment)) {
-        /*let id = TypeId::of::<K>();
+    /// Take a value from the environment, and call the provided function with the value and the remaining environment.
+    ///
+    /// This is useful in two scenarios:
+    /// 1. If the environment contains a type with a method that needs to be called with an environment.
+    /// This could for example be a factory method that constructs a type, but needs other parts of the
+    /// environment for the construction. Alternatively you can use get_many and extract the exact types
+    /// you depend upon, and narrow the constructor of your type.
+    /// 2. If you need to remove some values from the environment before letting it be used by a descendent.
+    /// This is additional to possible shadowing, but instead of providing a shadowing value, the environment value
+    /// with the key is empty.
+    pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(Option<&K::Value>, &mut Environment)) {
+        let id = TypeId::of::<K>();
 
         let value = self.data.remove(&id);
 
-        if let Some(inner) = value {
-            if let Some(inner_inner) = inner.downcast_ref() {
-                f(inner_inner, self);
+        let mapped = Option::map(value.as_ref(), |value| {
+            match value {
+                EnvironmentValue::Value(_, value1) => value1.downcast_ref(),
+                EnvironmentValue::ValueMut(_, value2) => value2.downcast_ref(),
             }
-        }
+        }).flatten();
+
+        f(mapped, self);
+
+        // TODO: Add drop guard to handle panic unwinds
 
         if let Some(val) = value {
             self.data.insert(id, val);
-        }*/
+        }
+    }
 
-        todo!()
+    pub fn extract_mut<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(Option<&mut K::Value>, &mut Environment)) {
+        let id = TypeId::of::<K>();
+
+        let mut value = self.data.remove(&id);
+
+        let mapped = Option::map(value.as_mut(), |value| {
+            match value {
+                EnvironmentValue::Value(_, _) => None,
+                EnvironmentValue::ValueMut(_, value2) => value2.downcast_mut(),
+            }
+        }).flatten();
+
+        f(mapped, self);
+
+        // TODO: Add drop guard to handle panic unwinds
+
+        if let Some(val) = value {
+            self.data.insert(id, val);
+        }
+    }
+}
+
+impl<'a> Debug for Environment<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut debug = f.debug_struct(type_name::<Environment<'a>>());
+
+        for (_, val) in &self.data {
+            match val {
+                EnvironmentValue::Value(name, val) => {
+                    debug.field(&format!("'{name}'"), *val);
+                }
+                EnvironmentValue::ValueMut(name, val) => {
+                    debug.field(&format!("mut '{name}'"), *val);
+                }
+            }
+        }
+
+        debug.finish()
+    }
+}
+
+impl<'a> Environment<'a> {
+    pub fn get_many<K: GetMany>(&mut self) -> K::Output<'_> {
+        K::get(self)
     }
 }
 
@@ -253,14 +331,108 @@ impl Hasher for TypeIdHasher {
     }
 }
 
+pub trait GetMany {
+    type Output<'a>;
+
+    fn get<'a>(env: &'a mut Environment) -> Self::Output<'a>;
+}
+
+pub trait GetManyAccess {
+    type Value<'a>;
+    type Key: EnvironmentKey;
+
+    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>>;
+}
+
+pub struct Mut<T>(PhantomData<T>) where T: EnvironmentKey;
+
+impl<T: EnvironmentKey> GetManyAccess for T {
+    type Value<'a> = &'a T::Value;
+    type Key = T;
+
+    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>> {
+        let value: &'a EnvironmentValue<'e> = value;
+        match value {
+            EnvironmentValue::Value(_, v) => v.downcast_ref::<T::Value>(),
+            EnvironmentValue::ValueMut(_, v) => v.downcast_ref::<T::Value>(),
+        }
+    }
+}
+
+impl<T: EnvironmentKey> GetManyAccess for Mut<T> {
+    type Value<'a> = &'a mut T::Value;
+    type Key = T;
+
+    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>> {
+        match value {
+            EnvironmentValue::Value(_, _) => None,
+            EnvironmentValue::ValueMut(_, v) => v.downcast_mut::<T::Value>(),
+        }
+    }
+}
+
+impl<K1: GetManyAccess> GetMany for K1 {
+    type Output<'a> = Option<K1::Value<'a>>;
+
+    fn get<'a>(env: &'a mut Environment) -> Self::Output<'a> {
+        let t1 = TypeId::of::<K1::Key>();
+
+        let [res] = env.data.get_disjoint_mut([&t1]);
+
+        Option::map(res, K1::extract).flatten()
+    }
+}
+
+// TODO: It is currently not possible to assert K1::Key and K2::Key are distinct types at compile time #143800 (const_cmp)
+macro_rules! impl_get_many {
+    ($(($($K:ident),+)),+ $(,)?) => {
+        $(
+            #[allow(non_snake_case)]
+            impl<$($K: GetManyAccess),+> GetMany for ($($K,)+) {
+                type Output<'a> = ($(Option<$K::Value<'a>>,)+);
+
+                fn get<'a>(env: &'a mut Environment) -> Self::Output<'a> {
+                    // Lowercase-free trick: reuse the type idents as local variable names.
+                    // Locals and types are in separate namespaces, so this compiles.
+                    $(let $K = TypeId::of::<$K::Key>();)+
+
+                    let [$($K),+] = env.data.get_disjoint_mut([$(&$K),+]);
+
+                    ($(Option::map($K, $K::extract).flatten(),)+)
+                }
+            }
+        )+
+    };
+}
+
+impl_get_many! {
+    (K1),
+    (K1, K2),
+    (K1, K2, K3),
+    (K1, K2, K3, K4),
+    (K1, K2, K3, K4, K5),
+    (K1, K2, K3, K4, K5, K6),
+    (K1, K2, K3, K4, K5, K6, K7),
+    (K1, K2, K3, K4, K5, K6, K7, K8),
+    (K1, K2, K3, K4, K5, K6, K7, K8, K9),
+    (K1, K2, K3, K4, K5, K6, K7, K8, K9, K10),
+    (K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11),
+    (K1, K2, K3, K4, K5, K6, K7, K8, K9, K10, K11, K12),
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::environment::environment::{EnvironmentKey, Environment};
+    use crate::environment::environment::{EnvironmentKey, Environment, Mut};
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey;
 
     impl EnvironmentKey for TestKey { type Value = u64; }
+
+    #[derive(Copy, Clone, Debug)]
+    struct TestKey2;
+
+    impl EnvironmentKey for TestKey2 { type Value = u64; }
 
     #[test]
     fn simple() {
@@ -273,5 +445,22 @@ mod tests {
 
         let get = map.get::<TestKey>();
         println!("{:?}", get);
+    }
+
+    #[test]
+    fn many() {
+        let mut map = Environment::new();
+
+        map.with::<TestKey>(&42, |inner| {
+            inner.with_mut::<TestKey2>(&mut 69, |inner| {
+                let f = inner.get_many::<(TestKey, Mut<TestKey2>)>();
+
+                println!("{:?}", f)
+            });
+
+            let f = inner.get_many::<(TestKey, Mut<TestKey2>)>();
+
+            println!("{:?}", f)
+        });
     }
 }
