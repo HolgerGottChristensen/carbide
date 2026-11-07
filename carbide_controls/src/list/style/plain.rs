@@ -2,7 +2,6 @@ use carbide::draw::Scalar;
 use crate::list::row_delegate::{RowDelegate, SelectableRowDelegate};
 use crate::list::style::ListStyle;
 use carbide::widget::{AnySequence, AnyWidget, LazyVStack, Scroll, WidgetExt};
-use crate::identifiable::AnySelectableWidget;
 
 #[derive(Copy, Clone, Debug)]
 pub struct PlainStyle(pub Scalar);

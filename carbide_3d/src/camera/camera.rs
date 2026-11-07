@@ -1,8 +1,5 @@
 use crate::camera::camera_projection::CameraProjection;
 use std::fmt::Debug;
-use carbide_core::time::Instant;
-use dyn_clone::{clone_trait_object, DynClone};
-use carbide::environment::Environment;
 use carbide::event::EventHandler;
 use carbide::lifecycle::Update;
 use carbide::math::{Deg, Matrix4, Rad, Vector4};

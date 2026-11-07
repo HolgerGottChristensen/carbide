@@ -1,4 +1,4 @@
-use carbide::color::{ColorExt, BLUE, BROWN, DARK_GREEN, DARK_ORANGE, DARK_PURPLE, DARK_YELLOW, RED, WHITE};
+use carbide::color::{ColorExt, BLUE, DARK_GREEN, DARK_ORANGE, DARK_PURPLE, DARK_YELLOW, RED, WHITE};
 use carbide::draw::{Dimension, DrawStyle, Scalar};
 use carbide::state::{LocalState, ReadState, State};
 use crate::cell::{Cell, CellSelection, ResizeHandles};

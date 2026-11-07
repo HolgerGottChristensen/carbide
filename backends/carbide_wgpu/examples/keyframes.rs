@@ -1,7 +1,6 @@
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::{capture, ControlsExt};
-use carbide_core::animation::{bounce_in_out, ease_in_out, elastic_in_out, AnimationManager};
-use carbide_core::animation::{bounce_out};
+use carbide_core::animation::{ease_in_out, AnimationManager};
 use carbide_core::animation::keyframes::{Keyframes, Repeat, TimelineController, Tracks};
 use carbide_core::color::{Color, BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;

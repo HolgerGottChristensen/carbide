@@ -3,7 +3,7 @@ use carbide::environment::{Environment, EnvironmentColor, IntoColorReadState};
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{AnyReadState, AnyState, Map1, Map2, ReadState, State};
 use carbide::text::text_wrap::Wrap;
-use carbide::widget::{AnyWidget, CornerRadii, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, Rectangle, RoundedRectangle, WidgetExt, ZStack};
+use carbide::widget::{AnyWidget, CornerRadii, HStack, IfElse, MouseArea, MouseAreaAction, MouseAreaActionContext, RoundedRectangle, WidgetExt, ZStack};
 use carbide_dialogs::color_dialog::ColorDialog;
 use crate::color_picker::style::ColorPickerStyle;
 use crate::UnfocusAction;

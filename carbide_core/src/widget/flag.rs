@@ -7,7 +7,7 @@ use crate::state::IntoReadState;
 use crate::widget::{Empty, IntoWidget, Widget, WidgetId};
 use crate::CommonWidgetImpl;
 use crate::identifiable::Identifiable;
-use crate::widget::properties::{Kind, WidgetKindDynamic};
+use crate::widget::properties::WidgetKindDynamic;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Properties)]

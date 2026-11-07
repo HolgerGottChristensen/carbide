@@ -3,7 +3,6 @@ use chrono::{Local, Timelike};
 
 use carbide::color::{Color, ColorExt, WHITE};
 use carbide::draw::{Dimension, Position};
-use carbide::environment::*;
 use carbide::widget::canvas::*;
 use carbide::widget::*;
 use carbide::{Application, Window};

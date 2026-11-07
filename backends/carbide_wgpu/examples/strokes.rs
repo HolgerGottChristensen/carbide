@@ -2,7 +2,6 @@ use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::{Alignment, Dimension, Position};
 use carbide_core::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
-use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 use carbide_core::time::*;
 use carbide_core::draw::gradient::Gradient;

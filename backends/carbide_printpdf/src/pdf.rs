@@ -1,6 +1,5 @@
 use printpdf::{Mm, PdfDocumentReference, PdfLayerIndex, PdfPageIndex, Point};
 use carbide_core::draw::{Dimension, Position};
-use carbide_core::render::Render;
 use carbide_core::widget::AnyWidget;
 
 pub struct Pdf {

@@ -1,5 +1,4 @@
-use carbide_controls::{ControlsExt, List};
-use carbide_controls::list::PlainStyle;
+use carbide_controls::List;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1};

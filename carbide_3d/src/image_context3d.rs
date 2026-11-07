@@ -2,7 +2,7 @@ use carbide::draw::{ImageId, Texture};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use carbide::any_debug::AnyDebug;
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::Environment;
 
 pub trait InnerImageContext3d: AnyDebug + DynClone + 'static {
     fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool;

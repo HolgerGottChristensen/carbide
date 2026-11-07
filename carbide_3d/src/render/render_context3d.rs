@@ -1,13 +1,9 @@
-use std::any::{Any, TypeId};
-use crate::camera::{Camera, CameraSpec};
-use crate::image_context3d::InnerImageContext3d;
+use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::mesh::Mesh;
 use carbide::draw::Color;
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::Environment;
 use carbide::render::Layer;
-use dyn_clone::DynClone;
-use std::fmt::Debug;
 use carbide::math::{Matrix4, Vector3};
 use crate::render::InnerRenderContext3d;
 

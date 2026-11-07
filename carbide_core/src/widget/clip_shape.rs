@@ -5,7 +5,6 @@ use crate::environment::Environment;
 use crate::render::{InnerRenderContext, Layer, LayerId};
 use crate::text::{TextContext, TextId};
 use crate::widget::ImageFilter;
-use carbide_macro::carbide_default_builder2;
 use cgmath::Matrix4;
 use carbide::text::TextStyle;
 use crate::draw::{Alignment, CompositeDrawShape, Dimension, Position};

@@ -1,4 +1,4 @@
-use carbide_controls::picker::{InlineStyle, MenuStyle, Picker, SegmentedStyle};
+use carbide_controls::picker::{MenuStyle, Picker};
 use carbide_controls::ControlsExt;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, StateValue};

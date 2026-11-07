@@ -1,17 +1,14 @@
-use std::any::{Any, TypeId};
 use std::fmt::Debug;
-use std::iter::Map;
-use dyn_clone::{clone_trait_object, DynClone};
+use dyn_clone::clone_trait_object;
 use carbide::automatic_style::AutomaticStyle;
 use carbide::color::Color;
 use carbide::environment::{EnvironmentColor, EnvironmentKey};
-use carbide::focus::Focus;
 use carbide::state::AnyReadState;
 use carbide::widget::{AnyWidget, Capsule, Rectangle};
 use crate::draw::DebugStyle;
 use crate::environment::Shared;
 use crate::state::Map2;
-use crate::widget::{IfElse, Widget, WidgetExt, WidgetStyle};
+use crate::widget::{IfElse, WidgetExt, WidgetStyle};
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct VerticalScrollBarStyleKey;

@@ -1,6 +1,5 @@
 use crate::application::Scenes;
 use crate::offscreen_renderer::OffscreenRenderer;
-use crate::wgpu_context::WgpuContext;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;

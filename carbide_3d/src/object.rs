@@ -1,4 +1,4 @@
-use carbide::math::{Deg, Euler, Matrix4, SquareMatrix};
+use carbide::math::{Matrix4, SquareMatrix};
 use crate::material::Material;
 use crate::mesh::Mesh;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};

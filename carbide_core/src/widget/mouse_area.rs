@@ -7,7 +7,6 @@ use crate::environment::Environment;
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, OtherEventContext};
 use crate::scene::SceneManager;
 use crate::widget::WidgetSync;
-use carbide_macro::carbide_default_builder2;
 use crate::accessibility::{Accessibility, AccessibilityAction};
 use crate::CommonWidgetImpl;
 use crate::common::cursor::MouseCursor;

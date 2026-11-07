@@ -1,5 +1,4 @@
 use smallvec::SmallVec;
-use carbide::environment::Shared;
 use crate::draw::Dimension;
 use crate::environment::{EnvironmentKey, Exclusive};
 use crate::scene::{AnyScene, Scene, SceneId};

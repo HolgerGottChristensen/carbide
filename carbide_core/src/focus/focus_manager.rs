@@ -1,4 +1,3 @@
-use carbide::environment::Shared;
 use crate::environment::{Environment, EnvironmentKey, Exclusive};
 use crate::focus::Refocus;
 

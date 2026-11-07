@@ -1,7 +1,6 @@
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::widget::AnyWidget;
 use carbide::widget::foreach_widget::Delegate;
-use crate::identifiable::AnySelectableWidget;
 use crate::list::list_row::AnyListRow;
 
 pub trait AnyRowDelegate: DynClone + 'static {

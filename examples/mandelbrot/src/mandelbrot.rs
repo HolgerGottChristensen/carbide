@@ -1,16 +1,13 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::mpsc::{channel, Receiver, TryRecvError};
 
 use num::complex::ComplexFloat;
 use num::{Complex, Zero};
-use uuid::Uuid;
-
 use carbide::asynchronous::get_event_sink;
 use carbide::color::ColorExt;
-use carbide::draw::{ImageFormat, ImageId, ImageMode, ImageOptions};
+use carbide::draw::{ImageFormat, ImageId, ImageMode};
 use carbide::draw::{Color, Dimension, Position, Rect, Scalar, Texture, TextureFormat};
 use carbide::event::{CoreEvent, ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::image::{DynamicImage, GenericImage, Rgba};

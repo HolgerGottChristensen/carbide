@@ -1,6 +1,6 @@
 use cgmath::Vector3;
 use carbide::draw::{ImageMetrics, Position};
-use carbide::render::{RenderInstruction, RenderInstructionValue, Style};
+use carbide::render::{RenderInstruction, RenderInstructionValue};
 use carbide::text::TextStyle;
 use crate::color::{Color, WHITE};
 use crate::draw::stroke::StrokeDashPattern;

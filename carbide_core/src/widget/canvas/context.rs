@@ -8,7 +8,7 @@ use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::text_wrap::Wrap;
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
+use crate::text::{FontStyle, FontWeight, TextDecoration, TextStyle};
 use crate::widget::ShapeStyle;
 use std::fmt::{Debug, Formatter};
 

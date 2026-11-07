@@ -1,5 +1,3 @@
-use std::ffi::OsStr;
-
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[non_exhaustive]
 pub enum ImageFormat {

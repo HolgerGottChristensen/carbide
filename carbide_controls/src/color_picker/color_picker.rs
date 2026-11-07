@@ -7,11 +7,9 @@ use carbide::draw::{Color, Dimension, Position};
 use carbide::environment::Environment;
 use carbide::flags::WidgetFlag;
 use carbide::focus::Focus;
-use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{Action, AnyWidget, CommonWidget, Empty, IntoWidget, MouseArea, Rectangle, Widget, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Rectangle, Widget, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
 use carbide::widget::properties::WidgetKindSimple;
-use crate::button::{Button, ButtonStyleKey};
 use crate::color_picker::ColorPickerStyleKey;
 
 #[derive(Debug, Clone, Widget)]

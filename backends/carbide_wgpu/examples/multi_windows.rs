@@ -2,9 +2,9 @@ use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, State};
-use carbide_core::widget::{MouseArea, Rectangle, Text, WidgetExt};
+use carbide_core::widget::{Text, WidgetExt};
 use carbide_wgpu::{Application, Window};
 
 fn main() {

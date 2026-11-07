@@ -1,9 +1,8 @@
 use carbide::CommonWidgetImpl;
-use carbide::draw::{Alignment, Dimension, Position, Rect};
-use carbide::environment::EnvironmentColor::Green;
+use carbide::draw::{Dimension, Position, Rect};
 use carbide::layout::{Layout, LayoutContext};
 use carbide::render::{Render, RenderContext};
-use carbide::widget::{AnySequence, AnyWidget, CommonWidget, HStack, Rectangle, Sequence, Widget, WidgetExt, WidgetId, WidgetSync};
+use carbide::widget::{AnySequence, AnyWidget, CommonWidget, HStack, Sequence, Widget, WidgetExt, WidgetId};
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Layout, Render)]

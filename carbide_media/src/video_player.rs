@@ -2,7 +2,7 @@ use std::ops::Deref;
 use carbide_core::time::*;
 use carbide::color::ColorExt;
 use carbide::draw::Rect;
-use carbide::widget::{CrossAxisAlignment, WidgetSync};
+use carbide::widget::WidgetSync;
 
 use carbide_core::color::BLACK;
 use carbide_core::CommonWidgetImpl;

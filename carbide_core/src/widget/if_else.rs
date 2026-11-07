@@ -1,8 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use carbide::widget::properties::WidgetKind;
-use carbide_macro::carbide_default_builder2;
-
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
 use crate::state::ReadState;

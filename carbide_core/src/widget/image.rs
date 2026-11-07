@@ -2,7 +2,7 @@
 
 use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
-use crate::color::{rgb, rgb_bytes, BLUE};
+use crate::color::{rgb_bytes, BLUE};
 use crate::draw::path::PathInstruction;
 use crate::draw::pre_multiply::PreMultiply;
 use crate::draw::stroke::{LineCap, LineJoin, StrokeOptions};
@@ -12,7 +12,7 @@ use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, RenderInstruction, RenderInstructionValue, Style};
 use crate::scene::SceneManager;
-use crate::state::{IntoReadState, LocalState, ReadState, ReadStateExtNew};
+use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
 use crate::widget::types::ScaleMode;
 use crate::widget::{CommonWidget, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
@@ -24,9 +24,6 @@ use std::io::{BufReader, Read};
 use std::path::PathBuf;
 use std::sync::Arc;
 use cgmath::{Matrix4, Vector4};
-use gif::{ColorOutput, Decoder};
-use image::codecs::gif::GifDecoder;
-use image::ImageDecoder;
 use url::Url;
 use carbide::draw::ImageFormat;
 use crate::draw::fill::FillOptions;

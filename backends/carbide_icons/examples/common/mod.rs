@@ -1,12 +1,9 @@
 use copypasta::{ClipboardContext, ClipboardProvider};
-use carbide_core::animate;
-use carbide_core::animation::ease_in_out;
 use carbide_core::asynchronous::Timer;
-use carbide_core::color::BLACK;
 use carbide_core::draw::{Alignment, Dimension};
 use carbide_core::environment::EnvironmentColor::Green;
-use carbide_core::state::{GlobalState, LocalState, ReadStateExtTransition, State};
-use carbide_core::widget::{Blur, CrossAxisAlignment, ForEach, GridItem, Image, LazyVGrid, Rectangle, Scroll, Text, VStack, WidgetExt, ZStack};
+use carbide_core::state::{GlobalState, State};
+use carbide_core::widget::{CrossAxisAlignment, ForEach, GridItem, Image, LazyVGrid, Rectangle, Scroll, Text, VStack, WidgetExt, ZStack};
 use carbide_icons::all_icon_names;
 use carbide_wgpu::{Application, Window};
 

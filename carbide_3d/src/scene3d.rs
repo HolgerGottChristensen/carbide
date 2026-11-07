@@ -1,9 +1,7 @@
-use std::any::{Any, TypeId};
-use carbide::animation::AnimationManager;
+use std::any::TypeId;
 use carbide::draw::Rect;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler};
 use carbide::lifecycle::{Update, UpdateContext};
-use carbide::math::Matrix4;
 use carbide::render::{LayerId, RenderContext};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::Render;
@@ -12,7 +10,7 @@ use carbide_core::CommonWidgetImpl;
 
 use crate::camera::{Camera, OrbitCamera};
 use crate::node3d_sequence::Node3dSequence;
-use crate::render::{ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d};
+use crate::render::{InnerRenderContext3d, NoopRenderContext3d, RenderContext3d};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Update, KeyboardEvent)]

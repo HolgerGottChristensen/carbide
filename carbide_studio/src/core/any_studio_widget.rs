@@ -1,8 +1,6 @@
 use std::ops::Deref;
 use std::rc::Rc;
-use carbide::render::Style;
-use carbide::state::ReadState;
-use carbide::widget::{AnyWidget, Rectangle, VStack, WidgetExt};
+use carbide::widget::AnyWidget;
 
 pub trait AnyStudioWidget: AnyWidget {
     fn editor(&self) -> Box<dyn AnyWidget>;

@@ -1,8 +1,7 @@
-use carbide_controls::{PASSWORD_CHAR, PlainTextInput, ControlsExt, TextInput};
+use carbide_controls::{PASSWORD_CHAR, ControlsExt, TextInput};
 use carbide_controls::button::{BorderedProminentStyle, Button};
 use carbide_core::closure;
 use carbide_core::draw::Dimension;
-use carbide_core::environment::EnvironmentFontSize;
 use carbide_core::state::{LocalState, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};

@@ -1,4 +1,4 @@
-use crate::draw::{Dimension, ImageContext, Position, Scalar};
+use crate::draw::ImageContext;
 use crate::environment::{Environment};
 use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};

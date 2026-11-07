@@ -1,4 +1,3 @@
-use log::info;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
 use carbide_core::widget::*;

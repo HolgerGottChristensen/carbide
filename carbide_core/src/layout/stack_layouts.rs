@@ -2,7 +2,7 @@ use smallvec::{SmallVec, smallvec};
 use crate::draw::{Dimension, Position, Rect};
 use crate::common::flags::WidgetFlag;
 use crate::layout::{Layout, LayoutContext};
-use crate::widget::{CrossAxisAlignment, AnyWidget};
+use crate::widget::CrossAxisAlignment;
 
 pub(crate) fn calculate_size_vstack(
     widget: &mut dyn Layout,

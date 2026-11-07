@@ -1,6 +1,5 @@
 use std::any::TypeId;
 use std::pin::Pin;
-use futures::future::BoxFuture;
 use crate::environment::Environment;
 
 inventory::collect!(Plugin);

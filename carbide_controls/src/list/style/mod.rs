@@ -2,7 +2,7 @@ mod plain;
 mod inset;
 
 use dyn_clone::{clone_trait_object, DynClone};
-use carbide::draw::{AutomaticStyle, Scalar};
+use carbide::draw::AutomaticStyle;
 use carbide::environment::{EnvironmentKey, EnvironmentKeyDefault, Shared};
 use carbide::widget::{AnySequence, AnyWidget, Sequence, WidgetStyle};
 use carbide::widget::foreach_widget::Delegate;

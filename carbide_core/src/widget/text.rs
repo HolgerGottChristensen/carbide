@@ -11,7 +11,6 @@ use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
 use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use accesskit::{Node, Point, Rect, Role, Size};
-use carbide_macro::carbide_default_builder2;
 use std::fmt::Debug;
 use crate::CommonWidgetImpl;
 use crate::identifiable::Identifiable;

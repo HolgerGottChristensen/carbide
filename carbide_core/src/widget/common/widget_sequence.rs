@@ -1,8 +1,7 @@
-use std::any::type_name;
 use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
-use dyn_clone::{clone_box, clone_trait_object, DynClone};
-use crate::state::{AnyReadState, StateExtNew, ValueState};
+use std::ops::DerefMut;
+use dyn_clone::{clone_trait_object, DynClone};
+use crate::state::AnyReadState;
 use crate::state::{Map1, ReadStateExtNew};
 use crate::widget::{AnyWidget, Widget};
 

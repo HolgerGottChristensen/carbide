@@ -1,12 +1,8 @@
 use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::automatic_style::AutomaticStyle;
-use carbide::color::Color;
-use carbide::environment::{Environment, EnvironmentKey, Shared};
-use carbide::focus::Focus;
-use carbide::state::{AnyReadState, AnyState};
-use carbide::widget::{AnySequence, AnyWidget, Sequence};
-use crate::button::BorderedStyle;
+use carbide::environment::{EnvironmentKey, Shared};
+use carbide::widget::AnySequence;
 use crate::context_menu::menu_widget::AnyMenuWidget;
 
 #[derive(Debug, Copy, Clone)]

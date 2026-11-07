@@ -1,8 +1,6 @@
 use carbide_core::draw::Dimension;
-use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide_core::state::{AnyState, Map1, ReadStateExtNew, State};
+use carbide_core::environment::EnvironmentColor;
 use carbide_core::widget::*;
-use carbide_icons::all_icon_names;
 use carbide_wgpu::{Application, Window};
 
 fn main() {

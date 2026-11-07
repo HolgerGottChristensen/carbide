@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 use std::hash::Hash;
-use carbide::state::StateContract;
 
 pub trait Identifiable {
     type Id: Hash + Eq + Clone + Debug;

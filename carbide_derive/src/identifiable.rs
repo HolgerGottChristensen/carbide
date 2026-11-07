@@ -1,4 +1,4 @@
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Ident, TokenStream};
 use syn::{Attribute, DataStruct, Field, Fields, Generics, Meta, Type, WhereClause};
 
 // First we should detect whether an id attribute is provided. If none are provided, we return self as the identity

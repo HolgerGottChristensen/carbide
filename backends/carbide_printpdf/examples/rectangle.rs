@@ -1,5 +1,3 @@
-use carbide_core::widget::WidgetExt;
-
 fn main() {
     /*let mut pdf = Pdf::new("test_rectangle");
 

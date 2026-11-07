@@ -20,7 +20,7 @@ use crate::render::{Render, RenderContext};
 use crate::lifecycle::{Initialize, Update, UpdateContext};
 use crate::widget::{CommonWidget, WidgetExt, WidgetId, WidgetSync};
 use crate::widget::common::widget_properties::WidgetProperties;
-use crate::widget::properties::{WidgetKindDynamic, WidgetKindSimple};
+use crate::widget::properties::WidgetKindSimple;
 
 pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {
     fn as_widget(&self) -> &dyn AnyWidget;

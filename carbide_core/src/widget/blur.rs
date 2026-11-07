@@ -1,7 +1,5 @@
 use crate::CommonWidgetImpl;
 use crate::render::RenderContext;
-use carbide_macro::carbide_default_builder2;
-
 use crate::draw::{Dimension, Position, Rect};
 use crate::render::Render;
 use crate::widget::{BlurType, CommonWidget, FilterId, ImageFilter, ImageFilterValue, Widget, WidgetId};

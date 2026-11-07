@@ -1,19 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Instant;
-use dolly::drivers::Smooth;
 use dolly::handedness::LeftHanded;
-use dolly::prelude::{Arm, YawPitch};
+use dolly::prelude::YawPitch;
 use dolly::rig::CameraRig;
 use carbide::animation::AnimationManager;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Dimension, Position};
-use carbide::event::{AccessibilityEventHandler, ApplicationEventHandler, EventHandler, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
+use carbide::event::{AccessibilityEventHandler, ApplicationEventHandler, Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use carbide::focus::Focusable;
 use carbide::identifiable::Identifiable;
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::math::{Deg, Euler, Matrix4, Quaternion, Vector3};
-use carbide::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
+use carbide::widget::{CommonWidget, WidgetId, WidgetSync};
 use crate::camera::Camera;
 use crate::camera::camera_projection::CameraProjection;
 

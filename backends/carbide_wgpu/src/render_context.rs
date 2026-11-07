@@ -16,13 +16,13 @@ use carbide_core::draw::stroke::{StrokeDashMode, StrokeDashPattern};
 use carbide_core::draw::{Dimension, DrawOptions, CompositeDrawShape, DrawStyle, ImageId, ImageMode, ImageOptions, Position, Rect, DrawShape, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix, Vector3};
-use carbide_core::render::{InnerRenderContext, Layer, LayerId, RenderInstruction};
+use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
 use carbide_core::text::{TextContext, TextId, TextStyle};
-use carbide_core::widget::{AnyShape, FilterId, ImageFilter};
+use carbide_core::widget::{FilterId, ImageFilter};
 use carbide_lyon::stroke_vertex::StrokeVertex;
 use carbide_lyon::triangle::Triangle;
-use carbide_lyon::{LyonScalar, Tesselator};
+use carbide_lyon::Tesselator;
 use crate::wgpu_dashes::WgpuDashes;
 use crate::window::util::calculate_carbide_to_wgpu_matrix;
 

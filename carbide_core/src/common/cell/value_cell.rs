@@ -5,10 +5,7 @@ use std::cell::{Cell, UnsafeCell};
 use std::cmp::Ordering;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
 use dyn_clone::DynClone;
-
-use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
 use crate::cell::{ValueRef, ValueRefMut};
 
 type BorrowFlag = isize;

@@ -1,5 +1,5 @@
 use carbide::draw::{Dimension, Position, Rect};
-use carbide::environment::{Environment, EnvironmentColor};
+use carbide::environment::EnvironmentColor;
 use carbide::state::{LocalState, StateSync, State, ValueRefMut};
 use carbide::widget::canvas::{Context, CanvasContext};
 

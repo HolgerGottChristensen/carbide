@@ -3,7 +3,6 @@ use carbide_controls::ControlsExt;
 use carbide_core::closure;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::Dimension;
-use carbide_core::state::{ReadState, State};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

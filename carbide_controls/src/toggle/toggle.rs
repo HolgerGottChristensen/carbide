@@ -7,14 +7,12 @@ use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
 use carbide_core::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
-use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
 use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetStyle, WidgetSync};
 use carbide::CommonWidgetImpl;
 use smallvec::SmallVec;
 use carbide::environment::Environment;
 use carbide::identifiable::Identifiable;
-use crate::slider::SliderStyleKey;
 
 #[derive(Clone, Debug, Widget)]
 #[carbide_exclude(Sync, Accessibility, AccessibilityEvent)]

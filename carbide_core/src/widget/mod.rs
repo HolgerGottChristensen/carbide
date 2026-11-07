@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
-use std::hash::{BuildHasherDefault, DefaultHasher, Hash, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::atomic::{AtomicU32, Ordering};
 
 pub use carbide_derive::Widget;

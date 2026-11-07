@@ -18,11 +18,11 @@ use crate::environment::environment::InternalEnvironmentValue;
 ///
 /// ## Example implementation
 /// ```
-/// use carbide_core::environment::EnvironmentKey;
+/// use carbide_core::environment::{EnvironmentKey, Shared};
 ///
 /// #[derive(Copy, Clone, Debug)]
 /// struct CustomKey;
-/// impl EnvironmentKey for CustomKey { type Value = u64; }
+/// impl EnvironmentKey for CustomKey { type Value = u64; type Access = Shared; }
 /// ```
 ///
 pub trait EnvironmentKey: Any + Debug + 'static {
@@ -39,7 +39,7 @@ pub trait EnvironmentKeyDefault: EnvironmentKey {
 }
 
 mod sealed {
-    use carbide::environment::environment_key::{sealed, Shared, Exclusive};
+    use carbide::environment::environment_key::{Shared, Exclusive};
     use crate::any_debug::AnyDebug;
     use crate::environment::environment::InternalEnvironmentValue;
 

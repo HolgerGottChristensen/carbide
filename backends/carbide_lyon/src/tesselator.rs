@@ -4,7 +4,7 @@ use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{LineJoin, Path, Winding};
 use lyon::path::builder::{BorderRadii, SvgPathBuilder};
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
-use carbide_core::draw::{CompositeDrawShape, Position, DrawShape, Scalar};
+use carbide_core::draw::{Position, DrawShape, Scalar};
 use crate::stroke_vertex::StrokeVertex;
 use crate::triangle::Triangle;
 use lyon::tessellation::{StrokeVertex as LyonStrokeVertex};

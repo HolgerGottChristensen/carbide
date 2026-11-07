@@ -4,7 +4,6 @@ use carbide::render::Render;
 use carbide::state::{AnyState, State};
 use carbide::widget::{CommonWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
-use std::hash::Hash;
 use carbide::identifiable::Identifiable;
 
 #[derive(Clone, Debug, Widget)]

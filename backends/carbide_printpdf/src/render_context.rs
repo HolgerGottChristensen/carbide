@@ -1,7 +1,5 @@
 use printpdf::{Color, IndirectFontRef, PdfLayerReference};
 use carbide_core::draw::Dimension;
-use carbide_core::render::InnerRenderContext;
-use carbide_core::text::TextContext;
 
 pub struct PDFRenderContext {
     /*style_stack: Vec<WGPUStyle>,

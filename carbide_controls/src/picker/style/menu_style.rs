@@ -22,7 +22,7 @@ use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::draw::stroke::LineCap;
 use carbide::text::text_wrap::Wrap;
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::{Rectangle, WidgetProperties};
+use carbide::widget::WidgetProperties;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;

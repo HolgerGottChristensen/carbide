@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 use dashmap::DashMap;
-use log::{error, info};
-use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Features, Instance, PipelineLayout, Queue, RenderPipeline, Sampler, ShaderModule, Texture, TextureFormat};
+use wgpu::{BindGroup, BindGroupLayout, PipelineLayout, Sampler, ShaderModule, Texture, TextureFormat};
 use carbide::environment::{Environment, Exclusive};
-use carbide_core::draw::{Dimension, ImageId};
+use carbide_core::draw::ImageId;
 use carbide_core::environment::EnvironmentKey;
-use carbide_core::render::RenderInstruction;
 use carbide_core::widget::FilterId;
 use carbide_wgpu_core::WgpuContextNew;
 use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, texture_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};

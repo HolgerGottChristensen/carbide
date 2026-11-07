@@ -1,21 +1,16 @@
-use std::any::type_name;
 use std::collections::HashMap;
 use crate::draw::{Dimension, Position};
 use crate::common::flags::WidgetFlag;
 use crate::widget::{AnySequence, CommonWidget, Sequence, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
-use crate::environment::Environment;
 use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use fxhash::FxBuildHasher;
-use indexmap::IndexMap;
 use carbide::random_access_collection::RandomAccessCollection;
-use carbide::state::StateContract;
-use carbide::widget::{AnyWidget, ForEach, WidgetProperties};
+use carbide::widget::{AnyWidget, WidgetProperties};
 use carbide::widget::properties::WidgetKindProxy;
 use crate::identifiable::Identifiable;
-use crate::lifecycle::InitializationContext;
 use crate::widget::properties::{Kind, WidgetKind};
 
 pub trait Delegate<T: ?Sized, O: Widget>: Clone + 'static {

@@ -1,5 +1,4 @@
 use cgmath::Matrix4;
-use crate::draw::DrawStyle;
 use crate::draw::{DrawOptions, DrawShape};
 use crate::render::Style;
 use crate::state::AnyReadState;

@@ -6,9 +6,8 @@ use carbide::draw::{Dimension, Position};
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
 use carbide::state::{AnyReadState, LocalState, ReadStateExtNew, StateContract};
-use carbide::widget::{AnyWidget, CommonWidget, Delegate, ForEach, MouseArea, MouseAreaAction, ReverseAnySequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Delegate, ForEach, MouseArea, ReverseAnySequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::properties::WidgetKindSimple;
-use crate::List;
 use crate::list::{ListSelection, SelectableMouseAreaAction};
 
 pub trait AnyListRow: Identifiable<Id=WidgetId> + WidgetSync + DynClone + 'static {

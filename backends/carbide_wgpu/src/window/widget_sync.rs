@@ -1,5 +1,4 @@
 use crate::window::Window;
-use carbide_core::accessibility::Accessibility;
 use carbide_core::draw::{Dimension, Rect};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
@@ -7,7 +6,7 @@ use carbide_core::lifecycle::{Update, UpdateContext};
 use carbide_core::scene::AnyScene;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{AnyWidget, Widget, WidgetExt, WidgetProperties, WidgetSync};
-use carbide_core::widget::properties::{WidgetKindDynamic, WidgetKindSimple};
+use carbide_core::widget::properties::WidgetKindSimple;
 
 impl<T: ReadState<T=String>, C: Widget> WidgetSync for Window<T, C> {}
 

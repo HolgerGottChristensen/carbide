@@ -1,20 +1,16 @@
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use carbide::automatic_style::AutomaticStyle;
 use carbide::cursor::MouseCursor;
 use carbide::draw::Rect;
 use crate::event::{WindowEvent, WindowEventContext};
-use carbide_macro::carbide_default_builder2;
-
-use crate::color::Color;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, WindowEventHandler};
-use crate::common::flags::WidgetFlag;
 use crate::CommonWidgetImpl;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{LocalState, ReadState, State, StateExtNew};
-use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
+use crate::widget::{AnyWidget, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::properties::WidgetKindSimple;
 use crate::widget::scroll::style::{HorizontalScrollBarStyleKey, VerticalScrollBarStyleKey};
 use crate::widget::types::ScrollDirection;

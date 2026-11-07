@@ -1,19 +1,15 @@
 use encase::ShaderType;
-use once_cell::sync::Lazy;
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Device, ShaderStages, TextureSampleType, TextureViewDimension};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, Device};
 use carbide_3d::InnerImageContext3d;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
-use carbide_core::draw::{ImageId, Texture, TextureFormat};
-use carbide_core::draw::pre_multiply::PreMultiply;
+use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
-use carbide_core::image;
 use carbide_core::math::{Matrix3, Vector3, Vector4, Zero};
 use carbide_core::state::ReadState;
-use carbide_wgpu::WgpuContext;
 use crate::image_context_3d::{ImageContext3d};
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]

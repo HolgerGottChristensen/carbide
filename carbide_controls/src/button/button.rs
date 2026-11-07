@@ -5,7 +5,6 @@ use carbide_core::cursor::MouseCursor;
 use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide_core::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
-use carbide::lifecycle::{InitializationContext, Initialize};
 use carbide::state::{IntoState, ReadStateExtNew, State};
 use carbide::CommonWidgetImpl;
 use carbide_core::environment::IntoColorReadState;

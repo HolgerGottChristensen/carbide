@@ -1,7 +1,6 @@
 use cosmic_text::Buffer;
-use carbide_core::color::Color;
-use carbide_core::draw::{Dimension, Scalar};
-use carbide_core::text::{FontSize, FontStyle, FontWeight, TextDecoration, TextStyle};
+use carbide_core::draw::Dimension;
+use carbide_core::text::{FontSize, FontStyle, FontWeight, TextDecoration};
 use carbide_core::text::text_wrap::Wrap;
 
 pub struct TextEntry {

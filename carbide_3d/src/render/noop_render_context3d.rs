@@ -1,9 +1,8 @@
-use std::any::TypeId;
 use carbide::color::Color;
 use carbide::environment::Environment;
 use carbide::math::{Matrix4, Vector3};
 use carbide::render::Layer;
-use crate::camera::{Camera, CameraSpec};
+use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh};
 use crate::render::InnerRenderContext3d;

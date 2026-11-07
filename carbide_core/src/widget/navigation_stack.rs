@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use carbide::environment::Shared;
 use carbide::widget::WidgetProperties;
 use crate::environment::{EnvironmentKey, Exclusive};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};

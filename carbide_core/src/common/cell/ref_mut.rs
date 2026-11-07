@@ -4,7 +4,6 @@ use std::ops::{Deref, DerefMut};
 use parking_lot::MappedRwLockWriteGuard;
 use carbide::common::cell::value_cell::BorrowRefMut;
 use crate::common::cell::r#ref::ValueRef;
-use crate::state::StateContract;
 
 pub type RefMut<'a, T: 'a + Debug + Clone + 'static> = ValueRefMut<'a, T>;
 
