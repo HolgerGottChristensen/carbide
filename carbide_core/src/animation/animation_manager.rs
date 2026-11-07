@@ -1,4 +1,4 @@
-use crate::environment::{Environment, EnvironmentKey};
+use crate::environment::{Environment, EnvironmentKey, Exclusive};
 use crate::animation::Animation;
 use crate::animation::keyframes::{TimelineController, TimelineHandle};
 use crate::state::StateContract;
@@ -91,6 +91,7 @@ impl AnimationManager {
 
 impl EnvironmentKey for AnimationManager {
     type Value = AnimationManager;
+    type Access = Exclusive;
 }
 
 struct OutOfBandAnimation(Vec<Box<dyn Fn(&Instant) -> bool>>);
@@ -124,7 +125,7 @@ mod tests {
         let mut env = Environment::new();
         let mut handle_opt: Option<TimelineHandle> = None;
 
-        env.with_mut::<AnimationManager>(&mut manager, |env| {
+        env.with::<AnimationManager>(&mut manager, |env| {
             if let Some(m) = env.get_mut::<AnimationManager>() {
                 handle_opt = Some(m.insert_controller(controller));
             }

@@ -1,4 +1,4 @@
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::{Environment, EnvironmentKey, Shared};
 use crate::render::InnerRenderContext3d;
 
 #[derive(Debug, Copy, Clone)]
@@ -8,4 +8,5 @@ pub struct ContextFactory3d {
 
 impl EnvironmentKey for ContextFactory3d {
     type Value = ContextFactory3d;
+    type Access = Shared;
 }

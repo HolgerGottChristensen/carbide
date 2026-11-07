@@ -1,4 +1,5 @@
-use crate::environment::{Environment, EnvironmentKey};
+use carbide::environment::Shared;
+use crate::environment::{Environment, EnvironmentKey, Exclusive};
 use crate::focus::Refocus;
 
 #[derive(Debug)]
@@ -30,4 +31,5 @@ impl FocusManager {
 
 impl EnvironmentKey for FocusManager {
     type Value = FocusManager;
+    type Access = Exclusive;
 }

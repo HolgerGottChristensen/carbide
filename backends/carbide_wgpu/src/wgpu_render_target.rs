@@ -43,10 +43,7 @@ impl WgpuRenderTarget {
             view_formats: &[],
         };
 
-        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>();
-
-        let wgpu_context = wgpu_context.unwrap();
-        let wgpu_context_new = wgpu_context_new.unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         let texture = wgpu_context_new.device.create_texture(&descriptor);
 

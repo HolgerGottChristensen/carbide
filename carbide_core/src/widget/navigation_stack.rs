@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
+use carbide::environment::Shared;
 use carbide::widget::WidgetProperties;
-use crate::environment::EnvironmentKey;
+use crate::environment::{EnvironmentKey, Exclusive};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::lifecycle::InitializationContext;
 use crate::CommonWidgetImpl;
@@ -61,7 +62,7 @@ impl NavigationManager {
         });
     }
 
-    pub fn specific<K: EnvironmentKey<Value=NavigationManager>>(env: &mut Environment, f: impl FnOnce(&mut NavigationManager)) {
+    pub fn specific<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive>>(env: &mut Environment, f: impl FnOnce(&mut NavigationManager)) {
         env.get_mut::<K>().map(|navigation_manager| {
             f(navigation_manager)
         });
@@ -84,17 +85,19 @@ enum StackItem {
 pub struct NavigationKey;
 impl EnvironmentKey for NavigationKey {
     type Value = NavigationManager;
+    type Access = Exclusive;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct NavigationRootKey;
 impl EnvironmentKey for NavigationRootKey {
     type Value = NavigationManager;
+    type Access = Exclusive;
 }
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Initialize, Update, MouseEvent, KeyboardEvent, OtherEvent, WindowEvent, AccessibilityEvent)]
-pub struct NavigationStack<K> where K: EnvironmentKey<Value=NavigationManager> + Clone {
+pub struct NavigationStack<K> where K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -105,7 +108,7 @@ pub struct NavigationStack<K> where K: EnvironmentKey<Value=NavigationManager> +
 }
 
 impl NavigationStack<NavigationKey> {
-    pub fn new(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
+    pub fn new(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
         NavigationStack::<NavigationKey> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -118,7 +121,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager> + Clone>(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<K> {
+    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone>(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<K> {
         NavigationStack::<K> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -131,7 +134,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_root(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager> + Clone> {
+    pub fn new_root(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
         NavigationStack::<NavigationRootKey> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -145,9 +148,9 @@ impl NavigationStack<NavigationKey> {
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> NavigationStack<K> {
     fn with_navigation_manager(&mut self, env: &mut Environment, f: impl FnOnce(&mut Environment, &mut Box<dyn AnyWidget>)) {
-        env.with_mut::<K>(&mut self.navigation_manager, |env| {
+        env.with::<K>(&mut self.navigation_manager, |env| {
             f(env, &mut self.current)
         });
 
@@ -185,7 +188,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> NavigationStack<K> {
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Initialize for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Initialize for NavigationStack<K> {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_initialization(&mut InitializationContext {
@@ -195,7 +198,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Initialize for Navigati
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Update for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Update for NavigationStack<K> {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_update(&mut UpdateContext {
@@ -207,7 +210,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> Update for NavigationSt
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> MouseEventHandler for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> MouseEventHandler for NavigationStack<K> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_mouse_event(event, &mut MouseEventContext {
@@ -222,7 +225,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> MouseEventHandler for N
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> KeyboardEventHandler for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> KeyboardEventHandler for NavigationStack<K> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_keyboard_event(event, &mut KeyboardEventContext {
@@ -237,7 +240,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> KeyboardEventHandler fo
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> OtherEventHandler for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> OtherEventHandler for NavigationStack<K> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_other_event(event, &mut OtherEventContext {
@@ -251,7 +254,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> OtherEventHandler for N
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> WindowEventHandler for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> WindowEventHandler for NavigationStack<K> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_window_event(event, &mut WindowEventContext {
@@ -265,7 +268,7 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> WindowEventHandler for 
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> AccessibilityEventHandler for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> AccessibilityEventHandler for NavigationStack<K> {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_accessibility_event(event, &mut AccessibilityEventContext {
@@ -275,6 +278,6 @@ impl<K: EnvironmentKey<Value=NavigationManager> + Clone> AccessibilityEventHandl
     }
 }
 
-impl<K: EnvironmentKey<Value=NavigationManager> + Clone> CommonWidget for NavigationStack<K> {
+impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> CommonWidget for NavigationStack<K> {
     CommonWidgetImpl!(self, child: self.current, position: self.position, dimension: self.dimension);
 }

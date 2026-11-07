@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::automatic_style::AutomaticStyle;
 use carbide::draw::Color;
-use carbide::environment::EnvironmentKey;
+use carbide::environment::{EnvironmentKey, Shared};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnyWidget, WidgetStyle};
@@ -17,6 +17,7 @@ pub(crate) struct ColorPickerStyleKey;
 
 impl EnvironmentKey for ColorPickerStyleKey {
     type Value = Box<dyn ColorPickerStyle>;
+    type Access = Shared;
 }
 
 pub trait ColorPickerStyle: WidgetStyle {

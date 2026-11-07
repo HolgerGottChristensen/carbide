@@ -10,6 +10,7 @@ use std::sync::{Arc, OnceLock};
 use log::info;
 use walkdir::WalkDir;
 use wgpu::{Adapter, Device, Instance, Queue};
+use carbide::environment::Shared;
 use carbide::plugin::register_plugins;
 use crate::image_context::WGPUImageContext;
 use crate::proxy_event_loop::ProxyEventLoop;
@@ -48,6 +49,7 @@ pub type Scenes = SmallVec<[Box<dyn AnyScene>; 4]>;
 pub(crate) struct ActiveEventLoopKey;
 impl EnvironmentKey for ActiveEventLoopKey {
     type Value = ActiveEventLoop;
+    type Access = Shared;
 }
 
 pub struct Application {
@@ -96,14 +98,6 @@ impl Application {
             event_loop,
             event_sink,
         }
-    }
-
-    pub fn add_environment<K: EnvironmentKey + ?Sized>(&mut self, value: &'static K::Value) {
-        self.environment.insert::<K>(value)
-    }
-
-    pub fn add_environment_owned<K: EnvironmentKey + ?Sized>(&mut self, value: K::Value) {
-        self.environment.insert::<K>(Box::leak(Box::new(value)))
     }
 
     pub fn assets() -> PathBuf {
@@ -246,8 +240,8 @@ impl RunningApplication {
 
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
-                env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                    env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
+                env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                    env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
                         for mut scene in self.application_manager.scenes_to_add().drain(..) {
                             // If the application is currently in the running state (meaning resumed), we can initialize the
                             // scene immediately. If the application is not in the running state, the windows will first be initialized
@@ -304,8 +298,8 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
-                env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                    env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
+                    env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                         self.event_handler.resumed_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
 
                         for scene in &mut self.scenes {
@@ -328,12 +322,12 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mouse_position = self.event_handler.mouse_position();
 
-        self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
-            env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                    env.with_mut::<ApplicationManager>(&mut self.application_manager, |env| {
+        self.environment.with::<AnimationManager>(&mut self.animation_manager, |env| {
+            env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
+                env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                    env.with::<ApplicationManager>(&mut self.application_manager, |env| {
                         env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                            env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
+                            env.with::<FocusManager>(&mut self.focus_manager, |env| {
                                 env.with::<MousePositionKey>(&mouse_position, |env| {
                                     env.with::<dyn EventSink>(&self.event_sink, |env| {
                                         for scene in &mut self.scenes {
@@ -364,12 +358,12 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         let mouse_position = self.event_handler.mouse_position();
 
-        self.environment.with_mut::<AnimationManager>(&mut self.animation_manager, |env| {
-            env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                    env.with_mut::<ApplicationManager>(&mut self.application_manager, |env| {
+        self.environment.with::<AnimationManager>(&mut self.animation_manager, |env| {
+            env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
+                env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                    env.with::<ApplicationManager>(&mut self.application_manager, |env| {
                         env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                            env.with_mut::<FocusManager>(&mut self.focus_manager, |env| {
+                            env.with::<FocusManager>(&mut self.focus_manager, |env| {
                                 env.with::<MousePositionKey>(&mouse_position, |env| {
                                     env.with::<dyn EventSink>(&self.event_sink, |env| {
                                         request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env, self.id);
@@ -390,8 +384,8 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
-                env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                    env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
+                    env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                         env.with::<ActiveEventLoopKey>(event_loop, |env| {
                             self.event_handler.suspended_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
                         })
@@ -406,8 +400,8 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
 
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
-                env.with_mut::<WgpuContext>(&mut self.wgpu_context, |env| {
-                    env.with_mut::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
+                env.with::<WgpuContext>(&mut self.wgpu_context, |env| {
+                    env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                         env.with::<ActiveEventLoopKey>(event_loop, |env| {
                             self.event_handler.exited_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
                         })

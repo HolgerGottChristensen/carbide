@@ -4,7 +4,7 @@ pub use text_input::*;
 pub use controls_ext::*;
 pub use help::*;
 pub use calendar::*;
-use carbide::environment::EnvironmentKey;
+use carbide::environment::{EnvironmentKey, Exclusive, Shared};
 use carbide::focus::{Focus, FocusManager, Refocus};
 use carbide::state::{KeyState, ReadState, State};
 use carbide::widget::{MouseAreaAction, MouseAreaActionContext, OverlayManager, Widget};
@@ -68,6 +68,7 @@ pub type EnabledState = KeyState<EnabledKey>;
 pub struct EnabledKey;
 impl EnvironmentKey for EnabledKey {
     type Value = bool;
+    type Access = Shared;
 }
 
 #[derive(Debug, Clone)]
@@ -90,6 +91,7 @@ pub(crate) struct ControlsOverlayKey;
 
 impl EnvironmentKey for ControlsOverlayKey {
     type Value = OverlayManager;
+    type Access = Exclusive;
 }
 
 pub fn controls_overlay<C: Widget>(c: C) -> impl Widget {

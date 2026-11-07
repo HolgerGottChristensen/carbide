@@ -5,39 +5,8 @@ use std::hash::{BuildHasherDefault, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
 use crate::common::any_debug::AnyDebug;
-
-/// # EnvironmentKey
-/// A key into the environment that can be used to retrieve a value.
-/// The value is determined by the associated type of the trait.
-/// This allows us to insert multiple values of the same type into
-/// the environment, as long as the key are different.
-///
-/// ## Defining a custom key
-/// A common way of defining a custom key is by defining a unit struct
-/// called `SomethingKey`. Often implementing Copy, Clone and Debug is
-/// enough for using the key. It is also smart keep the key private,
-/// and exposing accessor and insertion methods from your crate. This
-/// allows you to control how a key is inserted into the environment.
-///
-/// ## Example implementation
-/// ```
-/// use carbide_core::environment::EnvironmentKey;
-///
-/// #[derive(Copy, Clone, Debug)]
-/// struct CustomKey;
-/// impl EnvironmentKey for CustomKey { type Value = u64; }
-/// ```
-///
-pub trait EnvironmentKey: Any + Debug + 'static {
-    /// The type of the value retrieved when getting the value by the key from
-    /// the environment.
-    type Value: Any + Debug + 'static;
-}
-
-pub trait EnvironmentKeyDefault: EnvironmentKey {
-    fn default() -> Self::Value;
-}
-
+use crate::environment::{Access, EnvironmentKey, EnvironmentValue, Exclusive};
+use crate::environment::environment_key::{extract_value, wrap_value};
 
 pub trait EnvironmentKeyable: Debug + 'static {
     type Output: Any + Debug + 'static;
@@ -58,12 +27,6 @@ pub trait EnvironmentKeyable: Debug + 'static {
             }
         }
     }
-}
-
-#[derive(Debug)]
-enum EnvironmentValue<'a> {
-    Value(&'static str, &'a dyn AnyDebug),
-    ValueMut(&'static str, &'a mut dyn AnyDebug)
 }
 
 /// # Environment
@@ -92,8 +55,24 @@ enum EnvironmentValue<'a> {
 /// the keys hashes are generated at compile time, and are generated with using a good hashing
 /// algorithm, collisions should never occur.
 pub struct Environment<'a> {
-    data: HashMap<TypeId, EnvironmentValue<'a>, BuildTypeIdHasher>,
+    data: HashMap<TypeId, InternalEnvironmentValue<'a>, BuildTypeIdHasher>,
     _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
+}
+
+#[doc(hidden)]
+#[derive(Debug)]
+pub(super) enum InternalEnvironmentValue<'a> {
+    Value(&'static str, &'a dyn AnyDebug),
+    ValueMut(&'static str, &'a mut dyn AnyDebug)
+}
+
+impl<'a> InternalEnvironmentValue<'a> {
+    fn as_any(&self) -> &dyn AnyDebug {
+        match self {
+            InternalEnvironmentValue::Value(_, v) => *v,
+            InternalEnvironmentValue::ValueMut(_, v) => &**v,
+        }
+    }
 }
 
 impl<'a> Environment<'a> {
@@ -109,18 +88,14 @@ impl<'a> Environment<'a> {
 
 impl<'a> Environment<'a> {
     /// Get a value from the environment by the *key* type. The *key* must implement `EnvironmentKey`.
-    /// The value is retrieved from the immutable part of the environment.
     ///
     /// If the value does not exist as part of the environment, `None` will be returned.
+    /// This method can be used to to get both shared and exclusive values as &Value
     pub fn get<K: EnvironmentKey + ?Sized>(&self) -> Option<&K::Value> {
-        let id = TypeId::of::<K>();
-
-        Option::map(self.data.get(&id), |value| {
-            match value {
-                EnvironmentValue::Value(_, value1) => value1.downcast_ref(),
-                EnvironmentValue::ValueMut(_, value2) => value2.downcast_ref(),
-            }
-        }).flatten()
+        self.data
+            .get(&TypeId::of::<K>())?
+            .as_any()
+            .downcast_ref()
     }
 
     /// Get a mutable value from the environment by the *key* type. The *key* must implement `EnvironmentKey`.
@@ -132,15 +107,15 @@ impl<'a> Environment<'a> {
     /// value you are extracting and swapping with have a lifetime that has been artificially shortened
     /// due to the scoping rules of the environment. If you swap with some value, that actually has
     /// a short lifetime, it will be invalid when the environment is used in the outer scopes.
-    pub fn get_mut<K: EnvironmentKey + ?Sized>(&mut self) -> Option<&mut K::Value> {
-        let id = TypeId::of::<K>();
+    pub fn get_mut<K: EnvironmentKey<Access = Exclusive> + ?Sized>(&mut self) -> Option<&mut K::Value> {
+        match self.data.get_mut(&TypeId::of::<K>())? {
+            InternalEnvironmentValue::ValueMut(_, v) => v.downcast_mut(),
+            InternalEnvironmentValue::Value(_, _) => None,
+        }
+    }
 
-        Option::map(self.data.get_mut(&id), |value| {
-            match value {
-                EnvironmentValue::Value(_, _) => None,
-                EnvironmentValue::ValueMut(_, value2) => value2.downcast_mut(),
-            }
-        }).flatten()
+    pub fn get_many<K: GetMany>(&mut self) -> K::Output<'_> {
+        K::get(self)
     }
 
     pub fn value<K: EnvironmentKeyable>(&self, key: &K) -> Option<K::Output> {
@@ -153,7 +128,7 @@ impl<'a> Environment<'a> {
 struct RestoreGuard<'b> {
     env: &'b mut Environment<'b>,
     id: TypeId,
-    old: Option<EnvironmentValue<'b>>,
+    old: Option<InternalEnvironmentValue<'b>>,
 }
 
 impl<'b> Drop for RestoreGuard<'b> {
@@ -170,8 +145,9 @@ impl<'b> Drop for RestoreGuard<'b> {
 }
 
 impl<'a> Environment<'a> {
+    /// `v` is `&K::Value` for shared keys and `&mut K::Value` for exclusive keys.
     #[allow(unsafe_code)]
-    pub fn with<'b, K: EnvironmentKey + ?Sized>(&mut self, v: &'b K::Value, f: impl FnOnce(&mut Environment)) where 'a: 'b {
+    pub fn with<'b, K: EnvironmentKey + ?Sized>(&mut self, v: EnvironmentValue<'b, K>, f: impl FnOnce(&mut Environment)) where 'a: 'b {
         let id = TypeId::of::<K>();
 
         // If any existing value existed in the data with the key, remove and store it.
@@ -185,29 +161,7 @@ impl<'a> Environment<'a> {
         // and thus making sure it does not escape.
         let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
 
-        transmuted.data.insert(id, EnvironmentValue::Value(type_name::<K>(), v));
-
-        let mut guard = RestoreGuard { env: transmuted, id, old };
-        f(&mut *guard.env);
-        // `guard` drops here (or during unwinding) and restores the map.
-    }
-
-    #[allow(unsafe_code)]
-    pub fn with_mut<'b, K: EnvironmentKey + ?Sized>(&mut self, v: &'b mut K::Value, f: impl FnOnce(&mut Environment)) where 'a: 'b {
-        let id = TypeId::of::<K>();
-
-        // If any existing value existed in the data with the key, remove and store it.
-        let old = self.data.remove(&id);
-
-        // SAFETY: The transmuted map has a shorter lifetime. The map is
-        // only used and accessed in the scope of the closure. We insert the
-        // reference only for the duration of the closure, and ensure it is
-        // removed again, before returning from the function, ensuring the
-        // reference to the value v does is not in the map after the closure,
-        // and thus making sure it does not escape.
-        let transmuted: &'b mut Environment<'b> = unsafe { transmute(self) };
-
-        transmuted.data.insert(id, EnvironmentValue::ValueMut(type_name::<K>(), v));
+        transmuted.data.insert(id, wrap_value::<K>(v));
 
         let mut guard = RestoreGuard { env: transmuted, id, old };
         f(&mut *guard.env);
@@ -219,16 +173,10 @@ impl Environment<'static> {
     // This is only safe because its static, and no other lifetime lives longer than static.
     // If it was not static, and we insert in an env with 'b,
     // and it is not removed before going back to 'a, it will be an invalid reference.
-    pub fn insert<K: EnvironmentKey + ?Sized>(&mut self, v: &'static K::Value) {
+    pub fn insert<K: EnvironmentKey + ?Sized>(&mut self, v: EnvironmentValue<'static, K>) {
         let id = TypeId::of::<K>();
 
-        self.data.insert(id, EnvironmentValue::Value(type_name::<K>(), v));
-    }
-
-    pub fn insert_mut<K: EnvironmentKey + ?Sized>(&mut self, v: &'static mut K::Value) {
-        let id = TypeId::of::<K>();
-
-        self.data.insert(id, EnvironmentValue::ValueMut(type_name::<K>(), v));
+        self.data.insert(id, wrap_value::<K>(v));
     }
 }
 
@@ -246,41 +194,28 @@ impl<'a> Environment<'a> {
     /// with the key is empty.
     pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(Option<&K::Value>, &mut Environment)) {
         let id = TypeId::of::<K>();
-
         let value = self.data.remove(&id);
 
-        let mapped = Option::map(value.as_ref(), |value| {
-            match value {
-                EnvironmentValue::Value(_, value1) => value1.downcast_ref(),
-                EnvironmentValue::ValueMut(_, value2) => value2.downcast_ref(),
-            }
-        }).flatten();
-
+        let mapped = value.as_ref().and_then(|v| v.as_any().downcast_ref());
         f(mapped, self);
 
         // TODO: Add drop guard to handle panic unwinds
-
         if let Some(val) = value {
             self.data.insert(id, val);
         }
     }
 
-    pub fn extract_mut<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(Option<&mut K::Value>, &mut Environment)) {
+    pub fn extract_mut<K: EnvironmentKey<Access = Exclusive> + ?Sized>(
+        &mut self,
+        f: impl FnOnce(Option<&mut K::Value>, &mut Environment),
+    ) {
         let id = TypeId::of::<K>();
-
         let mut value = self.data.remove(&id);
 
-        let mapped = Option::map(value.as_mut(), |value| {
-            match value {
-                EnvironmentValue::Value(_, _) => None,
-                EnvironmentValue::ValueMut(_, value2) => value2.downcast_mut(),
-            }
-        }).flatten();
-
+        let mapped = value.as_mut().and_then(|v| extract_value::<K>(v));
         f(mapped, self);
 
         // TODO: Add drop guard to handle panic unwinds
-
         if let Some(val) = value {
             self.data.insert(id, val);
         }
@@ -293,10 +228,10 @@ impl<'a> Debug for Environment<'a> {
 
         for (_, val) in &self.data {
             match val {
-                EnvironmentValue::Value(name, val) => {
+                InternalEnvironmentValue::Value(name, val) => {
                     debug.field(&format!("'{name}'"), *val);
                 }
-                EnvironmentValue::ValueMut(name, val) => {
+                InternalEnvironmentValue::ValueMut(name, val) => {
                     debug.field(&format!("mut '{name}'"), *val);
                 }
             }
@@ -306,11 +241,7 @@ impl<'a> Debug for Environment<'a> {
     }
 }
 
-impl<'a> Environment<'a> {
-    pub fn get_many<K: GetMany>(&mut self) -> K::Output<'_> {
-        K::get(self)
-    }
-}
+
 
 type BuildTypeIdHasher = BuildHasherDefault<TypeIdHasher>;
 
@@ -337,49 +268,13 @@ pub trait GetMany {
     fn get<'a>(env: &'a mut Environment) -> Self::Output<'a>;
 }
 
-pub trait GetManyAccess {
-    type Value<'a>;
-    type Key: EnvironmentKey;
-
-    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>>;
-}
-
-pub struct Mut<T>(PhantomData<T>) where T: EnvironmentKey;
-
-impl<T: EnvironmentKey> GetManyAccess for T {
-    type Value<'a> = &'a T::Value;
-    type Key = T;
-
-    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>> {
-        let value: &'a EnvironmentValue<'e> = value;
-        match value {
-            EnvironmentValue::Value(_, v) => v.downcast_ref::<T::Value>(),
-            EnvironmentValue::ValueMut(_, v) => v.downcast_ref::<T::Value>(),
-        }
-    }
-}
-
-impl<T: EnvironmentKey> GetManyAccess for Mut<T> {
-    type Value<'a> = &'a mut T::Value;
-    type Key = T;
-
-    fn extract<'a, 'e>(value: &'a mut EnvironmentValue<'e>) -> Option<Self::Value<'a>> {
-        match value {
-            EnvironmentValue::Value(_, _) => None,
-            EnvironmentValue::ValueMut(_, v) => v.downcast_mut::<T::Value>(),
-        }
-    }
-}
-
-impl<K1: GetManyAccess> GetMany for K1 {
-    type Output<'a> = Option<K1::Value<'a>>;
+impl<K1: EnvironmentKey> GetMany for K1 {
+    type Output<'a> = Result<EnvironmentValue<'a, K1>, ()>;
 
     fn get<'a>(env: &'a mut Environment) -> Self::Output<'a> {
-        let t1 = TypeId::of::<K1::Key>();
-
+        let t1 = TypeId::of::<K1>();
         let [res] = env.data.get_disjoint_mut([&t1]);
-
-        Option::map(res, K1::extract).flatten()
+        Option::map(res, extract_value::<K1>).flatten().ok_or(())
     }
 }
 
@@ -388,17 +283,25 @@ macro_rules! impl_get_many {
     ($(($($K:ident),+)),+ $(,)?) => {
         $(
             #[allow(non_snake_case)]
-            impl<$($K: GetManyAccess),+> GetMany for ($($K,)+) {
-                type Output<'a> = ($(Option<$K::Value<'a>>,)+);
+            impl<$($K: EnvironmentKey),+> GetMany for ($($K,)+) {
+                type Output<'a> = Result<
+                    ($(EnvironmentValue<'a, $K>,)+),
+                    ($(Option<EnvironmentValue<'a, $K>>,)+),
+                >;
 
                 fn get<'a>(env: &'a mut Environment) -> Self::Output<'a> {
                     // Lowercase-free trick: reuse the type idents as local variable names.
                     // Locals and types are in separate namespaces, so this compiles.
-                    $(let $K = TypeId::of::<$K::Key>();)+
+                    $(let $K = TypeId::of::<$K>();)+
 
                     let [$($K),+] = env.data.get_disjoint_mut([$(&$K),+]);
 
-                    ($(Option::map($K, $K::extract).flatten(),)+)
+                    // Nothing is moved unless the first arm matches, so the
+                    // fallback arm can hand the untouched options back as `Err`.
+                    match ($(Option::map($K, extract_value::<$K>).flatten(),)+) {
+                        ($(Some($K),)+) => Ok(($($K,)+)),
+                        partial => Err(partial),
+                    }
                 }
             }
         )+
@@ -422,17 +325,18 @@ impl_get_many! {
 
 #[cfg(test)]
 mod tests {
-    use crate::environment::environment::{EnvironmentKey, Environment, Mut};
+    use crate::environment::environment::{EnvironmentKey, Environment};
+    use crate::environment::{Exclusive, Shared};
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey;
 
-    impl EnvironmentKey for TestKey { type Value = u64; }
+    impl EnvironmentKey for TestKey { type Value = u64; type Access = Shared; }
 
     #[derive(Copy, Clone, Debug)]
     struct TestKey2;
 
-    impl EnvironmentKey for TestKey2 { type Value = u64; }
+    impl EnvironmentKey for TestKey2 { type Value = u64; type Access = Exclusive; }
 
     #[test]
     fn simple() {
@@ -452,13 +356,13 @@ mod tests {
         let mut map = Environment::new();
 
         map.with::<TestKey>(&42, |inner| {
-            inner.with_mut::<TestKey2>(&mut 69, |inner| {
-                let f = inner.get_many::<(TestKey, Mut<TestKey2>)>();
+            inner.with::<TestKey2>(&mut 69, |inner| {
+                let f = inner.get_many::<(TestKey, TestKey2)>();
 
                 println!("{:?}", f)
             });
 
-            let f = inner.get_many::<(TestKey, Mut<TestKey2>)>();
+            let f = inner.get_many::<(TestKey, TestKey2)>();
 
             println!("{:?}", f)
         });

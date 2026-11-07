@@ -1,7 +1,7 @@
 use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
 use crate::draw::Dimension;
-use crate::environment::EnvironmentKey;
+use crate::environment::{EnvironmentKey, Shared};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, ApplicationEventHandler, ApplicationEvent, ApplicationEventContext};
 use crate::event::{AccessibilityEventHandler, KeyboardEventHandler, MouseEventHandler, OtherEventHandler, WindowEventHandler};
 use crate::focus::FocusContext;
@@ -23,17 +23,17 @@ use crate::state::ReadState;
 
 #[derive(Debug, Widget)]
 #[carbide_derive(Sync)]
-pub struct EnvUpdatingNew2<C, K, V> where C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>, K::Value: Clone {
+pub struct EnvUpdatingNew2<C, K, V> where C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>, K::Value: Clone {
     child: C,
     key: PhantomData<K>,
     value: V,
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> WidgetProperties for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> WidgetProperties for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     type Kind = C::Kind;
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Clone for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Clone for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn clone(&self) -> Self {
         EnvUpdatingNew2 {
             child: self.child.clone(),
@@ -43,7 +43,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Clone for EnvUpdati
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     pub fn new(value: V, child: C) -> EnvUpdatingNew2<C, K, V> {
         EnvUpdatingNew2 {
             child,
@@ -53,7 +53,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> EnvUpdatingNew2<C, 
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Layout for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Layout for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.value.sync(ctx.env);
 
@@ -89,7 +89,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Layout for EnvUpdat
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Update for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Update for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.value.sync(ctx.env);
 
@@ -103,7 +103,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Update for EnvUpdat
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Initialize for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Initialize for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         self.value.sync(ctx.env);
 
@@ -115,7 +115,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Initialize for EnvU
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> OtherEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> OtherEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.value.sync(ctx.env);
 
@@ -131,7 +131,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> OtherEventHandler f
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> WindowEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> WindowEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.value.sync(ctx.env);
 
@@ -147,7 +147,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> WindowEventHandler 
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> ApplicationEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> ApplicationEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
         self.value.sync(ctx.env);
 
@@ -161,7 +161,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> ApplicationEventHan
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> AccessibilityEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> AccessibilityEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         self.value.sync(ctx.env);
 
@@ -173,7 +173,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> AccessibilityEventH
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> KeyboardEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> KeyboardEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.value.sync(ctx.env);
 
@@ -190,7 +190,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> KeyboardEventHandle
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> MouseEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> MouseEventHandler for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.value.sync(ctx.env);
 
@@ -207,7 +207,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> MouseEventHandler f
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Focusable for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Focusable for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
         self.value.sync(ctx.env);
 
@@ -245,7 +245,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Focusable for EnvUp
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Accessibility for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Accessibility for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.value.sync(ctx.env);
 
@@ -265,7 +265,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Accessibility for E
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Render for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Render for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     fn render(&mut self, ctx: &mut RenderContext) {
         self.value.sync(ctx.env);
 
@@ -280,7 +280,7 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Render for EnvUpdat
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Identifiable for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> Identifiable for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     type Id = WidgetId;
 
     fn id(&self) -> WidgetId {
@@ -288,6 +288,6 @@ impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> Identifiable for En
     }
 }
 
-impl<C: Widget, K: EnvironmentKey, V: ReadState<T=K::Value>> CommonWidget for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> CommonWidget for EnvUpdatingNew2<C, K, V> where K::Value: Clone {
     ModifierWidgetImpl!(self, child: self.child);
 }

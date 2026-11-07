@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::pin::Pin;
 use log::info;
 use wgpu::{Adapter, Device, Features, Instance, Queue};
-use carbide_core::environment::{Environment, EnvironmentKey};
+use carbide_core::environment::{Environment, EnvironmentKey, Shared};
 use carbide_core::plugin::Plugin;
 use carbide_core::register;
 
@@ -62,6 +62,7 @@ impl WgpuContextNew {
 
 impl EnvironmentKey for WgpuContextNew {
     type Value = WgpuContextNew;
+    type Access = Shared;
 }
 
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {

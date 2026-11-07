@@ -9,6 +9,7 @@ use carbide::focus::Focus;
 use carbide::state::AnyReadState;
 use carbide::widget::{AnyWidget, Capsule, Rectangle};
 use crate::draw::DebugStyle;
+use crate::environment::Shared;
 use crate::state::Map2;
 use crate::widget::{IfElse, Widget, WidgetExt, WidgetStyle};
 
@@ -20,10 +21,12 @@ pub(crate) struct HorizontalScrollBarStyleKey;
 
 impl EnvironmentKey for VerticalScrollBarStyleKey {
     type Value = Box<dyn ScrollBarStyle>;
+    type Access = Shared;
 }
 
 impl EnvironmentKey for HorizontalScrollBarStyleKey {
     type Value = Box<dyn ScrollBarStyle>;
+    type Access = Shared;
 }
 
 pub trait ScrollBarStyle: WidgetStyle {

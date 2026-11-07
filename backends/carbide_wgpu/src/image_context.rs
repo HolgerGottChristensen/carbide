@@ -44,7 +44,7 @@ impl ImageContext for WGPUImageContext {
     }
 
     fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
-        let wgpu_context_new = env.get_mut::<WgpuContextNew>().unwrap();
+        let wgpu_context_new = env.get::<WgpuContextNew>().unwrap();
         let device = wgpu_context_new.device.clone();
         let queue = wgpu_context_new.queue.clone();
 

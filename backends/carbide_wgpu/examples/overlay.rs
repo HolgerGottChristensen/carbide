@@ -45,4 +45,5 @@ fn main() {
 struct OverlayKey;
 impl EnvironmentKey for OverlayKey {
     type Value = OverlayManager;
+    type Access = Exclusive;
 }

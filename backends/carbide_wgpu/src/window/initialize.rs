@@ -88,10 +88,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 let size = window.inner_size();
                 let scale_factor = window.scale_factor();
 
-                let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>();
-
-                let wgpu_context = wgpu_context.unwrap();
-                let wgpu_context_new = wgpu_context_new.unwrap();
+                let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
                 let surface = wgpu_context_new.instance
                     .create_surface(window.clone())

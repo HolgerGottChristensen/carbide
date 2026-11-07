@@ -6,7 +6,7 @@
 //! `carbide::backend` should be sufficient.
 
 use carbide_derive::Id;
-use crate::environment::EnvironmentKey;
+use crate::environment::{EnvironmentKey, Exclusive};
 
 /// This enum specifies cursor render used by internal widgets. For custom widgets using custom
 /// cursor render, you can still use this enum by specifying a numbered custom variant.
@@ -52,4 +52,5 @@ pub enum MouseCursor {
 
 impl EnvironmentKey for MouseCursor {
     type Value = MouseCursor;
+    type Access = Exclusive;
 }

@@ -63,14 +63,15 @@ impl<C: Node3dSequence, V: Camera> KeyboardEventHandler for Scene3d<C, V> {
 
 impl<C: Node3dSequence, V: Camera> Render for Scene3d<C, V> {
     fn render(&mut self, ctx: &mut RenderContext) {
-        ctx.env.extract::<ContextFactory3d>(|factory, env| {
+        /*ctx.env.extract::<ContextFactory3d>(|factory, env| {
             if factory.type_id() != self.render_context_factory_id {
                 self.render_context = (factory.render_context)(env);
                 self.render_context_factory_id = factory.type_id();
 
                 println!("Set new render context: {:#?}", self.render_context);
             }
-        });
+        });*/
+        panic!();
 
         ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env| {
             self.render_context.start();

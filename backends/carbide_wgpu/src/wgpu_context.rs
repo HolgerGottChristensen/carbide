@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use dashmap::DashMap;
 use log::{error, info};
 use wgpu::{Adapter, BindGroup, BindGroupLayout, Device, Features, Instance, PipelineLayout, Queue, RenderPipeline, Sampler, ShaderModule, Texture, TextureFormat};
-use carbide::environment::Environment;
+use carbide::environment::{Environment, Exclusive};
 use carbide_core::draw::{Dimension, ImageId};
 use carbide_core::environment::EnvironmentKey;
 use carbide_core::render::RenderInstruction;
@@ -110,4 +110,5 @@ impl WgpuContext {
 
 impl EnvironmentKey for WgpuContext {
     type Value = WgpuContext;
+    type Access = Exclusive;
 }

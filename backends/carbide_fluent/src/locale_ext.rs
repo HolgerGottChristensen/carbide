@@ -1,5 +1,5 @@
 use icu::locid::{Locale, locale};
-use carbide_core::environment::{Environment, EnvironmentKey};
+use carbide_core::environment::{Environment, EnvironmentKey, Shared};
 use carbide_core::state::{EnvMap1, IntoReadState, Map1, ReadState};
 use carbide_core::widget::{EnvUpdatingNew2, WidgetExt};
 
@@ -10,17 +10,16 @@ type LocaleState = EnvMap1<fn(&mut Environment, &i32) -> Locale, i32, Locale, i3
 pub(crate) struct LocaleKey;
 impl EnvironmentKey for LocaleKey {
     type Value = Locale;
+    type Access = Shared;
 }
 
-
 pub trait LocaleExt: WidgetExt {
-    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> WithLocale<Self, impl EnvironmentKey<Value=Locale>, impl ReadState<T=Locale>> {
+    fn locale<L: IntoReadState<Locale>>(self, locale: L) -> WithLocale<Self, impl EnvironmentKey<Value=Locale, Access=Shared>, impl ReadState<T=Locale>> {
         EnvUpdatingNew2::<Self, LocaleKey, L::Output>::new(locale.into_read_state(), self)
     }
 }
 
 impl<T> LocaleExt for T where T: WidgetExt {}
-
 
 pub fn locale_state() -> LocaleState {
     Map1::read_map_env(0, |env, _| {

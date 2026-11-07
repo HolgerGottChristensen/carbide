@@ -6,7 +6,7 @@ use crate::save_dialog::style::SaveDialogStyle;
 use crate::NativeStyle;
 use carbide::asynchronous::AsyncContext;
 use carbide::draw::AutomaticStyle;
-use carbide::environment::Environment;
+use carbide::environment::{Environment, Shared};
 use carbide_core::environment::EnvironmentKey;
 use dyn_clone::{clone_trait_object, DynClone};
 use oneshot::RecvError;
@@ -21,6 +21,7 @@ pub(crate) struct OpenDialogStyleKey;
 
 impl EnvironmentKey for OpenDialogStyleKey {
     type Value = Box<dyn OpenDialogStyle>;
+    type Access = Shared;
 }
 
 pub trait OpenDialogStyle: Debug + DynClone + 'static {

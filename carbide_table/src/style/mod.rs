@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::{Dimension, DrawOptions, DrawShape, Position, Rect, Scalar};
 use carbide::draw::fill::FillOptions;
-use carbide::environment::EnvironmentKey;
+use carbide::environment::{EnvironmentKey, Shared};
 use carbide::render::RenderContext;
 use crate::cell::{Cell, CellSelection};
 
@@ -16,6 +16,7 @@ pub(crate) struct TableStyleKey;
 
 impl EnvironmentKey for TableStyleKey {
     type Value = Box<dyn TableStyle>;
+    type Access = Shared;
 }
 
 pub trait TableStyle: Debug + DynClone + 'static {

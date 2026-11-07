@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use carbide::draw::Rect;
 use carbide::widget::properties::WidgetKindSimple;
 use carbide::widget::WidgetProperties;
-use crate::environment::Environment;
+use crate::environment::{Environment, Exclusive};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, WindowEvent, WindowEventContext};
 use crate::lifecycle::InitializationContext;
 use crate::CommonWidgetImpl;
@@ -34,7 +34,7 @@ impl OverlayManager {
         self.overlay = Some(OverlayAction::Insert(overlay.boxed()));
     }
 
-    pub fn get<K: EnvironmentKey<Value=OverlayManager>>(env: &mut Environment, f: impl FnOnce(&mut OverlayManager)) {
+    pub fn get<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive>>(env: &mut Environment, f: impl FnOnce(&mut OverlayManager)) {
         if let Some(manager) = env.get_mut::<K>() {
             f(manager)
         }
@@ -43,7 +43,7 @@ impl OverlayManager {
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, MouseEvent, KeyboardEvent, OtherEvent, Initialize, Update, WindowEvent, AccessibilityEvent)]
-pub struct Overlay<K, C> where C: Widget, K: EnvironmentKey<Value=OverlayManager> + Clone {
+pub struct Overlay<K, C> where C: Widget, K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -55,7 +55,7 @@ pub struct Overlay<K, C> where C: Widget, K: EnvironmentKey<Value=OverlayManager
     steal_events_when_some: bool,
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Overlay<K, C> {
     pub fn new(child: C) -> Overlay<K, C> {
         Overlay {
             id: WidgetId::new(),
@@ -69,7 +69,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Overlay<K, C> {
     pub fn steal_events(mut self) -> Overlay<K, C> {
         self.steal_events_when_some = true;
         self
@@ -80,7 +80,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
             overlay: None,
         };
 
-        env.with_mut::<K>(&mut manager, |env| {
+        env.with::<K>(&mut manager, |env| {
             f(env, self)
         });
 
@@ -97,7 +97,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Overlay<K, C> {
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Initialize for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Initialize for Overlay<K, C> {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut InitializationContext {
@@ -113,7 +113,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Initialize for 
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Update for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Update for Overlay<K, C> {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut UpdateContext {
@@ -131,7 +131,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Update for Over
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> MouseEventHandler for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> MouseEventHandler for Overlay<K, C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut MouseEventContext {
@@ -156,7 +156,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> MouseEventHandl
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> KeyboardEventHandler for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> KeyboardEventHandler for Overlay<K, C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut KeyboardEventContext {
@@ -180,7 +180,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> KeyboardEventHa
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> OtherEventHandler for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> OtherEventHandler for Overlay<K, C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut OtherEventContext {
@@ -203,7 +203,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> OtherEventHandl
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> WindowEventHandler for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> WindowEventHandler for Overlay<K, C> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut WindowEventContext {
@@ -226,7 +226,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> WindowEventHand
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> AccessibilityEventHandler for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> AccessibilityEventHandler for Overlay<K, C> {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut AccessibilityEventContext {
@@ -245,7 +245,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> AccessibilityEv
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Layout for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Layout for Overlay<K, C> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         if let Some(overlay) = &mut self.overlay {
             overlay.calculate_size(requested_size, ctx);
@@ -270,7 +270,7 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Layout for Over
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Render for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Render for Overlay<K, C> {
     fn render(&mut self, context: &mut RenderContext) {
         self.child.render(context);
 
@@ -280,6 +280,6 @@ impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget> Render for Over
     }
 }
 
-impl<K: EnvironmentKey<Value=OverlayManager> + Clone, C: Widget>CommonWidget for Overlay<K, C> {
+impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget>CommonWidget for Overlay<K, C> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flexibility: 0);
 }

@@ -3,7 +3,7 @@ mod inset;
 
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::{AutomaticStyle, Scalar};
-use carbide::environment::{EnvironmentKey, EnvironmentKeyDefault};
+use carbide::environment::{EnvironmentKey, EnvironmentKeyDefault, Shared};
 use carbide::widget::{AnySequence, AnyWidget, Sequence, WidgetStyle};
 use carbide::widget::foreach_widget::Delegate;
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget};
@@ -16,6 +16,7 @@ pub(crate) struct ListStyleKey;
 
 impl EnvironmentKey for ListStyleKey {
     type Value = Box<dyn ListStyle>;
+    type Access = Shared;
 }
 
 impl EnvironmentKeyDefault for ListStyleKey {

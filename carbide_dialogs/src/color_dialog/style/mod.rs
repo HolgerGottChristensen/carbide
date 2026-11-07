@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::{AutomaticStyle, Color};
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::{Environment, EnvironmentKey, Shared};
 use carbide::state::{AnyReadState, AnyState};
 #[cfg(target_os = "macos")]
 use crate::color_dialog::style::macos::MacOSNativeColorDialogStyle;
@@ -16,6 +16,7 @@ pub(crate) struct ColorDialogStyleKey;
 
 impl EnvironmentKey for ColorDialogStyleKey {
     type Value = Box<dyn ColorDialogStyle>;
+    type Access = Shared;
 }
 
 pub trait ColorDialogStyle: Debug + DynClone + 'static {

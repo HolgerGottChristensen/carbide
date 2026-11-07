@@ -8,7 +8,7 @@ pub use segmented_style::*;
 pub use menu_style::*;
 
 use crate::identifiable::{AnyIdentifiableWidget, AnySelectableWidget, IdentifiableWidget};
-use carbide::environment::EnvironmentKey;
+use carbide::environment::{EnvironmentKey, Shared};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState, ReadStateExtNew, State, StateContract, StateExtNew};
 use carbide::widget::{AnySequence, AnyWidget, Sequence, Widget, WidgetExt, WidgetStyle};
@@ -22,6 +22,7 @@ pub(crate) struct PickerStyleKey;
 
 impl EnvironmentKey for PickerStyleKey {
     type Value = Box<dyn PickerStyle>;
+    type Access = Shared;
 }
 
 pub trait PickerStyle: WidgetStyle {

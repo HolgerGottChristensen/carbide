@@ -1,3 +1,4 @@
+use carbide::environment::Shared;
 use crate::environment::{Environment, EnvironmentKeyable};
 use crate::state::*;
 use crate::environment::EnvironmentKey;
@@ -84,64 +85,75 @@ impl ConvertIntoRead<u32> for EnvironmentFontSize {
 struct EnvironmentFontSizeLargeTitle;
 impl EnvironmentKey for EnvironmentFontSizeLargeTitle {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle;
 impl EnvironmentKey for EnvironmentFontSizeTitle {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle2;
 impl EnvironmentKey for EnvironmentFontSizeTitle2 {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeTitle3;
 impl EnvironmentKey for EnvironmentFontSizeTitle3 {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeHeadline;
 impl EnvironmentKey for EnvironmentFontSizeHeadline {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeBody;
 impl EnvironmentKey for EnvironmentFontSizeBody {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCallout;
 impl EnvironmentKey for EnvironmentFontSizeCallout {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeSubhead;
 impl EnvironmentKey for EnvironmentFontSizeSubhead {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeFootnote;
 impl EnvironmentKey for EnvironmentFontSizeFootnote {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCaption;
 impl EnvironmentKey for EnvironmentFontSizeCaption {
     type Value = u32;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentFontSizeCaption2;
 impl EnvironmentKey for EnvironmentFontSizeCaption2 {
     type Value = u32;
+    type Access = Shared;
 }

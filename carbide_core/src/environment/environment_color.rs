@@ -1,6 +1,6 @@
 use carbide_derive::Id;
 use crate::draw::Color;
-use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable};
+use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable, Shared};
 use crate::identifiable::Identifiable;
 use crate::render::Style;
 use crate::state::*;
@@ -227,198 +227,231 @@ impl<T> IntoColorReadState for T where T: IntoReadState<Color> {
 struct EnvironmentColorBlue;
 impl EnvironmentKey for EnvironmentColorBlue {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGreen;
 impl EnvironmentKey for EnvironmentColorGreen {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorIndigo;
 impl EnvironmentKey for EnvironmentColorIndigo {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorOrange;
 impl EnvironmentKey for EnvironmentColorOrange {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPink;
 impl EnvironmentKey for EnvironmentColorPink {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPurple;
 impl EnvironmentKey for EnvironmentColorPurple {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRed;
 impl EnvironmentKey for EnvironmentColorRed {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTeal;
 impl EnvironmentKey for EnvironmentColorTeal {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorYellow;
 impl EnvironmentKey for EnvironmentColorYellow {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray;
 impl EnvironmentKey for EnvironmentColorGray {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray2;
 impl EnvironmentKey for EnvironmentColorGray2 {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray3;
 impl EnvironmentKey for EnvironmentColorGray3 {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray4;
 impl EnvironmentKey for EnvironmentColorGray4 {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray5;
 impl EnvironmentKey for EnvironmentColorGray5 {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorGray6;
 impl EnvironmentKey for EnvironmentColorGray6 {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct EnvironmentColorLabel;
 impl EnvironmentKey for EnvironmentColorLabel {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondaryLabel;
 impl EnvironmentKey for EnvironmentColorSecondaryLabel {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiaryLabel;
 impl EnvironmentKey for EnvironmentColorTertiaryLabel {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorQuaternaryLabel;
 impl EnvironmentKey for EnvironmentColorQuaternaryLabel {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSystemFill;
 impl EnvironmentKey for EnvironmentColorSystemFill {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondarySystemFill;
 impl EnvironmentKey for EnvironmentColorSecondarySystemFill {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiarySystemFill;
 impl EnvironmentKey for EnvironmentColorTertiarySystemFill {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorQuaternarySystemFill;
 impl EnvironmentKey for EnvironmentColorQuaternarySystemFill {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorPlaceholderText;
 impl EnvironmentKey for EnvironmentColorPlaceholderText {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSystemBackground;
 impl EnvironmentKey for EnvironmentColorSystemBackground {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSecondarySystemBackground;
 impl EnvironmentKey for EnvironmentColorSecondarySystemBackground {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorTertiarySystemBackground;
 impl EnvironmentKey for EnvironmentColorTertiarySystemBackground {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorSeparator;
 impl EnvironmentKey for EnvironmentColorSeparator {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorOpaqueSeparator;
 impl EnvironmentKey for EnvironmentColorOpaqueSeparator {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorLink;
 impl EnvironmentKey for EnvironmentColorLink {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorDarkText;
 impl EnvironmentKey for EnvironmentColorDarkText {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorLightText;
 impl EnvironmentKey for EnvironmentColorLightText {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct EnvironmentColorAccent;
 impl EnvironmentKey for EnvironmentColorAccent {
     type Value = Color;
+    type Access = Shared;
 }
 
 // Material colors theme
@@ -426,30 +459,35 @@ impl EnvironmentKey for EnvironmentColorAccent {
 struct EnvironmentColorUltraThick;
 impl EnvironmentKey for EnvironmentColorUltraThick {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThick;
 impl EnvironmentKey for EnvironmentColorThick {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegular;
 impl EnvironmentKey for EnvironmentColorRegular {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThin;
 impl EnvironmentKey for EnvironmentColorThin {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThin;
 impl EnvironmentKey for EnvironmentColorUltraThin {
     type Value = Color;
+    type Access = Shared;
 }
 
 // Material colors theme light
@@ -457,30 +495,35 @@ impl EnvironmentKey for EnvironmentColorUltraThin {
 struct EnvironmentColorUltraThickLight;
 impl EnvironmentKey for EnvironmentColorUltraThickLight {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThickLight;
 impl EnvironmentKey for EnvironmentColorThickLight {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegularLight;
 impl EnvironmentKey for EnvironmentColorRegularLight {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThinLight;
 impl EnvironmentKey for EnvironmentColorThinLight {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThinLight;
 impl EnvironmentKey for EnvironmentColorUltraThinLight {
     type Value = Color;
+    type Access = Shared;
 }
 
 // Material colors theme dark
@@ -488,28 +531,33 @@ impl EnvironmentKey for EnvironmentColorUltraThinLight {
 struct EnvironmentColorUltraThickDark;
 impl EnvironmentKey for EnvironmentColorUltraThickDark {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThickDark;
 impl EnvironmentKey for EnvironmentColorThickDark {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorRegularDark;
 impl EnvironmentKey for EnvironmentColorRegularDark {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorThinDark;
 impl EnvironmentKey for EnvironmentColorThinDark {
     type Value = Color;
+    type Access = Shared;
 }
 
 #[derive(Copy, Clone, Debug)]
 struct EnvironmentColorUltraThinDark;
 impl EnvironmentKey for EnvironmentColorUltraThinDark {
     type Value = Color;
+    type Access = Shared;
 }

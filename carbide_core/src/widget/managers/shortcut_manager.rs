@@ -1,4 +1,5 @@
-use crate::environment::EnvironmentKey;
+use carbide::environment::Shared;
+use crate::environment::{EnvironmentKey, Exclusive};
 use crate::widget::WidgetId;
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ impl ShortcutManager {
 
 impl EnvironmentKey for ShortcutManager {
     type Value = ShortcutManager;
+    type Access = Exclusive;
 }
 
 #[derive(Copy, Clone, Debug)]

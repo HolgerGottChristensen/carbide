@@ -1,11 +1,12 @@
 use crate::draw::Position;
-use crate::environment::{Environment, EnvironmentKey};
+use crate::environment::{Environment, EnvironmentKey, Shared};
 
 #[derive(Debug, Copy, Clone)]
 pub struct MousePositionKey;
 
 impl EnvironmentKey for MousePositionKey {
     type Value = Position;
+    type Access = Shared;
 }
 
 pub trait MousePositionEnvironmentExt {

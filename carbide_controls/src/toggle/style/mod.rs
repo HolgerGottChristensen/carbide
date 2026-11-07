@@ -12,6 +12,7 @@ use dyn_clone::{clone_trait_object, DynClone};
 use std::fmt::Debug;
 use carbide::accessibility::Role;
 use carbide::draw::AutomaticStyle;
+use carbide::environment::Shared;
 use carbide::widget::WidgetStyle;
 pub use switch_style::*;
 use crate::toggle::ToggleValue;
@@ -21,6 +22,7 @@ pub(crate) struct ToggleStyleKey;
 
 impl EnvironmentKey for ToggleStyleKey {
     type Value = Box<dyn ToggleStyle>;
+    type Access = Shared;
 }
 
 pub trait ToggleStyle: WidgetStyle {

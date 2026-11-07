@@ -4,7 +4,6 @@ use std::fmt::{Debug, Formatter};
 use typed_arena::Arena;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::{BindGroup, BindGroupLayout, Buffer, BufferUsages, CommandEncoder, Device, Extent3d, Queue, RenderPassDepthStencilAttachment, TexelCopyTextureInfo, Texture};
-use carbide::environment::Mut;
 use carbide_core::draw::color_space::ColorSpace;
 use carbide_core::draw::gradient::{GradientRepeat, GradientType};
 use carbide_core::draw::{Dimension, DrawGradient, ImageId, Position, Rect, Scalar};
@@ -71,9 +70,7 @@ impl OffscreenRenderer {
         };
         let gradient = WgpuGradient::convert(&gradient);
 
-        let (wgpu_context, wgpu_context_new) = env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
-        let wgpu_context = wgpu_context.unwrap();
-        let wgpu_context_new = wgpu_context_new.unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         let gradient_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_gradient_buffer"),
@@ -232,8 +229,8 @@ impl OffscreenRenderer {
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
         let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
-        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(Mut<WgpuContext>, Mut<WgpuContextNew>)>();
-        self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context.unwrap(), wgpu_context_new.unwrap(), encoder);
+        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
+        self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context, wgpu_context_new, encoder);
     }
 
     pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>, scale_factor: Scalar, env: &mut Environment) {
@@ -243,9 +240,7 @@ impl OffscreenRenderer {
             WgpuRenderTarget::new(new_size.width, new_size.height, self.msaa, env)
         ];
 
-        let (wgpu_context, wgpu_context_new) = env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
-        let wgpu_context = wgpu_context.unwrap();
-        let wgpu_context_new = wgpu_context_new.unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         self.texture_size_bind_group = size_to_uniform_bind_group(
             &wgpu_context_new.device,

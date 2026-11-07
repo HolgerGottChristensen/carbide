@@ -1,6 +1,7 @@
 use smallvec::SmallVec;
+use carbide::environment::Shared;
 use crate::draw::Dimension;
-use crate::environment::EnvironmentKey;
+use crate::environment::{EnvironmentKey, Exclusive};
 use crate::scene::{AnyScene, Scene, SceneId};
 use crate::draw::Scalar;
 use crate::environment::Environment;
@@ -100,4 +101,5 @@ impl SceneManager {
 
 impl EnvironmentKey for SceneManager {
     type Value = SceneManager;
+    type Access = Exclusive;
 }

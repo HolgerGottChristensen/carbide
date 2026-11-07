@@ -17,19 +17,20 @@ use crate::ModifierWidgetImpl;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use carbide::draw::Rect;
+use carbide::environment::Shared;
 use carbide::event::{ApplicationEvent, ApplicationEventContext};
 use crate::identifiable::Identifiable;
 use crate::widget::{WidgetId};
 
 #[derive(Debug, Widget)]
 #[carbide_derive(Sync)]
-pub struct EnvUpdatingNew<C, K> where C: Widget, K: EnvironmentKey, K::Value: Clone {
+pub struct EnvUpdatingNew<C, K> where C: Widget, K: EnvironmentKey<Access=Shared>, K::Value: Clone {
     child: C,
     key: PhantomData<K>,
     value: K::Value,
 }
 
-impl<C: Widget, K: EnvironmentKey> Clone for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Clone for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn clone(&self) -> Self {
         EnvUpdatingNew {
             child: self.child.clone(),
@@ -39,11 +40,11 @@ impl<C: Widget, K: EnvironmentKey> Clone for EnvUpdatingNew<C, K> where K::Value
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> WidgetProperties for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> WidgetProperties for EnvUpdatingNew<C, K> where K::Value: Clone {
     type Kind = C::Kind;
 }
 
-impl<C: Widget, K: EnvironmentKey> EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> EnvUpdatingNew<C, K> where K::Value: Clone {
     pub fn new(value: K::Value, child: C) -> EnvUpdatingNew<C, K> {
         EnvUpdatingNew {
             child,
@@ -53,7 +54,7 @@ impl<C: Widget, K: EnvironmentKey> EnvUpdatingNew<C, K> where K::Value: Clone {
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Layout for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Layout for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         let mut response = requested_size;
 
@@ -85,7 +86,7 @@ impl<C: Widget, K: EnvironmentKey> Layout for EnvUpdatingNew<C, K> where K::Valu
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Update for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Update for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_update(&mut UpdateContext {
@@ -97,7 +98,7 @@ impl<C: Widget, K: EnvironmentKey> Update for EnvUpdatingNew<C, K> where K::Valu
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Initialize for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Initialize for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_initialization(&mut self, ctx: &mut InitializationContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_initialization(&mut InitializationContext {
@@ -107,7 +108,7 @@ impl<C: Widget, K: EnvironmentKey> Initialize for EnvUpdatingNew<C, K> where K::
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> OtherEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> OtherEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_other_event(event, &mut OtherEventContext {
@@ -121,7 +122,7 @@ impl<C: Widget, K: EnvironmentKey> OtherEventHandler for EnvUpdatingNew<C, K> wh
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> WindowEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> WindowEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_window_event(event, &mut WindowEventContext {
@@ -135,7 +136,7 @@ impl<C: Widget, K: EnvironmentKey> WindowEventHandler for EnvUpdatingNew<C, K> w
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> ApplicationEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> ApplicationEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_application_event(event, &mut ApplicationEventContext {
@@ -147,7 +148,7 @@ impl<C: Widget, K: EnvironmentKey> ApplicationEventHandler for EnvUpdatingNew<C,
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> AccessibilityEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> AccessibilityEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_accessibility_event(event, &mut AccessibilityEventContext {
@@ -157,7 +158,7 @@ impl<C: Widget, K: EnvironmentKey> AccessibilityEventHandler for EnvUpdatingNew<
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> KeyboardEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> KeyboardEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
@@ -172,7 +173,7 @@ impl<C: Widget, K: EnvironmentKey> KeyboardEventHandler for EnvUpdatingNew<C, K>
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> MouseEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> MouseEventHandler for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_mouse_event(event, &mut MouseEventContext {
@@ -187,7 +188,7 @@ impl<C: Widget, K: EnvironmentKey> MouseEventHandler for EnvUpdatingNew<C, K> wh
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Focusable for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Focusable for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_focus_next(&mut self, ctx: &mut FocusContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_focus_next(&mut FocusContext {
@@ -219,7 +220,7 @@ impl<C: Widget, K: EnvironmentKey> Focusable for EnvUpdatingNew<C, K> where K::V
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Accessibility for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Accessibility for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.process_accessibility(&mut AccessibilityContext {
@@ -237,7 +238,7 @@ impl<C: Widget, K: EnvironmentKey> Accessibility for EnvUpdatingNew<C, K> where 
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Render for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Render for EnvUpdatingNew<C, K> where K::Value: Clone {
     fn render(&mut self, ctx: &mut RenderContext) {
         ctx.env.with::<K>(&self.value, |inner| {
             self.child.render(&mut RenderContext {
@@ -250,7 +251,7 @@ impl<C: Widget, K: EnvironmentKey> Render for EnvUpdatingNew<C, K> where K::Valu
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> Identifiable for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> Identifiable for EnvUpdatingNew<C, K> where K::Value: Clone {
     type Id = WidgetId;
 
     fn id(&self) -> WidgetId {
@@ -258,6 +259,6 @@ impl<C: Widget, K: EnvironmentKey> Identifiable for EnvUpdatingNew<C, K> where K
     }
 }
 
-impl<C: Widget, K: EnvironmentKey> CommonWidget for EnvUpdatingNew<C, K> where K::Value: Clone {
+impl<C: Widget, K: EnvironmentKey<Access=Shared>> CommonWidget for EnvUpdatingNew<C, K> where K::Value: Clone {
     ModifierWidgetImpl!(self, child: self.child);
 }

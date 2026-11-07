@@ -4,7 +4,7 @@ mod unstyled;
 use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::draw::AutomaticStyle;
-use carbide::environment::EnvironmentKey;
+use carbide::environment::{EnvironmentKey, Shared};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnySequence, AnyWidget, WidgetStyle};
@@ -17,6 +17,7 @@ pub(crate) struct SliderStyleKey;
 
 impl EnvironmentKey for SliderStyleKey {
     type Value = Box<dyn SliderStyle>;
+    type Access = Shared;
 }
 
 pub trait SliderStyle: WidgetStyle {

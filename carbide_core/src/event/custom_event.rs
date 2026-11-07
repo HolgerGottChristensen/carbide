@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use dyn_clone::DynClone;
+use carbide::environment::Shared;
 use crate::environment::EnvironmentKey;
 
 #[derive(Debug, Clone, Copy)]
@@ -17,6 +18,7 @@ dyn_clone::clone_trait_object!(EventSink);
 
 impl EnvironmentKey for dyn EventSink {
     type Value = Arc<dyn EventSink>;
+    type Access = Shared;
 }
 
 impl Debug for dyn EventSink {

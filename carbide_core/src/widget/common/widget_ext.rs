@@ -1,10 +1,11 @@
 use cgmath::Matrix4;
+use carbide::environment::Exclusive;
 use carbide::widget::{EnvUpdatingNew, WidgetProperties};
 use crate::widget::managers::ThemeManager;
 use crate::color::RED;
 use crate::draw::{Angle, Color, Rect, Scalar};
 use crate::draw::Dimension;
-use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, EnvironmentKey, EnvironmentKeyable};
+use crate::environment::{EnvironmentColorAccent, EnvironmentColorLabel, EnvironmentKey, EnvironmentKeyable, Shared};
 use crate::event::{KeyboardEventContext, ModifierKey};
 use crate::event::Key as KeyboardKey;
 use crate::common::flags::WidgetFlag;
@@ -141,7 +142,7 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         Mask::new(mask, self)
     }
 
-    fn text_wrap<E: IntoReadState<Wrap>>(self, wrap: E) -> Wrapped<Self, impl EnvironmentKey<Value=Wrap>, impl ReadState<T=Wrap>> {
+    fn text_wrap<E: IntoReadState<Wrap>>(self, wrap: E) -> Wrapped<Self, impl EnvironmentKey<Value=Wrap, Access=Shared>, impl ReadState<T=Wrap>> {
         EnvUpdatingNew2::<Self, TextWrapKey, E::Output>::new(wrap.into_read_state(), self)
     }
 
@@ -178,11 +179,11 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         Border::new(self)
     }
 
-    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, impl EnvironmentKey<Value=Color>, C::Output> {
+    fn foreground_color<C: IntoReadState<Color>>(self, color: C) -> ForegroundColor<Self, impl EnvironmentKey<Value=Color, Access=Shared>, C::Output> {
         EnvUpdatingNew2::<Self, EnvironmentColorLabel, C::Output>::new(color.into_read_state(), self)
     }
 
-    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, impl EnvironmentKey<Value=Color>, C::Output> {
+    fn accent_color<C: IntoReadState<Color>>(self, color: C) -> AccentColor<Self, impl EnvironmentKey<Value=Color, Access=Shared>, C::Output> {
         EnvUpdatingNew2::<Self, EnvironmentColorAccent, C::Output>::new(color.into_read_state(), self)
     }
 
@@ -227,7 +228,7 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         Luminance::new(self, shift)
     }
 
-    fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl EnvironmentKey<Value = Theme>, impl ReadState<T=Theme>> {
+    fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl EnvironmentKey<Value=Theme, Access=Shared>, impl ReadState<T=Theme>> {
         EnvUpdatingNew2::<ThemeManager<Self>, Theme, T::Output>::new(theme.into_read_state(), ThemeManager::new(self))
     }
 
@@ -235,7 +236,7 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         EnvUpdatingNew3::<Self, K, V::Output>::new(key, value.into_read_state(), self)
     }
 
-    fn overlay<K: EnvironmentKey<Value=OverlayManager> + Clone>(self) -> Overlay<K, Self> {
+    fn overlay<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone>(self) -> Overlay<K, Self> {
         Overlay::<K, Self>::new(self)
     }
 

@@ -8,6 +8,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide_core::event::{Key, MouseButton, TouchPhase};
 pub use event_handler::*;
 use winit::raw_window_handle_05::RawWindowHandle;
+use carbide_core::environment::Shared;
 
 mod event_handler;
 pub mod custom_event;
@@ -17,6 +18,7 @@ pub struct WindowHandleKey;
 
 impl carbide_core::environment::EnvironmentKey for WindowHandleKey {
     type Value = RawWindowHandle;
+    type Access = Shared;
 }
 
 /// Types that have access to a `winit::Window` and can provide the necessary dimensions and hidpi

@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use carbide::environment::Shared;
 use crate::environment::Environment;
 use crate::state::{EnvMap1, Map1};
 use carbide_derive::StateValue;
@@ -26,6 +27,7 @@ pub(crate) struct TextWrapKey;
 
 impl EnvironmentKey for TextWrapKey {
     type Value = Wrap;
+    type Access = Shared;
 }
 
 pub type WrapState = EnvMap1<fn(&mut Environment, &i32) -> Wrap, i32, Wrap, i32>;

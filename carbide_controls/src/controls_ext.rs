@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use carbide::environment::{EnvironmentKey};
+use carbide::environment::{EnvironmentKey, Shared};
 use carbide::state::{ReadState, StateContract, ValueState};
 use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2, Widget};
 use carbide_core::environment::EnvironmentColor;
@@ -32,7 +32,7 @@ pub trait ControlsExt: WidgetExt {
         Labelled::new(label, self)
     }
 
-    fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self, impl EnvironmentKey<Value=bool>, impl ReadState<T=bool>> {
+    fn enabled<E: IntoReadState<bool>>(self, enabled: E) -> Enabled<Self, impl EnvironmentKey<Value=bool, Access=Shared>, impl ReadState<T=bool>> {
         EnvUpdatingNew2::<Self, EnabledKey, E::Output>::new(enabled.into_read_state(), self)
     }
 

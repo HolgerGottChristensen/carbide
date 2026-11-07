@@ -652,7 +652,7 @@ impl NewEventHandler {
 
         match state {
             ElementState::Pressed => {
-                env.with_mut::<ShortcutManager>(&mut shortcut_manager, |env| {
+                env.with::<ShortcutManager>(&mut shortcut_manager, |env| {
                     for scene in scenes.iter_mut() {
                         scene.process_keyboard_event(&KeyboardEvent::Press {
                             key: key.clone(),
@@ -702,7 +702,7 @@ impl NewEventHandler {
                 }
             },
             ElementState::Released => {
-                env.with_mut::<ShortcutManager>(&mut shortcut_manager, |env| {
+                env.with::<ShortcutManager>(&mut shortcut_manager, |env| {
                     for scene in scenes.iter_mut() {
                         scene.process_keyboard_event(&KeyboardEvent::Release {
                             key: key.clone(),

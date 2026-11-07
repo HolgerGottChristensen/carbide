@@ -13,7 +13,6 @@ use carbide_core::widget::Widget;
 use carbide_winit::convert_mouse_cursor;
 use carbide_winit::dpi::PhysicalSize;
 use log::info;
-use carbide::environment::Mut;
 use carbide_core::environment::Environment;
 use carbide_wgpu_core::WgpuContextNew;
 use crate::wgpu_context::WgpuContext;
@@ -104,10 +103,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let render_passes = render_passes.expect("with_env always runs its closure exactly once");
 
-        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(Mut<WgpuContext>, WgpuContextNew)>();
-
-        let wgpu_context = wgpu_context.unwrap();
-        let wgpu_context_new = wgpu_context_new.unwrap();
+        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         if self.visible {
             let cursor = convert_mouse_cursor(self.mouse_cursor);
@@ -213,10 +209,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         info!("{:#?}", self.surface_configuration);
 
-        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>();
-
-        let wgpu_context = wgpu_context.unwrap();
-        let wgpu_context_new = wgpu_context_new.unwrap();
+        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         self.surface.configure(
             &wgpu_context_new.device,

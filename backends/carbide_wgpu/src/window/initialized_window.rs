@@ -76,9 +76,9 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         let mut cursor = self.mouse_cursor;
 
         env.with::<Theme>(&theme_for_frame, |env| {
-            env.with_mut::<SceneManager>(&mut scene_manager, |env| {
+            env.with::<SceneManager>(&mut scene_manager, |env| {
                 env.with::<WindowHandleKey>(&handle, |env| {
-                    env.with_mut::<MouseCursor>(&mut cursor, |env| {
+                    env.with::<MouseCursor>(&mut cursor, |env| {
                         f(env, self)
                     })
                 })
@@ -89,7 +89,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let mut screenshot_requests = std::mem::take(scene_manager.screenshot_requests());
         if !screenshot_requests.is_empty() {
-            let wgpu_context = env.get_mut::<WgpuContextNew>()
+            let wgpu_context = env.get::<WgpuContextNew>()
                 .expect("WgpuContext is in scope at every call site that reaches InitializedWindow::with_env");
             let image = crate::screenshot::capture_texture_to_image(
                 &wgpu_context.device,

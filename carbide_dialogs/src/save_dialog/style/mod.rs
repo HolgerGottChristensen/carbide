@@ -4,7 +4,7 @@ use crate::save_dialog::style::macos::MacOSNativeSaveDialogStyle;
 use crate::{FileType, NativeStyle};
 use carbide::asynchronous::AsyncContext;
 use carbide::draw::AutomaticStyle;
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::{Environment, EnvironmentKey, Shared};
 use dyn_clone::{clone_trait_object, DynClone};
 use oneshot::RecvError;
 use std::fmt::Debug;
@@ -18,6 +18,7 @@ pub(crate) struct SaveDialogStyleKey;
 
 impl EnvironmentKey for SaveDialogStyleKey {
     type Value = Box<dyn SaveDialogStyle>;
+    type Access = Shared;
 }
 
 pub trait SaveDialogStyle: Debug + DynClone + 'static {

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use dyn_clone::{clone_trait_object, DynClone};
 use carbide::automatic_style::AutomaticStyle;
 use carbide::color::Color;
-use carbide::environment::{Environment, EnvironmentKey};
+use carbide::environment::{Environment, EnvironmentKey, Shared};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnySequence, AnyWidget, Sequence};
@@ -14,6 +14,7 @@ pub(crate) struct ContextMenuStyleKey;
 
 impl EnvironmentKey for ContextMenuStyleKey {
     type Value = Box<dyn ContextMenuStyle>;
+    type Access = Shared;
 }
 
 pub trait ContextMenuStyle: Debug + DynClone {

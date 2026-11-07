@@ -1,4 +1,4 @@
-use crate::environment::EnvironmentKey;
+use crate::environment::{EnvironmentKey, Shared};
 use crate::impl_state_value;
 
 #[derive(Copy, Clone, Debug)]
@@ -9,6 +9,7 @@ pub enum Theme {
 
 impl EnvironmentKey for Theme {
     type Value = Theme;
+    type Access = Shared;
 }
 
 impl Default for Theme {
