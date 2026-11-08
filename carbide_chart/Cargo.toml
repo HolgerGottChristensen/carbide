@@ -14,13 +14,6 @@ carbide_derive.workspace = true
 carbide_core.workspace = true
 carbide_fluent = { workspace = true, optional = true }
 
-[dev-dependencies]
-carbide_winit = { workspace = true, features = ["controls"] }
-carbide_controls.workspace = true
-rand.workspace = true
-carbide_fluent.workspace = true
-
-
 [features]
 default = ["carbide_fluent"]
 

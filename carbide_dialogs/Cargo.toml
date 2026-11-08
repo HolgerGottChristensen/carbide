@@ -22,11 +22,5 @@ objc2-app-kit = { workspace = true, features = ["all"] }
 objc2-uniform-type-identifiers = { workspace = true, features = ["all"] } # Can be removed when https://github.com/madsmtm/objc2/milestone/6 is on crates
 block2.workspace = true
 
-
-[dev-dependencies]
-carbide_winit.workspace = true
-carbide_core = { workspace = true, features = ["tokio"] }
-carbide_controls.workspace = true
-
 [lints]
 workspace = true

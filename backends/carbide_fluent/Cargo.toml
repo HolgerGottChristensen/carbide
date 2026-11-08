@@ -18,9 +18,5 @@ icu.workspace = true
 walkdir.workspace = true
 chrono.workspace = true
 
-[dev-dependencies]
-carbide_winit = { workspace = true, features = ["controls"] }
-carbide_controls = { workspace = true, features = ["carbide_fluent"] }
-
 [lints]
 workspace = true

@@ -9,9 +9,5 @@ authors.workspace = true
 carbide_core.workspace = true
 dyn-clone.workspace = true
 
-
-[dev-dependencies]
-carbide_winit.workspace = true
-
 [lints]
 workspace = true

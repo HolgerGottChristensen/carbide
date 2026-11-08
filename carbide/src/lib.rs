@@ -41,6 +41,16 @@ pub mod media {
     pub use carbide_media::*;
 }
 
+#[cfg(feature = "carbide_table")]
+pub mod table {
+    pub use carbide_table::*;
+}
+
+#[cfg(feature = "carbide_icons")]
+pub mod icons {
+    pub use carbide_icons::*;
+}
+
 pub fn init() {
     static INITIALIZED: AtomicBool = AtomicBool::new(false);
     if !INITIALIZED.swap(true, Ordering::Relaxed) {

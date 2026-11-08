@@ -1,0 +1,70 @@
+use std::iter;
+
+use carbide::chart::{Chart, DatasetExt, ScatterController, Stepped};
+use carbide::controls::{ControlsExt};
+use carbide::controls::picker::{MenuStyle, Picker};
+use carbide::draw::{Dimension, Position, Scalar};
+use carbide::state::{LocalState, ValueState};
+use carbide::widget::{Text, VStack, WidgetExt};
+use carbide::i18n::{locale, LocaleExt};
+use carbide::{Application, Window};
+
+fn main() {
+    let mut application = Application::new()
+        .with_asset_fonts();
+
+    let stepped = LocalState::new(Stepped::None);
+
+    let _data1 = iter::repeat_with(|| {
+        Position::new(rand::random::<Scalar>() * 100.0, rand::random::<Scalar>())
+    }).take(40).collect::<Vec<_>>();
+
+    let _data4 = iter::repeat_with(|| {
+        Position::new(rand::random::<Scalar>(), rand::random::<Scalar>())
+    }).take(40).collect::<Vec<_>>();
+
+    let _data5 = iter::repeat_with(|| {
+        Position::new(rand::random::<Scalar>(), rand::random::<Scalar>())
+    }).take(40).collect::<Vec<_>>();
+
+    let _data2 = iter::repeat_with(|| {
+        rand::random::<Scalar>()
+    }).take(40).collect::<Vec<_>>();
+
+    let _data3 = (0..100)
+        .into_iter()
+        .map(|a| a as Scalar / 10.0)
+        .map(f64::sin)
+        .collect::<Vec<_>>();
+
+    let _data6 = (0..100)
+        .into_iter()
+        .map(|a| a as Scalar / 10.0)
+        .map(f64::cos)
+        .collect::<Vec<_>>();
+
+    let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].stepped(stepped.clone());
+    let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
+
+    application.set_scene(
+        Window::new(
+            "Chart example - Carbide",
+            Dimension::new(700.0, 700.0),
+            VStack::new((
+                //Chart::new(ScatterController::new(data2))
+                Chart::new(ScatterController::new((data7, data8)))
+                    //Chart::new(ScatterController::new((data3, data6)))
+                    .border()
+                    .locale(ValueState::new(locale!("da"))),
+                Picker::new("Stepped:", stepped.clone(), (
+                    Text::new("None").tag(Stepped::None),
+                    Text::new("Before").tag(Stepped::Before),
+                    Text::new("After").tag(Stepped::After),
+                    Text::new("Middle").tag(Stepped::Middle),
+                    Text::new("MiddleVertical").tag(Stepped::MiddleVertical),
+                )).picker_style(MenuStyle)
+            )).padding(50.0)
+        ));
+
+    application.launch();
+}

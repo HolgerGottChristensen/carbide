@@ -10,29 +10,11 @@ authors.workspace = true
 carbide_core.workspace = true
 include_dir.workspace = true
 
-[dev-dependencies]
-futures.workspace = true
-carbide_wgpu = { workspace = true, features = ["icons"] }
-carbide_winit.workspace = true
-copypasta.workspace = true
-
 [features]
 default = []
 lucide = []
 tabler = []
 remix = []
-
-[[example]]
-name = "lucide"
-required-features = ["lucide"]
-
-[[example]]
-name = "remix"
-required-features = ["remix"]
-
-[[example]]
-name = "tabler"
-required-features = ["tabler"]
 
 [lints]
 workspace = true

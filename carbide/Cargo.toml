@@ -20,9 +20,13 @@ controls = ["carbide_controls", "carbide_winit/controls"]
 media = ["carbide_media", "icons"]
 chart = ["carbide_chart"]
 dialogs = ["carbide_dialogs"]
-i18n = ["carbide_fluent"]
+# Also enables the controls' fluent integration, when controls are enabled.
+i18n = ["carbide_fluent", "carbide_controls?/carbide_fluent"]
 3d = ["carbide_3d", "carbide_wgpu_3d"]
 icons = ["carbide_icons", "carbide_wgpu/icons", "carbide_icons/lucide"]
+icons_remix = ["icons", "carbide_icons/remix"]
+icons_tabler = ["icons", "carbide_icons/tabler"]
+table = ["carbide_table"]
 
 [dependencies]
 carbide_core.workspace = true
@@ -37,12 +41,15 @@ carbide_fluent = { workspace = true, optional = true }
 carbide_chart = { workspace = true, optional = true }
 carbide_dialogs = { workspace = true, optional = true }
 carbide_icons = { workspace = true, optional = true }
+carbide_table = { workspace = true, optional = true }
 
 [dev-dependencies]
-# The examples use controls and icons, so enable them without passing --features.
-carbide = { workspace = true, features = ["controls", "icons"] }
+# The examples use these features, so enable them without passing --features.
+carbide = { workspace = true, features = ["controls", "icons", "chart", "dialogs", "i18n", "media", "table"] }
 reqwest.workspace = true
 chrono.workspace = true
+rand.workspace = true
+copypasta.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
@@ -372,6 +379,171 @@ path = "examples/widgets/progress_view.rs"
 [[example]]
 name = "scroll"
 path = "examples/widgets/scroll.rs"
+
+# chart
+[[example]]
+name = "chart"
+path = "examples/chart/chart.rs"
+
+[[example]]
+name = "chart_circle"
+path = "examples/chart/chart_circle.rs"
+
+# controls
+[[example]]
+name = "button"
+path = "examples/controls/button.rs"
+
+[[example]]
+name = "calendar"
+path = "examples/controls/calendar.rs"
+
+[[example]]
+name = "color_picker"
+path = "examples/controls/color_picker.rs"
+
+[[example]]
+name = "context_menu"
+path = "examples/controls/context_menu.rs"
+
+[[example]]
+name = "date_picker"
+path = "examples/controls/date_picker.rs"
+
+[[example]]
+name = "focus_behavior"
+path = "examples/controls/focus_behavior.rs"
+
+[[example]]
+name = "foreach_identifiable"
+path = "examples/controls/foreach_identifiable.rs"
+
+[[example]]
+name = "help"
+path = "examples/controls/help.rs"
+
+[[example]]
+name = "list"
+path = "examples/controls/list.rs"
+
+[[example]]
+name = "list_add_remove"
+path = "examples/controls/list_add_remove.rs"
+
+[[example]]
+name = "list_content"
+path = "examples/controls/list_content.rs"
+
+[[example]]
+name = "list_selectable_multiple"
+path = "examples/controls/list_selectable_multiple.rs"
+
+[[example]]
+name = "list_selectable_multiple2"
+path = "examples/controls/list_selectable_multiple2.rs"
+
+[[example]]
+name = "list_selectable_single"
+path = "examples/controls/list_selectable_single.rs"
+
+[[example]]
+name = "list_selectable_single2"
+path = "examples/controls/list_selectable_single2.rs"
+
+[[example]]
+name = "list_styled"
+path = "examples/controls/list_styled.rs"
+
+[[example]]
+name = "picker"
+path = "examples/controls/picker.rs"
+
+[[example]]
+name = "plain_calendar"
+path = "examples/controls/plain_calendar.rs"
+
+[[example]]
+name = "plain_date_picker"
+path = "examples/controls/plain_date_picker.rs"
+
+[[example]]
+name = "plain_text_input"
+path = "examples/controls/plain_text_input.rs"
+
+[[example]]
+name = "slider"
+path = "examples/controls/slider.rs"
+
+[[example]]
+name = "text_input"
+path = "examples/controls/text_input.rs"
+
+[[example]]
+name = "text_input_obscure"
+path = "examples/controls/text_input_obscure.rs"
+
+[[example]]
+name = "toggle"
+path = "examples/controls/toggle.rs"
+
+[[example]]
+name = "tree_list"
+path = "examples/controls/tree_list.rs"
+
+# dialogs
+[[example]]
+name = "color_dialog"
+path = "examples/dialogs/color_dialog.rs"
+
+[[example]]
+name = "open_dialog"
+path = "examples/dialogs/open_dialog.rs"
+
+[[example]]
+name = "save_dialog"
+path = "examples/dialogs/save_dialog.rs"
+
+# i18n
+[[example]]
+name = "localized_datetime"
+path = "examples/i18n/localized_datetime.rs"
+
+[[example]]
+name = "localized_number"
+path = "examples/i18n/localized_number.rs"
+
+[[example]]
+name = "localized_string"
+path = "examples/i18n/localized_string.rs"
+
+# icons
+[[example]]
+name = "lucide"
+path = "examples/icons/lucide.rs"
+
+[[example]]
+name = "remix"
+path = "examples/icons/remix.rs"
+required-features = ["icons_remix"]
+
+[[example]]
+name = "tabler"
+path = "examples/icons/tabler.rs"
+required-features = ["icons_tabler"]
+
+# media
+[[example]]
+name = "video"
+path = "examples/media/video.rs"
+
+[[example]]
+name = "video_player"
+path = "examples/media/video_player.rs"
+
+# table
+[[example]]
+name = "table"
+path = "examples/table/table.rs"
 
 [lints]
 workspace = true

@@ -118,7 +118,7 @@ Code for the example can be found at: [Textfield Example]
 I have started documenting the main parts of the projects and are planning on starting a mdbook 
 but currently this is in the early stages. 
 
-The easiest way to get started is by looking at the examples in the carbide and carbide_controls crates. These examples show a wide variety of projects and functionalities.
+The easiest way to get started is by looking at the examples in the carbide crate. These examples show a wide variety of projects and functionalities.
 While this is not the ideal form of documentation, it should get you started.
 
 ## Goals
