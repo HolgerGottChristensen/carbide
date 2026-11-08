@@ -3,13 +3,18 @@ use carbide::environment::Environment;
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Dimension, Position, Rect};
+use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use indexmap::IndexMap;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::ControllerSequence;
-use crate::scale::{Axis, ScaleBounds, ScaleId, Scales};
+use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, Scales};
+
+/// The gap between the bands of two scales stacked on the same side of the chart area, like
+/// ag-charts' axis `spacing`.
+const SCALE_SPACING: Scalar = 8.0;
 
 /// A container that owns the scales and draws a sequence of controllers on them. Each dataset
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
@@ -40,6 +45,16 @@ impl<C: ControllerSequence> Chart<C> {
         }
     }
 
+    /// Adds `scale` to the chart under `id`, for datasets bound to it with `.x_scale(id)` or
+    /// `.y_scale(id)`. Passing `ScaleId::X` or `ScaleId::Y` replaces that default scale.
+    ///
+    /// Scales on the same side of the chart area are stacked outwards, each in its own band:
+    /// by `Scale::weight`, then in the order they were added, the first closest to the area.
+    pub fn scale(mut self, id: ScaleId, scale: impl Scale) -> Chart<C> {
+        self.scales.insert(id, scale);
+        self
+    }
+
     /// Collects the bounds every controller reports for each scale id, then fits each scale to
     /// the bounds collected for it. Data bound to an id the chart has no scale for is not drawn;
     /// it is logged once per id.
@@ -59,23 +74,68 @@ impl<C: ControllerSequence> Chart<C> {
         self.scales.fit(&bounds);
     }
 
-    /// The area the datasets are drawn in: the chart's dimension minus the padding and the space
-    /// for the tick labels. Vertical scales' labels sit left of the area, horizontal scales'
-    /// below it (see `Scale::draw_grid`).
-    fn chart_area(&self) -> Rect {
-        let has_ticks = |axis: Axis| self.scales.iter()
-            .any(|(_, scale)| scale.axis() == axis && scale.display_ticks());
+    /// Lays the scales out around the chart area the way Chart.js lays out its boxes
+    /// (`core.layouts.js`): on each side, the scales are sorted by weight, ties kept in the order
+    /// they were added, and stacked outwards from the chart area, each taking a band as wide as
+    /// its measured `sizes` entry (see `Scale::size`), with `SCALE_SPACING` between neighbouring
+    /// bands. The chart area is what the padding and every side's bands leave over.
+    fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>) -> ScaleLayout {
+        let mut offsets = IndexMap::new();
 
-        let left_tick_gutter = if has_ticks(Axis::Vertical) { 10.0 } else { 0.0 };
-        let bottom_tick_gutter = if has_ticks(Axis::Horizontal) { 10.0 } else { 0.0 };
+        let mut stack_side = |side: AxisPosition| -> Scalar {
+            let mut on_side: Vec<(i32, usize, ScaleId)> = self.scales.iter()
+                .enumerate()
+                .filter(|(_, (_, scale))| scale.axis_position() == side)
+                .map(|(index, (id, scale))| (scale.weight(), index, id))
+                .collect();
 
-        Rect::new(
-            Position::new(self.padding.left + left_tick_gutter, self.padding.top),
+            on_side.sort_by_key(|(weight, index, _)| (*weight, *index));
+
+            let mut depth = 0.0;
+            for (_, _, id) in on_side {
+                let size = sizes.get(&id).copied().unwrap_or(0.0);
+
+                // Spacing goes only between two bands: never against the chart area, and not
+                // next to a scale that takes no space.
+                if depth > 0.0 && size > 0.0 {
+                    depth += SCALE_SPACING;
+                }
+
+                offsets.insert(id, depth);
+                depth += size;
+            }
+
+            depth
+        };
+
+        let left = stack_side(AxisPosition::Left);
+        let right = stack_side(AxisPosition::Right);
+        let top = stack_side(AxisPosition::Top);
+        let bottom = stack_side(AxisPosition::Bottom);
+
+        let chart_area = Rect::new(
+            Position::new(self.padding.left + left, self.padding.top + top),
             Dimension::new(
-                self.dimension.width - self.padding.left - self.padding.right - left_tick_gutter,
-                self.dimension.height - self.padding.top - self.padding.bottom - bottom_tick_gutter,
+                self.dimension.width - self.padding.left - self.padding.right - left - right,
+                self.dimension.height - self.padding.top - self.padding.bottom - top - bottom,
             )
-        )
+        );
+
+        ScaleLayout { chart_area, offsets }
+    }
+}
+
+/// Where everything goes for one render: the area the datasets are drawn in, and for each scale
+/// the distance from that area to the inner edge of its band.
+#[derive(Debug)]
+struct ScaleLayout {
+    chart_area: Rect,
+    offsets: IndexMap<ScaleId, Scalar>,
+}
+
+impl ScaleLayout {
+    fn offset(&self, id: ScaleId) -> Scalar {
+        self.offsets.get(&id).copied().unwrap_or(0.0)
     }
 }
 
@@ -91,15 +151,21 @@ impl<C: ControllerSequence> Update for Chart<C> {
 
 impl<C: ControllerSequence> Render for Chart<C> {
     fn render(&mut self, context: &mut RenderContext) {
-        let chart_area = self.chart_area();
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
-        for (_, scale) in self.scales.iter() {
-            scale.draw_grid(&mut canvas, chart_area);
+        let sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
+            .map(|(id, scale)| (id, scale.size(&mut canvas)))
+            .collect();
+
+        let layout = self.layout(&sizes);
+        let chart_area = layout.chart_area;
+
+        for (id, scale) in self.scales.iter() {
+            scale.draw_grid(&mut canvas, chart_area, layout.offset(id));
         }
 
-        for (_, scale) in self.scales.iter() {
-            scale.draw_border(&mut canvas, chart_area);
+        for (id, scale) in self.scales.iter() {
+            scale.draw_border(&mut canvas, chart_area, layout.offset(id));
         }
 
         let scales = &self.scales;
@@ -111,13 +177,14 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
 #[cfg(test)]
 mod tests {
-    use carbide::draw::Scalar;
+    use carbide::draw::{Dimension, Scalar};
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
+    use indexmap::IndexMap;
     use crate::controller::{ControllerSequence, ScatterController};
     use crate::dataset::DatasetExt;
-    use crate::scale::ScaleId;
-    use super::Chart;
+    use crate::scale::{Axis, AxisPosition, LinearScale, ScaleId};
+    use super::{Chart, SCALE_SPACING};
 
     /// Datasets spread over several controllers share the chart's scales: they fit exactly as
     /// they would with every dataset in one controller.
@@ -180,6 +247,106 @@ mod tests {
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 200.0, "Y should cover the large dataset after rebinding, but ends at {y_max}");
+    }
+
+    /// A dataset bound to a custom scale fits that scale, not `ScaleId::Y`, and a scale on the
+    /// right gets a band on the right of the chart area.
+    #[test]
+    fn custom_scales_get_their_own_bounds_and_side() {
+        const PERCENT: ScaleId = ScaleId::new("percent");
+
+        let revenue = vec![120.0, 150.0, 190.0];
+        let margin = vec![0.12, 0.25, 0.31].y_scale(PERCENT);
+
+        let mut chart = fitted(
+            Chart::new(ScatterController::new((revenue, margin)))
+                .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
+        );
+
+        let (percent_min, percent_max) = scale_range(&chart, PERCENT);
+        assert!(percent_min <= 0.12 && percent_max >= 0.31 && percent_max < 1.0, "percent should fit only the margin, got {percent_min}..{percent_max}");
+
+        let (y_min, _) = scale_range(&chart, ScaleId::Y);
+        assert!(y_min >= 100.0, "Y should fit only the revenue, but starts at {y_min}");
+
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let area = chart.layout(&sizes(&[(ScaleId::Y, 35.0), (PERCENT, 45.0)])).chart_area;
+        assert_eq!(area.left(), 30.0 + 35.0, "left: padding + Y's band");
+        assert_eq!(area.right(), 400.0 - 30.0 - 45.0, "right: padding + percent's band");
+    }
+
+    /// Without a scale on the right there is no band there.
+    #[test]
+    fn default_scales_have_no_right_band() {
+        let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])));
+
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let layout = chart.layout(&sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]));
+        assert_eq!(layout.chart_area.right(), 400.0 - 30.0);
+        assert_eq!(layout.chart_area.left(), 30.0 + 35.0);
+        assert_eq!(layout.chart_area.height(), 300.0 - 30.0 - 30.0 - 20.0, "X's band comes off the height");
+    }
+
+    /// Scales on the same side stack outwards in the order they were added, each starting
+    /// `SCALE_SPACING` past where the band inside it ends; the chart area gives up the bands and
+    /// the spacing between them.
+    #[test]
+    fn scales_on_one_side_stack_outwards_in_order() {
+        const INNER: ScaleId = ScaleId::new("inner");
+        const OUTER: ScaleId = ScaleId::new("outer");
+
+        let mut chart = Chart::new(ScatterController::new(vec![1.0, 2.0]))
+            .scale(INNER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
+            .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
+
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]));
+
+        assert_eq!(layout.offset(INNER), 0.0);
+        assert_eq!(layout.offset(OUTER), 40.0 + SCALE_SPACING);
+        assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 40.0 - SCALE_SPACING - 25.0);
+    }
+
+    /// No spacing is added next to a scale that takes no space, so hiding a scale's band doesn't
+    /// leave a gap behind.
+    #[test]
+    fn empty_bands_get_no_spacing() {
+        const EMPTY: ScaleId = ScaleId::new("empty");
+        const OUTER: ScaleId = ScaleId::new("outer");
+
+        let mut chart = Chart::new(ScatterController::new(vec![1.0, 2.0]))
+            .scale(EMPTY, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
+            .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
+
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]));
+
+        assert_eq!(layout.offset(OUTER), 0.0);
+        assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 25.0);
+    }
+
+    /// A higher weight moves a scale further out, whatever order it was added in; Y keeps its
+    /// default weight 0 and stays innermost on the left.
+    #[test]
+    fn higher_weights_are_further_from_the_chart_area() {
+        const HEAVY: ScaleId = ScaleId::new("heavy");
+        const LIGHT: ScaleId = ScaleId::new("light");
+
+        let mut chart = Chart::new(ScatterController::new(vec![1.0, 2.0]))
+            .scale(HEAVY, LinearScale::new(Axis::Vertical).weight(2))
+            .scale(LIGHT, LinearScale::new(Axis::Vertical).weight(1));
+
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]));
+
+        assert_eq!(layout.offset(ScaleId::Y), 0.0);
+        assert_eq!(layout.offset(LIGHT), 30.0 + SCALE_SPACING);
+        assert_eq!(layout.offset(HEAVY), 30.0 + SCALE_SPACING + 10.0 + SCALE_SPACING);
+        assert_eq!(layout.chart_area.left(), 30.0 + 30.0 + 10.0 + 20.0 + 2.0 * SCALE_SPACING);
+    }
+
+    fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {
+        entries.iter().copied().collect()
     }
 
     fn fitted<C: ControllerSequence>(mut chart: Chart<C>) -> Chart<C> {

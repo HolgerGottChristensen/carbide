@@ -65,6 +65,12 @@ impl Scales {
         Scales { scales }
     }
 
+    /// Adds `scale` under `id`. A scale already under `id` is replaced in place, so replacing a
+    /// default scale keeps its place in the draw order.
+    pub fn insert(&mut self, id: ScaleId, scale: impl Scale) {
+        self.scales.insert(id, Box::new(scale));
+    }
+
     /// The scale with the given id, if the chart has one.
     pub fn get(&self, id: ScaleId) -> Option<&dyn Scale> {
         self.scales.get(&id).map(|scale| scale.as_ref())
@@ -98,6 +104,7 @@ impl Default for Scales {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::scale::AxisPosition;
 
     #[test]
     fn bounds_without_data_have_no_range() {
@@ -113,6 +120,28 @@ mod tests {
         bounds.include(-8.0, 3.0);
 
         assert_eq!(bounds.range(), Some((-8.0, 20.0)));
+    }
+
+    /// Replacing a default scale keeps its place in the draw order; a new scale goes last.
+    #[test]
+    fn inserting_replaces_in_place_and_appends_new_ids() {
+        let mut scales = Scales::new();
+        scales.insert(ScaleId::new("right"), LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
+        scales.insert(ScaleId::X, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top));
+
+        let order: Vec<ScaleId> = scales.iter().map(|(id, _)| id).collect();
+        assert_eq!(order, vec![ScaleId::X, ScaleId::Y, ScaleId::new("right")]);
+        assert_eq!(scales.get(ScaleId::X).unwrap().axis_position(), AxisPosition::Top);
+    }
+
+    /// A side the axis can't use is ignored, keeping the axis default.
+    #[test]
+    fn positions_must_fit_the_axis() {
+        let horizontal = LinearScale::new(Axis::Horizontal).position(AxisPosition::Left);
+        assert_eq!(horizontal.axis_position(), AxisPosition::Bottom);
+
+        let vertical = LinearScale::new(Axis::Vertical).position(AxisPosition::Top);
+        assert_eq!(vertical.axis_position(), AxisPosition::Left);
     }
 
     #[test]

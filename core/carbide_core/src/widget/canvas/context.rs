@@ -319,8 +319,9 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.text_alignment = alignment;
     }
 
-    pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
-        let text_style = TextStyle {
+    /// The style `fill_text` draws with and `measure_text` measures with.
+    fn text_style() -> TextStyle {
+        TextStyle {
             family: "Noto Sans".to_string(),
             font_size: 14,
             line_height: 1.0,
@@ -329,7 +330,16 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
             text_decoration: TextDecoration::None,
             color: None,
             wrap: Wrap::Character,
-        };
+        }
+    }
+
+    /// The size `text` takes up when drawn with `fill_text`.
+    pub fn measure_text(&mut self, text: &str) -> Dimension {
+        self.render_context.measure_text(text, &Self::text_style(), None)
+    }
+
+    pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
+        let text_style = Self::text_style();
 
         let size = self.render_context.measure_text(text, &text_style, None);
 

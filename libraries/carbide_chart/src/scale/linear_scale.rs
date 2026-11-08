@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use carbide::draw::Scalar;
 
-use crate::scale::{Axis, Scale};
+use crate::scale::{Axis, AxisPosition, Scale};
 use crate::scale::bounds::Bounds;
 use crate::scale::percent_or_value::PercentOrValue;
 
@@ -11,6 +11,8 @@ const MIN_TICK_SPACING: f64 = 1e-14;
 #[derive(Clone, Debug)]
 pub struct LinearScale {
     axis: Axis,
+    position: AxisPosition,
+    weight: i32,
     min: Option<Scalar>,
     max: Option<Scalar>,
     range: Range<Scalar>,
@@ -28,6 +30,8 @@ impl LinearScale {
     pub fn new(axis: Axis) -> LinearScale {
         LinearScale {
             axis,
+            position: axis.default_position(),
+            weight: 0,
             min: None,
             max: None,
             range: 0.0..1.0,
@@ -40,6 +44,26 @@ impl LinearScale {
             precision: None,
             bounds: Bounds::Ticks,
         }
+    }
+
+    /// Draws the scale on the given side of the chart area. Horizontal scales go above or below
+    /// it, vertical scales left or right of it; any other side is logged and the scale keeps its
+    /// current position.
+    pub fn position(mut self, position: AxisPosition) -> LinearScale {
+        if self.axis.allows(position) {
+            self.position = position;
+        } else {
+            log::warn!("A {:?} scale can't be positioned {:?}; keeping {:?}", self.axis, position, self.position);
+        }
+
+        self
+    }
+
+    /// Orders the scale among the scales on the same side: a higher weight is placed further
+    /// away from the chart area. Defaults to 0. See `Scale::weight`.
+    pub fn weight(mut self, weight: i32) -> LinearScale {
+        self.weight = weight;
+        self
     }
 
     fn tick_limits(&self) -> u32 {
@@ -92,6 +116,14 @@ impl LinearScale {
 impl Scale for LinearScale {
     fn axis(&self) -> Axis {
         self.axis
+    }
+
+    fn axis_position(&self) -> AxisPosition {
+        self.position
+    }
+
+    fn weight(&self) -> i32 {
+        self.weight
     }
 
     fn min(&self) -> Scalar {
