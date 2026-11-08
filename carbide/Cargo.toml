@@ -39,7 +39,339 @@ carbide_dialogs = { workspace = true, optional = true }
 carbide_icons = { workspace = true, optional = true }
 
 [dev-dependencies]
-carbide_controls.workspace = true
+# The examples use controls and icons, so enable them without passing --features.
+carbide = { workspace = true, features = ["controls", "icons"] }
+reqwest.workspace = true
+chrono.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { workspace = true, features = ["full"] }
+
+# Examples in subfolders aren't discovered by Cargo, so each one is listed here. Examples directly
+# in examples/ are still discovered automatically.
+
+# animation
+[[example]]
+name = "animate_on_click"
+path = "examples/animation/animate_on_click.rs"
+
+[[example]]
+name = "animations"
+path = "examples/animation/animations.rs"
+
+[[example]]
+name = "keyframe_controller"
+path = "examples/animation/keyframe_controller.rs"
+
+[[example]]
+name = "keyframe_repeat"
+path = "examples/animation/keyframe_repeat.rs"
+
+[[example]]
+name = "keyframe_sequence"
+path = "examples/animation/keyframe_sequence.rs"
+
+[[example]]
+name = "keyframes"
+path = "examples/animation/keyframes.rs"
+
+[[example]]
+name = "transition"
+path = "examples/animation/transition.rs"
+
+# async
+[[example]]
+name = "async"
+path = "examples/async/async.rs"
+required-features = ["carbide_core/async-std"]
+
+[[example]]
+name = "async_tokio"
+path = "examples/async/async_tokio.rs"
+required-features = ["carbide_core/tokio"]
+
+[[example]]
+name = "timer"
+path = "examples/async/timer.rs"
+
+# drawing
+[[example]]
+name = "accent"
+path = "examples/drawing/accent.rs"
+
+[[example]]
+name = "blur"
+path = "examples/drawing/blur.rs"
+
+[[example]]
+name = "border"
+path = "examples/drawing/border.rs"
+
+[[example]]
+name = "canvas"
+path = "examples/drawing/canvas.rs"
+
+[[example]]
+name = "clip"
+path = "examples/drawing/clip.rs"
+
+[[example]]
+name = "clip_shape"
+path = "examples/drawing/clip_shape.rs"
+
+[[example]]
+name = "colors"
+path = "examples/drawing/colors.rs"
+
+[[example]]
+name = "dashes"
+path = "examples/drawing/dashes.rs"
+
+[[example]]
+name = "filter"
+path = "examples/drawing/filter.rs"
+
+[[example]]
+name = "gradient"
+path = "examples/drawing/gradient.rs"
+
+[[example]]
+name = "gradient_color_spaces"
+path = "examples/drawing/gradient_color_spaces.rs"
+
+[[example]]
+name = "gradient_icon"
+path = "examples/drawing/gradient_icon.rs"
+
+[[example]]
+name = "gradient_text"
+path = "examples/drawing/gradient_text.rs"
+
+[[example]]
+name = "hue_rotation"
+path = "examples/drawing/hue_rotation.rs"
+
+[[example]]
+name = "luminance"
+path = "examples/drawing/luminance.rs"
+
+[[example]]
+name = "mask"
+path = "examples/drawing/mask.rs"
+
+[[example]]
+name = "materials"
+path = "examples/drawing/materials.rs"
+
+[[example]]
+name = "saturation"
+path = "examples/drawing/saturation.rs"
+
+[[example]]
+name = "shadow"
+path = "examples/drawing/shadow.rs"
+
+[[example]]
+name = "shapes"
+path = "examples/drawing/shapes.rs"
+
+[[example]]
+name = "strokes"
+path = "examples/drawing/strokes.rs"
+
+# image
+[[example]]
+name = "icon"
+path = "examples/image/icon.rs"
+
+[[example]]
+name = "image"
+path = "examples/image/image.rs"
+
+[[example]]
+name = "image_resize"
+path = "examples/image/image_resize.rs"
+
+[[example]]
+name = "image_svg"
+path = "examples/image/image_svg.rs"
+
+[[example]]
+name = "sub_images"
+path = "examples/image/sub_images.rs"
+
+# layout
+[[example]]
+name = "absolute"
+path = "examples/layout/absolute.rs"
+
+[[example]]
+name = "aspect_ratio"
+path = "examples/layout/aspect_ratio.rs"
+
+[[example]]
+name = "background"
+path = "examples/layout/background.rs"
+
+[[example]]
+name = "frame"
+path = "examples/layout/frame.rs"
+
+[[example]]
+name = "h_grid"
+path = "examples/layout/h_grid.rs"
+
+[[example]]
+name = "h_split"
+path = "examples/layout/h_split.rs"
+
+[[example]]
+name = "h_stack"
+path = "examples/layout/h_stack.rs"
+
+[[example]]
+name = "h_stack_lazy"
+path = "examples/layout/h_stack_lazy.rs"
+
+[[example]]
+name = "offset"
+path = "examples/layout/offset.rs"
+
+[[example]]
+name = "v_grid"
+path = "examples/layout/v_grid.rs"
+
+[[example]]
+name = "v_split"
+path = "examples/layout/v_split.rs"
+
+[[example]]
+name = "v_stack"
+path = "examples/layout/v_stack.rs"
+
+[[example]]
+name = "v_stack_lazy"
+path = "examples/layout/v_stack_lazy.rs"
+
+[[example]]
+name = "z_stack"
+path = "examples/layout/z_stack.rs"
+
+# misc
+[[example]]
+name = "application_management"
+path = "examples/misc/application_management.rs"
+
+[[example]]
+name = "color_temperature"
+path = "examples/misc/color_temperature.rs"
+
+[[example]]
+name = "cursors"
+path = "examples/misc/cursors.rs"
+
+[[example]]
+name = "foreach"
+path = "examples/misc/foreach.rs"
+
+[[example]]
+name = "foreach_nested"
+path = "examples/misc/foreach_nested.rs"
+
+[[example]]
+name = "foreach_widget"
+path = "examples/misc/foreach_widget.rs"
+
+[[example]]
+name = "foreach_widget_lazy"
+path = "examples/misc/foreach_widget_lazy.rs"
+
+[[example]]
+name = "geometry_reader"
+path = "examples/misc/geometry_reader.rs"
+
+[[example]]
+name = "group"
+path = "examples/misc/group.rs"
+
+[[example]]
+name = "group2"
+path = "examples/misc/group2.rs"
+
+[[example]]
+name = "if"
+path = "examples/misc/if.rs"
+
+[[example]]
+name = "match"
+path = "examples/misc/match.rs"
+
+[[example]]
+name = "mouse_area"
+path = "examples/misc/mouse_area.rs"
+
+[[example]]
+name = "multi_windows"
+path = "examples/misc/multi_windows.rs"
+
+[[example]]
+name = "navigation_stack"
+path = "examples/misc/navigation_stack.rs"
+
+[[example]]
+name = "on_change"
+path = "examples/misc/on_change.rs"
+
+[[example]]
+name = "on_key"
+path = "examples/misc/on_key.rs"
+
+[[example]]
+name = "overlay"
+path = "examples/misc/overlay.rs"
+
+[[example]]
+name = "theme"
+path = "examples/misc/theme.rs"
+
+[[example]]
+name = "window_title"
+path = "examples/misc/window_title.rs"
+
+# text
+[[example]]
+name = "text"
+path = "examples/text/text.rs"
+
+[[example]]
+name = "text_styling"
+path = "examples/text/text_styling.rs"
+
+# transforms
+[[example]]
+name = "rotation"
+path = "examples/transforms/rotation.rs"
+
+[[example]]
+name = "rotation_3d_effect"
+path = "examples/transforms/rotation_3d_effect.rs"
+
+[[example]]
+name = "scale"
+path = "examples/transforms/scale.rs"
+
+# widgets
+[[example]]
+name = "progress_bar"
+path = "examples/widgets/progress_bar.rs"
+
+[[example]]
+name = "progress_view"
+path = "examples/widgets/progress_view.rs"
+
+[[example]]
+name = "scroll"
+path = "examples/widgets/scroll.rs"
 
 [lints]
 workspace = true

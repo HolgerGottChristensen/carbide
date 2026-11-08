@@ -1,0 +1,41 @@
+use carbide::draw::Dimension;
+use carbide::environment::EnvironmentColor;
+use carbide::state::{LocalState, Map1, State};
+use carbide::text::text_wrap::Wrap;
+use carbide::widget::*;
+use carbide::{Application, Window};
+
+fn main() {
+    let mut application = Application::new();
+
+    let width1 = LocalState::new(0.1);
+    let percent = LocalState::new(0.1);
+    let width2 = LocalState::new(0.1);
+
+    application.set_scene(Window::new(
+        "HSplit example - Carbide",
+        Dimension::new(400.0, 600.0),
+        VStack::new((
+            h_split(width1.clone()).relative_to_start(width1),
+            h_split(percent.clone()).percent(percent),
+            h_split(width2.clone()).relative_to_end(width2),
+        ))
+    ));
+
+    application.launch();
+}
+
+fn h_split(size: impl State<T=f64>) -> HSplit<f64, impl Widget, impl Widget> {
+    HSplit::new(
+        ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::Green),
+            Text::new(Map1::read_map(size, |t: &f64| format!("{:.2}", t))).wrap(Wrap::None),
+        )),
+        ZStack::new((
+            Rectangle::new().fill(EnvironmentColor::Accent),
+            Rectangle::new()
+                .fill(EnvironmentColor::Yellow)
+                .frame(100.0, 100.0),
+        )),
+    )
+}

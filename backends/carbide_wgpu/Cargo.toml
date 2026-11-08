@@ -41,32 +41,11 @@ image.workspace = true
 serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
-carbide_wgpu = { workspace = true, features = ["icons"] }
-carbide_winit = { workspace = true, features = ["controls"] }
-carbide_icons = { workspace = true, features = ["lucide"] }
-carbide_controls.workspace = true
-carbide_macro.workspace = true
-
 futures.workspace = true
-async-std.workspace = true
-reqwest.workspace = true
-chrono.workspace = true
-
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-surf.workspace = true
-tokio = { workspace = true, features = ["full"] }
 
 [[test]]
 name = "window_renderer_plugin"
 required-features = ["windowing"]
-
-[[example]]
-name = "async"
-required-features = ["carbide_core/async-std"]
-
-[[example]]
-name = "async_tokio"
-required-features = ["carbide_core/tokio"]
 
 [lints]
 workspace = true

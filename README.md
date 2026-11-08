@@ -118,7 +118,7 @@ Code for the example can be found at: [Textfield Example]
 I have started documenting the main parts of the projects and are planning on starting a mdbook 
 but currently this is in the early stages. 
 
-The easiest way to get started is by looking at the examples in the carbide_wgpu, carbide_controls and carbide crates. These examples show a wide variety of projects and functionalities.
+The easiest way to get started is by looking at the examples in the carbide and carbide_controls crates. These examples show a wide variety of projects and functionalities.
 While this is not the ideal form of documentation, it should get you started.
 
 ## Goals
@@ -180,8 +180,8 @@ defined in the Apache-2.0 license, shall be dual licensed as above, without any 
 **Example Assets**
 - [Google Noto](https://www.google.com/get/noto/) (Apache2)
 
-[Materials Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/backends/carbide_wgpu/examples/materials.rs
-[Shapes Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/backends/carbide_wgpu/examples/shapes.rs
+[Materials Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/carbide/examples/materials.rs
+[Shapes Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/carbide/examples/shapes.rs
 [Calculator Example]: https://github.com/HolgerGottChristensen/carbide/tree/master/carbide/examples/calculator
 [Textfield Example]: https://github.com/HolgerGottChristensen/carbide/blob/master/carbide_controls/examples/text_input.rs
 [The API Documentation]: https://docs.rs/carbide_core/

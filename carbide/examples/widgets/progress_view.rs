@@ -1,0 +1,18 @@
+use carbide::draw::Dimension;
+use carbide::widget::*;
+use carbide::{Application, Window};
+
+fn main() {
+    let mut application = Application::new();
+
+    application.set_scene(Window::new(
+        "Progress view example - Carbide",
+        Dimension::new(400.0, 600.0),
+        VStack::new((
+            ProgressView::new(),
+            ProgressView::new().size(50.0)
+        )).spacing(10.0),
+    ));
+
+    application.launch();
+}
