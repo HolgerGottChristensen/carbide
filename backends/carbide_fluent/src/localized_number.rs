@@ -61,6 +61,8 @@ impl LocalizedNumber<
     Option<usize>,
     ValueState<RoundingMode>,
 > {
+    // The return type spells out every state parameter; see the builder impl below.
+    #[allow(clippy::type_complexity)]
     pub fn new<V: Into<Number>, S: ReadState<T=V>>(value: S) -> LocalizedNumber<
         V,
         S,
@@ -94,6 +96,10 @@ impl LocalizedNumber<
     }
 }
 
+// `LocalizedNumber` keeps every option as its own generic state type, so each setter's
+// return type has to name all of them. That's intentional; type-erased variants can be
+// added as aliases later.
+#[allow(clippy::type_complexity)]
 impl<
     V: Into<Number>,
     S: ReadState<T=V>,

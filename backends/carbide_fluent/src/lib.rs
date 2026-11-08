@@ -60,7 +60,7 @@ fn load_languages() -> Result<HashMap<Locale, Bundle>, io::Error> {
 
                             let resource = FluentResource::try_new(s).expect("Could not parse an FTL string.");
 
-                            bundle.add_resource(resource);
+                            bundle.add_resource(resource).unwrap();
                         }
                     }
 
