@@ -36,7 +36,6 @@ mod wgpu_msaa;
 mod wgpu_context;
 mod wgpu_dashes;
 mod offscreen_renderer;
-mod screenshot;
 #[cfg(feature = "testing")]
 pub mod testing;
 

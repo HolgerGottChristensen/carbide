@@ -1,15 +1,47 @@
-use wgpu::CommandEncoderDescriptor;
+use std::fmt;
+use wgpu::{CommandEncoderDescriptor, TextureFormat};
+
+/// Why a texture could not be captured by [`capture_texture_to_image`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScreenshotError {
+    /// The texture's format is not one of the 8-bit RGBA/BGRA formats the readback supports.
+    UnsupportedFormat(TextureFormat),
+}
+
+impl fmt::Display for ScreenshotError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ScreenshotError::UnsupportedFormat(format) => write!(
+                f,
+                "cannot capture texture with format {:?}; supported formats are Rgba8Unorm, Rgba8UnormSrgb, Bgra8Unorm and Bgra8UnormSrgb",
+                format
+            ),
+        }
+    }
+}
+
+impl std::error::Error for ScreenshotError {}
 
 /// Reads a render-target texture back from the GPU as an `image::RgbaImage`. Standard
 /// offscreen-texture readback: copy into a padded `COPY_DST | MAP_READ` buffer, map it,
 /// `device.poll(Wait)` to actually drive the GPU queue (the map future never resolves
-/// otherwise), then de-pad rows and swizzle BGRA->RGBA (`RENDER_TARGET_FORMAT` is
-/// `Bgra8UnormSrgb`, but `image::RgbaImage` expects RGBA channel order).
-pub(crate) fn capture_texture_to_image(
+/// otherwise), then de-pad rows and, for BGRA textures, swizzle to the RGBA channel order
+/// `image::RgbaImage` expects.
+///
+/// Only 8-bit RGBA and BGRA textures (unorm or sRGB) are supported. Any other format is
+/// rejected with [`ScreenshotError::UnsupportedFormat`] before any GPU work is done. sRGB
+/// textures are returned with their stored (sRGB-encoded) bytes, unconverted.
+pub fn capture_texture_to_image(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     texture: &wgpu::Texture,
-) -> image::RgbaImage {
+) -> Result<image::RgbaImage, ScreenshotError> {
+    let swap_red_blue = match texture.format() {
+        TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb => false,
+        TextureFormat::Bgra8Unorm | TextureFormat::Bgra8UnormSrgb => true,
+        format => return Err(ScreenshotError::UnsupportedFormat(format)),
+    };
+
     let width = texture.width();
     let height = texture.height();
 
@@ -66,10 +98,11 @@ pub(crate) fn capture_texture_to_image(
     }
     buffer.unmap();
 
-    // RENDER_TARGET_FORMAT is Bgra8UnormSrgb; image::RgbaImage expects RGBA channel order.
-    for pixel in pixels.as_chunks_mut::<4>().0 {
-        pixel.swap(0, 2);
+    if swap_red_blue {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
+            pixel.swap(0, 2);
+        }
     }
 
-    image::RgbaImage::from_raw(width, height, pixels).expect("readback buffer size should match width*height*4")
+    Ok(image::RgbaImage::from_raw(width, height, pixels).expect("readback buffer size should match width*height*4"))
 }

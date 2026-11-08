@@ -90,13 +90,18 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
         if !screenshot_requests.is_empty() {
             let wgpu_context = env.get::<WgpuContextNew>()
                 .expect("WgpuContext is in scope at every call site that reaches InitializedWindow::with_env");
-            let image = crate::screenshot::capture_texture_to_image(
+            match carbide_wgpu_core::capture_texture_to_image(
                 &wgpu_context.device,
                 &wgpu_context.queue,
                 &self.offscreen.targets[0].texture,
-            );
-            for sender in screenshot_requests.drain(..) {
-                let _ = sender.send(image.clone());
+            ) {
+                Ok(image) => {
+                    for sender in screenshot_requests.drain(..) {
+                        let _ = sender.send(image.clone());
+                    }
+                }
+                // Dropping the senders tells every waiting receiver that the request failed.
+                Err(error) => log::error!("Failed to take screenshot: {}", error),
             }
         }
 

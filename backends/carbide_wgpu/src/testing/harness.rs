@@ -714,15 +714,15 @@ impl Harness {
     }
 
     /// Reads the last-rendered frame back from the GPU as an `image::RgbaImage`, via the shared
-    /// [`crate::screenshot::capture_texture_to_image`] readback (also used by the live window's
+    /// [`carbide_wgpu_core::capture_texture_to_image`] readback (also used by the live window's
     /// `SceneManager::take_screenshot()` path).
     pub fn pixels(&mut self) -> image::RgbaImage {
         let wgpu_context_new = self.env.get::<WgpuContextNew>().unwrap();
-        crate::screenshot::capture_texture_to_image(
+        carbide_wgpu_core::capture_texture_to_image(
             &wgpu_context_new.device,
             &wgpu_context_new.queue,
             &self.offscreen.targets[0].texture,
-        )
+        ).expect("the harness renders to RENDER_TARGET_FORMAT, which capture_texture_to_image supports")
     }
 
     /// Layout-and-record only, no GPU work at all — the CPU-computed draw-call plan that
