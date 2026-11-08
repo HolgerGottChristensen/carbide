@@ -3,6 +3,9 @@
 // https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=45ea0874855a115a2b5d41f947908652
 
 #![deny(unsafe_code)]
+// Widget and state types are deliberately generic over their parts (boxed closures, nested
+// state types), so their full types are long by design.
+#![allow(clippy::type_complexity)]
 
 extern crate self as carbide;
 
