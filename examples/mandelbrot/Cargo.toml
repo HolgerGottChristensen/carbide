@@ -11,8 +11,6 @@ publish = false
 [dependencies]
 carbide = { workspace = true, features = ["controls"] }
 rayon.workspace = true
-uuid = { workspace = true, features = ["v4"] }
-rand.workspace = true
 num.workspace = true
 
 [lints]

@@ -4,7 +4,7 @@ use carbide::controls::list::PlainStyle;
 use carbide::closure;
 use carbide::draw::Dimension;
 use carbide::environment::EnvironmentColor;
-use carbide::state::{LocalState, State};
+use carbide::state::LocalState;
 use carbide::widget::*;
 use carbide::{Application, Window};
 

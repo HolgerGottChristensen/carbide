@@ -38,20 +38,6 @@ proc-macro2 = { workspace = true, default-features = false }
 quote = { workspace = true, optional = true, default-features = false }
 unicode-ident.workspace = true
 
-[dev-dependencies]
-anyhow.workspace = true
-automod.workspace = true
-flate2.workspace = true
-insta.workspace = true
-rayon.workspace = true
-ref-cast.workspace = true
-regex.workspace = true
-reqwest = { workspace = true, features = ["blocking"] }
-rustversion.workspace = true
-tar.workspace = true
-termcolor.workspace = true
-walkdir.workspace = true
-
 [lints.rust]
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(doc_cfg)'] }
 

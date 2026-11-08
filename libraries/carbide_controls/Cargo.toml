@@ -20,15 +20,10 @@ carbide_fluent = { workspace = true, optional = true }
 carbide_core.workspace = true
 copypasta.workspace = true
 unicode-segmentation.workspace = true
-serde.workspace = true
 dyn-clone.workspace = true
-chrono.workspace = true
 smallvec.workspace = true
-indexmap.workspace = true
 
 [dev-dependencies]
-env_logger.workspace = true
-futures.workspace = true
 assert_matches.workspace = true
 
 [lints]

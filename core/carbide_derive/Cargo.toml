@@ -20,7 +20,6 @@ proc-macro2.workspace = true
 quote.workspace = true
 syn = { workspace = true, features = ["extra-traits", "full"] }
 carbide_syn = { workspace = true, features = ["extra-traits", "full", "fold"] }
-paste.workspace = true
 proc-macro-crate.workspace = true
 
 [lints]

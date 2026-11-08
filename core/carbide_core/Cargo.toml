@@ -32,12 +32,10 @@ carbide_usvg.workspace = true
 bitflags.workspace = true
 cgmath.workspace = true
 dyn-clone.workspace = true
-indexmap.workspace = true
 parking_lot.workspace = true
 smallvec.workspace = true
 url.workspace = true
 web-time.workspace = true
-dashmap.workspace = true
 inventory.workspace = true
 
 accesskit.workspace = true

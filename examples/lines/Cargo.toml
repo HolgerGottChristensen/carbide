@@ -10,9 +10,6 @@ publish = false
 
 [dependencies]
 carbide = { workspace = true, features = ["controls"] }
-euclid.workspace = true
-smol_str.workspace = true
-approx.workspace = true
 
 [lints]
 workspace = true

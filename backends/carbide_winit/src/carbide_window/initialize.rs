@@ -13,8 +13,6 @@ use crate::dpi::{LogicalSize, PhysicalPosition, Size};
 use crate::update_scale_factor;
 use crate::window::{Theme, WindowAttributes};
 
-pub const ZOOM: f32 = 1.0;
-
 impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
         self.state = match std::mem::replace(&mut self.state, WindowState::Failed) {
