@@ -27,12 +27,17 @@ impl ScatterController<LinearScale, LinearScale, Vec<(Scalar, Scalar)>> {
 impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for ScatterController<X, Y, D> {
     fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets) {
 
-        let x_ticks_width = if self.default_x_scale.display_ticks() { 10.0 } else { 0.0 };
-        let y_ticks_width = if self.default_x_scale.display_ticks() { 10.0 } else { 0.0 };
+        // Space for the tick labels outside the chart area: the y scale's labels sit left of it,
+        // the x scale's below it (see `Scale::draw_grid`).
+        let left_tick_gutter = if self.default_y_scale.display_ticks() { 10.0 } else { 0.0 };
+        let bottom_tick_gutter = if self.default_x_scale.display_ticks() { 10.0 } else { 0.0 };
 
         let chart_area = Rect::new(
-            Position::new(padding.left + x_ticks_width, padding.top),
-            Dimension::new(ctx.dimension().width - padding.left - padding.right, ctx.dimension().height - padding.top - padding.bottom - y_ticks_width)
+            Position::new(padding.left + left_tick_gutter, padding.top),
+            Dimension::new(
+                ctx.dimension().width - padding.left - padding.right - left_tick_gutter,
+                ctx.dimension().height - padding.top - padding.bottom - bottom_tick_gutter,
+            )
         );
 
         self.default_x_scale.draw_grid(ctx, chart_area);
