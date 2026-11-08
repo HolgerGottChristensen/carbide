@@ -9,7 +9,7 @@ authors = [
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "A set of media widgets for the carbide core crate"
 license = "MIT OR Apache-2.0"
-readme = "../README.md"
+readme = "../../README.md"
 categories = ["gui"]
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 

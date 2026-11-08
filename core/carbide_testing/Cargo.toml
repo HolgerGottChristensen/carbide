@@ -8,7 +8,7 @@ homepage.workspace = true
 authors.workspace = true
 keywords = ["ui", "gui", "testing", "snapshot"]
 description = "Headless test harness for carbide: drive widgets with synthetic input and snapshot what they render"
-readme = "../README.md"
+readme = "../../README.md"
 categories = ["gui", "development-tools::testing"]
 
 [features]
@@ -20,10 +20,10 @@ controls = ["dep:carbide_controls"]
 carbide_core.workspace = true
 # Not inherited from the workspace, so the default `wgpu` feature can be turned off: that would
 # link carbide_wgpu with its `windowing` feature, which the offscreen harness never needs.
-carbide_winit = { path = "../backends/carbide_winit", version = "0.72.0", default-features = false }
+carbide_winit = { path = "../../backends/carbide_winit", version = "0.72.0", default-features = false }
 # Not inherited from the workspace, so the default `windowing` feature can be turned off: the
 # harness renders offscreen and never needs a window renderer.
-carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.72.0", default-features = false, features = ["lyon", "cosmic_text", "testing"] }
+carbide_wgpu = { path = "../../backends/carbide_wgpu", version = "0.72.0", default-features = false, features = ["lyon", "cosmic_text", "testing"] }
 carbide_controls = { workspace = true, optional = true }
 accesskit = { workspace = true, features = ["serde"] }
 futures.workspace = true

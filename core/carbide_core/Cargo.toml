@@ -9,7 +9,7 @@ authors = [
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
 description = "An easy-to-use, 100% Rust, extensible 2D GUI library."
 license = "MIT OR Apache-2.0"
-readme = "../README.md"
+readme = "../../README.md"
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 

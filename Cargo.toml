@@ -1,38 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-    "carbide_core",
-    "carbide_macro",
-    "carbide_controls",
-    "carbide_derive",
-    "carbide_media",
-    "carbide_syn",
-    "backends/carbide_winit",
-    "backends/carbide_wgpu",
-    "backends/carbide_wgpu_3d",
-    "backends/carbide_windows",
-    "backends/carbide_cosmic_text",
-    "backends/carbide_printpdf",
-    "backends/carbide_lyon",
-    "backends/carbide_fluent",
-    "examples/lines",
-    "examples/hacker_news",
-    "examples/calculator",
-    "examples/counter",
-    "examples/fractal",
-    "examples/mandelbrot",
-    "examples/othello",
-    "examples/drawing_paths_and_shapes",
+    "backends/*",
     "carbide",
-    "carbide_3d",
-    "carbide_chart",
-    "carbide_dialogs",
-    "carbide_table",
-    "backends/carbide_cache",
-    "backends/carbide_usvg", "backends/carbide_icons", "carbide_studio", "backends/carbide_wgpu_core",
-    "backends/carbide_tesselation",
-    "carbide_testing",
-    "carbide_windowing",
+    "core/*",
+    "examples/*",
+    "libraries/*",
 ]
 
 [workspace.lints.clippy]
@@ -51,29 +24,29 @@ authors = [
 
 [workspace.dependencies]
 carbide = { path = "carbide", version = "0.72.0" }
-carbide_3d = { path = "carbide_3d", version = "0.72.0" }
-carbide_cache = { path = "backends/carbide_cache", version = "0.72.0" }
-carbide_chart = { path = "carbide_chart", version = "0.72.0" }
-carbide_controls = { path = "carbide_controls", version = "0.72.0" }
-carbide_core = { path = "carbide_core", version = "0.72.0" }
+carbide_3d = { path = "libraries/carbide_3d", version = "0.72.0" }
+carbide_cache = { path = "core/carbide_cache", version = "0.72.0" }
+carbide_chart = { path = "libraries/carbide_chart", version = "0.72.0" }
+carbide_controls = { path = "libraries/carbide_controls", version = "0.72.0" }
+carbide_core = { path = "core/carbide_core", version = "0.72.0" }
 carbide_cosmic_text = { path = "backends/carbide_cosmic_text", version = "0.72.0" }
-carbide_derive = { path = "carbide_derive", version = "0.72.0" }
-carbide_dialogs = { path = "carbide_dialogs", version = "0.72.0" }
-carbide_fluent = { path = "backends/carbide_fluent", version = "0.72.0" }
-carbide_icons = { path = "backends/carbide_icons", version = "0.72.0" }
+carbide_derive = { path = "core/carbide_derive", version = "0.72.0" }
+carbide_dialogs = { path = "libraries/carbide_dialogs", version = "0.72.0" }
+carbide_fluent = { path = "libraries/carbide_fluent", version = "0.72.0" }
+carbide_icons = { path = "libraries/carbide_icons", version = "0.72.0" }
 carbide_lyon = { path = "backends/carbide_lyon", version = "0.72.0" }
-carbide_macro = { path = "carbide_macro", version = "0.72.0" }
-carbide_media = { path = "carbide_media", version = "0.72.0" }
-carbide_syn = { path = "carbide_syn", version = "0.72.0" }
-carbide_table = { path = "carbide_table", version = "0.72.0" }
-carbide_tesselation = { path = "backends/carbide_tesselation", version = "0.72.0" }
+carbide_macro = { path = "core/carbide_macro", version = "0.72.0" }
+carbide_media = { path = "libraries/carbide_media", version = "0.72.0" }
+carbide_syn = { path = "core/carbide_syn", version = "0.72.0" }
+carbide_table = { path = "libraries/carbide_table", version = "0.72.0" }
+carbide_tesselation = { path = "core/carbide_tesselation", version = "0.72.0" }
 carbide_usvg = { path = "backends/carbide_usvg", version = "0.72.0" }
 carbide_wgpu = { path = "backends/carbide_wgpu", version = "0.72.0" }
 carbide_wgpu_3d = { path = "backends/carbide_wgpu_3d", version = "0.72.0" }
 carbide_wgpu_core = { path = "backends/carbide_wgpu_core", version = "0.72.0" }
 carbide_winit = { path = "backends/carbide_winit", version = "0.72.0" }
-carbide_testing = { path = "carbide_testing", version = "0.72.0" }
-carbide_windowing = { path = "carbide_windowing", version = "0.72.0" }
+carbide_testing = { path = "core/carbide_testing", version = "0.72.0" }
+carbide_windowing = { path = "core/carbide_windowing", version = "0.72.0" }
 
 accesskit = "0.24.0"
 accesskit_winit = "0.32.2"
