@@ -22,12 +22,19 @@ impl Default for SnapshotOptions {
     }
 }
 
-/// Anchored at compile time via `CARGO_MANIFEST_DIR`, independent of `cargo test`'s cwd.
+/// Anchored at the manifest dir of the crate whose tests are running, independent of
+/// `cargo test`'s cwd: cargo sets `CARGO_MANIFEST_DIR` in the environment of every test binary it
+/// runs, so a crate that uses this harness from its own `tests/` (e.g. `carbide_chart`) keeps its
+/// golden files in its own `tests/snapshots/`. Falls back to this crate's dir, captured at compile
+/// time, when the binary is run outside of cargo.
 /// `scope` (typically the current test's name — see `harness::current_test_scope`) nests golden
 /// files under a per-test subdirectory, so two different tests can each use a snapshot named
 /// `"idle"` without colliding; `None` falls back to the flat, unscoped layout.
 fn snapshot_dir(scope: Option<&str>) -> PathBuf {
-    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots");
+    let manifest_dir = env::var_os("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")));
+    let base = manifest_dir.join("tests/snapshots");
     match scope {
         Some(scope) => base.join(scope),
         None => base,
