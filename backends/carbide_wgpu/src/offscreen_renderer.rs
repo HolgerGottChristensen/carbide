@@ -492,7 +492,7 @@ impl OffscreenRenderer {
                                 let width = (rect.width() * scale_factor) as u32;
                                 let height = (rect.height() * scale_factor) as u32;
 
-                                invalid_scissor = width <= 0 || height <= 0;
+                                invalid_scissor = width == 0 || height == 0;
 
                                 if !invalid_scissor {
                                     render_pass.set_scissor_rect(x, y, width, height);
