@@ -81,7 +81,7 @@ impl DeriveType {
         generics: &Generics,
         wheres: &Option<WhereClause>,
         state_idents: &Vec<Ident>,
-        id_idents: &Vec<Ident>,
+        id_idents: &[Ident],
     ) -> TokenStream {
         match self {
             DeriveType::MouseEvent => mouse_event_token_stream(ident, generics, wheres),
@@ -203,7 +203,7 @@ fn id_token_stream(
     ident: &Ident,
     generics: &Generics,
     wheres: &Option<WhereClause>,
-    id_idents: &Vec<Ident>,
+    id_idents: &[Ident],
 ) -> TokenStream {
     if let Some(id) = id_idents.first() {
         quote! {

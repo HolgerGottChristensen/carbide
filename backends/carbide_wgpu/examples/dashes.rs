@@ -213,7 +213,7 @@ fn parse_dash_pattern(string: &str) -> Result<Vec<f64>, ParseFloatError> {
     string.split(",").map(|val| f64::from_str(val.trim())).collect::<Result<Vec<f64>, ParseFloatError>>()
 }
 
-fn dash_pattern_to_string(pattern: &Vec<f64>) -> String {
+fn dash_pattern_to_string(pattern: &[f64]) -> String {
     pattern.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
 }
 

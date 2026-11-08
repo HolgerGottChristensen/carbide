@@ -325,7 +325,7 @@ impl OffscreenRenderer {
         }
     }
 
-    fn ensure_vertices_in_buffer(device: &Device, queue: &Queue, vertices: &Vec<WgpuVertex>, vertex_buffer: &mut Buffer, buffer_size: &mut usize) {
+    fn ensure_vertices_in_buffer(device: &Device, queue: &Queue, vertices: &[WgpuVertex], vertex_buffer: &mut Buffer, buffer_size: &mut usize) {
         if vertices.len() <= *buffer_size {
             // There is space in the current vertex buffer
             queue.write_buffer(vertex_buffer, 0, bytemuck::cast_slice(vertices));
@@ -402,7 +402,7 @@ impl OffscreenRenderer {
         encoder: &mut CommandEncoder,
         render_pipelines: &RenderPipelines,
         bind_groups: &HashMap<ImageId, BindGroupExtended>,
-        uniform_bind_groups: &Vec<BindGroup>,
+        uniform_bind_groups: &[BindGroup],
         gradient_dashes_bind_group_layout: &BindGroupLayout,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
         size: PhysicalSize<u32>,

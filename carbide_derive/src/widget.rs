@@ -104,7 +104,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     }
 }
 
-fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<DeriveType> {
+fn parse_attributes(attr: &[Attribute]) -> HashSet<DeriveType> {
     let mut string_set = HashSet::new();
     attr.iter()
         .filter_map(|attribute| match Attribute::parse_meta(attribute) {
