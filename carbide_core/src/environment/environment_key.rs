@@ -37,6 +37,10 @@ pub trait EnvironmentKeyDefault: EnvironmentKey {
     fn default() -> Self::Value;
 }
 
+// Sealed-trait pattern: `Sealed` must be reachable as a supertrait of the public `Access`, but
+// `InternalEnvironmentValue` is intentionally crate-private, and nobody outside can implement or
+// call these methods.
+#[allow(private_interfaces)]
 mod sealed {
     use carbide::environment::environment_key::{Shared, Exclusive};
     use crate::any_debug::AnyDebug;

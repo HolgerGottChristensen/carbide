@@ -32,3 +32,6 @@ carbide_wgpu = { workspace = true, features = ["controls", "icons"] }
 carbide_icons = { workspace = true, features = ["lucide"] }
 futures.workspace = true
 assert_matches.workspace = true
+
+[lints]
+workspace = true

@@ -25,3 +25,6 @@ dolly = { workspace = true, optional = true }
 [dev-dependencies]
 carbide_wgpu.workspace = true
 carbide_wgpu_3d.workspace = true
+
+[lints]
+workspace = true

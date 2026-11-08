@@ -90,3 +90,6 @@ required-features = ["carbide_core/tokio"]
 [[test]]
 name = "rendering"
 required-features = ["testing"]
+
+[lints]
+workspace = true

@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::mem;
-use proc_macro2::{Delimiter, Ident, Span, TokenStream, TokenTree};
+use proc_macro2::{Delimiter, Ident, TokenStream, TokenTree};
 use quote::{ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::{bracketed, Index, Lit, LitFloat, Macro, MacroDelimiter, MethodTurbofish, parenthesized, Path, PathArguments, QSelf, Token};
@@ -93,7 +93,6 @@ pub enum CarbideMember {
     /// An unnamed field like `self.0`.
     Unnamed {
         index: u32,
-        span: Span,
     },
 }
 
@@ -474,7 +473,6 @@ impl CarbideExpr {
                 dot_token: Token![.](dot_token.span),
                 member: CarbideMember::Unnamed {
                     index: index.index,
-                    span: index.span
                 },
             });
             *dot_token = Token![.](float.span());

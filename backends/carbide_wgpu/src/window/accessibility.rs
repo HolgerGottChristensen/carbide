@@ -1,3 +1,4 @@
+use crate::window::WindowState;
 use crate::Window;
 use accesskit::{Node, NodeId, Role, Tree, TreeId, TreeUpdate};
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
@@ -8,9 +9,9 @@ use carbide_core::identifiable::Identifiable;
 
 impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
-        match self {
-            Window::UnInitialized { .. } => {}
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Initialized(initialized) => {
                 let id = initialized.id;
                 if ctx.parent_id.is_none() {
                     initialized.with_env(ctx.env, |env, initialized| {
@@ -81,7 +82,7 @@ impl<T: ReadState<T=String>, C: Widget> Accessibility for Window<T, C> {
 
                 ctx.children.push(self.id());
             }
-            Window::Failed => {}
+            WindowState::Failed => {}
         }
     }
 }

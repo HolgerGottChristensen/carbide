@@ -25,7 +25,10 @@ impl EnvironmentKey for PickerStyleKey {
     type Access = Shared;
 }
 
+/// Implemented by the built-in picker styles. `create` takes the crate-internal
+/// `PickerSelectionType`, so the trait can only be implemented inside this crate.
 pub trait PickerStyle: WidgetStyle {
+    #[allow(private_interfaces)] // `PickerSelectionType` is crate-internal; see `PickerStyle`.
     fn create(
         &self,
         focus: Box<dyn AnyState<T=Focus>>,
@@ -37,6 +40,7 @@ pub trait PickerStyle: WidgetStyle {
 }
 
 impl PickerStyle for AutomaticStyle {
+    #[allow(private_interfaces)] // `PickerSelectionType` is crate-internal; see `PickerStyle`.
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         MenuStyle.create(focus, enabled, label, model, selection_type)
     }

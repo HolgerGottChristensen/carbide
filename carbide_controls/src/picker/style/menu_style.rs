@@ -248,6 +248,7 @@ impl MenuStyle {
 }
 
 impl PickerStyle for MenuStyle {
+    #[allow(private_interfaces)] // `PickerSelectionType` is crate-internal; see `PickerStyle`.
     fn create(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         MenuStyle.generate(focus, enabled, label, model, picker_selection_type).boxed()
     }

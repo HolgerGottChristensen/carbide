@@ -3,8 +3,6 @@
 // https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=45ea0874855a115a2b5d41f947908652
 
 #![deny(unsafe_code)]
-// Modules like `state::state` follow the crate's file layout convention. Allowed for now.
-#![allow(clippy::module_inception)]
 
 extern crate self as carbide;
 

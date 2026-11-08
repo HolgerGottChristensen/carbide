@@ -23,3 +23,6 @@ carbide_fluent.workspace = true
 
 [features]
 default = ["carbide_fluent"]
+
+[lints]
+workspace = true

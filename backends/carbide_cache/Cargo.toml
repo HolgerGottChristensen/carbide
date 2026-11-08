@@ -7,3 +7,6 @@ authors.workspace = true
 
 [dependencies]
 carbide_core.workspace = true
+
+[lints]
+workspace = true

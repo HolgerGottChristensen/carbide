@@ -45,3 +45,6 @@ text = ["fontdb", "rustybuzz", "ttf-parser", "unicode-bidi", "unicode-script", "
 system-fonts = ["fontdb/fs", "fontdb/fontconfig"]
 # Enables font files memmaping for faster loading.
 memmap-fonts = ["fontdb/memmap"]
+
+[lints]
+workspace = true

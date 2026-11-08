@@ -52,3 +52,5 @@ open = { workspace = true, optional = true }
 async-std = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true, features = ["full"] }
 
+[lints]
+workspace = true

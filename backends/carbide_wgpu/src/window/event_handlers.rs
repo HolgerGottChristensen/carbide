@@ -1,4 +1,5 @@
 use crate::window::Window;
+use crate::window::WindowState;
 use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler, ApplicationEvent, ApplicationEventContext, ApplicationEventHandler, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler, OtherEvent, OtherEventContext, OtherEventHandler, WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
@@ -7,8 +8,8 @@ use carbide_winit::window::Theme;
 
 impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 let id: u64 = initialized.inner.id().into();
 
                 initialized.with_env(ctx.env, |env, initialized| {
@@ -28,16 +29,16 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
                     initialized.child.process_mouse_event(event, new_ctx);
                 });
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }
 
 impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, C> {
     fn process_accessibility_event(&mut self, event: &AccessibilityEvent, ctx: &mut AccessibilityEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut AccessibilityEventContext {
                         env,
@@ -50,16 +51,16 @@ impl<T: ReadState<T=String>, C: Widget> AccessibilityEventHandler for Window<T, 
                     initialized.child.process_accessibility_event(event, new_ctx);
                 })
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }
 
 impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 let id: u64 = initialized.inner.id().into();
 
                 initialized.with_env(ctx.env, |env, initialized| {
@@ -79,16 +80,16 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
                     initialized.child.process_keyboard_event(event, new_ctx);
                 })
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }
 
 impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut OtherEventContext {
                         text: ctx.text,
@@ -105,16 +106,16 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
                     initialized.child.process_other_event(event, new_ctx);
                 })
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }
 
 impl<T: ReadState<T=String>, C: Widget> ApplicationEventHandler for Window<T, C> {
     fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut ApplicationEventContext {
                         text: ctx.text,
@@ -129,16 +130,16 @@ impl<T: ReadState<T=String>, C: Widget> ApplicationEventHandler for Window<T, C>
                     initialized.child.process_application_event(event, new_ctx);
                 })
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }
 
 impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
-        match self {
-            Window::Initialized(initialized) => {
+        match &mut self.state {
+            WindowState::Initialized(initialized) => {
                 let window_id = ctx.window_id;
 
                 let id: u64 = initialized.inner.id().into();
@@ -208,8 +209,8 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
                     initialized.child.process_window_event(event, new_ctx);
                 })
             }
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }

@@ -82,6 +82,7 @@ impl SegmentedStyle {
 }
 
 impl PickerStyle for SegmentedStyle {
+    #[allow(private_interfaces)] // `PickerSelectionType` is crate-internal; see `PickerStyle`.
     fn create(&self, _focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, _picker_selection_type: PickerSelectionType) -> Box<dyn AnyWidget> {
         let radio_group = HStack::new(
             ForEach::custom_widget(

@@ -14,3 +14,6 @@ carbide = { workspace = true, features = ["controls"] }
 [package.metadata.bundle]
 name = "Counter Example - Carbide"
 identifier = "rs.carbide.counterapplication"
+
+[lints]
+workspace = true

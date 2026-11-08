@@ -54,3 +54,8 @@ walkdir.workspace = true
 
 [lints.rust]
 unexpected_cfgs = { level = "allow", check-cfg = ['cfg(doc_cfg)'] }
+
+# Can't use `workspace = true` together with the `[lints.rust]` table above, so the
+# workspace's clippy settings are repeated here.
+[lints.clippy]
+module_inception = "allow"

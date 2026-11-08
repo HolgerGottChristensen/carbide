@@ -33,6 +33,10 @@ members = [
     "backends/carbide_tesselation",
 ]
 
+[workspace.lints.clippy]
+# Modules like `state::state` follow the project's file layout convention.
+module_inception = "allow"
+
 [workspace.package]
 version = "0.72.0"
 edition = "2024"

@@ -19,3 +19,6 @@ encase = { workspace = true, features = ["cgmath"] }
 include_dir.workspace = true
 once_cell.workspace = true
 dashmap.workspace = true
+
+[lints]
+workspace = true

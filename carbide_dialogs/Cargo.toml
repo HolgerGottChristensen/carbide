@@ -27,3 +27,6 @@ block2.workspace = true
 carbide_wgpu.workspace = true
 carbide_core = { workspace = true, features = ["tokio"] }
 carbide_controls.workspace = true
+
+[lints]
+workspace = true

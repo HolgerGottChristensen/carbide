@@ -16,7 +16,12 @@ use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
 use carbide_core::widget::{CommonWidget, Empty, IntoWidget, NavigationStack, Rectangle, Widget, WidgetId, ZStack};
 use std::fmt::{Debug, Formatter};
 
-pub enum Window<T: ReadState<T=String>, C: Widget> {
+/// A window scene. Construct it with [`Window::new`]; its lifecycle state is internal.
+pub struct Window<T: ReadState<T=String>, C: Widget> {
+    state: WindowState<T, C>,
+}
+
+pub(crate) enum WindowState<T: ReadState<T=String>, C: Widget> {
     UnInitialized {
         id: WidgetId,
         title: T,
@@ -48,13 +53,15 @@ impl Window<String, Empty> {
 
         let child = FontSizeManager::new(child);
 
-        Window::UnInitialized {
-            id: WidgetId::new(),
-            title: title.into_read_state(),
-            position: Default::default(),
-            dimension,
-            child,
-            msaa: WgpuMsaa::X4
+        Window {
+            state: WindowState::UnInitialized {
+                id: WidgetId::new(),
+                title: title.into_read_state(),
+                position: Default::default(),
+                dimension,
+                child,
+                msaa: WgpuMsaa::X4
+            }
         }
     }
 }
@@ -70,10 +77,10 @@ impl<T: ReadState<T=String>, C: Widget> Debug for Window<T, C> {
         f.debug_struct("Window")
             .field("position", &self.position())
             .field("dimension", &self.dimension())
-            .field("child", match self {
-                Window::UnInitialized { child, .. } => child,
-                Window::Initialized (initialized) => &initialized.child,
-                Window::Failed => &"Failed",
+            .field("child", match &self.state {
+                WindowState::UnInitialized { child, .. } => child,
+                WindowState::Initialized (initialized) => &initialized.child,
+                WindowState::Failed => &"Failed",
             })
             .finish()
     }

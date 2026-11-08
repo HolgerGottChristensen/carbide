@@ -75,6 +75,8 @@ impl List<(), ()> {
         }
     }*/
 
+    // `IntoSelection` is crate-internal; callers pass one of the state types it's implemented for.
+    #[allow(private_bounds)]
     pub fn new_selectable<T: StateContract + Identifiable, M: RandomAccessCollection<T>, W: Widget + WidgetProperties<Kind=WidgetKindSimple>, U: Delegate<M, T, W>>(
         model: M,
         selection: impl IntoSelection<<T as Identifiable>::Id>,

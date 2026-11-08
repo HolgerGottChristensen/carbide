@@ -1,6 +1,7 @@
 use crate::render_pass_command::RenderPass;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::Window;
+use crate::window::WindowState;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
@@ -19,10 +20,10 @@ use crate::wgpu_context::WgpuContext;
 
 impl<T: ReadState<T=String>, C: Widget> Render for Window<T, C> {
     fn render(&mut self, ctx: &mut RenderContext) {
-        match self {
-            Window::Initialized(initialized) => initialized.render(ctx),
-            Window::UnInitialized { .. } => {}
-            Window::Failed => {}
+        match &mut self.state {
+            WindowState::Initialized(initialized) => initialized.render(ctx),
+            WindowState::UnInitialized { .. } => {}
+            WindowState::Failed => {}
         }
     }
 }

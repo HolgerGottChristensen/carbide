@@ -12,3 +12,6 @@ dyn-clone.workspace = true
 
 [dev-dependencies]
 carbide_wgpu.workspace = true
+
+[lints]
+workspace = true

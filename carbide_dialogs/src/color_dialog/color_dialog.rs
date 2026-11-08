@@ -1,9 +1,11 @@
 use dyn_clone::clone_box;
 use carbide::draw::{AutomaticStyle, Color};
 use carbide::environment::Environment;
+use carbide::identifiable::Identifiable;
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateExtNew, StateSync};
 use carbide::widget::WidgetId;
 use crate::color_dialog::style::ColorDialogStyleKey;
+use crate::save_dialog::SaveDialog;
 
 #[derive(Debug)]
 pub struct ColorDialog {
@@ -29,5 +31,13 @@ impl ColorDialog {
 
 
         style.open(self.color, self.show_alpha, env);
+    }
+}
+
+impl Identifiable for ColorDialog {
+    type Id = WidgetId;
+
+    fn id(&self) -> WidgetId {
+        self.id
     }
 }

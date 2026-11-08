@@ -13,3 +13,6 @@ authors = [
 carbide_core.workspace = true
 carbide_derive.workspace = true
 printpdf = { workspace = true, features = ["embedded_images"] }
+
+[lints]
+workspace = true

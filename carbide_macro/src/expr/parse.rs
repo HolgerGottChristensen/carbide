@@ -24,7 +24,6 @@ impl Parse for CarbideMember {
                         .base10_digits()
                         .parse()
                         .map_err(|err| syn::Error::new(lit.span(), err))?,
-                    span: lit.span(),
                 })
             } else {
                 Err(syn::Error::new(lit.span(), "expected unsuffixed integer"))

@@ -13,3 +13,6 @@ carbide_core.workspace = true
 wgpu.workspace = true
 futures.workspace = true
 log.workspace = true
+
+[lints]
+workspace = true

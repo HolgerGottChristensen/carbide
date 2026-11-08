@@ -5,6 +5,7 @@ use crate::offscreen_renderer::OffscreenRenderer;
 use crate::pipeline::create_final_render_pipeline;
 use crate::window::initialized_window::InitializedWindow;
 use crate::window::Window;
+use crate::window::WindowState;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::lifecycle::{InitializationContext, Initialize};
 use carbide_core::state::ReadState;
@@ -19,8 +20,8 @@ pub const ZOOM: f32 = 1.0;
 
 impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
     fn initialize(&mut self, ctx: &mut InitializationContext) {
-        *self = match std::mem::replace(self, Window::Failed) {
-            Window::UnInitialized {
+        self.state = match std::mem::replace(&mut self.state, WindowState::Failed) {
+            WindowState::UnInitialized {
                 id,
                 title,
                 position,
@@ -127,7 +128,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                     Theme::Dark => carbide_core::draw::theme::Theme::Dark,
                 };
 
-                Window::Initialized(InitializedWindow {
+                WindowState::Initialized(InitializedWindow {
                     id,
                     surface,
                     surface_configuration,

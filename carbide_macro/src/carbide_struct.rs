@@ -246,19 +246,12 @@ impl Parse for CarbideBodyFunction {
 #[derive(Clone)]
 pub enum CarbideStructField {
     Optional {
-        attrs: Vec<Attribute>,
-        l: Let,
         ident: Ident,
-        c: Colon,
         t: Type,
-        eq: syn::token::Eq,
         expr: Expr,
     },
     Required {
-        attrs: Vec<Attribute>,
-        l: Let,
         ident: Ident,
-        c: Colon,
         t: Type,
     }
 }
@@ -388,32 +381,26 @@ impl Debug for CarbideStructField {
 
 impl Parse for CarbideStructField {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-        let l = Let::parse(input)?;
+        // Attributes are accepted but not used.
+        input.call(Attribute::parse_outer)?;
+        Let::parse(input)?;
         let ident = Ident::parse(input)?;
-        let col = Colon::parse(input)?;
+        Colon::parse(input)?;
         let types = Type::parse(input)?;
 
-        Ok(if let Ok(token) = syn::token::Eq::parse(input) {
+        Ok(if syn::token::Eq::parse(input).is_ok() {
             let types = parse_quote!(carbide_core::state::TState<#types>);
 
             Optional {
-                attrs,
-                l,
                 ident,
-                c: col,
                 t: types,
-                eq: token,
                 expr: Expr::parse(input)?
             }
         } else {
             let types = parse_quote!(carbide_core::state::TState<#types>);
 
             Required {
-                attrs,
-                l,
                 ident,
-                c: col,
                 t: types
             }
         })

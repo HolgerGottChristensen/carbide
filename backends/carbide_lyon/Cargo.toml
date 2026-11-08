@@ -8,3 +8,6 @@ repository.workspace = true
 carbide_core.workspace = true
 carbide_tesselation.workspace = true
 lyon_for_carbide.workspace = true
+
+[lints]
+workspace = true

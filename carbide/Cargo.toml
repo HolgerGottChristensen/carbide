@@ -39,3 +39,6 @@ carbide_icons = { workspace = true, optional = true }
 
 [dev-dependencies]
 carbide_controls.workspace = true
+
+[lints]
+workspace = true

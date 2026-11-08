@@ -11,3 +11,6 @@ publish = false
 [dependencies]
 carbide = { workspace = true, features = ["controls"] }
 chrono.workspace = true
+
+[lints]
+workspace = true

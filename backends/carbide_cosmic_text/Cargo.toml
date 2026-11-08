@@ -17,3 +17,6 @@ cosmic-text.workspace = true
 swash.workspace = true
 unicode-segmentation.workspace = true
 include_dir = { workspace = true, features = ["glob"]}
+
+[lints]
+workspace = true

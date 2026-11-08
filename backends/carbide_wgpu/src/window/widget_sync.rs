@@ -1,4 +1,5 @@
 use crate::window::Window;
+use crate::window::WindowState;
 use carbide_core::draw::{Dimension, Rect};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};
@@ -45,33 +46,33 @@ impl<T: ReadState<T=String>, C: Widget> WidgetProperties for Window<T, C> {
 impl<T: ReadState<T=String>, C: Widget> AnyScene for Window<T, C> {
     /// Request the window to redraw next frame
     fn request_redraw(&self) -> bool {
-        match self {
-            Window::UnInitialized { .. } => false,
-            Window::Initialized(initialized) => {
+        match &self.state {
+            WindowState::UnInitialized { .. } => false,
+            WindowState::Initialized(initialized) => {
                 initialized.inner.request_redraw();
                 true
             }
-            Window::Failed => false,
+            WindowState::Failed => false,
         }
     }
 
     fn has_application_focus(&self) -> bool {
-        match self {
-            Window::UnInitialized { .. } => false,
-            Window::Initialized(initialized) => {
+        match &self.state {
+            WindowState::UnInitialized { .. } => false,
+            WindowState::Initialized(initialized) => {
                 initialized.inner.has_focus()
             }
-            Window::Failed => false,
+            WindowState::Failed => false,
         }
     }
 
     fn is_daemon(&self) -> bool {
-        match self {
-            Window::UnInitialized { .. } => true,
-            Window::Initialized(_initialized) => {
+        match &self.state {
+            WindowState::UnInitialized { .. } => true,
+            WindowState::Initialized(_initialized) => {
                 false
             }
-            Window::Failed => true
+            WindowState::Failed => true
         }
     }
 }

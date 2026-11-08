@@ -23,11 +23,8 @@ pub enum CarbideExpression {
 }
 
 pub struct CarbideExprLet {
-    pub let_token: Let,
     pub pat: Pat,
-    pub eq_token: token::Eq,
     pub expr: CarbideExpr,
-    pub semi_token: Semi,
 }
 
 impl Debug for CarbideExprLet {
@@ -42,13 +39,7 @@ impl Debug for CarbideExprLet {
 impl ToTokens for CarbideExprLet {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
-        let CarbideExprLet {
-            let_token: _,
-            pat,
-            eq_token: _,
-            expr,
-            semi_token: _
-        } = self;
+        let CarbideExprLet { pat, expr } = self;
         tokens.extend(quote!(
             let #pat = { #expr };
         ))
@@ -58,42 +49,30 @@ impl ToTokens for CarbideExprLet {
 impl Parse for CarbideExprLet {
     fn parse(input: ParseStream) -> syn::Result<Self> {
 
-        Ok(CarbideExprLet {
-            let_token: Let::parse(input)?,
-            pat: Pat::parse(input)?,
-            eq_token: token::Eq::parse(input)?,
-            expr: CarbideExpr::parse(input)?,
-            semi_token: Semi::parse(input)?
-        })
+        Let::parse(input)?;
+        let pat = Pat::parse(input)?;
+        token::Eq::parse(input)?;
+        let expr = CarbideExpr::parse(input)?;
+        Semi::parse(input)?;
+
+        Ok(CarbideExprLet { pat, expr })
     }
 }
 
 pub struct CarbideExprMatch {
-    pub attrs: Vec<Attribute>,
-    pub match_token: Token![match],
     pub expr: Box<CarbideExpr>,
-    pub brace_token: Brace,
     pub arms: Vec<CarbideArm>,
 }
 
 pub struct CarbideArm {
-    pub attrs: Vec<Attribute>,
     pub pat: Pat,
     pub guard: Option<(Token![if], Box<Expr>)>,
-    pub fat_arrow_token: Token![=>],
     pub body: Box<CarbideBlock>,
-    pub comma: Option<Token![,]>,
 }
 
 impl ToTokens for CarbideExprMatch {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let CarbideExprMatch {
-            attrs: _,
-            match_token: _,
-            expr,
-            brace_token: _,
-            arms
-        } = self;
+        let CarbideExprMatch { expr, arms } = self;
 
         let arms = arms.iter().map(|arm| {
             CarbideArm::tokens(arm)
@@ -112,14 +91,7 @@ impl ToTokens for CarbideExprMatch {
 
 impl CarbideArm {
     fn tokens(&self) -> TokenStream {
-        let CarbideArm {
-            attrs: _,
-            pat,
-            guard,
-            fat_arrow_token: _,
-            body,
-            comma: _
-        } = self;
+        let CarbideArm { pat, guard, body } = self;
 
         let idents = extract_idents_from_pattern(pat.clone());
 
@@ -170,12 +142,13 @@ impl Debug for CarbideArm {
 
 impl Parse for CarbideExprMatch {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
-        let match_token: Token![match] = input.parse()?;
+        // Attributes are accepted but not used.
+        input.call(Attribute::parse_outer)?;
+        let _: Token![match] = input.parse()?;
         let expr = CarbideExpr::parse(input)?;
 
         let content;
-        let brace_token = braced!(content in input);
+        braced!(content in input);
         //attr::parsing::parse_inner(&content, &mut attrs)?;
 
         let mut arms = Vec::new();
@@ -184,10 +157,7 @@ impl Parse for CarbideExprMatch {
         }
 
         Ok(CarbideExprMatch {
-            attrs,
-            match_token,
             expr: Box::new(expr),
-            brace_token,
             arms,
         })
     }
@@ -195,41 +165,27 @@ impl Parse for CarbideExprMatch {
 
 impl Parse for CarbideArm {
     fn parse(input: ParseStream) -> syn::Result<CarbideArm> {
-        let requires_comma;
-        Ok(CarbideArm {
-            attrs: input.call(Attribute::parse_outer)?,
-            pat: CarbideExprForLoop::multi_pat_with_leading_vert(input)?,
-            guard: {
-                if input.peek(Token![if]) {
-                    let if_token: Token![if] = input.parse()?;
-                    let guard: Expr = input.parse()?;
-                    Some((if_token, Box::new(guard)))
-                } else {
-                    None
-                }
-            },
-            fat_arrow_token: input.parse()?,
-            body: {
-                let body = CarbideBlock::parse(input)?;
-                requires_comma = false;
-                Box::new(body)
-            },
-            comma: {
-                if requires_comma && !input.is_empty() {
-                    Some(input.parse()?)
-                } else {
-                    input.parse()?
-                }
-            },
-        })
+        // Attributes are accepted but not used.
+        input.call(Attribute::parse_outer)?;
+        let pat = CarbideExprForLoop::multi_pat_with_leading_vert(input)?;
+        let guard = if input.peek(Token![if]) {
+            let if_token: Token![if] = input.parse()?;
+            let guard: Expr = input.parse()?;
+            Some((if_token, Box::new(guard)))
+        } else {
+            None
+        };
+        let _: Token![=>] = input.parse()?;
+        let body = Box::new(CarbideBlock::parse(input)?);
+        // Arm bodies are always blocks, so the trailing comma is optional.
+        let _: Option<Token![,]> = input.parse()?;
+
+        Ok(CarbideArm { pat, guard, body })
     }
 }
 
 pub struct CarbideExprForLoop {
-    pub attrs: Vec<Attribute>,
-    pub for_token: Token![for],
     pub pat: Pat,
-    pub in_token: Token![in],
     pub expr: Box<CarbideExpr>,
     pub body: CarbideBlock,
 }
@@ -237,14 +193,7 @@ pub struct CarbideExprForLoop {
 impl ToTokens for CarbideExprForLoop {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
-        let CarbideExprForLoop {
-            attrs: _,
-            for_token: _,
-            pat,
-            in_token: _,
-            expr,
-            body
-        } = self;
+        let CarbideExprForLoop { pat, expr, body } = self;
 
         let body = if body.produces_vec() {
             quote!(
@@ -299,22 +248,20 @@ impl Debug for CarbideExprForLoop {
 
 impl Parse for CarbideExprForLoop {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
+        // Attributes are accepted but not used.
+        input.call(Attribute::parse_outer)?;
 
-        let for_token: Token![for] = input.parse()?;
+        let _: Token![for] = input.parse()?;
 
         let pat = CarbideExprForLoop::multi_pat_with_leading_vert(input)?;
 
-        let in_token: Token![in] = input.parse()?;
+        let _: Token![in] = input.parse()?;
         let expr = CarbideExpr::parse(input)?;
 
         let body = CarbideBlock::parse(input)?;
 
         Ok(CarbideExprForLoop {
-            attrs,
-            for_token,
             pat,
-            in_token,
             expr: Box::new(expr),
             body,
         })
@@ -353,21 +300,18 @@ impl CarbideExprForLoop {
 }
 
 pub struct CarbideExprIf {
-    pub attrs: Vec<Attribute>,
-    pub if_token: Token![if],
     pub cond: Box<CarbideExpr>,
     pub then_branch: CarbideBlock,
     pub else_branch: CarbideElseBranch,
 }
 
 pub enum CarbideElseBranch {
-    ElseIf (Token![else], Box<CarbideExprIf>),
-    Else (Token![else], CarbideBlock),
+    ElseIf(Box<CarbideExprIf>),
+    Else(CarbideBlock),
     None
 }
 
 pub struct CarbideBlock {
-    pub brace_token: Brace,
     pub exprs: Vec<CarbideExpression>,
 }
 
@@ -394,10 +338,10 @@ impl Debug for CarbideExprIf {
 impl Debug for CarbideElseBranch {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            CarbideElseBranch::ElseIf(_, if_expr) => {
+            CarbideElseBranch::ElseIf(if_expr) => {
                 Debug::fmt(if_expr, f)
             }
-            CarbideElseBranch::Else(_, el) => {
+            CarbideElseBranch::Else(el) => {
                 Debug::fmt(el, f)
             }
             CarbideElseBranch::None => {
@@ -417,10 +361,10 @@ impl Debug for CarbideBlock {
 
 impl Parse for CarbideExprIf {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let attrs = input.call(Attribute::parse_outer)?;
+        // Attributes are accepted but not used.
+        input.call(Attribute::parse_outer)?;
+        let _: Token![if] = input.parse()?;
         Ok(CarbideExprIf {
-            attrs,
-            if_token: input.parse()?,
             cond: Box::new(CarbideExpr::parse(input)?),
             then_branch: input.parse()?,
             else_branch: {
@@ -428,10 +372,12 @@ impl Parse for CarbideExprIf {
                     CarbideElseBranch::None
                 } else if input.peek2(Token![if]) {
                     println!("Else if");
-                    CarbideElseBranch::ElseIf(Else::parse(input)?, Box::new(CarbideExprIf::parse(input)?))
+                    Else::parse(input)?;
+                    CarbideElseBranch::ElseIf(Box::new(CarbideExprIf::parse(input)?))
                 } else {
                     println!("Else");
-                    CarbideElseBranch::Else(Else::parse(input)?, CarbideBlock::parse(input)?)
+                    Else::parse(input)?;
+                    CarbideElseBranch::Else(CarbideBlock::parse(input)?)
                 }
             },
         })
@@ -452,7 +398,6 @@ impl Parse for CarbideBlock {
             }
 
             Ok(CarbideBlock {
-                brace_token: brace.token,
                 exprs: body
             })
         } else {
@@ -464,10 +409,6 @@ impl Parse for CarbideBlock {
 impl ToTokens for CarbideBlock {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
-        let CarbideBlock {
-            brace_token: _,
-            exprs: _
-        } = self;
 
         if self.expression_count() == 0 {
             tokens.extend(quote!(
@@ -526,18 +467,16 @@ impl ToTokens for CarbideExprIf {
     fn to_tokens(&self, tokens: &mut TokenStream) {
 
         let CarbideExprIf {
-            attrs: _,
-            if_token: _,
             cond,
             then_branch,
             else_branch
         } = self;
 
         let else_quote = match else_branch {
-            CarbideElseBranch::ElseIf(_, e) => {
+            CarbideElseBranch::ElseIf(e) => {
                 quote!(.when_false(#e))
             }
-            CarbideElseBranch::Else(_, e) => {
+            CarbideElseBranch::Else(e) => {
                 if e.produces_vec() {
                     quote!(.when_false(ZStack::new(#e)))
                 } else {
@@ -841,7 +780,6 @@ pub enum CarbideInstantiateParam {
     },
     Optional {
         ident: Ident,
-        colon: Colon,
         expr: CarbideExpr,
     }
 }
@@ -911,9 +849,10 @@ impl Debug for CarbideInstantiateParam {
 impl Parse for CarbideInstantiateParam {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let res = if input.peek(Ident) && input.peek2(Token!(:)) {
+            let ident = Ident::parse(input)?;
+            Colon::parse(input)?;
             Optional {
-                ident: Ident::parse(input)?,
-                colon: Colon::parse(input)?,
+                ident,
                 expr: CarbideExpr::parse(input)?
             }
         } else {

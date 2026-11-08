@@ -19,3 +19,6 @@ dashmap.workspace = true
 once_cell.workspace = true
 accesskit.workspace = true
 accesskit_winit.workspace = true
+
+[lints]
+workspace = true
