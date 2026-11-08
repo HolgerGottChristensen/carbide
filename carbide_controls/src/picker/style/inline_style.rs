@@ -48,10 +48,10 @@ impl InlineStyle {
             .focused(focus)
     }
 
-    fn radio_button(selected: &Box<dyn AnyState<T=bool>>, enabled: &Box<dyn AnyReadState<T=bool>>, focus: &LocalState<Focus>) -> impl Widget<Kind=WidgetKindSimple> {
+    fn radio_button(selected: &dyn AnyState<T=bool>, enabled: &dyn AnyReadState<T=bool>, focus: &LocalState<Focus>) -> impl Widget<Kind=WidgetKindSimple> {
         let background_color = Map2::read_map(
-            selected.clone(),
-            enabled.clone(),
+            selected.boxed(),
+            enabled.boxed(),
             |checked, enabled| {
                 if *enabled {
                     if *checked {
@@ -81,7 +81,7 @@ impl InlineStyle {
             }
         );
 
-        let mark_color = Map1::read_map(enabled.clone(), |enabled| {
+        let mark_color = Map1::read_map(enabled.boxed(), |enabled| {
             if *enabled {
                 Color::new_rgba(222, 222, 224, 255)
             } else {
@@ -97,7 +97,7 @@ impl InlineStyle {
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
                 .stroke_style(1.0),
-            IfElse::new(selected.clone()).when_true(
+            IfElse::new(selected.boxed()).when_true(
                 Ellipse::new()
                     .fill(mark_color)
                     .frame(6.0, 6.0),

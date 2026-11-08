@@ -50,6 +50,8 @@ pub struct Slider<Value, F, T, Start, End, StepMode, Enabled> where
 }
 
 impl Slider<f64, Focus, f64, f64, f64, SliderStepping<f64>, bool> {
+    // The return type names every generic state parameter of the slider.
+    #[allow(clippy::type_complexity)]
     pub fn new<Value: SliderValue, T: State<T=Value>, Start: IntoReadState<Value>, End: IntoReadState<Value>>(state: T, start: Start, end: End) -> Slider<Value, LocalState<Focus>, T, Start::Output, End::Output, SliderStepping<Value>, EnabledState> {
         let focus = LocalState::new(Focus::Unfocused);
 
@@ -240,7 +242,7 @@ impl<
                     let relative_to_position = *position - self.position;
                     let p = (relative_to_position.x - self.thumb.width() / 2.0)
                         / (self.dimension.width - self.thumb.width());
-                    self.percent.set_value(p.max(0.0).min(1.0));
+                    self.percent.set_value(p.clamp(0.0, 1.0));
                 } else {
                     if *self.focus.value() == Focus::Focused {
                         self.focus.set_value(Focus::FocusReleased);
@@ -261,7 +263,7 @@ impl<
                 let relative_to_position = *to - self.position;
                 let p = (relative_to_position.x - self.thumb.width() / 2.0)
                     / (self.dimension.width - self.thumb.width());
-                self.percent.set_value(p.max(0.0).min(1.0));
+                self.percent.set_value(p.clamp(0.0, 1.0));
             }
             _ => (),
         }
@@ -278,7 +280,7 @@ impl<
     En: ReadState<T=bool>,
 > Layout for Slider<V, F, St, S, E, P, En> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
-        let percent = self.percent.value().max(0.0).min(1.0);
+        let percent = self.percent.value().clamp(0.0, 1.0);
 
         let background = self.background.calculate_size(requested_size, ctx);
 
@@ -301,7 +303,7 @@ impl<
     }
 
     fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
-        let percent = self.percent.value().max(0.0).min(1.0);
+        let percent = self.percent.value().clamp(0.0, 1.0);
         let position = self.position();
 
         let background_y = position.y + self.height() / 2.0 - self.background.height() / 2.0;

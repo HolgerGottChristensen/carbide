@@ -80,10 +80,18 @@ impl Folder {
             let acc = #crate_name::widget::Empty::new();
 
             #(
-                let acc = #crate_name::widget::IfElse::new(#crate_name::state::Map1::read_map((#expr).clone(), |a| {matches!(a, #patterns_rev)} ))
+                #[warn(unreachable_code)]
+                let acc = #crate_name::widget::IfElse::new(#crate_name::state::Map1::read_map((#expr).clone(), |a| {
+                    // Only tests whether the arm matches; the pattern's bindings are created
+                    // separately below, so they're unused here.
+                    #[allow(unused_variables)]
+                    let matched = matches!(a, #patterns_rev);
+                    matched
+                }))
                     .when_true({
                         #(
                             let #bindings = #crate_name::state::FieldState::new((#expr).clone(), |a| {
+                                #[warn(unused_variables)]
                                 match a {
                                     #patterns_rev => {
                                         #bindings
