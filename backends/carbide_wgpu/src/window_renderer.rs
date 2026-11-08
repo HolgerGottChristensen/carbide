@@ -11,7 +11,7 @@ use carbide_core::environment::Environment;
 use carbide_core::plugin::Plugin;
 use carbide_core::register;
 use carbide_core::render::{NoopRenderContext, RenderContext};
-use carbide_windowing::{PhysicalSize, SurfaceTarget, WindowRenderError, WindowRenderer, WindowRendererFactory};
+use carbide_windowing::{PhysicalSize, SurfaceTarget, WindowRenderError, WindowRendererBackend, WindowRendererFactory, WindowRendererId};
 use carbide_core::text::TextContextKey;
 use carbide_core::widget::AnyWidget;
 use carbide_wgpu_core::WgpuContextNew;
@@ -23,15 +23,15 @@ use crate::wgpu_context::WgpuContext;
 use crate::wgpu_msaa::WgpuMsaa;
 
 /// Renders a widget tree offscreen and composites the result onto a window's surface.
-pub(crate) struct WgpuWindowRenderer {
+pub(crate) struct WgpuWindowRendererBackend {
     surface: Surface<'static>,
     surface_configuration: SurfaceConfiguration,
     surface_render_pipeline: RenderPipeline,
     offscreen: OffscreenRenderer,
 }
 
-impl WgpuWindowRenderer {
-    fn new(target: Arc<dyn SurfaceTarget>, size: PhysicalSize, scale_factor: Scalar, env: &mut Environment) -> WgpuWindowRenderer {
+impl WgpuWindowRendererBackend {
+    fn new(target: Arc<dyn SurfaceTarget>, size: PhysicalSize, scale_factor: Scalar, env: &mut Environment) -> WgpuWindowRendererBackend {
         let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         let surface = wgpu_context_new.instance
@@ -62,7 +62,7 @@ impl WgpuWindowRenderer {
 
         let offscreen = OffscreenRenderer::new(TargetSize::new(size.width, size.height), scale_factor, WgpuMsaa::X4, env);
 
-        WgpuWindowRenderer {
+        WgpuWindowRendererBackend {
             surface,
             surface_configuration,
             surface_render_pipeline,
@@ -98,7 +98,7 @@ impl WgpuWindowRenderer {
     }
 }
 
-impl WindowRenderer for WgpuWindowRenderer {
+impl WindowRendererBackend for WgpuWindowRendererBackend {
     fn resize(&mut self, size: PhysicalSize, scale_factor: Scalar, env: &mut Environment) {
         self.offscreen.resize(TargetSize::new(size.width, size.height), scale_factor, env);
 
@@ -171,8 +171,8 @@ impl WindowRenderer for WgpuWindowRenderer {
     }
 }
 
-fn create(target: Arc<dyn SurfaceTarget>, size: PhysicalSize, scale_factor: Scalar, env: &mut Environment) -> Box<dyn WindowRenderer> {
-    Box::new(WgpuWindowRenderer::new(target, size, scale_factor, env))
+fn create(target: Arc<dyn SurfaceTarget>, size: PhysicalSize, scale_factor: Scalar, env: &mut Environment) -> Box<dyn WindowRendererBackend> {
+    Box::new(WgpuWindowRendererBackend::new(target, size, scale_factor, env))
 }
 
 fn image_context() -> Box<dyn ImageContext> {
@@ -182,6 +182,7 @@ fn image_context() -> Box<dyn ImageContext> {
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
     Box::pin(async {
         env.insert::<WindowRendererFactory>(Box::leak(Box::new(WindowRendererFactory {
+            id: WindowRendererId::of::<WgpuWindowRendererBackend>(),
             create,
             image_context,
         })))

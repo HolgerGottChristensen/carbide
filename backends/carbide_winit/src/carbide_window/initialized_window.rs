@@ -21,7 +21,7 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) dimension: Dimension,
     pub(crate) child: C,
 
-    pub(crate) renderer: Box<dyn WindowRenderer>,
+    pub(crate) renderer: WindowRenderer,
 
     pub(crate) inner: Arc<crate::window::Window>,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,

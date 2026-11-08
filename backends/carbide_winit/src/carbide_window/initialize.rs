@@ -6,7 +6,7 @@ use crate::carbide_window::Window;
 use crate::carbide_window::WindowState;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::lifecycle::{InitializationContext, Initialize};
-use carbide_windowing::{PhysicalSize, WindowRendererFactory};
+use carbide_windowing::{PhysicalSize, WindowRendererFactory, WindowRenderer};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
 use crate::dpi::{LogicalSize, PhysicalPosition, Size};
@@ -91,7 +91,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 let factory = *ctx.env.get::<WindowRendererFactory>()
                     .expect("No renderer is registered. Enable carbide_winit's `wgpu` feature, or link another renderer crate");
-                let renderer = (factory.create)(window.clone(), PhysicalSize::new(size.width, size.height), scale_factor, ctx.env);
+                let renderer = WindowRenderer::new(factory, window.clone(), PhysicalSize::new(size.width, size.height), scale_factor, ctx.env);
 
                 let theme = match window.theme().unwrap_or(Theme::Dark) {
                     Theme::Light => carbide_core::draw::theme::Theme::Light,
