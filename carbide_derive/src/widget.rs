@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
-use proc_macro2;
 use proc_macro2::Ident;
-use syn;
 use syn::{Attribute, Fields, Meta, NestedMeta, Path};
 
 use crate::derive_type::DeriveType;
@@ -31,22 +29,19 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let mut contains_state = false;
 
         for attr in &field.attrs {
-            match Attribute::parse_meta(&attr) {
-                Ok(n) => {
-                    match n {
-                        // Path token
-                        Meta::Path(path) => {
-                            if is_attribute_path(path, "state") {
-                                contains_state = true
-                            }
+            if let Ok(n) = Attribute::parse_meta(attr) {
+                match n {
+                    // Path token
+                    Meta::Path(path) => {
+                        if is_attribute_path(path, "state") {
+                            contains_state = true
                         }
-                        // We do not have any list attributes for our macro yet
-                        Meta::List(_) => {}
-                        // We do not have any nameValue attributes for our macro yet
-                        Meta::NameValue(_) => {}
                     }
+                    // We do not have any list attributes for our macro yet
+                    Meta::List(_) => {}
+                    // We do not have any nameValue attributes for our macro yet
+                    Meta::NameValue(_) => {}
                 }
-                Err(_) => {}
             }
         }
 
@@ -61,22 +56,19 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
         let mut contains_state = false;
 
         for attr in &field.attrs {
-            match Attribute::parse_meta(&attr) {
-                Ok(n) => {
-                    match n {
-                        // Path token
-                        Meta::Path(path) => {
-                            if is_attribute_path(path, "id") {
-                                contains_state = true
-                            }
+            if let Ok(n) = Attribute::parse_meta(attr) {
+                match n {
+                    // Path token
+                    Meta::Path(path) => {
+                        if is_attribute_path(path, "id") {
+                            contains_state = true
                         }
-                        // We do not have any list attributes for our macro yet
-                        Meta::List(_) => {}
-                        // We do not have any nameValue attributes for our macro yet
-                        Meta::NameValue(_) => {}
                     }
+                    // We do not have any list attributes for our macro yet
+                    Meta::List(_) => {}
+                    // We do not have any nameValue attributes for our macro yet
+                    Meta::NameValue(_) => {}
                 }
-                Err(_) => {}
             }
         }
 
@@ -90,7 +82,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let streams = struct_attributes
         .iter()
-        .map(|x| x.to_token_stream(struct_ident, generics, &wheres, &state_idents, &id_idents))
+        .map(|x| x.to_token_stream(struct_ident, generics, wheres, &state_idents, &id_idents))
         .collect::<Vec<_>>();
 
     quote! {
@@ -135,7 +127,7 @@ fn parse_attributes(attr: &Vec<Attribute>) -> HashSet<DeriveType> {
         if string.contains(".")
             && (string.starts_with("carbide_derive") || string.starts_with("carbide_exclude"))
         {
-            let last = string.split('.').last().unwrap();
+            let last = string.split('.').next_back().unwrap();
             let derive_type = DeriveType::from_str(last);
             if string.starts_with("carbide_derive") {
                 set.insert(derive_type);
@@ -169,7 +161,7 @@ fn stringify_meta(meta: Meta) -> Vec<String> {
                 let joined = i.join(".");
 
                 let mut new = own_path.clone();
-                new.push_str(".");
+                new.push('.');
                 new.push_str(joined.as_str());
                 resulting.push(new);
             }
@@ -188,7 +180,7 @@ fn path_to_string(path: Path) -> String {
         .iter()
         .fold(String::from(""), |mut state, new| {
             state.push_str(new.ident.to_string().as_str());
-            state.push_str(".");
+            state.push('.');
             state
         });
 
@@ -197,12 +189,12 @@ fn path_to_string(path: Path) -> String {
 }
 
 pub(crate) fn is_attribute_path(path: Path, equal_to: &str) -> bool {
-    let is = path.segments.len() == 1
+    
+
+    path.segments.len() == 1
         && match path.segments.first() {
             None => false,
-            Some(segment) => segment.ident.to_string() == equal_to,
-        };
-
-    is
+            Some(segment) => segment.ident == equal_to,
+        }
 }
 

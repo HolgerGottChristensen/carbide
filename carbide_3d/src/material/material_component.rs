@@ -3,18 +3,15 @@ use carbide::draw::ImageId;
 /// Generic container for a component of a material that could either be from a
 /// texture or a fixed value.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum MaterialComponent<T> {
+    #[default]
     None,
     Value(T),
     Texture(ImageId),
     TextureValue { texture: ImageId, value: T },
 }
 
-impl<T> Default for MaterialComponent<T> {
-    fn default() -> Self {
-        Self::None
-    }
-}
 
 impl<T: Copy> MaterialComponent<T> {
     pub fn to_value(&self, default: T) -> T {

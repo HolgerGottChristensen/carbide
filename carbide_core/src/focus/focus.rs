@@ -1,13 +1,10 @@
 #[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Default)]
 pub enum Focus {
     Focused,
     FocusRequested,
     FocusReleased,
+    #[default]
     Unfocused,
 }
 
-impl Default for Focus {
-    fn default() -> Self {
-        Focus::Unfocused
-    }
-}

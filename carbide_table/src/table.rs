@@ -47,6 +47,12 @@ impl Table<SpreadsheetStyle> {
     }
 }
 
+impl Default for Table<SpreadsheetStyle> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S: TableStyle + Clone> MouseEventHandler for Table<S> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
@@ -272,31 +278,27 @@ impl<S: TableStyle + Clone> Table<S> {
         let mut col = 0;
 
         if pos_in_table_y < frozen_height {
-            self.style.heights().iter_range(pos_in_table_y, pos_in_table_y).next().map(|(inner_y, inner_height, inner_row)| {
+            if let Some((inner_y, inner_height, inner_row)) = self.style.heights().iter_range(pos_in_table_y, pos_in_table_y).next() {
                 y_in_cell = pos_in_table_y - inner_y;
                 height = inner_height;
                 row = inner_row;
-            });
-        } else {
-            self.style.heights().iter_range(scroll_offset_y, scroll_offset_y).next().map(|(inner_y, inner_height, inner_row)| {
-                y_in_cell = scroll_offset_y - inner_y;
-                height = inner_height;
-                row = inner_row;
-            });
+            }
+        } else if let Some((inner_y, inner_height, inner_row)) = self.style.heights().iter_range(scroll_offset_y, scroll_offset_y).next() {
+            y_in_cell = scroll_offset_y - inner_y;
+            height = inner_height;
+            row = inner_row;
         }
 
         if pos_in_table_x < frozen_width {
-            self.style.widths().iter_range(pos_in_table_x, pos_in_table_x).next().map(|(inner_x, inner_width, inner_col)| {
+            if let Some((inner_x, inner_width, inner_col)) = self.style.widths().iter_range(pos_in_table_x, pos_in_table_x).next() {
                 x_in_cell = pos_in_table_x - inner_x;
                 width = inner_width;
                 col = inner_col;
-            });
-        } else {
-            self.style.widths().iter_range(scroll_offset_x, scroll_offset_x).next().map(|(inner_x, inner_width, inner_col)| {
-                x_in_cell = scroll_offset_x - inner_x;
-                width = inner_width;
-                col = inner_col;
-            });
+            }
+        } else if let Some((inner_x, inner_width, inner_col)) = self.style.widths().iter_range(scroll_offset_x, scroll_offset_x).next() {
+            x_in_cell = scroll_offset_x - inner_x;
+            width = inner_width;
+            col = inner_col;
         }
 
         TableCellInfo {

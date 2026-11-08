@@ -1,4 +1,3 @@
-use carbide_core::event::{Key, ModifierKey};
 
 pub enum TextInputKeyCommand {
     MoveLeft,

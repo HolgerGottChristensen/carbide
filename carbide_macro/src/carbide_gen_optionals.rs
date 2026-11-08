@@ -72,7 +72,7 @@ impl ToTokens for CarbideGenOptional {
             ..
         } = self;
 
-        let method_ident = Ident::new(&format!("with_optional_{}", ident.to_string()), ident.span());
+        let method_ident = Ident::new(&format!("with_optional_{}", ident), ident.span());
 
         tokens.extend(quote!(
             pub fn #method_ident (mut self, #ident: impl Into<#ty>) -> Box<Self> {

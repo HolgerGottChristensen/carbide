@@ -9,7 +9,9 @@ use crate::Month::{
 };
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(Default)]
 pub enum Month {
+    #[default]
     January,
     February,
     March,
@@ -24,11 +26,6 @@ pub enum Month {
     December,
 }
 
-impl Default for Month {
-    fn default() -> Self {
-        January
-    }
-}
 
 fn main() {
     let text_state = LocalState::new("Hello World!".to_string());

@@ -298,7 +298,7 @@ impl DatabaseExt for Database {
     fn has_opsz_axis(&self, id: ID) -> bool {
         self.with_face_data(id, |data, face_index| -> Option<bool> {
             let font = ttf_parser::Face::parse(data, face_index).ok()?;
-            let has_opsz = font.tables().fvar.map_or(false, |axes| {
+            let has_opsz = font.tables().fvar.is_some_and(|axes| {
                 axes.axes
                     .into_iter()
                     .any(|axis| axis.tag == ttf_parser::Tag::from_bytes(b"opsz"))

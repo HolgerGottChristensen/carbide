@@ -53,7 +53,7 @@ fn main() {
 
     let delegate = |item: &MouseCursor, _| {
         Button::new(format!("{:?}", *item), closure!(|_|{}))
-            .cursor(item.clone())
+            .cursor(*item)
             .frame(100.0, 22.0)
     };
 

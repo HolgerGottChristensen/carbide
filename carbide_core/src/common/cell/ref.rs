@@ -18,10 +18,10 @@ impl<T> Deref for ValueRef<'_, T> {
     #[inline]
     fn deref(&self) -> &T {
         match self {
-            ValueRef::CellBorrow { value, .. } => *value,
-            ValueRef::Borrow(value) => *value,
+            ValueRef::CellBorrow { value, .. } => value,
+            ValueRef::Borrow(value) => value,
             ValueRef::Owned(value) => value,
-            ValueRef::Locked(val) => &*val,
+            ValueRef::Locked(val) => val,
         }
     }
 }

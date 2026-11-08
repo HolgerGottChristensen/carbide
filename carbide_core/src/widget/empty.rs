@@ -21,6 +21,12 @@ impl Empty {
     }
 }
 
+impl Default for Empty {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CommonWidget for Empty {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flag: WidgetFlag::IGNORE);
 }

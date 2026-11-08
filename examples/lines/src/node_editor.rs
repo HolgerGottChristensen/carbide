@@ -5,7 +5,7 @@ use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
 use carbide::event::{ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::state::{LocalState, ReadState, State};
-use carbide::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide::widget::{CommonWidget, Widget, WidgetId};
 
 use crate::{CreateWallState, Edge, EditingMode, Graph, Line, Node, SelectedState};
 
@@ -35,8 +35,8 @@ impl NodeEditor {
     fn normal_mode_mouse_event(
         &mut self,
         event: &MouseEvent,
-        consumed: &bool,
-        env: &mut Environment,
+        _consumed: &bool,
+        _env: &mut Environment,
     ) {
         match event {
             MouseEvent::Press { position: b, .. } => {
@@ -63,25 +63,16 @@ impl NodeEditor {
                 self.graph.value_mut().guides.clear();
             }
             MouseEvent::Click(_, _, _) => {}
-            MouseEvent::Move {
-                from,
-                to,
-                delta_xy,
-                modifiers,
-            } => {
+            MouseEvent::Move { to, .. } => {
                 let to = *to - self.position;
-                if *self.selected_node.value() == None {
+                if (*self.selected_node.value()).is_none() {
                     for node in &mut self.graph.value_mut().nodes {
-                        if node.position.dist(&to) < 10.0 {
-                            node.hovered = true;
-                        } else {
-                            node.hovered = false;
-                        }
+                        node.hovered = node.position.dist(&to) < 10.0;
                     }
                 }
 
                 if let Some(id) = *self.selected_node.value() {
-                    let mut new_position = self.graph.value_mut().guides_and_position(to, id);
+                    let new_position = self.graph.value_mut().guides_and_position(to, id);
                     self.graph.value_mut().get_node_mut(id).position = new_position;
                 }
             }
@@ -91,7 +82,7 @@ impl NodeEditor {
                 }
 
                 let position = *position - self.position;
-                if *self.selected_node.value() == None {
+                if (*self.selected_node.value()).is_none() {
                     let close_line = self.graph.value().edge_in_range(position);
 
                     if let Some(edge_id) = close_line {
@@ -113,12 +104,7 @@ impl NodeEditor {
                     }
                 }
             }
-            MouseEvent::Scroll {
-                x,
-                y,
-                mouse_position,
-                modifiers,
-            } => {
+            MouseEvent::Scroll { .. } => {
                 //self.graph.value_mut().offset -= Position::new(*x, *y);
             }
             MouseEvent::Drag { .. } => {}
@@ -129,8 +115,8 @@ impl NodeEditor {
     fn create_wall_p1_mouse_event(
         &mut self,
         event: &MouseEvent,
-        consumed: &bool,
-        env: &mut Environment,
+        _consumed: &bool,
+        _env: &mut Environment,
     ) {
         match event {
             MouseEvent::Press { .. } => {}
@@ -216,8 +202,8 @@ impl NodeEditor {
         &mut self,
         first_id: usize,
         event: &MouseEvent,
-        consumed: &bool,
-        env: &mut Environment,
+        _consumed: &bool,
+        _env: &mut Environment,
     ) {
         match event {
             MouseEvent::Release { position: to, modifiers: modifier, .. } => {
@@ -282,7 +268,7 @@ impl NodeEditor {
                         }
                     }
                 } else {
-                    let mut new_position =
+                    let new_position =
                         self.graph.value_mut().guides_and_position(to, usize::MAX);
 
                     let new = self.graph.value_mut().add_node(Node::new(new_position));
@@ -363,7 +349,7 @@ impl NodeEditor {
                         }
                     }
                 } else {
-                    let mut new_position =
+                    let new_position =
                         self.graph.value_mut().guides_and_position(to, usize::MAX);
 
                     self.graph.value_mut().editing_mode = EditingMode::CreateWallP2 {
@@ -380,8 +366,8 @@ impl NodeEditor {
     fn selection_mode_mouse_event(
         &mut self,
         event: &MouseEvent,
-        consumed: &bool,
-        env: &mut Environment,
+        _consumed: &bool,
+        _env: &mut Environment,
         selected: SelectedState,
     ) {
         match event {

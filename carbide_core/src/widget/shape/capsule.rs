@@ -61,7 +61,7 @@ impl<S2: ReadState<T=Style> + Clone, F2: ReadState<T=Style> + Clone> Capsule<S2,
         self
     }
 
-    pub fn material<M: IntoReadState<Color>>(self, material: M) -> ZStack<(Blur, Capsule<S2, impl ReadState<T=Style> + Clone>)> {
+    pub fn material<M: IntoReadState<Color>>(self, material: M) -> ZStack<(Blur, Capsule<S2, impl ReadState<T=Style>>)> {
         let comp = self.fill(material.into_read_state());
         ZStack::new((Blur::gaussian(10.0), comp))
     }

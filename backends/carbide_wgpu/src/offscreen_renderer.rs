@@ -74,7 +74,7 @@ impl OffscreenRenderer {
 
         let gradient_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_gradient_buffer"),
-            contents: &*gradient.as_bytes(),
+            contents: &gradient.as_bytes(),
             usage: BufferUsages::STORAGE,
         });
 
@@ -89,7 +89,7 @@ impl OffscreenRenderer {
 
         let dashes_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("carbide_dashes_buffer"),
-            contents: &*dashes.as_bytes(),
+            contents: &dashes.as_bytes(),
             usage: BufferUsages::STORAGE,
         });
 
@@ -309,7 +309,7 @@ impl OffscreenRenderer {
 
                 let filter_buffer = wgpu_context_new.device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("Filter Buffer"),
-                    contents: &*filter.as_bytes(),
+                    contents: &filter.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
 
@@ -365,7 +365,7 @@ impl OffscreenRenderer {
             let gradient_buffer =
                 device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("Gradient Buffer"),
-                    contents: &*gradient.as_bytes(),
+                    contents: &gradient.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
 
@@ -380,13 +380,13 @@ impl OffscreenRenderer {
             let dashes_buffer =
                 device.create_buffer_init(&BufferInitDescriptor {
                     label: Some("Dashes Buffer"),
-                    contents: &*dashes.as_bytes(),
+                    contents: &dashes.as_bytes(),
                     usage: BufferUsages::STORAGE,
                 });
 
             gradient_bind_groups.push(
                 gradient_dashes_bind_group(
-                    &device,
+                    device,
                     gradient_dashes_bind_group_layout,
                     &gradient_buffer,
                     &dashes_buffer
@@ -430,7 +430,7 @@ impl OffscreenRenderer {
                 RenderPass::Normal { commands: inner, target_index: index } => {
                     current_target_view = &self.targets[index].view;
 
-                    if inner.len() == 0 {
+                    if inner.is_empty() {
                         continue;
                     }
 
@@ -535,7 +535,7 @@ impl OffscreenRenderer {
                                 current_gradient_buffer =
                                     buffers.alloc(device.create_buffer_init(&BufferInitDescriptor {
                                         label: Some("Gradient Buffer"),
-                                        contents: &*gradient.as_bytes(),
+                                        contents: &gradient.as_bytes(),
                                         usage: BufferUsages::STORAGE,
                                     }));
 
@@ -552,7 +552,7 @@ impl OffscreenRenderer {
                                 current_dashes_buffer =
                                     buffers.alloc(device.create_buffer_init(&BufferInitDescriptor {
                                         label: Some("Dashes Buffer"),
-                                        contents: &*dashes.as_bytes(),
+                                        contents: &dashes.as_bytes(),
                                         usage: BufferUsages::STORAGE,
                                     }));
 

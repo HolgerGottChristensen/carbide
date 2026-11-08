@@ -128,7 +128,7 @@ fn format_tick(x: Scalar, env: &mut Environment) -> String {
     let mut number = LocalizedNumber::new(x);
     number.sync(env);
 
-    let x = number.value().to_string(); x
+     number.value().to_string()
 }
 
 #[cfg(not(feature = "carbide_fluent"))]

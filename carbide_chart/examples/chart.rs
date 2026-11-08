@@ -34,13 +34,13 @@ fn main() {
     let _data3 = (0..100)
         .into_iter()
         .map(|a| a as Scalar / 10.0)
-        .map(|a| f64::sin(a))
+        .map(f64::sin)
         .collect::<Vec<_>>();
 
     let _data6 = (0..100)
         .into_iter()
         .map(|a| a as Scalar / 10.0)
-        .map(|a| f64::cos(a))
+        .map(f64::cos)
         .collect::<Vec<_>>();
 
     let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].stepped(stepped.clone());

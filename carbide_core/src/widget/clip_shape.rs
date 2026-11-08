@@ -104,7 +104,7 @@ struct ShapeRenderCapture {
 
 impl InnerRenderContext for ShapeRenderCapture {
     fn shape(&mut self, shape: &DrawShape, option: &DrawOptions, _env: &mut Environment) {
-        self.shape.push((shape.clone(), option.clone()));
+        self.shape.push((shape.clone(), *option));
     }
 
     fn transform(&mut self, _transform: &Matrix4<f32>) {}

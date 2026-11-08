@@ -30,7 +30,7 @@ pub(crate) fn create_uniform_bind_group(
     uniform_buffer: Buffer,
 ) -> BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &uniform_bind_group_layout,
+        layout: uniform_bind_group_layout,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: wgpu::BindingResource::Buffer(uniform_buffer.as_entire_buffer_binding()),
@@ -68,7 +68,7 @@ pub(crate) fn uniforms_to_bind_group(
     });
 
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &uniform_bind_group_layout,
+        layout: uniform_bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
@@ -102,9 +102,9 @@ pub(crate) fn size_to_uniform_bind_group(
         usage: wgpu::BufferUsages::UNIFORM,
     });
 
-    let uniform_bind_group = create_uniform_bind_group(device, uniform_bind_group_layout, uniform_buffer);
+    
 
-    uniform_bind_group
+    create_uniform_bind_group(device, uniform_bind_group_layout, uniform_buffer)
 }
 
 pub(crate) fn filter_buffer_bind_group(
@@ -113,7 +113,7 @@ pub(crate) fn filter_buffer_bind_group(
     buffer: &Buffer,
 ) -> BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &filter_bind_group_layout,
+        layout: filter_bind_group_layout,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
             resource: wgpu::BindingResource::Buffer(buffer.as_entire_buffer_binding()),
@@ -129,7 +129,7 @@ pub(crate) fn gradient_dashes_bind_group(
     dashes_buffer: &Buffer,
 ) -> BindGroup {
     device.create_bind_group(&wgpu::BindGroupDescriptor {
-        layout: &gradient_bind_group_layout,
+        layout: gradient_bind_group_layout,
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,

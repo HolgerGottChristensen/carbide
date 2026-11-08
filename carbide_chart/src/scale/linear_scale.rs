@@ -60,13 +60,13 @@ impl LinearScale {
             let offset = if self.range.end == 0.0 {
                 1.0
             } else {
-                (self.range.end.abs() * 0.05)
+                self.range.end.abs() * 0.05
             };
 
-            self.range.end = self.range.end + offset;
+            self.range.end += offset;
 
             if !self.begin_at_zero {
-                self.range.start = self.range.start - offset;
+                self.range.start -= offset;
             }
         }
     }
@@ -220,11 +220,10 @@ impl Scale for LinearScale {
         for k in j..num_spaces as i32 {
             let tick_value = ((nice_min + k as Scalar * spacing) * factor) / factor;
 
-            if let Some(max) = self.max {
-                if tick_value > max {
+            if let Some(max) = self.max
+                && tick_value > max {
                     break;
                 }
-            }
 
             ticks.push(tick_value);
         }
@@ -249,11 +248,11 @@ impl Scale for LinearScale {
 }
 
 fn nice_num(range: Scalar) -> Scalar {
-    let roundedRange = range.round();
+    let rounded_range = range.round();
 
-    let almost = almost_equals(range, roundedRange, range / 1000.0);
+    let almost = almost_equals(range, rounded_range, range / 1000.0);
 
-    let range = if almost { roundedRange } else { range };
+    let range = if almost { rounded_range } else { range };
 
     let nice_range = f64::powi(10.0, range.log10().floor() as i32);
     let fraction = range / nice_range;
@@ -268,7 +267,7 @@ fn nice_num(range: Scalar) -> Scalar {
         10.0
     };
 
-    return nice_fraction * nice_range;
+    nice_fraction * nice_range
 }
 
 fn almost_equals(x: Scalar, y: Scalar, epsilon: Scalar) -> bool {

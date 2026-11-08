@@ -6,8 +6,10 @@ use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// How normals should be derived
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum NormalTexture {
     /// No normal texture.
+    #[default]
     None,
     /// Normal stored in RGB values.
     Tricomponent(ImageId, NormalTextureYDirection),
@@ -17,11 +19,6 @@ pub enum NormalTexture {
     /// reconstructed. This is useful for storing in BC3 or BC7 compressed
     /// textures.
     BicomponentSwizzled(ImageId, NormalTextureYDirection),
-}
-impl Default for NormalTexture {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 impl NormalTexture {

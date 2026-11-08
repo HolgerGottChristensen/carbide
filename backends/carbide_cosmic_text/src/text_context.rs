@@ -32,7 +32,7 @@ pub struct CosmicTextContext {
 impl CosmicTextContext {
     pub fn new() -> CosmicTextContext {
 
-        let mut system = FontSystem::new();
+        let system = FontSystem::new();
 
         #[cfg(target_arch = "wasm32")]
         {
@@ -129,8 +129,14 @@ impl CosmicTextContext {
 
         texture_atlas.process_queued();
 
-        let dimension = Dimension::new(width as f64, height as f64);
-        dimension
+        
+        Dimension::new(width as f64, height as f64)
+    }
+}
+
+impl Default for CosmicTextContext {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -146,16 +152,16 @@ impl TextContext for CosmicTextContext {
             text: text.to_string(),
             style: CachableTextStyle {
                 family: style.family.clone(),
-                font_size: style.font_size.clone(),
+                font_size: style.font_size,
                 line_height: style.line_height.to_bits(),
-                font_style: style.font_style.clone(),
-                font_weight: style.font_weight.clone(),
+                font_style: style.font_style,
+                font_weight: style.font_weight,
                 text_decoration: style.text_decoration.clone(),
                 color: style.color.map(|color| {
                     let fsa = color.to_fsa();
                     (fsa[0].to_bits(), fsa[1].to_bits(), fsa[2].to_bits(), fsa[3].to_bits())
                 }),
-                wrap: style.wrap.clone(),
+                wrap: style.wrap,
             },
             width: width.to_bits(),
             scale_factor: scale_factor.to_bits(),
@@ -212,16 +218,16 @@ impl TextContext for CosmicTextContext {
             text: text.to_string(),
             style: CachableTextStyle {
                 family: style.family.clone(),
-                font_size: style.font_size.clone(),
+                font_size: style.font_size,
                 line_height: style.line_height.to_bits(),
-                font_style: style.font_style.clone(),
-                font_weight: style.font_weight.clone(),
+                font_style: style.font_style,
+                font_weight: style.font_weight,
                 text_decoration: style.text_decoration.clone(),
                 color: style.color.map(|color| {
                     let fsa = color.to_fsa();
                     (fsa[0].to_bits(), fsa[1].to_bits(), fsa[2].to_bits(), fsa[3].to_bits())
                 }),
-                wrap: style.wrap.clone(),
+                wrap: style.wrap,
             },
             width: width.to_bits(),
             scale_factor: scale_factor.to_bits(),
@@ -361,7 +367,7 @@ impl TextContext for CosmicTextContext {
     fn update(&mut self, id: TextId, text: &str, style: &TextStyle) {
         if let Some((buffer, metadata)) = self.map.get_mut(&id) {
 
-            if &metadata.text != text || &metadata.style != style {
+            if metadata.text != text || &metadata.style != style {
                 metadata.style = style.clone();
                 metadata.text = text.to_string();
 

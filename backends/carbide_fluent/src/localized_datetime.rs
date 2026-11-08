@@ -84,7 +84,7 @@ impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadSt
 impl<S: ReadState<T=DateTime<FixedOffset>>, D: ReadState<T=DateStyle>, T: ReadState<T=TimeStyle>, Tz: ReadState<T=TimezoneStyle>> AnyReadState for LocalizedDateTime<S, D, T, Tz> {
     type T = String;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         let value = self.datetime.value();
         let date_style = self.date_style.value();
         let time_style = self.time_style.value();

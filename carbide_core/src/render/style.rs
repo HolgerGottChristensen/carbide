@@ -11,7 +11,7 @@ pub enum Style {
 impl Style {
     pub fn convert(&self, position: Position, dimension: Dimension) -> DrawStyle {
         match self {
-            Style::Color(c) => DrawStyle::Color(c.clone()),
+            Style::Color(c) => DrawStyle::Color(*c),
             Style::Gradient(g) => DrawStyle::Gradient(DrawGradient::convert(g.clone(), position, dimension)),
             Style::MultiGradient(_) => todo!(),
         }

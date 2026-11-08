@@ -35,6 +35,12 @@ impl Spacer {
     }
 }
 
+impl Default for Spacer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Layout for Spacer {
     fn calculate_size(&mut self, requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
         if let Some(max) = self.max_size {
@@ -55,7 +61,7 @@ impl Layout for Spacer {
 
 impl CommonWidget for Spacer {
     fn flag(&self) -> WidgetFlag {
-        if let Some(_) = self.max_size {
+        if self.max_size.is_some() {
             WidgetFlag::EMPTY
         } else {
             WidgetFlag::SPACER

@@ -19,7 +19,7 @@ struct VecRangeIter<'a> {
 }
 
 impl VecRangeIter<'_> {
-    fn new(vec: &[f64], from: f64, to: f64) -> VecRangeIter {
+    fn new(vec: &[f64], from: f64, to: f64) -> VecRangeIter<'_> {
         let mut current = 0.0;
         let mut current_index = 0;
 
@@ -54,7 +54,7 @@ impl Iterator for VecRangeIter<'_> {
             None
         } else {
             let item = self.collection[self.current_index];
-            let res = Some((self.current, item, self.current_index as u32));;
+            let res = Some((self.current, item, self.current_index as u32));
 
             self.current_index += 1;
             self.current += item;

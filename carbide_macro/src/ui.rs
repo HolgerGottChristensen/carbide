@@ -152,7 +152,7 @@ struct PatFolder(Vec<Ident>);
 
 impl Fold for PatFolder {
     fn fold_pat_ident(&mut self, i: PatIdent) -> PatIdent {
-        if i.ident.to_string().chars().next().map_or(false, |c| c.is_lowercase()) {
+        if i.ident.to_string().chars().next().is_some_and(|c| c.is_lowercase()) {
             self.0.push(i.ident.clone());
         }
 

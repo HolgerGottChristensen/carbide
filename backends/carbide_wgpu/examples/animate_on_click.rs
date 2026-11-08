@@ -57,7 +57,7 @@ fn animation_buttons(
         Button::new(
             format!("{} left", name),
             capture!({ offset }, |ctx: MouseAreaActionContext| {
-                if &*offset.value() > &119.0 {
+                if *offset.value() > 119.0 {
                     animate!(ctx.env, offset := 120.0 => -120.0, curve: curve)
                 }
             }),
@@ -66,7 +66,7 @@ fn animation_buttons(
         Button::new(
             format!("{} right", name),
             capture!({ offset }, |ctx: MouseAreaActionContext| {
-                if &*offset.value() < &-119.0 {
+                if *offset.value() < -119.0 {
                     animate!(ctx.env, offset := -120.0 => 120.0, curve: curve)
                 }
             }),

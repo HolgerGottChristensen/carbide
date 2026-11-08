@@ -181,7 +181,9 @@ impl Font {
 /// A dominant baseline property.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum DominantBaseline {
+    #[default]
     Auto,
     UseScript,
     NoChange,
@@ -196,16 +198,13 @@ pub enum DominantBaseline {
     TextBeforeEdge,
 }
 
-impl Default for DominantBaseline {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
 
 /// An alignment baseline property.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum AlignmentBaseline {
+    #[default]
     Auto,
     Baseline,
     BeforeEdge,
@@ -220,11 +219,6 @@ pub enum AlignmentBaseline {
     Mathematical,
 }
 
-impl Default for AlignmentBaseline {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
 
 /// A baseline shift property.
 #[allow(missing_docs)]
@@ -246,34 +240,28 @@ impl Default for BaselineShift {
 /// A length adjust property.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum LengthAdjust {
+    #[default]
     Spacing,
     SpacingAndGlyphs,
 }
 
-impl Default for LengthAdjust {
-    fn default() -> Self {
-        Self::Spacing
-    }
-}
 
 /// A font optical sizing property.
 ///
 /// Controls automatic adjustment of the `opsz` axis in variable fonts
 /// based on font size. Matches CSS `font-optical-sizing`.
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum FontOpticalSizing {
     /// Automatically set `opsz` to match font size (browser default).
+    #[default]
     Auto,
     /// Do not automatically adjust `opsz`.
     None,
 }
 
-impl Default for FontOpticalSizing {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
 
 /// A text span decoration style.
 ///
@@ -464,17 +452,14 @@ impl TextSpan {
 /// A text chunk anchor property.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum TextAnchor {
+    #[default]
     Start,
     Middle,
     End,
 }
 
-impl Default for TextAnchor {
-    fn default() -> Self {
-        Self::Start
-    }
-}
 
 /// A path used by text-on-path.
 #[derive(Debug)]

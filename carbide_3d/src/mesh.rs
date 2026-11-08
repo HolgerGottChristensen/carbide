@@ -91,7 +91,7 @@ impl From<Model> for Mesh {
         println!("{:?}", value.mesh.vertex_color.len());
         let vertices = value.mesh.positions.chunks(3)
             .zip(value.mesh.normals.chunks(3))
-            .zip(value.mesh.texcoords.chunks(2)).map(|((pos, normal), (tex))| {
+            .zip(value.mesh.texcoords.chunks(2)).map(|((pos, normal), tex)| {
             Vertex::new(Vector3::new(pos[0], pos[1], pos[2]))
                 .normal(Vector3::new(normal[0], normal[1], normal[2]))
                 .texture_coords_0(Vector2::new(tex[0], tex[1]))

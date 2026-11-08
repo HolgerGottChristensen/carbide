@@ -24,14 +24,14 @@ impl<T: FnMut() + Clone + Send + 'static> Timer<T> {
     ///
     /// The default timer will not repeat, is not running and has an interval of 1 sec.
     pub fn new(trigger: T) -> Timer<T> {
-        let timer = Timer {
+        
+
+        Timer {
             interval: Arc::new(RwLock::new(Duration::new(1, 0))),
             repeat: Arc::new(AtomicBool::new(false)),
             triggered: trigger,
             channel: Arc::new(RwLock::new(None)),
-        };
-
-        timer
+        }
     }
 
     /// Set a custom interval of the current timer.

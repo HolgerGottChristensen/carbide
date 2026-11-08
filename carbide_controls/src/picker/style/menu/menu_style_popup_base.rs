@@ -25,24 +25,20 @@ impl Layout for MenuStylePopupBase {
     fn calculate_size(&mut self, _requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
-        let res = self.child.calculate_size(self.dimension(), ctx);
+        
 
-        res
+        self.child.calculate_size(self.dimension(), ctx)
     }
 }
 
 impl MouseEventHandler for MenuStylePopupBase {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
-        match event {
-            MouseEvent::Click(_, position, _) => {
-                if !self.child.is_inside(*position) {
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
-                        manager.clear();
-                    })
-                }
+        if let MouseEvent::Click(_, position, _) = event
+            && !self.child.is_inside(*position) {
+                OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
+                    manager.clear();
+                })
             }
-            _ => ()
-        }
     }
 }
 
@@ -144,13 +140,13 @@ impl CommonWidget for MenuStylePopupBase {
     CommonWidgetImpl!(self, child: self.child);
 
     fn position(&self) -> Position {
-        self.position.value().clone()
+        *self.position.value()
     }
 
     fn set_position(&mut self, _position: Position) {}
 
     fn dimension(&self) -> Dimension {
-        self.dimension.value().clone()
+        *self.dimension.value()
     }
 
     fn set_dimension(&mut self, _dimension: Dimension) {}

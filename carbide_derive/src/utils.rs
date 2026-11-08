@@ -1,4 +1,3 @@
-use syn;
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
@@ -24,10 +23,10 @@ where
 {
     type Item = Vec<syn::NestedMeta>;
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(attr) = self.attrs.next() {
-            if let Ok(_meta) = attr.parse_meta() {
-                if let &syn::Meta::List(ref _metalist) = &_meta {
-                    if _metalist.path.is_ident("carbide") {
+        for attr in self.attrs.by_ref() {
+            if let Ok(_meta) = attr.parse_meta()
+                && let syn::Meta::List(_metalist) = &_meta
+                    && _metalist.path.is_ident("carbide") {
                         let j = _metalist
                             .nested
                             .clone()
@@ -36,8 +35,6 @@ where
                             .collect::<Vec<syn::NestedMeta>>();
                         return Some(j);
                     }
-                }
-            }
         }
         None
     }

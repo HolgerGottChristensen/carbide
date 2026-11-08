@@ -68,10 +68,10 @@ impl<W: Sequence> Layout for LazyVGrid<W> {
         let mut remaining_width = total_width;
 
         // Subtract the spacings between the grid columns
-        remaining_width = remaining_width - self.columns.len().saturating_sub(1) as f64 * self.spacing.width;
+        remaining_width -= self.columns.len().saturating_sub(1) as f64 * self.spacing.width;
 
         // Subtract all the fixed columns
-        remaining_width = remaining_width - self.columns.iter().filter_map(|col| match col {
+        remaining_width -= self.columns.iter().filter_map(|col| match col {
             GridItem::Fixed(width) => Some(*width),
             GridItem::Adaptive(_) => None,
             GridItem::Flexible => None,

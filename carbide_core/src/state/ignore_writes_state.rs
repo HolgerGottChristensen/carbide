@@ -9,7 +9,7 @@ pub struct IgnoreWritesState<T: StateContract, TState: ReadState<T=T> + 'static>
 
 impl IgnoreWritesState<(), ()> {
     pub fn new<T: StateContract, TState: ReadState<T=T> + Clone + 'static>(inner: TState) -> IgnoreWritesState<T, TState> {
-        IgnoreWritesState(inner, PhantomData::default())
+        IgnoreWritesState(inner, PhantomData)
     }
 }
 

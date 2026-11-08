@@ -53,11 +53,11 @@ impl TableStyle for SpreadsheetStyle {
         let frozen_rows = self.frozen_rows() as u32;
 
         let base_color = if col < frozen_columns && row < frozen_rows {
-            if (row + col) % 2 == 0 { DARK_PURPLE } else { DARK_ORANGE }
+            if (row + col).is_multiple_of(2) { DARK_PURPLE } else { DARK_ORANGE }
         } else if col < frozen_columns || row < frozen_rows {
-            if (row + col) % 2 == 0 { DARK_YELLOW } else { DARK_GREEN }
+            if (row + col).is_multiple_of(2) { DARK_YELLOW } else { DARK_GREEN }
         } else {
-            if (row + col) % 2 == 0 { RED } else { BLUE }
+            if (row + col).is_multiple_of(2) { RED } else { BLUE }
         };
 
         let text = if col < frozen_columns && row < frozen_rows {

@@ -9,7 +9,9 @@
 /// +X right, +Y up, +Z _into_ the screen is left handed.
 /// +X right, +Y up, +Z _out of_ the screen is right handed.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Default)]
 pub enum Handedness {
+    #[default]
     Left,
     Right,
 }
@@ -23,8 +25,3 @@ pub enum Handedness {
     }
 }*/
 
-impl Default for Handedness {
-    fn default() -> Self {
-        Self::Left
-    }
-}

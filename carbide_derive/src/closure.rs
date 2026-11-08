@@ -21,8 +21,8 @@ pub fn process_a_expr(ast: Expr) -> Expr {
 
     let res = collector.fold_expr(ast);
 
-    let deduplicated_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.state.into_iter());
-    let deduplicated_read_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.read_state.into_iter());
+    let deduplicated_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.state);
+    let deduplicated_read_state: HashSet<Ident, RandomState> = HashSet::from_iter(collector.read_state);
 
     let state_idents = deduplicated_state.into_iter().collect::<Vec<_>>();
     let read_state_idents = deduplicated_read_state.into_iter().collect::<Vec<_>>();

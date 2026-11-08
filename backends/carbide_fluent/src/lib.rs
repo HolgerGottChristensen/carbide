@@ -43,35 +43,29 @@ fn load_languages() -> Result<HashMap<Locale, Bundle>, io::Error> {
     let dir = fs::read_dir(assets.join("i18n"))?;
     let mut locales = HashMap::new();
 
-    for entry in dir {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            if path.is_dir() {
-                if let Some(name) = path.file_name() {
-                    if let Some(name) = name.to_str() {
-                        let langid = Locale::from_str(name).expect("Parsing failed.");
-                        let mut bundle = fluent_for_carbide::bundle::FluentBundle::new_concurrent(vec![langid.clone()]);
+    for entry in dir.flatten() {
+        let path = entry.path();
+        if path.is_dir()
+            && let Some(name) = path.file_name()
+                && let Some(name) = name.to_str() {
+                    let langid = Locale::from_str(name).expect("Parsing failed.");
+                    let mut bundle = fluent_for_carbide::bundle::FluentBundle::new_concurrent(vec![langid.clone()]);
 
-                        for entry in WalkDir::new(path) {
-                            if let Ok(entry) = entry {
-                                let path = entry.path();
-                                if path.is_file() {
-                                    let mut f = File::open(path)?;
-                                    let mut s = String::new();
-                                    f.read_to_string(&mut s)?;
+                    for entry in WalkDir::new(path).into_iter().flatten() {
+                        let path = entry.path();
+                        if path.is_file() {
+                            let mut f = File::open(path)?;
+                            let mut s = String::new();
+                            f.read_to_string(&mut s)?;
 
-                                    let resource = FluentResource::try_new(s).expect("Could not parse an FTL string.");
+                            let resource = FluentResource::try_new(s).expect("Could not parse an FTL string.");
 
-                                    bundle.add_resource(resource);
-                                }
-                            }
+                            bundle.add_resource(resource);
                         }
-
-                        locales.insert(langid, bundle);
                     }
+
+                    locales.insert(langid, bundle);
                 }
-            }
-        }
     }
 
     Ok(locales)

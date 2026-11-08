@@ -68,10 +68,10 @@ impl<W: Sequence> Layout for LazyHGrid<W> {
         let mut remaining_height = total_heights;
 
         // Subtract the spacings between the grid columns
-        remaining_height = remaining_height - self.rows.len().saturating_sub(1) as f64 * self.spacing.height;
+        remaining_height -= self.rows.len().saturating_sub(1) as f64 * self.spacing.height;
 
         // Subtract all the fixed columns
-        remaining_height = remaining_height - self.rows.iter().filter_map(|row| match row {
+        remaining_height -= self.rows.iter().filter_map(|row| match row {
             GridItem::Fixed(height) => Some(*height),
             GridItem::Adaptive(_) => None,
             GridItem::Flexible => None,

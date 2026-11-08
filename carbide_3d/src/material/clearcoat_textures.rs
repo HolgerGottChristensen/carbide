@@ -3,6 +3,7 @@ use carbide::draw::ImageId;
 
 /// How clearcoat values should be derived.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum ClearcoatTextures {
     GltfCombined {
         /// Texture with Clearcoat in R, and Clearcoat Roughness in G
@@ -20,6 +21,7 @@ pub enum ClearcoatTextures {
         /// Texture with Clearcoat Roughness in R
         clearcoat_roughness_texture: Option<ImageId>,
     },
+    #[default]
     None,
 }
 
@@ -50,10 +52,5 @@ impl ClearcoatTextures {
             // Use CC_GLTF_COMBINED so shader only checks clear coat texture, then bails
             Self::None => MaterialFlags::CC_GLTF_COMBINED,
         }
-    }
-}
-impl Default for ClearcoatTextures {
-    fn default() -> Self {
-        Self::None
     }
 }

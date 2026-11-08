@@ -101,7 +101,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync 
         if let Some(manager) = env.get_mut::<AnimationManager>() {
             if self.transition.borrow().is_some() {
                 manager.request_animation_frame();
-            } else if &*self.value.borrow() != &*self.inner.value() {
+            } else if *self.value.borrow() != *self.inner.value() {
                 manager.request_animation_frame();
             }
         }
@@ -120,11 +120,7 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> AnyReadSta
 
         let update = if let Some(transition) = &*self.transition.borrow() {
             transition.to != *self.inner.value()
-        } else if &*self.value.borrow() != &*self.inner.value() {
-            true
-        } else {
-            false
-        };
+        } else { *self.value.borrow() != *self.inner.value() };
 
         if update {
             let transition = Transition {

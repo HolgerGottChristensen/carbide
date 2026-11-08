@@ -1,7 +1,9 @@
 use std::ops::{Add, AddAssign};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Default)]
 pub enum ShapeStyle {
+    #[default]
     Default,
     Fill,
     Stroke { line_width: f64 },
@@ -33,12 +35,7 @@ impl Add for ShapeStyle {
 
 impl AddAssign for ShapeStyle {
     fn add_assign(&mut self, rhs: Self) {
-        *self = self.clone() + rhs
+        *self = *self + rhs
     }
 }
 
-impl Default for ShapeStyle {
-    fn default() -> Self {
-        ShapeStyle::Default
-    }
-}

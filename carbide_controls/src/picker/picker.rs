@@ -57,7 +57,7 @@ impl<
             model,
             focus,
             enabled: EnabledState::new(true),
-            selected: selection.into(),
+            selected: selection,
             label: label.into_read_state(),
             phantom_data: Default::default(),
         }

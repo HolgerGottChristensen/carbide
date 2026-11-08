@@ -77,22 +77,19 @@ fn has_id_attribute(field: &&Field) -> bool {
     let mut contains_state = false;
 
     for attr in &field.attrs {
-        match Attribute::parse_meta(&attr) {
-            Ok(n) => {
-                match n {
-                    // Path token
-                    Meta::Path(path) => {
-                        if crate::widget::is_attribute_path(path, "id") {
-                            contains_state = true
-                        }
+        if let Ok(n) = Attribute::parse_meta(attr) {
+            match n {
+                // Path token
+                Meta::Path(path) => {
+                    if crate::widget::is_attribute_path(path, "id") {
+                        contains_state = true
                     }
-                    // We do not have any list attributes for our macro yet
-                    Meta::List(_) => {}
-                    // We do not have any nameValue attributes for our macro yet
-                    Meta::NameValue(_) => {}
                 }
+                // We do not have any list attributes for our macro yet
+                Meta::List(_) => {}
+                // We do not have any nameValue attributes for our macro yet
+                Meta::NameValue(_) => {}
             }
-            Err(_) => {}
         }
     }
     contains_state

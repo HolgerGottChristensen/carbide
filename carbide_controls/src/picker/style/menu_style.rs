@@ -22,13 +22,12 @@ use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::draw::stroke::LineCap;
 use carbide::text::text_wrap::Wrap;
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::WidgetProperties;
 
 #[derive(Debug, Clone)]
 pub struct MenuStyle;
 
 impl MenuStyle {
-    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn generate(&self, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, label: Box<dyn AnyReadState<T=String>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget<Kind=WidgetKindSimple> {
         let mark = Self::mark(enabled.clone());
 
         let content = Self::content(enabled.clone(), model.clone(), picker_selection_type);
@@ -114,7 +113,7 @@ impl MenuStyle {
         )).spacing(8.0)
     }
 
-    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget + use<> + WidgetProperties<Kind=WidgetKindSimple> {
+    fn popup_item(item: &dyn AnySelectableWidget, event_id: EventId, hovered: Box<dyn AnyState<T=WidgetId>>) -> impl Widget<Kind=WidgetKindSimple> + use<> {
         let selection = item.selection().boxed();
 
         let hovered = Map2::map(hovered, ValueState::new(item.id()), |hovered, id| {
@@ -147,7 +146,7 @@ impl MenuStyle {
 
     }
 
-    fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn mark(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget<Kind=WidgetKindSimple> {
         let arrows = Self::arrows(enabled.clone());
 
         let mark_color = Map3::read_map(enabled, EnvironmentColor::Accent.color(), EnvironmentColor::TertiarySystemFill.color(), |enabled, color, disabled_color| {
@@ -166,16 +165,16 @@ impl MenuStyle {
             }
         });
 
-        let mark = ZStack::new((
+        
+        ZStack::new((
             RoundedRectangle::new(5.0).fill(mark_color),
             arrows
         ))
             .padding(3.0)
-            .aspect_ratio(Dimension::new(1.0, 1.0));
-        mark
+            .aspect_ratio(Dimension::new(1.0, 1.0))
     }
 
-    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn content(enabled: Box<dyn AnyReadState<T=bool>>, model: Box<dyn AnySequence<dyn AnySelectableWidget>>, picker_selection_type: PickerSelectionType) -> impl Widget<Kind=WidgetKindSimple> {
         let label_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
@@ -184,7 +183,8 @@ impl MenuStyle {
             }
         });
 
-        let content = HStack::new(
+        
+        HStack::new(
             ForEach::custom_widget(model, move |input: &dyn AnySelectableWidget| {
                 if picker_selection_type == PickerSelectionType::Multi {
                     input.as_widget()
@@ -206,11 +206,10 @@ impl MenuStyle {
             })
         ).spacing(3.0)
             .foreground_color(label_color)
-            .text_wrap(Wrap::None);
-        content
+            .text_wrap(Wrap::None)
     }
 
-    fn arrows(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn arrows(enabled: Box<dyn AnyReadState<T=bool>>) -> impl Widget<Kind=WidgetKindSimple> {
         let mark_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::DarkText
@@ -219,7 +218,9 @@ impl MenuStyle {
             }
         });
 
-        let arrows = Canvas::new(move |ctx: &mut CanvasContext| {
+        
+
+        Canvas::new(move |ctx: &mut CanvasContext| {
             let padding = ctx.dimension() * 0.22;
             let arrow_width = ctx.width() * 0.4;
             let arrow_height = ctx.height() * 0.2;
@@ -242,9 +243,7 @@ impl MenuStyle {
             ctx.set_line_width(1.5);
             ctx.set_line_cap(LineCap::Round);
             ctx.stroke()
-        });
-
-        arrows
+        })
     }
 }
 

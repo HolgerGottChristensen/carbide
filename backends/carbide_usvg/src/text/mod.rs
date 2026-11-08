@@ -208,7 +208,7 @@ pub(crate) fn convert(text: &mut Text, resolver: &FontResolver, cache: &mut Cach
     text.abs_bounding_box = bbox.transform(text.abs_transform)?.to_rect();
 
     let (group, stroke_bbox) = flatten::flatten(text, cache)?;
-    text.flattened = Box::new(group);
+    *text.flattened = group;
     text.stroke_bounding_box = stroke_bbox.to_rect();
     text.abs_stroke_bounding_box = stroke_bbox.transform(text.abs_transform)?.to_rect();
 

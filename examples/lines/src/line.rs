@@ -14,9 +14,7 @@ impl Line {
     }
 
     pub fn flip(&mut self) {
-        let temp = self.start;
-        self.start = self.end;
-        self.end = temp;
+        std::mem::swap(&mut self.start, &mut self.end);
     }
 
     pub fn flipped(&self) -> Line {
@@ -74,18 +72,16 @@ impl Line {
         let ap = point - self.start;
         let ab = self.end - self.start;
 
-        let t = (ap.dot(&ab) / ab.dot(&ab));
+        let t = ap.dot(&ab) / ab.dot(&ab);
 
-        let res = self.start + (ab * t);
-
-        res
+        self.start + (ab * t)
     }
 
     pub fn closest_point_on_line(&self, point: Position) -> Option<Position> {
         let ap = point - self.start;
         let ab = self.end - self.start;
 
-        let t = (ap.dot(&ab) / ab.dot(&ab));
+        let t = ap.dot(&ab) / ab.dot(&ab);
 
         if t < 0.0 || t > 1.0 {
             None

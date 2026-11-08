@@ -24,11 +24,11 @@ impl Node {
         }
     }
 
-    pub fn get_incoming_edges_iter(&self) -> Iter<usize> {
+    pub fn get_incoming_edges_iter(&self) -> Iter<'_, usize> {
         self.incoming_edges.iter()
     }
 
-    pub fn get_outgoing_edges_iter(&self) -> Iter<usize> {
+    pub fn get_outgoing_edges_iter(&self) -> Iter<'_, usize> {
         self.outgoing_edges.iter()
     }
 }

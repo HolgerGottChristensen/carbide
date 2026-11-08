@@ -38,7 +38,7 @@ impl AnimationManager {
             self.frame_count -= 1;
             true
         } else {
-            self.out_of_band_animations.0.len() > 0
+            !self.out_of_band_animations.0.is_empty()
         }
     }
 
@@ -86,6 +86,12 @@ impl AnimationManager {
         if let Some(manager) = env.get_mut::<AnimationManager>() {
             f(manager)
         }
+    }
+}
+
+impl Default for AnimationManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

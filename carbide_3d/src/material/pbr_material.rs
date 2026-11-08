@@ -68,6 +68,12 @@ impl PbrMaterial {
     }
 }
 
+impl Default for PbrMaterial {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PbrMaterial {
     pub fn color<C: IntoReadState<AlbedoComponent>>(self, color: C) -> PbrMaterial {
         PbrMaterial {

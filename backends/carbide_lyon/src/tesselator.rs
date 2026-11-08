@@ -261,7 +261,9 @@ impl Tesselator for LyonTesselator {
                 .unwrap();
         }
 
-        let triangles = geometry
+        
+
+        geometry
             .indices
             .chunks(3)
             .map(|indices| {
@@ -322,8 +324,6 @@ impl Tesselator for LyonTesselator {
                         offset: min.offset,
                     },
                 ])
-            }).collect::<Vec<_>>();
-
-        triangles
+            }).collect::<Vec<_>>()
     }
 }

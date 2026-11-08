@@ -53,7 +53,7 @@ impl<K: Localizable, S: ReadState<T=K>, V: Args> StateSync for LocalizedString<K
 impl<K: Localizable, S: ReadState<T=K>, V: Args> AnyReadState for LocalizedString<K, S, V> {
     type T = String;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         let languages = &LANGUAGES;
 
         let res = if let Some(bundle) = languages.get(&self.locale) {

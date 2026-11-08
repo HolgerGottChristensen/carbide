@@ -4,7 +4,9 @@ use carbide::draw::ImageId;
 /// How the Ambient Occlusion, Metalic, and Roughness values should be
 /// determined.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum AoMRTextures {
+    #[default]
     None,
     Combined {
         /// Texture with Ambient Occlusion in R, Roughness in G, and Metallic in
@@ -73,10 +75,5 @@ impl AoMRTextures {
             // Use AOMR_COMBINED so shader only checks roughness texture, then bails
             Self::None => MaterialFlags::AOMR_COMBINED,
         }
-    }
-}
-impl Default for AoMRTextures {
-    fn default() -> Self {
-        Self::None
     }
 }

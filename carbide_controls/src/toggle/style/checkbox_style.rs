@@ -1,5 +1,4 @@
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::WidgetProperties;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::toggle::ToggleStyle;
@@ -17,7 +16,7 @@ use carbide_core::widget::{AnyWidget, CornerRadii, HStack, IfElse, MouseArea, Ro
 pub struct CheckboxStyle;
 
 impl CheckboxStyle {
-    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget<Kind=WidgetKindSimple> {
         MouseArea::new(Self::widget(focus.clone(), value.clone(), enabled.clone(), label))
             .custom_on_click(ToggleAction {
                 value,
@@ -27,7 +26,7 @@ impl CheckboxStyle {
             .focused(focus.clone())
     }
 
-    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget<Kind=WidgetKindSimple> {
         let check_box = Self::check_box(focus, value, enabled.clone());
 
         let label_color = Map1::read_map(enabled.clone(), |enabled| {
@@ -41,7 +40,7 @@ impl CheckboxStyle {
         HStack::new((check_box, Text::new(label).color(label_color))).spacing(5.0)
     }
 
-    pub fn check_box(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    pub fn check_box(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>) -> impl Widget<Kind=WidgetKindSimple> {
         let background_color = Map2::read_map(value.clone(), enabled.clone(), |value, enabled| {
             match *value {
                 ToggleValue::True | ToggleValue::Mixed if *enabled => EnvironmentColor::Accent,
@@ -78,7 +77,8 @@ impl CheckboxStyle {
             }
         );
 
-        let check_box = ZStack::new((
+        
+        ZStack::new((
             RoundedRectangle::new(CornerRadii::all(3.0))
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
@@ -106,8 +106,7 @@ impl CheckboxStyle {
                     .stroke_style(1.0)
                     .padding(-1.0)
             )
-            .frame(14.0, 14.0);
-        check_box
+            .frame(14.0, 14.0)
     }
 }
 

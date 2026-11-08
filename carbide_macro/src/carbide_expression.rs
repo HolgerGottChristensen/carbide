@@ -123,7 +123,7 @@ impl CarbideArm {
 
         let idents = extract_idents_from_pattern(pat.clone());
 
-        let quoted_idents = if idents.len() == 0 {
+        let quoted_idents = if idents.is_empty() {
             quote!()
         } else {
             quote!(
@@ -258,7 +258,7 @@ impl ToTokens for CarbideExprForLoop {
 
         let idents = extract_idents_from_pattern(pat.clone());
 
-        let unpacked = if idents.len() == 0 {
+        let unpacked = if idents.is_empty() {
             quote!()
         } else {
             if let Pat::Ident(ident) = pat {
@@ -879,7 +879,7 @@ impl CarbideInstantiateParam {
         match self {
             CarbideInstantiateParam::Optional { ident, expr, .. } => {
 
-                let ident = Ident::new(&format!("with_optional_{}", ident.to_string()), ident.span());
+                let ident = Ident::new(&format!("with_optional_{}", ident), ident.span());
 
                 Some(quote!(
                     .#ident({#expr})

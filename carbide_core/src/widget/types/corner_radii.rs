@@ -33,8 +33,8 @@ impl CornerRadii {
     }
 }
 
-impl Into<CornerRadii> for f64 {
-    fn into(self) -> CornerRadii {
-        CornerRadii::all(self)
+impl From<f64> for CornerRadii {
+    fn from(val: f64) -> Self {
+        CornerRadii::all(val)
     }
 }

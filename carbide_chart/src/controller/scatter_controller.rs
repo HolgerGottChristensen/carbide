@@ -50,7 +50,7 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clon
         let y_min = self.default_y_scale.min();
         let y_max = self.default_y_scale.max();
 
-        let colors = vec![WHITE, GREEN, RED];
+        let colors = [WHITE, GREEN, RED];
 
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());

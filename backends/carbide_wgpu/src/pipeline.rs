@@ -44,10 +44,10 @@ pub(crate) fn filter_pipeline_layout(
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("carbide_filter_pipeline_layout"),
         bind_group_layouts: &[
-            &filter_texture_bind_group_layout,
-            &filter_buffer_bind_group_layout,
-            &uniform_bind_group_layout,
-            &filter_texture_bind_group_layout,
+            filter_texture_bind_group_layout,
+            filter_buffer_bind_group_layout,
+            uniform_bind_group_layout,
+            filter_texture_bind_group_layout,
         ],
         push_constant_ranges: &[],
     })
@@ -130,7 +130,7 @@ pub(crate) fn create_render_pipeline(
         label: Some(&format!("carbide_render_pipeline_{:?}", mask_type)),
         layout: Some(render_pipeline_layout),
         vertex: VertexState {
-            module: &shader,
+            module: shader,
             entry_point: Some("main_vs"),
             compilation_options: Default::default(),
             buffers: &[WgpuVertex::desc()],
@@ -160,7 +160,7 @@ pub(crate) fn create_render_pipeline(
             ..Default::default()
         },
         fragment: Some(FragmentState {
-            module: &shader,
+            module: shader,
             entry_point: Some("main_fs"),
             compilation_options: Default::default(),
             targets: &[Some(ColorTargetState {
@@ -200,7 +200,7 @@ pub(crate) fn create_final_render_pipeline(
         label: Some("carbide_final_render_pipeline"),
         layout: Some(&final_pipeline_layout),
         vertex: VertexState {
-            module: &shader,
+            module: shader,
             entry_point: Some("vs_main"),
             compilation_options: Default::default(),
             buffers: &[],
@@ -217,7 +217,7 @@ pub(crate) fn create_final_render_pipeline(
         depth_stencil: None,
         multisample: Default::default(),
         fragment: Some(FragmentState {
-            module: &shader,
+            module: shader,
             entry_point: Some("fs_main"),
             compilation_options: Default::default(),
             targets: &[Some(ColorTargetState {

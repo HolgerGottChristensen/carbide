@@ -101,12 +101,18 @@ impl SaveDialog {
             message.clone(),
             prompt.clone(),
             default_file_name.clone(),
-            show_hidden_files.clone(),
+            *show_hidden_files,
             path.clone(),
             file_types,
             callback,
             env
         );
+    }
+}
+
+impl Default for SaveDialog {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

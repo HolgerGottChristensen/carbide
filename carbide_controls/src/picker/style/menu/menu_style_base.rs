@@ -133,37 +133,34 @@ impl<
     // Implementing this instead of handle_mouse_event makes all the children not receive events.
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !*ctx.is_current { return }
-        match event {
-            MouseEvent::Press { position, id, button: MouseButton::Left, .. } => {
-                if self.is_inside(*position) {
-                    if !*self.enabled.value() {
-                        return;
-                    }
+        if let MouseEvent::Press { position, id, button: MouseButton::Left, .. } = event {
+            if self.is_inside(*position) {
+                if !*self.enabled.value() {
+                    return;
+                }
 
-                    if self.get_focus() != Focus::Focused {
-                        self.set_focus(Focus::FocusRequested);
-                        FocusManager::get(ctx.env, |manager| {
-                            manager.request_focus(Refocus::FocusRequest)
-                        });
-                    }
-
-                    let mut accent = EnvironmentColor::Accent.color();
-                    accent.sync(ctx.env);
-
-                    OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
-                        let popup = (self.open)(*id, *accent.value());
-                        manager.insert(popup);
+                if self.get_focus() != Focus::Focused {
+                    self.set_focus(Focus::FocusRequested);
+                    FocusManager::get(ctx.env, |manager| {
+                        manager.request_focus(Refocus::FocusRequest)
                     });
-                } else {
-                    if self.get_focus() == Focus::Focused {
-                        self.set_focus(Focus::FocusReleased);
-                        FocusManager::get(ctx.env, |manager| {
-                            manager.request_focus(Refocus::FocusRequest)
-                        });
-                    }
+                }
+
+                let mut accent = EnvironmentColor::Accent.color();
+                accent.sync(ctx.env);
+
+                OverlayManager::get::<ControlsOverlayKey>(ctx.env, |manager| {
+                    let popup = (self.open)(*id, *accent.value());
+                    manager.insert(popup);
+                });
+            } else {
+                if self.get_focus() == Focus::Focused {
+                    self.set_focus(Focus::FocusReleased);
+                    FocusManager::get(ctx.env, |manager| {
+                        manager.request_focus(Refocus::FocusRequest)
+                    });
                 }
             }
-            _ => (),
         }
     }
 }

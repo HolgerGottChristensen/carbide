@@ -18,6 +18,12 @@ impl LineController<LinearScale, LinearScale> {
     }
 }
 
+impl Default for LineController<LinearScale, LinearScale> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<X: Scale, Y: Scale> DatasetController for LineController<X, Y> {
     fn draw(&self, _ctx: &mut CanvasContext, _padding: EdgeInsets) {
         //self.x_scale.draw(ctx, env, padding);

@@ -27,7 +27,7 @@ impl<'a> TextureAtlasCommand<'a> {
     pub fn create_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("carbide_texture_atlas_buffer"),
-            contents: &self.texture_atlas_buffer,
+            contents: self.texture_atlas_buffer,
             usage: wgpu::BufferUsages::COPY_SRC,
         })
     }
@@ -45,9 +45,9 @@ impl<'a> TextureAtlasCommand<'a> {
     }
 
     /// Create the texture copy view ready for receiving the pixel data from the buffer.
-    pub fn texture_copy_view(&self) -> wgpu::TexelCopyTextureInfo {
+    pub fn texture_copy_view(&self) -> wgpu::TexelCopyTextureInfo<'_> {
         wgpu::TexelCopyTextureInfo {
-            texture: &self.texture_atlas_texture,
+            texture: self.texture_atlas_texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
             aspect: Default::default(),
@@ -56,7 +56,7 @@ impl<'a> TextureAtlasCommand<'a> {
 
     /// Encode the command for copying the buffer's pixel data to the glyph cache texture.
     pub fn encode(&self, buffer: &wgpu::Buffer, encoder: &mut wgpu::CommandEncoder) {
-        let buffer_copy_view = self.buffer_copy_view(&buffer);
+        let buffer_copy_view = self.buffer_copy_view(buffer);
         let texture_copy_view = self.texture_copy_view();
         let extent = self.extent();
         encoder.copy_buffer_to_texture(buffer_copy_view, texture_copy_view, extent);
@@ -73,7 +73,7 @@ impl<'a> TextureAtlasCommand<'a> {
 
     /// Short-hand for `create_buffer` and `encode` in succession.
     pub fn load_buffer_and_encode(&self, device: &wgpu::Device, e: &mut wgpu::CommandEncoder) {
-        let buffer = self.create_buffer(&device);
+        let buffer = self.create_buffer(device);
         self.encode(&buffer, e);
     }
 }

@@ -25,6 +25,6 @@ impl<T: Send + 'static, Ta: Future<Output = T> + Send + 'static, Cont: Fn(T, &mu
 
 impl<T: Send + 'static, Ta: Future<Output = T> + Send + 'static, Cont: Fn(T, &mut AsyncContext) + 'static + Clone> Clone for Task<T, Ta, Cont> {
     fn clone(&self) -> Self {
-        Task::new(self.task.clone(), self.cont.clone())
+        Task::new(self.task, self.cont.clone())
     }
 }

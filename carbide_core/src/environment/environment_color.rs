@@ -5,7 +5,9 @@ use crate::render::Style;
 use crate::state::*;
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug, Copy, Id)]
+#[derive(Default)]
 pub enum EnvironmentColor {
+    #[default]
     Blue,
     Green,
     Indigo,
@@ -175,15 +177,10 @@ impl EnvironmentKeyable for EnvironmentColor {
 
 impl EnvironmentColor {
     pub fn style(&self) -> impl ReadState<T=Style> {
-        <EnvironmentColor as IntoReadState<Style>>::into_read_state(self.clone())
+        <EnvironmentColor as IntoReadState<Style>>::into_read_state(*self)
     }
 }
 
-impl Default for EnvironmentColor {
-    fn default() -> Self {
-        EnvironmentColor::Blue
-    }
-}
 
 // ---------------------------------------------------
 //  Conversion implementations

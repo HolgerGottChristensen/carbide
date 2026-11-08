@@ -423,11 +423,10 @@ impl<W: Widget<Kind=WidgetKindSimple>> Render for Scroll<W> {
             if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
                 *env_cursor = MouseCursor::Grabbing;
             }
-        } else if *self.vertical_background_hovered.value() || *self.horizontal_background_hovered.value() {
-            if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
+        } else if (*self.vertical_background_hovered.value() || *self.horizontal_background_hovered.value())
+            && let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
                 *env_cursor = MouseCursor::Pointer;
             }
-        }
 
         if (self.scroll_directions == ScrollDirection::Both
             || self.scroll_directions == ScrollDirection::Vertical)

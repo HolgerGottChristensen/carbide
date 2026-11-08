@@ -41,3 +41,9 @@ impl PathBuilder {
     }
 
 }
+
+impl Default for PathBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}

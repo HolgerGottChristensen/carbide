@@ -52,11 +52,9 @@ pub trait Accessibility: Focusable + CommonWidget + WidgetSync {
                 node.set_value(hint);
             }
 
-            if let Some(enabled) = ctx.inherited_enabled {
-                if !enabled {
+            if let Some(enabled) = ctx.inherited_enabled && !enabled {
                     node.set_disabled();
                 }
-            }
 
             Some(node)
         } else {

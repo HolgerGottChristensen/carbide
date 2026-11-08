@@ -18,7 +18,7 @@ use carbide_core::lifecycle::UpdateContext;
 use carbide_core::render::{NoopRenderContext, RenderContext, RenderInstruction, RenderInstructionCache};
 use carbide_core::scene::{AnyScene, SceneManager};
 use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
-use carbide_core::widget::{NavigationStack, Rectangle, Widget, WidgetExt, WidgetId, ZStack};
+use carbide_core::widget::{NavigationStack, Rectangle, Widget, WidgetId, ZStack};
 use carbide_winit::dpi::{PhysicalPosition, PhysicalSize};
 use carbide_winit::event::{ElementState, MouseButton, MouseScrollDelta};
 use carbide_winit::keyboard::Key;

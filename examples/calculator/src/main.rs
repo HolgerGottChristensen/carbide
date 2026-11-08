@@ -101,7 +101,7 @@ fn main() {
     application.launch();
 }
 
-fn calculator_button(label: impl Widget, action: impl Action + Clone + 'static) -> impl Widget + WidgetExt {
+fn calculator_button(label: impl Widget, action: impl Action + 'static) -> impl Widget {
     let pressed_state = LocalState::new(false);
     let hovered_state = LocalState::new(false);
 
@@ -128,7 +128,7 @@ fn calculator_button(label: impl Widget, action: impl Action + Clone + 'static) 
         .hovered(hovered_state)
 }
 
-fn number_button(number: i64, state: impl State<T=CalculatorState>) -> impl Widget + WidgetExt {
+fn number_button(number: i64, state: impl State<T=CalculatorState>) -> impl Widget {
     calculator_button(
         Text::new(number).font_size(32),
         closure!(|_| ($state).append(number)),
@@ -136,7 +136,7 @@ fn number_button(number: i64, state: impl State<T=CalculatorState>) -> impl Widg
     .accent_color(EnvironmentColor::SystemFill)
 }
 
-fn operator_button(operator: Operation, state: impl State<T=CalculatorState>) -> impl Widget + WidgetExt {
+fn operator_button(operator: Operation, state: impl State<T=CalculatorState>) -> impl Widget {
     calculator_button(
         Text::new(operator.to_symbol()).font_size(32),
         closure!(|_| ($state).set_operation(operator)),

@@ -28,7 +28,7 @@ impl<'input> Document<'input> {
     }
 
     pub fn to_tree(&'input self, opt: &'input Options) -> Tree {
-        converter::convert_doc(&self, opt).unwrap()
+        converter::convert_doc(self, opt).unwrap()
     }
 
     /// Parses a [`Document`] from a [`roxmltree::Document`].
@@ -361,18 +361,14 @@ pub(crate) fn parse_svg_element<'input>(
                 insert_attribute(AttributeId::FontVariantPosition, "normal", imp);
 
                 // Then, we set the properties that have been declared.
-                shorthand
-                    .font_stretch
-                    .map(|s| insert_attribute(AttributeId::FontStretch, s, imp));
-                shorthand
-                    .font_weight
-                    .map(|s| insert_attribute(AttributeId::FontWeight, s, imp));
-                shorthand
-                    .font_variant
-                    .map(|s| insert_attribute(AttributeId::FontVariant, s, imp));
-                shorthand
-                    .font_style
-                    .map(|s| insert_attribute(AttributeId::FontStyle, s, imp));
+                if let Some(s) = shorthand
+                    .font_stretch { insert_attribute(AttributeId::FontStretch, s, imp) }
+                if let Some(s) = shorthand
+                    .font_weight { insert_attribute(AttributeId::FontWeight, s, imp) }
+                if let Some(s) = shorthand
+                    .font_variant { insert_attribute(AttributeId::FontVariant, s, imp) }
+                if let Some(s) = shorthand
+                    .font_style { insert_attribute(AttributeId::FontStyle, s, imp) }
                 insert_attribute(AttributeId::FontSize, shorthand.font_size, imp);
                 insert_attribute(AttributeId::FontFamily, shorthand.font_family, imp);
             } else {

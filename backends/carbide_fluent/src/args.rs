@@ -65,7 +65,7 @@ impl Arg for i32 {
 
 impl Arg for &'static str {
     fn into(&self) -> LocalizedArg {
-        LocalizedArg::Str(*self)
+        LocalizedArg::Str(self)
     }
 }
 

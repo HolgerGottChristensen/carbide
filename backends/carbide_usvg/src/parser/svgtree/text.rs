@@ -256,11 +256,9 @@ fn trim_text_nodes(text_elem_id: NodeId, xmlspace: XmlSpace, doc: &mut Document)
             //
             // See text-tspan-02-b.svg for details.
             if depth1 < depth2 {
-                if c3 == Some(b' ') {
-                    if xmlspace2 == XmlSpace::Default {
-                        if let NodeKind::Text(ref mut text) = doc.nodes[node2_id.get_usize()].kind {
-                            text.remove_first_space();
-                        }
+                if c3 == Some(b' ') && xmlspace2 == XmlSpace::Default {
+                    if let NodeKind::Text(ref mut text) = doc.nodes[node2_id.get_usize()].kind {
+                        text.remove_first_space();
                     }
                 }
             } else {

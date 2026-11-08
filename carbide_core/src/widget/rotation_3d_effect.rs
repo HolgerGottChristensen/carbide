@@ -68,7 +68,7 @@ impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for R
 
         let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
 
-        let z = outer_angle.to_radians().tan() as f32;
+        let z = outer_angle.to_radians().tan();
         let up: Vector3<f32> = cgmath::Vector3::unit_y();
         let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
         let eye: Point3<f32> = Point3::new(0.0, 0.0, z);

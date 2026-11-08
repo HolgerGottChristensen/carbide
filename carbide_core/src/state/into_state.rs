@@ -157,11 +157,10 @@ impl ConvertInto<Result<String, String>> for Result<f32, String> {
         Map1::map_owned(f, |val, existing| {
             match (val, existing) {
                 (Ok(val), Ok(existing)) => {
-                    if let Ok(v) = f32::from_str(existing) {
-                        if *val == v {
+                    if let Ok(v) = f32::from_str(existing)
+                        && *val == v {
                             return;
                         }
-                    }
 
                     *existing = val.to_string();
                 }
@@ -187,11 +186,10 @@ impl ConvertInto<Result<String, String>> for Result<f64, String> {
         Map1::map_owned(f, |val, existing| {
             match (val, existing) {
                 (Ok(val), Ok(existing)) => {
-                    if let Ok(v) = f64::from_str(existing) {
-                        if *val == v {
+                    if let Ok(v) = f64::from_str(existing)
+                        && *val == v {
                             return;
                         }
-                    }
 
                     *existing = val.to_string();
                 }

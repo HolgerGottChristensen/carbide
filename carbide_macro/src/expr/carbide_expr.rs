@@ -227,7 +227,7 @@ impl CarbideExpr {
                 .fork()
                 .parse::<CarbideBinOp>()
                 .ok()
-                .map_or(false, |op| CarbidePrecedence::of(&op) >= base)
+                .is_some_and(|op| CarbidePrecedence::of(&op) >= base)
             {
                 let op = CarbideBinOp::parse(input)?;
                 let precedence = CarbidePrecedence::of(&op);
@@ -326,11 +326,10 @@ impl CarbideExpr {
                 let mut dot_token: Token![.] = input.parse()?;
 
                 let float_token: Option<LitFloat> = input.parse()?;
-                if let Some(float_token) = float_token {
-                    if CarbideExpr::multi_index(&mut e, &mut dot_token, float_token)? {
+                if let Some(float_token) = float_token
+                    && CarbideExpr::multi_index(&mut e, &mut dot_token, float_token)? {
                         continue;
                     }
-                }
 
                 let member = CarbideMember::parse(input)?;
                 let turbofish = if matches!(member, CarbideMember::Named(_)) && input.peek(Token![::]) {
@@ -339,8 +338,8 @@ impl CarbideExpr {
                     None
                 };
 
-                if turbofish.is_some() || input.peek(Paren) {
-                    if let CarbideMember::Named(method) = member {
+                if (turbofish.is_some() || input.peek(Paren))
+                    && let CarbideMember::Named(method) = member {
                         let content;
                         e = CarbideExpr::MethodCall(MethodCallExpr {
                             receiver: Box::new(e),
@@ -352,7 +351,6 @@ impl CarbideExpr {
                         });
                         continue;
                     }
-                }
 
                 e = CarbideExpr::Field(FieldExpr {
                     base: Box::new(e),

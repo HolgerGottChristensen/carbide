@@ -64,7 +64,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, ()> {
             delegate,
             widgets: HashMap::new(),
             indices: HashMap::new(),
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             ident: T::id,
         }
     }
@@ -76,7 +76,7 @@ impl ForEach<(), Vec<()>, EmptyDelegate, Empty, ()> {
             delegate,
             widgets: HashMap::new(),
             indices: HashMap::new(),
-            phantom: PhantomData::default(),
+            phantom: PhantomData,
             ident: id,
         }
     }
@@ -114,7 +114,7 @@ where
             self.indices.insert(id.clone(), LocalState::new(index.clone()));
         }
 
-        if self.widgets.get(&id).is_none() {
+        if !self.widgets.contains_key(&id) {
             println!("Creating: {:?}", id);
             let item = self.model.index(self.indices.get(&id).unwrap().clone());
             let i = self.indices.get(&id).unwrap();

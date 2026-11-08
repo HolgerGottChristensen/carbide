@@ -51,7 +51,7 @@ impl Triangle<Position> {
             return vec![];
         }
 
-        if len % 3 != 0 {
+        if !len.is_multiple_of(3) {
             panic!("The vector of points can not be converted to a list of triangles because its length is not divisible by three")
         }
 
@@ -93,20 +93,20 @@ where
     }
 }
 
-impl<V> Into<[V; 3]> for Triangle<V>
+impl<V> From<Triangle<V>> for [V; 3]
 where
     V: Vertex,
 {
-    fn into(self) -> [V; 3] {
-        self.0
+    fn from(val: Triangle<V>) -> Self {
+        val.0
     }
 }
 
-impl<V> Into<(V, V, V)> for Triangle<V>
+impl<V> From<Triangle<V>> for (V, V, V)
 where
     V: Vertex,
 {
-    fn into(self) -> (V, V, V) {
-        (self[0], self[1], self[2])
+    fn from(val: Triangle<V>) -> Self {
+        (val[0], val[1], val[2])
     }
 }

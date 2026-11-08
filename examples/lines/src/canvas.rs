@@ -1,6 +1,7 @@
 use carbide::draw::{Dimension, Position, Rect};
 use carbide::environment::EnvironmentColor;
-use carbide::state::{LocalState, StateSync, State, ValueRefMut};
+use carbide::cell::ValueRefMut;
+use carbide::state::{LocalState, StateSync, State};
 use carbide::widget::canvas::{Context, CanvasContext};
 
 use crate::editing_mode::{CreateWallState, EditingMode, SelectedState};
@@ -91,8 +92,8 @@ impl Context for GraphCanvas {
 
 
 fn draw_selection_selected(
-    mut context: &mut CanvasContext,
-    mut graph: ValueRefMut<Graph>,
+    context: &mut CanvasContext,
+    graph: ValueRefMut<Graph>,
     selected: SelectedState,
 ) {
     match selected {
@@ -114,15 +115,15 @@ fn draw_selection_selected(
 
             context.begin_path();
             context.set_stroke_style(EnvironmentColor::Yellow);
-            line_between(&mut context, &line, graph.offset);
+            line_between(context, &line, graph.offset);
             context.stroke();
         }
     }
 }
 
 fn draw_selection_hovered(
-    mut context: &mut CanvasContext,
-    mut graph: &mut ValueRefMut<Graph>,
+    context: &mut CanvasContext,
+    graph: &mut ValueRefMut<Graph>,
     hovered: SelectedState,
 ) {
     match hovered {
@@ -144,13 +145,13 @@ fn draw_selection_hovered(
 
             context.begin_path();
             context.set_stroke_style(EnvironmentColor::Green);
-            line_between(&mut context, &line, graph.offset);
+            line_between(context, &line, graph.offset);
             context.stroke();
         }
     }
 }
 
-fn draw_edges(mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph>) {
+fn draw_edges(context: &mut CanvasContext, graph: &mut ValueRefMut<Graph>) {
     context.begin_path();
 
     context.set_stroke_style(EnvironmentColor::DarkText);
@@ -161,7 +162,7 @@ fn draw_edges(mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph
             graph.get_node(edge.to).position,
         );
 
-        line_between(&mut context, &line, graph.offset);
+        line_between(context, &line, graph.offset);
     }
 
     context.stroke();
@@ -170,14 +171,14 @@ fn draw_edges(mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph
     context.set_stroke_style(EnvironmentColor::Blue);
 
     for edge in &graph.edges {
-        line_between(&mut context, &edge.neg_line, graph.offset);
-        line_between(&mut context, &edge.pos_line, graph.offset);
+        line_between(context, &edge.neg_line, graph.offset);
+        line_between(context, &edge.pos_line, graph.offset);
     }
 
     context.stroke();
 }
 
-fn draw_nodes(mut context: &mut CanvasContext, graph: &mut ValueRefMut<Graph>) {
+fn draw_nodes(context: &mut CanvasContext, graph: &mut ValueRefMut<Graph>) {
     context.set_fill_style(EnvironmentColor::DarkText);
     context.begin_path();
 
@@ -207,7 +208,7 @@ fn line_between(context: &mut CanvasContext, line: &Line, offset: Position) {
     }
 }
 
-fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut ValueRefMut<Graph>) {
+fn draw_guides(rect: &Rect, context: &mut CanvasContext, graph: &mut ValueRefMut<Graph>) {
     context.begin_path();
     context.set_stroke_style(EnvironmentColor::Green);
     context.set_fill_style(EnvironmentColor::Green);
@@ -216,21 +217,21 @@ fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut Val
         match guide {
             Guide::Vertical(x) => {
                 line_between(
-                    &mut context,
+                    context,
                     &Line::new(Position::new(*x, 0.0), Position::new(*x, rect.height())),
                     graph.offset,
                 );
             }
             Guide::Horizontal(y) => {
                 line_between(
-                    &mut context,
+                    context,
                     &Line::new(Position::new(0.0, *y), Position::new(rect.width(), *y)),
                     graph.offset,
                 );
             }
             Guide::Directional(line) => {
                 line_between(
-                    &mut context,
+                    context,
                     &line.extend(Rect::new(
                         Position::new(0.0, 0.0),
                         Dimension::new(rect.width(), rect.height()),
@@ -245,11 +246,8 @@ fn draw_guides(rect: &Rect, mut context: &mut CanvasContext, mut graph: &mut Val
     context.stroke();
 
     for guide in &graph.guides {
-        match guide {
-            Guide::Point(position) => {
-                context.circle(position.x, position.y, 5.0);
-            }
-            _ => ()
+        if let Guide::Point(position) = guide {
+            context.circle(position.x, position.y, 5.0);
         }
     }
 

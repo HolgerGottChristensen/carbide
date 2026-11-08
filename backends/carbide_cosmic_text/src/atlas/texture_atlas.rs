@@ -79,7 +79,7 @@ impl TextureAtlas {
 
     pub fn process_queued(&mut self) {
         // If no elements are in the queue, we can return early
-        if self.queue.len() == 0 {
+        if self.queue.is_empty() {
             return;
         }
 
@@ -89,7 +89,7 @@ impl TextureAtlas {
         let mut queue = self.queue.drain().collect::<Vec<_>>();
 
         // Sort by height, to allow for better caching density
-        queue.sort_unstable_by(|(_, (data1, _, _)), (_, (data2, _, _))| data2.height().cmp(&data1.height()));
+        queue.sort_unstable_by_key(|(_, (data, _, _))| std::cmp::Reverse(data.height()));
 
         'queue: for (key, (image, top, left)) in queue {
 

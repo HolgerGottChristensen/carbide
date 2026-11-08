@@ -509,7 +509,7 @@ fn parse_font_variation_settings(node: SvgNode) -> Vec<FontVariation> {
         let mut chars = part.chars().peekable();
 
         // Skip whitespace
-        while chars.peek().map_or(false, |c| c.is_whitespace()) {
+        while chars.peek().is_some_and(|c| c.is_whitespace()) {
             chars.next();
         }
 
@@ -538,7 +538,7 @@ fn parse_font_variation_settings(node: SvgNode) -> Vec<FontVariation> {
         }
 
         // Skip whitespace before value
-        while chars.peek().map_or(false, |c| c.is_whitespace()) {
+        while chars.peek().is_some_and(|c| c.is_whitespace()) {
             chars.next();
         }
 

@@ -113,14 +113,20 @@ impl OpenDialog {
             title.clone(),
             message.clone(),
             prompt.clone(),
-            multiple_selection.clone(),
-            show_hidden_files.clone(),
-            selection_type.clone(),
+            *multiple_selection,
+            *show_hidden_files,
+            *selection_type,
             path.clone(),
             file_types,
             callback,
             env
         );
+    }
+}
+
+impl Default for OpenDialog {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -123,7 +123,7 @@ impl Application {
             let entry = entry.unwrap();
             let path = entry.path();
             if path.is_file() && path.extension() == Some(OsStr::new("ttf")) {
-                self.add_font(path.to_path_buf());
+                self.add_font(path);
             }
         }
 
@@ -189,6 +189,12 @@ impl Application {
         {
             event_loop.run_app(&mut running).unwrap();
         }
+    }
+}
+
+impl Default for Application {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -268,7 +274,7 @@ impl RunningApplication {
             event_loop.exit();
         }
 
-        if ApplicationManager::application_frame() % 60 == 0 {
+        if ApplicationManager::application_frame().is_multiple_of(60) {
             self.text_context.sweep()
         }
 

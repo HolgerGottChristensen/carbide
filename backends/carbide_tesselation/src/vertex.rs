@@ -21,7 +21,7 @@ impl Vertex for Position {
     }
 
     fn offset(&mut self, other: Position) {
-        *self = *self + other;
+        *self += other;
     }
 }
 
@@ -65,6 +65,6 @@ impl Vertex for ColoredPoint {
 
     fn offset(&mut self, other: Position) {
         let (p, _) = self;
-        *p = *p + other;
+        *p += other;
     }
 }

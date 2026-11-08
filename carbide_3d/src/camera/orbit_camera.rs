@@ -41,6 +41,12 @@ impl OrbitCamera {
     }
 }
 
+impl Default for OrbitCamera {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MouseEventHandler for OrbitCamera {}
 
 impl CommonWidget for OrbitCamera {

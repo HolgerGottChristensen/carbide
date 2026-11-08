@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use carbide::widget::WidgetProperties;
 use crate::environment::{EnvironmentKey, Exclusive};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, OtherEvent, KeyboardEvent, KeyboardEventContext, MouseEvent, MouseEventContext, OtherEventContext, WindowEvent, WindowEventContext, WindowEventHandler};
 use crate::lifecycle::InitializationContext;
@@ -22,7 +21,7 @@ impl NavigationManager {
     }
 
     pub fn extend(&mut self, iter: impl IntoIterator<Item=Box<dyn AnyWidget>>) {
-        self.stack.extend(iter.into_iter().map(|item| StackItem::Other(item)));
+        self.stack.extend(iter.into_iter().map(StackItem::Other));
     }
 
     pub fn pop(&mut self) -> bool {
@@ -56,21 +55,15 @@ impl NavigationManager {
 
 impl NavigationManager {
     pub fn root(env: &mut Environment, f: impl FnOnce(&mut NavigationManager)) {
-        env.get_mut::<NavigationRootKey>().map(|navigation_manager| {
-            f(navigation_manager)
-        });
+        if let Some(navigation_manager) = env.get_mut::<NavigationRootKey>() { f(navigation_manager) }
     }
 
     pub fn specific<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive>>(env: &mut Environment, f: impl FnOnce(&mut NavigationManager)) {
-        env.get_mut::<K>().map(|navigation_manager| {
-            f(navigation_manager)
-        });
+        if let Some(navigation_manager) = env.get_mut::<K>() { f(navigation_manager) }
     }
 
     pub fn get(env: &mut Environment, f: impl FnOnce(&mut NavigationManager)) {
-        env.get_mut::<NavigationKey>().map(|navigation_manager| {
-            f(navigation_manager)
-        });
+        if let Some(navigation_manager) = env.get_mut::<NavigationKey>() { f(navigation_manager) }
     }
 }
 
@@ -107,7 +100,7 @@ pub struct NavigationStack<K> where K: EnvironmentKey<Value=NavigationManager, A
 }
 
 impl NavigationStack<NavigationKey> {
-    pub fn new(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
+    pub fn new(initial: impl Widget<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
         NavigationStack::<NavigationKey> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -120,7 +113,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone>(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<K> {
+    pub fn new_specific<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone>(initial: impl Widget<Kind=WidgetKindSimple>) -> NavigationStack<K> {
         NavigationStack::<K> {
             id: WidgetId::new(),
             position: Default::default(),
@@ -133,7 +126,7 @@ impl NavigationStack<NavigationKey> {
         }
     }
 
-    pub fn new_root(initial: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
+    pub fn new_root(initial: impl Widget<Kind=WidgetKindSimple>) -> NavigationStack<impl EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> {
         NavigationStack::<NavigationRootKey> {
             id: WidgetId::new(),
             position: Default::default(),

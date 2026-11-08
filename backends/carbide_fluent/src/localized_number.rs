@@ -364,7 +364,7 @@ impl<
 > AnyReadState for LocalizedNumber<V, S, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11> {
     type T = String;
 
-    fn value_dyn(&self) -> ValueRef<Self::T> {
+    fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         let mut value = self.value.value().clone().into();
         let style = self.style.value();
         let notation = self.notation.value();

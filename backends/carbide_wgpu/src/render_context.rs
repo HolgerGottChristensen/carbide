@@ -124,9 +124,7 @@ impl TargetStates {
     fn get(&mut self, radius_x: u32, radius_y: u32) -> (usize, bool) {
         if let Some((index, (state, radius))) = self.inner
             .iter_mut()
-            .enumerate()
-            .filter(|(_, (a, _))| *a != Used)
-            .next() {
+            .enumerate().find(|(_, (a, _))| *a != Used) {
                 let needs_free = *state == Free;
                 *state = Used;
                 radius.0 = radius.0.max(radius_x);
@@ -1239,7 +1237,7 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(mask);
     }
 
-    fn layer(&mut self, layer_id: LayerId, requested_size: Dimension, env: &mut Environment) -> Layer {
+    fn layer(&mut self, layer_id: LayerId, requested_size: Dimension, env: &mut Environment) -> Layer<'_> {
         let width = requested_size.width.floor().max(1.0) as u32;
         let height = requested_size.height.floor().max(1.0) as u32;
 

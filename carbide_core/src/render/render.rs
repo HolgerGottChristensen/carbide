@@ -7,11 +7,10 @@ pub trait Render: CommonWidget + WidgetSync {
     fn render(&mut self, ctx: &mut RenderContext) {
         self.sync(ctx.env);
 
-        if let Some(cursor) = self.cursor() {
-            if let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
+        if let Some(cursor) = self.cursor()
+            && let Some(env_cursor) = ctx.env.get_mut::<MouseCursor>() {
                 *env_cursor = cursor;
             }
-        }
 
         self.foreach_child(&mut |child| {
             child.render(ctx);

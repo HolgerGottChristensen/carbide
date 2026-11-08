@@ -28,7 +28,7 @@ const N_CLICK_THRESHOLD: Duration = Duration::from_millis(500);
 const MOUSE_CLICK_MAX_DISTANCE: f64 = 3.0;
 const ARBITRARY_POINTS_PER_LINE_FACTOR: f64 = 10.0;
 
-static SCALE_FACTORS: Lazy<DashMap<WindowId, Scalar>> = Lazy::new(|| DashMap::new());
+static SCALE_FACTORS: Lazy<DashMap<WindowId, Scalar>> = Lazy::new(DashMap::new);
 
 pub fn update_scale_factor(window_id: WindowId, factor: Scalar) {
     SCALE_FACTORS.insert(window_id, factor);
@@ -580,7 +580,6 @@ impl NewEventHandler {
         let (x, y) = match delta {
             MouseScrollDelta::PixelDelta(delta) => {
                 let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor(window_id));
-                let x = x;
                 let y = -y;
 
                 (x, y)
@@ -685,8 +684,8 @@ impl NewEventHandler {
                     return RequestRedraw::True;
                 }
 
-                if !prevent_default {
-                    if key == carbide_core::event::Key::Tab {
+                if !prevent_default
+                    && key == carbide_core::event::Key::Tab {
                         if self.modifiers.shift_key() {
                             //self.set_focus(Focus::FocusReleased);
                             FocusManager::get(env, |manager| {
@@ -699,7 +698,6 @@ impl NewEventHandler {
                             });
                         }
                     }
-                }
             },
             ElementState::Released => {
                 env.with::<ShortcutManager>(&mut shortcut_manager, |env| {
@@ -747,7 +745,7 @@ impl NewEventHandler {
             Ime::Preedit(s, cursor) => {
                 for scene in scenes.iter_mut() {
                     scene.process_keyboard_event(&KeyboardEvent::Ime(
-                        carbide_core::event::Ime::PreEdit(s.to_string(), cursor.clone())
+                        carbide_core::event::Ime::PreEdit(s.to_string(), cursor)
                     ), &mut KeyboardEventContext {
                         text: text_context,
                         image: image_context,
@@ -820,36 +818,39 @@ impl NewEventHandler {
 
         if distance > drag_threshold {
             for (button, (evt, _)) in self.pressed_buttons.iter() {
-                match evt {
-                    MouseEvent::Press { position: location, .. } => {
-                        let total_delta_xy = self.mouse_position - *location;
-                        let drag_event = MouseEvent::Drag {
-                            button: convert_mouse_button(*button),
-                            origin: *location,
-                            from: last_mouse_xy,
-                            to: self.mouse_position,
-                            delta_xy,
-                            total_delta_xy,
-                            modifiers: self.modifiers,
-                        };
+                if let MouseEvent::Press { position: location, .. } = evt {
+                    let total_delta_xy = self.mouse_position - *location;
+                    let drag_event = MouseEvent::Drag {
+                        button: convert_mouse_button(*button),
+                        origin: *location,
+                        from: last_mouse_xy,
+                        to: self.mouse_position,
+                        delta_xy,
+                        total_delta_xy,
+                        modifiers: self.modifiers,
+                    };
 
-                        let mut consumed = false;
-                        for scene in scenes.iter_mut() {
-                            scene.process_mouse_event(&drag_event, &mut MouseEventContext {
-                                text: text_context,
-                                image: image_context,
-                                is_current: &false,
-                                window_id: &window_id.into(),
-                                consumed: &mut consumed,
-                                env,
-                            });
-                        }
+                    let mut consumed = false;
+                    for scene in scenes.iter_mut() {
+                        scene.process_mouse_event(&drag_event, &mut MouseEventContext {
+                            text: text_context,
+                            image: image_context,
+                            is_current: &false,
+                            window_id: &window_id.into(),
+                            consumed: &mut consumed,
+                            env,
+                        });
                     }
-                    _ => {}
                 }
             }
         }
 
         RequestRedraw::True
+    }
+}
+
+impl Default for NewEventHandler {
+    fn default() -> Self {
+        Self::new()
     }
 }

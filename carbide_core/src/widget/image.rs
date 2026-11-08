@@ -226,7 +226,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     };
 
                     let image = image::open(&full_path)
-                        .expect(&format!("Couldn't load image: {}", full_path.display()))
+                        .unwrap_or_else(|_| panic!("Couldn't load image: {}", full_path.display()))
                         .pre_multiplied();
 
                     let texture = Texture {
@@ -245,8 +245,8 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     Self::load_remote_raster(ctx, url);
                 }
             }
-            (ImageId::System(name, ..), _) => {
-                if !ctx.image.exist(image_id, ctx.env) {
+            (ImageId::System(name, ..), _)
+                if !ctx.image.exist(image_id, ctx.env) => {
                     let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
 
                     let string = system_provider(name).map(|b| str::from_utf8(b).unwrap())
@@ -268,7 +268,6 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                         ctx.env
                     );
                 }
-            }
             _ => {}
         }
 
@@ -556,7 +555,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> CommonWidget for Image<Id,
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
 
-static MISSING_SVG: &'static str = r#"
+static MISSING_SVG: &str = r#"
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"

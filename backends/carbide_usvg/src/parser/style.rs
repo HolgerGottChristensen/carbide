@@ -101,7 +101,8 @@ pub(crate) fn resolve_stroke(
 
     let mut sub_opacity = Opacity::ONE;
     let (paint, context_element) =
-        if let Some(n) = node.ancestors().find(|n| n.has_attribute(AttributeId::Stroke)) {
+        {
+            let n = node.ancestors().find(|n| n.has_attribute(AttributeId::Stroke))?;
             let value: &str = n.attribute(AttributeId::Stroke)?;
 
             convert_paint(
@@ -113,8 +114,6 @@ pub(crate) fn resolve_stroke(
                 &mut sub_opacity,
                 cache,
             )?
-        } else {
-            return None;
         };
 
     let width = node.resolve_valid_length(AttributeId::StrokeWidth, state, 1.0)?;

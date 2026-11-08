@@ -45,7 +45,7 @@ impl<W: Sequence> Layout for ZStack<W> {
             index += 1;
         });
 
-        children_flexibility.sort_by(|(a, _), (b, _)| a.cmp(&b));
+        children_flexibility.sort_by_key(|(a, _)| *a);
         children_flexibility.reverse();
 
         let mut max_width = 0.0;

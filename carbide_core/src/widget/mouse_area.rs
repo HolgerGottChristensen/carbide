@@ -425,11 +425,10 @@ impl<
             builder.set_value(value);
         }
 
-        if let Some(enabled) = ctx.inherited_enabled {
-            if !enabled {
+        if let Some(enabled) = ctx.inherited_enabled
+            && !enabled {
                 builder.set_disabled();
             }
-        }
 
         builder.add_action(AccessibilityAction::Click);
 

@@ -85,6 +85,12 @@ impl ApplicationManager {
     }
 }
 
+impl Default for ApplicationManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EnvironmentKey for ApplicationManager {
     type Value = ApplicationManager;
     type Access = Exclusive;

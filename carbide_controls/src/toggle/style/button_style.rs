@@ -1,6 +1,5 @@
 use carbide::draw::gradient::{Gradient, GradientPosition};
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::WidgetProperties;
 use crate::toggle::toggle_value::ToggleValue;
 use crate::toggle::ToggleAction;
 use crate::toggle::ToggleStyle;
@@ -18,7 +17,7 @@ use carbide_core::widget::{AnyWidget, CornerRadii, EdgeInsets, MouseArea, Rounde
 pub struct ButtonStyle;
 
 impl ButtonStyle {
-    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn create(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>) -> impl Widget<Kind=WidgetKindSimple> {
         let pressed = LocalState::new(false);
         let hovered = LocalState::new(false);
 
@@ -33,7 +32,7 @@ impl ButtonStyle {
             .focused(focus.clone())
     }
 
-    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>, pressed: impl ReadState<T=bool>, hovered: impl ReadState<T=bool>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn widget(focus: impl State<T=Focus>, value: impl State<T=ToggleValue>, enabled: impl ReadState<T=bool>, label: Box<dyn AnyReadState<T=String>>, pressed: impl ReadState<T=bool>, hovered: impl ReadState<T=bool>) -> impl Widget<Kind=WidgetKindSimple> {
         let base_color = Map3::read_map(value.clone(), EnvironmentColor::Accent.color(), EnvironmentColor::SecondarySystemBackground.color(), |value, toggled, untoggled| {
             if *value == ToggleValue::True {
                 *toggled
@@ -57,7 +56,7 @@ impl ButtonStyle {
                 return Style::Gradient(Gradient::linear(vec![col.lightened(0.1), *col], GradientPosition::Alignment(Alignment::Top), GradientPosition::Alignment(Alignment::Bottom)))
             }
 
-            return Style::Gradient(Gradient::linear(vec![col.lightened(0.05), *col], GradientPosition::Alignment(Alignment::Top), GradientPosition::Alignment(Alignment::Bottom)))
+            Style::Gradient(Gradient::linear(vec![col.lightened(0.05), *col], GradientPosition::Alignment(Alignment::Top), GradientPosition::Alignment(Alignment::Bottom)))
         });
 
         let label_color = Map1::read_map(enabled, |enabled| {

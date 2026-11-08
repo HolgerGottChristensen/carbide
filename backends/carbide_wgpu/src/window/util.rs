@@ -26,16 +26,16 @@ pub fn calculate_carbide_to_wgpu_matrix(
     let aspect_ratio = (dimension.width / dimension.height) as f32;
 
     let ortho = ortho(
-        -1.0 * aspect_ratio,
+        -aspect_ratio,
         1.0 * aspect_ratio,
         -1.0,
         1.0,
         1.0,
         -1.0,
     );
-    let res = OPENGL_TO_WGPU_MATRIX
+    
+    OPENGL_TO_WGPU_MATRIX
         * ortho
         * Matrix4::from_translation(Vector3::new(-aspect_ratio, 1.0, 0.0))
-        * Matrix4::from(pixel_to_points);
-    res
+        * Matrix4::from(pixel_to_points)
 }

@@ -109,7 +109,7 @@ pub fn create_bind_group(
             origin: wgpu::Origin3d::ZERO,
             aspect: Default::default(),
         },
-        &texture.data,
+        texture.data,
         wgpu::TexelCopyBufferLayout {
             offset: 0,
             bytes_per_row: Some(texture.bytes_per_row),

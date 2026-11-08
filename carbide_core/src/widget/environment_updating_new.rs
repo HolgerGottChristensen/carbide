@@ -48,7 +48,7 @@ impl<C: Widget, K: EnvironmentKey<Access=Shared>> EnvUpdatingNew<C, K> where K::
     pub fn new(value: K::Value, child: C) -> EnvUpdatingNew<C, K> {
         EnvUpdatingNew {
             child,
-            key: PhantomData::default(),
+            key: PhantomData,
             value
         }
     }

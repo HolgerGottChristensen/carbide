@@ -8,7 +8,7 @@ pub struct LoggingState<T: StateContract, TState: State<T=T> + Clone + 'static>(
 
 impl LoggingState<(), ()> {
     pub fn new<T: StateContract, TState: State<T=T> + Clone + 'static>(inner: TState) -> LoggingState<T, TState> {
-        LoggingState(inner, PhantomData::default())
+        LoggingState(inner, PhantomData)
     }
 }
 
@@ -32,7 +32,7 @@ impl<T: StateContract, TState: State<T=T> + Clone + 'static> AnyState for Loggin
     }
 
     fn set_value_dyn(&mut self, val: T) {
-        println!("Set value to: {:?}", &val);
+        println!("Set value to: {:?}", val);
         self.0.set_value(val);
     }
 }

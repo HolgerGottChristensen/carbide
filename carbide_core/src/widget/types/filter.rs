@@ -95,6 +95,12 @@ impl FilterId {
     }
 }
 
+impl Default for FilterId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImageFilter {
     /// Applying this filter will sharpen the image
     pub fn sharpen() -> ImageFilter {
@@ -276,9 +282,7 @@ impl ImageFilter {
     /// cross-correlation or changing a cross-correlation to a convolution.
     pub fn flip(&mut self) {
         for val in self.filter.iter_mut() {
-            let temp = val.offset_x;
-            val.offset_x = val.offset_y;
-            val.offset_y = temp;
+            std::mem::swap(&mut val.offset_x, &mut val.offset_y);
         }
         self.id = FilterId::new();
     }

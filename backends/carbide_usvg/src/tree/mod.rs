@@ -79,26 +79,25 @@ pub(crate) enum Units {
 /// `visibility` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub(crate) enum Visibility {
+    #[default]
     Visible,
     Hidden,
     Collapse,
 }
 
-impl Default for Visibility {
-    fn default() -> Self {
-        Self::Visible
-    }
-}
 
 /// A shape rendering method.
 ///
 /// `shape-rendering` attribute in the SVG.
 #[derive(Clone, Copy, PartialEq, Debug)]
 #[allow(missing_docs)]
+#[derive(Default)]
 pub enum ShapeRendering {
     OptimizeSpeed,
     CrispEdges,
+    #[default]
     GeometricPrecision,
 }
 
@@ -113,11 +112,6 @@ impl ShapeRendering {
     }
 }
 
-impl Default for ShapeRendering {
-    fn default() -> Self {
-        Self::GeometricPrecision
-    }
-}
 
 impl std::str::FromStr for ShapeRendering {
     type Err = &'static str;
@@ -137,17 +131,14 @@ impl std::str::FromStr for ShapeRendering {
 /// `text-rendering` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum TextRendering {
     OptimizeSpeed,
+    #[default]
     OptimizeLegibility,
     GeometricPrecision,
 }
 
-impl Default for TextRendering {
-    fn default() -> Self {
-        Self::OptimizeLegibility
-    }
-}
 
 impl std::str::FromStr for TextRendering {
     type Err = &'static str;
@@ -167,7 +158,9 @@ impl std::str::FromStr for TextRendering {
 /// `image-rendering` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum ImageRendering {
+    #[default]
     OptimizeQuality,
     OptimizeSpeed,
     // The following can only appear as presentation attributes.
@@ -177,11 +170,6 @@ pub enum ImageRendering {
     Pixelated,
 }
 
-impl Default for ImageRendering {
-    fn default() -> Self {
-        Self::OptimizeQuality
-    }
-}
 
 impl std::str::FromStr for ImageRendering {
     type Err = &'static str;
@@ -204,7 +192,9 @@ impl std::str::FromStr for ImageRendering {
 /// `mix-blend-mode` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum BlendMode {
+    #[default]
     Normal,
     Multiply,
     Screen,
@@ -223,11 +213,6 @@ pub enum BlendMode {
     Luminosity,
 }
 
-impl Default for BlendMode {
-    fn default() -> Self {
-        Self::Normal
-    }
-}
 
 impl Display for BlendMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -258,17 +243,14 @@ impl Display for BlendMode {
 /// `spreadMethod` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum SpreadMethod {
+    #[default]
     Pad,
     Reflect,
     Repeat,
 }
 
-impl Default for SpreadMethod {
-    fn default() -> Self {
-        Self::Pad
-    }
-}
 
 /// A generic gradient.
 #[derive(Debug)]
@@ -538,35 +520,29 @@ impl PartialEq for StrokeMiterlimit {
 /// `stroke-linecap` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum LineCap {
+    #[default]
     Butt,
     Round,
     Square,
 }
 
-impl Default for LineCap {
-    fn default() -> Self {
-        Self::Butt
-    }
-}
 
 /// A line join.
 ///
 /// `stroke-linejoin` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum LineJoin {
+    #[default]
     Miter,
     MiterClip,
     Round,
     Bevel,
 }
 
-impl Default for LineJoin {
-    fn default() -> Self {
-        Self::Miter
-    }
-}
 
 /// A stroke style.
 #[derive(Clone, Debug)]
@@ -659,16 +635,13 @@ impl Stroke {
 /// `fill-rule` attribute in the SVG.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum FillRule {
+    #[default]
     NonZero,
     EvenOdd,
 }
 
-impl Default for FillRule {
-    fn default() -> Self {
-        Self::NonZero
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum ContextElement {
@@ -829,18 +802,15 @@ impl ClipPath {
 
 /// A mask type.
 #[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Default)]
 pub enum MaskType {
     /// Indicates that the luminance values of the mask should be used.
+    #[default]
     Luminance,
     /// Indicates that the alpha values of the mask should be used.
     Alpha,
 }
 
-impl Default for MaskType {
-    fn default() -> Self {
-        Self::Luminance
-    }
-}
 
 /// A mask element.
 ///
@@ -1258,16 +1228,13 @@ impl Group {
 /// [`paint-order`]: https://www.w3.org/TR/SVG2/painting.html#PaintOrder
 #[derive(Clone, Copy, PartialEq, Debug)]
 #[allow(missing_docs)]
+#[derive(Default)]
 pub enum PaintOrder {
+    #[default]
     FillAndStroke,
     StrokeAndFill,
 }
 
-impl Default for PaintOrder {
-    fn default() -> Self {
-        Self::FillAndStroke
-    }
-}
 
 /// A path element.
 #[derive(Clone, Debug)]

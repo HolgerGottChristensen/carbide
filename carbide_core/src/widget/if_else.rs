@@ -361,9 +361,9 @@ impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind
 impl<T: Widget, F: Widget, S: ReadState<T=bool> + Clone + 'static, K: WidgetKind, KTrue: WidgetKind, KFalse: WidgetKind> Clone for IfElse<T, F, S, K, KTrue, KFalse> {
     fn clone(&self) -> Self {
         IfElse {
-            id: self.id.clone(),
-            position: self.position.clone(),
-            dimension: self.dimension.clone(),
+            id: self.id,
+            position: self.position,
+            dimension: self.dimension,
             predicate: self.predicate.clone(),
             when_true: self.when_true.clone(),
             when_false: self.when_false.clone(),

@@ -63,10 +63,8 @@ impl CalculatorState {
                 return "-0".to_string();
             }
             return self.string.to_string();
-        } else if self.current_operation == Operation::Eq {
-            if let Some(val) = self.result {
-                return val.to_string();
-            }
+        } else if self.current_operation == Operation::Eq && let Some(val) = self.result {
+            return val.to_string();
         }
         "0".to_string()
     }
@@ -114,7 +112,7 @@ impl CalculatorState {
             self.string.push_str("0,");
         } else {
             if !self.string.contains(",") {
-                self.string.push_str(",");
+                self.string.push(',');
             }
         }
         println!("{:?}", self);
@@ -149,7 +147,7 @@ impl CalculatorState {
 
     pub fn pop_char(&mut self) {
         self.string.pop();
-        ()
+        
     }
 
     pub fn set_operation(&mut self, op: Operation) {
@@ -158,7 +156,7 @@ impl CalculatorState {
             self.right = None;
         }
 
-        if let None = self.left {
+        if self.left.is_none() {
             if !self.string.is_empty() {
                 self.left = Some(f64::from_str(&self.string.replace(",", ".")).unwrap());
                 self.string = String::new()
@@ -172,7 +170,13 @@ impl CalculatorState {
         }
         self.old_operation = self.current_operation;
         self.current_operation = op;
-        println!("{:?}", &self);
+        println!("{:?}", self);
+    }
+}
+
+impl Default for CalculatorState {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

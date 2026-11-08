@@ -67,7 +67,7 @@ pub(crate) fn capture_texture_to_image(
     buffer.unmap();
 
     // RENDER_TARGET_FORMAT is Bgra8UnormSrgb; image::RgbaImage expects RGBA channel order.
-    for pixel in pixels.chunks_exact_mut(4) {
+    for pixel in pixels.as_chunks_mut::<4>().0 {
         pixel.swap(0, 2);
     }
 

@@ -12,7 +12,9 @@ use url::Url;
 /// `Id`s, carbide can remain agnostic of the actual image or texture render used to represent each
 /// image.
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Default)]
 pub enum ImageId {
+    #[default]
     None,
     System(String, ImageFormat),
     Local(Arc<PathBuf>, ImageFormat),
@@ -47,11 +49,6 @@ impl ImageId {
     }
 }
 
-impl Default for ImageId {
-    fn default() -> Self {
-        ImageId::None
-    }
-}
 
 // ---------------------------------------------------
 //  Conversion implementations
@@ -83,7 +80,7 @@ impl IntoImageId for &'static str {
     fn into(self) -> ImageId {
         match Url::parse(self) {
             Ok(url) if url.scheme() == "file" => {
-                let format = match url.path().split('.').last() {
+                let format = match url.path().split('.').next_back() {
                     None => ImageFormat::Unknown,
                     Some(ext) => ImageFormat::from_extension(ext),
                 };
@@ -94,7 +91,7 @@ impl IntoImageId for &'static str {
                 )
             }
             Ok(url) => {
-                let format = match url.path().split('.').last() {
+                let format = match url.path().split('.').next_back() {
                     None => ImageFormat::Unknown,
                     Some(ext) => ImageFormat::from_extension(ext),
                 };
@@ -102,7 +99,7 @@ impl IntoImageId for &'static str {
                 ImageId::Remote(Arc::new(url), format)
             }
             Err(_) => {
-                let format = match self.split('.').last() {
+                let format = match self.split('.').next_back() {
                     None => ImageFormat::Unknown,
                     Some(ext) => ImageFormat::from_extension(ext),
                 };

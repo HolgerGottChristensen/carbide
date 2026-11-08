@@ -46,3 +46,9 @@ impl<K: Eq + Hash, V> Cache<K, V> {
         self.inner.retain(|_a, v| current_frame - v.frame_last_used < v.frame_retention);
     }
 }
+
+impl<K: Eq + Hash, V> Default for Cache<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

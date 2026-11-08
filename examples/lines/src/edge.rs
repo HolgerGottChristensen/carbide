@@ -31,9 +31,7 @@ impl Edge {
     }
 
     pub fn flip_lines(&mut self) {
-        let temp = self.pos_line;
-        self.pos_line = self.neg_line;
-        self.neg_line = temp;
+        std::mem::swap(&mut self.pos_line, &mut self.neg_line);
     }
 
     pub fn offset(mut self, offset: f64) -> Self {

@@ -19,7 +19,7 @@ pub trait DataPoint {
     }
 }
 
-impl<'a, T> DataPoint for &'a T where T: DataPoint {
+impl<T> DataPoint for &T where T: DataPoint {
     type X = T::X;
     type Y = T::Y;
     type Z = T::Z;

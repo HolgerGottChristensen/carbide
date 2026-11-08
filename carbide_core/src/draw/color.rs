@@ -228,9 +228,9 @@ impl Color {
         let mut new_angle_deg = from_h as f64 + (percentage * delta as f64);
 
         if new_angle_deg < 0.0 {
-            new_angle_deg = 360.0 + new_angle_deg;
+            new_angle_deg += 360.0;
         } else if new_angle_deg >= 360.0 {
-            new_angle_deg = new_angle_deg - 360.0
+            new_angle_deg -= 360.0
         }
 
         Color::Hsla(
@@ -309,9 +309,9 @@ impl From<Rgba> for Color {
     }
 }
 
-impl Into<[f32; 4]> for Rgba {
-    fn into(self) -> [f32; 4] {
-        let Rgba(r, g, b, a) = self;
+impl From<Rgba> for [f32; 4] {
+    fn from(val: Rgba) -> Self {
+        let Rgba(r, g, b, a) = val;
         [r, g, b, a]
     }
 }
@@ -378,7 +378,6 @@ pub fn hsl_to_rgb(hue: f32, saturation: f32, lightness: f32) -> (f32, f32, f32) 
 /// [Tango palette](http://tango.freedesktop.org/Tango_Icon_Theme_Guidelines) which provides
 /// aesthetically reasonable defaults for colors. Each color also comes with a light and dark
 /// version.
-
 macro_rules! make_color {
     ($r:expr, $g:expr, $b:expr) => {
         Color::Rgba($r as f32 / 255.0, $g as f32 / 255.0, $b as f32 / 255.0, 1.0)
@@ -731,7 +730,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_red(self, r: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= r && r <= 1.0),
+                (0.0..=1.0).contains(&r),
                 "The value r={} should be [0.0, 1.0]",
                 r
             );
@@ -746,7 +745,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_green(self, g: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= g && g <= 1.0),
+                (0.0..=1.0).contains(&g),
                 "The value g={} should be [0.0, 1.0]",
                 g
             );
@@ -760,7 +759,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_blue(self, b: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= b && b <= 1.0),
+                (0.0..=1.0).contains(&b),
                 "The value b={} should be [0.0, 1.0]",
                 b
             );
@@ -774,7 +773,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_hue(self, h: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= h && h <= 1.0),
+                (0.0..=1.0).contains(&h),
                 "The value h={} should be [0.0, 1.0]",
                 h
             );
@@ -788,7 +787,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_saturation(self, s: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= s && s <= 1.0),
+                (0.0..=1.0).contains(&s),
                 "The value s={} should be [0.0, 1.0]",
                 s
             );
@@ -802,7 +801,7 @@ pub trait ColorExt: Functor<Color> + Sized {
     fn with_lightness(self, l: f32) -> Self::Output<Color, impl Fn(&Color)->Color + Clone + 'static> {
         self.map(move |color| {
             debug_assert!(
-                (0.0 <= l && l <= 1.0),
+                (0.0..=1.0).contains(&l),
                 "The value l={} should be [0.0, 1.0]",
                 l
             );

@@ -60,8 +60,8 @@ fn main() {
         let data = response.bytes()
             .await
             .expect("Could not get bytes");
-        let image = carbide_core::image::load_from_memory(&data).unwrap();
-        image
+        
+        image::load_from_memory(&data).unwrap()
     }, move |image, ctx| {
         let id = ImageId::temp(ImageFormat::Png);
 

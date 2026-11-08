@@ -6,8 +6,10 @@ use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// How the albedo color should be determined.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum AlbedoComponent {
     /// No albedo color.
+    #[default]
     None,
     /// Albedo color is the vertex value.
     Vertex {
@@ -48,11 +50,6 @@ pub enum AlbedoComponent {
     },
 }
 
-impl Default for AlbedoComponent {
-    fn default() -> Self {
-        Self::None
-    }
-}
 
 impl AlbedoComponent {
     pub fn to_value(&self) -> Color {

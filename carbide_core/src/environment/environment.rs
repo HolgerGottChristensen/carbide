@@ -75,6 +75,12 @@ impl<'a> InternalEnvironmentValue<'a> {
     }
 }
 
+impl Default for Environment<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> Environment<'a> {
     /// Create a new empty environment.
     /// The environment can only be used in the thread it was created.
@@ -186,12 +192,12 @@ impl<'a> Environment<'a> {
     ///
     /// This is useful in two scenarios:
     /// 1. If the environment contains a type with a method that needs to be called with an environment.
-    /// This could for example be a factory method that constructs a type, but needs other parts of the
-    /// environment for the construction. Alternatively you can use get_many and extract the exact types
-    /// you depend upon, and narrow the constructor of your type.
+    ///    This could for example be a factory method that constructs a type, but needs other parts of the
+    ///    environment for the construction. Alternatively you can use get_many and extract the exact types
+    ///    you depend upon, and narrow the constructor of your type.
     /// 2. If you need to remove some values from the environment before letting it be used by a descendent.
-    /// This is additional to possible shadowing, but instead of providing a shadowing value, the environment value
-    /// with the key is empty.
+    ///    This is additional to possible shadowing, but instead of providing a shadowing value, the environment value
+    ///    with the key is empty.
     pub fn extract<K: EnvironmentKey + ?Sized>(&mut self, f: impl FnOnce(Option<&K::Value>, &mut Environment)) {
         let id = TypeId::of::<K>();
         let value = self.data.remove(&id);
@@ -226,7 +232,7 @@ impl<'a> Debug for Environment<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let mut debug = f.debug_struct(type_name::<Environment<'a>>());
 
-        for (_, val) in &self.data {
+        for val in self.data.values() {
             match val {
                 InternalEnvironmentValue::Value(name, val) => {
                     debug.field(&format!("'{name}'"), *val);

@@ -112,7 +112,7 @@ impl<T: Debug + Clone + 'static> Deref for ValueRefMut<'_, T> {
             ValueRefMut::Borrow(value) => value.as_ref().unwrap(),
             ValueRefMut::Locked(value) => value.as_ref().unwrap().deref(),
             ValueRefMut::TupleState(_, val) => val.as_ref().unwrap(),
-            ValueRefMut::Read(val) => &*val
+            ValueRefMut::Read(val) => val
         }
     }
 }

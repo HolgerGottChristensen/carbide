@@ -36,18 +36,17 @@ impl<C: Widget> KeyboardEventHandler for KeyboardShortcut<C> {
             _ => false
         };
 
-        if handle_event {
-            if let Some(manager) = ctx.env.get_mut::<ShortcutManager>() {
+        if handle_event
+            && let Some(manager) = ctx.env.get_mut::<ShortcutManager>() {
                 manager.shortcut(self.id());
             }
-        }
     }
 }
 
 impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
-        if let Some(pressed) = event.value::<ShortcutPressed>() {
-            if pressed.0 == self.id() {
+        if let Some(pressed) = event.value::<ShortcutPressed>()
+            && pressed.0 == self.id() {
                 self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
                         text: ctx.text,
@@ -58,10 +57,9 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
                     });
                 });
             }
-        }
 
-        if let Some(released) = event.value::<ShortcutReleased>() {
-            if released.0 == self.id() {
+        if let Some(released) = event.value::<ShortcutReleased>()
+            && released.0 == self.id() {
                 self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
                         text: ctx.text,
@@ -72,7 +70,6 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
                     });
                 });
             }
-        }
     }
 }
 

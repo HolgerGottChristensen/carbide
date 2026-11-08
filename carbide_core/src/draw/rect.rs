@@ -128,7 +128,7 @@ impl Add<Position> for Rect {
     type Output = Rect;
 
     fn add(mut self, rhs: Position) -> Self::Output {
-        self.position = self.position + rhs;
+        self.position += rhs;
         self
     }
 }

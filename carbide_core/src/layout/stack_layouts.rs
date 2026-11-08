@@ -159,8 +159,8 @@ fn calculate_size_stack(
         idx += 1;
     });
 
-    children_flexibility_using_max_val.sort_by(|(a, _), (b, _)| b.cmp(&a));
-    children_flexibility_rest.sort_by(|(a, _), (b, _)| b.cmp(&a));
+    children_flexibility_using_max_val.sort_by(|(a, _), (b, _)| b.cmp(a));
+    children_flexibility_rest.sort_by(|(a, _), (b, _)| b.cmp(a));
 
     let mut max_cross_axis = 0.0;
 

@@ -30,7 +30,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
             } => {
                 info!("Initializing window");
 
-                let mut attributes = WindowAttributes::default()
+                let attributes = WindowAttributes::default()
                     .with_inner_size(Size::Logical(LogicalSize {
                         width: dimension.width,
                         height: dimension.height,
@@ -58,7 +58,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 let (window, accessibility_adapter) = if let Some(eventloop) = ctx.env.get::<ActiveEventLoopKey>() {
                     let window = Arc::new(eventloop.create_window(attributes).unwrap());
-                    let adapter = accesskit_winit::Adapter::with_event_loop_proxy(eventloop, &*window, EVENT_LOOP_PROXY.get().unwrap().clone());
+                    let adapter = accesskit_winit::Adapter::with_event_loop_proxy(eventloop, &window, EVENT_LOOP_PROXY.get().unwrap().clone());
 
                     (window, adapter)
                 } else {

@@ -2,8 +2,8 @@ use std::{env, fs};
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// This file originated from https://github.com/PistonDevelopers/find_folder/blob/master/src/lib.rs
-/// Updated to not use deprecated try macro
+// This file originated from https://github.com/PistonDevelopers/find_folder/blob/master/src/lib.rs
+// Updated to not use deprecated try macro
 
 /// Depth of recursion through kids.
 pub type KidsDepth = u8;
@@ -117,11 +117,10 @@ pub fn check_kids(depth: u8, name: &str, path: &Path) -> Result<PathBuf, Error> 
                 for entry in fs::read_dir(path)? {
                     let entry = entry?;
                     let entry_path = entry.path();
-                    if fs::metadata(&entry_path)?.is_dir() {
-                        if let Ok(folder) = check_kids(depth - 1, name, &entry_path) {
+                    if fs::metadata(&entry_path)?.is_dir()
+                        && let Ok(folder) = check_kids(depth - 1, name, &entry_path) {
                             return Ok(folder);
                         }
-                    }
                 }
                 err
             }

@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 use carbide::draw::Rect;
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::WidgetProperties;
 use crate::environment::{Environment, Exclusive};
 use crate::event::{AccessibilityEvent, AccessibilityEventContext, WindowEvent, WindowEventContext};
 use crate::lifecycle::InitializationContext;
@@ -30,7 +29,7 @@ impl OverlayManager {
         self.overlay = Some(OverlayAction::Clear);
     }
 
-    pub fn insert(&mut self, overlay: impl Widget + WidgetProperties<Kind=WidgetKindSimple>) {
+    pub fn insert(&mut self, overlay: impl Widget<Kind=WidgetKindSimple>) {
         self.overlay = Some(OverlayAction::Insert(overlay.boxed()));
     }
 

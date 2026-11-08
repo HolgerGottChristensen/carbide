@@ -12,25 +12,25 @@ impl BadgeSymbol {
             let height = width * 0.75;
             let spacing = width * 0.030;
             let middle = width * 0.5;
-            let topWidth = width * 0.226;
-            let topHeight = height * 0.488;
+            let top_width = width * 0.226;
+            let top_height = height * 0.488;
 
             context.add_lines([
                 Position::new(middle, spacing),
-                Position::new(middle - topWidth, topHeight - spacing),
-                Position::new(middle, topHeight / 2.0 + spacing),
-                Position::new(middle + topWidth, topHeight - spacing),
+                Position::new(middle - top_width, top_height - spacing),
+                Position::new(middle, top_height / 2.0 + spacing),
+                Position::new(middle + top_width, top_height - spacing),
                 Position::new(middle, spacing),
             ]);
 
-            context.move_to(middle, topHeight / 2.0 + spacing * 3.0);
+            context.move_to(middle, top_height / 2.0 + spacing * 3.0);
 
             context.add_lines([
-                Position::new(middle - topWidth, topHeight + spacing),
+                Position::new(middle - top_width, top_height + spacing),
                 Position::new(spacing, height - spacing),
                 Position::new(width - spacing, height - spacing),
-                Position::new(middle + topWidth, topHeight + spacing),
-                Position::new(middle, topHeight / 2.0 + spacing * 3.0),
+                Position::new(middle + top_width, top_height + spacing),
+                Position::new(middle, top_height / 2.0 + spacing * 3.0),
             ]);
 
             context.set_fill_style(Color::new_rgba(79, 79, 191, 128));

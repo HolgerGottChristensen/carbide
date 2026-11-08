@@ -9,7 +9,6 @@ pub trait ImageContext {
     /// load an image.
     fn exist(&self, id: &ImageId, env: &mut Environment) -> bool;
 
-    /// 
     fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics;
     fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool;
     fn update_vector(&mut self, id: &ImageId, description: Vec<RenderInstruction>, size: Dimension, env: &mut Environment) -> bool;

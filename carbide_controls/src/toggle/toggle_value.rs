@@ -3,17 +3,14 @@ use carbide_core::impl_state_value;
 use carbide_core::state::{AnyReadState, AnyState, ConvertInto, ConvertIntoRead, Map1, RMap1, RWMap1};
 
 #[derive(Clone, Debug, PartialEq)]
+#[derive(Default)]
 pub enum ToggleValue {
     True,
     Mixed,
+    #[default]
     False,
 }
 
-impl Default for ToggleValue {
-    fn default() -> Self {
-        ToggleValue::False
-    }
-}
 
 impl_state_value!(ToggleValue);
 

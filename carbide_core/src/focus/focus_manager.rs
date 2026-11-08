@@ -28,6 +28,12 @@ impl FocusManager {
     }
 }
 
+impl Default for FocusManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EnvironmentKey for FocusManager {
     type Value = FocusManager;
     type Access = Exclusive;

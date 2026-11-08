@@ -14,7 +14,7 @@ impl ShortcutManager {
     }
 
     pub fn shortcut(&mut self, id: WidgetId) -> bool {
-        if let Some(_) = self.shortcut_id {
+        if self.shortcut_id.is_some() {
             return false;
         }
 
@@ -25,6 +25,12 @@ impl ShortcutManager {
 
     pub fn has_shortcut(&self) -> Option<WidgetId> {
         self.shortcut_id
+    }
+}
+
+impl Default for ShortcutManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

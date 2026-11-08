@@ -40,15 +40,15 @@ impl EdgeInsets {
     }
 }
 
-impl Into<EdgeInsets> for f64 {
-    fn into(self) -> EdgeInsets {
-        EdgeInsets::all(self)
+impl From<f64> for EdgeInsets {
+    fn from(val: f64) -> Self {
+        EdgeInsets::all(val)
     }
 }
 
-impl Into<EdgeInsets> for u32 {
-    fn into(self) -> EdgeInsets {
-        EdgeInsets::all(self as f64)
+impl From<u32> for EdgeInsets {
+    fn from(val: u32) -> Self {
+        EdgeInsets::all(val as f64)
     }
 }
 

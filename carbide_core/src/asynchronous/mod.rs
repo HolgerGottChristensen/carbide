@@ -49,7 +49,7 @@ pub fn spawn_task<T: Send + 'static>(
     let task_with_oneshot = task.then(|message| async move {
         let _ = sender.send(message);
         event_sink.send(CoreEvent::Async);
-        ()
+        
     });
 
     let poll_message: Box<dyn Fn(&mut AsyncContext) -> bool> = Box::new(move |ctx| -> bool {

@@ -23,7 +23,7 @@ pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
         // In the or pattern, we need to ensure the idents from each case are the same.
         // We do not do any type checking, but only ensures the names match
         Pat::Or(i) => {
-            if i.cases.len() == 0 {
+            if i.cases.is_empty() {
                 return vec![]
             }
 

@@ -121,7 +121,7 @@ impl Render for Mandelbrot {
                     zoom,
                     center: Position::new(
                         CENTER.x + (xn - width / 2.0) / (zoom * width / 2.0),
-                        CENTER.y + (-1.0 * (yn - height / 2.0) / (zoom * height / 2.0))
+                        CENTER.y + (-(yn - height / 2.0) / (zoom * height / 2.0))
                     ),
                 };
 
@@ -131,7 +131,7 @@ impl Render for Mandelbrot {
                 let sink = get_event_sink();
 
                 rayon::spawn(move || {
-                    let info_for_job = info.clone();
+                    let info_for_job = info;
 
                     let image = generate_image(info_for_job.width, info_for_job.height, info_for_job.zoom, info_for_job.center);
 
@@ -155,7 +155,7 @@ impl Render for Mandelbrot {
         context.transform(transform, |this| {
             for x in start_tile_x..end_tile_x {
                 for y in start_tile_y..end_tile_y {
-                    self.images.get(&(x, y, 0)).map(|(id, info)| {
+                    if let Some((id, info)) = self.images.get(&(x, y, 0)) {
                         if this.image.exist(id, this.env) {
                             this.image(
                                 id,
@@ -166,7 +166,7 @@ impl Render for Mandelbrot {
                                 ImageMode::Image,
                             )
                         }
-                    });
+                    }
                 }
             }
         });
@@ -250,7 +250,7 @@ fn get_colormap(i: u32, za: f64) -> Color {
 
 fn point_to_complex(width: f64, height: f64, x: f64, y: f64, zxoff: f64, zyoff: f64, zoom: f64) -> Complex<f64> {
     let zx_coord = zxoff + ((width / height) * (x - width / 2.0) / (zoom * width / 2.0));
-    let zy_coord = zyoff + (-1.0 * (y - height / 2.0) / (zoom * height / 2.0));
+    let zy_coord = zyoff + (-(y - height / 2.0) / (zoom * height / 2.0));
 
     Complex::new(zx_coord, zy_coord)
 }

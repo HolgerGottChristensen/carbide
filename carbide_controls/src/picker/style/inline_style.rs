@@ -10,14 +10,13 @@ use carbide_core::state::{AnyReadState, AnyState, IntoState, LocalState, Map1, M
 use carbide_core::widget::{AnySequence, AnyWidget, Circle, CrossAxisAlignment, Ellipse, ForEach, HStack, IfElse, MouseArea, Text, VStack, Widget, WidgetExt, ZStack};
 use std::fmt::Debug;
 use carbide::widget::properties::WidgetKindSimple;
-use carbide::widget::WidgetProperties;
 use crate::identifiable::AnySelectableWidget;
 
 #[derive(Debug, Clone)]
 pub struct InlineStyle;
 
 impl InlineStyle {
-    fn delegate(label: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>, picker_selection_type: PickerSelectionType) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn delegate(label: Box<dyn AnyWidget>, selected: Box<dyn AnyState<T=bool>>, enabled: Box<dyn AnyReadState<T=bool>>, picker_selection_type: PickerSelectionType) -> impl Widget<Kind=WidgetKindSimple> {
         let focus = LocalState::new(Focus::Unfocused);
 
         let component = match picker_selection_type {
@@ -49,7 +48,7 @@ impl InlineStyle {
             .focused(focus)
     }
 
-    fn radio_button(selected: &Box<dyn AnyState<T=bool>>, enabled: &Box<dyn AnyReadState<T=bool>>, focus: &LocalState<Focus>) -> impl Widget + WidgetProperties<Kind=WidgetKindSimple> {
+    fn radio_button(selected: &Box<dyn AnyState<T=bool>>, enabled: &Box<dyn AnyReadState<T=bool>>, focus: &LocalState<Focus>) -> impl Widget<Kind=WidgetKindSimple> {
         let background_color = Map2::read_map(
             selected.clone(),
             enabled.clone(),
@@ -91,7 +90,9 @@ impl InlineStyle {
         });
 
 
-        let radio = ZStack::new((
+        
+
+        ZStack::new((
             Circle::new()
                 .fill(background_color)
                 .stroke(EnvironmentColor::OpaqueSeparator)
@@ -106,9 +107,7 @@ impl InlineStyle {
                 .stroke(outline_color)
                 .stroke_style(1.0)
                 .padding(-1.0)
-        ).frame(14.0, 14.0);
-
-        radio
+        ).frame(14.0, 14.0)
     }
 }
 

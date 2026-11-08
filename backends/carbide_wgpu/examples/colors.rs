@@ -62,7 +62,7 @@ fn main() {
                             HStack::new((
                                 Text::new(format!("{:?}", *item.value())),
                                 Rectangle::new()
-                                    .fill(item.clone())
+                                    .fill(*item)
                                     .stroke(EnvironmentColor::Label)
                                     .stroke_style(1.0)
                                     .frame(100.0, 30.0)

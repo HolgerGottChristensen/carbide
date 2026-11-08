@@ -47,7 +47,7 @@ impl<C: Widget, K: EnvironmentKey<Access=Shared>, V: ReadState<T=K::Value>> EnvU
     pub fn new(value: V, child: C) -> EnvUpdatingNew2<C, K, V> {
         EnvUpdatingNew2 {
             child,
-            key: PhantomData::default(),
+            key: PhantomData,
             value
         }
     }

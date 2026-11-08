@@ -71,7 +71,6 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         res
     }
 
-    ///
     pub fn shape(&mut self, shape: impl Into<DrawShape>, options: impl Into<DrawOptions>) {
         self.render.shape(&shape.into(), &options.into(), self.env);
     }

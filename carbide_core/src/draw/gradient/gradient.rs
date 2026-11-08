@@ -234,21 +234,21 @@ impl Gradient {
     }
 }
 
-impl Into<GradientPosition> for Alignment {
-    fn into(self) -> GradientPosition {
-        GradientPosition::Alignment(self)
+impl From<Alignment> for GradientPosition {
+    fn from(val: Alignment) -> Self {
+        GradientPosition::Alignment(val)
     }
 }
 
-impl Into<GradientPosition> for Position {
-    fn into(self) -> GradientPosition {
-        GradientPosition::Absolute(self)
+impl From<Position> for GradientPosition {
+    fn from(val: Position) -> Self {
+        GradientPosition::Absolute(val)
     }
 }
 
-impl Into<GradientPosition> for (f64, f64) {
-    fn into(self) -> GradientPosition {
-        GradientPosition::Relative(self.0, self.1)
+impl From<(f64, f64)> for GradientPosition {
+    fn from(val: (f64, f64)) -> Self {
+        GradientPosition::Relative(val.0, val.1)
     }
 }
 

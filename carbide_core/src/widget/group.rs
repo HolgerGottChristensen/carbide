@@ -103,7 +103,7 @@ impl<T: ?Sized + AnyWidget, W: Sequence<T>> Debug for Group<W, T> {
 impl<T: ?Sized + AnyWidget, W: Sequence<T>> Clone for Group<W, T> {
     fn clone(&self) -> Self {
         Group {
-            id: self.id.clone(),
+            id: self.id,
             sequence: self.sequence.clone(),
             phantom_data: Default::default(),
         }

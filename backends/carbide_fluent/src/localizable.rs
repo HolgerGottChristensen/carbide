@@ -6,6 +6,6 @@ pub trait Localizable: Debug + Clone + 'static {
 
 impl Localizable for &'static str {
     fn get(&self) -> &str {
-        *self
+        self
     }
 }

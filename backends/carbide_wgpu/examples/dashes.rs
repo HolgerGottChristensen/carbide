@@ -47,11 +47,10 @@ fn main() {
     let dash_pattern_input = Map1::map_owned(dash_pattern.clone(), |val, existing| {
         match (val, existing) {
             (Ok(val), Ok(existing)) => {
-                if let Ok(v) = parse_dash_pattern(existing) {
-                    if *val == v {
+                if let Ok(v) = parse_dash_pattern(existing)
+                    && *val == v {
                         return;
                     }
-                }
 
                 *existing = dash_pattern_to_string(val);
             }
@@ -123,14 +122,13 @@ fn main() {
                         ctx.set_line_join(*$line_join);
                         ctx.set_dash_mode(*$dash_mode);
 
-                        if *$dash {
-                            if let Ok(pattern) = $dash_pattern {
+                        if *$dash
+                            && let Ok(pattern) = $dash_pattern {
                                 ctx.set_dash_offset(*$dash_offset);
                                 ctx.set_dash_pattern(Some(pattern.clone()));
                                 ctx.set_dash_start_cap(*$dash_start_cap);
                                 ctx.set_dash_end_cap(*$dash_end_cap);
                             }
-                        }
 
                         ctx.set_stroke_style(WHITE);
 

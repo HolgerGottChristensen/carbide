@@ -119,15 +119,9 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T
                 let relative_to_position = *to - self.position;
 
                 let split = self.leading.dimension();
-                if relative_to_position.y > split.height - press_margin
+                self.hovering = relative_to_position.y > split.height - press_margin
                     && relative_to_position.y < split.height + press_margin
-                    && relative_to_position.x > 0.0
-                    && relative_to_position.x < self.width()
-                {
-                    self.hovering = true;
-                } else {
-                    self.hovering = false;
-                }
+                    && relative_to_position.x > 0.0 && relative_to_position.x < self.width();
 
                 if !self.dragging {
                     return;
@@ -160,17 +154,17 @@ impl<S: State<T=f64>, L: Widget, T: Widget> Layout for VSplit<S, L, T> {
         let (requested_top_height, requested_bottom_height) = match &mut self.split {
             SplitType::Start(offset) => {
                 offset.sync(ctx.env);
-                (offset.value().clone(), requested_size.height - offset.value().clone())
+                (*offset.value(), requested_size.height - *offset.value())
             },
             SplitType::Percent(percent) => {
                 percent.sync(ctx.env);
-                let leading = requested_size.height * percent.value().clone();
-                let trailing = requested_size.height * (1.0 - percent.value().clone());
+                let leading = requested_size.height * *percent.value();
+                let trailing = requested_size.height * (1.0 - *percent.value());
                 (leading, trailing)
             }
             SplitType::End(offset) => {
                 offset.sync(ctx.env);
-                (requested_size.height - offset.value().clone(), offset.value().clone())
+                (requested_size.height - *offset.value(), *offset.value())
             },
         };
 

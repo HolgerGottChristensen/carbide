@@ -28,19 +28,19 @@ impl Graph {
     }
 
     pub fn get_node(&self, node_id: usize) -> &Node {
-        &self.nodes[node_id as usize]
+        &self.nodes[node_id]
     }
 
     pub fn get_node_mut(&mut self, node_id: usize) -> &mut Node {
-        &mut self.nodes[node_id as usize]
+        &mut self.nodes[node_id]
     }
 
     pub fn get_edge(&self, edge_id: usize) -> &Edge {
-        &self.edges[edge_id as usize]
+        &self.edges[edge_id]
     }
 
     pub fn get_edge_mut(&mut self, edge_id: usize) -> &mut Edge {
-        &mut self.edges[edge_id as usize]
+        &mut self.edges[edge_id]
     }
 
     pub fn add_node(&mut self, mut node: Node) -> usize {
@@ -86,8 +86,8 @@ impl Graph {
 
         node.get_incoming_edges_iter()
             .map(move |edge_id: &usize| -> &Edge {
-                let edge = self.get_edge(*edge_id);
-                edge
+                
+                (self.get_edge(*edge_id)) as _
             })
     }
 
@@ -96,8 +96,8 @@ impl Graph {
 
         node.get_outgoing_edges_iter()
             .map(move |edge_id: &usize| -> &Edge {
-                let edge = self.get_edge(*edge_id);
-                edge
+                
+                (self.get_edge(*edge_id)) as _
             })
     }
 
@@ -150,12 +150,11 @@ impl Graph {
                 self.get_node(edge.to).position,
             );
 
-            if let Some(_) = line.closest_point_on_line(position) {
-                if line.dist_inf_line_to_point(position) < 5.0 {
+            if line.closest_point_on_line(position).is_some()
+                && line.dist_inf_line_to_point(position) < 5.0 {
                     number_of_close_lines += 1;
                     close_line_id = edge_id;
                 }
-            }
         }
 
         if number_of_close_lines != 1 {
@@ -324,8 +323,8 @@ impl Graph {
                         edge_after.neg_line.flip();
                     }
                 } else {
-                    let multiplier1 = if before.2 { (1.0 - before.3) } else { before.3 };
-                    let multiplier2 = if before.2 { before.3 } else { (1.0 - before.3) };
+                    let multiplier1 = if before.2 { 1.0 - before.3 } else { before.3 };
+                    let multiplier2 = if before.2 { before.3 } else { 1.0 - before.3 };
 
                     let offset1 = before.1.normal_offset(-before.4 * multiplier1);
                     let offset2 = before.1.normal_offset(before.4 * multiplier2);

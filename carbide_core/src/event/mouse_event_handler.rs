@@ -23,7 +23,6 @@ pub trait MouseEventHandler: CommonWidget + WidgetSync + Focusable {
         self.foreach_child(&mut |child| {
             child.process_mouse_event(event, ctx);
             if *ctx.consumed {
-                return;
             }
         });
     }

@@ -8,15 +8,15 @@ pub(crate) enum ListSelection<T: StateContract> {
     Multi(Box<dyn AnyState<T=HashSet<T>>>),
 }
 
-impl<T: StateContract> Into<ListSelection<T>> for LocalState<Option<T>> {
-    fn into(self) -> ListSelection<T> {
-        ListSelection::Single(self.as_dyn())
+impl<T: StateContract> From<LocalState<Option<T>>> for ListSelection<T> {
+    fn from(val: LocalState<Option<T>>) -> Self {
+        ListSelection::Single(val.as_dyn())
     }
 }
 
-impl<T: StateContract + Hash + Eq> Into<ListSelection<T>> for LocalState<HashSet<T>> {
-    fn into(self) -> ListSelection<T> {
-        ListSelection::Multi(self.as_dyn())
+impl<T: StateContract + Hash + Eq> From<LocalState<HashSet<T>>> for ListSelection<T> {
+    fn from(val: LocalState<HashSet<T>>) -> Self {
+        ListSelection::Multi(val.as_dyn())
     }
 }
 

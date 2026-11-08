@@ -66,11 +66,11 @@ impl Position {
         let mut y = self.y.fract();
 
         if x < 0.0 {
-            x = 1.0 + x;
+            x += 1.0;
         }
 
         if y < 0.0 {
-            y = 1.0 + y;
+            y += 1.0;
         }
 
         Position::new(x, y)

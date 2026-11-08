@@ -308,11 +308,10 @@ fn get_clip_rect(
     // should not be clipped.
     if use_node.tag_name() == Some(ElementId::Svg) {
         // Nested `svg` referenced by `use` still should be clipped, but by `use` bounds.
-        if state.use_size.0.is_none() && state.use_size.1.is_none() {
-            if !(use_node.has_attribute(AttributeId::Width) && use_node.has_attribute(AttributeId::Height)) {
+        if state.use_size.0.is_none() && state.use_size.1.is_none()
+            && !(use_node.has_attribute(AttributeId::Width) && use_node.has_attribute(AttributeId::Height)) {
                 return None;
             }
-        }
     }
 
     let (x, y, mut w, mut h) = {

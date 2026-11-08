@@ -35,7 +35,7 @@ impl ConvertIntoRead<SliderStepping<f32>> for f32 {
 
     fn convert<F: AnyReadState<T=f32> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map(f, |c| {
-            SliderStepping::Stepped(c.clone())
+            SliderStepping::Stepped(*c)
         })
     }
 }
@@ -45,7 +45,7 @@ impl ConvertIntoRead<SliderStepping<f64>> for f64 {
 
     fn convert<F: AnyReadState<T=f64> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map(f, |c| {
-            SliderStepping::Stepped(c.clone())
+            SliderStepping::Stepped(*c)
         })
     }
 }

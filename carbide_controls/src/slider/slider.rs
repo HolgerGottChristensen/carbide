@@ -199,10 +199,10 @@ impl<
                 KeyboardEvent::Press { key: Key::ArrowLeft, modifiers: ModifierKey::SHIFT, .. } => {
                     self.percent.set_value((value - SMOOTH_VALUE_SMALL_INCREMENT).max(0.0));
                 }
-                KeyboardEvent::Press { key: Key::ArrowRight, modifiers: _, .. } => {
+                KeyboardEvent::Press { key: Key::ArrowRight, .. } => {
                     self.percent.set_value((value + SMOOTH_VALUE_INCREMENT).min(1.0));
                 }
-                KeyboardEvent::Press { key: Key::ArrowLeft, modifiers: _, .. } => {
+                KeyboardEvent::Press { key: Key::ArrowLeft, .. } => {
                     self.percent.set_value((value - SMOOTH_VALUE_INCREMENT).max(0.0));
                 }
                 _ => ()

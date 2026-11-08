@@ -707,8 +707,8 @@ pub enum Key {
     F35,
 }
 
-impl Into<Key> for &str {
-    fn into(self) -> Key {
-        Key::Character(self.to_lowercase())
+impl From<&str> for Key {
+    fn from(val: &str) -> Self {
+        Key::Character(val.to_lowercase())
     }
 }

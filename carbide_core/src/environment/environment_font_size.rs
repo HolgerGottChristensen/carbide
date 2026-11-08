@@ -5,12 +5,14 @@ use crate::environment::EnvironmentKey;
 
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug, Copy)]
+#[derive(Default)]
 pub enum EnvironmentFontSize {
     LargeTitle,
     Title,
     Title2,
     Title3,
     Headline,
+    #[default]
     Body,
     Callout,
     Subhead,
@@ -57,15 +59,10 @@ impl EnvironmentKeyable for EnvironmentFontSize {
 
 impl EnvironmentFontSize {
     pub fn u32(&self) -> impl ReadState<T=u32> {
-        <EnvironmentFontSize as IntoReadState<u32>>::into_read_state(self.clone())
+        <EnvironmentFontSize as IntoReadState<u32>>::into_read_state(*self)
     }
 }
 
-impl Default for EnvironmentFontSize {
-    fn default() -> Self {
-        EnvironmentFontSize::Body
-    }
-}
 
 // ---------------------------------------------------
 //  Conversion implementations
