@@ -2,8 +2,8 @@ use carbide::draw::Alignment;
 use carbide::environment::EnvironmentColor;
 use crate::list::row_delegate::{AnyRowDelegate, AnySelectableRowDelegate, RowDelegate, SelectableRowDelegate};
 use crate::list::style::ListStyle;
-use carbide::widget::{AnySequence, AnyWidget, EdgeInsets, LazyVStack, Rectangle, Scroll, VStack, WidgetExt};
-use crate::list::list_row::AnyListRow;
+use carbide::widget::{AnySequence, AnyWidget, EdgeInsets, LazyVStack, Rectangle, RoundedRectangle, Scroll, VStack, WidgetExt};
+use crate::identifiable::AnySelectableWidget;
 
 #[derive(Copy, Clone, Debug)]
 pub struct InsetStyle;
@@ -51,27 +51,24 @@ impl AnyRowDelegate for InsetRowDelegate {
     }
 }
 
-
 #[derive(Clone, Debug)]
 struct InsetSelectableRowDelegate;
 
 impl AnySelectableRowDelegate for InsetSelectableRowDelegate {
-    fn call(&self, row: &dyn AnyListRow) -> Box<dyn AnyWidget> {
-        let child = row.widget();
-
-
-        VStack::new((
-            child
-                .fit()
-                .expand_width()
-                .alignment(Alignment::Leading)
-                .padding(EdgeInsets::vertical_horizontal(3.0, 0.0)),
-            Rectangle::new()
-                .fill(EnvironmentColor::Separator)
-                .frame_fixed_height(0.5)
-                .padding(EdgeInsets::vertical_horizontal(0.0, 2.0))
-        )).spacing(0.0)
-            .padding(EdgeInsets::vertical_horizontal(0.0, 10.0))
+    fn call(&self, child: &dyn AnySelectableWidget) -> Box<dyn AnyWidget> {
+        child
+            .as_widget()
+            .boxed()
+            .frame(0.0, 0.0)
+            .fit_height()
+            .expand_width()
+            .alignment(Alignment::Leading)
+            .padding(EdgeInsets::vertical_horizontal(3.0, 6.0))
+            .background(
+                RoundedRectangle::new(4.0)
+                    .fill(EnvironmentColor::SystemFill)
+                    .padding(EdgeInsets::vertical_horizontal(-4.0, 0.0))
+            )
             .boxed()
     }
 }

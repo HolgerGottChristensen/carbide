@@ -10,7 +10,7 @@ use crate::list::row_delegate::{RowDelegate, SelectableRowDelegate};
 use crate::list::style::inset::InsetStyle;
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) struct ListStyleKey;
+pub struct ListStyleKey;
 
 impl EnvironmentKey for ListStyleKey {
     type Value = Box<dyn ListStyle>;
@@ -31,6 +31,7 @@ pub trait ListStyle: WidgetStyle {
     }
 
     fn row(&self) -> RowDelegate;
+
     fn selectable_row(&self) -> SelectableRowDelegate;
 }
 

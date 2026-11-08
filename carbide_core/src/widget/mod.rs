@@ -57,6 +57,7 @@ pub use self::v_split::*;
 pub use self::v_stack::*;
 pub use self::v_stack_lazy::*;
 pub use self::z_stack::*;
+pub use self::styled::*;
 
 pub mod canvas;
 mod common;
@@ -116,6 +117,7 @@ mod keyboard_shortcut;
 mod foreach;
 mod v_stack_lazy;
 mod h_stack_lazy;
+mod styled;
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct WidgetId(u32, u64);

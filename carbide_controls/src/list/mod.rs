@@ -3,7 +3,7 @@ mod list_selection;
 mod selectable_delegate;
 mod style;
 mod row_delegate;
-mod list_row;
+mod row_styled;
 
 use carbide::event::ModifierKey;
 pub use list::*;
