@@ -1,5 +1,5 @@
 use carbide::draw::Scalar;
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 
 use crate::scale::{Axis, LinearScale, Scale, ScaleId};
 
@@ -29,9 +29,21 @@ impl DataBounds {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScaleBounds {
     bounds: IndexMap<ScaleId, DataBounds>,
+    offsets: IndexSet<ScaleId>,
 }
 
 impl ScaleBounds {
+    /// Asks for the scale `id` to be offset on this fit (see `Scale::set_offset`). Bar
+    /// controllers request it for the scale their bars are spread along.
+    pub fn request_offset(&mut self, id: ScaleId) {
+        self.offsets.insert(id);
+    }
+
+    /// Whether any controller requested an offset for the scale `id` on this fit.
+    pub fn offset_requested(&self, id: ScaleId) -> bool {
+        self.offsets.contains(&id)
+    }
+
     /// Grows the bounds of the scale `id` to include `min..=max`.
     pub fn include(&mut self, id: ScaleId, min: Scalar, max: Scalar) {
         self.bounds.entry(id).or_default().include(min, max);
@@ -85,11 +97,12 @@ impl Scales {
         self.scales.iter().map(|(id, scale)| (*id, scale.as_ref()))
     }
 
-    /// Sets each scale's range to the bounds collected for its id. A scale without any reported
-    /// data gets the range `0..1`.
+    /// Sets each scale's range to the bounds collected for its id, and its offset to whether one
+    /// was requested. A scale without any reported data gets the range `0..1`.
     pub fn fit(&mut self, bounds: &ScaleBounds) {
         for (id, scale) in &mut self.scales {
             let (min, max) = bounds.get(*id).range().unwrap_or((0.0, 1.0));
+            scale.set_offset(bounds.offset_requested(*id));
             scale.set_range(min, max);
         }
     }
@@ -132,6 +145,23 @@ mod tests {
         let order: Vec<ScaleId> = scales.iter().map(|(id, _)| id).collect();
         assert_eq!(order, vec![ScaleId::X, ScaleId::Y, ScaleId::new("right")]);
         assert_eq!(scales.get(ScaleId::X).unwrap().axis_position(), AxisPosition::Top);
+    }
+
+    /// An offset pads the mapping by half a tick step at both ends without changing the ticks:
+    /// for ticks 0..=6 (step 1) the mapped range becomes -0.5..6.5.
+    #[test]
+    fn offset_pads_half_a_tick_step_at_both_ends() {
+        let mut scale = LinearScale::new(Axis::Horizontal);
+        scale.set_range(0.0, 6.0);
+        assert_eq!(scale.ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        assert_eq!(scale.normalize(0.0), 0.0);
+
+        scale.set_offset(true);
+        scale.set_range(0.0, 6.0);
+
+        assert_eq!(scale.ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0], "the ticks don't change");
+        assert!((scale.normalize(0.0) - 0.5 / 7.0).abs() < 1e-12);
+        assert!((scale.normalize(6.0) - 6.5 / 7.0).abs() < 1e-12);
     }
 
     /// A side the axis can't use is ignored, keeping the axis default.

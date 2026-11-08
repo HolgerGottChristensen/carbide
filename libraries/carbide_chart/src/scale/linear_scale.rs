@@ -13,6 +13,9 @@ pub struct LinearScale {
     axis: Axis,
     position: AxisPosition,
     weight: i32,
+    grid_lines: bool,
+    tick_marks: bool,
+    offset: bool,
     min: Option<Scalar>,
     max: Option<Scalar>,
     range: Range<Scalar>,
@@ -32,6 +35,9 @@ impl LinearScale {
             axis,
             position: axis.default_position(),
             weight: 0,
+            grid_lines: true,
+            tick_marks: true,
+            offset: false,
             min: None,
             max: None,
             range: 0.0..1.0,
@@ -63,6 +69,21 @@ impl LinearScale {
     /// away from the chart area. Defaults to 0. See `Scale::weight`.
     pub fn weight(mut self, weight: i32) -> LinearScale {
         self.weight = weight;
+        self
+    }
+
+    /// Whether the scale draws grid lines across the chart area. Defaults to `true`. Turn it off
+    /// for secondary scales so their lines don't interleave with the primary scale's, like
+    /// Chart.js's `grid.drawOnChartArea: false`; the labels stay.
+    pub fn grid_lines(mut self, grid_lines: bool) -> LinearScale {
+        self.grid_lines = grid_lines;
+        self
+    }
+
+    /// Whether the scale draws tick marks in its band, between the chart area and its labels.
+    /// Defaults to `true`, like Chart.js's `grid.drawTicks`.
+    pub fn tick_marks(mut self, tick_marks: bool) -> LinearScale {
+        self.tick_marks = tick_marks;
         self
     }
 
@@ -126,6 +147,25 @@ impl Scale for LinearScale {
         self.weight
     }
 
+    /// With an offset, the mapped range is widened by half a tick step at both ends, as in
+    /// Chart.js's `LinearScaleBase::configure`.
+    fn normalize(&self, value: Scalar) -> Scalar {
+        let mut start = self.nice_range.start;
+        let mut end = self.nice_range.end;
+
+        if self.offset && !self.ticks.is_empty() {
+            let half_step = (end - start) / (self.ticks.len() - 1).max(1) as Scalar / 2.0;
+            start -= half_step;
+            end += half_step;
+        }
+
+        (value - start) / (end - start)
+    }
+
+    fn set_offset(&mut self, offset: bool) {
+        self.offset = offset;
+    }
+
     fn min(&self) -> Scalar {
         self.nice_range.start
     }
@@ -154,11 +194,11 @@ impl Scale for LinearScale {
     }
 
     fn display_ticks(&self) -> bool {
-        true
+        self.tick_marks
     }
 
     fn display_grid(&self) -> bool {
-        true
+        self.grid_lines
     }
 
     fn range(&self) -> Range<Scalar> {

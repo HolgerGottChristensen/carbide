@@ -5,7 +5,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataSetSequence};
 use crate::element::Stepped;
-use crate::scale::{ScaleBounds, Scales};
+use crate::scale::{Scale, ScaleBounds, Scales};
 
 #[derive(Clone, Debug)]
 pub struct ScatterController<D: DataSetSequence> {
@@ -45,7 +45,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());
 
-            let Some((x_min, x_max, y_min, y_max)) = scale_ranges(scales, &options) else {
+            let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
                 return;
             };
 
@@ -56,8 +56,8 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
             let mut prev_y = 0.0;
 
             dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
-                let x = (point.x() - x_min) / (x_max - x_min);
-                let y = (point.y() - y_min) / (y_max - y_min);
+                let x = x_scale.normalize(point.x());
+                let y = y_scale.normalize(point.y());
 
                 if first_in_dataset {
                     ctx.move_to(
@@ -144,13 +144,13 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());
 
-            let Some((x_min, x_max, y_min, y_max)) = scale_ranges(scales, &options) else {
+            let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
                 return;
             };
 
             dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
-                let x = (point.x() - x_min) / (x_max - x_min);
-                let y = (point.y() - y_min) / (y_max - y_min);
+                let x = x_scale.normalize(point.x());
+                let y = y_scale.normalize(point.y());
                 ctx.begin_path();
                 ctx.circle(
                     chart_area.width() * x + chart_area.left(),
@@ -181,12 +181,8 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
     }
 }
 
-/// The fitted ranges (x min, x max, y min, y max) of the scales a dataset is bound to, or `None`
-/// when the chart has no scale with one of those ids. The chart warns about unknown ids when it
-/// fits its scales (see `Chart::fit_scales`).
-fn scale_ranges(scales: &Scales, options: &DataSetOptions) -> Option<(Scalar, Scalar, Scalar, Scalar)> {
-    let x_scale = scales.get(options.x_scale)?;
-    let y_scale = scales.get(options.y_scale)?;
-
-    Some((x_scale.min(), x_scale.max(), y_scale.min(), y_scale.max()))
+/// The x and y scales a dataset is bound to, or `None` when the chart has no scale with one of
+/// those ids. The chart warns about unknown ids when it fits its scales (see `Chart::fit_scales`).
+pub(crate) fn dataset_scales<'a>(scales: &'a Scales, options: &DataSetOptions) -> Option<(&'a dyn Scale, &'a dyn Scale)> {
+    Some((scales.get(options.x_scale)?, scales.get(options.y_scale)?))
 }

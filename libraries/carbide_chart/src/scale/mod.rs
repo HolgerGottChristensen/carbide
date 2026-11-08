@@ -38,6 +38,21 @@ pub trait Scale: DynClone + Debug + 'static {
         0
     }
 
+    /// Where `value` falls along the scale, from 0 at the start of the chart area to 1 at its
+    /// end. Controllers and the grid map values to positions through this, so a scale's offset
+    /// (see `set_offset`) applies to everything drawn on it.
+    fn normalize(&self, value: Scalar) -> Scalar {
+        let range = self.range();
+        (value - range.start) / (range.end - range.start)
+    }
+
+    /// Pads the mapping by half a tick step at both ends, so values on the first and last tick
+    /// sit inside the chart area instead of on its edges, like Chart.js's `offset`. The chart
+    /// sets it on every fit, for the scales a controller requested it on (see
+    /// `ScaleBounds::request_offset`); bar charts use it so their first and last bars aren't cut
+    /// in half. Scales that don't support it ignore it.
+    fn set_offset(&mut self, _offset: bool) {}
+
     fn draw(&self, ctx: &mut CanvasContext, _env: &mut Environment, area: Rect) {
         self.draw_grid(ctx, area, 0.0);
         self.draw_border(ctx, area, 0.0);
@@ -47,7 +62,7 @@ pub trait Scale: DynClone + Debug + 'static {
     /// tick label for a vertical scale, or its tallest for a horizontal one. Scales on the same
     /// side are stacked outwards, each in its own band.
     fn size(&self, ctx: &mut CanvasContext) -> Scalar {
-        if !self.display_grid() {
+        if self.axis() == Axis::Radial {
             return 0.0;
         }
 
@@ -74,101 +89,82 @@ pub trait Scale: DynClone + Debug + 'static {
     // `Rect`'s y grows downwards on screen, so `area.bottom()` is the screen's top edge of the
     // area and `area.top()` its bottom edge.
 
+    /// Draws the scale's grid lines across the chart area (if `display_grid`), its tick marks in
+    /// its band (if `display_ticks`), and its tick labels. Turning the grid lines off keeps the
+    /// labels, like Chart.js's `grid.drawOnChartArea: false`, which is what secondary scales
+    /// usually want.
     fn draw_grid(&self, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
-        if self.display_grid() {
-            ctx.save();
-            ctx.set_line_width(1.0);
-            ctx.set_stroke_style(YELLOW);
-            ctx.set_fill_style(YELLOW);
+        // Per side: the chart area's edge the band starts at, which way is outwards across the
+        // axis (+1 or -1), the opposite edge the grid lines run to, and how labels hang off the
+        // end of the tick marks.
+        let (horizontal, area_edge, outward, far_edge, alignment) = match (self.axis(), self.axis_position()) {
+            (Axis::Horizontal, AxisPosition::Top) => (true, area.bottom(), -1.0, area.top(), Alignment::Bottom),
+            (Axis::Horizontal, _) => (true, area.top(), 1.0, area.bottom(), Alignment::Top),
+            (Axis::Vertical, AxisPosition::Right) => (false, area.right(), 1.0, area.left(), Alignment::Leading),
+            (Axis::Vertical, _) => (false, area.left(), -1.0, area.right(), Alignment::Trailing),
+            (Axis::Radial, _) => return,
+        };
 
+        let grid_lines = self.display_grid();
+        let tick_marks = self.display_ticks();
+        let tick_length = if tick_marks { TICK_LENGTH } else { 0.0 };
 
-            let tick_offset = if self.display_ticks() { TICK_LENGTH } else { 0.0 };
+        let band_edge = area_edge + outward * offset;
+        let tick_end = band_edge + outward * tick_length;
 
-            let ticks = self.ticks();
-            let range = self.range();
+        ctx.save();
+        ctx.set_line_width(1.0);
+        ctx.set_stroke_style(YELLOW);
+        ctx.set_fill_style(YELLOW);
+        ctx.set_text_align(alignment);
 
-            let difference = range.end - range.start;
+        ctx.begin_path();
 
+        for tick in self.ticks() {
+            let fraction = self.normalize(*tick);
 
-            ctx.begin_path();
+            // `along` is the tick's coordinate along the axis; `across` a coordinate across it.
+            let along = if horizontal {
+                area.left() + fraction * area.width()
+            } else {
+                area.bottom() + (1.0 - fraction) * area.height()
+            };
+            let point = |across: Scalar| if horizontal { (along, across) } else { (across, along) };
 
+            // Drawn as one segment from the tick mark's end through the chart area when the band
+            // touches the area, and as two separate segments when it is stacked further out.
+            let mut pen_down = false;
 
-            match (self.axis(), self.axis_position()) {
-                (Axis::Horizontal, AxisPosition::Top) => {
-                    let band_edge = area.bottom() - offset;
-                    ctx.set_text_align(Alignment::Bottom);
-                    for tick in ticks {
-                        let x = area.left() + (tick - range.start) / difference * area.width();
-                        ctx.move_to(x, band_edge - tick_offset);
-                        if offset > 0.0 {
-                            ctx.line_to(x, band_edge);
-                            ctx.move_to(x, area.bottom());
-                        }
-                        ctx.line_to(x, area.top());
+            if tick_marks {
+                let (x, y) = point(tick_end);
+                ctx.move_to(x, y);
+                pen_down = true;
 
-                        let value = &format_tick(*tick, ctx.env());
-
-                        ctx.fill_text(value, x, band_edge - tick_offset);
-                    }
+                if offset > 0.0 || !grid_lines {
+                    let (x, y) = point(band_edge);
+                    ctx.line_to(x, y);
+                    pen_down = false;
                 }
-                (Axis::Horizontal, _) => {
-                    let band_edge = area.top() + offset;
-                    ctx.set_text_align(Alignment::Top);
-                    for tick in ticks {
-                        let x = area.left() + (tick - range.start) / difference * area.width();
-                        ctx.move_to(x, band_edge + tick_offset);
-                        if offset > 0.0 {
-                            ctx.line_to(x, band_edge);
-                            ctx.move_to(x, area.top());
-                        }
-                        ctx.line_to(x, area.bottom());
-
-                        let value = &format_tick(*tick, ctx.env());
-
-                        ctx.fill_text(value, x, band_edge + tick_offset);
-                    }
-                }
-                (Axis::Vertical, AxisPosition::Right) => {
-                    let band_edge = area.right() + offset;
-                    ctx.set_text_align(Alignment::Leading);
-                    for tick in ticks {
-                        let y = area.bottom() + (1.0 - ((tick - range.start) / difference)) * area.height();
-                        ctx.move_to(band_edge + tick_offset, y);
-                        if offset > 0.0 {
-                            ctx.line_to(band_edge, y);
-                            ctx.move_to(area.right(), y);
-                        }
-                        ctx.line_to(area.left(), y);
-
-                        let value = &format_tick(*tick, ctx.env());
-
-                        ctx.fill_text(value, band_edge + tick_offset, y);
-                    }
-                }
-                (Axis::Vertical, _) => {
-                    let band_edge = area.left() - offset;
-                    ctx.set_text_align(Alignment::Trailing);
-                    for tick in ticks {
-                        let y = area.bottom() + (1.0 - ((tick - range.start) / difference)) * area.height();
-                        ctx.move_to(band_edge - tick_offset, y);
-                        if offset > 0.0 {
-                            ctx.line_to(band_edge, y);
-                            ctx.move_to(area.left(), y);
-                        }
-                        ctx.line_to(area.right(), y);
-
-                        let value = &format_tick(*tick, ctx.env());
-
-                        ctx.fill_text(value, band_edge - tick_offset, y);
-                    }
-                }
-                (Axis::Radial, _) => {}
             }
 
-            ctx.stroke();
+            if grid_lines {
+                if !pen_down {
+                    let (x, y) = point(area_edge);
+                    ctx.move_to(x, y);
+                }
 
-            ctx.restore();
+                let (x, y) = point(far_edge);
+                ctx.line_to(x, y);
+            }
+
+            let value = &format_tick(*tick, ctx.env());
+            let (x, y) = point(tick_end);
+            ctx.fill_text(value, x, y);
         }
+
+        ctx.stroke();
+
+        ctx.restore();
     }
 
     fn draw_border(&self, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {

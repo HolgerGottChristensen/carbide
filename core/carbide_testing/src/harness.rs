@@ -1,6 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Condvar, Mutex};
+use std::rc::{Rc, Weak};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use carbide_core::accessibility::AccessibilityContext;
@@ -45,6 +46,38 @@ use crate::test_scene::TestScene;
 /// be created together. Correctness over speed: register fresh every time.
 fn register_harness_plugins(env: &mut Environment<'static>) {
     futures::executor::block_on(register_plugins(env));
+}
+
+/// Held by every live `Harness`, so harnesses on different threads never exist at the same time.
+///
+/// `cargo test` runs tests on parallel threads, and harnesses alive on several threads at once
+/// crash the test binary intermittently with SIGSEGV: in one measurement 1 run in 12 of
+/// carbide_testing's rendering tests crashed in parallel, and 0 in 12 with `--test-threads=1`.
+/// The root cause in the headless wgpu path is not yet known. Harnesses also share global state:
+/// `update_scale_factor` sets the scale factor for `WindowId::dummy()`, the same id for every
+/// harness. Holding this lock for a harness's whole lifetime gives every crate's rendering tests
+/// the serial behaviour without each having to remember `--test-threads=1`.
+static RENDER_LOCK: Mutex<()> = Mutex::new(());
+
+thread_local! {
+    /// The lock this thread already holds, if any. Several harnesses alive at once on one thread
+    /// (e.g. `toggle_accessible_and_mouse_paths_agree`) share it; the lock is released when the
+    /// last of them is dropped.
+    static HELD_RENDER_LOCK: RefCell<Weak<MutexGuard<'static, ()>>> = RefCell::new(Weak::new());
+}
+
+fn acquire_render_lock() -> Rc<MutexGuard<'static, ()>> {
+    HELD_RENDER_LOCK.with(|held| {
+        if let Some(guard) = held.borrow().upgrade() {
+            return guard;
+        }
+
+        // A failing snapshot panics in `Harness::drop` while holding the lock, which poisons it.
+        // The lock guards no data, only exclusivity, so a poisoned lock is still fine to take.
+        let guard = Rc::new(RENDER_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
+        *held.borrow_mut() = Rc::downgrade(&guard);
+        guard
+    })
 }
 
 /// Installed as the global `carbide_core::asynchronous` event sink for a `Harness`'s lifetime, in
@@ -166,6 +199,9 @@ pub struct Harness {
     virtual_now: Instant,
     async_signal: TestEventSink,
     test_scope: Option<String>,
+    /// See `RENDER_LOCK`. Declared last, so it is dropped last: the renderer and every other
+    /// field are gone before another thread's harness can start.
+    _render_lock: Rc<MutexGuard<'static, ()>>,
 }
 
 impl Harness {
@@ -182,6 +218,9 @@ impl Harness {
     /// created would silently keep using the *first* sample count requested, not the new one.
     /// `resize()` keeps whatever `scale_factor`/`msaa` the `Harness` was constructed with.
     pub fn new_with_options<C: Widget>(root: C, dimension: Dimension, scale_factor: Scalar, msaa: WgpuMsaa) -> Self {
+        // Before anything else: `update_scale_factor` below already touches shared state.
+        let render_lock = acquire_render_lock();
+
         let window_id = WindowId::dummy();
         update_scale_factor(window_id, scale_factor);
 
@@ -239,6 +278,7 @@ impl Harness {
             virtual_now: Instant::now(),
             async_signal,
             test_scope: current_test_scope(),
+            _render_lock: render_lock,
         }
     }
 

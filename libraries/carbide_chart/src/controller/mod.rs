@@ -2,11 +2,13 @@ use std::fmt::Debug;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
+pub use bar_controller::BarController;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;
 use crate::scale::{ScaleBounds, Scales};
 
+mod bar_controller;
 mod controller_sequence;
 mod line_controller;
 mod scatter_controller;

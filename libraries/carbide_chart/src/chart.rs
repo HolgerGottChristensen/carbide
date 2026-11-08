@@ -181,7 +181,7 @@ mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
     use indexmap::IndexMap;
-    use crate::controller::{ControllerSequence, ScatterController};
+    use crate::controller::{BarController, ControllerSequence, ScatterController};
     use crate::dataset::DatasetExt;
     use crate::scale::{Axis, AxisPosition, LinearScale, ScaleId};
     use super::{Chart, SCALE_SPACING};
@@ -343,6 +343,26 @@ mod tests {
         assert_eq!(layout.offset(LIGHT), 30.0 + SCALE_SPACING);
         assert_eq!(layout.offset(HEAVY), 30.0 + SCALE_SPACING + 10.0 + SCALE_SPACING);
         assert_eq!(layout.chart_area.left(), 30.0 + 30.0 + 10.0 + 20.0 + 2.0 * SCALE_SPACING);
+    }
+
+    /// A bar controller makes its y scale include zero, so bars grow from it, and offsets its x
+    /// scale so the first and last bars sit inside the chart area. A scatter controller on its own
+    /// does neither.
+    #[test]
+    fn bars_include_zero_and_offset_their_x_scale() {
+        let revenue = vec![120.0, 150.0, 190.0];
+
+        let bars = fitted(Chart::new(BarController::new(revenue.clone())));
+        let (y_min, _) = scale_range(&bars, ScaleId::Y);
+        assert!(y_min <= 0.0, "bars should start the y scale at zero, but it starts at {y_min}");
+
+        let x = bars.scales.get(ScaleId::X).unwrap();
+        assert!(x.normalize(0.0) > 0.0 && x.normalize(2.0) < 1.0, "the first and last bar should sit inside the chart area");
+
+        let points = fitted(Chart::new(ScatterController::new(revenue)));
+        let (y_min, _) = scale_range(&points, ScaleId::Y);
+        assert!(y_min > 0.0, "without bars the y scale needn't include zero, but starts at {y_min}");
+        assert_eq!(points.scales.get(ScaleId::X).unwrap().normalize(0.0), 0.0);
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {
