@@ -50,8 +50,6 @@ pub async fn register_plugins(env: &mut Environment<'static>) {
         (plugin.register)(env).await;
         registered.push(plugin.registers);
     }
-
-    println!("{:#?}", env);
 }
 
 #[macro_export]
