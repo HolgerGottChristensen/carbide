@@ -1,7 +1,7 @@
 use carbide_core::draw::{Alignment, Color, Dimension, Position};
 use carbide_core::draw::gradient::Gradient;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let colors = vec![

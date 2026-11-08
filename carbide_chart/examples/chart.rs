@@ -7,7 +7,7 @@ use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::state::{LocalState, ValueState};
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{locale, LocaleExt};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new()

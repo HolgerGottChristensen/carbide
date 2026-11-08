@@ -4,7 +4,7 @@ use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtNew};
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let text_state = LocalState::new("Hello World!".to_string());

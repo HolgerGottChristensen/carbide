@@ -8,7 +8,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::state::LocalState;
 use carbide_core::time::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 /// Multi-stop analogue of `transition.rs`: a toast slides in, holds, then
 /// slides back out, using `Chain::then()` with a `Delay` in the middle for

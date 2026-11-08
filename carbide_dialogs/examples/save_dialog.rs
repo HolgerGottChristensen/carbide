@@ -4,7 +4,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
 use carbide_dialogs::save_dialog::SaveDialog;
 use carbide_dialogs::{DialogsExt, FileType, NativeStyle};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

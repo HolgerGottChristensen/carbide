@@ -5,7 +5,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::state::ValueState;
 use carbide_core::widget::WidgetExt;
 use carbide_fluent::{locale, LocaleExt};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 
 fn main() {

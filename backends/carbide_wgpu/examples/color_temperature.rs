@@ -3,7 +3,7 @@ use carbide_core::color::Color;
 use carbide_core::draw::{Dimension};
 use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::{Rectangle, Text, VStack, WidgetExt};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

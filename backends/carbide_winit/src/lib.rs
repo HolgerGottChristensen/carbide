@@ -1,4 +1,11 @@
-//! A function for converting a `winit::Event` to a `carbide::event::Input`.
+//! Runs carbide applications in winit windows: owns the event loop, the `Application` and its
+//! `Window` scenes, and converts winit events to carbide events. Rendering is done by whichever
+//! renderer has registered a `WindowRendererFactory` in the environment. With the default `wgpu`
+//! feature that is carbide_wgpu.
+
+// Registers carbide_wgpu as the renderer for every window, using its plugin.
+#[cfg(feature = "wgpu")]
+extern crate carbide_wgpu;
 pub use winit::*;
 use winit::event::{MouseButton as WinitMouseButton, TouchPhase as WinitTouchPhase};
 use winit::keyboard::{Key as WinitKey, NamedKey};
@@ -7,19 +14,17 @@ use winit::window::CursorIcon;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::event::{Key, MouseButton, TouchPhase};
 pub use event_handler::*;
-use winit::raw_window_handle_05::RawWindowHandle;
-use carbide_core::environment::Shared;
 
 mod event_handler;
 pub mod custom_event;
+mod app;
+mod proxy_event_loop;
+mod carbide_window;
 
-#[derive(Copy, Clone, Debug)]
-pub struct WindowHandleKey;
+pub use app::Application;
+pub use carbide_window::Window;
 
-impl carbide_core::environment::EnvironmentKey for WindowHandleKey {
-    type Value = RawWindowHandle;
-    type Access = Shared;
-}
+pub use carbide_windowing::WindowHandleKey;
 
 /// Types that have access to a `winit::Window` and can provide the necessary dimensions and hidpi
 /// factor for converting `winit::Event`s to `carbide::event::Input`, as well as set the mouse

@@ -3,7 +3,7 @@ use carbide_core::draw::gradient::Gradient;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::text::text_wrap::Wrap;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

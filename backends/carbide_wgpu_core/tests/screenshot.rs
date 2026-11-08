@@ -2,7 +2,7 @@
 //!
 //! Each test uploads a known 100x100 pattern into a texture, reads it back and compares the
 //! result against a blessed PNG in `tests/snapshots/screenshot/{test}/{name}.png`, the same
-//! layout the `carbide_wgpu` harness uses. Run with `BLESS=true` to create or update the
+//! layout the `carbide_testing` harness uses. Run with `BLESS=true` to create or update the
 //! blessed images. On a mismatch, the actual output is written next to the blessed image as
 //! `{name}.new.png`.
 //!

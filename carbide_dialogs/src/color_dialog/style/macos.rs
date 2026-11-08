@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::color_dialog::style::ColorDialogStyle;
 use carbide::color::{Color, ColorExt, RED};
 use carbide::environment::Environment;
-use carbide::event::{CoreEvent, EventSinkKey, NoopEventSink};
+use carbide::event::{CoreEvent, EventSink, EventSinkKey, NoopEventSink};
 use carbide::state::{AnyReadState, AnyState, LocalState, ReadState, State, StateExtNew, StateSync};
 use objc2::rc::Retained;
 use objc2::runtime::NSObject;

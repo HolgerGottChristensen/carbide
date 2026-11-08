@@ -3,7 +3,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 use std::collections::HashSet;
 use carbide_controls::list::PlainStyle;
 

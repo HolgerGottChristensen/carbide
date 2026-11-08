@@ -7,7 +7,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, RepeatMode};
 use carbide_core::time::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 /// Direct multi-stop analogue of `animate_on_click.rs`, using the new
 /// composable keyframe/timeline engine instead of the single-tween

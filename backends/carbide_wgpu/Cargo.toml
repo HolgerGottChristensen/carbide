@@ -12,53 +12,37 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 
 [features]
-default = ["lyon", "cosmic_text"]
+default = ["lyon", "cosmic_text", "windowing"]
 # Registers carbide_lyon as the tesselator used to render shapes.
 lyon = ["dep:carbide_lyon"]
 # Registers carbide_cosmic_text as the text context used to lay out and render text.
 cosmic_text = ["dep:carbide_cosmic_text"]
-controls = ["carbide_controls"]
 icons = ["carbide_icons"]
-# Enables the headless rendering-regression-test fixture (carbide_wgpu::testing).
-testing = ["dep:image-compare", "dep:serde_json", "accesskit/serde"]
+# Registers a window renderer, so windowing backends such as carbide_winit can render with wgpu.
+windowing = ["dep:carbide_windowing"]
+# Exposes the headless renderer hooks (carbide_wgpu::testing) that carbide_testing builds on.
+testing = ["dep:serde_json"]
 
 [dependencies]
 carbide_core.workspace = true
-carbide_winit.workspace = true
+carbide_windowing = { workspace = true, optional = true }
 carbide_lyon = { workspace = true, optional = true }
 carbide_tesselation.workspace = true
-carbide_controls = { workspace = true, optional = true }
 carbide_cosmic_text = { workspace = true, optional = true }
 carbide_icons = { workspace = true, optional = true }
 carbide_wgpu_core.workspace = true
 log.workspace = true
 wgpu.workspace = true
-futures.workspace = true
 bytemuck.workspace = true
-walkdir.workspace = true
 #smaa = "0.4.0"
 typed-arena.workspace = true
-once_cell.workspace = true
 dashmap.workspace = true
-accesskit_winit.workspace = true
-accesskit.workspace = true
-smallvec.workspace = true
 image.workspace = true
-image-compare = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-oneshot.workspace = true
-
-
-[target.'cfg(target_os="macos")'.dependencies]
-block.workspace = true
-cocoa.workspace = true
-objc.workspace = true
-core-graphics.workspace = true
-foreign-types.workspace = true
 
 [dev-dependencies]
-carbide_wgpu = { workspace = true, features = ["controls", "icons", "testing"] }
-carbide_winit.workspace = true
+carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_winit = { workspace = true, features = ["controls"] }
 carbide_icons = { workspace = true, features = ["lucide"] }
 carbide_controls.workspace = true
 carbide_macro.workspace = true
@@ -72,14 +56,9 @@ chrono.workspace = true
 surf.workspace = true
 tokio = { workspace = true, features = ["full"] }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger.workspace = true
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-console_error_panic_hook.workspace = true
-console_log.workspace = true
-wasm-bindgen.workspace = true
-wasm-bindgen-futures.workspace = true
+[[test]]
+name = "window_renderer_plugin"
+required-features = ["windowing"]
 
 [[example]]
 name = "async"
@@ -88,10 +67,6 @@ required-features = ["carbide_core/async-std"]
 [[example]]
 name = "async_tokio"
 required-features = ["carbide_core/tokio"]
-
-[[test]]
-name = "rendering"
-required-features = ["testing"]
 
 [lints]
 workspace = true

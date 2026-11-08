@@ -7,14 +7,13 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::{Arc, OnceLock};
 use walkdir::WalkDir;
-use carbide::environment::Shared;
-use carbide::plugin::register_plugins;
-use crate::image_context::WGPUImageContext;
+use carbide_core::environment::Shared;
+use carbide_core::plugin::register_plugins;
 use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::draw::{Dimension, ImageId};
+use carbide_core::draw::{Dimension, ImageContext, ImageId};
 use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::event::{ApplicationEvent, EventSink, EventSinkKey, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::FocusManager;
@@ -22,15 +21,16 @@ use carbide_core::lifecycle::InitializationContext;
 use carbide_core::locate_folder;
 use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{RenderInstruction, RenderInstructionCache};
+use carbide_windowing::WindowRendererFactory;
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContextKey;
 use carbide_core::widget::WidgetId;
-use carbide_winit::application::ApplicationHandler;
-use carbide_winit::custom_event::CustomEvent;
-use carbide_winit::event::WindowEvent;
-use carbide_winit::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
-use carbide_winit::window::WindowId as WinitWindowId;
-use carbide_winit::{NewEventHandler, RequestRedraw};
+use crate::application::ApplicationHandler;
+use crate::custom_event::CustomEvent;
+use crate::event::WindowEvent;
+use crate::event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy};
+use crate::window::WindowId as WinitWindowId;
+use crate::{NewEventHandler, RequestRedraw};
 
 pub static EVENT_LOOP_PROXY: OnceLock<EventLoopProxy<CustomEvent>> = OnceLock::new();
 
@@ -155,6 +155,10 @@ impl Application {
 
         register_plugins(&mut environment).await;
 
+        let image_context = (environment.get::<WindowRendererFactory>()
+            .expect("No renderer is registered. Enable carbide_winit's `wgpu` feature, or link another renderer crate")
+            .image_context)();
+
         let text_context = TextContextKey::get_mut(&mut environment);
         for font in fonts {
             text_context.add_font(font);
@@ -165,6 +169,7 @@ impl Application {
             scenes,
             event_handler,
             environment,
+            image_context,
             animation_manager: AnimationManager::new(),
             application_manager: ApplicationManager::new(),
             focus_manager: FocusManager::new(),
@@ -175,7 +180,7 @@ impl Application {
 
         #[cfg(target_arch = "wasm32")]
         {
-            use carbide_winit::platform::web::EventLoopExtWebSys;
+            use crate::platform::web::EventLoopExtWebSys;
             event_loop.spawn_app(running)
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -204,6 +209,8 @@ pub struct RunningApplication {
     scenes: Scenes,
     event_handler: NewEventHandler,
     environment: Environment<'static>,
+    /// Provided by the renderer registered in the environment.
+    image_context: Box<dyn ImageContext>,
     animation_manager: AnimationManager,
     application_manager: ApplicationManager,
     focus_manager: FocusManager,
@@ -239,7 +246,7 @@ impl RunningApplication {
                         // when the application event Resumed is sent.
                         if self.latest_application_event == Some(ApplicationEvent::Resumed) {
                             scene.process_window_event(&carbide_core::event::WindowEvent::Initialize, &mut WindowEventContext {
-                                image: &mut WGPUImageContext,
+                                image: &mut *self.image_context,
                                 env,
                                 is_current: &false, // todo
                                 window_id: &0, // todo
@@ -288,7 +295,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<EventSinkKey>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                    self.event_handler.resumed_event(&mut self.scenes, &mut WGPUImageContext, env);
+                    self.event_handler.resumed_event(&mut self.scenes, &mut *self.image_context, env);
 
                     for scene in &mut self.scenes {
                         scene.process_initialization(&mut InitializationContext {
@@ -317,7 +324,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
                                 env.with::<EventSinkKey>(&self.event_sink, |env| {
                                     for scene in &mut self.scenes {
-                                        request += self.event_handler.user_event(&event, scene, &mut WGPUImageContext, env, self.id);
+                                        request += self.event_handler.user_event(&event, scene, &mut *self.image_context, env, self.id);
                                     }
                                 })
                             })
@@ -350,7 +357,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                         env.with::<FocusManager>(&mut self.focus_manager, |env| {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
                                 env.with::<EventSinkKey>(&self.event_sink, |env| {
-                                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut WGPUImageContext, env, self.id);
+                                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut *self.image_context, env, self.id);
                                 })
                             })
                         })
@@ -369,7 +376,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env.with::<EventSinkKey>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                        self.event_handler.suspended_event(&mut self.scenes, &mut WGPUImageContext, env);
+                        self.event_handler.suspended_event(&mut self.scenes, &mut *self.image_context, env);
                     })
                 })
             })
@@ -383,7 +390,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env.with::<EventSinkKey>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                        self.event_handler.exited_event(&mut self.scenes, &mut WGPUImageContext, env);
+                        self.event_handler.exited_event(&mut self.scenes, &mut *self.image_context, env);
                     })
                 })
             })

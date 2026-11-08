@@ -151,7 +151,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn resumed_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut impl ImageContext, env: &mut Environment) {
+    pub fn resumed_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut dyn ImageContext, env: &mut Environment) {
         for scene in scenes.iter_mut() {
             scene.process_application_event(&ApplicationEvent::Resumed, &mut ApplicationEventContext {
                 image: image_context,
@@ -160,7 +160,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn suspended_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut impl ImageContext, env: &mut Environment) {
+    pub fn suspended_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut dyn ImageContext, env: &mut Environment) {
         for scene in scenes.iter_mut() {
             scene.process_application_event(&ApplicationEvent::Suspended, &mut ApplicationEventContext {
                 image: image_context,
@@ -169,7 +169,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn exited_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut impl ImageContext, env: &mut Environment) {
+    pub fn exited_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut dyn ImageContext, env: &mut Environment) {
         for scene in scenes.iter_mut() {
             scene.process_application_event(&ApplicationEvent::Exited, &mut ApplicationEventContext {
                 image: image_context,
@@ -178,7 +178,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: &WindowEvent, window_id: WindowId, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut impl ImageContext, env: &mut Environment, id: WidgetId) -> RequestRedraw {
+    pub fn window_event<'a: 'b, 'b, 'c: 'a>(&'a mut self, event: &WindowEvent, window_id: WindowId, scenes: &'b mut [Box<dyn AnyScene>], image_context: &'a mut dyn ImageContext, env: &mut Environment, id: WidgetId) -> RequestRedraw {
         match event {
             WindowEvent::Moved(position) => {
                 let logical_position = position.to_logical(scale_factor(window_id));
@@ -384,7 +384,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn mouse_input(&mut self, button: MouseButton, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         match state {
             ElementState::Pressed => {
                 let id = self.next_id();
@@ -502,7 +502,7 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn user_event(&mut self, event: &CustomEvent, target: &mut impl AnyScene, image_context: &mut impl ImageContext, env: &mut Environment, id: WidgetId) -> RequestRedraw {
+    pub fn user_event(&mut self, event: &CustomEvent, target: &mut impl AnyScene, image_context: &mut dyn ImageContext, env: &mut Environment, id: WidgetId) -> RequestRedraw {
         match event {
             CustomEvent::Core(core_event) => {
                 check_tasks(&mut AsyncContext {
@@ -555,7 +555,7 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn mouse_wheel(&mut self, delta: MouseScrollDelta, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         let (x, y) = match delta {
             MouseScrollDelta::PixelDelta(delta) => {
                 let LogicalPosition { x, y } = delta.to_logical::<f64>(scale_factor(window_id));
@@ -593,7 +593,7 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn focus(&mut self, focus: bool, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn focus(&mut self, focus: bool, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         if focus {
             for scene in scenes.iter_mut() {
                 scene.process_window_event(&carbide_core::event::WindowEvent::Focus, &mut WindowEventContext {
@@ -617,7 +617,7 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn keyboard(&mut self, logical_key: Key, no_modifier_key: Key, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn keyboard(&mut self, logical_key: Key, no_modifier_key: Key, state: ElementState, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         let key = convert_key(&logical_key);
         let no_modifier_key = convert_key(&no_modifier_key);
 
@@ -711,7 +711,7 @@ impl NewEventHandler {
         RequestRedraw::True
     }
 
-    pub fn ime(&mut self, ime: Ime, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn ime(&mut self, ime: Ime, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         match ime {
             Ime::Enabled => RequestRedraw::False,
             Ime::Preedit(s, cursor) => {
@@ -746,7 +746,7 @@ impl NewEventHandler {
         }
     }
 
-    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut impl ImageContext, env: &mut Environment) -> RequestRedraw {
+    pub fn cursor_moved(&mut self, position: PhysicalPosition<f64>, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
         let last_mouse_xy = self.mouse_position;
 
         let LogicalPosition { x, y } = position.to_logical::<f64>(scale_factor(window_id));

@@ -15,8 +15,8 @@ description = "A crate that includes the other carbide crates and where features
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
-controls = ["carbide_controls", "carbide_wgpu/controls"]
+default = ["carbide_winit", "carbide_wgpu", "carbide_macro", "carbide_core/tokio"]
+controls = ["carbide_controls", "carbide_winit/controls"]
 media = ["carbide_media", "icons"]
 chart = ["carbide_chart"]
 dialogs = ["carbide_dialogs"]
@@ -28,6 +28,7 @@ icons = ["carbide_icons", "carbide_wgpu/icons", "carbide_icons/lucide"]
 carbide_core.workspace = true
 carbide_macro = { workspace = true, optional = true }
 carbide_controls = { workspace = true, optional = true }
+carbide_winit = { workspace = true, optional = true }
 carbide_wgpu = { workspace = true, optional = true }
 carbide_3d = { workspace = true, optional = true }
 carbide_wgpu_3d = { workspace = true, optional = true }

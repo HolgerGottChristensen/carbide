@@ -2,7 +2,7 @@ use carbide_core::color::{GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::environment::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

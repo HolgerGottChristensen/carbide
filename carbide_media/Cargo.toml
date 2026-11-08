@@ -24,6 +24,7 @@ cocoa.workspace = true
 
 [dev-dependencies]
 carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_winit.workspace = true
 carbide_icons = { workspace = true, features = ["lucide"] }
 
 [lints]

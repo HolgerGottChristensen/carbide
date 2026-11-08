@@ -3,7 +3,7 @@ use carbide_controls::{ControlsExt, List};
 use carbide_core::draw::{AutomaticStyle, Dimension};
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

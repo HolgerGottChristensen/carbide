@@ -7,7 +7,7 @@ use carbide_core::state::LocalState;
 use carbide_core::widget::*;
 use carbide_dialogs::color_dialog::ColorDialog;
 use carbide_dialogs::{DialogsExt, NativeStyle};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

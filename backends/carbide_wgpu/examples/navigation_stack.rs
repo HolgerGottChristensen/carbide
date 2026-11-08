@@ -3,7 +3,7 @@ use carbide_controls::ControlsExt;
 use carbide_core::draw::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new()

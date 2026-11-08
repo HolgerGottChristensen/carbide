@@ -4,7 +4,7 @@ use carbide_core::draw::{Color, Dimension};
 use carbide_core::scene::SceneManager;
 use carbide_core::state::ReadState;
 use carbide_core::widget::{MouseArea, Rectangle, Text, VStack, Widget, WidgetExt};
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new()

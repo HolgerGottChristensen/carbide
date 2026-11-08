@@ -31,6 +31,8 @@ members = [
     "backends/carbide_cache",
     "backends/carbide_usvg", "backends/carbide_icons", "carbide_studio", "backends/carbide_wgpu_core",
     "backends/carbide_tesselation",
+    "carbide_testing",
+    "carbide_windowing",
 ]
 
 [workspace.lints.clippy]
@@ -69,6 +71,8 @@ carbide_wgpu = { path = "backends/carbide_wgpu", version = "0.72.0" }
 carbide_wgpu_3d = { path = "backends/carbide_wgpu_3d", version = "0.72.0" }
 carbide_wgpu_core = { path = "backends/carbide_wgpu_core", version = "0.72.0" }
 carbide_winit = { path = "backends/carbide_winit", version = "0.72.0" }
+carbide_testing = { path = "carbide_testing", version = "0.72.0" }
+carbide_windowing = { path = "carbide_windowing", version = "0.72.0" }
 
 accesskit = "0.24.0"
 accesskit_winit = "0.32.2"
@@ -136,6 +140,8 @@ proc-macro2 = "1.0.67"
 quote = "1.0.28"
 rand = "0.10.0"
 raw-window-handle = "0.5"
+# 0.6 is the version wgpu and winit 0.30 share; used for the renderer seam in carbide_windowing.
+raw-window-handle-06 = { package = "raw-window-handle", version = "0.6" }
 rayon = "1.7.0"
 ref-cast = "1"
 regex = "1"
@@ -171,6 +177,7 @@ uuid = "1.4.1"
 walkdir = "2.4.0"
 wasm-bindgen = "0.2.97"
 wasm-bindgen-futures = "0.4.45"
+web-sys = "0.3.77"
 web-time = "1.1.0"
 wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
 windows = "0.28.0"

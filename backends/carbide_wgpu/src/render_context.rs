@@ -25,7 +25,7 @@ use carbide_tesselation::stroke_vertex::StrokeVertex;
 use carbide_tesselation::triangle::Triangle;
 use carbide_tesselation::{Tesselator, TesselatorKey};
 use crate::wgpu_dashes::WgpuDashes;
-use crate::window::util::calculate_carbide_to_wgpu_matrix;
+use crate::util::calculate_carbide_to_wgpu_matrix;
 
 /// Look up the tesselator currently in the environment. This is done every time a shape
 /// is tesselated, such that the tesselator can be switched while the application is running,

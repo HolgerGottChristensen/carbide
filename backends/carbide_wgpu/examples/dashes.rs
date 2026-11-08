@@ -9,7 +9,7 @@ use carbide_core::mouse_position::MousePositionEnvironmentExt;
 use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 use std::f64::consts::PI;
 use std::num::ParseFloatError;
 use std::str::FromStr;

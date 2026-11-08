@@ -1,14 +1,12 @@
 mod common_widget;
 mod initialize;
 mod widget_sync;
-pub(crate) mod util;
 mod event_handlers;
 mod render;
 mod initialized_window;
 mod accessibility;
 
-use crate::wgpu_msaa::WgpuMsaa;
-use crate::window::initialized_window::InitializedWindow;
+use crate::carbide_window::initialized_window::InitializedWindow;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{IntoReadState, ReadState};
@@ -28,7 +26,6 @@ pub(crate) enum WindowState<T: ReadState<T=String>, C: Widget> {
         position: Position,
         dimension: Dimension,
         child: C,
-        msaa: WgpuMsaa,
     },
     Initialized(InitializedWindow<T, C>),
     Failed
@@ -60,7 +57,6 @@ impl Window<String, Empty> {
                 position: Default::default(),
                 dimension,
                 child,
-                msaa: WgpuMsaa::X4
             }
         }
     }

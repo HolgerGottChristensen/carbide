@@ -1,20 +1,17 @@
 use std::sync::Arc;
 use log::info;
-use crate::application::{ActiveEventLoopKey, EVENT_LOOP_PROXY};
-use crate::offscreen_renderer::OffscreenRenderer;
-use crate::pipeline::create_final_render_pipeline;
-use crate::window::initialized_window::InitializedWindow;
-use crate::window::Window;
-use crate::window::WindowState;
+use crate::app::{ActiveEventLoopKey, EVENT_LOOP_PROXY};
+use crate::carbide_window::initialized_window::InitializedWindow;
+use crate::carbide_window::Window;
+use crate::carbide_window::WindowState;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::lifecycle::{InitializationContext, Initialize};
+use carbide_windowing::{PhysicalSize, WindowRendererFactory};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
-use carbide_wgpu_core::WgpuContextNew;
-use carbide_winit::dpi::{LogicalSize, PhysicalPosition, Size};
-use carbide_winit::update_scale_factor;
-use carbide_winit::window::{Theme, WindowAttributes};
-use crate::wgpu_context::WgpuContext;
+use crate::dpi::{LogicalSize, PhysicalPosition, Size};
+use crate::update_scale_factor;
+use crate::window::{Theme, WindowAttributes};
 
 pub const ZOOM: f32 = 1.0;
 
@@ -27,7 +24,6 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 position,
                 dimension,
                 mut child,
-                msaa,
             } => {
                 info!("Initializing window");
 
@@ -41,15 +37,15 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 #[cfg(target_arch = "wasm32")]
                 {
                     use wasm_bindgen::JsCast;
-                    use carbide_winit::platform::web::WindowAttributesExtWebSys;
+                    use crate::platform::web::WindowAttributesExtWebSys;
 
-                    let canvas = wgpu::web_sys::window()
+                    let canvas = web_sys::window()
                         .unwrap()
                         .document()
                         .unwrap()
                         .get_element_by_id("canvas")
                         .unwrap()
-                        .dyn_into::<wgpu::web_sys::HtmlCanvasElement>()
+                        .dyn_into::<web_sys::HtmlCanvasElement>()
                         .unwrap();
 
                     info!("Found and converted canvas");
@@ -89,39 +85,13 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
                 let size = window.inner_size();
                 let scale_factor = window.scale_factor();
 
-                let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
-
-                let surface = wgpu_context_new.instance
-                    .create_surface(window.clone())
-                    .unwrap();
-
-                let surface_configuration = surface.get_default_config(
-                    &wgpu_context_new.adapter,
-                    window.inner_size().width,
-                    window.inner_size().height
-                ).unwrap();
-
-                // Configure the surface with format, size and usage
-                surface.configure(
-                    &wgpu_context_new.device,
-                    &surface_configuration,
-                );
-
-                info!("{:#?}", surface_configuration);
-
-                let final_render_pipeline = create_final_render_pipeline(
-                    &wgpu_context_new.device,
-                    &wgpu_context.texture_bind_group_layout,
-                    &wgpu_context.final_render_shader_srgb,
-                    &wgpu_context.final_render_shader_linear,
-                    surface_configuration.format,
-                );
-
                 update_scale_factor(window.id(), window.scale_factor());
 
                 child.initialize(ctx);
 
-                let offscreen = OffscreenRenderer::new(size, scale_factor, msaa, ctx.env);
+                let factory = *ctx.env.get::<WindowRendererFactory>()
+                    .expect("No renderer is registered. Enable carbide_winit's `wgpu` feature, or link another renderer crate");
+                let renderer = (factory.create)(window.clone(), PhysicalSize::new(size.width, size.height), scale_factor, ctx.env);
 
                 let theme = match window.theme().unwrap_or(Theme::Dark) {
                     Theme::Light => carbide_core::draw::theme::Theme::Light,
@@ -130,10 +100,7 @@ impl<T: ReadState<T=String>, C: Widget> Initialize for Window<T, C> {
 
                 WindowState::Initialized(InitializedWindow {
                     id,
-                    surface,
-                    surface_configuration,
-                    surface_render_pipeline: final_render_pipeline,
-                    offscreen,
+                    renderer,
                     inner: window,
                     accessibility_adapter,
                     visible: true,

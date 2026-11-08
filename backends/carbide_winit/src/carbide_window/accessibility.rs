@@ -1,5 +1,5 @@
-use crate::window::WindowState;
-use crate::Window;
+use crate::carbide_window::WindowState;
+use crate::carbide_window::Window;
 use accesskit::{Node, NodeId, Role, Tree, TreeId, TreeUpdate};
 use carbide_core::accessibility::{Accessibility, AccessibilityContext};
 use carbide_core::state::ReadState;

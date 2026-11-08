@@ -4,7 +4,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::state::LocalState;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 use carbide_core::state::ReadStateExtNew;
 
 fn main() {

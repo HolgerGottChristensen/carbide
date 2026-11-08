@@ -12,7 +12,7 @@
 // use carbide_core::state::{AnimatedState, GlobalState, LocalState, Map1, Map2, ReadState, ReadStateExtNew};
 // use carbide_core::time::*;
 // use carbide_core::widget::WidgetExt;
-// use carbide_wgpu::{Application, Window};
+// use carbide_winit::{Application, Window};
 // use carbide_wgpu_3d::WGPURenderContext3d;
 // use std::collections::HashMap;
 // use std::f32::consts::PI;

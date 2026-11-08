@@ -1,0 +1,21 @@
+[package]
+name = "carbide_windowing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords = ["ui", "gui", "window", "renderer"]
+description = "Window abstractions shared between carbide's windowing backends and renderers"
+readme = "../README.md"
+categories = ["gui"]
+
+[dependencies]
+carbide_core.workspace = true
+image.workspace = true
+raw-window-handle.workspace = true
+raw-window-handle-06.workspace = true
+
+[lints]
+workspace = true

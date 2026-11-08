@@ -1,5 +1,5 @@
-use crate::window::Window;
-use crate::window::WindowState;
+use crate::carbide_window::Window;
+use crate::carbide_window::WindowState;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::identifiable::Identifiable;
 use carbide_core::state::ReadState;

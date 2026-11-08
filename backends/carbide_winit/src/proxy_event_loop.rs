@@ -1,7 +1,7 @@
-use carbide_winit::event_loop::EventLoopProxy;
+use crate::event_loop::EventLoopProxy;
 
 use carbide_core::event::EventSink;
-use carbide_winit::custom_event::CustomEvent;
+use crate::custom_event::CustomEvent;
 
 #[derive(Clone)]
 pub(crate) struct ProxyEventLoop(pub EventLoopProxy<CustomEvent>);

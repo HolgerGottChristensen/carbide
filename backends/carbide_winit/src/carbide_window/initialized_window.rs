@@ -1,5 +1,4 @@
-use crate::application::Scenes;
-use crate::offscreen_renderer::OffscreenRenderer;
+use crate::app::Scenes;
 use carbide_core::application::ApplicationManager;
 use carbide_core::cursor::MouseCursor;
 use carbide_core::draw::theme::Theme;
@@ -10,11 +9,10 @@ use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
 use carbide_core::widget::Widget;
-use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
-use carbide_winit::WindowHandleKey;
+use crate::raw_window_handle_05::HasRawWindowHandle;
+use crate::WindowHandleKey;
 use std::sync::Arc;
-use wgpu::{RenderPipeline, Surface, SurfaceConfiguration};
-use carbide_wgpu_core::WgpuContextNew;
+use carbide_windowing::WindowRenderer;
 
 pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) id: SceneId,
@@ -23,13 +21,9 @@ pub(crate) struct InitializedWindow<T: ReadState<T=String>, C: Widget> {
     pub(crate) dimension: Dimension,
     pub(crate) child: C,
 
-    pub(crate) surface: Surface<'static>,
-    pub(crate) surface_configuration: SurfaceConfiguration,
-    pub(crate) surface_render_pipeline: RenderPipeline,
+    pub(crate) renderer: Box<dyn WindowRenderer>,
 
-    pub(crate) offscreen: OffscreenRenderer,
-
-    pub(crate) inner: Arc<carbide_winit::window::Window>,
+    pub(crate) inner: Arc<crate::window::Window>,
     pub(crate) accessibility_adapter: accesskit_winit::Adapter,
     pub(crate) visible: bool,
     pub(crate) theme: Theme,
@@ -87,13 +81,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let mut screenshot_requests = std::mem::take(scene_manager.screenshot_requests());
         if !screenshot_requests.is_empty() {
-            let wgpu_context = env.get::<WgpuContextNew>()
-                .expect("WgpuContext is in scope at every call site that reaches InitializedWindow::with_env");
-            match carbide_wgpu_core::capture_texture_to_image(
-                &wgpu_context.device,
-                &wgpu_context.queue,
-                &self.offscreen.targets[0].texture,
-            ) {
+            match self.renderer.capture(env) {
                 Ok(image) => {
                     for sender in screenshot_requests.drain(..) {
                         let _ = sender.send(image.clone());

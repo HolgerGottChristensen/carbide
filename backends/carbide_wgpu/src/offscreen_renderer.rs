@@ -13,7 +13,6 @@ use carbide_core::render::RenderContext;
 use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::{AnyWidget, FilterId};
 use carbide_wgpu_core::WgpuContextNew;
-use carbide_winit::dpi::PhysicalSize;
 
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
 use crate::image_context::BindGroupExtended;
@@ -27,14 +26,27 @@ use crate::wgpu_gradient::WgpuGradient;
 use crate::wgpu_msaa::WgpuMsaa;
 use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
 use crate::wgpu_vertex::WgpuVertex;
-use crate::window::util::calculate_carbide_to_wgpu_matrix;
+use crate::util::calculate_carbide_to_wgpu_matrix;
 use crate::{render_pass_ops, RenderPassOps, WgpuRenderTarget};
 
 /// Everything needed to render carbide's widget tree into offscreen textures, decoupled from any
 /// live OS window or `wgpu::Surface`. `InitializedWindow` holds one of these and adds only the
 /// swapchain-specific bits (the surface itself, and the final blit-to-swapchain step) on top.
+/// The size of the offscreen render targets, in physical pixels.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub(crate) struct TargetSize {
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+}
+
+impl TargetSize {
+    pub(crate) fn new(width: u32, height: u32) -> TargetSize {
+        TargetSize { width, height }
+    }
+}
+
 pub(crate) struct OffscreenRenderer {
-    size: PhysicalSize<u32>,
+    size: TargetSize,
     msaa: WgpuMsaa,
     #[allow(dead_code)]
     texture_size_bind_group: BindGroup,
@@ -55,7 +67,7 @@ impl Debug for OffscreenRenderer {
 }
 
 impl OffscreenRenderer {
-    pub(crate) fn new(size: PhysicalSize<u32>, scale_factor: Scalar, msaa: WgpuMsaa, env: &mut Environment) -> OffscreenRenderer {
+    pub(crate) fn new(size: TargetSize, scale_factor: Scalar, msaa: WgpuMsaa, env: &mut Environment) -> OffscreenRenderer {
         let pixel_dimensions = Dimension::new(size.width as Scalar, size.height as Scalar);
         let matrix = calculate_carbide_to_wgpu_matrix(pixel_dimensions, scale_factor);
 
@@ -223,8 +235,9 @@ impl OffscreenRenderer {
         );
     }
 
-    /// Convenience combining both halves, used by the live-window path which never needs the
+    /// Convenience combining both halves, used by the headless renderer which never needs the
     /// intermediate `Vec<RenderPass>` on its own.
+    #[cfg(feature = "testing")]
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
         let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
@@ -232,7 +245,7 @@ impl OffscreenRenderer {
         self.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, encoder);
     }
 
-    pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>, scale_factor: Scalar, env: &mut Environment) {
+    pub(crate) fn resize(&mut self, new_size: TargetSize, scale_factor: Scalar, env: &mut Environment) {
         self.size = new_size;
 
         self.targets = vec![
@@ -277,7 +290,7 @@ impl OffscreenRenderer {
         });
     }
 
-    fn update_filter_bind_groups(&self, size: PhysicalSize<u32>, wgpu_context_new: &WgpuContextNew, wgpu_context: &mut WgpuContext) {
+    fn update_filter_bind_groups(&self, size: TargetSize, wgpu_context_new: &WgpuContextNew, wgpu_context: &mut WgpuContext) {
         let filters = self.render_context.filters();
 
         wgpu_context.filter_bind_groups.retain(|id, _| filters.contains_key(id));
@@ -404,7 +417,7 @@ impl OffscreenRenderer {
         uniform_bind_groups: &[BindGroup],
         gradient_dashes_bind_group_layout: &BindGroupLayout,
         filter_bind_groups: &HashMap<FilterId, BindGroup>,
-        size: PhysicalSize<u32>,
+        size: TargetSize,
         scale_factor: Scalar,
         atlas_cache_bind_group: &BindGroup,
     ) {

@@ -3,7 +3,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::environment::{EnvironmentColor, IntoColorReadState};
 use carbide_core::state::ReadState;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

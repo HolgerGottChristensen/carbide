@@ -2,7 +2,7 @@ use carbide_core::animation::linear;
 use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 use carbide_core::time::*;
 use carbide_core::draw::gradient::Gradient;
 

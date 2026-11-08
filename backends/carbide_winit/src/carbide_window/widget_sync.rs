@@ -1,5 +1,5 @@
-use crate::window::Window;
-use crate::window::WindowState;
+use crate::carbide_window::Window;
+use crate::carbide_window::WindowState;
 use carbide_core::draw::{Dimension, Rect};
 use carbide_core::focus::Focusable;
 use carbide_core::layout::{Layout, LayoutContext};

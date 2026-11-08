@@ -1,6 +1,6 @@
 use carbide_core::draw::Dimension;
 use carbide_media::Video;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new()

@@ -5,7 +5,7 @@ use carbide_core::environment::EnvironmentColor::Green;
 use carbide_core::state::{GlobalState, State};
 use carbide_core::widget::{CrossAxisAlignment, ForEach, GridItem, Image, LazyVGrid, Rectangle, Scroll, Text, VStack, WidgetExt, ZStack};
 use carbide_icons::all_icon_names;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 pub fn build_application(name: &str) -> Application {
     let mut application = Application::new();

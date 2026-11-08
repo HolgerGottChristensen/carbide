@@ -9,7 +9,7 @@ use carbide_core::state::LocalState;
 use carbide_core::widget::{EdgeInsets, Text, VStack, WidgetExt};
 use carbide_fluent::{LocalizedNumber, LocalizedString, NumberGrouping, NumberNotation, NumberStyle, RoundingMode};
 use carbide_fluent::LocaleExt;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

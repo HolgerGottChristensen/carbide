@@ -15,7 +15,7 @@ carbide_core.workspace = true
 carbide_fluent = { workspace = true, optional = true }
 
 [dev-dependencies]
-carbide_wgpu = { workspace = true, features = ["controls"] }
+carbide_winit = { workspace = true, features = ["controls"] }
 carbide_controls.workspace = true
 rand.workspace = true
 carbide_fluent.workspace = true

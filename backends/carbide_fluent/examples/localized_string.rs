@@ -9,7 +9,7 @@ use carbide_core::state::{LocalState, StateValue};
 use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_fluent::{Arg, Localizable, LocalizedArg, LocalizedString};
 use carbide_fluent::LocaleExt;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash, StateValue)]
 enum Gender {

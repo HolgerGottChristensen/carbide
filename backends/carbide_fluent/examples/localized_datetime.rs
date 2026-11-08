@@ -11,7 +11,7 @@ use carbide_core::widget::{Text, VStack, WidgetExt};
 use carbide_core::time::*;
 use carbide_fluent::{DateStyle, LocalizedDateTime, LocalizedString, TimeStyle, TimezoneStyle};
 use carbide_fluent::LocaleExt;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

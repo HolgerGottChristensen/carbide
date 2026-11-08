@@ -1,0 +1,42 @@
+[package]
+name = "carbide_testing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords = ["ui", "gui", "testing", "snapshot"]
+description = "Headless test harness for carbide: drive widgets with synthetic input and snapshot what they render"
+readme = "../README.md"
+categories = ["gui", "development-tools::testing"]
+
+[features]
+# Wraps the widget under test in carbide_controls' overlay, the same as a window does with
+# carbide_winit's `controls` feature.
+controls = ["dep:carbide_controls"]
+
+[dependencies]
+carbide_core.workspace = true
+# Not inherited from the workspace, so the default `wgpu` feature can be turned off: that would
+# link carbide_wgpu with its `windowing` feature, which the offscreen harness never needs.
+carbide_winit = { path = "../backends/carbide_winit", version = "0.72.0", default-features = false }
+# Not inherited from the workspace, so the default `windowing` feature can be turned off: the
+# harness renders offscreen and never needs a window renderer.
+carbide_wgpu = { path = "../backends/carbide_wgpu", version = "0.72.0", default-features = false, features = ["lyon", "cosmic_text", "testing"] }
+carbide_controls = { workspace = true, optional = true }
+accesskit = { workspace = true, features = ["serde"] }
+futures.workspace = true
+image.workspace = true
+image-compare.workspace = true
+serde_json.workspace = true
+smallvec.workspace = true
+
+[dev-dependencies]
+carbide_testing = { workspace = true, features = ["controls"] }
+carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_icons = { workspace = true, features = ["lucide"] }
+carbide_controls.workspace = true
+
+[lints]
+workspace = true

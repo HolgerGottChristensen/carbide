@@ -12,7 +12,7 @@ use carbide_core::environment::Environment;
 use carbide_core::state::LocalState;
 use carbide_core::time::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 /// Imperative playback controls (play/pause/stop/seek) driven through a
 /// `TimelineHandle`, with a real `carbide_controls::Slider` wired to `seek`

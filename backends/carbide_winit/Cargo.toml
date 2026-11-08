@@ -6,19 +6,48 @@ edition.workspace = true
 authors.workspace = true
 homepage.workspace = true
 keywords = ["ui", "widgets", "gui", "interface", "graphics"]
-description = "A crate to convert from winit types to equivalents in carbide"
+description = "Runs carbide applications in winit windows"
 license = "MIT OR Apache-2.0"
 readme = "../../README.md"
 categories = ["gui"]
 
 
+[features]
+default = ["wgpu"]
+# Links carbide_wgpu, which registers itself as the renderer for every window.
+wgpu = ["dep:carbide_wgpu"]
+# Wraps every window's content in carbide_controls' overlay, so controls that open overlays
+# (dropdowns, menus, popovers) have somewhere to render.
+controls = ["dep:carbide_controls"]
+
 [dependencies]
 winit.workspace = true
 carbide_core.workspace = true
+carbide_windowing.workspace = true
+carbide_controls = { workspace = true, optional = true }
+carbide_wgpu = { workspace = true, optional = true, features = ["windowing"] }
 dashmap.workspace = true
 once_cell.workspace = true
 accesskit.workspace = true
 accesskit_winit.workspace = true
+futures.workspace = true
+log.workspace = true
+smallvec.workspace = true
+walkdir.workspace = true
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+console_error_panic_hook.workspace = true
+console_log.workspace = true
+wasm-bindgen.workspace = true
+wasm-bindgen-futures.workspace = true
+web-sys = { workspace = true, features = ["Document", "Element", "HtmlCanvasElement", "Window"] }
+
+[[test]]
+name = "wgpu_feature"
+required-features = ["wgpu"]
 
 [lints]
 workspace = true

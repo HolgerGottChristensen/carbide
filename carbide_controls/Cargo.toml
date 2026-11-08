@@ -28,7 +28,8 @@ indexmap.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
-carbide_wgpu = { workspace = true, features = ["controls", "icons"] }
+carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_winit = { workspace = true, features = ["controls"] }
 carbide_icons = { workspace = true, features = ["lucide"] }
 futures.workspace = true
 assert_matches.workspace = true

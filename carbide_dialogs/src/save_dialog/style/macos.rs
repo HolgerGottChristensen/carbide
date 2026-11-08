@@ -4,7 +4,7 @@ use block2::RcBlock;
 use carbide::asynchronous::AsyncContext;
 use carbide::environment::Environment;
 use carbide::SpawnTask;
-use carbide_winit::WindowHandleKey;
+use carbide_windowing::WindowHandleKey;
 use objc2::__framework_prelude::Retained;
 use objc2::rc::RetainedFromIterator;
 use objc2::{msg_send, msg_send_id};

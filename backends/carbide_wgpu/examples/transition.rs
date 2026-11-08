@@ -4,7 +4,7 @@ use carbide_core::closure;
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, ReadStateExtTransition};
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 use carbide_core::time::*;
 
 fn main() {

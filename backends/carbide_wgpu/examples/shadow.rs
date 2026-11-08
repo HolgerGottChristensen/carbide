@@ -4,7 +4,7 @@ use carbide_core::color::{LIGHT_BLUE, RED};
 use carbide_core::draw::{Color, Dimension};
 use carbide_core::state::AnimatedState;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

@@ -174,6 +174,7 @@ pub(crate) fn create_render_pipeline(
     })
 }
 
+#[cfg(feature = "windowing")]
 pub(crate) fn create_final_render_pipeline(
     device: &Device,
     texture_bind_group_layout: &BindGroupLayout,

@@ -13,6 +13,7 @@ include_dir.workspace = true
 [dev-dependencies]
 futures.workspace = true
 carbide_wgpu = { workspace = true, features = ["icons"] }
+carbide_winit.workspace = true
 copypasta.workspace = true
 
 [features]

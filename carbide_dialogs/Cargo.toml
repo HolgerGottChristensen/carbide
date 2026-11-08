@@ -9,7 +9,7 @@ authors = [
 
 [dependencies]
 carbide_core.workspace = true
-carbide_winit.workspace = true
+carbide_windowing.workspace = true
 raw-window-handle.workspace = true
 oneshot.workspace = true
 futures.workspace = true
@@ -24,7 +24,7 @@ block2.workspace = true
 
 
 [dev-dependencies]
-carbide_wgpu.workspace = true
+carbide_winit.workspace = true
 carbide_core = { workspace = true, features = ["tokio"] }
 carbide_controls.workspace = true
 

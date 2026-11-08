@@ -4,7 +4,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::*;
 use carbide_core::widget::canvas::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

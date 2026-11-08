@@ -7,7 +7,7 @@ use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_core::time::*;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new().with_asset_fonts();

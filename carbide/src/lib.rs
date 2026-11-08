@@ -4,7 +4,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(feature = "carbide_macro")]
 pub use carbide_macro::*;
 
-#[cfg(feature = "default")]
+#[cfg(feature = "carbide_winit")]
+pub use carbide_winit::{Application, Window};
+
+// Also links carbide_wgpu, which registers itself as the window renderer through its plugin.
+#[cfg(feature = "carbide_wgpu")]
 pub use carbide_wgpu::*;
 
 #[cfg(feature = "carbide_controls")]

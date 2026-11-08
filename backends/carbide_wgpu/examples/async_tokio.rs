@@ -10,7 +10,7 @@ use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{AnimatedState, LocalState, State};
 use carbide_core::task;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 

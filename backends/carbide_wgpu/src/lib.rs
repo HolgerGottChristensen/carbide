@@ -1,3 +1,6 @@
+// With neither `windowing` nor `testing` nothing drives the renderer, so most of it is unused.
+#![cfg_attr(not(any(feature = "windowing", feature = "testing")), allow(dead_code))]
+
 use wgpu::{LoadOp, Operations, StoreOp};
 
 extern crate carbide_core as carbide;
@@ -12,9 +15,7 @@ extern crate carbide_cosmic_text;
 #[cfg(feature = "icons")]
 extern crate carbide_icons;
 
-pub use application::Application;
 pub use wgpu_render_target::WgpuRenderTarget;
-pub use window::Window;
 
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 
@@ -25,7 +26,6 @@ mod bind_groups;
 mod wgpu_filter;
 mod wgpu_gradient;
 mod pipeline;
-mod proxy_event_loop;
 //mod render;
 mod render_pass_command;
 mod samplers;
@@ -33,11 +33,13 @@ mod texture_atlas_command;
 mod textures;
 mod wgpu_vertex;
 //pub mod window;
-mod application;
 mod render_context;
 mod image_context;
 mod wgpu_render_target;
-mod window;
+// Registers the wgpu renderer for windows created by a windowing backend, using its plugin.
+#[cfg(feature = "windowing")]
+mod window_renderer;
+mod util;
 mod wgpu_msaa;
 mod wgpu_context;
 mod wgpu_dashes;

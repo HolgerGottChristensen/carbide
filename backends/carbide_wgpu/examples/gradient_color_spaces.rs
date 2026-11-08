@@ -2,7 +2,7 @@ use carbide_core::draw::{Alignment, Color, Dimension};
 use carbide_core::draw::color_space::ColorSpace;
 use carbide_core::draw::gradient::Gradient;
 use carbide_core::widget::*;
-use carbide_wgpu::{Application, Window};
+use carbide_winit::{Application, Window};
 
 fn main() {
     let mut application = Application::new();

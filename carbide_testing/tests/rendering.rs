@@ -4,7 +4,7 @@ use carbide_core::draw::{Color, Dimension, Position, Scalar};
 use carbide_core::environment::EnvironmentColor;
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{Rectangle, WidgetExt, ZStack};
-use carbide_wgpu::testing::{Harness, WgpuMsaa};
+use carbide_testing::{Harness, WgpuMsaa};
 use carbide_winit::event::MouseButton;
 
 #[test]

@@ -3,8 +3,6 @@ use std::rc::Rc;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
-use wgpu::CommandEncoderDescriptor;
-
 use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::animation::AnimationManager;
 use carbide_core::asynchronous::{check_tasks, set_event_sink, AsyncContext};
@@ -15,23 +13,21 @@ use carbide_core::event::{AccessibilityEvent, AccessibilityEventContext, CoreEve
 use carbide_core::focus::FocusManager;
 use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::UpdateContext;
-use carbide_core::render::{NoopRenderContext, RenderContext, RenderInstruction, RenderInstructionCache};
+use carbide_core::render::{RenderInstruction, RenderInstructionCache};
 use carbide_core::scene::{AnyScene, SceneManager};
 use carbide_core::widget::managers::{FontSizeManager, ThemeManager};
 use carbide_core::widget::{NavigationStack, Rectangle, Widget, WidgetId, ZStack};
-use carbide_winit::dpi::{PhysicalPosition, PhysicalSize};
+use carbide_winit::dpi::PhysicalPosition;
 use carbide_winit::event::{ElementState, MouseButton, MouseScrollDelta};
 use carbide_winit::keyboard::Key;
 use carbide_winit::window::WindowId;
 use carbide_winit::{update_scale_factor, NewEventHandler};
 
-use crate::image_context::WGPUImageContext;
-use crate::offscreen_renderer::OffscreenRenderer;
-use crate::testing::{snapshot, SnapshotOptions};
-use crate::testing::test_scene::TestScene;
 use carbide_core::plugin::register_plugins;
-use carbide_wgpu_core::WgpuContextNew;
-use crate::wgpu_msaa::WgpuMsaa;
+use carbide_wgpu::testing::{HeadlessRenderer, WGPUImageContext, WgpuMsaa};
+
+use crate::snapshot::{self, SnapshotOptions};
+use crate::test_scene::TestScene;
 
 /// Registers every plugin into a `Harness`'s own, fresh environment: the shared
 /// `WgpuContextNew` (instance/adapter/device/queue), the `WgpuContext` renderer state built on
@@ -99,8 +95,8 @@ impl EventSink for TestEventSink {
 /// needs physical pixels, i.e. `dimension * scale_factor` — not `dimension` verbatim. Rounds up
 /// (`.ceil()`) so a fractional logical size never gets truncated to a smaller physical texture
 /// than the layout actually requested.
-fn physical_size(dimension: Dimension, scale_factor: Scalar) -> PhysicalSize<u32> {
-    PhysicalSize::new(
+fn physical_size(dimension: Dimension, scale_factor: Scalar) -> (u32, u32) {
+    (
         (dimension.width.max(1.0) * scale_factor).ceil() as u32,
         (dimension.height.max(1.0) * scale_factor).ceil() as u32,
     )
@@ -151,74 +147,6 @@ fn current_test_scope() -> Option<String> {
     }
 }
 
-/// Hand-built `serde_json::Value` conversion for `snapshot_render_instructions` — see that
-/// method's doc comment for why this doesn't just derive `Serialize` on the underlying types.
-fn render_passes_to_json(passes: &[crate::render_pass_command::RenderPass]) -> serde_json::Value {
-    use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-
-    fn bind_group_to_json(bind_group: &WGPUBindGroup) -> serde_json::Value {
-        match bind_group {
-            WGPUBindGroup::Image(id) => serde_json::json!({ "type": "Image", "id": format!("{id:?}") }),
-            WGPUBindGroup::Target(index) => serde_json::json!({ "type": "Target", "index": index }),
-            WGPUBindGroup::Layer(id) => serde_json::json!({ "type": "Layer", "id": format!("{id:?}") }),
-        }
-    }
-
-    fn command_to_json(command: &RenderPassCommand) -> serde_json::Value {
-        match command {
-            RenderPassCommand::SetScissor { rect } => serde_json::json!({
-                "type": "SetScissor", "rect": format!("{rect:?}"),
-            }),
-            RenderPassCommand::Draw { vertex_range } => serde_json::json!({
-                "type": "Draw", "vertex_range": [vertex_range.start, vertex_range.end],
-            }),
-            RenderPassCommand::Stencil { vertex_range } => serde_json::json!({
-                "type": "Stencil", "vertex_range": [vertex_range.start, vertex_range.end],
-            }),
-            RenderPassCommand::DeStencil { vertex_range } => serde_json::json!({
-                "type": "DeStencil", "vertex_range": [vertex_range.start, vertex_range.end],
-            }),
-            RenderPassCommand::Uniform { uniform_bind_group_index } => serde_json::json!({
-                "type": "Uniform", "uniform_bind_group_index": uniform_bind_group_index,
-            }),
-            RenderPassCommand::Gradient(gradient) => serde_json::json!({
-                "type": "Gradient", "value": format!("{gradient:?}"),
-            }),
-            RenderPassCommand::StrokeDashing(dashes) => serde_json::json!({
-                "type": "StrokeDashing", "value": format!("{dashes:?}"),
-            }),
-            RenderPassCommand::SetBindGroup { bind_group } => serde_json::json!({
-                "type": "SetBindGroup", "bind_group": bind_group_to_json(bind_group),
-            }),
-            RenderPassCommand::SetMaskBindGroup { bind_group } => serde_json::json!({
-                "type": "SetMaskBindGroup", "bind_group": bind_group_to_json(bind_group),
-            }),
-        }
-    }
-
-    let passes: Vec<serde_json::Value> = passes.iter().map(|pass| match pass {
-        RenderPass::Normal { commands, target_index } => serde_json::json!({
-            "type": "Normal",
-            "target_index": target_index,
-            "commands": commands.iter().map(command_to_json).collect::<Vec<_>>(),
-        }),
-        RenderPass::Clear { target_index } => serde_json::json!({
-            "type": "Clear", "target_index": target_index,
-        }),
-        RenderPass::Filter { vertex_range, filter_id, source_id, target_id, mask_id, initial_copy } => serde_json::json!({
-            "type": "Filter",
-            "vertex_range": [vertex_range.start, vertex_range.end],
-            "filter_id": format!("{filter_id:?}"),
-            "source_id": source_id,
-            "target_id": target_id,
-            "mask_id": mask_id,
-            "initial_copy": initial_copy,
-        }),
-    }).collect();
-
-    serde_json::Value::Array(passes)
-}
-
 /// Headless fixture for rendering-regression tests: constructs a single root widget, drives it
 /// with synthetic input events (no OS window, no live event loop), renders it to an offscreen
 /// texture, and lets a test compare the pixel output (and other snapshot strategies) against a
@@ -230,7 +158,7 @@ pub struct Harness {
     focus_manager: FocusManager,
     animation_manager: AnimationManager,
     render_instruction_cache: HashMap<ImageId, Rc<(Dimension, Vec<RenderInstruction>)>>,
-    offscreen: OffscreenRenderer,
+    renderer: HeadlessRenderer,
     dimension: Dimension,
     scale_factor: Scalar,
     window_id: WindowId,
@@ -261,7 +189,7 @@ impl Harness {
         register_harness_plugins(&mut env);
         let physical = physical_size(dimension, scale_factor);
 
-        let offscreen = OffscreenRenderer::new(physical, scale_factor, msaa, &mut env);
+        let renderer = HeadlessRenderer::new(physical.0, physical.1, scale_factor, msaa, &mut env);
 
         // Mirrors `Window::new`'s wrapping exactly. In order, innermost first:
         // - `controls_overlay` gives any `carbide_controls` widget that renders into an overlay
@@ -303,7 +231,7 @@ impl Harness {
             focus_manager: FocusManager::new(),
             animation_manager: AnimationManager::new(),
             render_instruction_cache: HashMap::new(),
-            offscreen,
+            renderer,
             dimension,
             scale_factor,
             window_id,
@@ -316,10 +244,10 @@ impl Harness {
 
     /// Runs `f` with `AnimationManager`/`RenderInstructionCache`/`FocusManager`
     /// pushed into the environment for the duration of the call — the same scoping
-    /// `RunningApplication` does for the live-window path (`application.rs`), needed because
-    /// `NewEventHandler`'s dispatch methods and `OffscreenRenderer` both look these up via
+    /// `RunningApplication` does for the live-window path (`carbide_winit/src/app.rs`), needed because
+    /// `NewEventHandler`'s dispatch methods and `HeadlessRenderer` both look these up via
     /// `env.get_mut::<...>()`.
-    fn with_env_scope<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut NewEventHandler, &mut OffscreenRenderer) -> R) -> R {
+    fn with_env_scope<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut NewEventHandler, &mut HeadlessRenderer) -> R) -> R {
         let Harness {
             env,
             animation_manager,
@@ -327,7 +255,7 @@ impl Harness {
             focus_manager,
             scenes,
             event_handler,
-            offscreen,
+            renderer,
             dimension,
             scale_factor,
             ..
@@ -347,7 +275,7 @@ impl Harness {
             env.with::<RenderInstructionCache>(render_instruction_cache, |env| {
                 env.with::<FocusManager>(focus_manager, |env| {
                     env.with::<SceneManager>(&mut scene_manager, |env| {
-                        result = Some(f(env, scenes, event_handler, offscreen));
+                        result = Some(f(env, scenes, event_handler, renderer));
                     })
                 })
             })
@@ -363,8 +291,8 @@ impl Harness {
         let physical = physical_size(dimension, self.scale_factor);
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
-            offscreen.resize(physical, scale_factor, env);
+        self.with_env_scope(|env, scenes, _event_handler, renderer| {
+            renderer.resize(physical.0, physical.1, scale_factor, env);
 
             scenes[0].process_window_event(&WindowEvent::Resize(dimension), &mut WindowEventContext {
                 image: &mut WGPUImageContext,
@@ -401,7 +329,7 @@ impl Harness {
         update_scale_factor(window_id, scale_factor);
         let physical = PhysicalPosition::new(position.x * scale_factor, position.y * scale_factor);
 
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.cursor_moved(physical, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -409,7 +337,7 @@ impl Harness {
 
     pub fn mouse_press(&mut self, button: MouseButton) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.mouse_input(button, ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -417,7 +345,7 @@ impl Harness {
 
     pub fn mouse_release(&mut self, button: MouseButton) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.mouse_input(button, ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -440,7 +368,7 @@ impl Harness {
         update_scale_factor(window_id, scale_factor);
         let physical = PhysicalPosition::new(delta_x * scale_factor, delta_y * scale_factor);
 
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.mouse_wheel(MouseScrollDelta::PixelDelta(physical), window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -448,7 +376,7 @@ impl Harness {
 
     pub fn key_press(&mut self, key: Key) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.keyboard(key.clone(), key.clone(), ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -456,7 +384,7 @@ impl Harness {
 
     pub fn key_release(&mut self, key: Key) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
             event_handler.keyboard(key.clone(), key.clone(), ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
@@ -515,7 +443,7 @@ impl Harness {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, _event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, _renderer| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
@@ -601,7 +529,7 @@ impl Harness {
         let (widget_id, _) = self.find_by_label(label)
             .unwrap_or_else(|| panic!("invoke_accessibility_action: no accessible node with label {label:?}"));
 
-        self.with_env_scope(|env, scenes, _event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, _renderer| {
             scenes[0].process_accessibility_event(&AccessibilityEvent {
                 action,
                 target: widget_id,
@@ -633,7 +561,7 @@ impl Harness {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, renderer| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
@@ -654,46 +582,24 @@ impl Harness {
                 env,
             });
 
-            let mut encoder = {
-                let wgpu_context_new = env.get::<WgpuContextNew>().unwrap();
-                wgpu_context_new.device.create_command_encoder(&CommandEncoderDescriptor {
-                    label: Some("carbide_harness_encoder"),
-                })
-            };
-
-            offscreen.render_child(scene, dimension, scale_factor, &mut RenderContext {
-                render: &mut NoopRenderContext,
-                image: &mut WGPUImageContext,
-                env,
-            }, &mut encoder);
-
-            let wgpu_context_new = env.get::<WgpuContextNew>().unwrap();
-            wgpu_context_new.queue.submit(Some(encoder.finish()));
+            renderer.render(scene, dimension, scale_factor, &mut WGPUImageContext, env);
         });
     }
 
-    /// Reads the last-rendered frame back from the GPU as an `image::RgbaImage`, via the shared
-    /// [`carbide_wgpu_core::capture_texture_to_image`] readback (also used by the live window's
-    /// `SceneManager::take_screenshot()` path).
+    /// Reads the last-rendered frame back from the GPU as an `image::RgbaImage`, via the same
+    /// readback a live window's `SceneManager::take_screenshot()` path uses.
     pub fn pixels(&mut self) -> image::RgbaImage {
-        let wgpu_context_new = self.env.get::<WgpuContextNew>().unwrap();
-        carbide_wgpu_core::capture_texture_to_image(
-            &wgpu_context_new.device,
-            &wgpu_context_new.queue,
-            &self.offscreen.targets[0].texture,
-        ).expect("the harness renders to RENDER_TARGET_FORMAT, which capture_texture_to_image supports")
+        self.renderer.pixels(&mut self.env)
     }
 
     /// Layout-and-record only, no GPU work at all — the CPU-computed draw-call plan that
-    /// `render()` would otherwise hand off for GPU execution. `pub(crate)`: the primary public
-    /// entry point is `snapshot_render_instructions`, which formats this and compares it; the raw
-    /// `Vec<RenderPass>` isn't exposed directly since `RenderPass` lives in a crate-private
-    /// module (nothing outside this crate can currently name it usefully).
-    pub(crate) fn render_instructions(&mut self) -> Vec<crate::render_pass_command::RenderPass> {
+    /// `render()` would otherwise hand off for GPU execution, as JSON. The primary public entry
+    /// point is `snapshot_render_instructions`, which compares this against a golden file.
+    fn render_instructions_json(&mut self) -> serde_json::Value {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, renderer| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
@@ -714,11 +620,7 @@ impl Harness {
                 env,
             });
 
-            offscreen.build_render_passes(scene, dimension, scale_factor, &mut RenderContext {
-                render: &mut NoopRenderContext,
-                image: &mut WGPUImageContext,
-                env,
-            })
+            renderer.render_instructions_json(scene, dimension, scale_factor, &mut WGPUImageContext, env)
         })
     }
 
@@ -766,21 +668,14 @@ impl Harness {
         }
     }
 
-    /// Structural snapshot of the CPU-computed render-instruction plan (`render_instructions()`),
+    /// Structural snapshot of the CPU-computed render-instruction plan (`render_instructions_json()`),
     /// as JSON, compared exactly against `tests/snapshots/{test}/{name}.render.json` (see
     /// `current_test_scope`). Unlike pixels, this is pure CPU logic with no GPU rasterization
     /// involved, so it's exactly as reproducible on a software rasterizer as on real hardware —
     /// no tolerance-tuning ever needed for this layer.
-    ///
-    /// `RenderPass`/`RenderPassCommand`/`WGPUBindGroup` don't derive `Serialize` (adding it would
-    /// mean adding it across their whole nested type graph — `Rect`, `FilterId`, `ImageId`,
-    /// `LayerId`, `WgpuGradient`, `WgpuDashes` — including several `carbide_core` types, for a
-    /// benefit specific to this one snapshot), so `render_passes_to_json` below builds the
-    /// `serde_json::Value` tree by hand instead, falling back to each inner type's existing
-    /// `Debug` output for the handful of fields it doesn't break out explicitly.
     pub fn snapshot_render_instructions(&mut self, name: &str) {
-        let instructions = self.render_instructions();
-        let json = serde_json::to_string_pretty(&render_passes_to_json(&instructions))
+        let instructions = self.render_instructions_json();
+        let json = serde_json::to_string_pretty(&instructions)
             .expect("serializing the render-instruction plan to JSON should not fail");
 
         if let Err(message) = snapshot::compare_text_and_report(name, &json, "render", self.test_scope.as_deref()) {
