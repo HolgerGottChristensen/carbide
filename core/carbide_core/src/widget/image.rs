@@ -1,32 +1,32 @@
 //! A simple, non-interactive widget for drawing an `Image`.
 
+#[cfg(feature = "svg")]
+mod svg;
+
 use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
-use crate::color::{rgb_bytes, BLUE};
-use crate::draw::path::PathInstruction;
 use crate::draw::pre_multiply::PreMultiply;
-use crate::draw::stroke::{LineCap, LineJoin, StrokeOptions};
-use crate::draw::{Dimension, ImageId, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat, DrawOptions, DrawShape, SystemImageManager};
+use crate::draw::{Dimension, ImageId, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat};
+#[cfg(feature = "svg")]
+use crate::draw::SystemImageManager;
 use crate::environment::EnvironmentColor;
 use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
-use crate::render::{Render, RenderContext, RenderInstruction, RenderInstructionValue, Style};
+use crate::render::{Render, RenderContext, Style};
 use crate::scene::SceneManager;
 use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
 use crate::widget::types::ScaleMode;
 use crate::widget::{CommonWidget, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;
 use accesskit::{Node, Point, Role, Size};
-use carbide_usvg::tiny_skia_path::PathSegment;
-use carbide_usvg::{Document, Fill, Group, Options, Paint, PaintOrder, Stroke, Tree};
+#[cfg(feature = "svg")]
 use std::fs::File;
+#[cfg(feature = "svg")]
 use std::io::{BufReader, Read};
 use std::path::PathBuf;
 use std::sync::Arc;
-use cgmath::{Matrix4, Vector4};
 use url::Url;
 use carbide::draw::ImageFormat;
-use crate::draw::fill::FillOptions;
 
 /// A primitive and basic widget for drawing an `Image`.
 #[derive(Debug, Clone, Widget)]
@@ -182,6 +182,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     }*/
                 }
             }
+            #[cfg(feature = "svg")]
             (ImageId::Local(path, ..), ImageFormat::Svg) => {
                 if !ctx.image.exist(image_id, ctx.env) {
                     let full_path = if path.is_relative() {
@@ -198,21 +199,14 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     let mut string = String::new();
                     file.read_to_string(&mut string).unwrap();
 
-                    let options = Options::default();
-                    let doc = Document::from_str(&string, &options);
-                    let tree = doc.to_tree(&options);
-
-                    let description = self.construct_render_instructions(&tree);
-
-                    ctx.image.update_vector(
-                        image_id,
-                        description,
-                        Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
-                        ctx.env
-                    );
+                    self.load_svg(ctx, image_id, &string);
                 }
-
             }
+            #[cfg(not(feature = "svg"))]
+            (ImageId::Local(..), ImageFormat::Svg) | (ImageId::System(..), _)
+                if !ctx.image.exist(image_id, ctx.env) => {
+                    Self::svg_unsupported(ctx, image_id);
+                }
             (ImageId::Local(path, ..), _) => {
                 if !ctx.image.exist(image_id, ctx.env) {
                     let full_path = if path.is_relative() {
@@ -245,6 +239,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     Self::load_remote_raster(ctx, url);
                 }
             }
+            #[cfg(feature = "svg")]
             (ImageId::System(name, ..), _)
                 if !ctx.image.exist(image_id, ctx.env) => {
                     let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
@@ -252,21 +247,10 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                     let string = system_provider.image(name).map(|b| str::from_utf8(b).unwrap())
                         .unwrap_or_else(|| {
                             println!("Could not load system image: {}", name);
-                            MISSING_SVG
+                            svg::MISSING_SVG
                         });
 
-                    let options = Options::default();
-                    let doc = Document::from_str(string, &options);
-                    let tree = doc.to_tree(&options);
-
-                    let description = self.construct_render_instructions(&tree);
-
-                    ctx.image.update_vector(
-                        image_id,
-                        description,
-                        Dimension::new(tree.size().width() as Scalar, tree.size().height() as Scalar),
-                        ctx.env
-                    );
+                    self.load_svg(ctx, image_id, string);
                 }
             _ => {}
         }
@@ -313,150 +297,16 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
     }
 }
 
-impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
-    fn construct_render_instructions(&self, tree: &Tree) -> Vec<RenderInstruction> {
-        let mut description = vec![];
-
-        self.render_instructions_from_group(tree.root(), &mut description);
-
-        description
-    }
-
-    fn render_instructions_from_group(&self, group: &Group, description: &mut Vec<RenderInstruction>) {
-
-        let group_transform = group.transform();
-
-        let matrix = Matrix4::from_cols(
-            Vector4::new(group_transform.sx, group_transform.ky, 0.0, 0.0),
-            Vector4::new(group_transform.kx, group_transform.sy, 0.0, 0.0),
-            Vector4::new(0.0, 0.0, 1.0, 0.0),
-            Vector4::new(group_transform.tx, group_transform.ty, 0.0, 1.0)
-        );
-
-        description.push(RenderInstruction::PushTransform { transform: matrix });
-
-        for child in group.children() {
-            self.render_instructions_from_node(child, description)
-        }
-
-        description.push(RenderInstruction::PopTransform);
-    }
-
-    fn render_instructions_from_path(&self, path: &carbide_usvg::Path, description: &mut Vec<RenderInstruction>) {
-        let mut path_instructions = vec![];
-
-        for segment in path.data().segments() {
-            match segment {
-                PathSegment::MoveTo(point) => path_instructions.push(PathInstruction::MoveTo {
-                    to: Position::new(point.x as f64, point.y as f64)
-                }),
-                PathSegment::LineTo(point) => path_instructions.push(PathInstruction::LineTo {
-                    to: Position::new(point.x as f64, point.y as f64)
-                }),
-                PathSegment::QuadTo(ctrl, point) => path_instructions.push(PathInstruction::QuadraticBezierTo {
-                    ctrl: Position::new(ctrl.x as f64, ctrl.y as f64),
-                    to: Position::new(point.x as f64, point.y as f64)
-                }),
-                PathSegment::CubicTo(ctrl1, ctrl2, point) => path_instructions.push(PathInstruction::CubicBezierTo {
-                    ctrl1: Position::new(ctrl1.x as f64, ctrl1.y as f64),
-                    ctrl2: Position::new(ctrl2.x as f64, ctrl2.y as f64),
-                    to: Position::new(point.x as f64, point.y as f64)
-                }),
-                PathSegment::Close => path_instructions.push(PathInstruction::Close),
-            }
-        }
-
-        match path.paint_order() {
-            PaintOrder::FillAndStroke => {
-                if let Some(fill) = path.fill() {
-                    self.fill_path(description, &path_instructions, fill);
-                }
-                if let Some(stroke) = path.stroke() {
-                    self.stroke_path(description, &path_instructions, stroke);
-                }
-            }
-            PaintOrder::StrokeAndFill => {
-                if let Some(stroke) = path.stroke() {
-                    self.stroke_path(description, &path_instructions, stroke);
-                }
-                if let Some(fill) = path.fill() {
-                    self.fill_path(description, &path_instructions, fill);
-                }
-            }
-        }
-    }
-
-    fn fill_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, fill: &Fill) {
-        let style = match fill.paint() {
-            Paint::CurrentColor => self.color.as_ref()
-                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
-                .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
-            Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
-            Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
-            Paint::RadialGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
-            Paint::Pattern(_) => RenderInstructionValue::Constant(Style::Color(BLUE))
-        };
-
-        description.push(RenderInstruction::PushStyle { style });
-
-        description.push(RenderInstruction::Shape {
-            shape: DrawShape::Path(crate::draw::path::Path { instructions: path_instructions.clone() }),
-            options: DrawOptions::Fill(FillOptions::default())
-        });
-
-        description.push(RenderInstruction::PopStyle);
-    }
-
-    fn stroke_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, stroke: &Stroke) {
-        let style = match stroke.paint() {
-            Paint::CurrentColor => self.color.as_ref()
-                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
-                .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
-            Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
-            Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
-            Paint::RadialGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
-            Paint::Pattern(_) => RenderInstructionValue::Constant(Style::Color(BLUE))
-        };
-
-        let cap = match stroke.linecap() {
-            carbide_usvg::LineCap::Butt => LineCap::Butt,
-            carbide_usvg::LineCap::Round => LineCap::Round,
-            carbide_usvg::LineCap::Square => LineCap::Square
-        };
-
-        let join = match stroke.linejoin() {
-            carbide_usvg::LineJoin::Miter => LineJoin::Miter,
-            carbide_usvg::LineJoin::MiterClip => LineJoin::MiterClip { miter_limit: stroke.miterlimit().get() as Scalar },
-            carbide_usvg::LineJoin::Round => LineJoin::Round,
-            carbide_usvg::LineJoin::Bevel => LineJoin::Bevel,
-        };
-
-
-        description.push(RenderInstruction::PushStyle { style });
-
-        description.push(RenderInstruction::Shape {
-            shape: DrawShape::Path(crate::draw::path::Path { instructions: path_instructions.clone() }),
-            options: DrawOptions::Stroke(StrokeOptions::default()
-                .with_stroke_cap(cap)
-                .with_stroke_join(join)
-                .with_stroke_width(stroke.width().get() as Scalar)
-            )
-        });
-
-        description.push(RenderInstruction::PopStyle);
-    }
-
-    fn render_instructions_from_node(&self, node: &carbide_usvg::Node, description: &mut Vec<RenderInstruction>) {
-        match node {
-            carbide_usvg::Node::Group(g) => self.render_instructions_from_group(g, description),
-            carbide_usvg::Node::Path(p) => self.render_instructions_from_path(p, description),
-            carbide_usvg::Node::Image(_) => {}
-            carbide_usvg::Node::Text(_) => {}
-        }
-    }
-}
 
 impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
+    /// Without the `svg` feature, SVG and system images can't be parsed. Registers an empty 1x1
+    /// vector image instead, so the image renders as nothing and the warning prints once per image.
+    #[cfg(not(feature = "svg"))]
+    fn svg_unsupported(ctx: &mut LayoutContext, image_id: &ImageId) {
+        eprintln!("carbide: can't load {:?}: carbide_core was built without the `svg` feature", image_id);
+        ctx.image.update_vector(image_id, vec![], Dimension::new(1.0, 1.0), ctx.env);
+    }
+
     fn load_remote_raster(_ctx: &mut LayoutContext, url: &Url) {
         todo!("Load image from url: {}", url);
     }
@@ -554,24 +404,3 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Accessibility for Image<Id
 impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> CommonWidget for Image<Id, C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension, flexibility: 10);
 }
-
-static MISSING_SVG: &str = r#"
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-        <line x1="2" x2="22" y1="2" y2="22" />
-        <path d="M10.41 10.41a2 2 0 1 1-2.83-2.83" />
-        <line x1="13.5" x2="6" y1="13.5" y2="21" />
-        <line x1="18" x2="21" y1="12" y2="15" />
-        <path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59" />
-        <path d="M21 15V5a2 2 0 0 0-2-2H9" />
-    </svg>
-"#;

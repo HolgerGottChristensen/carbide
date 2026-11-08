@@ -17,17 +17,20 @@ categories = ["gui"]
 all-features = true
 
 [features]
-default = ["macro", "open-url"]
+default = ["macro", "open-url", "svg"]
 macro = ["carbide_macro"]
 # Enables ApplicationManager::open_url, which shells out to the OS to open a url/path with
 # whatever application is registered for it (default browser, mail client, etc). Opt-out since
 # it pulls in the `open` crate.
 open-url = ["dep:open"]
+# Loads SVG files and system images (icons) into vector images. Without it, those images render
+# as nothing and print a warning. Opt-out since it pulls in `carbide_usvg`.
+svg = ["dep:carbide_usvg"]
 
 [dependencies]
 carbide_derive.workspace = true
 carbide_macro = { workspace = true, optional = true }
-carbide_usvg.workspace = true
+carbide_usvg = { workspace = true, optional = true }
 
 bitflags.workspace = true
 cgmath.workspace = true
