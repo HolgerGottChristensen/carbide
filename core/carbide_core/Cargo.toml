@@ -43,8 +43,6 @@ image.workspace = true
 fxhash.workspace = true
 futures.workspace = true
 oneshot.workspace = true
-gif.workspace = true
-gif-dispose.workspace = true
 open = { workspace = true, optional = true }
 
 async-std = { workspace = true, optional = true }
