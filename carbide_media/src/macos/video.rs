@@ -8,7 +8,7 @@ use objc::{msg_send, class, sel, sel_impl};
 use carbide::animation::AnimationManager;
 use carbide::draw::{ImageMetrics, ImageMode, ImageOptions};
 use carbide::environment::Environment;
-use carbide::event::{EventSink, NoopEventSink};
+use carbide::event::{EventSinkKey, NoopEventSink};
 use carbide::layout::LayoutContext;
 use carbide::scene::SceneManager;
 use carbide_core::CommonWidgetImpl;
@@ -351,7 +351,7 @@ impl<Id: ReadState<T=ImageId> + Clone> Video<Id> {
             let duration = self.duration.clone();
             let buffering = self.buffering.clone();
 
-            let sink = if let Some(sink) = env.get::<dyn EventSink>().cloned() {
+            let sink = if let Some(sink) = env.get::<EventSinkKey>().cloned() {
                 sink
             } else {
                 Arc::new(NoopEventSink)

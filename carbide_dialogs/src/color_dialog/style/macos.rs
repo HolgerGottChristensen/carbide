@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::color_dialog::style::ColorDialogStyle;
 use carbide::color::{Color, ColorExt, RED};
 use carbide::environment::Environment;
-use carbide::event::{CoreEvent, EventSink, NoopEventSink};
+use carbide::event::{CoreEvent, EventSinkKey, NoopEventSink};
 use carbide::state::{AnyReadState, AnyState, LocalState, ReadState, State, StateExtNew, StateSync};
 use objc2::rc::Retained;
 use objc2::runtime::NSObject;
@@ -50,7 +50,7 @@ impl ColorDialogStyle for MacOSNativeColorDialogStyle {
         unsafe { panel.setShowsAlpha(*show_alpha.value()) };
         unsafe { panel.setAction(Some(sel!(colorChanged:))) };
 
-        let sink = env.get::<dyn EventSink>()
+        let sink = env.get::<EventSinkKey>()
             .expect("Event sink is required to open this color dialog")
             .clone();
 

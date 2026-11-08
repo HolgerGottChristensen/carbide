@@ -1,5 +1,6 @@
 pub use custom_event::CoreEvent;
 pub use custom_event::EventSink;
+pub use custom_event::EventSinkKey;
 pub use custom_event::HasEventSink;
 pub use custom_event::NoopEventSink;
 pub use event_handler::EventHandler;

@@ -16,7 +16,11 @@ pub trait EventSink: DynClone + Send {
 
 dyn_clone::clone_trait_object!(EventSink);
 
-impl EnvironmentKey for dyn EventSink {
+/// The key used to look up the [EventSink] from the environment.
+#[derive(Copy, Clone, Debug)]
+pub struct EventSinkKey;
+
+impl EnvironmentKey for EventSinkKey {
     type Value = Arc<dyn EventSink>;
     type Access = Shared;
 }
