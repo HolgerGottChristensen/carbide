@@ -9,7 +9,6 @@ use carbide_core::event::{WindowEvent, WindowEventContext, WindowEventHandler};
 use carbide_core::lifecycle::InitializationContext;
 use carbide_core::scene::{SceneId, SceneManager};
 use carbide_core::state::ReadState;
-use carbide_core::text::NOOPTextContext;
 use carbide_core::widget::Widget;
 use carbide_winit::raw_window_handle_05::HasRawWindowHandle;
 use carbide_winit::WindowHandleKey;
@@ -114,7 +113,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
                     env,
                 });
                 scene.process_window_event(&WindowEvent::Initialize, &mut WindowEventContext {
-                    text: &mut NOOPTextContext,
                     image: &mut NOOPImageContext,
                     env,
                     is_current: &false, // todo

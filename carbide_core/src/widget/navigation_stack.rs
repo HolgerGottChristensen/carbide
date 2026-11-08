@@ -194,7 +194,6 @@ impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Updat
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_update(&mut UpdateContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
             })
@@ -206,7 +205,6 @@ impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Mouse
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_mouse_event(event, &mut MouseEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -221,7 +219,6 @@ impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Keybo
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_keyboard_event(event, &mut KeyboardEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,
@@ -236,7 +233,6 @@ impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Other
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_other_event(event, &mut OtherEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,
@@ -250,7 +246,6 @@ impl<K: EnvironmentKey<Value=NavigationManager, Access=Exclusive> + Clone> Windo
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.with_navigation_manager(ctx.env, |env, child| {
             child.process_window_event(event, &mut WindowEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,

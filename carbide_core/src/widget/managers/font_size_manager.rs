@@ -52,7 +52,6 @@ impl<C: Widget> Layout for FontSizeManager<C> {
 
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             response = self.child.calculate_size(requested_size, &mut LayoutContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             });
@@ -70,7 +69,6 @@ impl<C: Widget> Layout for FontSizeManager<C> {
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
             self.child.position_children(
                 bounding_box, &mut LayoutContext {
-                                text: ctx.text,
                                 image: ctx.image,
                                 env: inner,
                             })
@@ -82,7 +80,6 @@ impl<C: Widget> Update for FontSizeManager<C> {
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_update(&mut UpdateContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             })
@@ -104,7 +101,6 @@ impl<C: Widget> OtherEventHandler for FontSizeManager<C> {
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_other_event(event, &mut OtherEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -118,7 +114,6 @@ impl<C: Widget> WindowEventHandler for FontSizeManager<C> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_window_event(event, &mut WindowEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -132,7 +127,6 @@ impl<C: Widget> ApplicationEventHandler for FontSizeManager<C> {
     fn process_application_event(&mut self, event: &ApplicationEvent, ctx: &mut ApplicationEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_application_event(event, &mut ApplicationEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner
             })
@@ -154,7 +148,6 @@ impl<C: Widget> KeyboardEventHandler for FontSizeManager<C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -169,7 +162,6 @@ impl<C: Widget> MouseEventHandler for FontSizeManager<C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.process_mouse_event(event, &mut MouseEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -235,7 +227,6 @@ impl<C: Widget> Render for FontSizeManager<C> {
         EnvironmentFontSize::with_all(&self.sizes, ctx.env, |inner| {
             self.child.render(&mut RenderContext {
                 render: ctx.render,
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             })

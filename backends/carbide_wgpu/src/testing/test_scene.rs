@@ -31,7 +31,6 @@ pub(crate) struct TestScene<C> where C: Widget {
 impl<C: Widget> MouseEventHandler for TestScene<C> {
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.child.process_mouse_event(event, &mut MouseEventContext {
-            text: ctx.text,
             image: ctx.image,
             is_current: &true,
             window_id: ctx.window_id,
@@ -44,7 +43,6 @@ impl<C: Widget> MouseEventHandler for TestScene<C> {
 impl<C: Widget> KeyboardEventHandler for TestScene<C> {
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.child.process_keyboard_event(event, &mut KeyboardEventContext {
-            text: ctx.text,
             image: ctx.image,
             env: ctx.env,
             is_current: &true,
@@ -57,7 +55,6 @@ impl<C: Widget> KeyboardEventHandler for TestScene<C> {
 impl<C: Widget> WindowEventHandler for TestScene<C> {
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.child.process_window_event(event, &mut WindowEventContext {
-            text: ctx.text,
             image: ctx.image,
             env: ctx.env,
             is_current: &true,

@@ -11,7 +11,8 @@ use crate::environment::Environment;
 use crate::render::layer::{Layer, LayerId};
 use crate::render::render_instruction_cache::RenderInstructionCache;
 use crate::state::ReadState;
-use crate::text::{TextContext, TextId};
+use crate::scene::SceneManager;
+use crate::text::{TextContextKey, TextId};
 use crate::widget::ImageFilter;
 
 /// # Render context
@@ -19,7 +20,6 @@ use crate::widget::ImageFilter;
 /// The rendering context provides an abstraction over different inner contexts and the environment.
 pub struct RenderContext<'a, 'b: 'a> {
     pub render: &'a mut dyn InnerRenderContext,
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }
@@ -154,15 +154,19 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
     }
 
     pub fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>) {
-        self.render.text(text, style, position, requested_size, self.env, self.text)
+        self.render.text(text, style, position, requested_size, self.env)
     }
 
     pub fn measure_text(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>) -> Dimension {
-        self.text.calculate_size_new(text, style, requested_size, self.env)
+        let scale_factor = self.env.get::<SceneManager>()
+            .map(|scene_manager| scene_manager.scale_factor())
+            .unwrap_or(1.0);
+
+        TextContextKey::get_mut(self.env).calculate_size_new(text, style, requested_size, scale_factor)
     }
 
     pub fn text_old(&mut self, text: TextId) {
-        self.render.text_old(text, self.text);
+        self.render.text_old(text, self.env);
     }
 
     pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
@@ -264,8 +268,10 @@ pub trait InnerRenderContext {
 
     fn raster_image(&mut self, id: &ImageId, bounding_box: Rect, options: ImageOptions);
 
-    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext);
-    fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext);
+    /// Render a piece of text, using the text context registered in `env` (see `TextContextKey`).
+    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment);
+    /// Render the text with the given id, using the text context registered in `env`.
+    fn text_old(&mut self, text: TextId, env: &mut Environment);
 
     /// `radius_x`/`radius_y` are how far (in logical pixels, on each side) the upcoming filter's
     /// kernel taps can reach — i.e. `ImageFilter::radius_x()`/`radius_y()` of whichever filter(s)

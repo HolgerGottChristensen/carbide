@@ -14,7 +14,6 @@ impl<T: ReadState<T=String>, C: Widget> MouseEventHandler for Window<T, C> {
 
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut MouseEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         is_current: &(*ctx.window_id == id),
                         window_id: ctx.window_id,
@@ -65,7 +64,6 @@ impl<T: ReadState<T=String>, C: Widget> KeyboardEventHandler for Window<T, C> {
 
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut KeyboardEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env,
                         is_current: &(*ctx.window_id == id),
@@ -92,7 +90,6 @@ impl<T: ReadState<T=String>, C: Widget> OtherEventHandler for Window<T, C> {
             WindowState::Initialized(initialized) => {
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut OtherEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env,
                         is_current: ctx.is_current,
@@ -118,7 +115,6 @@ impl<T: ReadState<T=String>, C: Widget> ApplicationEventHandler for Window<T, C>
             WindowState::Initialized(initialized) => {
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut ApplicationEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env
                     };
@@ -195,7 +191,6 @@ impl<T: ReadState<T=String>, C: Widget> WindowEventHandler for Window<T, C> {
 
                 initialized.with_env(ctx.env, |env, initialized| {
                     let new_ctx = &mut WindowEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env,
                         is_current: &is_current,

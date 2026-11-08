@@ -8,7 +8,7 @@ use crate::scene::SceneManager;
 use crate::state::{IntoReadState, ReadState};
 use crate::text::text_justify::TextJustify;
 use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextId, TextStyle};
+use crate::text::{FontStyle, FontWeight, TextContextKey, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use accesskit::{Node, Point, Rect, Role, Size};
 use std::fmt::Debug;
@@ -218,8 +218,13 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
-        ctx.text.update(self.text_id, &self.text.value(), &self.get_style());
-        self.dimension = ctx.text.calculate_size(self.text_id, requested_size, ctx.env);
+        let scale_factor = ctx.env.get::<SceneManager>()
+            .map(|a| a.scale_factor())
+            .unwrap_or(1.0);
+
+        let text_context = TextContextKey::get_mut(ctx.env);
+        text_context.update(self.text_id, &self.text.value(), &self.get_style());
+        self.dimension = text_context.calculate_size(self.text_id, requested_size, scale_factor);
 
         self.dimension
     }
@@ -229,7 +234,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);
 
-        ctx.text.calculate_position(self.text_id, self.position.tolerance(1.0 / scale_factor), ctx.env)
+        TextContextKey::get_mut(ctx.env).calculate_position(self.text_id, self.position.tolerance(1.0 / scale_factor), scale_factor)
     }
 }
 

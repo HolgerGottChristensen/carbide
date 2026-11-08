@@ -18,7 +18,8 @@ use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix4, SquareMatrix, Vector3};
 use carbide_core::render::{InnerRenderContext, Layer, LayerId};
 use carbide_core::text::glyph::GlyphRenderMode;
-use carbide_core::text::{TextContext, TextId, TextStyle};
+use carbide_core::text::{TextContextKey, TextId, TextStyle};
+use carbide_core::scene::SceneManager;
 use carbide_core::widget::{FilterId, ImageFilter};
 use carbide_tesselation::stroke_vertex::StrokeVertex;
 use carbide_tesselation::triangle::Triangle;
@@ -989,12 +990,16 @@ impl InnerRenderContext for WGPURenderContext {
         self.draw_raster_image(Some(WGPUBindGroup::Image(id.clone())), bounding_box, source_rect, mode)
     }
 
-    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {
+    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment) {
         if self.skip_rendering {
             return;
         }
 
-        ctx.render_new(text, style, position, requested_size, env, &mut |glyph| {
+        let scale_factor = env.get::<SceneManager>()
+            .map(|scene_manager| scene_manager.scale_factor())
+            .unwrap_or(1.0);
+
+        TextContextKey::get_mut(env).render_new(text, style, position, requested_size, scale_factor, &mut |glyph| {
             let mode = match glyph.mode {
                 GlyphRenderMode::Plain => MODE_TEXT,
                 GlyphRenderMode::Colored => MODE_TEXT_COLOR,
@@ -1004,12 +1009,12 @@ impl InnerRenderContext for WGPURenderContext {
         });
     }
 
-    fn text_old(&mut self, text: TextId, ctx: &mut dyn TextContext) {
+    fn text_old(&mut self, text: TextId, env: &mut Environment) {
         if self.skip_rendering {
             return;
         }
 
-        ctx.render(text, &mut |glyph| {
+        TextContextKey::get_mut(env).render(text, &mut |glyph| {
             let mode = match glyph.mode {
                 GlyphRenderMode::Plain => MODE_TEXT,
                 GlyphRenderMode::Colored => MODE_TEXT_COLOR,

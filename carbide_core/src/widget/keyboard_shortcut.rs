@@ -49,7 +49,6 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
             && pressed.0 == self.id() {
                 self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env: ctx.env,
                         is_current: &true,
@@ -62,7 +61,6 @@ impl<C: Widget> OtherEventHandler for KeyboardShortcut<C> {
             && released.0 == self.id() {
                 self.foreach_child(&mut |child| {
                     child.process_other_event(event, &mut OtherEventContext {
-                        text: ctx.text,
                         image: ctx.image,
                         env: ctx.env,
                         is_current: &true,

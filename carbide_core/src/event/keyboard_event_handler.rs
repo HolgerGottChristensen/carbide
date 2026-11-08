@@ -2,7 +2,6 @@ use crate::draw::ImageContext;
 use crate::environment::{Environment};
 use crate::event::{Key, ModifierKey};
 use crate::focus::Focusable;
-use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
@@ -33,7 +32,6 @@ pub trait KeyboardEventHandler: CommonWidget + WidgetSync + Focusable {
 
 
 pub struct KeyboardEventContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
     pub is_current: &'a bool,

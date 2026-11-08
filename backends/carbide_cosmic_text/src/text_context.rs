@@ -1,5 +1,6 @@
 use cosmic_text::{Attrs, Buffer, Family, FontSystem, LayoutRun, Metrics, Shaping, Style, SwashImage, Weight};
 use fxhash::FxHashMap;
+use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
 use swash::scale::image::Content;
 use swash::scale::{Render, ScaleContext, Source, StrikeWith};
@@ -11,9 +12,7 @@ use crate::text_cache::{CachableTextStyle, TextEntry, TextKey};
 use carbide_cache::Cache;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
-use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
-use carbide_core::scene::SceneManager;
 use carbide_core::text::glyph::{Glyph, GlyphRenderMode};
 use carbide_core::text::text_wrap::Wrap;
 use carbide_core::text::{FontStyle, TextId};
@@ -134,6 +133,14 @@ impl CosmicTextContext {
     }
 }
 
+impl Debug for CosmicTextContext {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CosmicTextContext")
+            .field("texts", &self.map.len())
+            .finish_non_exhaustive()
+    }
+}
+
 impl Default for CosmicTextContext {
     fn default() -> Self {
         Self::new()
@@ -141,11 +148,11 @@ impl Default for CosmicTextContext {
 }
 
 impl TextContext for CosmicTextContext {
-    fn calculate_size_new(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>, env: &mut Environment) -> Dimension {
-        let scale_factor = env.get_mut::<SceneManager>()
-            .map(|a| a.scale_factor())
-            .unwrap_or(1.0);
+    fn sweep(&mut self) {
+        CosmicTextContext::sweep(self)
+    }
 
+    fn calculate_size_new(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>, scale_factor: Scalar) -> Dimension {
         let width = requested_size.map(|x| x.width as f32).unwrap_or(f32::MAX);
 
         let cache_key = TextKey {
@@ -205,11 +212,7 @@ impl TextContext for CosmicTextContext {
         }
     }
 
-    fn render_new(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, f: &mut dyn FnMut(&Glyph)) {
-        let scale_factor = env.get_mut::<SceneManager>()
-            .map(|a| a.scale_factor())
-            .unwrap_or(1.0);
-
+    fn render_new(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, scale_factor: Scalar, f: &mut dyn FnMut(&Glyph)) {
         let width = requested_size.map(|x| x.width as f32).unwrap_or(f32::MAX);
 
         let position = position.tolerance(1.0 / scale_factor);
@@ -308,18 +311,13 @@ impl TextContext for CosmicTextContext {
         }
     }
 
-    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, env: &mut Environment) -> Dimension {
+    fn calculate_size(&mut self, id: TextId, requested_size: Dimension, scale_factor: Scalar) -> Dimension {
         let (buffer, _) = self.map.get_mut(&id).unwrap_or_else(|| panic!("Expected the text context to contain an entry with id: {:?}", id));
 
         buffer.set_size(&mut self.font_system, Some(requested_size.width as f32), None);
 
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
-
-        let scale_factor = env.get_mut::<SceneManager>()
-            .map(|a| a.scale_factor())
-            .unwrap_or(1.0);
-
         for run in buffer.layout_runs() {
             width = width.max(run.line_w);
             height = height.max(run.line_top + buffer.metrics().line_height);
@@ -351,11 +349,7 @@ impl TextContext for CosmicTextContext {
         Dimension::new(width as f64, height as f64)
     }
 
-    fn calculate_position(&mut self, id: TextId, requested_offset: Position, env: &mut Environment) {
-        let scale_factor = env.get::<SceneManager>()
-            .map(|a| a.scale_factor())
-            .unwrap_or(1.0);
-
+    fn calculate_position(&mut self, id: TextId, requested_offset: Position, scale_factor: Scalar) {
         self.map.get_mut(&id).unwrap().1.position = requested_offset.rounded();
         self.map.get_mut(&id).unwrap().1.scale_factor = scale_factor;
     }

@@ -51,7 +51,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Layout
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             response = self.child.calculate_size(requested_size, &mut LayoutContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             });
@@ -71,7 +70,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Layout
             self.child.set_position(alignment.position(position, dimension, self.child.dimension()));
             self.child.position_children(
                 bounding_box, &mut LayoutContext {
-                                text: ctx.text,
                                 image: ctx.image,
                                 env: inner,
                             })
@@ -85,7 +83,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Update
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_update(&mut UpdateContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             })
@@ -111,7 +108,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> OtherE
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_other_event(event, &mut OtherEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -127,7 +123,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Window
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_window_event(event, &mut WindowEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -143,7 +138,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Applic
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_application_event(event, &mut ApplicationEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner
             })
@@ -169,7 +163,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Keyboa
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_keyboard_event(event, &mut KeyboardEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -186,7 +179,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> MouseE
 
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.process_mouse_event(event, &mut MouseEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
                 is_current: ctx.is_current,
@@ -262,7 +254,6 @@ impl<C: Widget, K: EnvironmentKeyable + Clone, V: ReadState<T=K::Output>> Render
         self.key.with(&*self.value.value(), ctx.env, |inner| {
             self.child.render(&mut RenderContext {
                 render: ctx.render,
-                text: ctx.text,
                 image: ctx.image,
                 env: inner,
             })

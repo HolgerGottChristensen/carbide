@@ -10,7 +10,7 @@ use carbide_core::draw::{Dimension, DrawGradient, ImageId, Position, Rect, Scala
 use carbide_core::environment::Environment;
 use carbide_core::math::Matrix4;
 use carbide_core::render::RenderContext;
-use carbide_core::text::TextContext;
+use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::{AnyWidget, FilterId};
 use carbide_wgpu_core::WgpuContextNew;
 use carbide_winit::dpi::PhysicalSize;
@@ -150,11 +150,10 @@ impl OffscreenRenderer {
     pub(crate) fn build_render_passes(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext) -> Vec<RenderPass> {
         self.render_context.start(Rect::new(Position::origin(), dimensions), scale_factor);
 
-        ctx.text.prepare_render();
+        TextContextKey::get_mut(ctx.env).prepare_render();
 
         child.render(&mut RenderContext {
             render: &mut self.render_context,
-            text: ctx.text,
             image: ctx.image,
             env: ctx.env,
         });
@@ -229,8 +228,8 @@ impl OffscreenRenderer {
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
         let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
-        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
-        self.execute_render_passes(render_passes, scale_factor, ctx.text, wgpu_context, wgpu_context_new, encoder);
+        let (wgpu_context, wgpu_context_new, text_context) = ctx.env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey)>().unwrap();
+        self.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, encoder);
     }
 
     pub(crate) fn resize(&mut self, new_size: PhysicalSize<u32>, scale_factor: Scalar, env: &mut Environment) {

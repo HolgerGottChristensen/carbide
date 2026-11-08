@@ -9,7 +9,7 @@ use carbide_core::layout::LayoutContext;
 use carbide_core::lifecycle::UpdateContext;
 use carbide_core::render::{NoopRenderContext, Render, RenderContext};
 use carbide_core::state::ReadState;
-use carbide_core::text::TextContext;
+use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::Widget;
 use carbide_winit::convert_mouse_cursor;
 use carbide_winit::dpi::PhysicalSize;
@@ -43,7 +43,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             for scene in &mut initialized.scenes {
                 scene.render(&mut RenderContext {
                     render: ctx.render,
-                    text: ctx.text,
                     image: ctx.image,
                     env,
                 });
@@ -51,14 +50,12 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
             // Update children
             initialized.child.process_update(&mut UpdateContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
             });
 
             // Calculate size
             initialized.child.calculate_size(dimensions, &mut LayoutContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
             });
@@ -76,7 +73,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             initialized.child.position_children(
                 bounding_box,
                 &mut LayoutContext {
-                    text: ctx.text,
                     image: ctx.image,
                     env,
                 }
@@ -85,7 +81,6 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
             // Render the children into the offscreen draw-call plan
             render_passes = Some(initialized.offscreen.build_render_passes(&mut initialized.child, dimensions, scale_factor, &mut RenderContext {
                 render: &mut NoopRenderContext,
-                text: ctx.text,
                 image: ctx.image,
                 env,
             }));
@@ -104,14 +99,14 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         let render_passes = render_passes.expect("with_env always runs its closure exactly once");
 
-        let (wgpu_context, wgpu_context_new) = ctx.env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
+        let (wgpu_context, wgpu_context_new, text_context) = ctx.env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey)>().unwrap();
 
         if self.visible {
             let cursor = convert_mouse_cursor(self.mouse_cursor);
             self.inner.set_cursor(cursor);
             self.mouse_cursor = MouseCursor::Default;
 
-            match self.render_inner(render_passes, ctx.text, scale_factor, wgpu_context, wgpu_context_new) {
+            match self.render_inner(render_passes, &mut **text_context, scale_factor, wgpu_context, wgpu_context_new) {
                 Ok(_) => {}
                 // Recreate the swap_chain if lost
                 Err(wgpu::SurfaceError::Lost) => {

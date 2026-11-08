@@ -2,7 +2,6 @@ use crate::draw::ImageContext;
 use crate::environment::Environment;
 use crate::focus::Focusable;
 use crate::common::any_debug::AnyDebug;
-use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 use crate::event::CoreEvent;
 use std::any::{Any, TypeId};
@@ -27,7 +26,6 @@ pub trait OtherEventHandler: CommonWidget + WidgetSync + Focusable {
 }
 
 pub struct OtherEventContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
     pub is_current: &'a bool,

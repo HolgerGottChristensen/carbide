@@ -25,7 +25,6 @@ use carbide_winit::keyboard::Key;
 use carbide_winit::window::WindowId;
 use carbide_winit::{update_scale_factor, NewEventHandler};
 
-use carbide_cosmic_text::text_context::CosmicTextContext;
 use crate::image_context::WGPUImageContext;
 use crate::offscreen_renderer::OffscreenRenderer;
 use crate::testing::{snapshot, SnapshotOptions};
@@ -36,18 +35,18 @@ use crate::wgpu_msaa::WgpuMsaa;
 
 /// Registers every plugin into a `Harness`'s own, fresh environment: the shared
 /// `WgpuContextNew` (instance/adapter/device/queue), the `WgpuContext` renderer state built on
-/// top of it, and the tesselator. Same setup as `Application::launch_inner`.
+/// top of it, the text context and the tesselator. Same setup as `Application::launch_inner`.
 ///
-/// Each `Harness` gets its own `WgpuContext` this way, deliberately *not* shared across
-/// instances. Sharing one was the original design here, for speed, since creating it requests an
-/// adapter/device and compiles every shader module. It was reverted after discovering a real
-/// correctness bug: `WgpuContext::atlas_cache_texture` is a *stateful* glyph cache whose contents
-/// are only meaningful in combination with the one `CosmicTextContext`'s allocation bookkeeping
-/// that populated it. Two `Harness`es sharing the physical texture while each running its own
-/// independent `CosmicTextContext` corrupts each other's glyph/icon atlas regions, observed
-/// directly as a `Toggle` checkbox icon rendering wrong when a second `Harness` was constructed
-/// while a first one (rendering the same icon) was still alive. Correctness over speed: register
-/// fresh every time.
+/// Each `Harness` gets its own `WgpuContext` and text context this way, deliberately *not*
+/// shared across instances. Sharing the `WgpuContext` was the original design here, for speed,
+/// since creating it requests an adapter/device and compiles every shader module. It was reverted
+/// after discovering a real correctness bug: `WgpuContext::atlas_cache_texture` is a *stateful*
+/// glyph cache whose contents are only meaningful in combination with the one text context's
+/// allocation bookkeeping that populated it. Two `Harness`es sharing the physical texture while
+/// each running its own independent text context corrupts each other's glyph/icon atlas regions,
+/// observed directly as a `Toggle` checkbox icon rendering wrong when a second `Harness` was
+/// constructed while a first one (rendering the same icon) was still alive. The two must always
+/// be created together. Correctness over speed: register fresh every time.
 fn register_harness_plugins(env: &mut Environment<'static>) {
     futures::executor::block_on(register_plugins(env));
 }
@@ -226,7 +225,6 @@ fn render_passes_to_json(passes: &[crate::render_pass_command::RenderPass]) -> s
 /// committed reference.
 pub struct Harness {
     env: Environment<'static>,
-    text_context: CosmicTextContext,
     scenes: [Box<dyn AnyScene>; 1],
     event_handler: NewEventHandler,
     focus_manager: FocusManager,
@@ -300,7 +298,6 @@ impl Harness {
 
         Harness {
             env,
-            text_context: CosmicTextContext::new(),
             scenes: [scene],
             event_handler: NewEventHandler::new(),
             focus_manager: FocusManager::new(),
@@ -322,14 +319,13 @@ impl Harness {
     /// `RunningApplication` does for the live-window path (`application.rs`), needed because
     /// `NewEventHandler`'s dispatch methods and `OffscreenRenderer` both look these up via
     /// `env.get_mut::<...>()`.
-    fn with_env_scope<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut CosmicTextContext, &mut NewEventHandler, &mut OffscreenRenderer) -> R) -> R {
+    fn with_env_scope<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut NewEventHandler, &mut OffscreenRenderer) -> R) -> R {
         let Harness {
             env,
             animation_manager,
             render_instruction_cache,
             focus_manager,
             scenes,
-            text_context,
             event_handler,
             offscreen,
             dimension,
@@ -351,7 +347,7 @@ impl Harness {
             env.with::<RenderInstructionCache>(render_instruction_cache, |env| {
                 env.with::<FocusManager>(focus_manager, |env| {
                     env.with::<SceneManager>(&mut scene_manager, |env| {
-                        result = Some(f(env, scenes, text_context, event_handler, offscreen));
+                        result = Some(f(env, scenes, event_handler, offscreen));
                     })
                 })
             })
@@ -367,11 +363,10 @@ impl Harness {
         let physical = physical_size(dimension, self.scale_factor);
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, text_context, _event_handler, offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
             offscreen.resize(physical, scale_factor, env);
 
             scenes[0].process_window_event(&WindowEvent::Resize(dimension), &mut WindowEventContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
                 is_current: &false,
@@ -406,24 +401,24 @@ impl Harness {
         update_scale_factor(window_id, scale_factor);
         let physical = PhysicalPosition::new(position.x * scale_factor, position.y * scale_factor);
 
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.cursor_moved(physical, window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.cursor_moved(physical, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
 
     pub fn mouse_press(&mut self, button: MouseButton) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.mouse_input(button, ElementState::Pressed, window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.mouse_input(button, ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
 
     pub fn mouse_release(&mut self, button: MouseButton) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.mouse_input(button, ElementState::Released, window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.mouse_input(button, ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
@@ -445,24 +440,24 @@ impl Harness {
         update_scale_factor(window_id, scale_factor);
         let physical = PhysicalPosition::new(delta_x * scale_factor, delta_y * scale_factor);
 
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.mouse_wheel(MouseScrollDelta::PixelDelta(physical), window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.mouse_wheel(MouseScrollDelta::PixelDelta(physical), window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
 
     pub fn key_press(&mut self, key: Key) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.keyboard(key.clone(), key.clone(), ElementState::Pressed, window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.keyboard(key.clone(), key.clone(), ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
 
     pub fn key_release(&mut self, key: Key) {
         let window_id = self.window_id;
-        self.with_env_scope(|env, scenes, text_context, event_handler, _offscreen| {
-            event_handler.keyboard(key.clone(), key.clone(), ElementState::Released, window_id, scenes, text_context, &mut WGPUImageContext, env);
+        self.with_env_scope(|env, scenes, event_handler, _offscreen| {
+            event_handler.keyboard(key.clone(), key.clone(), ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
         });
         self.refocus();
     }
@@ -488,7 +483,6 @@ impl Harness {
     /// widget's own polling (typically inside its `Render::render()`) picks up the result.
     pub fn run_async_tasks(&mut self) {
         let mut ctx = AsyncContext {
-            text: &mut self.text_context,
             image: &mut WGPUImageContext,
             env: &mut self.env,
         };
@@ -521,17 +515,15 @@ impl Harness {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, text_context, _event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, _offscreen| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
@@ -540,7 +532,6 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
@@ -610,7 +601,7 @@ impl Harness {
         let (widget_id, _) = self.find_by_label(label)
             .unwrap_or_else(|| panic!("invoke_accessibility_action: no accessible node with label {label:?}"));
 
-        self.with_env_scope(|env, scenes, _text_context, _event_handler, _offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, _offscreen| {
             scenes[0].process_accessibility_event(&AccessibilityEvent {
                 action,
                 target: widget_id,
@@ -642,17 +633,15 @@ impl Harness {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, text_context, _event_handler, offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
@@ -661,7 +650,6 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
@@ -675,7 +663,6 @@ impl Harness {
 
             offscreen.render_child(scene, dimension, scale_factor, &mut RenderContext {
                 render: &mut NoopRenderContext,
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             }, &mut encoder);
@@ -706,17 +693,15 @@ impl Harness {
         let dimension = self.dimension;
         let scale_factor = self.scale_factor;
 
-        self.with_env_scope(|env, scenes, text_context, _event_handler, offscreen| {
+        self.with_env_scope(|env, scenes, _event_handler, offscreen| {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
@@ -725,14 +710,12 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             });
 
             offscreen.build_render_passes(scene, dimension, scale_factor, &mut RenderContext {
                 render: &mut NoopRenderContext,
-                text: text_context,
                 image: &mut WGPUImageContext,
                 env,
             })

@@ -2,7 +2,7 @@ use crate::draw::stroke::StrokeDashPattern;
 use crate::draw::DrawShape;
 use crate::draw::{Color, CompositeDrawShape, Dimension, DrawOptions, DrawStyle, ImageId, ImageOptions, Rect};
 use crate::render::{InnerRenderContext, Layer, LayerId, NoopLayer};
-use crate::text::{TextContext, TextId};
+use crate::text::TextId;
 use crate::widget::ImageFilter;
 use crate::environment::Environment;
 use cgmath::Matrix4;
@@ -42,9 +42,9 @@ impl InnerRenderContext for NoopRenderContext {
 
     fn raster_image(&mut self, _id: &ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
-    fn text(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment, _ctx: &mut dyn TextContext) {}
+    fn text(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment) {}
 
-    fn text_old(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
+    fn text_old(&mut self, _text: TextId, _env: &mut Environment) {}
 
     fn filter_new(&mut self, _radius_x: u32, _radius_y: u32) {}
 

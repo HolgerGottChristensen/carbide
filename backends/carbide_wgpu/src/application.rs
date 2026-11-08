@@ -23,9 +23,8 @@ use carbide_core::locate_folder;
 use carbide_core::mouse_position::MousePositionKey;
 use carbide_core::render::{RenderInstruction, RenderInstructionCache};
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
-use carbide_core::text::TextContext as _;
+use carbide_core::text::TextContextKey;
 use carbide_core::widget::WidgetId;
-use carbide_cosmic_text::text_context::CosmicTextContext;
 #[cfg(feature = "icons")]
 use carbide_icons::{SYSTEM_IMAGE_MANAGER};
 use carbide_winit::application::ApplicationHandler;
@@ -53,7 +52,9 @@ pub struct Application {
 
     event_handler: NewEventHandler,
     environment: Environment<'static>,
-    text_context: CosmicTextContext,
+    /// Fonts added before launch. They are added to the text context registered in the
+    /// environment once the plugins have run.
+    fonts: Vec<PathBuf>,
     event_loop: EventLoop<CustomEvent>,
     event_sink: Arc<dyn EventSink>,
 }
@@ -88,7 +89,7 @@ impl Application {
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
             environment,
-            text_context: CosmicTextContext::new(),
+            fonts: Vec::new(),
             event_loop,
             event_sink,
         }
@@ -129,12 +130,9 @@ impl Application {
         self
     }
 
+    /// Add a font file. The font is loaded into the text context when the application launches.
     pub fn add_font<P: AsRef<Path>>(&mut self, path: P) {
-        self.text_context.add_font(path.as_ref().to_path_buf());
-    }
-
-    pub fn text_context_mut(&mut self) -> &mut dyn carbide_core::text::TextContext {
-        &mut self.text_context
+        self.fonts.push(path.as_ref().to_path_buf());
     }
 
     pub fn launch(self) {
@@ -155,19 +153,23 @@ impl Application {
             scenes,
             event_handler,
             mut environment,
-            text_context,
+            fonts,
             event_loop,
             event_sink
         } = application;
 
         register_plugins(&mut environment).await;
 
+        let text_context = TextContextKey::get_mut(&mut environment);
+        for font in fonts {
+            text_context.add_font(font);
+        }
+
         let mut running = RunningApplication {
             id,
             scenes,
             event_handler,
             environment,
-            text_context,
             animation_manager: AnimationManager::new(),
             application_manager: ApplicationManager::new(),
             focus_manager: FocusManager::new(),
@@ -207,7 +209,6 @@ pub struct RunningApplication {
     scenes: Scenes,
     event_handler: NewEventHandler,
     environment: Environment<'static>,
-    text_context: CosmicTextContext,
     animation_manager: AnimationManager,
     application_manager: ApplicationManager,
     focus_manager: FocusManager,
@@ -243,7 +244,6 @@ impl RunningApplication {
                         // when the application event Resumed is sent.
                         if self.latest_application_event == Some(ApplicationEvent::Resumed) {
                             scene.process_window_event(&carbide_core::event::WindowEvent::Initialize, &mut WindowEventContext {
-                                text: &mut self.text_context,
                                 image: &mut WGPUImageContext,
                                 env,
                                 is_current: &false, // todo
@@ -268,7 +268,7 @@ impl RunningApplication {
         }
 
         if ApplicationManager::application_frame().is_multiple_of(60) {
-            self.text_context.sweep()
+            TextContextKey::get_mut(&mut self.environment).sweep()
         }
 
         match request {
@@ -293,7 +293,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
         self.environment.with::<ActiveEventLoopKey>(event_loop, |env| {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
-                    self.event_handler.resumed_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                    self.event_handler.resumed_event(&mut self.scenes, &mut WGPUImageContext, env);
 
                     for scene in &mut self.scenes {
                         scene.process_initialization(&mut InitializationContext {
@@ -322,7 +322,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
                                 env.with::<dyn EventSink>(&self.event_sink, |env| {
                                     for scene in &mut self.scenes {
-                                        request += self.event_handler.user_event(&event, scene, &mut self.text_context, &mut WGPUImageContext, env, self.id);
+                                        request += self.event_handler.user_event(&event, scene, &mut WGPUImageContext, env, self.id);
                                     }
                                 })
                             })
@@ -355,7 +355,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
                         env.with::<FocusManager>(&mut self.focus_manager, |env| {
                             env.with::<MousePositionKey>(&mouse_position, |env| {
                                 env.with::<dyn EventSink>(&self.event_sink, |env| {
-                                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env, self.id);
+                                    request = self.event_handler.window_event(&event, window_id, &mut self.scenes, &mut WGPUImageContext, env, self.id);
                                 })
                             })
                         })
@@ -374,7 +374,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                        self.event_handler.suspended_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                        self.event_handler.suspended_event(&mut self.scenes, &mut WGPUImageContext, env);
                     })
                 })
             })
@@ -388,7 +388,7 @@ impl ApplicationHandler<CustomEvent> for RunningApplication {
             env.with::<dyn EventSink>(&self.event_sink, |env| {
                 env.with::<RenderInstructionCache>(&mut self.render_instruction_cache, |env| {
                     env.with::<ActiveEventLoopKey>(event_loop, |env| {
-                        self.event_handler.exited_event(&mut self.scenes, &mut self.text_context, &mut WGPUImageContext, env);
+                        self.event_handler.exited_event(&mut self.scenes, &mut WGPUImageContext, env);
                     })
                 })
             })

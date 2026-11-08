@@ -12,9 +12,11 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 categories = ["gui"]
 
 [features]
-default = ["lyon"]
+default = ["lyon", "cosmic_text"]
 # Registers carbide_lyon as the tesselator used to render shapes.
 lyon = ["dep:carbide_lyon"]
+# Registers carbide_cosmic_text as the text context used to lay out and render text.
+cosmic_text = ["dep:carbide_cosmic_text"]
 controls = ["carbide_controls"]
 icons = ["carbide_icons"]
 # Enables the headless rendering-regression-test fixture (carbide_wgpu::testing).
@@ -26,7 +28,7 @@ carbide_winit.workspace = true
 carbide_lyon = { workspace = true, optional = true }
 carbide_tesselation.workspace = true
 carbide_controls = { workspace = true, optional = true }
-carbide_cosmic_text.workspace = true
+carbide_cosmic_text = { workspace = true, optional = true }
 carbide_icons = { workspace = true, optional = true }
 carbide_wgpu_core.workspace = true
 log.workspace = true

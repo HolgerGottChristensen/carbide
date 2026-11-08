@@ -7,3 +7,4 @@ pub mod text_context;
 //pub mod font_family;
 mod metadata;
 mod text_cache;
+mod plugin;

@@ -157,7 +157,6 @@ impl<T: Send + 'static> StartStream<T> for std::sync::mpsc::Receiver<T> {
 use std::sync::OnceLock;
 use crate::draw::ImageContext;
 use crate::environment::Environment;
-use crate::text::TextContext;
 
 #[cfg(feature = "tokio")]
 static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
@@ -198,7 +197,6 @@ pub async fn sleep(duration: Duration) {
 }
 
 pub struct AsyncContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }

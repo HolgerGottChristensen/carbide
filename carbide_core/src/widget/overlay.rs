@@ -116,7 +116,6 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
     fn process_update(&mut self, ctx: &mut UpdateContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut UpdateContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
             };
@@ -134,7 +133,6 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
     fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut MouseEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 is_current: ctx.is_current,
                 window_id: ctx.window_id,
@@ -159,7 +157,6 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
     fn process_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut KeyboardEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,
@@ -183,7 +180,6 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
     fn process_other_event(&mut self, event: &OtherEvent, ctx: &mut OtherEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut OtherEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,
@@ -206,7 +202,6 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
     fn process_window_event(&mut self, event: &WindowEvent, ctx: &mut WindowEventContext) {
         self.with(ctx.env, |env, inner| {
             let inner_ctx = &mut WindowEventContext {
-                text: ctx.text,
                 image: ctx.image,
                 env,
                 is_current: ctx.is_current,

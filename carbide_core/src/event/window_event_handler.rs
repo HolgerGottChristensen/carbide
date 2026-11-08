@@ -1,6 +1,5 @@
 use crate::draw::{Dimension, ImageContext, Position, Scalar};
 use crate::environment::{Environment};
-use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait WindowEventHandler: CommonWidget + WidgetSync {
@@ -21,7 +20,6 @@ pub trait WindowEventHandler: CommonWidget + WidgetSync {
 
 
 pub struct WindowEventContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
     pub is_current: &'a bool,

@@ -1,7 +1,6 @@
 use carbide::draw::Rect;
 use crate::draw::{Dimension, ImageContext};
 use crate::environment::{Environment};
-use crate::text::TextContext;
 use crate::widget::CommonWidget;
 
 pub trait Layout: CommonWidget {
@@ -42,7 +41,6 @@ pub trait Layout: CommonWidget {
 }
 
 pub struct LayoutContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
 }

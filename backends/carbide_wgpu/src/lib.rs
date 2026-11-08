@@ -5,6 +5,9 @@ extern crate carbide_wgpu_core;
 // Registers carbide_lyon as the tesselator used to render shapes, using its plugin.
 #[cfg(feature = "lyon")]
 extern crate carbide_lyon;
+// Registers carbide_cosmic_text as the text context used to lay out and render text, using its plugin.
+#[cfg(feature = "cosmic_text")]
+extern crate carbide_cosmic_text;
 
 pub use application::Application;
 pub use wgpu_render_target::WgpuRenderTarget;

@@ -3,7 +3,6 @@ use crate::draw::{ImageContext, Position, Scalar};
 use crate::environment::{Environment};
 use crate::event::{EventId, ModifierKey, TouchPhase};
 use crate::focus::Focusable;
-use crate::text::TextContext;
 use crate::widget::{CommonWidget, WidgetSync};
 
 pub trait MouseEventHandler: CommonWidget + WidgetSync + Focusable {
@@ -31,7 +30,6 @@ pub trait MouseEventHandler: CommonWidget + WidgetSync + Focusable {
 
 // TODO: Consider changing to Event Context
 pub struct MouseEventContext<'a, 'b: 'a> {
-    pub text: &'a mut dyn TextContext,
     pub image: &'a mut dyn ImageContext,
     pub is_current: &'a bool,
     pub window_id: &'a u64,

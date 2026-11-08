@@ -3,7 +3,7 @@ use crate::draw::stroke::StrokeDashPattern;
 use crate::draw::{DrawOptions, DrawShape, DrawStyle, ImageId, ImageOptions, Rect};
 use crate::environment::Environment;
 use crate::render::{InnerRenderContext, Layer, LayerId};
-use crate::text::{TextContext, TextId};
+use crate::text::TextId;
 use crate::widget::ImageFilter;
 use cgmath::Matrix4;
 use carbide::text::TextStyle;
@@ -87,7 +87,6 @@ impl<C: Widget, S: AnyShape + AnyWidget + Clone> Render for ClipShape<C, S> {
 
         self.shape.render(&mut RenderContext {
             render: &mut capture,
-            text: context.text,
             image: context.image,
             env: context.env,
         });
@@ -151,7 +150,7 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn raster_image(&mut self, _id: &ImageId, _bounding_box: Rect, _options: ImageOptions) {}
 
-    fn text_old(&mut self, _text: TextId, _ctx: &mut dyn TextContext) {}
+    fn text_old(&mut self, _text: TextId, _env: &mut Environment) {}
 
     fn filter_new(&mut self, _radius_x: u32, _radius_y: u32) {}
 
@@ -178,5 +177,5 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
 
-    fn text(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment, _ctx: &mut dyn TextContext) {}
+    fn text(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment) {}
 }

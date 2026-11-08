@@ -16,7 +16,7 @@ use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State};
-use carbide_core::text::TextContext;
+use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId};
 
 use crate::{EnabledState};
@@ -1119,7 +1119,7 @@ impl<
 
                 if self.last_drag_position.is_some() || self.is_inside(event.get_current_mouse_position()) {
                     self.last_drag_position = Some(*to);
-                    self.drag_selection(ctx.text, to, delta_xy);
+                    self.drag_selection(TextContextKey::get_mut(ctx.env), to, delta_xy);
                 }
             }
             _ => (),
@@ -1166,7 +1166,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
         }
 
         let x = position.x - self.position.x - *self.text_offset.value();
-        let (line, index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
+        let (line, index) = TextContextKey::get(ctx.env).hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         self.cursor = Cursor::Single(CursorIndex {
             line,
@@ -1176,7 +1176,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn selection_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         let x = position.x - self.position.x - *self.text_offset.value();
-        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
+        let (line, clicked_index) = TextContextKey::get(ctx.env).hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         match self.cursor {
             Cursor::Single(CursorIndex { line: _, index }) => {
@@ -1205,7 +1205,7 @@ impl<F: State<T=Focus>, C: ReadState<T=Color>, O: ReadState<T=Option<char>>, S: 
 
     fn select_word_at_click(&mut self, position: &Position, ctx: &mut MouseEventContext) {
         let x = position.x - self.position.x - *self.text_offset.value();
-        let (line, clicked_index) = ctx.text.hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
+        let (line, clicked_index) = TextContextKey::get(ctx.env).hit(self.text_widget.text_id(), Position::new(x, self.text_widget.height() / 2.0));
 
         let range = word_range_surrounding_grapheme_index(clicked_index, &self.display_text.value());
 
@@ -1235,7 +1235,7 @@ impl<
 
         //println!("calculate size");
         if let Some(position) = self.last_drag_position {
-            self.drag_selection(ctx.text, &position, &position);
+            self.drag_selection(TextContextKey::get_mut(ctx.env), &position, &position);
         }
 
         let text_dimensions = self.text_widget.calculate_size(requested_size, ctx);
@@ -1247,8 +1247,8 @@ impl<
             }
             Cursor::Selection { start, end } => {
                 let text_id = self.text_widget.text_id();
-                let start_x = ctx.text.position_of(text_id, 0, start.index).x + self.x();
-                let end_x = ctx.text.position_of(text_id, 0, end.index).x + self.x();
+                let start_x = TextContextKey::get(ctx.env).position_of(text_id, 0, start.index).x + self.x();
+                let end_x = TextContextKey::get(ctx.env).position_of(text_id, 0, end.index).x + self.x();
 
                 let min = start_x.min(end_x);
                 let max = start_x.max(end_x);
@@ -1278,12 +1278,12 @@ impl<
 
         //println!("Position children called");
         if let Some(speed) = self.current_offset_speed {
-            self.update_offset_with_speed_to_make_cursor_visible(speed, ctx.text);
+            self.update_offset_with_speed_to_make_cursor_visible(speed, TextContextKey::get_mut(ctx.env));
             if let Some(manager) = ctx.env.get_mut::<AnimationManager>() {
                 manager.request_animation_frame();
             }
         } else {
-            self.update_offset_to_make_cursor_visible(ctx.text);
+            self.update_offset_to_make_cursor_visible(TextContextKey::get_mut(ctx.env));
         }
 
 
@@ -1298,14 +1298,14 @@ impl<
 
             match self.cursor {
                 Cursor::Single(index) => {
-                    let x = ctx.text.position_of(text_id, 0, index.index).x + self.x() + *self.text_offset.value();
+                    let x = TextContextKey::get(ctx.env).position_of(text_id, 0, index.index).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(x, self.text_widget.y()));
                     self.cursor_widget.position_children(bounding_box, ctx);
                 }
                 Cursor::Selection { start, end } => {
-                    let end_x = ctx.text.position_of(text_id, 0, end.index).x + self.x() + *self.text_offset.value();
-                    let min_x = ctx.text.position_of(text_id, 0, start.index.min(end.index)).x + self.x() + *self.text_offset.value();
+                    let end_x = TextContextKey::get(ctx.env).position_of(text_id, 0, end.index).x + self.x() + *self.text_offset.value();
+                    let min_x = TextContextKey::get(ctx.env).position_of(text_id, 0, start.index.min(end.index)).x + self.x() + *self.text_offset.value();
 
                     self.cursor_widget.set_position(Position::new(end_x, self.text_widget.y()));
                     self.cursor_widget.position_children(bounding_box, ctx);
