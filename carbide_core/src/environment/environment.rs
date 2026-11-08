@@ -5,7 +5,7 @@ use std::hash::{BuildHasherDefault, Hasher};
 use std::marker::PhantomData;
 use std::mem::transmute;
 use crate::common::any_debug::AnyDebug;
-use crate::environment::{Access, EnvironmentKey, EnvironmentValue, Exclusive};
+use crate::environment::{EnvironmentKey, EnvironmentValue, Exclusive};
 use crate::environment::environment_key::{extract_value, wrap_value};
 
 pub trait EnvironmentKeyable: Debug + 'static {
@@ -163,7 +163,7 @@ impl<'a> Environment<'a> {
 
         transmuted.data.insert(id, wrap_value::<K>(v));
 
-        let mut guard = RestoreGuard { env: transmuted, id, old };
+        let guard = RestoreGuard { env: transmuted, id, old };
         f(&mut *guard.env);
         // `guard` drops here (or during unwinding) and restores the map.
     }

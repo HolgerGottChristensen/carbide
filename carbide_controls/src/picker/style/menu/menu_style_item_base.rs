@@ -8,7 +8,7 @@ use carbide_core::event::{
 use carbide_core::state::AnyState;
 use carbide_core::state::{ReadState, State};
 use carbide_core::widget::OverlayManager;
-use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{AnyWidget, CommonWidget, Widget, WidgetId};
 use carbide_core::CommonWidgetImpl;
 
 #[derive(Debug, Clone, Widget)]

@@ -65,11 +65,11 @@ impl ScrollBarStyle for AutomaticStyle {
 }
 
 impl ScrollBarStyle for DebugStyle {
-    fn thumb(&self, dragging: Box<dyn AnyReadState<T=bool>>, hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn thumb(&self, _dragging: Box<dyn AnyReadState<T=bool>>, _hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         Rectangle::new().fill(EnvironmentColor::Blue).frame(8.0, 8.0).boxed()
     }
 
-    fn background(&self, dragging: Box<dyn AnyReadState<T=bool>>, hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn background(&self, _dragging: Box<dyn AnyReadState<T=bool>>, _hovering: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         Rectangle::new().fill(EnvironmentColor::Red).frame(8.0, 8.0).boxed()
     }
 }

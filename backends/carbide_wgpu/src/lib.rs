@@ -7,7 +7,6 @@ extern crate carbide_wgpu_core;
 extern crate carbide_lyon;
 
 pub use application::Application;
-use carbide::environment::EnvironmentKey;
 pub use wgpu_render_target::WgpuRenderTarget;
 pub use window::Window;
 

@@ -13,7 +13,7 @@ use crate::slider::SliderSteppingType;
 pub struct PlainStyle;
 
 impl SliderStyle for PlainStyle {
-    fn create_thumb(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_thumb(&self, _focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
 
         let thumb_color = Map1::read_map(enabled.clone(), |enabled| {
             if *enabled {
@@ -60,7 +60,7 @@ impl SliderStyle for PlainStyle {
         }).boxed()
     }
 
-    fn create_track(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_track(&self, _focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, _percent: Box<dyn AnyReadState<T=f64>>, _stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         let track_color = Map1::read_map(enabled, |enabled| {
             if *enabled {
                 EnvironmentColor::Accent
@@ -75,7 +75,7 @@ impl SliderStyle for PlainStyle {
             .boxed()
     }
 
-    fn create_background(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_background(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, _percent: Box<dyn AnyReadState<T=f64>>, _stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         let outline_color = Map2::read_map(focus, EnvironmentColor::Accent.color(), |focus, color| {
             if *focus == Focus::Focused {
                 *color

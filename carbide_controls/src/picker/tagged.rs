@@ -1,6 +1,6 @@
-use crate::identifiable::{AnyIdentifiableWidget};
-use carbide::state::{AnyReadState, IntoReadState, ReadState, StateContract};
-use carbide::widget::{AnySequence, CommonWidget, Empty, IntoWidget, Widget, WidgetId};
+use crate::identifiable::AnyIdentifiableWidget;
+use carbide::state::{AnyReadState, ReadState, StateContract};
+use carbide::widget::{CommonWidget, Empty, IntoWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
 use std::fmt::Debug;
 use carbide::identifiable::Identifiable;
@@ -26,15 +26,15 @@ impl<T: StateContract + PartialEq, C: Widget, S: ReadState<T=T>> AnyIdentifiable
         &self.tag
     }
 
-    fn child(&mut self, index: usize) -> &mut dyn AnyIdentifiableWidget<T=Self::T> {
+    fn child(&mut self, _index: usize) -> &mut dyn AnyIdentifiableWidget<T=Self::T> {
         todo!()//self.child.index(index)
     }
 
-    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
+    fn foreach_child(&mut self, _f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
         todo!()//self.child.foreach(f)
     }
 
-    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
+    fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyIdentifiableWidget<T=Self::T>)) {
         todo!()//self.child.foreach_rev(f)
     }
 }

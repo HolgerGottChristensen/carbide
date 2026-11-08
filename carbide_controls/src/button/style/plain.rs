@@ -9,7 +9,7 @@ use crate::button::style::ButtonStyle;
 pub struct PlainStyle;
 
 impl ButtonStyle for PlainStyle {
-    fn create(&self, label: Box<dyn AnyWidget>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn create(&self, label: Box<dyn AnyWidget>, _focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let label_color = Map5::read_map(EnvironmentColor::Label.color(), EnvironmentColor::TertiaryLabel.color(), enabled, hovered, pressed, |color, disabled_color, enabled, hovered, pressed| {
             if !*enabled {
                 *disabled_color

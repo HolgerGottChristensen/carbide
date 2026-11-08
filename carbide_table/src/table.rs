@@ -9,7 +9,7 @@ use carbide_core::draw::{Dimension, Position};
 use carbide_core::event::{MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use carbide_core::CommonWidgetImpl;
 use std::fmt::Debug;
 use carbide::cursor::MouseCursor;
@@ -77,7 +77,7 @@ impl<S: TableStyle + Clone> MouseEventHandler for Table<S> {
 
                 self.handle_mouse_position_inside_table_change(to);
             }
-            MouseEvent::Drag { button, origin, from, to, delta_xy, total_delta_xy, modifiers } => {
+            MouseEvent::Drag { button: _, origin, from: _, to: _, delta_xy: _, total_delta_xy, modifiers: _ } => {
                 match self.resizing {
                     CellResizing::None | CellResizing::BothHovered |CellResizing::RowHovered | CellResizing::ColHovered => {
                         let (resize_col, resize_row) = self.resize_handles_from_position(origin);
@@ -133,7 +133,7 @@ impl<S: TableStyle + Clone> MouseEventHandler for Table<S> {
 
 impl<S: TableStyle + Clone> Table<S> {
     fn handle_mouse_position_inside_table_change(&mut self, to: &Position) {
-        let TableCellInfo { y_in_cell, height, row, x_in_cell, width, col } = self.cell_from_position(to);
+        let TableCellInfo { y_in_cell: _, height: _, row, x_in_cell: _, width: _, col } = self.cell_from_position(to);
 
         self.style.set_hovered(CellSelection::Single { row, column: col });
 
@@ -145,15 +145,15 @@ impl<S: TableStyle + Clone> Table<S> {
             _ => {
                 let (resize_col, resize_row) = self.resize_handles_from_position(to);
 
-                if let Some(r) = resize_row {
+                if let Some(_r) = resize_row {
                     self.resizing = CellResizing::RowHovered;
                 }
 
-                if let Some(c) = resize_col {
+                if let Some(_c) = resize_col {
                     self.resizing = CellResizing::ColHovered;
                 }
 
-                if let Some(r) = resize_row && let Some(c) = resize_col {
+                if let Some(_r) = resize_row && let Some(_c) = resize_col {
                     self.resizing = CellResizing::BothHovered;
                 }
 
@@ -311,7 +311,7 @@ impl<S: TableStyle + Clone> Table<S> {
 }
 
 impl<S: TableStyle + Clone> Layout for Table<S> {
-    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+    fn calculate_size(&mut self, requested_size: Dimension, _ctx: &mut LayoutContext) -> Dimension {
         self.set_dimension(requested_size);
         requested_size
     }

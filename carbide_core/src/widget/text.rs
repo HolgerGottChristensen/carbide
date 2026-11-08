@@ -203,7 +203,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
     }
 
     /// Take a given text element and make it render with an underline
-    pub fn underline(mut self) -> Self {
+    pub fn underline(self) -> Self {
         //self.text_decoration = TextDecoration::Underline(vec![]);
         self
     }
@@ -224,7 +224,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
         self.dimension
     }
 
-    fn position_children(&mut self, bounding_box: crate::draw::Rect, ctx: &mut LayoutContext) {
+    fn position_children(&mut self, _bounding_box: crate::draw::Rect, ctx: &mut LayoutContext) {
         let scale_factor = ctx.env.get_mut::<SceneManager>()
             .map(|a| a.scale_factor())
             .unwrap_or(1.0);

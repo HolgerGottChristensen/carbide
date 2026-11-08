@@ -4,7 +4,7 @@ use crate::utils::get_crate_name;
 // The implementation for `Value`.
 pub fn impl_state_value(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let struct_ident = &ast.ident;
-    let mut generics = ast.generics.clone();
+    let generics = ast.generics.clone();
     let wheres = ast.generics.where_clause.clone().map(|a| a.predicates).unwrap_or(Punctuated::default());
 
 

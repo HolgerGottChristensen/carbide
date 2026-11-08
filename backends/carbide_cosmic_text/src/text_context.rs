@@ -13,7 +13,6 @@ use carbide_core::color::ColorExt;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use carbide_core::environment::Environment;
 use carbide_core::image::{DynamicImage, GrayImage, RgbaImage};
-use carbide_core::render::InnerRenderContext;
 use carbide_core::scene::SceneManager;
 use carbide_core::text::glyph::{Glyph, GlyphRenderMode};
 use carbide_core::text::text_wrap::Wrap;
@@ -97,7 +96,7 @@ impl CosmicTextContext {
         }
     }
 
-    fn enqueue_glyphs(scale_context: &mut ScaleContext, texture_atlas: &mut TextureAtlas, font_system: &mut FontSystem, scale_factor: Scalar, mut buffer: &mut Buffer) -> Dimension {
+    fn enqueue_glyphs(scale_context: &mut ScaleContext, texture_atlas: &mut TextureAtlas, font_system: &mut FontSystem, scale_factor: Scalar, buffer: &mut Buffer) -> Dimension {
         let mut width: f32 = 0.0;
         let mut height: f32 = 0.0;
 

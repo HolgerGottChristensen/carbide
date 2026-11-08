@@ -1,6 +1,6 @@
 use crate::identifiable::{AnySelectableWidget, SelectableWidget};
 use carbide::reverse;
-use carbide::widget::{CommonWidget, ReverseAnySequence};
+use carbide::widget::ReverseAnySequence;
 
 impl<W: SelectableWidget> ReverseAnySequence<Vec<W>> for dyn AnySelectableWidget {
     fn index(value: &mut Vec<W>, index: usize) -> &mut dyn AnySelectableWidget {

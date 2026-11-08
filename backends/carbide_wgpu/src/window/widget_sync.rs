@@ -17,7 +17,7 @@ impl<T: ReadState<T=String>, C: Widget> Layout for Window<T, C> {
         Dimension::new(0.0, 0.0)
     }
 
-    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {}
+    fn position_children(&mut self, _bounding_box: Rect, _ctx: &mut LayoutContext) {}
 }
 
 impl<T: ReadState<T=String>, C: Widget> Update for Window<T, C> {
@@ -68,7 +68,7 @@ impl<T: ReadState<T=String>, C: Widget> AnyScene for Window<T, C> {
     fn is_daemon(&self) -> bool {
         match self {
             Window::UnInitialized { .. } => true,
-            Window::Initialized(initialized) => {
+            Window::Initialized(_initialized) => {
                 false
             }
             Window::Failed => true

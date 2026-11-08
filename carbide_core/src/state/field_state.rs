@@ -330,7 +330,7 @@ mod tests {
         let mut base = LocalState::new((24, 42));
 
         let mut field = lens!(base.0);
-        let mut field2 = lens!(base.1);
+        let field2 = lens!(base.1);
 
         println!("Base: {:?}, Field: {:?}", base.value(), field.value());
 

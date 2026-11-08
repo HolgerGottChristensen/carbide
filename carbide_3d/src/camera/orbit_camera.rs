@@ -50,7 +50,7 @@ impl CommonWidget for OrbitCamera {
         todo!()
     }
 
-    fn set_position(&mut self, position: Position) {
+    fn set_position(&mut self, _position: Position) {
         todo!()
     }
 
@@ -58,7 +58,7 @@ impl CommonWidget for OrbitCamera {
         todo!()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {
+    fn set_dimension(&mut self, _dimension: Dimension) {
         todo!()
     }
 }
@@ -76,7 +76,7 @@ impl WidgetSync for OrbitCamera {}
 impl Focusable for OrbitCamera {}
 
 impl KeyboardEventHandler for OrbitCamera {
-    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, ctx: &mut KeyboardEventContext) {
+    fn handle_keyboard_event(&mut self, event: &KeyboardEvent, _ctx: &mut KeyboardEventContext) {
         match event {
             KeyboardEvent::Press { key: Key::ArrowLeft, .. } => {
                 self.rig.borrow_mut().driver_mut::<YawPitch>().rotate_yaw_pitch(15.0, 0.0);

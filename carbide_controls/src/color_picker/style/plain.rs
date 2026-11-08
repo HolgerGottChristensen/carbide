@@ -12,7 +12,7 @@ use crate::UnfocusAction;
 pub struct PlainStyle;
 
 impl ColorPickerStyle for PlainStyle {
-    fn create(&self, label: Box<dyn AnyWidget>, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>, value: Box<dyn AnyState<T=Color>>) -> Box<dyn AnyWidget> {
+    fn create(&self, label: Box<dyn AnyWidget>, focus: Box<dyn AnyState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, _hovered: Box<dyn AnyReadState<T=bool>>, _pressed: Box<dyn AnyReadState<T=bool>>, value: Box<dyn AnyState<T=Color>>) -> Box<dyn AnyWidget> {
 
         let outline_color = Map2::read_map(EnvironmentColor::Accent.color(), focus.clone(), |color, focused| {
             if *focused == Focus::Focused {

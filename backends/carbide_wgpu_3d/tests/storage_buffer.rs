@@ -10,7 +10,7 @@ struct Positions {
 
 #[test]
 fn test() {
-    let mut positions = Positions {
+    let positions = Positions {
         length: ArrayLength,
         positions: Vec::from([
             Vector2 { x: 4.5, y: 3.4 },

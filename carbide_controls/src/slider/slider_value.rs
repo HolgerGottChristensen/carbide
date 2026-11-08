@@ -48,7 +48,7 @@ impl SliderValue for f64 {
         (*self - *start) / (*end - *start)
     }
 
-    fn value_to_percent_stepped(&self, start: &Self, end: &Self, step: &Self) -> f64 {
+    fn value_to_percent_stepped(&self, _start: &Self, _end: &Self, _step: &Self) -> f64 {
         todo!()
     }
 
@@ -76,7 +76,7 @@ impl SliderValue for f32 {
         (*self - *start) as f64 / (*end - *start) as f64
     }
 
-    fn value_to_percent_stepped(&self, start: &Self, end: &Self, step: &Self) -> f64 {
+    fn value_to_percent_stepped(&self, _start: &Self, _end: &Self, _step: &Self) -> f64 {
         todo!()
     }
 
@@ -125,7 +125,7 @@ macro_rules! impl_slider_value {
                 }
             }
 
-            fn value_to_percent_stepped(&self, start: &Self, end: &Self, step: &Self) -> f64 {
+            fn value_to_percent_stepped(&self, _start: &Self, _end: &Self, _step: &Self) -> f64 {
                 todo!()
             }
         }

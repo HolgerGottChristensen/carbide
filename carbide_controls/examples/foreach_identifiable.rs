@@ -11,7 +11,7 @@ fn main() {
         Text::new("Test").tag(10u32),
         Text::new("Test").tag(11u32),
 
-        ForEach::new(vec![12u32, 13u32], |a: &u32, b| {
+        ForEach::new(vec![12u32, 13u32], |a: &u32, _b| {
             Text::new("Test").tag_state(*a)
         })
     );

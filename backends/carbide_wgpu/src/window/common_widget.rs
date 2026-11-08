@@ -18,7 +18,7 @@ impl<T: ReadState<T=String>, C: Widget> Identifiable for Window<T, C> {
 }
 
 impl<T: ReadState<T=String>, C: Widget> CommonWidget for Window<T, C> {
-    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, _index: usize) -> &mut dyn AnyWidget {
         todo!()
     }
 

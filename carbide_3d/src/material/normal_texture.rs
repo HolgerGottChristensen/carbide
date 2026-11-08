@@ -1,6 +1,5 @@
 use crate::material::material_flags::MaterialFlags;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
-use bitflags::Flags;
 use carbide::draw::ImageId;
 use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};

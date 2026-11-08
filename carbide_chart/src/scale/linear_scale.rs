@@ -136,8 +136,8 @@ impl Scale for LinearScale {
     fn recalculate_ticks(&mut self) {
         let range_min = self.range.start;
         let range_max = self.range.end;
-        let min = self.min;
-        let max = self.max;
+        let _min = self.min;
+        let _max = self.max;
 
         let max_ticks = self.tick_limits().max(2);
         let mut ticks = vec![];
@@ -184,7 +184,7 @@ impl Scale for LinearScale {
         }
 
 
-        let mut num_spaces_float = (nice_max - nice_min) / spacing;
+        let num_spaces_float = (nice_max - nice_min) / spacing;
 
         // If very close to our rounded value, use it.
         if almost_equals(num_spaces_float, num_spaces_float.round(), spacing / 1000.0) {

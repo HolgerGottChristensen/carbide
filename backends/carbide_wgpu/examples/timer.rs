@@ -14,7 +14,7 @@ use carbide_wgpu::{Application, Window};
 fn main() {
     let mut application = Application::new();
 
-    let mut counter = Arc::new(AtomicUsize::new(0));
+    let counter = Arc::new(AtomicUsize::new(0));
     let counter2 = counter.clone();
 
     let timer = Timer::new(move || {

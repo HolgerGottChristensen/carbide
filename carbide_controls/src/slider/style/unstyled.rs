@@ -9,7 +9,7 @@ use crate::slider::style::SliderStyle;
 pub struct UnstyledStyle;
 
 impl SliderStyle for UnstyledStyle {
-    fn create_thumb(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_thumb(&self, _focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         let color = Map3::read_map(percent, stepped, enabled, |state, stepped, enabled| {
             if !*enabled {
                 return EnvironmentColor::Teal;
@@ -33,14 +33,14 @@ impl SliderStyle for UnstyledStyle {
         Rectangle::new().fill(color).frame(26.0, 26.0).boxed()
     }
 
-    fn create_track(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_track(&self, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>, _percent: Box<dyn AnyReadState<T=f64>>, _stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         Rectangle::new()
             .fill(EnvironmentColor::Green)
             .frame_fixed_height(26.0)
             .boxed()
     }
 
-    fn create_background(&self, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, percent: Box<dyn AnyReadState<T=f64>>, stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
+    fn create_background(&self, _focus: Box<dyn AnyReadState<T=Focus>>, _enabled: Box<dyn AnyReadState<T=bool>>, _percent: Box<dyn AnyReadState<T=f64>>, _stepped: Box<dyn AnyReadState<T=SliderSteppingType>>) -> Box<dyn AnyWidget> {
         Rectangle::new()
             .fill(EnvironmentColor::Red)
             .frame_fixed_height(26.0)

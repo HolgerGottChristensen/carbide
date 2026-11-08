@@ -29,7 +29,7 @@ impl Element for Line {
         self.position.y
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment) {
+    fn draw(&self, _ctx: &mut CanvasContext, _env: &mut Environment) {
         todo!()
     }
 }

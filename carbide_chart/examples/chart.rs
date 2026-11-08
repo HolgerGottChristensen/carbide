@@ -15,29 +15,29 @@ fn main() {
 
     let stepped = LocalState::new(Stepped::None);
 
-    let data1 = iter::repeat_with(|| {
+    let _data1 = iter::repeat_with(|| {
         Position::new(rand::random::<Scalar>() * 100.0, rand::random::<Scalar>())
     }).take(40).collect::<Vec<_>>();
 
-    let data4 = iter::repeat_with(|| {
+    let _data4 = iter::repeat_with(|| {
         Position::new(rand::random::<Scalar>(), rand::random::<Scalar>())
     }).take(40).collect::<Vec<_>>();
 
-    let data5 = iter::repeat_with(|| {
+    let _data5 = iter::repeat_with(|| {
         Position::new(rand::random::<Scalar>(), rand::random::<Scalar>())
     }).take(40).collect::<Vec<_>>();
 
-    let data2 = iter::repeat_with(|| {
+    let _data2 = iter::repeat_with(|| {
         rand::random::<Scalar>()
     }).take(40).collect::<Vec<_>>();
 
-    let data3 = (0..100)
+    let _data3 = (0..100)
         .into_iter()
         .map(|a| a as Scalar / 10.0)
         .map(|a| f64::sin(a))
         .collect::<Vec<_>>();
 
-    let data6 = (0..100)
+    let _data6 = (0..100)
         .into_iter()
         .map(|a| a as Scalar / 10.0)
         .map(|a| f64::cos(a))

@@ -1,6 +1,4 @@
 use crate::identifiable::AnySelectableWidget;
-use carbide::accessibility::Accessibility;
-use carbide::render::Render;
 use carbide::state::{AnyState, State};
 use carbide::widget::{CommonWidget, Widget, WidgetId};
 use carbide::ModifierWidgetImpl;
@@ -17,13 +15,13 @@ impl<W: Widget, S: State<T=bool>> AnySelectableWidget for PickerItem<W, S> {
         &self.selection
     }
 
-    fn child(&mut self, index: usize) -> &mut dyn AnySelectableWidget {
+    fn child(&mut self, _index: usize) -> &mut dyn AnySelectableWidget {
         panic!("This widget can not have any selectable widget children")
     }
 
-    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
+    fn foreach_child(&mut self, _f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
 
-    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
+    fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnySelectableWidget)) {}
 }
 
 impl<W: Widget, S: State<T=bool>> Identifiable for PickerItem<W, S> {

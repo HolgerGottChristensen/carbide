@@ -6,7 +6,7 @@ use crate::state::{AnyReadState, LocalState, State, StateContract};
 use crate::widget::foreach_widget::Delegate as ForEachChildDelegate;
 use crate::widget::foreach_widget::ForEachWidget;
 use crate::widget::properties::{WidgetKind, WidgetKindProxy};
-use crate::widget::{AnySequence, AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
+use crate::widget::{AnySequence, AnyWidget, CommonWidget, Empty, Sequence as ForEachSequence, Widget, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::properties::Kind;
 use dyn_clone::DynClone;
 use std::collections::HashMap;
@@ -286,7 +286,7 @@ impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T
         unimplemented!()
     }
 
-    fn set_position(&mut self, position: Position) {
+    fn set_position(&mut self, _position: Position) {
         unimplemented!()
     }
 
@@ -294,7 +294,7 @@ impl<T: StateContract, M: RandomAccessCollection<T>, W: Widget, U: Delegate<M, T
         unimplemented!()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {
+    fn set_dimension(&mut self, _dimension: Dimension) {
         unimplemented!()
     }
 }

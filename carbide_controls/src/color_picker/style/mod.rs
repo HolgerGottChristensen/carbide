@@ -1,14 +1,13 @@
 mod plain;
 
 use std::fmt::Debug;
-use dyn_clone::{clone_trait_object, DynClone};
+use dyn_clone::clone_trait_object;
 use carbide::automatic_style::AutomaticStyle;
 use carbide::draw::Color;
 use carbide::environment::{EnvironmentKey, Shared};
 use carbide::focus::Focus;
 use carbide::state::{AnyReadState, AnyState};
 use carbide::widget::{AnyWidget, WidgetStyle};
-use crate::button::ButtonStyle;
 
 pub use plain::PlainStyle;
 

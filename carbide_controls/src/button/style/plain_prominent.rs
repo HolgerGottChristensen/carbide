@@ -9,7 +9,7 @@ use crate::button::style::ButtonStyle;
 pub struct PlainProminentStyle;
 
 impl ButtonStyle for PlainProminentStyle {
-    fn create(&self, label: Box<dyn AnyWidget>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
+    fn create(&self, label: Box<dyn AnyWidget>, focus: Box<dyn AnyReadState<T=Focus>>, enabled: Box<dyn AnyReadState<T=bool>>, _hovered: Box<dyn AnyReadState<T=bool>>, pressed: Box<dyn AnyReadState<T=bool>>) -> Box<dyn AnyWidget> {
         let label_color = Map4::read_map(EnvironmentColor::Accent.color(), EnvironmentColor::TertiaryLabel.color(), enabled, pressed, |color, disabled_color, enabled, pressed| {
             if !*enabled {
                 *disabled_color

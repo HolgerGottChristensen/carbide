@@ -209,7 +209,7 @@ impl<T: ReadState<T=String>, C: Widget> InitializedWindow<T, C> {
 
         info!("{:#?}", self.surface_configuration);
 
-        let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
+        let (_wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
 
         self.surface.configure(
             &wgpu_context_new.device,

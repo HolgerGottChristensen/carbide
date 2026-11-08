@@ -11,10 +11,10 @@ fn main() {
         "ForEach nested example - Carbide",
         Dimension::new(350.0, 600.0),
         VStack::new(
-            ForEach::new(0..3, |a, b| {
+            ForEach::new(0..3, |_a, _b| {
                 let group_color = Color::random();
 
-                ForEach::new(0..3, move |c, d| {
+                ForEach::new(0..3, move |_c, d| {
                     let element_color = Map1::read_map(d, move |d| group_color.lightened(*d as f32 / 7.0));
 
                     Rectangle::new()

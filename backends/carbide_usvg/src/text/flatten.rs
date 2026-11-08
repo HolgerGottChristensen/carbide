@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use fontdb::{Database, ID};
 use rustybuzz::ttf_parser;
-use rustybuzz::ttf_parser::{GlyphId, RasterImageFormat, RgbaColor};
+use rustybuzz::ttf_parser::{GlyphId, RasterImageFormat};
 use tiny_skia_path::{NonZeroRect, Size, Transform};
 
 //use crate::text::colr::GlyphPainter;
@@ -374,7 +374,7 @@ impl DatabaseExt for Database {
         })?
     }
 
-    fn colr(&self, id: ID, glyph_id: GlyphId) -> Option<Tree> {
+    fn colr(&self, _id: ID, _glyph_id: GlyphId) -> Option<Tree> {
         /*self.with_face_data(id, |data, face_index| -> Option<Tree> {
             let face = ttf_parser::Face::parse(data, face_index).ok()?;
 

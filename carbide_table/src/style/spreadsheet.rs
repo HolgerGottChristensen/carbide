@@ -92,7 +92,7 @@ impl TableStyle for SpreadsheetStyle {
         }
     }
 
-    fn cell_border(&self, col: u32, row: u32) -> CellBorders {
+    fn cell_border(&self, _col: u32, _row: u32) -> CellBorders {
         CellBorders {
             top: CellBorder {
                 style: DrawStyle::Color(WHITE),

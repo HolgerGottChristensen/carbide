@@ -195,6 +195,7 @@ macro_rules! CommonWidgetImpl {
 
     ($self:ident, child: $child:expr $(, $($rest:tt)*)?) => {
 
+        #[allow(unused_imports)]
         fn child(&mut $self, i: usize) -> &mut dyn $crate::widget::AnyWidget {
             use $crate::widget::AnySequence;
             $child.index(i)

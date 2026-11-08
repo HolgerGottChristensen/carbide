@@ -1532,7 +1532,7 @@ mod tests {
 
     #[test]
     fn hello_world() {
-        let input = PlainTextInput::new("Hello world!".to_string());
+        let _input = PlainTextInput::new("Hello world!".to_string());
     }
 
     #[test]

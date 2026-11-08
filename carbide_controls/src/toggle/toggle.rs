@@ -1,14 +1,14 @@
 use std::any::TypeId;
 use crate::toggle::toggle_value::ToggleValue;
-use crate::toggle::{ToggleAction, ToggleStyle, ToggleStyleKey};
-use crate::{EnabledState};
+use crate::toggle::{ToggleAction, ToggleStyleKey};
+use crate::EnabledState;
 use carbide::accessibility::{Accessibility, AccessibilityAction, AccessibilityContext, AccessibilityNode, Role, Toggled};
 use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide::event::{AccessibilityEvent, AccessibilityEventContext, AccessibilityEventHandler};
 use carbide_core::flags::WidgetFlag;
 use carbide::focus::{Focus, Focusable};
 use carbide::state::{IntoReadState, IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetStyle, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetExt, WidgetId, WidgetSync};
 use carbide::CommonWidgetImpl;
 use smallvec::SmallVec;
 use carbide::environment::Environment;

@@ -43,6 +43,6 @@ impl<K: Eq + Hash, V> Cache<K, V> {
 
     pub fn sweep(&mut self) {
         let current_frame = ApplicationManager::application_frame();
-        self.inner.retain(|a, v| current_frame - v.frame_last_used < v.frame_retention);
+        self.inner.retain(|_a, v| current_frame - v.frame_last_used < v.frame_retention);
     }
 }

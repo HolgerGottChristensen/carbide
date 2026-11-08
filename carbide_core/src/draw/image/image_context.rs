@@ -22,15 +22,15 @@ impl ImageContext for NOOPImageContext {
         unimplemented!()
     }
 
-    fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics {
+    fn metrics(&self, _id: &ImageId, _env: &mut Environment) -> ImageMetrics {
         unimplemented!()
     }
 
-    fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
+    fn update_texture(&mut self, _id: &ImageId, _texture: Texture, _env: &mut Environment) -> bool {
         unimplemented!()
     }
 
-    fn update_vector(&mut self, id: &ImageId, description: Vec<RenderInstruction>, size: Dimension, env: &mut Environment) -> bool {
+    fn update_vector(&mut self, _id: &ImageId, _description: Vec<RenderInstruction>, _size: Dimension, _env: &mut Environment) -> bool {
         unimplemented!()
     }
 }

@@ -1,4 +1,3 @@
-use crate::open_dialog::style::OpenDialogStyle;
 #[cfg(target_os = "macos")]
 use crate::save_dialog::style::macos::MacOSNativeSaveDialogStyle;
 use crate::{FileType, NativeStyle};
@@ -42,7 +41,7 @@ impl SaveDialogStyle for NativeStyle {
 
 #[cfg(not(target_os = "macos"))]
 impl SaveDialogStyle for NativeStyle {
-    fn open(&self, title: Option<String>, message: Option<String>, prompt: Option<String>, default_file_name: Option<String>, show_hidden_files: bool, path: Option<PathBuf>, file_types: &[FileType], f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, env: &mut Environment) {
+    fn open(&self, _title: Option<String>, _message: Option<String>, _prompt: Option<String>, _default_file_name: Option<String>, _show_hidden_files: bool, _path: Option<PathBuf>, _file_types: &[FileType], _f: Box<dyn Fn(Result<Option<PathBuf>, RecvError>, &mut AsyncContext) + 'static>, _env: &mut Environment) {
         todo!()
     }
 }

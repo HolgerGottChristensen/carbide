@@ -16,15 +16,15 @@ clone_trait_object!(InnerImageContext3d);
 pub struct NoopImageContext3d;
 
 impl InnerImageContext3d for NoopImageContext3d {
-    fn texture_exist(&self, id: &ImageId, env: &mut Environment) -> bool {
+    fn texture_exist(&self, _id: &ImageId, _env: &mut Environment) -> bool {
         todo!()
     }
 
-    fn texture_dimensions(&self, id: &ImageId, env: &mut Environment) -> Option<(u32, u32)> {
+    fn texture_dimensions(&self, _id: &ImageId, _env: &mut Environment) -> Option<(u32, u32)> {
         todo!()
     }
 
-    fn update_texture(&mut self, id: ImageId, texture: Texture, env: &mut Environment) -> bool {
+    fn update_texture(&mut self, _id: ImageId, _texture: Texture, _env: &mut Environment) -> bool {
         todo!()
     }
 }

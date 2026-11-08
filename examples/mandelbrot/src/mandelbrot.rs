@@ -72,7 +72,7 @@ impl Mandelbrot {
 impl Render for Mandelbrot {
     fn render(&mut self, context: &mut RenderContext) {
 
-        self.jobs.retain(|(job, receiver)| {
+        self.jobs.retain(|(_job, receiver)| {
             match receiver.try_recv() {
                 Ok((image, id)) => {
                     context.image.update_texture(&id, Texture {
@@ -174,12 +174,12 @@ impl Render for Mandelbrot {
 }
 
 impl MouseEventHandler for Mandelbrot {
-    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll { x, y, .. } => {
                 self.offset += Position::new(*x, -*y);
             }
-            MouseEvent::Rotation(delta, _, _) => {
+            MouseEvent::Rotation(_delta, _, _) => {
                 //self.rotation -= delta;
             }
             MouseEvent::Drag { button: MouseButton::Left, modifiers: ModifierKey::EMPTY, delta_xy, ..  } => {
@@ -195,7 +195,7 @@ impl CommonWidget for Mandelbrot {
 }
 
 impl Debug for Mandelbrot {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }

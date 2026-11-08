@@ -6,15 +6,15 @@ use carbide::environment::Environment;
 use carbide::identifiable::Identifiable;
 use carbide::random_access_collection::RandomAccessCollection;
 use carbide::state::{LocalState, StateContract};
-use carbide::widget::{AnySequence, AnyWidget, CommonWidget, Delegate, ForEach, Rectangle, Sequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Delegate, ForEach, Rectangle, Sequence, Widget, WidgetExt, WidgetId, WidgetProperties, WidgetSync};
 use carbide::CommonWidgetImpl;
 use std::any::TypeId;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use std::rc::Rc;
 use carbide::widget::properties::WidgetKindSimple;
-use crate::list::{IntoSelection, ListStyle, SelectableDelegate};
-use crate::list::list_row::{AnyListRow};
+use crate::list::{IntoSelection, SelectableDelegate};
+use crate::list::list_row::AnyListRow;
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Sync)]

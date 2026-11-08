@@ -580,7 +580,7 @@ impl WGPURenderContext {
 
         let style = self.style_stack.last().unwrap().clone();
 
-        let (mut color, gradient) = match style {
+        let (color, gradient) = match style {
             WGPUStyle::Color(c) => {
                 (c, false)
             },

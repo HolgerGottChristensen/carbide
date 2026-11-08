@@ -16,8 +16,8 @@ enum Flavor {
 
 fn main() {
     let state = LocalState::new(Flavor::Chocolate);
-    let state2 = LocalState::new(Some(Flavor::Chocolate));
-    let state3 = LocalState::new(HashSet::<Flavor>::new());
+    let _state2 = LocalState::new(Some(Flavor::Chocolate));
+    let _state3 = LocalState::new(HashSet::<Flavor>::new());
 
     let mut application = Application::new();
 

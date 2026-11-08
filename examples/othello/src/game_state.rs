@@ -187,7 +187,7 @@ impl GameState {
     fn capture(&mut self, pos: BoardPosition, x: i32, y: i32, check: bool, top: bool) -> bool {
         let opponent = !self.current_player;
 
-        let mut current = BoardPosition { x: (pos.x as i32 + x) as usize, y: (pos.y as i32 + y) as usize };
+        let current = BoardPosition { x: (pos.x as i32 + x) as usize, y: (pos.y as i32 + y) as usize };
 
         if current.x >= self.radius * 2 || current.y >= self.radius * 2 {
             return false;

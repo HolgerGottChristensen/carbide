@@ -1,5 +1,4 @@
 use crate::material::material_flags::MaterialFlags;
-use bitflags::Flags;
 use carbide::color::WHITE;
 use carbide::draw::{Color, ImageId};
 use carbide::impl_state_value;

@@ -1,5 +1,4 @@
 use std::fmt::Debug;
-use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 use accesskit::{Node, Role};
 use dyn_clone::{clone_box, DynClone};

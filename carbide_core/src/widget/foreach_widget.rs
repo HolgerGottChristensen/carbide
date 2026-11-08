@@ -7,7 +7,6 @@ use dyn_clone::DynClone;
 use std::fmt::{Debug, Formatter};
 use std::marker::PhantomData;
 use fxhash::FxBuildHasher;
-use carbide::random_access_collection::RandomAccessCollection;
 use carbide::widget::{AnyWidget, WidgetProperties};
 use carbide::widget::properties::WidgetKindProxy;
 use crate::identifiable::Identifiable;

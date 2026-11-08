@@ -14,25 +14,25 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     fn start(&mut self) {
     }
 
-    fn render(&mut self, layer: Layer, camera: CameraSpec, env: &mut Environment) {
+    fn render(&mut self, _layer: Layer, _camera: CameraSpec, _env: &mut Environment) {
     }
 
-    fn mesh(&mut self, mesh: &Mesh) {
+    fn mesh(&mut self, _mesh: &Mesh) {
     }
 
-    fn material(&mut self, material: &Material, env: &mut Environment) {
+    fn material(&mut self, _material: &Material, _env: &mut Environment) {
     }
 
     fn pop_material(&mut self) {
     }
 
-    fn transform(&mut self, transform: &Matrix4<f32>) {
+    fn transform(&mut self, _transform: &Matrix4<f32>) {
     }
 
     fn pop_transform(&mut self) {
     }
 
-    fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>) {
+    fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {
     }
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d {

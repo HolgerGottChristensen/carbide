@@ -1,5 +1,4 @@
 use crate::locale_ext::LocaleKey;
-use crate::localizable::Localizable;
 use crate::locale;
 use carbide_core::environment::Environment;
 use carbide_core::state::{AnyReadState, IntoReadState, ReadState, StateSync, ValueState};

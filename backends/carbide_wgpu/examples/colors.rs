@@ -56,9 +56,9 @@ fn main() {
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::Label.color().invert()),
             HStack::new(
-                ForEach::new(vec![colors1, colors2, colors3], |item: &Vec<EnvironmentColor>, index| {
+                ForEach::new(vec![colors1, colors2, colors3], |item: &Vec<EnvironmentColor>, _index| {
                     VStack::new(
-                        ForEach::new(item.clone(), |item: &EnvironmentColor, index| {
+                        ForEach::new(item.clone(), |item: &EnvironmentColor, _index| {
                             HStack::new((
                                 Text::new(format!("{:?}", *item.value())),
                                 Rectangle::new()

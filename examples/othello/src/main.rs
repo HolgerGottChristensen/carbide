@@ -1,7 +1,7 @@
 use carbide::draw::Dimension;
 use carbide::environment::EnvironmentColor;
 use carbide::state::{AnyReadState, AnyState, LocalState, Map1, ReadState, State};
-use carbide::widget::{AnyWidget, ForEach, HStack, Rectangle, Text, LazyVGrid, GridItem, VStack, Widget, WidgetExt, Scroll};
+use carbide::widget::{ForEach, HStack, Rectangle, Text, LazyVGrid, GridItem, VStack, WidgetExt, Scroll};
 use carbide::{lens, ui, Application, Window};
 
 use crate::game_state::{BoardPosition, GameState, Player, Tile, TileInfo};

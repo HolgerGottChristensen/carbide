@@ -10,8 +10,8 @@ use carbide_wgpu::{Application, Window};
 pub fn build_application(name: &str) -> Application {
     let mut application = Application::new();
 
-    let mut toast_offset = GlobalState::new(100.0);
-    let mut toast_offset_for_content = toast_offset.clone();
+    let toast_offset = GlobalState::new(100.0);
+    let toast_offset_for_content = toast_offset.clone();
     let mut toast_offset_for_timer = toast_offset.clone();
 
     let timer = Timer::new(move || {
@@ -33,7 +33,7 @@ pub fn build_application(name: &str) -> Application {
             let timer2 = timer.clone();
             let toast_offset_for_content2 = toast_offset_for_content.clone();
 
-            move |ctx| {
+            move |_ctx| {
                 let mut toast_offset_for_content3 = toast_offset_for_content2.clone();
 
                 let mut clipboard = ClipboardContext::new().unwrap();

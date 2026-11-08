@@ -1,4 +1,3 @@
-use crate::token::Token;
 
 ast_enum! {
     /// A binary operator: `+`, `+=`, `&`.

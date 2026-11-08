@@ -178,5 +178,5 @@ impl InnerRenderContext for ShapeRenderCapture {
 
     fn render_layer(&mut self, _layer_id: LayerId, _bounding_box: Rect) {}
 
-    fn text(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, ctx: &mut dyn TextContext) {}
+    fn text(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment, _ctx: &mut dyn TextContext) {}
 }

@@ -1,11 +1,11 @@
 use std::any::TypeId;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
-use carbide::widget::{WidgetStyle, WidgetSync};
+use carbide::widget::WidgetSync;
 use crate::slider::{SliderStepping, SliderSteppingType, SliderStyle};
 use crate::slider::SliderValue;
 use crate::slider::SliderStyleKey;
-use crate::{EnabledState};
+use crate::EnabledState;
 use carbide_core::draw::{AutomaticStyle, Dimension, Position};
 use carbide_core::event::{Key, KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, ModifierKey, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide_core::flags::WidgetFlag;

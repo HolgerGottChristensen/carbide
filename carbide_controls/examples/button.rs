@@ -4,7 +4,7 @@ use carbide_core::accessibility::AccessibilityExt;
 use carbide_core::closure;
 use carbide_core::draw::{AutomaticStyle, Dimension};
 use carbide_core::event::ModifierKey;
-use carbide_core::state::{LocalState, ReadStateExtNew, State};
+use carbide_core::state::{LocalState, ReadStateExtNew};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};
 

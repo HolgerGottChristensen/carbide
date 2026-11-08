@@ -14,7 +14,7 @@ fn main() {
             Scroll::new(
                 LazyHGrid::new(vec![
                     GridItem::Adaptive(80.0)
-                ], ForEach::new(0x1f600..=0x1f64f, |val, idx| unsafe {
+                ], ForEach::new(0x1f600..=0x1f64f, |val, _idx| unsafe {
                     ZStack::new((
                         RoundedRectangle::new(5.0),
                         Text::new(Map1::read_map(val, |c| char::from_u32_unchecked(*c))).font_size(EnvironmentFontSize::LargeTitle),

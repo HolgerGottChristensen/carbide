@@ -6,7 +6,6 @@ use carbide::state::{AnyReadState, AnyState};
 #[cfg(target_os = "macos")]
 use crate::color_dialog::style::macos::MacOSNativeColorDialogStyle;
 use crate::NativeStyle;
-use crate::open_dialog::style::OpenDialogStyle;
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -38,7 +37,7 @@ impl ColorDialogStyle for NativeStyle {
 
 #[cfg(not(target_os = "macos"))]
 impl ColorDialogStyle for NativeStyle {
-    fn open(&self, color: Box<dyn AnyState<T=Color>>, show_alpha: Box<dyn AnyReadState<T=bool>>, env: &mut Environment) {
+    fn open(&self, _color: Box<dyn AnyState<T=Color>>, _show_alpha: Box<dyn AnyReadState<T=bool>>, _env: &mut Environment) {
         todo!()
     }
 }

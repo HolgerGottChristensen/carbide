@@ -3,7 +3,7 @@ use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::widget::{CommonWidget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, WidgetId};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{DatasetController, LineController};
@@ -40,7 +40,7 @@ impl<C: DatasetController> CommonWidget for Chart<C> {
 }
 
 impl<C: DatasetController> Update for Chart<C> {
-    fn update(&mut self, ctx: &mut UpdateContext) {
+    fn update(&mut self, _ctx: &mut UpdateContext) {
         self.dataset_controller.update_scales_min_max();
     }
 }

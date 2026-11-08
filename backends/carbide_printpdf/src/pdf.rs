@@ -85,9 +85,9 @@ impl Pdf {
         self.widgets = widgets;
     }
 
-    pub fn render(mut self) -> String {
-        let current_layer = self.document.get_page(PdfPageIndex(0)).get_layer(PdfLayerIndex(0));
-        let page_dimensions = Dimension::new(210.0, 297.0);
+    pub fn render(self) -> String {
+        let _current_layer = self.document.get_page(PdfPageIndex(0)).get_layer(PdfLayerIndex(0));
+        let _page_dimensions = Dimension::new(210.0, 297.0);
 
         //self.environment.capture_time();
         //self.environment.set_root_alignment(BasicLayouter::Top);

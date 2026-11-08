@@ -138,7 +138,7 @@ impl Application {
         &mut self.text_context
     }
 
-    pub fn launch(mut self) {
+    pub fn launch(self) {
         #[cfg(target_arch = "wasm32")]
         {
             wasm_bindgen_futures::spawn_local(Application::launch_inner(self))
@@ -150,7 +150,7 @@ impl Application {
 
     }
 
-    async fn launch_inner(mut application: Application) {
+    async fn launch_inner(application: Application) {
         let Application {
             id,
             scenes,

@@ -18,7 +18,7 @@ pub trait DataSet: Debug + 'static {
     fn min(&self) -> (Self::X, Self::Y, Self::Z);
     fn max(&self) -> (Self::X, Self::Y, Self::Z);
 
-    fn options(&self, env: &mut Environment) -> DataSetOptions {
+    fn options(&self, _env: &mut Environment) -> DataSetOptions {
         DataSetOptions {
             color: DataColor::Inherit,
             stepped: Stepped::None,

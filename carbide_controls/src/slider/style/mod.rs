@@ -2,12 +2,12 @@ mod plain;
 mod unstyled;
 
 use std::fmt::Debug;
-use dyn_clone::{clone_trait_object, DynClone};
+use dyn_clone::clone_trait_object;
 use carbide::draw::AutomaticStyle;
 use carbide::environment::{EnvironmentKey, Shared};
 use carbide::focus::Focus;
-use carbide::state::{AnyReadState, AnyState};
-use carbide::widget::{AnySequence, AnyWidget, WidgetStyle};
+use carbide::state::AnyReadState;
+use carbide::widget::{AnyWidget, WidgetStyle};
 pub use plain::PlainStyle;
 pub use unstyled::UnstyledStyle;
 use crate::slider::SliderSteppingType;

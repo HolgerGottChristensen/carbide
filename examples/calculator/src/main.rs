@@ -1,11 +1,10 @@
-use std::ops::Deref;
 
 use carbide::color::ColorExt;
 use carbide::controls::button::{Button, PlainStyle};
 use carbide::controls::ControlsExt;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::state::{LocalState, Map3, ReadState, ReadStateExtNew, State};
+use carbide::state::{LocalState, Map3, ReadStateExtNew, State};
 use carbide::widget::*;
 use carbide::{closure, Application, Window};
 
@@ -17,7 +16,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let mut calculator_state = LocalState::new(CalculatorState::new());
+    let calculator_state = LocalState::new(CalculatorState::new());
 
     let upper_display_string = calculator_state.map(|m: &CalculatorState| m.get_upper_display());
     let display_string = calculator_state.map(|m: &CalculatorState| m.get_display());

@@ -38,9 +38,9 @@ fn main() {
     //let text_state5 = LocalState::new("Bonjour monde!".to_string());
     //let text_state6 = LocalState::new("Hola mundo!".to_string());
 
-    let selected = LocalState::new(January);
+    let _selected = LocalState::new(January);
 
-    let model = LocalState::new(vec![
+    let _model = LocalState::new(vec![
         January, February, March, April, May, June, July, September, October, November, December,
     ]);
 

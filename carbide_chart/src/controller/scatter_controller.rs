@@ -61,7 +61,7 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clon
             let mut prev_x = 0.0;
             let mut prev_y = 0.0;
 
-            dataset.points(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+            dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
                 let x = (point.x() - x_min) / (x_max - x_min);
                 let y = (point.y() - y_min) / (y_max - y_min);
 
@@ -150,7 +150,7 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clon
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());
 
-            dataset.points(&mut |index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+            dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
                 let x = (point.x() - x_min) / (x_max - x_min);
                 let y = (point.y() - y_min) / (y_max - y_min);
                 ctx.begin_path();

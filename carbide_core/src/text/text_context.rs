@@ -57,11 +57,11 @@ pub trait TextContext {
 pub struct NOOPTextContext;
 
 impl TextContext for NOOPTextContext {
-    fn calculate_size_new(&mut self, text: &str, style: &TextStyle, requested_size: Option<Dimension>, env: &mut Environment) -> Dimension {
+    fn calculate_size_new(&mut self, _text: &str, _style: &TextStyle, _requested_size: Option<Dimension>, _env: &mut Environment) -> Dimension {
         unimplemented!()
     }
 
-    fn render_new(&mut self, text: &str, style: &TextStyle, position: Position, requested_size: Option<Dimension>, env: &mut Environment, f: &mut dyn FnMut(&Glyph)) {
+    fn render_new(&mut self, _text: &str, _style: &TextStyle, _position: Position, _requested_size: Option<Dimension>, _env: &mut Environment, _f: &mut dyn FnMut(&Glyph)) {
         unimplemented!()
     }
 

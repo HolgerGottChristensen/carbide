@@ -1,7 +1,6 @@
 use carbide_derive::Id;
 use crate::draw::Color;
 use crate::environment::{Environment, EnvironmentKey, EnvironmentKeyable, Shared};
-use crate::identifiable::Identifiable;
 use crate::render::Style;
 use crate::state::*;
 

@@ -11,7 +11,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(mut vertices: Vec<Vertex>, indices: Vec<u32>) -> Mesh {
+    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>) -> Mesh {
         Mesh {
             handedness: Default::default(),
             vertices,

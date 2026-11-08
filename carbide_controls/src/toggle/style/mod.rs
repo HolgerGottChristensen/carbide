@@ -8,7 +8,7 @@ use carbide_core::focus::Focus;
 use carbide_core::state::{AnyReadState, AnyState};
 use carbide_core::widget::AnyWidget;
 pub use checkbox_style::*;
-use dyn_clone::{clone_trait_object, DynClone};
+use dyn_clone::clone_trait_object;
 use std::fmt::Debug;
 use carbide::accessibility::Role;
 use carbide::draw::AutomaticStyle;

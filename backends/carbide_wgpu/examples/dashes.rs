@@ -6,7 +6,7 @@ use carbide_core::color::{TRANSPARENT, WHITE};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide_core::mouse_position::MousePositionEnvironmentExt;
-use carbide_core::state::{LocalState, Map1, State};
+use carbide_core::state::{LocalState, Map1};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::*;
 use carbide_wgpu::{Application, Window};

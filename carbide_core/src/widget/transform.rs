@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, Map1, ReadState, RMap1};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId, WidgetSync};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId, WidgetSync};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]

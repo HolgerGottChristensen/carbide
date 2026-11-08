@@ -2,7 +2,7 @@ use lyon::geom::LineSegment;
 use lyon::lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, FillVertex, StrokeTessellator, VertexBuffers};
 use lyon::math::{point, vector, Angle, Point};
 use lyon::path::{LineJoin, Path, Winding};
-use lyon::path::builder::{BorderRadii, SvgPathBuilder};
+use lyon::path::builder::BorderRadii;
 use lyon::tessellation::{FillRule, LineCap, StrokeAlignment, StrokeOptions};
 use carbide_core::draw::{Position, DrawShape, Scalar};
 use carbide_core::draw::fill::FillOptions as CarbideFillOptions;
@@ -10,7 +10,7 @@ use carbide_core::draw::stroke::StrokeOptions as CarbideStrokeOptions;
 use carbide_tesselation::stroke_vertex::StrokeVertex;
 use carbide_tesselation::triangle::Triangle;
 use carbide_tesselation::Tesselator;
-use lyon::tessellation::{StrokeVertex as LyonStrokeVertex};
+use lyon::tessellation::StrokeVertex as LyonStrokeVertex;
 use carbide_core::draw::path::PathInstruction;
 
 const RADIANS_FOR_MISSING_ANGLE: f32 = 100.0;

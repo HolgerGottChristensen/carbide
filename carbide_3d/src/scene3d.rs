@@ -5,7 +5,7 @@ use carbide::lifecycle::{Update, UpdateContext};
 use carbide::render::{LayerId, RenderContext};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::Render;
-use carbide_core::widget::{CommonWidget, Widget, WidgetExt, WidgetId};
+use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use carbide_core::CommonWidgetImpl;
 
 use crate::camera::{Camera, OrbitCamera};

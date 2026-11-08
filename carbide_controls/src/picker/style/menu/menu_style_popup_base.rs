@@ -7,7 +7,6 @@ use carbide::state::{AnyReadState, AnyState, ReadState};
 use carbide::widget::{AnySequence, AnyWidget, CommonWidget, OverlayManager, Widget, WidgetId, WidgetSync};
 use crate::ControlsOverlayKey;
 use crate::identifiable::AnySelectableWidget;
-use crate::picker::picker_selection::PickerSelection;
 use crate::picker::style::menu::key_command::PopupButtonKeyCommand;
 
 #[derive(Debug, Clone, Widget)]
@@ -23,7 +22,7 @@ pub struct MenuStylePopupBase {
 }
 
 impl Layout for MenuStylePopupBase {
-    fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
+    fn calculate_size(&mut self, _requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
         let res = self.child.calculate_size(self.dimension(), ctx);
@@ -148,11 +147,11 @@ impl CommonWidget for MenuStylePopupBase {
         self.position.value().clone()
     }
 
-    fn set_position(&mut self, position: Position) {}
+    fn set_position(&mut self, _position: Position) {}
 
     fn dimension(&self) -> Dimension {
         self.dimension.value().clone()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {}
+    fn set_dimension(&mut self, _dimension: Dimension) {}
 }

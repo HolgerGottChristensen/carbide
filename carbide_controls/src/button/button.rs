@@ -7,7 +7,6 @@ use carbide_core::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
 use carbide::state::{IntoState, ReadStateExtNew, State};
 use carbide::CommonWidgetImpl;
-use carbide_core::environment::IntoColorReadState;
 use carbide_core::focus::Focus;
 use carbide_core::state::{LocalState, ReadState};
 use carbide_core::widget::*;

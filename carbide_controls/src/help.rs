@@ -1,14 +1,14 @@
-use std::fmt::{Debug};
+use std::fmt::Debug;
 use carbide::draw::Rect;
 use carbide::event::MouseEventContext;
 use carbide::layout::LayoutContext;
 use carbide::mouse_position::MousePositionEnvironmentExt;
-use carbide_core::{CommonWidgetImpl};
+use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position, Scalar};
 use carbide_core::event::{MouseEvent, MouseEventHandler};
 use carbide_core::layout::Layout;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::widget::{CommonWidget, Empty, AnyWidget, WidgetExt, WidgetId, Widget};
+use carbide_core::widget::{CommonWidget, Empty, AnyWidget, WidgetId, Widget};
 
 const PADDING: Scalar = 8.0;
 

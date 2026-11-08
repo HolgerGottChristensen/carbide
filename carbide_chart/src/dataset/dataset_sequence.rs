@@ -1,5 +1,5 @@
 use std::fmt::Debug;
-use crate::{DataPoint, DataSet, DataValue};
+use crate::{DataSet, DataValue};
 
 pub trait DataSetSequence: Debug + 'static {
     type X: DataValue;
@@ -16,6 +16,7 @@ macro_rules! tuple_sequence_impl {
     ($first_generic:ident $(, $generic:ident)*) => {
         #[allow(non_snake_case)]
         #[allow(unused_parens)]
+        #[allow(unused_mut)]
         impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, $first_generic: DataSet<X=X, Y=Y, Z=Z> $(, $generic: DataSet<X=X, Y=Y, Z=Z>)*> DataSetSequence for ($first_generic $(, $generic)*) {
             type X = X;
             type Y = Y;

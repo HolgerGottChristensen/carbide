@@ -158,7 +158,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
         match (image_id, image_id.format()) {
             (ImageId::Local(path, ..), ImageFormat::Gif) => {
                 if !ctx.image.exist(image_id, ctx.env) {
-                    let full_path = if path.is_relative() {
+                    let _full_path = if path.is_relative() {
                         let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
                             .for_folder("assets")
                             .unwrap();
@@ -387,7 +387,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
         }
     }
 
-    fn fill_path(&self, description: &mut Vec<RenderInstruction>, mut path_instructions: &Vec<PathInstruction>, fill: &Fill) {
+    fn fill_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, fill: &Fill) {
         let style = match fill.paint() {
             Paint::CurrentColor => self.color.as_ref()
                 .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
@@ -408,7 +408,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
         description.push(RenderInstruction::PopStyle);
     }
 
-    fn stroke_path(&self, description: &mut Vec<RenderInstruction>, mut path_instructions: &Vec<PathInstruction>, stroke: &Stroke) {
+    fn stroke_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, stroke: &Stroke) {
         let style = match stroke.paint() {
             Paint::CurrentColor => self.color.as_ref()
                 .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
@@ -458,11 +458,11 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
 }
 
 impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
-    fn load_remote_raster(ctx: &mut LayoutContext, url: &Url) {
+    fn load_remote_raster(_ctx: &mut LayoutContext, url: &Url) {
         todo!("Load image from url: {}", url);
     }
 
-    fn load_local_raster(ctx: &mut LayoutContext, path: &Arc<PathBuf>) {
+    fn load_local_raster(_ctx: &mut LayoutContext, _path: &Arc<PathBuf>) {
 
     }
 }

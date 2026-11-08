@@ -3,7 +3,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Alignment, Dimension, Position};
 use crate::layout::{Layout, LayoutContext};
 use crate::state::{IntoReadState, ReadState};
-use crate::widget::{AnyWidget, CommonWidget, Empty, Widget, WidgetId};
+use crate::widget::{CommonWidget, Empty, Widget, WidgetId};
 use crate::widget::types::EdgeInsets;
 
 #[derive(Debug, Clone, Widget)]

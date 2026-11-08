@@ -79,7 +79,7 @@ impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessC
 }
 
 impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessCollection<T>, W: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for ListRow<Id, T, M, W> {
-    fn child(&mut self, index: usize) -> &mut dyn AnyWidget {
+    fn child(&mut self, _index: usize) -> &mut dyn AnyWidget {
         todo!()
     }
 
@@ -87,11 +87,11 @@ impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessC
         todo!()
     }
 
-    fn foreach_child(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         todo!()
     }
 
-    fn foreach_child_rev(&mut self, f: &mut dyn FnMut(&mut dyn AnyWidget)) {
+    fn foreach_child_rev(&mut self, _f: &mut dyn FnMut(&mut dyn AnyWidget)) {
         todo!()
     }
 
@@ -99,7 +99,7 @@ impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessC
         todo!()
     }
 
-    fn set_position(&mut self, position: Position) {
+    fn set_position(&mut self, _position: Position) {
         todo!()
     }
 
@@ -107,7 +107,7 @@ impl<Id: Hash + Eq + Clone + Debug + 'static, T: StateContract, M: RandomAccessC
         todo!()
     }
 
-    fn set_dimension(&mut self, dimension: Dimension) {
+    fn set_dimension(&mut self, _dimension: Dimension) {
         todo!()
     }
 }
@@ -117,7 +117,7 @@ impl<T: StateContract,
     W: AnyListRow + Widget,
     U: Delegate<M, T, W>,
     Id: Hash + Eq + Clone + Debug + 'static> ReverseAnySequence<ForEach<T, M, U, W, Id>> for dyn AnyListRow {
-    fn index(value: &mut ForEach<T, M, U, W, Id>, index: usize) -> &mut dyn AnyListRow {
+    fn index(_value: &mut ForEach<T, M, U, W, Id>, _index: usize) -> &mut dyn AnyListRow {
         /*let (   W1   ) = value;
 
         let mut passed = 0;
@@ -146,7 +146,7 @@ impl<T: StateContract,
         value.child_count()
     }
 
-    fn foreach(value: &mut ForEach<T, M, U, W, Id>, f: &mut dyn FnMut(&mut dyn AnyListRow)) {
+    fn foreach(_value: &mut ForEach<T, M, U, W, Id>, _f: &mut dyn FnMut(&mut dyn AnyListRow)) {
         /*let (   W1   ) = value;
         if W1.is_ignore() {} else if W1.is_proxy() {
             AnySelectableWidget::foreach_child(W1, f);
@@ -155,7 +155,7 @@ impl<T: StateContract,
         }*/
     }
 
-    fn foreach_rev(value: &mut ForEach<T, M, U, W, Id>, f: &mut dyn FnMut(&mut dyn AnyListRow)) {
+    fn foreach_rev(_value: &mut ForEach<T, M, U, W, Id>, _f: &mut dyn FnMut(&mut dyn AnyListRow)) {
         /*let (   W1    ) = value;
         if W1.is_ignore() {} else if W1.is_proxy() {
             AnySelectableWidget::foreach_child_rev(W1, f);

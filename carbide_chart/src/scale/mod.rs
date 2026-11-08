@@ -15,7 +15,7 @@ pub use linear_scale::*;
 pub trait Scale: Clone + Debug + 'static {
     fn axis(&self) -> Axis;
 
-    fn draw(&self, ctx: &mut CanvasContext, env: &mut Environment, area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, _env: &mut Environment, area: Rect) {
         self.draw_grid(ctx, area);
         self.draw_border(ctx, area);
     }

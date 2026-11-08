@@ -1,12 +1,11 @@
 use crate::file_type::FileType;
-use crate::open_dialog::style::OpenDialogStyle;
 use crate::open_dialog::style::OpenDialogStyleKey;
 use carbide::asynchronous::AsyncContext;
 use carbide::draw::AutomaticStyle;
 use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState, ReadStateExtNew, StateSync};
 use carbide_core::state::{AnyReadState, StateValue};
-use carbide_core::widget::{WidgetId};
+use carbide_core::widget::WidgetId;
 use dyn_clone::clone_box;
 use oneshot::RecvError;
 use std::path::PathBuf;

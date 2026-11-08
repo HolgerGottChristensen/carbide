@@ -18,7 +18,7 @@ pub trait ContextMenuStyle: Debug + DynClone {
 }
 
 impl ContextMenuStyle for AutomaticStyle {
-    fn open(&self, menu_items: &dyn AnySequence<dyn AnyMenuWidget>) {
+    fn open(&self, _menu_items: &dyn AnySequence<dyn AnyMenuWidget>) {
 
     }
 }

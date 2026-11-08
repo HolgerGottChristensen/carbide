@@ -422,8 +422,8 @@ impl OffscreenRenderer {
         let mut current_dashes_buffer = &self.dashes_buffer;
         let mut invalid_scissor = false;
 
-        let mut buffers = Arena::new();
-        let mut gradient_dashed_bind_groups = Arena::new();
+        let buffers = Arena::new();
+        let gradient_dashed_bind_groups = Arena::new();
 
         for command in render_passes {
             match command {

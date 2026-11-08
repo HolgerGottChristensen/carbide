@@ -1,6 +1,6 @@
 use std::any::TypeId;
 use carbide::automatic_style::AutomaticStyle;
-use crate::{EnabledState};
+use crate::EnabledState;
 use carbide::color::RED;
 use carbide::CommonWidgetImpl;
 use carbide::draw::{Color, Dimension, Position};
@@ -8,7 +8,7 @@ use carbide::environment::Environment;
 use carbide::flags::WidgetFlag;
 use carbide::focus::Focus;
 use carbide::state::{IntoState, LocalState, ReadState, ReadStateExtNew, State, StateExtNew};
-use carbide::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Rectangle, Widget, WidgetId, WidgetProperties, WidgetStyle, WidgetSync};
+use carbide::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Rectangle, Widget, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::properties::WidgetKindSimple;
 use crate::color_picker::ColorPickerStyleKey;
 
