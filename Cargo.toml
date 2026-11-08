@@ -44,63 +44,130 @@ authors = [
 ]
 
 [workspace.dependencies]
+carbide = { path = "carbide", version = "0.72.0" }
+carbide_3d = { path = "carbide_3d", version = "0.72.0" }
+carbide_cache = { path = "backends/carbide_cache", version = "0.72.0" }
+carbide_chart = { path = "carbide_chart", version = "0.72.0" }
+carbide_controls = { path = "carbide_controls", version = "0.72.0" }
+carbide_core = { path = "carbide_core", version = "0.72.0" }
+carbide_cosmic_text = { path = "backends/carbide_cosmic_text", version = "0.72.0" }
+carbide_derive = { path = "carbide_derive", version = "0.72.0" }
+carbide_dialogs = { path = "carbide_dialogs", version = "0.72.0" }
+carbide_fluent = { path = "backends/carbide_fluent", version = "0.72.0" }
+carbide_icons = { path = "backends/carbide_icons", version = "0.72.0" }
+carbide_lyon = { path = "backends/carbide_lyon", version = "0.72.0" }
+carbide_macro = { path = "carbide_macro", version = "0.72.0" }
+carbide_media = { path = "carbide_media", version = "0.72.0" }
+carbide_syn = { path = "carbide_syn", version = "0.72.0" }
+carbide_tesselation = { path = "backends/carbide_tesselation", version = "0.72.0" }
+carbide_usvg = { path = "backends/carbide_usvg", version = "0.72.0" }
+carbide_wgpu = { path = "backends/carbide_wgpu", version = "0.72.0" }
+carbide_wgpu_3d = { path = "backends/carbide_wgpu_3d", version = "0.72.0" }
+carbide_wgpu_core = { path = "backends/carbide_wgpu_core", version = "0.72.0" }
+carbide_winit = { path = "backends/carbide_winit", version = "0.72.0" }
+
 accesskit = "0.24.0"
 accesskit_winit = "0.32.2"
+anyhow = "1"
+approx = "0.3.2"
+assert_matches = "1.5.0"
 async-std = "1.13.0"
+automod = "1"
+base64 = "0.22"
 bitflags = "2.4.0"
 block = "0.1.6"
+block2 = "0.5.1"
 bytemuck = { version = "1.7", features = ["derive", "min_const_generics"] }
-carbide_derive = { path = "carbide_derive", version = "0.72.0" }
-carbide_macro = { path = "carbide_macro", version = "0.72.0" }
-carbide_dialogs = { path = "carbide_dialogs", version = "0.72.0" }
-carbide_icons = { path = "backends/carbide_icons", version = "0.72.0" }
-carbide_usvg = { path = "backends/carbide_usvg", version = "0.72.0" }
-carbide_core = { path = "carbide_core", version = "0.72.0" }
-carbide_wgpu = { path = "backends/carbide_wgpu", version = "0.72.0" }
-carbide_wgpu_core = { path = "backends/carbide_wgpu_core", version = "0.72.0" }
-carbide_tesselation = { path = "backends/carbide_tesselation", version = "0.72.0" }
-carbide_lyon = { path = "backends/carbide_lyon", version = "0.72.0" }
-carbide_winit = { path = "backends/carbide_winit", version = "0.72.0" }
-carbide_controls = { path = "carbide_controls", version = "0.72.0" }
-carbide_cosmic_text = { path = "backends/carbide_cosmic_text", version = "0.72.0" }
-carbide = { path = "carbide", version = "0.72.0" }
 cgmath = { version = "0.18", features = ["mint"] }
-chrono = "0.4"
-cocoa = "0.24.0"
+chrono = "0.4.31"
+cocoa = "0.25.0"
 console_error_panic_hook = "0.1.7"
 console_log = "1"
 copypasta = "0.8.1"
 core-graphics = "0.22.0"
+cosmic-text = "0.18.2"
 dashmap = "6.1.0"
+data-url = "0.3"
+dolly = "0.6.0"
+downcast-rs = "1.2.1"
 dyn-clone = "1.0.5"
+encase = "0.9"
 env_logger = "0.11.7"
+euclid = "0.20.13"
+flate2 = "1.1"
+fluent_for_carbide = "0.16.0"
+fontdb = "0.23.0"
 foreign-types = "0.3.2"
-futures = "0.3"
+futures = "0.3.21"
+fxhash = "0.2.1"
+gif = "0.14.1"
+gif-dispose = "6.0.0"
+icu = "1.2.0"
 image = "0.25.5"
 image-compare = "0.5.0"
-inventory = "0.3.25"
+imagesize = "0.14.0"
 include_dir = "0.7.4"
 indexmap = "2.6.0"
+insta = "1"
+intl-memoizer_for_carbide = "0.5.1"
+inventory = "0.3.25"
+kurbo = "0.13.0"
+lazy_static = "1.4.0"
 log = "0.4"
 lyon_for_carbide = "1.0.1"
+num = "0.4.1"
 objc = "0.2.7"
+objc2 = "0.5.2"
+objc2-app-kit = "0.2.2"
+objc2-foundation = "0.2.2"
+objc2-uniform-type-identifiers = "0.2.2"
 once_cell = "1.19.0"
 oneshot = "0.1.3"
+open = "1"
 parking_lot = "0.12.3"
+paste = "1.0.15"
+printpdf = { git = "https://github.com/HolgerGottChristensen/printpdf" }
 proc-macro-crate = "3.2.0"
-rand = { version = "0.10.0" }
+proc-macro2 = "1.0.67"
+quote = "1.0.28"
+rand = "0.10.0"
 raw-window-handle = "0.5"
+rayon = "1.7.0"
+ref-cast = "1"
+regex = "1"
 reqwest = "0.11.22"
+roxmltree = "0.21.1"
+rustversion = "1"
+rustybuzz = "0.20.1"
+serde = "1.0.133"
 serde_json = "1"
+simplecss = "0.2"
+siphasher = "1.0"
 smallvec = "1.13.2"
+smol_str = "0.1.15"
+strict-num = "0.1.1"
 surf = "2.3"
+svgtypes = "0.16.1"
+swash = "0.2.6"
+syn = "1"
+tar = "0.4.16"
+termcolor = "1"
+tiny-skia-path = "0.12.0"
+tobj = "4.0.2"
 tokio = "1"
+ttf-parser = "0.25.1"
 typed-arena = "2.0.2"
+unicode-bidi = "0.3"
+unicode-ident = "1"
+unicode-script = "0.5"
+unicode-segmentation = "1.7.1"
+unicode-vo = "0.1"
 url = "2.5.8"
+uuid = "1.4.1"
 walkdir = "2.4.0"
 wasm-bindgen = "0.2.97"
 wasm-bindgen-futures = "0.4.45"
 web-time = "1.1.0"
 wgpu = { version = "25", features = ["fragile-send-sync-non-atomic-wasm"] }
+windows = "0.28.0"
 winit = { version = "0.30.13", features = ["rwh_05"] }
-

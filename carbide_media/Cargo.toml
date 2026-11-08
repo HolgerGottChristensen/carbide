@@ -14,13 +14,13 @@ categories = ["gui"]
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
-carbide_derive = { path = "../carbide_derive" }
-carbide_core = { path = "../carbide_core" }
-bitflags = "2.4.0"
+carbide_derive.workspace = true
+carbide_core.workspace = true
+bitflags.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc = "0.2.7"
-cocoa = "0.25.0"
+objc.workspace = true
+cocoa.workspace = true
 
 [dev-dependencies]
 carbide_wgpu = { workspace = true, features = ["icons"] }

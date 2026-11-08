@@ -10,15 +10,15 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide_derive = { path = "../carbide_derive" }
-carbide_core = { path = "../carbide_core" }
-carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
+carbide_derive.workspace = true
+carbide_core.workspace = true
+carbide_fluent = { workspace = true, optional = true }
 
 [dev-dependencies]
-carbide_wgpu = { path = "../backends/carbide_wgpu", features = ["controls"] }
-carbide_controls = { path = "../carbide_controls" }
+carbide_wgpu = { workspace = true, features = ["controls"] }
+carbide_controls.workspace = true
 rand.workspace = true
-carbide_fluent = { path = "../backends/carbide_fluent" }
+carbide_fluent.workspace = true
 
 
 [features]

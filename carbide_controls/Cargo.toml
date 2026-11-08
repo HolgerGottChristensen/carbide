@@ -14,21 +14,21 @@ categories = ["gui"]
 homepage = "https://github.com/HolgerGottChristensen/carbide"
 
 [dependencies]
-carbide_macro = { path = "../carbide_macro" }
+carbide_macro.workspace = true
 carbide_dialogs.workspace = true
-carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
-carbide_core = { path = "../carbide_core" }
+carbide_fluent = { workspace = true, optional = true }
+carbide_core.workspace = true
 copypasta.workspace = true
-unicode-segmentation = "1.7.1"
-serde = "1.0.118"
+unicode-segmentation.workspace = true
+serde.workspace = true
 dyn-clone.workspace = true
 chrono.workspace = true
 smallvec.workspace = true
 indexmap.workspace = true
 
 [dev-dependencies]
-env_logger = "0.7"
+env_logger.workspace = true
 carbide_wgpu = { workspace = true, features = ["controls", "icons"] }
 carbide_icons = { workspace = true, features = ["lucide"] }
-futures = "0.3"
-assert_matches = "1.5.0"
+futures.workspace = true
+assert_matches.workspace = true

@@ -10,10 +10,10 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide_core = { path = "../../carbide_core" }
-carbide_cache = { path = "../carbide_cache" }
-fxhash = "0.2.1"
-cosmic-text = "0.18.2"
-swash = "0.2.6"
-unicode-segmentation = "1.7.1"
+carbide_core.workspace = true
+carbide_cache.workspace = true
+fxhash.workspace = true
+cosmic-text.workspace = true
+swash.workspace = true
+unicode-segmentation.workspace = true
 include_dir = { workspace = true, features = ["glob"]}

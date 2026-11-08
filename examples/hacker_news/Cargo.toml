@@ -9,9 +9,9 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide = { path = "../../carbide", features = ["controls", "icons"] }
-reqwest = { version = "0.11.6", features = ["json"]}
-futures = "0.3"
-serde = { version = "1.0.133", features = ["derive"] }
-chrono = { version = "0.4.19", features = ["serde"] }
-open = "1"
+carbide = { workspace = true, features = ["controls", "icons"] }
+reqwest = { workspace = true, features = ["json"] }
+futures.workspace = true
+serde = { workspace = true, features = ["derive"] }
+chrono = { workspace = true, features = ["serde"] }
+open.workspace = true

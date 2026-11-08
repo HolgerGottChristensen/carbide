@@ -25,17 +25,17 @@ i18n = ["carbide_fluent"]
 icons = ["carbide_icons", "carbide_wgpu/icons", "carbide_icons/lucide"]
 
 [dependencies]
-carbide_core = { path = "../carbide_core" }
-carbide_macro = { path = "../carbide_macro", optional = true }
-carbide_controls = { path = "../carbide_controls", optional = true }
-carbide_wgpu = { path = "../backends/carbide_wgpu", optional = true }
-carbide_3d = { path = "../carbide_3d", optional = true }
-carbide_wgpu_3d = { path = "../backends/carbide_wgpu_3d", optional = true }
-carbide_media = { path = "../carbide_media", optional = true }
-carbide_fluent = { path = "../backends/carbide_fluent", optional = true }
-carbide_chart = { path = "../carbide_chart", optional = true }
-carbide_dialogs = { path = "../carbide_dialogs", optional = true }
-carbide_icons = { path = "../backends/carbide_icons", optional = true }
+carbide_core.workspace = true
+carbide_macro = { workspace = true, optional = true }
+carbide_controls = { workspace = true, optional = true }
+carbide_wgpu = { workspace = true, optional = true }
+carbide_3d = { workspace = true, optional = true }
+carbide_wgpu_3d = { workspace = true, optional = true }
+carbide_media = { workspace = true, optional = true }
+carbide_fluent = { workspace = true, optional = true }
+carbide_chart = { workspace = true, optional = true }
+carbide_dialogs = { workspace = true, optional = true }
+carbide_icons = { workspace = true, optional = true }
 
 [dev-dependencies]
-carbide_controls = { path = "../carbide_controls" }
+carbide_controls.workspace = true

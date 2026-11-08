@@ -6,4 +6,4 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-carbide_core = { path = "../../carbide_core" }
+carbide_core.workspace = true

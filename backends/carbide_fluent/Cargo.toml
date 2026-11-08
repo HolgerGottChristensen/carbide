@@ -10,14 +10,14 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide_core = { path = "../../carbide_core" }
-fluent_for_carbide = "0.16.0"
-intl-memoizer_for_carbide = "0.5.1"
-lazy_static = "1.4.0"
-icu = "1.2.0"
+carbide_core.workspace = true
+fluent_for_carbide.workspace = true
+intl-memoizer_for_carbide.workspace = true
+lazy_static.workspace = true
+icu.workspace = true
 walkdir.workspace = true
-chrono = "0.4.30"
+chrono.workspace = true
 
 [dev-dependencies]
-carbide_wgpu = { path = "../carbide_wgpu", features = ["controls"] }
-carbide_controls = { path = "../../carbide_controls", features = ["carbide_fluent"] }
+carbide_wgpu = { workspace = true, features = ["controls"] }
+carbide_controls = { workspace = true, features = ["carbide_fluent"] }

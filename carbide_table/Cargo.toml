@@ -6,9 +6,9 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
-carbide_core = { path = "../carbide_core" }
+carbide_core.workspace = true
 dyn-clone.workspace = true
 
 
 [dev-dependencies]
-carbide_wgpu = { path = "../backends/carbide_wgpu" }
+carbide_wgpu.workspace = true

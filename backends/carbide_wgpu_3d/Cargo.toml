@@ -11,11 +11,11 @@ authors = [
 
 [dependencies]
 wgpu.workspace = true
-carbide_wgpu = { path = "../carbide_wgpu" }
-carbide_core = { path = "../../carbide_core" }
-carbide_3d = { path = "../../carbide_3d" }
+carbide_wgpu.workspace = true
+carbide_core.workspace = true
+carbide_3d.workspace = true
 bytemuck.workspace = true
-encase = { version = "0.9", features = ["cgmath"] }
+encase = { workspace = true, features = ["cgmath"] }
 include_dir.workspace = true
 once_cell.workspace = true
 dashmap.workspace = true

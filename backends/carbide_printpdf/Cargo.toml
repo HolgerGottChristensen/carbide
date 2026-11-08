@@ -10,6 +10,6 @@ authors = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide_core = { path = "../../carbide_core" }
-carbide_derive = { path = "../../carbide_derive" }
-printpdf = { git = "https://github.com/HolgerGottChristensen/printpdf", features = ["embedded_images"]}
+carbide_core.workspace = true
+carbide_derive.workspace = true
+printpdf = { workspace = true, features = ["embedded_images"] }

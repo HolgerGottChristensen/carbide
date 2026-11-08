@@ -16,9 +16,9 @@ homepage = "https://github.com/HolgerGottChristensen/carbide"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1"
-quote = "1"
-syn = { version = "1", features = ["extra-traits", "full"] }
-carbide_syn = { path = "../carbide_syn", features = ["extra-traits", "full", "fold"] }
-paste = "1.0.15"
+proc-macro2.workspace = true
+quote.workspace = true
+syn = { workspace = true, features = ["extra-traits", "full"] }
+carbide_syn = { workspace = true, features = ["extra-traits", "full", "fold"] }
+paste.workspace = true
 proc-macro-crate.workspace = true

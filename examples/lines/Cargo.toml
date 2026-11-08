@@ -9,7 +9,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-carbide = { path = "../../carbide", features = ["controls"] }
-euclid = "0.20.13"
-smol_str = "0.1.15"
-approx = "0.3.2"
+carbide = { workspace = true, features = ["controls"] }
+euclid.workspace = true
+smol_str.workspace = true
+approx.workspace = true

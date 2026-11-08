@@ -9,7 +9,7 @@ homepage.workspace = true
 authors.workspace = true
 
 [dependencies]
-carbide_core = { path = "../../carbide_core" }
+carbide_core.workspace = true
 wgpu.workspace = true
 futures.workspace = true
-log = "0.4"
+log.workspace = true
