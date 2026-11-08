@@ -1,9 +1,13 @@
+use std::any::TypeId;
 use std::collections::HashMap;
+use std::pin::Pin;
 use dashmap::DashMap;
 use wgpu::{BindGroup, BindGroupLayout, PipelineLayout, Sampler, ShaderModule, Texture, TextureFormat};
 use carbide::environment::{Environment, Exclusive};
 use carbide_core::draw::ImageId;
 use carbide_core::environment::EnvironmentKey;
+use carbide_core::plugin::Plugin;
+use carbide_core::register;
 use carbide_core::widget::FilterId;
 use carbide_wgpu_core::WgpuContextNew;
 use crate::bind_group_layouts::{atlas_bind_group_layout, filter_buffer_bind_group_layout, filter_texture_bind_group_layout, gradient_buffer_bind_group_layout, texture_bind_group_layout, uniform_bind_group_layout, uniform_bind_group_layout2};
@@ -110,3 +114,18 @@ impl EnvironmentKey for WgpuContext {
     type Value = WgpuContext;
     type Access = Exclusive;
 }
+
+fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
+    Box::pin(async {
+        let context = WgpuContext::new(env).await;
+
+        env.insert::<WgpuContext>(Box::leak(Box::new(context)))
+    })
+}
+
+register!(Plugin {
+    // `WgpuContext::new` builds on the device and queue from `WgpuContextNew`.
+    dependencies: &[TypeId::of::<WgpuContextNew>()],
+    registers: TypeId::of::<WgpuContext>(),
+    register
+});

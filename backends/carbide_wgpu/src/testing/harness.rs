@@ -30,34 +30,26 @@ use crate::image_context::WGPUImageContext;
 use crate::offscreen_renderer::OffscreenRenderer;
 use crate::testing::{snapshot, SnapshotOptions};
 use crate::testing::test_scene::TestScene;
-use crate::wgpu_context::WgpuContext;
 use carbide_core::plugin::register_plugins;
 use carbide_wgpu_core::WgpuContextNew;
 use crate::wgpu_msaa::WgpuMsaa;
 
-/// A fresh `WgpuContext` per `Harness`, deliberately *not* shared across instances.
+/// Registers every plugin into a `Harness`'s own, fresh environment: the shared
+/// `WgpuContextNew` (instance/adapter/device/queue), the `WgpuContext` renderer state built on
+/// top of it, and the tesselator. Same setup as `Application::launch_inner`.
 ///
-/// Sharing one process-wide `WgpuContext` (cloned per `Harness`) was the original design here, for
-/// speed — `WgpuContext::new()` requests an adapter/device and compiles every shader module, which
-/// is expensive. It was reverted after discovering a real correctness bug: `WgpuContext::
-/// atlas_cache_texture` is a *stateful* glyph cache whose contents are only meaningful in
-/// combination with the one `CosmicTextContext`'s allocation bookkeeping that populated it. Two
-/// `Harness`es sharing the physical texture while each running its own independent
-/// `CosmicTextContext` corrupts each other's glyph/icon atlas regions — observed directly as a
-/// `Toggle` checkbox icon rendering wrong when a second `Harness` was constructed while a first
-/// one (rendering the same icon) was still alive, even though nothing else about the test was
-/// non-deterministic. `Device`/`Queue`/shader modules/pipeline layouts *would* be safe to share
-/// (genuinely stateless), but `WgpuContext` bundles the atlas cache in with them, so sharing
-/// anything less than the whole struct would need restructuring `WgpuContext` itself — out of
-/// scope for this fixture. Correctness over speed: construct fresh every time.
-fn new_wgpu_context(env: &mut Environment<'static>) -> WgpuContext {
-    // Same setup as `Application::launch_inner`: the registered plugins insert the shared
-    // `WgpuContextNew` (instance/adapter/device/queue) and the tesselator into `env`, and
-    // `WgpuContext::new` builds the renderer-specific state on top of that device.
-    futures::executor::block_on(async {
-        register_plugins(env).await;
-        WgpuContext::new(env).await
-    })
+/// Each `Harness` gets its own `WgpuContext` this way, deliberately *not* shared across
+/// instances. Sharing one was the original design here, for speed, since creating it requests an
+/// adapter/device and compiles every shader module. It was reverted after discovering a real
+/// correctness bug: `WgpuContext::atlas_cache_texture` is a *stateful* glyph cache whose contents
+/// are only meaningful in combination with the one `CosmicTextContext`'s allocation bookkeeping
+/// that populated it. Two `Harness`es sharing the physical texture while each running its own
+/// independent `CosmicTextContext` corrupts each other's glyph/icon atlas regions, observed
+/// directly as a `Toggle` checkbox icon rendering wrong when a second `Harness` was constructed
+/// while a first one (rendering the same icon) was still alive. Correctness over speed: register
+/// fresh every time.
+fn register_harness_plugins(env: &mut Environment<'static>) {
+    futures::executor::block_on(register_plugins(env));
 }
 
 /// Installed as the global `carbide_core::asynchronous` event sink for a `Harness`'s lifetime, in
@@ -102,19 +94,6 @@ impl EventSink for TestEventSink {
         *observed = true;
         condvar.notify_all();
     }
-}
-
-/// Runs `f`, with `WgpuContext` temporarily pushed into `env`, and returns `f`'s result.
-/// `Environment::with` itself always returns `()` — it's designed for side-effecting scopes,
-/// not for threading a return value back out — so capturing the result needs this out-parameter
-/// (a local `Option` the inner closure assigns into) rather than relying on the call expression's
-/// value directly.
-fn with_wgpu_context<R>(env: &mut Environment, wgpu_context: &mut WgpuContext, f: impl FnOnce(&mut Environment) -> R) -> R {
-    let mut result: Option<R> = None;
-    env.with::<WgpuContext>(wgpu_context, |env| {
-        result = Some(f(env));
-    });
-    result.unwrap()
 }
 
 /// `dimension` is always in logical units; every GPU-side resource (textures, readback buffers)
@@ -253,7 +232,6 @@ pub struct Harness {
     focus_manager: FocusManager,
     animation_manager: AnimationManager,
     render_instruction_cache: HashMap<ImageId, Rc<(Dimension, Vec<RenderInstruction>)>>,
-    wgpu_context: WgpuContext,
     offscreen: OffscreenRenderer,
     dimension: Dimension,
     scale_factor: Scalar,
@@ -282,12 +260,10 @@ impl Harness {
         update_scale_factor(window_id, scale_factor);
 
         let mut env: Environment<'static> = Environment::new();
-        let mut wgpu_context = new_wgpu_context(&mut env);
+        register_harness_plugins(&mut env);
         let physical = physical_size(dimension, scale_factor);
 
-        let offscreen = with_wgpu_context(&mut env, &mut wgpu_context, |env| {
-            OffscreenRenderer::new(physical, scale_factor, msaa, env)
-        });
+        let offscreen = OffscreenRenderer::new(physical, scale_factor, msaa, &mut env);
 
         // Mirrors `Window::new`'s wrapping exactly. In order, innermost first:
         // - `controls_overlay` gives any `carbide_controls` widget that renders into an overlay
@@ -330,7 +306,6 @@ impl Harness {
             focus_manager: FocusManager::new(),
             animation_manager: AnimationManager::new(),
             render_instruction_cache: HashMap::new(),
-            wgpu_context,
             offscreen,
             dimension,
             scale_factor,
@@ -342,7 +317,7 @@ impl Harness {
         }
     }
 
-    /// Runs `f` with `AnimationManager`/`WgpuContext`/`RenderInstructionCache`/`FocusManager`
+    /// Runs `f` with `AnimationManager`/`RenderInstructionCache`/`FocusManager`
     /// pushed into the environment for the duration of the call — the same scoping
     /// `RunningApplication` does for the live-window path (`application.rs`), needed because
     /// `NewEventHandler`'s dispatch methods and `OffscreenRenderer` both look these up via
@@ -351,7 +326,6 @@ impl Harness {
         let Harness {
             env,
             animation_manager,
-            wgpu_context,
             render_instruction_cache,
             focus_manager,
             scenes,
@@ -374,12 +348,10 @@ impl Harness {
         let mut result: Option<R> = None;
 
         env.with::<AnimationManager>(animation_manager, |env| {
-            env.with::<WgpuContext>(wgpu_context, |env| {
-                env.with::<RenderInstructionCache>(render_instruction_cache, |env| {
-                    env.with::<FocusManager>(focus_manager, |env| {
-                        env.with::<SceneManager>(&mut scene_manager, |env| {
-                            result = Some(f(env, scenes, text_context, event_handler, offscreen));
-                        })
+            env.with::<RenderInstructionCache>(render_instruction_cache, |env| {
+                env.with::<FocusManager>(focus_manager, |env| {
+                    env.with::<SceneManager>(&mut scene_manager, |env| {
+                        result = Some(f(env, scenes, text_context, event_handler, offscreen));
                     })
                 })
             })

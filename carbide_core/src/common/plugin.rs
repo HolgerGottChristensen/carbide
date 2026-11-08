@@ -22,10 +22,33 @@ pub struct Plugin {
 #[doc(hidden)]
 pub use inventory::submit;
 
+/// Runs every registered plugin. A plugin only runs once every type in its `dependencies` has
+/// been registered by an earlier plugin.
+///
+/// Panics if some plugins can never run, because a dependency is registered by no plugin or the
+/// dependencies form a cycle.
 pub async fn register_plugins(env: &mut Environment<'static>) {
+    let mut pending: Vec<&Plugin> = inventory::iter::<Plugin>.into_iter().collect();
+    let mut registered: Vec<TypeId> = Vec::with_capacity(pending.len());
 
-    for plugin in inventory::iter::<Plugin> {
-        (plugin.register)(env).await
+    while !pending.is_empty() {
+        let ready = pending.iter().position(|plugin| {
+            plugin.dependencies.iter().all(|dependency| registered.contains(dependency))
+        });
+
+        let Some(index) = ready else {
+            let unresolved: Vec<_> = pending.iter()
+                .map(|plugin| (plugin.registers, plugin.dependencies))
+                .collect();
+            panic!(
+                "plugins can not be registered, because their dependencies are never registered or depend on each other. Unresolved (registers, dependencies): {:?}",
+                unresolved
+            );
+        };
+
+        let plugin = pending.remove(index);
+        (plugin.register)(env).await;
+        registered.push(plugin.registers);
     }
 
     println!("{:#?}", env);
