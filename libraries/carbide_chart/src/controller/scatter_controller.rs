@@ -1,64 +1,53 @@
 use carbide::color::{GREEN, RED, WHITE};
-use carbide::draw::{Dimension, Position, Rect, Scalar};
-use carbide::widget::EdgeInsets;
+use carbide::draw::{Rect, Scalar};
+use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::{DataColor, DataPoint, DataSet, DataSetSequence};
+use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataSetSequence};
 use crate::element::Stepped;
-use crate::scale::{Axis, LinearScale, Scale};
+use crate::scale::{ScaleBounds, Scales};
 
 #[derive(Clone, Debug)]
-pub struct ScatterController<X: Scale, Y: Scale, D: DataSetSequence> {
-    default_x_scale: X,
-    default_y_scale: Y,
+pub struct ScatterController<D: DataSetSequence> {
     dataset_sequence: D
 }
 
-impl ScatterController<LinearScale, LinearScale, Vec<(Scalar, Scalar)>> {
-    pub fn new<D: DataSetSequence>(dataset: D) -> ScatterController<LinearScale, LinearScale, D> {
+impl<D: DataSetSequence> ScatterController<D> {
+    pub fn new(dataset: D) -> ScatterController<D> {
         ScatterController {
-            default_x_scale: LinearScale::new(Axis::Horizontal),
-            default_y_scale: LinearScale::new(Axis::Vertical),
             dataset_sequence: dataset,
         }
     }
 }
 
-impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for ScatterController<X, Y, D> {
-    fn draw(&self, ctx: &mut CanvasContext, padding: EdgeInsets) {
+impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for ScatterController<D> {
+    fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
+        self.dataset_sequence.datasets(|_dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+            // An empty dataset has no bounds and contributes nothing.
+            let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
+                return;
+            };
 
-        // Space for the tick labels outside the chart area: the y scale's labels sit left of it,
-        // the x scale's below it (see `Scale::draw_grid`).
-        let left_tick_gutter = if self.default_y_scale.display_ticks() { 10.0 } else { 0.0 };
-        let bottom_tick_gutter = if self.default_x_scale.display_ticks() { 10.0 } else { 0.0 };
+            let options = dataset.options(env);
 
-        let chart_area = Rect::new(
-            Position::new(padding.left + left_tick_gutter, padding.top),
-            Dimension::new(
-                ctx.dimension().width - padding.left - padding.right - left_tick_gutter,
-                ctx.dimension().height - padding.top - padding.bottom - bottom_tick_gutter,
-            )
-        );
+            bounds.include(options.x_scale, x_min, x_max);
+            bounds.include(options.y_scale, y_min, y_max);
+        });
+    }
 
-        self.default_x_scale.draw_grid(ctx, chart_area);
-        self.default_y_scale.draw_grid(ctx, chart_area);
-        self.default_x_scale.draw_border(ctx, chart_area);
-        self.default_y_scale.draw_border(ctx, chart_area);
-
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
         ctx.save();
 
         ctx.set_fill_style(WHITE);
-
-        let x_min = self.default_x_scale.min();
-        let x_max = self.default_x_scale.max();
-
-        let y_min = self.default_y_scale.min();
-        let y_max = self.default_y_scale.max();
 
         let colors = [WHITE, GREEN, RED];
 
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());
+
+            let Some((x_min, x_max, y_min, y_max)) = scale_ranges(scales, &options) else {
+                return;
+            };
 
             ctx.begin_path();
 
@@ -155,6 +144,10 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clon
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let options = dataset.options(ctx.env());
 
+            let Some((x_min, x_max, y_min, y_max)) = scale_ranges(scales, &options) else {
+                return;
+            };
+
             dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
                 let x = (point.x() - x_min) / (x_max - x_min);
                 let y = (point.y() - y_min) / (y_max - y_min);
@@ -186,12 +179,14 @@ impl<X: Scale, Y: Scale, D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clon
 
         ctx.restore();
     }
+}
 
-    fn update_scales_min_max(&mut self) {
-        let min = self.dataset_sequence.min();
-        let max = self.dataset_sequence.max();
+/// The fitted ranges (x min, x max, y min, y max) of the scales a dataset is bound to, or `None`
+/// when the chart has no scale with one of those ids. The chart warns about unknown ids when it
+/// fits its scales (see `Chart::fit_scales`).
+fn scale_ranges(scales: &Scales, options: &DataSetOptions) -> Option<(Scalar, Scalar, Scalar, Scalar)> {
+    let x_scale = scales.get(options.x_scale)?;
+    let y_scale = scales.get(options.y_scale)?;
 
-        self.default_x_scale.set_range(min.x(), max.x());
-        self.default_y_scale.set_range(min.y(), max.y());
-    }
+    Some((x_scale.min(), x_scale.max(), y_scale.min(), y_scale.max()))
 }

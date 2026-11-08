@@ -1,36 +1,28 @@
-use carbide::widget::EdgeInsets;
+use carbide::draw::Rect;
+use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::scale::{Axis, LinearScale, Scale};
+use crate::scale::{ScaleBounds, Scales};
 
+/// Placeholder for a line controller. It has no datasets yet, so it reports no bounds and draws
+/// nothing.
 #[derive(Clone, Debug)]
-pub struct LineController<X: Scale, Y: Scale> {
-    x_scale: X,
-    y_scale: Y,
-}
+pub struct LineController;
 
-impl LineController<LinearScale, LinearScale> {
-    pub fn new() -> LineController<LinearScale, LinearScale> {
-        LineController {
-            x_scale: LinearScale::new(Axis::Horizontal),
-            y_scale: LinearScale::new(Axis::Vertical),
-        }
+impl LineController {
+    pub fn new() -> LineController {
+        LineController
     }
 }
 
-impl Default for LineController<LinearScale, LinearScale> {
+impl Default for LineController {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<X: Scale, Y: Scale> DatasetController for LineController<X, Y> {
-    fn draw(&self, _ctx: &mut CanvasContext, _padding: EdgeInsets) {
-        //self.x_scale.draw(ctx, env, padding);
-        //self.y_scale.draw(ctx, env, padding);
-    }
+impl DatasetController for LineController {
+    fn collect_bounds(&self, _bounds: &mut ScaleBounds, _env: &mut Environment) {}
 
-    fn update_scales_min_max(&mut self) {
-        todo!()
-    }
+    fn draw(&self, _ctx: &mut CanvasContext, _scales: &Scales, _area: Rect) {}
 }

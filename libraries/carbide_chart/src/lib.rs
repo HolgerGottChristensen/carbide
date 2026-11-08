@@ -8,5 +8,6 @@ pub use dataset::*;
 pub use chart::Chart;
 pub use controller::*;
 pub use element::*;
+pub use scale::{Axis, DataBounds, LinearScale, Scale, ScaleBounds, ScaleId, Scales};
 
 extern crate carbide_core as carbide;

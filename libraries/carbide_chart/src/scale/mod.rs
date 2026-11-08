@@ -1,8 +1,11 @@
 mod linear_scale;
 mod percent_or_value;
 mod bounds;
+mod scales;
+mod scale_id;
 
 use std::fmt::Debug;
+use dyn_clone::DynClone;
 use std::ops::Range;
 use carbide::color::{GREEN, RED, YELLOW};
 use carbide::draw::{Alignment, Rect};
@@ -11,8 +14,12 @@ use carbide::state::{ReadState, StateSync};
 use carbide_core::draw::Scalar;
 use carbide_core::widget::canvas::CanvasContext;
 pub use linear_scale::*;
+pub use scales::*;
+pub use scale_id::ScaleId;
 
-pub trait Scale: Clone + Debug + 'static {
+/// A scale maps data values to positions along an axis. Charts own their scales as
+/// `Box<dyn Scale>`, so different kinds of scales can sit side by side.
+pub trait Scale: DynClone + Debug + 'static {
     fn axis(&self) -> Axis;
 
     fn draw(&self, ctx: &mut CanvasContext, _env: &mut Environment, area: Rect) {
@@ -114,7 +121,9 @@ pub trait Scale: Clone + Debug + 'static {
     fn range(&self) -> Range<Scalar>;
 }
 
-#[derive(Copy, Clone, Debug)]
+dyn_clone::clone_trait_object!(Scale);
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Axis {
     Horizontal,
     Vertical,

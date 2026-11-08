@@ -13,6 +13,9 @@ authors = [
 carbide_derive.workspace = true
 carbide_core.workspace = true
 carbide_fluent = { workspace = true, optional = true }
+dyn-clone.workspace = true
+indexmap.workspace = true
+log.workspace = true
 
 [dev-dependencies]
 carbide_testing.workspace = true

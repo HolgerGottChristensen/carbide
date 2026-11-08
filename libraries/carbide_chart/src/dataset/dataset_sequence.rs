@@ -6,10 +6,42 @@ pub trait DataSetSequence: Debug + 'static {
     type Y: DataValue;
     type Z: DataValue;
 
-    fn min(&self) -> (Self::X, Self::Y, Self::Z);
-    fn max(&self) -> (Self::X, Self::Y, Self::Z);
+    /// The smallest x, y and z over every dataset, or `None` when no dataset has points.
+    fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
+    /// The largest x, y and z over every dataset, or `None` when no dataset has points.
+    fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
 
     fn datasets<'a, F: FnMut(usize, &'a dyn DataSet<X=Self::X, Y=Self::Y, Z=Self::Z>)>(&'a self, f: F) where Self::X: 'a, Self::Y: 'a, Self::Z: 'a;
+}
+
+#[derive(Copy, Clone)]
+enum Extreme {
+    Min,
+    Max,
+}
+
+fn pick<T: PartialOrd>(current: T, other: T, extreme: Extreme) -> T {
+    let keep_current = match extreme {
+        Extreme::Min => current < other,
+        Extreme::Max => current > other,
+    };
+
+    if keep_current { current } else { other }
+}
+
+/// Combines two optional (x, y, z) extremes component-wise. A `None` side (an empty dataset)
+/// contributes nothing.
+fn combine<X, Y, Z>(current: Option<(X, Y, Z)>, other: Option<(X, Y, Z)>, extreme: Extreme) -> Option<(X, Y, Z)>
+where
+    X: DataValue + PartialOrd,
+    Y: DataValue + PartialOrd,
+    Z: DataValue + PartialOrd,
+{
+    match (current, other) {
+        (Some((cx, cy, cz)), Some((ox, oy, oz))) => Some((pick(cx, ox, extreme), pick(cy, oy, extreme), pick(cz, oz, extreme))),
+        (current, None) => current,
+        (None, other) => other,
+    }
 }
 
 macro_rules! tuple_sequence_impl {
@@ -22,32 +54,26 @@ macro_rules! tuple_sequence_impl {
             type Y = Y;
             type Z = Z;
 
-            fn min(&self) -> (Self::X, Self::Y, Self::Z) {
+            fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
                 let ($first_generic $(, $generic)*) = self;
-                let (mut min_x, mut min_y, mut min_z) = $first_generic.min();
+                let mut min = $first_generic.min();
 
                 $(
-                    let (x, y, z) = $generic.min();
-                    min_x = if PartialOrd::lt(&min_x, &x) { min_x } else { x };
-                    min_y = if PartialOrd::lt(&min_y, &y) { min_y } else { y };
-                    min_z = if PartialOrd::lt(&min_z, &z) { min_z } else { z };
+                    min = combine(min, $generic.min(), Extreme::Min);
                 )*
 
-                (min_x, min_y, min_z)
+                min
             }
 
-            fn max(&self) -> (Self::X, Self::Y, Self::Z) {
+            fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
                 let ($first_generic $(, $generic)*) = self;
-                let (mut max_x, mut max_y, mut max_z) = $first_generic.max();
+                let mut max = $first_generic.max();
 
                 $(
-                    let (x, y, z) = $generic.max();
-                    max_x = if PartialOrd::gt(&max_x, &x) { max_x } else { x };
-                    max_y = if PartialOrd::gt(&max_y, &y) { max_y } else { y };
-                    max_z = if PartialOrd::gt(&max_z, &z) { max_z } else { z };
+                    max = combine(max, $generic.max(), Extreme::Max);
                 )*
 
-                (max_x, max_y, max_z)
+                max
             }
 
             fn datasets<'a, F: FnMut(usize, &'a dyn DataSet<X=Self::X, Y=Self::Y, Z=Self::Z>)>(&'a self, mut f: F) where Self::X: 'a, Self::Y: 'a, Self::Z: 'a {
