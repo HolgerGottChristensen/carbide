@@ -143,7 +143,7 @@ mod private {
     /// Support writing `token.span` rather than `token.spans[0]` on tokens that
     /// hold a single span.
     #[repr(transparent)]
-    #[allow(unknown_lints, repr_transparent_external_private_fields)] // False positive: https://github.com/rust-lang/rust/issues/78586#issuecomment-1722680482
+    #[allow(unknown_lints)] // False positive: https://github.com/rust-lang/rust/issues/78586#issuecomment-1722680482
     pub struct WithSpan {
         pub span: Span,
     }
@@ -366,7 +366,7 @@ macro_rules! define_punctuation_structs {
     ($($token:literal pub struct $name:ident/$len:tt #[doc = $usage:literal])*) => {
         $(
             #[cfg_attr(not(doc), repr(transparent))]
-            #[allow(unknown_lints, repr_transparent_external_private_fields)] // False positive: https://github.com/rust-lang/rust/issues/78586#issuecomment-1722680482
+            #[allow(unknown_lints)] // False positive: https://github.com/rust-lang/rust/issues/78586#issuecomment-1722680482
             #[doc = concat!('`', $token, '`')]
             ///
             /// Usage:
@@ -576,16 +576,14 @@ impl ToTokens for Underscore {
 impl Parse for Underscore {
     fn parse(input: ParseStream) -> Result<Self> {
         input.step(|cursor| {
-            if let Some((ident, rest)) = cursor.ident() {
-                if ident == "_" {
+            if let Some((ident, rest)) = cursor.ident()
+                && ident == "_" {
                     return Ok((Underscore(ident.span()), rest));
                 }
-            }
-            if let Some((punct, rest)) = cursor.punct() {
-                if punct.as_char() == '_' {
+            if let Some((punct, rest)) = cursor.punct()
+                && punct.as_char() == '_' {
                     return Ok((Underscore(punct.span()), rest));
                 }
-            }
             Err(cursor.error("expected `_`"))
         })
     }
@@ -1021,11 +1019,10 @@ pub(crate) mod parsing {
 
     pub(crate) fn keyword(input: ParseStream, token: &str) -> Result<Span> {
         input.step(|cursor| {
-            if let Some((ident, rest)) = cursor.ident() {
-                if ident == token {
+            if let Some((ident, rest)) = cursor.ident()
+                && ident == token {
                     return Ok((ident.span(), rest));
                 }
-            }
             Err(cursor.error(format!("expected `{}`", token)))
         })
     }

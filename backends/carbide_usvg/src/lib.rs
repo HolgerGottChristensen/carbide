@@ -47,7 +47,6 @@ and can focus just on the rendering part.
 */
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 

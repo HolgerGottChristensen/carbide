@@ -1563,8 +1563,8 @@ pub(crate) mod parsing {
         let pat = Box::new(Pat::parse_single(input)?);
         let colon_token: Token![:] = input.parse()?;
 
-        if allow_variadic {
-            if let Some(dots) = input.parse::<Option<Token![...]>>()? {
+        if allow_variadic
+            && let Some(dots) = input.parse::<Option<Token![...]>>()? {
                 return Ok(FnArgOrVariadic::Variadic(Variadic {
                     attrs,
                     pat: Some((pat, colon_token)),
@@ -1572,7 +1572,6 @@ pub(crate) mod parsing {
                     comma: None,
                 }));
             }
-        }
 
         Ok(FnArgOrVariadic::FnArg(FnArg::Typed(PatType {
             attrs,

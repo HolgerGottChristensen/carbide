@@ -560,133 +560,133 @@ mod debug_impls {
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitStr {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitStr {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitStr")
+        }
+    }
+    impl LitStr {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitByteStr {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitByteStr {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitByteStr")
+        }
+    }
+    impl LitByteStr {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitByte {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitByte {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitByte")
+        }
+    }
+    impl LitByte {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitChar {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitChar {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitChar")
+        }
+    }
+    impl LitChar {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitInt {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitInt {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitInt")
+        }
+    }
+    impl LitInt {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitFloat {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitFloat {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("token", &format_args!("{}", self.repr.token))
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitFloat")
+        }
+    }
+    impl LitFloat {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("token", &format_args!("{}", self.repr.token))
+                .finish()
         }
     }
 
     #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
     impl Debug for LitBool {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            impl LitBool {
-                pub(crate) fn debug(
-                    &self,
-                    formatter: &mut fmt::Formatter,
-                    name: &str,
-                ) -> fmt::Result {
-                    formatter
-                        .debug_struct(name)
-                        .field("value", &self.value)
-                        .finish()
-                }
-            }
             self.debug(formatter, "LitBool")
+        }
+    }
+    impl LitBool {
+        pub(crate) fn debug(
+            &self,
+            formatter: &mut fmt::Formatter,
+            name: &str,
+        ) -> fmt::Result {
+            formatter
+                .debug_struct(name)
+                .field("value", &self.value)
+                .finish()
         }
     }
 }
@@ -832,13 +832,11 @@ pub(crate) mod parsing {
                     }
                 }
 
-                if let Some((punct, rest)) = cursor.punct() {
-                    if punct.as_char() == '-' {
-                        if let Some((lit, rest)) = parse_negative_lit(punct, rest) {
+                if let Some((punct, rest)) = cursor.punct()
+                    && punct.as_char() == '-'
+                        && let Some((lit, rest)) = parse_negative_lit(punct, rest) {
                             return Ok((lit, rest));
                         }
-                    }
-                }
 
                 Err(cursor.error("expected literal"))
             })
@@ -1329,7 +1327,7 @@ mod value {
         assert_eq!(byte(s, 1), b'\'');
 
         // We're going to want to have slices which don't respect codepoint boundaries.
-        let mut v = s[2..].as_bytes();
+        let mut v = &s.as_bytes()[2..];
 
         let b = match byte(v, 0) {
             b'\\' => {

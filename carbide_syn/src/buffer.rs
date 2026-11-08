@@ -74,7 +74,7 @@ impl TokenBuffer {
 
     /// Creates a cursor referencing the first token in the buffer and able to
     /// traverse until the end of the buffer.
-    pub fn begin(&self) -> Cursor {
+    pub fn begin(&self) -> Cursor<'_> {
         let ptr = self.entries.as_ptr();
         unsafe { Cursor::create(ptr, ptr.add(self.entries.len() - 1)) }
     }
@@ -128,11 +128,13 @@ impl<'a> Cursor<'a> {
         // past it, unless `ptr == scope`, which means that we're at the edge of
         // our cursor's scope. We should only have `ptr != scope` at the exit
         // from None-delimited groups entered with `ignore_none`.
-        while let Entry::End(_) = *ptr {
-            if ptr == scope {
-                break;
+        unsafe {
+            while let Entry::End(_) = *ptr {
+                if ptr == scope {
+                    break;
+                }
+                ptr = ptr.add(1);
             }
-            ptr = ptr.add(1);
         }
 
         Cursor {
@@ -154,7 +156,9 @@ impl<'a> Cursor<'a> {
     /// If the cursor is looking at an `Entry::Group`, the bumped cursor will
     /// point at the first token in the group (with the same scope end).
     unsafe fn bump_ignore_group(self) -> Cursor<'a> {
-        Cursor::create(self.ptr.offset(1), self.scope)
+        // SAFETY: the caller guarantees the cursor is not at `Entry::End`, so the
+        // next entry is still inside the buffer.
+        unsafe { Cursor::create(self.ptr.offset(1), self.scope) }
     }
 
     /// While the cursor is looking at a `None`-delimited group, move it to look
@@ -189,15 +193,14 @@ impl<'a> Cursor<'a> {
             self.ignore_none();
         }
 
-        if let Entry::Group(group, end_offset) = self.entry() {
-            if group.delimiter() == delim {
+        if let Entry::Group(group, end_offset) = self.entry()
+            && group.delimiter() == delim {
                 let span = group.delim_span();
                 let end_of_group = unsafe { self.ptr.add(*end_offset) };
                 let inside_of_group = unsafe { Cursor::create(self.ptr.add(1), end_of_group) };
                 let after_group = unsafe { Cursor::create(end_of_group, self.scope) };
                 return Some((inside_of_group, span, after_group));
             }
-        }
 
         None
     }

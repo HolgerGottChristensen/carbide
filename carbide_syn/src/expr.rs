@@ -807,7 +807,7 @@ ast_struct! {
 
 impl From<usize> for Index {
     fn from(index: usize) -> Index {
-        assert!(index < u32::max_value() as usize);
+        assert!(index < u32::MAX as usize);
         Index {
             index: index as u32,
             span: Span::call_site(),
@@ -1455,11 +1455,10 @@ pub(crate) mod parsing {
                 let mut dot_token: Token![.] = input.parse()?;
 
                 let float_token: Option<LitFloat> = input.parse()?;
-                if let Some(float_token) = float_token {
-                    if multi_index(&mut e, &mut dot_token, float_token)? {
+                if let Some(float_token) = float_token
+                    && multi_index(&mut e, &mut dot_token, float_token)? {
                         continue;
                     }
-                }
 
                 let await_token: Option<Token![await]> = input.parse()?;
                 if let Some(await_token) = await_token {
@@ -1479,8 +1478,8 @@ pub(crate) mod parsing {
                     None
                 };
 
-                if turbofish.is_some() || input.peek(token::Paren) {
-                    if let Member::Named(method) = member {
+                if (turbofish.is_some() || input.peek(token::Paren))
+                    && let Member::Named(method) = member {
                         let content;
                         e = Expr::MethodCall(ExprMethodCall {
                             attrs: Vec::new(),
@@ -1493,7 +1492,6 @@ pub(crate) mod parsing {
                         });
                         continue;
                     }
-                }
 
                 e = Expr::Field(ExprField {
                     attrs: Vec::new(),

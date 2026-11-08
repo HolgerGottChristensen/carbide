@@ -187,8 +187,8 @@ pub(crate) mod parsing {
         // expression statements.
         let ahead = input.fork();
         let mut is_item_macro = false;
-        if let Ok(path) = ahead.call(Path::parse_mod_style) {
-            if ahead.peek(Token![!]) {
+        if let Ok(path) = ahead.call(Path::parse_mod_style)
+            && ahead.peek(Token![!]) {
                 if ahead.peek2(Ident) || ahead.peek2(Token![try]) {
                     is_item_macro = true;
                 } else if ahead.peek2(token::Brace)
@@ -198,7 +198,6 @@ pub(crate) mod parsing {
                     return stmt_mac(input, attrs, path).map(Stmt::Macro);
                 }
             }
-        }
 
         if input.peek(Token![let]) {
             stmt_local(input, attrs).map(Stmt::Local)

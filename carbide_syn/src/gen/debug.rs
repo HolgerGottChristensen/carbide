@@ -17,17 +17,18 @@ impl Debug for Abi {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for AngleBracketedGenericArguments {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl AngleBracketedGenericArguments {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("colon2_token", &self.colon2_token);
-                formatter.field("lt_token", &self.lt_token);
-                formatter.field("args", &self.args);
-                formatter.field("gt_token", &self.gt_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "AngleBracketedGenericArguments")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl AngleBracketedGenericArguments {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("colon2_token", &self.colon2_token);
+        formatter.field("lt_token", &self.lt_token);
+        formatter.field("args", &self.args);
+        formatter.field("gt_token", &self.gt_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -332,47 +333,50 @@ impl Debug for Data {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for DataEnum {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl DataEnum {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("enum_token", &self.enum_token);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("variants", &self.variants);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "DataEnum")
+    }
+}
+#[cfg(feature = "derive")]
+impl DataEnum {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("enum_token", &self.enum_token);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("variants", &self.variants);
+        formatter.finish()
     }
 }
 #[cfg(feature = "derive")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for DataStruct {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl DataStruct {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("struct_token", &self.struct_token);
-                formatter.field("fields", &self.fields);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "DataStruct")
+    }
+}
+#[cfg(feature = "derive")]
+impl DataStruct {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("struct_token", &self.struct_token);
+        formatter.field("fields", &self.fields);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "derive")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for DataUnion {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl DataUnion {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("union_token", &self.union_token);
-                formatter.field("fields", &self.fields);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "DataUnion")
+    }
+}
+#[cfg(feature = "derive")]
+impl DataUnion {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("union_token", &self.union_token);
+        formatter.field("fields", &self.fields);
+        formatter.finish()
     }
 }
 #[cfg(feature = "derive")]
@@ -473,647 +477,685 @@ impl Debug for Expr {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprArray {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprArray {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprArray")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprArray {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprAssign {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprAssign {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("left", &self.left);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("right", &self.right);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprAssign")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprAssign {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("left", &self.left);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("right", &self.right);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprAsync {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprAsync {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("async_token", &self.async_token);
-                formatter.field("capture", &self.capture);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprAsync")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprAsync {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("async_token", &self.async_token);
+        formatter.field("capture", &self.capture);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprAwait {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprAwait {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("base", &self.base);
-                formatter.field("dot_token", &self.dot_token);
-                formatter.field("await_token", &self.await_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprAwait")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprAwait {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("base", &self.base);
+        formatter.field("dot_token", &self.dot_token);
+        formatter.field("await_token", &self.await_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprBinary {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprBinary {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("left", &self.left);
-                formatter.field("op", &self.op);
-                formatter.field("right", &self.right);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprBinary")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprBinary {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("left", &self.left);
+        formatter.field("op", &self.op);
+        formatter.field("right", &self.right);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprBlock {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprBlock {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("label", &self.label);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprBlock")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprBlock {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("label", &self.label);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprBreak {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprBreak {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("break_token", &self.break_token);
-                formatter.field("label", &self.label);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprBreak")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprBreak {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("break_token", &self.break_token);
+        formatter.field("label", &self.label);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprCall {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprCall {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("func", &self.func);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("args", &self.args);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprCall")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprCall {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("func", &self.func);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("args", &self.args);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprCast {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprCast {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("expr", &self.expr);
-                formatter.field("as_token", &self.as_token);
-                formatter.field("ty", &self.ty);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprCast")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprCast {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("expr", &self.expr);
+        formatter.field("as_token", &self.as_token);
+        formatter.field("ty", &self.ty);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprClosure {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprClosure {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("lifetimes", &self.lifetimes);
-                formatter.field("constness", &self.constness);
-                formatter.field("movability", &self.movability);
-                formatter.field("asyncness", &self.asyncness);
-                formatter.field("capture", &self.capture);
-                formatter.field("or1_token", &self.or1_token);
-                formatter.field("inputs", &self.inputs);
-                formatter.field("or2_token", &self.or2_token);
-                formatter.field("output", &self.output);
-                formatter.field("body", &self.body);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprClosure")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprClosure {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("lifetimes", &self.lifetimes);
+        formatter.field("constness", &self.constness);
+        formatter.field("movability", &self.movability);
+        formatter.field("asyncness", &self.asyncness);
+        formatter.field("capture", &self.capture);
+        formatter.field("or1_token", &self.or1_token);
+        formatter.field("inputs", &self.inputs);
+        formatter.field("or2_token", &self.or2_token);
+        formatter.field("output", &self.output);
+        formatter.field("body", &self.body);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprConst {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprConst {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("const_token", &self.const_token);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprConst")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprConst {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("const_token", &self.const_token);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprContinue {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprContinue {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("continue_token", &self.continue_token);
-                formatter.field("label", &self.label);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprContinue")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprContinue {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("continue_token", &self.continue_token);
+        formatter.field("label", &self.label);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprField {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprField {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("base", &self.base);
-                formatter.field("dot_token", &self.dot_token);
-                formatter.field("member", &self.member);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprField")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprField {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("base", &self.base);
+        formatter.field("dot_token", &self.dot_token);
+        formatter.field("member", &self.member);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprForLoop {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprForLoop {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("label", &self.label);
-                formatter.field("for_token", &self.for_token);
-                formatter.field("pat", &self.pat);
-                formatter.field("in_token", &self.in_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("body", &self.body);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprForLoop")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprForLoop {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("label", &self.label);
+        formatter.field("for_token", &self.for_token);
+        formatter.field("pat", &self.pat);
+        formatter.field("in_token", &self.in_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("body", &self.body);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprGroup {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprGroup {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("group_token", &self.group_token);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprGroup")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprGroup {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("group_token", &self.group_token);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprIf {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprIf {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("if_token", &self.if_token);
-                formatter.field("cond", &self.cond);
-                formatter.field("then_branch", &self.then_branch);
-                formatter.field("else_branch", &self.else_branch);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprIf")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprIf {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("if_token", &self.if_token);
+        formatter.field("cond", &self.cond);
+        formatter.field("then_branch", &self.then_branch);
+        formatter.field("else_branch", &self.else_branch);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprIndex {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprIndex {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("expr", &self.expr);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("index", &self.index);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprIndex")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprIndex {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("expr", &self.expr);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("index", &self.index);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprInfer {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprInfer {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("underscore_token", &self.underscore_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprInfer")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprInfer {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("underscore_token", &self.underscore_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprLet {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprLet {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("let_token", &self.let_token);
-                formatter.field("pat", &self.pat);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprLet")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprLet {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("let_token", &self.let_token);
+        formatter.field("pat", &self.pat);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprLit {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprLit {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("lit", &self.lit);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprLit")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprLit {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("lit", &self.lit);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprLoop {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprLoop {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("label", &self.label);
-                formatter.field("loop_token", &self.loop_token);
-                formatter.field("body", &self.body);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprLoop")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprLoop {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("label", &self.label);
+        formatter.field("loop_token", &self.loop_token);
+        formatter.field("body", &self.body);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("mac", &self.mac);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprMacro")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("mac", &self.mac);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprMatch {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprMatch {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("match_token", &self.match_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("arms", &self.arms);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprMatch")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprMatch {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("match_token", &self.match_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("arms", &self.arms);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprMethodCall {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprMethodCall {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("receiver", &self.receiver);
-                formatter.field("dot_token", &self.dot_token);
-                formatter.field("method", &self.method);
-                formatter.field("turbofish", &self.turbofish);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("args", &self.args);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprMethodCall")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprMethodCall {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("receiver", &self.receiver);
+        formatter.field("dot_token", &self.dot_token);
+        formatter.field("method", &self.method);
+        formatter.field("turbofish", &self.turbofish);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("args", &self.args);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprParen {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprParen {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprParen")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprParen {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprPath {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprPath {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("qself", &self.qself);
-                formatter.field("path", &self.path);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprPath")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprPath {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("qself", &self.qself);
+        formatter.field("path", &self.path);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprRange {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprRange {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("start", &self.start);
-                formatter.field("limits", &self.limits);
-                formatter.field("end", &self.end);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprRange")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprRange {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("start", &self.start);
+        formatter.field("limits", &self.limits);
+        formatter.field("end", &self.end);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprReference {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprReference {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("and_token", &self.and_token);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprReference")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprReference {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("and_token", &self.and_token);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprRepeat {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprRepeat {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.field("len", &self.len);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprRepeat")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprRepeat {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.field("len", &self.len);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprReturn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprReturn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("return_token", &self.return_token);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprReturn")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprReturn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("return_token", &self.return_token);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprStruct {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprStruct {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("qself", &self.qself);
-                formatter.field("path", &self.path);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("fields", &self.fields);
-                formatter.field("dot2_token", &self.dot2_token);
-                formatter.field("rest", &self.rest);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprStruct")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprStruct {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("qself", &self.qself);
+        formatter.field("path", &self.path);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("fields", &self.fields);
+        formatter.field("dot2_token", &self.dot2_token);
+        formatter.field("rest", &self.rest);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprTry {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprTry {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("expr", &self.expr);
-                formatter.field("question_token", &self.question_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprTry")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprTry {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("expr", &self.expr);
+        formatter.field("question_token", &self.question_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprTryBlock {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprTryBlock {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("try_token", &self.try_token);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprTryBlock")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprTryBlock {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("try_token", &self.try_token);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprTuple {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprTuple {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprTuple")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprTuple {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprUnary {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprUnary {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("op", &self.op);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprUnary")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ExprUnary {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("op", &self.op);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprUnsafe {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprUnsafe {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("unsafe_token", &self.unsafe_token);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprUnsafe")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprUnsafe {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("unsafe_token", &self.unsafe_token);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprWhile {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprWhile {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("label", &self.label);
-                formatter.field("while_token", &self.while_token);
-                formatter.field("cond", &self.cond);
-                formatter.field("body", &self.body);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprWhile")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprWhile {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("label", &self.label);
+        formatter.field("while_token", &self.while_token);
+        formatter.field("cond", &self.cond);
+        formatter.field("body", &self.body);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ExprYield {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ExprYield {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("yield_token", &self.yield_token);
-                formatter.field("expr", &self.expr);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ExprYield")
+    }
+}
+#[cfg(feature = "full")]
+impl ExprYield {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("yield_token", &self.yield_token);
+        formatter.field("expr", &self.expr);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -1180,30 +1222,32 @@ impl Debug for Fields {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for FieldsNamed {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl FieldsNamed {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("named", &self.named);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "FieldsNamed")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl FieldsNamed {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("named", &self.named);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for FieldsUnnamed {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl FieldsUnnamed {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("unnamed", &self.unnamed);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "FieldsUnnamed")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl FieldsUnnamed {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("unnamed", &self.unnamed);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -1258,73 +1302,77 @@ impl Debug for ForeignItem {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ForeignItemFn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ForeignItemFn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("sig", &self.sig);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ForeignItemFn")
+    }
+}
+#[cfg(feature = "full")]
+impl ForeignItemFn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("sig", &self.sig);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ForeignItemMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ForeignItemMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("mac", &self.mac);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ForeignItemMacro")
+    }
+}
+#[cfg(feature = "full")]
+impl ForeignItemMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("mac", &self.mac);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ForeignItemStatic {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ForeignItemStatic {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("static_token", &self.static_token);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("ident", &self.ident);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ForeignItemStatic")
+    }
+}
+#[cfg(feature = "full")]
+impl ForeignItemStatic {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("static_token", &self.static_token);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("ident", &self.ident);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ForeignItemType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ForeignItemType {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("type_token", &self.type_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ForeignItemType")
+    }
+}
+#[cfg(feature = "full")]
+impl ForeignItemType {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("type_token", &self.type_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -1424,80 +1472,84 @@ impl Debug for ImplItem {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ImplItemConst {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ImplItemConst {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("defaultness", &self.defaultness);
-                formatter.field("const_token", &self.const_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ImplItemConst")
+    }
+}
+#[cfg(feature = "full")]
+impl ImplItemConst {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("defaultness", &self.defaultness);
+        formatter.field("const_token", &self.const_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ImplItemFn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ImplItemFn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("defaultness", &self.defaultness);
-                formatter.field("sig", &self.sig);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ImplItemFn")
+    }
+}
+#[cfg(feature = "full")]
+impl ImplItemFn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("defaultness", &self.defaultness);
+        formatter.field("sig", &self.sig);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ImplItemMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ImplItemMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("mac", &self.mac);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ImplItemMacro")
+    }
+}
+#[cfg(feature = "full")]
+impl ImplItemMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("mac", &self.mac);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ImplItemType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ImplItemType {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("defaultness", &self.defaultness);
-                formatter.field("type_token", &self.type_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ImplItemType")
+    }
+}
+#[cfg(feature = "full")]
+impl ImplItemType {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("defaultness", &self.defaultness);
+        formatter.field("type_token", &self.type_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -1550,305 +1602,320 @@ impl Debug for Item {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemConst {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemConst {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("const_token", &self.const_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemConst")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemConst {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("const_token", &self.const_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemEnum {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemEnum {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("enum_token", &self.enum_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("variants", &self.variants);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemEnum")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemEnum {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("enum_token", &self.enum_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("variants", &self.variants);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemExternCrate {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemExternCrate {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("extern_token", &self.extern_token);
-                formatter.field("crate_token", &self.crate_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("rename", &self.rename);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemExternCrate")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemExternCrate {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("extern_token", &self.extern_token);
+        formatter.field("crate_token", &self.crate_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("rename", &self.rename);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemFn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemFn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("sig", &self.sig);
-                formatter.field("block", &self.block);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemFn")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemFn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("sig", &self.sig);
+        formatter.field("block", &self.block);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemForeignMod {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemForeignMod {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("unsafety", &self.unsafety);
-                formatter.field("abi", &self.abi);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("items", &self.items);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemForeignMod")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemForeignMod {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("unsafety", &self.unsafety);
+        formatter.field("abi", &self.abi);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("items", &self.items);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemImpl {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemImpl {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("defaultness", &self.defaultness);
-                formatter.field("unsafety", &self.unsafety);
-                formatter.field("impl_token", &self.impl_token);
-                formatter.field("generics", &self.generics);
-                formatter.field("trait_", &self.trait_);
-                formatter.field("self_ty", &self.self_ty);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("items", &self.items);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemImpl")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemImpl {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("defaultness", &self.defaultness);
+        formatter.field("unsafety", &self.unsafety);
+        formatter.field("impl_token", &self.impl_token);
+        formatter.field("generics", &self.generics);
+        formatter.field("trait_", &self.trait_);
+        formatter.field("self_ty", &self.self_ty);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("items", &self.items);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("ident", &self.ident);
-                formatter.field("mac", &self.mac);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemMacro")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("ident", &self.ident);
+        formatter.field("mac", &self.mac);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemMod {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemMod {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("unsafety", &self.unsafety);
-                formatter.field("mod_token", &self.mod_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("content", &self.content);
-                formatter.field("semi", &self.semi);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemMod")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemMod {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("unsafety", &self.unsafety);
+        formatter.field("mod_token", &self.mod_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("content", &self.content);
+        formatter.field("semi", &self.semi);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemStatic {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemStatic {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("static_token", &self.static_token);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("ident", &self.ident);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("expr", &self.expr);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemStatic")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemStatic {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("static_token", &self.static_token);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("ident", &self.ident);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("expr", &self.expr);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemStruct {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemStruct {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("struct_token", &self.struct_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("fields", &self.fields);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemStruct")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemStruct {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("struct_token", &self.struct_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("fields", &self.fields);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemTrait {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemTrait {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("unsafety", &self.unsafety);
-                formatter.field("auto_token", &self.auto_token);
-                formatter.field("restriction", &self.restriction);
-                formatter.field("trait_token", &self.trait_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("supertraits", &self.supertraits);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("items", &self.items);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemTrait")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemTrait {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("unsafety", &self.unsafety);
+        formatter.field("auto_token", &self.auto_token);
+        formatter.field("restriction", &self.restriction);
+        formatter.field("trait_token", &self.trait_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("supertraits", &self.supertraits);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("items", &self.items);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemTraitAlias {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemTraitAlias {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("trait_token", &self.trait_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("bounds", &self.bounds);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemTraitAlias")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemTraitAlias {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("trait_token", &self.trait_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("bounds", &self.bounds);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemType {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("type_token", &self.type_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemType")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemType {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("type_token", &self.type_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemUnion {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemUnion {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("union_token", &self.union_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("fields", &self.fields);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemUnion")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemUnion {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("union_token", &self.union_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("fields", &self.fields);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ItemUse {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ItemUse {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("vis", &self.vis);
-                formatter.field("use_token", &self.use_token);
-                formatter.field("leading_colon", &self.leading_colon);
-                formatter.field("tree", &self.tree);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ItemUse")
+    }
+}
+#[cfg(feature = "full")]
+impl ItemUse {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("vis", &self.vis);
+        formatter.field("use_token", &self.use_token);
+        formatter.field("leading_colon", &self.leading_colon);
+        formatter.field("tree", &self.tree);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -1864,15 +1931,15 @@ impl Debug for Label {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for Lifetime {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl Lifetime {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("apostrophe", &self.apostrophe);
-                formatter.field("ident", &self.ident);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "Lifetime")
+    }
+}
+impl Lifetime {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("apostrophe", &self.apostrophe);
+        formatter.field("ident", &self.ident);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -1911,18 +1978,19 @@ impl Debug for Lit {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for Local {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl Local {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("let_token", &self.let_token);
-                formatter.field("pat", &self.pat);
-                formatter.field("init", &self.init);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "Local")
+    }
+}
+#[cfg(feature = "full")]
+impl Local {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("let_token", &self.let_token);
+        formatter.field("pat", &self.pat);
+        formatter.field("init", &self.init);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -2007,48 +2075,51 @@ impl Debug for Meta {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for MetaList {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl MetaList {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("path", &self.path);
-                formatter.field("delimiter", &self.delimiter);
-                formatter.field("tokens", &self.tokens);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "MetaList")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl MetaList {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("path", &self.path);
+        formatter.field("delimiter", &self.delimiter);
+        formatter.field("tokens", &self.tokens);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for MetaNameValue {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl MetaNameValue {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("path", &self.path);
-                formatter.field("eq_token", &self.eq_token);
-                formatter.field("value", &self.value);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "MetaNameValue")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl MetaNameValue {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("path", &self.path);
+        formatter.field("eq_token", &self.eq_token);
+        formatter.field("value", &self.value);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for ParenthesizedGenericArguments {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl ParenthesizedGenericArguments {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("inputs", &self.inputs);
-                formatter.field("output", &self.output);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "ParenthesizedGenericArguments")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl ParenthesizedGenericArguments {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("inputs", &self.inputs);
+        formatter.field("output", &self.output);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
@@ -2085,198 +2156,210 @@ impl Debug for Pat {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatIdent {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatIdent {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("by_ref", &self.by_ref);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("ident", &self.ident);
-                formatter.field("subpat", &self.subpat);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatIdent")
+    }
+}
+#[cfg(feature = "full")]
+impl PatIdent {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("by_ref", &self.by_ref);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("ident", &self.ident);
+        formatter.field("subpat", &self.subpat);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatOr {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatOr {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("leading_vert", &self.leading_vert);
-                formatter.field("cases", &self.cases);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatOr")
+    }
+}
+#[cfg(feature = "full")]
+impl PatOr {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("leading_vert", &self.leading_vert);
+        formatter.field("cases", &self.cases);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatParen {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatParen {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("pat", &self.pat);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatParen")
+    }
+}
+#[cfg(feature = "full")]
+impl PatParen {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("pat", &self.pat);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatReference {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatReference {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("and_token", &self.and_token);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("pat", &self.pat);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatReference")
+    }
+}
+#[cfg(feature = "full")]
+impl PatReference {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("and_token", &self.and_token);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("pat", &self.pat);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatRest {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatRest {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("dot2_token", &self.dot2_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatRest")
+    }
+}
+#[cfg(feature = "full")]
+impl PatRest {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("dot2_token", &self.dot2_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatSlice {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatSlice {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatSlice")
+    }
+}
+#[cfg(feature = "full")]
+impl PatSlice {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatStruct {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatStruct {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("qself", &self.qself);
-                formatter.field("path", &self.path);
-                formatter.field("brace_token", &self.brace_token);
-                formatter.field("fields", &self.fields);
-                formatter.field("rest", &self.rest);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatStruct")
+    }
+}
+#[cfg(feature = "full")]
+impl PatStruct {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("qself", &self.qself);
+        formatter.field("path", &self.path);
+        formatter.field("brace_token", &self.brace_token);
+        formatter.field("fields", &self.fields);
+        formatter.field("rest", &self.rest);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatTuple {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatTuple {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatTuple")
+    }
+}
+#[cfg(feature = "full")]
+impl PatTuple {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatTupleStruct {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatTupleStruct {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("qself", &self.qself);
-                formatter.field("path", &self.path);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatTupleStruct")
+    }
+}
+#[cfg(feature = "full")]
+impl PatTupleStruct {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("qself", &self.qself);
+        formatter.field("path", &self.path);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatType {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("pat", &self.pat);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatType")
+    }
+}
+#[cfg(feature = "full")]
+impl PatType {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("pat", &self.pat);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for PatWild {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl PatWild {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("underscore_token", &self.underscore_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "PatWild")
+    }
+}
+#[cfg(feature = "full")]
+impl PatWild {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("underscore_token", &self.underscore_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for Path {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl Path {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("leading_colon", &self.leading_colon);
-                formatter.field("segments", &self.segments);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "Path")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl Path {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("leading_colon", &self.leading_colon);
+        formatter.field("segments", &self.segments);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -2446,16 +2529,17 @@ impl Debug for Stmt {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for StmtMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl StmtMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("mac", &self.mac);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "StmtMacro")
+    }
+}
+#[cfg(feature = "full")]
+impl StmtMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("mac", &self.mac);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -2507,75 +2591,79 @@ impl Debug for TraitItem {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TraitItemConst {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TraitItemConst {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("const_token", &self.const_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("ty", &self.ty);
-                formatter.field("default", &self.default);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TraitItemConst")
+    }
+}
+#[cfg(feature = "full")]
+impl TraitItemConst {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("const_token", &self.const_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("ty", &self.ty);
+        formatter.field("default", &self.default);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TraitItemFn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TraitItemFn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("sig", &self.sig);
-                formatter.field("default", &self.default);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TraitItemFn")
+    }
+}
+#[cfg(feature = "full")]
+impl TraitItemFn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("sig", &self.sig);
+        formatter.field("default", &self.default);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TraitItemMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TraitItemMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("mac", &self.mac);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TraitItemMacro")
+    }
+}
+#[cfg(feature = "full")]
+impl TraitItemMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("mac", &self.mac);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(feature = "full")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TraitItemType {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TraitItemType {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("attrs", &self.attrs);
-                formatter.field("type_token", &self.type_token);
-                formatter.field("ident", &self.ident);
-                formatter.field("generics", &self.generics);
-                formatter.field("colon_token", &self.colon_token);
-                formatter.field("bounds", &self.bounds);
-                formatter.field("default", &self.default);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TraitItemType")
+    }
+}
+#[cfg(feature = "full")]
+impl TraitItemType {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("attrs", &self.attrs);
+        formatter.field("type_token", &self.type_token);
+        formatter.field("ident", &self.ident);
+        formatter.field("generics", &self.generics);
+        formatter.field("colon_token", &self.colon_token);
+        formatter.field("bounds", &self.bounds);
+        formatter.field("default", &self.default);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -2610,110 +2698,117 @@ impl Debug for Type {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeArray {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeArray {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("elem", &self.elem);
-                formatter.field("semi_token", &self.semi_token);
-                formatter.field("len", &self.len);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeArray")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeArray {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("elem", &self.elem);
+        formatter.field("semi_token", &self.semi_token);
+        formatter.field("len", &self.len);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeBareFn {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeBareFn {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("lifetimes", &self.lifetimes);
-                formatter.field("unsafety", &self.unsafety);
-                formatter.field("abi", &self.abi);
-                formatter.field("fn_token", &self.fn_token);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("inputs", &self.inputs);
-                formatter.field("variadic", &self.variadic);
-                formatter.field("output", &self.output);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeBareFn")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeBareFn {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("lifetimes", &self.lifetimes);
+        formatter.field("unsafety", &self.unsafety);
+        formatter.field("abi", &self.abi);
+        formatter.field("fn_token", &self.fn_token);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("inputs", &self.inputs);
+        formatter.field("variadic", &self.variadic);
+        formatter.field("output", &self.output);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeGroup {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeGroup {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("group_token", &self.group_token);
-                formatter.field("elem", &self.elem);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeGroup")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeGroup {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("group_token", &self.group_token);
+        formatter.field("elem", &self.elem);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeImplTrait {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeImplTrait {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("impl_token", &self.impl_token);
-                formatter.field("bounds", &self.bounds);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeImplTrait")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeImplTrait {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("impl_token", &self.impl_token);
+        formatter.field("bounds", &self.bounds);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeInfer {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeInfer {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("underscore_token", &self.underscore_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeInfer")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeInfer {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("underscore_token", &self.underscore_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeMacro {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeMacro {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("mac", &self.mac);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeMacro")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeMacro {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("mac", &self.mac);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeNever {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeNever {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("bang_token", &self.bang_token);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeNever")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeNever {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("bang_token", &self.bang_token);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -2754,109 +2849,116 @@ impl Debug for TypeParamBound {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeParen {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeParen {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("elem", &self.elem);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeParen")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeParen {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("elem", &self.elem);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypePath {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypePath {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("qself", &self.qself);
-                formatter.field("path", &self.path);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypePath")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypePath {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("qself", &self.qself);
+        formatter.field("path", &self.path);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypePtr {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypePtr {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("star_token", &self.star_token);
-                formatter.field("const_token", &self.const_token);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("elem", &self.elem);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypePtr")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypePtr {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("star_token", &self.star_token);
+        formatter.field("const_token", &self.const_token);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("elem", &self.elem);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeReference {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeReference {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("and_token", &self.and_token);
-                formatter.field("lifetime", &self.lifetime);
-                formatter.field("mutability", &self.mutability);
-                formatter.field("elem", &self.elem);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeReference")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeReference {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("and_token", &self.and_token);
+        formatter.field("lifetime", &self.lifetime);
+        formatter.field("mutability", &self.mutability);
+        formatter.field("elem", &self.elem);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeSlice {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeSlice {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("bracket_token", &self.bracket_token);
-                formatter.field("elem", &self.elem);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeSlice")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeSlice {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("bracket_token", &self.bracket_token);
+        formatter.field("elem", &self.elem);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeTraitObject {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeTraitObject {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("dyn_token", &self.dyn_token);
-                formatter.field("bounds", &self.bounds);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeTraitObject")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeTraitObject {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("dyn_token", &self.dyn_token);
+        formatter.field("bounds", &self.bounds);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for TypeTuple {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl TypeTuple {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("elems", &self.elems);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "TypeTuple")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl TypeTuple {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("elems", &self.elems);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]
@@ -3005,17 +3107,18 @@ impl Debug for Variant {
 #[cfg_attr(doc_cfg, doc(cfg(feature = "extra-traits")))]
 impl Debug for VisRestricted {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        impl VisRestricted {
-            fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
-                let mut formatter = formatter.debug_struct(name);
-                formatter.field("pub_token", &self.pub_token);
-                formatter.field("paren_token", &self.paren_token);
-                formatter.field("in_token", &self.in_token);
-                formatter.field("path", &self.path);
-                formatter.finish()
-            }
-        }
         self.debug(formatter, "VisRestricted")
+    }
+}
+#[cfg(any(feature = "derive", feature = "full"))]
+impl VisRestricted {
+    fn debug(&self, formatter: &mut fmt::Formatter, name: &str) -> fmt::Result {
+        let mut formatter = formatter.debug_struct(name);
+        formatter.field("pub_token", &self.pub_token);
+        formatter.field("paren_token", &self.paren_token);
+        formatter.field("in_token", &self.in_token);
+        formatter.field("path", &self.path);
+        formatter.finish()
     }
 }
 #[cfg(any(feature = "derive", feature = "full"))]

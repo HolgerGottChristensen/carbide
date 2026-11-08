@@ -104,7 +104,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">LifetimeParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the lifetime parameters in `self.params`.
-    pub fn lifetimes(&self) -> Lifetimes {
+    pub fn lifetimes(&self) -> Lifetimes<'_> {
         Lifetimes(self.params.iter())
     }
 
@@ -115,7 +115,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">LifetimeParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the lifetime parameters in `self.params`.
-    pub fn lifetimes_mut(&mut self) -> LifetimesMut {
+    pub fn lifetimes_mut(&mut self) -> LifetimesMut<'_> {
         LifetimesMut(self.params.iter_mut())
     }
 
@@ -126,7 +126,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">TypeParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the type parameters in `self.params`.
-    pub fn type_params(&self) -> TypeParams {
+    pub fn type_params(&self) -> TypeParams<'_> {
         TypeParams(self.params.iter())
     }
 
@@ -137,7 +137,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">TypeParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the type parameters in `self.params`.
-    pub fn type_params_mut(&mut self) -> TypeParamsMut {
+    pub fn type_params_mut(&mut self) -> TypeParamsMut<'_> {
         TypeParamsMut(self.params.iter_mut())
     }
 
@@ -148,7 +148,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">ConstParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the constant parameters in `self.params`.
-    pub fn const_params(&self) -> ConstParams {
+    pub fn const_params(&self) -> ConstParams<'_> {
         ConstParams(self.params.iter())
     }
 
@@ -159,7 +159,7 @@ impl Generics {
     ///   style="padding-left:0;padding-right:0;">ConstParam</code></a><code
     ///   style="padding-left:0;">&gt;</code>
     /// over the constant parameters in `self.params`.
-    pub fn const_params_mut(&mut self) -> ConstParamsMut {
+    pub fn const_params_mut(&mut self) -> ConstParamsMut<'_> {
         ConstParamsMut(self.params.iter_mut())
     }
 
@@ -178,10 +178,7 @@ impl<'a> Iterator for Lifetimes<'a> {
     type Item = &'a LifetimeParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Lifetime(lifetime) = next {
             Some(lifetime)
         } else {
@@ -196,10 +193,7 @@ impl<'a> Iterator for LifetimesMut<'a> {
     type Item = &'a mut LifetimeParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Lifetime(lifetime) = next {
             Some(lifetime)
         } else {
@@ -214,10 +208,7 @@ impl<'a> Iterator for TypeParams<'a> {
     type Item = &'a TypeParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Type(type_param) = next {
             Some(type_param)
         } else {
@@ -232,10 +223,7 @@ impl<'a> Iterator for TypeParamsMut<'a> {
     type Item = &'a mut TypeParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Type(type_param) = next {
             Some(type_param)
         } else {
@@ -250,10 +238,7 @@ impl<'a> Iterator for ConstParams<'a> {
     type Item = &'a ConstParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Const(const_param) = next {
             Some(const_param)
         } else {
@@ -268,10 +253,7 @@ impl<'a> Iterator for ConstParamsMut<'a> {
     type Item = &'a mut ConstParam;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.0.next() {
-            Some(item) => item,
-            None => return None,
-        };
+        let next = self.0.next()?;
         if let GenericParam::Const(const_param) = next {
             Some(const_param)
         } else {
@@ -328,7 +310,7 @@ impl Generics {
         doc_cfg,
         doc(cfg(all(any(feature = "full", feature = "derive"), feature = "printing")))
     )]
-    pub fn split_for_impl(&self) -> (ImplGenerics, TypeGenerics, Option<&WhereClause>) {
+    pub fn split_for_impl(&self) -> (ImplGenerics<'_>, TypeGenerics<'_>, Option<&WhereClause>) {
         (
             ImplGenerics(self),
             TypeGenerics(self),
@@ -391,7 +373,7 @@ generics_wrapper_impls!(Turbofish);
 #[cfg(feature = "printing")]
 impl<'a> TypeGenerics<'a> {
     /// Turn a type's generics like `<X, Y>` into a turbofish like `::<X, Y>`.
-    pub fn as_turbofish(&self) -> Turbofish {
+    pub fn as_turbofish(&self) -> Turbofish<'_> {
         Turbofish(self.0)
     }
 }

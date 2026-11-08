@@ -78,7 +78,7 @@ impl SaveDialogStyle for MacOSNativeSaveDialogStyle {
 
             let types = NSArray::id_from_iter(types_ier);
 
-            setAllowedContentTypes(&*panel, &*types);
+            set_allowed_content_types(&*panel, &*types);
         }
 
 
@@ -121,10 +121,10 @@ impl SaveDialogStyle for MacOSNativeSaveDialogStyle {
     }
 }
 
-fn allowedContentTypes(panel: &NSSavePanel) -> Retained<NSArray<UTType>> {
+fn allowed_content_types(panel: &NSSavePanel) -> Retained<NSArray<UTType>> {
     unsafe { msg_send_id![panel, allowedContentTypes] }
 }
 
-fn setAllowedContentTypes(panel: &NSSavePanel, allowed_content_types: &NSArray<UTType>) {
+fn set_allowed_content_types(panel: &NSSavePanel, allowed_content_types: &NSArray<UTType>) {
     unsafe { msg_send![panel, setAllowedContentTypes: allowed_content_types] }
 }

@@ -614,12 +614,11 @@ impl<'a> ParseBuffer<'a> {
     /// ```
     pub fn peek2<T: Peek>(&self, token: T) -> bool {
         fn peek2(buffer: &ParseBuffer, peek: fn(Cursor) -> bool) -> bool {
-            if let Some(group) = buffer.cursor().group(Delimiter::None) {
-                if group.0.skip().map_or(false, peek) {
+            if let Some(group) = buffer.cursor().group(Delimiter::None)
+                && group.0.skip().is_some_and(peek) {
                     return true;
                 }
-            }
-            buffer.cursor().skip().map_or(false, peek)
+            buffer.cursor().skip().is_some_and(peek)
         }
 
         let _ = token;
@@ -629,16 +628,15 @@ impl<'a> ParseBuffer<'a> {
     /// Looks at the third-next token in the parse stream.
     pub fn peek3<T: Peek>(&self, token: T) -> bool {
         fn peek3(buffer: &ParseBuffer, peek: fn(Cursor) -> bool) -> bool {
-            if let Some(group) = buffer.cursor().group(Delimiter::None) {
-                if group.0.skip().and_then(Cursor::skip).map_or(false, peek) {
+            if let Some(group) = buffer.cursor().group(Delimiter::None)
+                && group.0.skip().and_then(Cursor::skip).is_some_and(peek) {
                     return true;
                 }
-            }
             buffer
                 .cursor()
                 .skip()
                 .and_then(Cursor::skip)
-                .map_or(false, peek)
+                .is_some_and(peek)
         }
 
         let _ = token;
@@ -1147,11 +1145,10 @@ impl Parse for TokenTree {
 impl Parse for Group {
     fn parse(input: ParseStream) -> Result<Self> {
         input.step(|cursor| {
-            if let Some((group, rest)) = cursor.any_group_token() {
-                if group.delimiter() != Delimiter::None {
+            if let Some((group, rest)) = cursor.any_group_token()
+                && group.delimiter() != Delimiter::None {
                     return Ok((group, rest));
                 }
-            }
             Err(cursor.error("expected group token"))
         })
     }
@@ -1223,7 +1220,7 @@ pub trait Parser: Sized {
     }
 }
 
-fn tokens_to_parse_buffer(tokens: &TokenBuffer) -> ParseBuffer {
+fn tokens_to_parse_buffer(tokens: &TokenBuffer) -> ParseBuffer<'_> {
     let scope = Span::call_site();
     let cursor = tokens.begin();
     let unexpected = Rc::new(Cell::new(Unexpected::None));

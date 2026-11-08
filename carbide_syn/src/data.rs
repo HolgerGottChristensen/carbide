@@ -63,7 +63,7 @@ impl Fields {
     /// Get an iterator over the borrowed [`Field`] items in this object. This
     /// iterator can be used to iterate over a named or unnamed struct or
     /// variant's fields uniformly.
-    pub fn iter(&self) -> punctuated::Iter<Field> {
+    pub fn iter(&self) -> punctuated::Iter<'_, Field> {
         match self {
             Fields::Unit => crate::punctuated::empty_punctuated_iter(),
             Fields::Named(f) => f.named.iter(),
@@ -74,7 +74,7 @@ impl Fields {
     /// Get an iterator over the mutably borrowed [`Field`] items in this
     /// object. This iterator can be used to iterate over a named or unnamed
     /// struct or variant's fields uniformly.
-    pub fn iter_mut(&mut self) -> punctuated::IterMut<Field> {
+    pub fn iter_mut(&mut self) -> punctuated::IterMut<'_, Field> {
         match self {
             Fields::Unit => crate::punctuated::empty_punctuated_iter_mut(),
             Fields::Named(f) => f.named.iter_mut(),

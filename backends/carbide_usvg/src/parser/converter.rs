@@ -25,7 +25,7 @@ use crate::parser::paint_server::process_paint;
 use crate::text::flatten::DatabaseExt;
 use crate::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct State<'a> {
     pub(crate) parent_clip_path: Option<SvgNode<'a, 'a>>,
     pub(crate) parent_markers: Vec<SvgNode<'a, 'a>>,
