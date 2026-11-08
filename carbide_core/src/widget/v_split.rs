@@ -136,7 +136,7 @@ impl<S: State<T=f64>, L: Widget, T: Widget> MouseEventHandler for VSplit<S, L, T
                     }
                     SplitType::Percent(percent) => {
                         let p = relative_to_position.y / height;
-                        percent.set_value(p.max(0.0).min(1.0));
+                        percent.set_value(p.clamp(0.0, 1.0));
                     }
                     SplitType::End(offset) => {
                         let new_offset = height - relative_to_position.y;

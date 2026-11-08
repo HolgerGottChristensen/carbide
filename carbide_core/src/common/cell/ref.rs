@@ -3,7 +3,7 @@ use std::ops::Deref;
 use parking_lot::MappedRwLockReadGuard;
 use carbide::common::cell::value_cell::BorrowRef;
 
-pub type Ref<'a, T: 'a> = ValueRef<'a, T>;
+pub type Ref<'a, T> = ValueRef<'a, T>;
 
 pub enum ValueRef<'a, T: 'a> {
     CellBorrow { value: &'a T, borrow: BorrowRef<'a> },

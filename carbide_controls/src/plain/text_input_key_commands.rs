@@ -1,3 +1,5 @@
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use carbide::event::{Key, ModifierKey};
 
 pub enum TextInputKeyCommand {
     MoveLeft,

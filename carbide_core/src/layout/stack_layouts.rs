@@ -232,6 +232,7 @@ fn calculate_size_stack(
     widget.set_dimension(dimension(total_main_axis + spacing_total, max_cross_axis));
 }
 
+#[allow(clippy::too_many_arguments)]
 fn position_children_stack(
     widget: &mut dyn Layout,
     main_axis_position: fn(Position) -> f64,

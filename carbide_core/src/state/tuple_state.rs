@@ -15,7 +15,7 @@ macro_rules! tuple_state {
         pub struct $struct_name;
 
         impl $struct_name {
-            #[allow(unused_parens)]
+            #[allow(unused_parens, clippy::too_many_arguments)]
             pub fn read_map<$($type: StateContract),*, TO: StateContract, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $read_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $read_map_name {
                     $(
@@ -25,7 +25,7 @@ macro_rules! tuple_state {
                 }
             }
 
-            #[allow(unused_parens)]
+            #[allow(unused_parens, clippy::too_many_arguments)]
             pub fn read_map_env<$($type: StateContract),*, TO: StateContract + Default, $($type2: AnyReadState<T=$type> + Clone + 'static),*, MAP: Fn(&mut Environment, $(&$type),*) -> TO + Clone + 'static>($($name: $type2),*, map: MAP) -> $env_map_name<MAP, $($type),*, TO, $($type2),*> {
                 $env_map_name {
                     $(
@@ -37,7 +37,7 @@ macro_rules! tuple_state {
             }
 
 
-            #[allow(unused_parens)]
+            #[allow(unused_parens, clippy::too_many_arguments)]
             pub fn map<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*) -> TO + Clone + 'static, REPLACE: Fn(TO, $(ValueRefMut<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE) -> $map_name<MAP, REPLACE, $($type),*, TO, $($type2),*> {
                 $map_name {
                     $(
@@ -48,7 +48,7 @@ macro_rules! tuple_state {
                 }
             }
 
-            #[allow(unused_parens)]
+            #[allow(unused_parens, clippy::too_many_arguments)]
             pub fn map_owned<$($type: StateContract),*, TO: StateContract, $($type2: AnyState<T=$type> + Clone + 'static),*, MAP: Fn($(&$type),*, &mut TO) + Clone + 'static, REPLACE: Fn(&TO, $(ValueRefMut<$type>),*) + Clone + 'static>($($name: $type2),*, map: MAP, replace: REPLACE, default: TO) -> $map_name_owned<MAP, REPLACE, $($type),*, TO, $($type2),*> {
                 $map_name_owned {
                     $(

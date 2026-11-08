@@ -21,7 +21,14 @@ pub trait RandomAccessCollection<T>: StateContract + 'static where T: StateContr
     /// same as the end index.
     fn start_index(&self) -> Self::Idx;
 
+    /// The number of items in the collection.
     fn len(&self) -> usize;
+
+    /// Returns true if the collection contains no items.
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Get the end index of the collection. This will be the index one past the last valid index that
     /// can be used for getting a value.
     fn end_index(&self) -> Self::Idx;

@@ -5,7 +5,7 @@ use parking_lot::MappedRwLockWriteGuard;
 use carbide::common::cell::value_cell::BorrowRefMut;
 use crate::common::cell::r#ref::ValueRef;
 
-pub type RefMut<'a, T: 'a + Debug + Clone + 'static> = ValueRefMut<'a, T>;
+pub type RefMut<'a, T> = ValueRefMut<'a, T>;
 
 pub enum ValueRefMut<'a, T: 'a + Debug + Clone + 'static> {
     CellBorrow {

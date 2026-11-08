@@ -193,13 +193,7 @@ pub fn grayscale(p: f32) -> Color {
 
 /// Clamp a f32 between 0f32 and 1f32.
 fn clampf32(f: f32) -> f32 {
-    if f < 0.0 {
-        0.0
-    } else if f > 1.0 {
-        1.0
-    } else {
-        f
-    }
+    f.clamp(0.0, 1.0)
 }
 
 impl Color {

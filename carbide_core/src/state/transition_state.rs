@@ -98,12 +98,10 @@ impl<T: StateContract + Animatable<T> + PartialEq, S: ReadState<T=T>> StateSync 
     fn sync(&mut self, env: &mut Environment) -> bool {
         let res = self.inner.sync(env);
 
-        if let Some(manager) = env.get_mut::<AnimationManager>() {
-            if self.transition.borrow().is_some() {
-                manager.request_animation_frame();
-            } else if *self.value.borrow() != *self.inner.value() {
-                manager.request_animation_frame();
-            }
+        if let Some(manager) = env.get_mut::<AnimationManager>()
+            && (self.transition.borrow().is_some() || *self.value.borrow() != *self.inner.value())
+        {
+            manager.request_animation_frame();
         }
 
         res

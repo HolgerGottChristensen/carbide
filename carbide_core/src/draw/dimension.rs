@@ -5,18 +5,20 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub, SubAssign};
 use crate::draw::Position;
 use crate::draw::Scalar;
 
+// `non_exhaustive` keeps the fields public for reading and writing, but prevents constructing the
+// struct with a literal outside this crate, so fields can be added later without a breaking change.
+// Use `Dimension::new` instead.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Default)]
+#[non_exhaustive]
 pub struct Dimension {
     pub width: Scalar,
     pub height: Scalar,
-    // https://users.rust-lang.org/t/public-getter-method-vs-pub-field/20147/4
-    _private: ()
 }
 
 impl Dimension {
     #[inline]
     pub fn new(width: Scalar, height: Scalar) -> Dimension {
-        Dimension { width, height, _private: () }
+        Dimension { width, height }
     }
 
 }

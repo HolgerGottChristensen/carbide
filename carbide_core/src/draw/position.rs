@@ -12,19 +12,21 @@ use crate::draw::Scalar;
 ///
 /// The position can be seen as a vector and can be translated, reversed, normalized and more.
 /// You are also able to add Positions and [super::Dimension], to get new offset positions.
+///
+/// The struct is `#[non_exhaustive]`: the fields are public, but outside this crate it must be
+/// created with [Position::new] (or [Position::origin]) rather than a struct literal.
 #[derive(Copy, Clone, PartialOrd, PartialEq, Default)]
+#[non_exhaustive]
 pub struct Position {
     pub x: Scalar,
     pub y: Scalar,
-    // https://users.rust-lang.org/t/public-getter-method-vs-pub-field/20147/4
-    _private: (),
 }
 
 impl Position {
     /// Create a new Position from scalar values.
     #[inline]
     pub const fn new(x: Scalar, y: Scalar) -> Position {
-        Position { x, y, _private: () }
+        Position { x, y }
     }
 
     pub const fn origin() -> Position {
