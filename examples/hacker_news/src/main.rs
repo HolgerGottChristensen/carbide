@@ -12,6 +12,7 @@ use carbide::environment::{EnvironmentColor, EnvironmentFontSize, IntoColorReadS
 use carbide::state::{AnyReadState, AnyState, IndexState, LocalState, Map1, Map2, ReadState, ReadStateExtNew, State};
 use carbide::text::FontWeight;
 use carbide::widget::*;
+use carbide::widget::properties::WidgetKindSimple;
 use carbide::{closure, lens, task, ui};
 use carbide::{Application, Window};
 
@@ -140,10 +141,11 @@ fn main() {
         match news_articles {
             Some(news_articles) => {
                 HSplit::new(
-                    List::new(
+                    List::new_selectable(
                         news_articles.clone(),
+                        selected_id.clone(),
                         delegate
-                    ).selectable(selected_id.clone()),
+                    ),
 
                     match selected_id {
                         Some(f) => {
@@ -170,7 +172,7 @@ fn main() {
     application.launch();
 }
 
-fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNItem>>) -> impl Widget {
+fn detail_view(selected: impl State<T=Article>, content: impl State<T=Option<HNItem>>) -> impl Widget<Kind=WidgetKindSimple> {
     let selected_article_for_link = selected.clone();
 
     let title = lens!(selected.title);

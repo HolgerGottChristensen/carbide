@@ -1,9 +1,9 @@
 use serde::Deserialize;
-use carbide::identifiable::Identifiable;
+use carbide::Id;
 
-#[derive(Identifiable, Clone, Debug, Deserialize)]
+#[derive(Id, Clone, Debug, Deserialize)]
 pub struct Article {
-    pub id: u64,
+    #[id] pub id: u64,
     pub title: String,
     pub url: Option<String>,
     pub by: String,
