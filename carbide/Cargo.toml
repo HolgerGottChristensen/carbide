@@ -101,6 +101,69 @@ required-features = ["carbide_core/tokio"]
 name = "timer"
 path = "examples/async/timer.rs"
 
+# chart
+[[example]]
+name = "chart"
+path = "examples/chart/chart.rs"
+
+[[example]]
+name = "chart_circle"
+path = "examples/chart/chart_circle.rs"
+
+# controls
+[[example]]
+name = "button"
+path = "examples/controls/button.rs"
+
+[[example]]
+name = "calendar"
+path = "examples/controls/calendar.rs"
+
+[[example]]
+name = "color_picker"
+path = "examples/controls/color_picker.rs"
+
+[[example]]
+name = "context_menu"
+path = "examples/controls/context_menu.rs"
+
+[[example]]
+name = "date_picker"
+path = "examples/controls/date_picker.rs"
+
+[[example]]
+name = "picker"
+path = "examples/controls/picker.rs"
+
+[[example]]
+name = "slider"
+path = "examples/controls/slider.rs"
+
+[[example]]
+name = "text_input"
+path = "examples/controls/text_input.rs"
+
+[[example]]
+name = "text_input_obscure"
+path = "examples/controls/text_input_obscure.rs"
+
+[[example]]
+name = "toggle"
+path = "examples/controls/toggle.rs"
+
+# dialogs
+[[example]]
+name = "color_dialog"
+path = "examples/dialogs/color_dialog.rs"
+
+[[example]]
+name = "open_dialog"
+path = "examples/dialogs/open_dialog.rs"
+
+[[example]]
+name = "save_dialog"
+path = "examples/dialogs/save_dialog.rs"
+
 # drawing
 [[example]]
 name = "accent"
@@ -186,6 +249,21 @@ path = "examples/drawing/shapes.rs"
 name = "strokes"
 path = "examples/drawing/strokes.rs"
 
+# icons
+[[example]]
+name = "lucide"
+path = "examples/icons/lucide.rs"
+
+[[example]]
+name = "remix"
+path = "examples/icons/remix.rs"
+required-features = ["icons_remix"]
+
+[[example]]
+name = "tabler"
+path = "examples/icons/tabler.rs"
+required-features = ["icons_tabler"]
+
 # image
 [[example]]
 name = "icon"
@@ -264,6 +342,52 @@ path = "examples/layout/v_stack_lazy.rs"
 name = "z_stack"
 path = "examples/layout/z_stack.rs"
 
+# list
+[[example]]
+name = "list"
+path = "examples/list/list.rs"
+
+[[example]]
+name = "list_add_remove"
+path = "examples/list/list_add_remove.rs"
+
+[[example]]
+name = "list_content"
+path = "examples/list/list_content.rs"
+
+[[example]]
+name = "list_selectable_multiple"
+path = "examples/list/list_selectable_multiple.rs"
+
+[[example]]
+name = "list_selectable_multiple2"
+path = "examples/list/list_selectable_multiple2.rs"
+
+[[example]]
+name = "list_selectable_single"
+path = "examples/list/list_selectable_single.rs"
+
+[[example]]
+name = "list_selectable_single2"
+path = "examples/list/list_selectable_single2.rs"
+
+[[example]]
+name = "list_styled"
+path = "examples/list/list_styled.rs"
+
+[[example]]
+name = "tree_list"
+path = "examples/list/tree_list.rs"
+
+# media
+[[example]]
+name = "video"
+path = "examples/media/video.rs"
+
+[[example]]
+name = "video_player"
+path = "examples/media/video_player.rs"
+
 # misc
 [[example]]
 name = "application_management"
@@ -278,8 +402,16 @@ name = "cursors"
 path = "examples/misc/cursors.rs"
 
 [[example]]
+name = "focus_behavior"
+path = "examples/misc/focus_behavior.rs"
+
+[[example]]
 name = "foreach"
 path = "examples/misc/foreach.rs"
+
+[[example]]
+name = "foreach_identifiable"
+path = "examples/misc/foreach_identifiable.rs"
 
 [[example]]
 name = "foreach_nested"
@@ -304,6 +436,10 @@ path = "examples/misc/group.rs"
 [[example]]
 name = "group2"
 path = "examples/misc/group2.rs"
+
+[[example]]
+name = "help"
+path = "examples/misc/help.rs"
 
 [[example]]
 name = "if"
@@ -345,7 +481,37 @@ path = "examples/misc/theme.rs"
 name = "window_title"
 path = "examples/misc/window_title.rs"
 
+# plain_controls
+[[example]]
+name = "plain_calendar"
+path = "examples/plain_controls/plain_calendar.rs"
+
+[[example]]
+name = "plain_date_picker"
+path = "examples/plain_controls/plain_date_picker.rs"
+
+[[example]]
+name = "plain_text_input"
+path = "examples/plain_controls/plain_text_input.rs"
+
+# table
+[[example]]
+name = "table"
+path = "examples/table/table.rs"
+
 # text
+[[example]]
+name = "localized_datetime"
+path = "examples/text/localized_datetime.rs"
+
+[[example]]
+name = "localized_number"
+path = "examples/text/localized_number.rs"
+
+[[example]]
+name = "localized_string"
+path = "examples/text/localized_string.rs"
+
 [[example]]
 name = "text"
 path = "examples/text/text.rs"
@@ -379,171 +545,6 @@ path = "examples/widgets/progress_view.rs"
 [[example]]
 name = "scroll"
 path = "examples/widgets/scroll.rs"
-
-# chart
-[[example]]
-name = "chart"
-path = "examples/chart/chart.rs"
-
-[[example]]
-name = "chart_circle"
-path = "examples/chart/chart_circle.rs"
-
-# controls
-[[example]]
-name = "button"
-path = "examples/controls/button.rs"
-
-[[example]]
-name = "calendar"
-path = "examples/controls/calendar.rs"
-
-[[example]]
-name = "color_picker"
-path = "examples/controls/color_picker.rs"
-
-[[example]]
-name = "context_menu"
-path = "examples/controls/context_menu.rs"
-
-[[example]]
-name = "date_picker"
-path = "examples/controls/date_picker.rs"
-
-[[example]]
-name = "focus_behavior"
-path = "examples/controls/focus_behavior.rs"
-
-[[example]]
-name = "foreach_identifiable"
-path = "examples/controls/foreach_identifiable.rs"
-
-[[example]]
-name = "help"
-path = "examples/controls/help.rs"
-
-[[example]]
-name = "list"
-path = "examples/controls/list.rs"
-
-[[example]]
-name = "list_add_remove"
-path = "examples/controls/list_add_remove.rs"
-
-[[example]]
-name = "list_content"
-path = "examples/controls/list_content.rs"
-
-[[example]]
-name = "list_selectable_multiple"
-path = "examples/controls/list_selectable_multiple.rs"
-
-[[example]]
-name = "list_selectable_multiple2"
-path = "examples/controls/list_selectable_multiple2.rs"
-
-[[example]]
-name = "list_selectable_single"
-path = "examples/controls/list_selectable_single.rs"
-
-[[example]]
-name = "list_selectable_single2"
-path = "examples/controls/list_selectable_single2.rs"
-
-[[example]]
-name = "list_styled"
-path = "examples/controls/list_styled.rs"
-
-[[example]]
-name = "picker"
-path = "examples/controls/picker.rs"
-
-[[example]]
-name = "plain_calendar"
-path = "examples/controls/plain_calendar.rs"
-
-[[example]]
-name = "plain_date_picker"
-path = "examples/controls/plain_date_picker.rs"
-
-[[example]]
-name = "plain_text_input"
-path = "examples/controls/plain_text_input.rs"
-
-[[example]]
-name = "slider"
-path = "examples/controls/slider.rs"
-
-[[example]]
-name = "text_input"
-path = "examples/controls/text_input.rs"
-
-[[example]]
-name = "text_input_obscure"
-path = "examples/controls/text_input_obscure.rs"
-
-[[example]]
-name = "toggle"
-path = "examples/controls/toggle.rs"
-
-[[example]]
-name = "tree_list"
-path = "examples/controls/tree_list.rs"
-
-# dialogs
-[[example]]
-name = "color_dialog"
-path = "examples/dialogs/color_dialog.rs"
-
-[[example]]
-name = "open_dialog"
-path = "examples/dialogs/open_dialog.rs"
-
-[[example]]
-name = "save_dialog"
-path = "examples/dialogs/save_dialog.rs"
-
-# i18n
-[[example]]
-name = "localized_datetime"
-path = "examples/i18n/localized_datetime.rs"
-
-[[example]]
-name = "localized_number"
-path = "examples/i18n/localized_number.rs"
-
-[[example]]
-name = "localized_string"
-path = "examples/i18n/localized_string.rs"
-
-# icons
-[[example]]
-name = "lucide"
-path = "examples/icons/lucide.rs"
-
-[[example]]
-name = "remix"
-path = "examples/icons/remix.rs"
-required-features = ["icons_remix"]
-
-[[example]]
-name = "tabler"
-path = "examples/icons/tabler.rs"
-required-features = ["icons_tabler"]
-
-# media
-[[example]]
-name = "video"
-path = "examples/media/video.rs"
-
-[[example]]
-name = "video_player"
-path = "examples/media/video_player.rs"
-
-# table
-[[example]]
-name = "table"
-path = "examples/table/table.rs"
 
 [lints]
 workspace = true
