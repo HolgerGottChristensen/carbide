@@ -27,8 +27,9 @@ pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
                 return vec![]
             }
 
-            let mut set = HashSet::new();
-            set.extend(extract_idents_from_pattern(i.cases[0].clone()));
+            // Keep the first case's order for the result; the set is only used for comparison.
+            let first = extract_idents_from_pattern(i.cases[0].clone());
+            let set: HashSet<Ident> = HashSet::from_iter(first.iter().cloned());
 
             for case in i.cases.iter().skip(1) {
                 let idents_from_case = HashSet::from_iter(extract_idents_from_pattern(case.clone()));
@@ -37,7 +38,7 @@ pub fn extract_idents_from_pattern(pat: Pat) -> Vec<Ident> {
                 }
             }
 
-            Vec::from_iter(set)
+            first
         }
         // Even when the path contains idents, they are for structs and such and not used for bindings?
         Pat::Path(_) => {

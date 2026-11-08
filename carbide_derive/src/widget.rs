@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use proc_macro2::Ident;
 use syn::{Attribute, Fields, Meta, NestedMeta, Path};
@@ -11,7 +11,7 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let generics = &ast.generics;
     let wheres = &ast.generics.where_clause;
 
-    let struct_attributes: HashSet<DeriveType> = parse_attributes(&ast.attrs);
+    let struct_attributes: BTreeSet<DeriveType> = parse_attributes(&ast.attrs);
 
     // Ensure we are deriving for a struct.
     let body = match ast.data {
@@ -104,8 +104,10 @@ pub fn impl_widget(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     }
 }
 
-fn parse_attributes(attr: &[Attribute]) -> HashSet<DeriveType> {
-    let mut string_set = HashSet::new();
+// Returns a BTreeSet so the impls are emitted in the same order on every expansion. A HashSet's
+// random iteration order renumbers the impl blocks each compile, which defeats incremental reuse.
+fn parse_attributes(attr: &[Attribute]) -> BTreeSet<DeriveType> {
+    let mut string_set = BTreeSet::new();
     attr.iter()
         .filter_map(|attribute| match Attribute::parse_meta(attribute) {
             Ok(meta) => Some(stringify_meta(meta)),
@@ -118,7 +120,7 @@ fn parse_attributes(attr: &[Attribute]) -> HashSet<DeriveType> {
         });
 
     let mut set = if string_set.contains("carbide_derive") {
-        HashSet::new()
+        BTreeSet::new()
     } else {
         DeriveType::all()
     };

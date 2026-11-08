@@ -1,9 +1,10 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use proc_macro2::{Ident, TokenStream};
 use syn::{Generics, WhereClause};
 
-#[derive(Hash, Eq, PartialEq, Debug)]
+// Ord gives the derived impls a fixed emit order (see `parse_attributes`).
+#[derive(Hash, Eq, PartialEq, PartialOrd, Ord, Debug)]
 pub enum DeriveType {
     // Events
     MouseEvent,
@@ -35,8 +36,8 @@ pub enum DeriveType {
 }
 
 impl DeriveType {
-    pub fn all() -> HashSet<DeriveType> {
-        let mut set = HashSet::new();
+    pub fn all() -> BTreeSet<DeriveType> {
+        let mut set = BTreeSet::new();
         set.insert(DeriveType::MouseEvent);
         set.insert(DeriveType::KeyboardEvent);
         set.insert(DeriveType::WindowEvent);
