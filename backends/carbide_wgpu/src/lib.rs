@@ -8,6 +8,9 @@ extern crate carbide_lyon;
 // Registers carbide_cosmic_text as the text context used to lay out and render text, using its plugin.
 #[cfg(feature = "cosmic_text")]
 extern crate carbide_cosmic_text;
+// Registers carbide_icons as the system image manager used for system images, using its plugin.
+#[cfg(feature = "icons")]
+extern crate carbide_icons;
 
 pub use application::Application;
 pub use wgpu_render_target::WgpuRenderTarget;

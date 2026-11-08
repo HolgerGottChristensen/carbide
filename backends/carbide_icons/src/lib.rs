@@ -1,5 +1,7 @@
 use include_dir::{include_dir, Dir};
 
+mod plugin;
+
 #[cfg(feature = "lucide")]
 static LUCIDE_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/lucide");
 

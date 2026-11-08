@@ -249,7 +249,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                 if !ctx.image.exist(image_id, ctx.env) => {
                     let system_provider = ctx.env.get::<SystemImageManager>().unwrap();
 
-                    let string = system_provider(name).map(|b| str::from_utf8(b).unwrap())
+                    let string = system_provider.image(name).map(|b| str::from_utf8(b).unwrap())
                         .unwrap_or_else(|| {
                             println!("Could not load system image: {}", name);
                             MISSING_SVG

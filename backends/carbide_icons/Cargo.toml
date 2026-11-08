@@ -7,10 +7,11 @@ repository.workspace = true
 authors.workspace = true
 
 [dependencies]
+carbide_core.workspace = true
 include_dir.workspace = true
 
 [dev-dependencies]
-carbide_core.workspace = true
+futures.workspace = true
 carbide_wgpu = { workspace = true, features = ["icons"] }
 copypasta.workspace = true
 

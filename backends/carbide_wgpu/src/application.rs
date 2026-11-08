@@ -14,7 +14,7 @@ use crate::proxy_event_loop::ProxyEventLoop;
 use carbide_core::animation::AnimationManager;
 use carbide_core::application::ApplicationManager;
 use carbide_core::asynchronous::set_event_sink;
-use carbide_core::draw::{Dimension, ImageId, SystemImageManager};
+use carbide_core::draw::{Dimension, ImageId};
 use carbide_core::environment::{Environment, EnvironmentKey};
 use carbide_core::event::{ApplicationEvent, EventSink, WindowEventContext, WindowEventHandler};
 use carbide_core::focus::FocusManager;
@@ -25,8 +25,6 @@ use carbide_core::render::{RenderInstruction, RenderInstructionCache};
 use carbide_core::scene::{AnyScene, Scene, SceneSequence};
 use carbide_core::text::TextContextKey;
 use carbide_core::widget::WidgetId;
-#[cfg(feature = "icons")]
-use carbide_icons::{SYSTEM_IMAGE_MANAGER};
 use carbide_winit::application::ApplicationHandler;
 use carbide_winit::custom_event::CustomEvent;
 use carbide_winit::event::WindowEvent;
@@ -79,10 +77,7 @@ impl Application {
 
         let event_sink = Arc::new(ProxyEventLoop(event_loop.create_proxy()));
 
-        let mut environment = Environment::new();
-
-        #[cfg(feature = "icons")]
-        environment.insert::<SystemImageManager>(&SYSTEM_IMAGE_MANAGER);
+        let environment = Environment::new();
 
         Application {
             id: WidgetId::new(),
