@@ -50,15 +50,34 @@ pub struct Application {
 
     event_handler: NewEventHandler,
     environment: Environment<'static>,
-    /// Fonts added before launch. They are added to the text context registered in the
-    /// environment once the plugins have run.
+    /// Whether to run the registered plugins on `environment` at launch.
+    register_plugins: bool,
+    /// Fonts added before launch. They are added to the text context in the environment at
+    /// launch, after the plugins have run.
     fonts: Vec<PathBuf>,
     event_loop: EventLoop<CustomEvent>,
     event_sink: Arc<dyn EventSink>,
 }
 
 impl Application {
+    /// Create an application whose environment is filled by the registered plugins at launch.
     pub fn new() -> Self {
+        Self::create(Environment::new(), true)
+    }
+
+    /// Create an application that uses `environment` as it is: the registered plugins are not
+    /// run at launch.
+    ///
+    /// The environment must already contain what the plugins would otherwise provide: a
+    /// `WindowRendererFactory` (and whatever that renderer needs, such as carbide_wgpu's
+    /// `WgpuContextNew` and `WgpuContext`), a text context, and a tesselator if shapes are drawn.
+    /// To start from the plugins and change some values, call
+    /// `carbide_core::plugin::register_plugins` on the environment before passing it in.
+    pub fn from_environment(environment: Environment<'static>) -> Self {
+        Self::create(environment, false)
+    }
+
+    fn create(environment: Environment<'static>, register_plugins: bool) -> Self {
         #[cfg(target_arch = "wasm32")]
         {
             std::panic::set_hook(Box::new(console_error_panic_hook::hook));
@@ -77,13 +96,12 @@ impl Application {
 
         let event_sink = Arc::new(ProxyEventLoop(event_loop.create_proxy()));
 
-        let environment = Environment::new();
-
         Application {
             id: WidgetId::new(),
             scenes: Default::default(),
             event_handler: NewEventHandler::new(),
             environment,
+            register_plugins,
             fonts: Vec::new(),
             event_loop,
             event_sink,
@@ -148,12 +166,15 @@ impl Application {
             scenes,
             event_handler,
             mut environment,
+            register_plugins: run_plugins,
             fonts,
             event_loop,
             event_sink
         } = application;
 
-        register_plugins(&mut environment).await;
+        if run_plugins {
+            register_plugins(&mut environment).await;
+        }
 
         let image_context = (environment.get::<WindowRendererFactory>()
             .expect("No renderer is registered. Enable carbide_winit's `wgpu` feature, or link another renderer crate")
