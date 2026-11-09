@@ -1,42 +1,28 @@
-use std::fmt::Debug;
-
 use crate::controller::DatasetController;
+use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 
-/// The controllers in a chart: a single controller, or a tuple of up to 12 controllers.
-/// Controllers are visited in sequence order, which is also the order they are drawn in.
-pub trait ControllerSequence: Debug + Clone + 'static {
-    fn controllers(&self, f: &mut dyn FnMut(&dyn DatasetController));
-}
+/// The controllers of a chart: any `Sequence` of controllers. They are visited in sequence
+/// order, which is also the order they are drawn in.
+///
+/// Implemented for, with `C` any controller that is `Clone`:
+/// - tuples `(C1,)` to `(C1, …, C12)`, each of its own controller type;
+/// - `Vec<C>`;
+/// - `LocalState<Vec<C>>`;
+/// - `Box<dyn AnyReadState<T=Vec<C>>>`. Any other state of a `Vec` of controllers is a sequence
+///   once boxed with `.as_dyn_read()`.
+///
+/// A type of your own becomes one by implementing `Sequence<dyn DatasetController>`. A single
+/// controller is not a `ControllerSequence`, but `Chart::new` takes an `IntoSequence`, which turns
+/// it into the 1-tuple `(C,)`, so it can be passed on its own.
+pub trait ControllerSequence: Sequence<dyn DatasetController> {}
 
-impl<C: DatasetController + Clone> ControllerSequence for C {
-    fn controllers(&self, f: &mut dyn FnMut(&dyn DatasetController)) {
-        f(self);
+impl<S: Sequence<dyn DatasetController>> ControllerSequence for S {}
+
+/// A controller is an item of a sequence of controllers.
+impl<C: DatasetController + Clone> SequenceItem<dyn DatasetController> for C {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DatasetController + 'static))) {
+        f(index, self);
     }
 }
 
-macro_rules! tuple_sequence_impl {
-    ($($generic:ident),*) => {
-        #[allow(non_snake_case)]
-        impl<$($generic: DatasetController + Clone),*> ControllerSequence for ($($generic,)*) {
-            fn controllers(&self, f: &mut dyn FnMut(&dyn DatasetController)) {
-                let ($($generic,)*) = self;
-                $(
-                    f($generic);
-                )*
-            }
-        }
-    };
-}
-
-tuple_sequence_impl!(W1);
-tuple_sequence_impl!(W1, W2);
-tuple_sequence_impl!(W1, W2, W3);
-tuple_sequence_impl!(W1, W2, W3, W4);
-tuple_sequence_impl!(W1, W2, W3, W4, W5);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);
+tuple_sequences!([] dyn DatasetController);

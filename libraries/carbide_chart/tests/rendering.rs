@@ -252,6 +252,40 @@ fn grouped_bars_positive_and_negative() {
     harness.snapshot("grouped_bars_positive_and_negative");
 }
 
+/// Grouped bars whose first dataset is held in a state, changed between the two snapshots: its
+/// values grow past the old y range, and a sixth month is appended. Pins down that the chart
+/// follows data changed after it is built: the y scale refits to the new values, the category x
+/// scale gains a slot for the new month, and the second dataset, which didn't change, keeps its
+/// bars in every month it has data for.
+#[test]
+fn data_changed_between_renders() {
+    let revenue = LocalState::new(vec![12.0, 19.0, 3.0, 5.0, 2.0]);
+    let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
+
+    let mut harness = Harness::new(bar_chart((revenue.clone(), costs)), Dimension::new(600.0, 500.0));
+    harness.snapshot("before_change");
+
+    revenue.clone().set_value(vec![12.0, 19.0, 30.0, 5.0, 24.0, 17.0]);
+    harness.snapshot("after_change");
+}
+
+/// Grouped bars whose datasets are a state of a `Vec`, with a third dataset added between the two
+/// snapshots. Pins down that the chart follows a dataset sequence changed after it is built: each
+/// month's slot splits three ways instead of two, the new dataset takes the next palette colour
+/// (red), and the y scale refits to include its larger values.
+#[test]
+fn dataset_added_between_renders() {
+    let revenue = vec![12.0, 19.0, 3.0, 5.0, 2.0];
+    let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
+    let datasets = LocalState::new(vec![revenue.clone(), costs.clone()]);
+
+    let mut harness = Harness::new(bar_chart(datasets.clone()), Dimension::new(600.0, 500.0));
+    harness.snapshot("two_datasets");
+
+    datasets.clone().set_value(vec![revenue, costs, vec![15.0, 24.0, 9.0, 7.0, 4.0]]);
+    harness.snapshot("three_datasets");
+}
+
 /// One dataset of only negative values. Zero is still included in the y scale, so it is the top
 /// of the scale and every bar hangs down from it.
 #[test]
@@ -266,7 +300,7 @@ fn bar_chart_all_negative() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DataSetSequence, DatasetExt, LineController, LinearScale, ScaleId, ScatterController, Stepped};
+    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DataSetSequence, DataSet, DatasetExt, IntoSequence, LineController, LinearScale, ScaleId, ScatterController, Stepped};
     // `.border()` alone picks a random colour on every run, which makes snapshots flaky.
     use carbide_core::color::{BLUE, GREEN, RED};
     use carbide_core::draw::Scalar;
@@ -481,9 +515,10 @@ mod support {
 
     /// A chart with only a `BarController` for `datasets` on the default scales: no lines or
     /// points on top.
-    pub fn bar_chart<D>(datasets: D) -> impl Widget
+    pub fn bar_chart<I, M, D>(datasets: I) -> impl Widget
     where
-        D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone,
+        I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>,
+        D: DataSetSequence<Scalar, Scalar, Scalar>,
     {
         Chart::new(BarController::new(datasets))
             .border().color(BLUE)

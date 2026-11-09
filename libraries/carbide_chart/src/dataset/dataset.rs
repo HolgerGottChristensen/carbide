@@ -1,25 +1,34 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use carbide::environment::{Environment};
-use carbide::math::Zero;
+use carbide::environment::Environment;
 use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;
 use crate::dataset::dataset_options::DataSetOptions;
 use crate::dataset::datavalue::DataValue;
 use crate::element::Stepped;
 use crate::scale::ScaleId;
+use crate::sequence::{Sequence, SequenceItem};
 
-pub trait DataSet: Debug + 'static {
-    type X: DataValue;
-    type Y: DataValue;
-    type Z: DataValue;
-
-    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>));
+/// One series: a sequence of data points, with options for how it is drawn.
+///
+/// Every `Sequence` of data points is a dataset, so `Vec<Position>`, `Vec<Scalar>` (each value
+/// at its index) and `LocalState<Vec<(Scalar, Scalar)>>` all are. `OptionsDataset`, which
+/// `DatasetExt` wraps a dataset in, implements it directly to override `options`.
+///
+/// The point types are type parameters rather than associated types: a type could be a sequence
+/// of several kinds of point, so the blanket implementation can't pick one.
+pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: Debug + 'static {
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>));
 
     /// The smallest x, y and z of the dataset's points, or `None` when it has no points.
-    fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
+    fn min(&self) -> Option<(X, Y, Z)> {
+        extreme(self, Extreme::Min)
+    }
+
     /// The largest x, y and z of the dataset's points, or `None` when it has no points.
-    fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
+    fn max(&self) -> Option<(X, Y, Z)> {
+        extreme(self, Extreme::Max)
+    }
 
     fn options(&self, _env: &mut Environment) -> DataSetOptions {
         DataSetOptions {
@@ -31,86 +40,68 @@ pub trait DataSet: Debug + 'static {
     }
 }
 
-impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, T: DataPoint<X=X, Y=Y, Z=Z> + PartialOrd + Clone + Debug + 'static> DataSet for Vec<T> {
-    type X = X;
-    type Y = Y;
-    type Z = Z;
-
-    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)) {
-        for (index, point) in self.iter().enumerate() {
-            f(index, point);
-        }
-    }
-
-    fn min(&self) -> Option<(X, Y, Z)> {
-        let mut iter = self.iter();
-        let item = iter.next()?;
-
-        let mut min_x = item.x();
-        let mut min_y = item.y();
-        let mut min_z = item.z();
-
-        for item in iter {
-            min_x = if PartialOrd::lt(&min_x, &item.x()) { min_x } else { item.x() };
-            min_y = if PartialOrd::lt(&min_y, &item.y()) { min_y } else { item.y() };
-            min_z = if PartialOrd::lt(&min_z, &item.z()) { min_z } else { item.z() };
-        }
-
-        Some((min_x, min_y, min_z))
-    }
-
-    fn max(&self) -> Option<(X, Y, Z)> {
-        let mut iter = self.iter();
-        let item = iter.next()?;
-
-        let mut max_x = item.x();
-        let mut max_y = item.y();
-        let mut max_z = item.z();
-
-        for item in iter {
-            max_x = if PartialOrd::gt(&max_x, &item.x()) { max_x } else { item.x() };
-            max_y = if PartialOrd::gt(&max_y, &item.y()) { max_y } else { item.y() };
-            max_z = if PartialOrd::gt(&max_z, &item.z()) { max_z } else { item.z() };
-        }
-
-        Some((max_x, max_y, max_z))
+impl<X: DataValue, Y: DataValue, Z: DataValue, S: Sequence<dyn DataPoint<X=X, Y=Y, Z=Z>>> DataSet<X, Y, Z> for S {
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>)) {
+        // The sequence hands out `'static` trait objects; `f` takes them for any lifetime.
+        self.foreach(&mut |index, point| f(index, point));
     }
 }
 
-/// A plain list of y values; each value's x is its index.
-impl DataSet for Vec<Scalar> {
-    type X = Scalar;
-    type Y = Scalar;
-    type Z = Scalar;
+/// A point is an item of a sequence of points.
+///
+/// The `+ 'static` in `visit` matches the `&T` in `SequenceItem<T>`: as a type argument, the
+/// trait object is `'static`, while a bare `&dyn DataPoint<…>` would only live as long as the
+/// reference.
+impl<X: DataValue, Y: DataValue, Z: DataValue, P: DataPoint<X=X, Y=Y, Z=Z> + Clone + Debug + 'static> SequenceItem<dyn DataPoint<X=X, Y=Y, Z=Z>> for P {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataPoint<X=X, Y=Y, Z=Z> + 'static))) {
+        f(index, self);
+    }
+}
 
-    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)) {
-        for (index, point) in self.iter().enumerate() {
-            f(index, &(index as Scalar, *point));
-        }
+/// A plain y value is the point `(index, value)`.
+impl SequenceItem<dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>> for Scalar {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar> + 'static))) {
+        f(index, &(index as Scalar, *self));
+    }
+}
+
+/// A dataset is an item of a sequence of datasets.
+impl<X: DataValue, Y: DataValue, Z: DataValue, D: DataSet<X, Y, Z> + Clone> SequenceItem<dyn DataSet<X, Y, Z>> for D {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataSet<X, Y, Z> + 'static))) {
+        f(index, self);
+    }
+}
+
+#[derive(Copy, Clone)]
+enum Extreme {
+    Min,
+    Max,
+}
+
+/// The component-wise smallest or largest x, y and z of the dataset's points, or `None` when it
+/// has no points.
+fn extreme<X: DataValue, Y: DataValue, Z: DataValue, D: DataSet<X, Y, Z> + ?Sized>(dataset: &D, extreme: Extreme) -> Option<(X, Y, Z)> {
+    fn pick<T: PartialOrd>(current: T, other: T, extreme: Extreme) -> T {
+        let replace = match extreme {
+            Extreme::Min => other < current,
+            Extreme::Max => other > current,
+        };
+
+        if replace { other } else { current }
     }
 
-    fn min(&self) -> Option<(Scalar, Scalar, Scalar)> {
-        let mut iter = self.iter();
-        let mut min = *iter.next()?;
+    let mut result: Option<(X, Y, Z)> = None;
 
-        for item in iter {
-            min = if PartialOrd::lt(&min, item) { min } else { *item };
-        }
+    dataset.points(&mut |_index, point| {
+        let (x, y, z) = (point.x(), point.y(), point.z());
 
-        Some((0.0, min, Scalar::zero()))
-    }
+        result = Some(match result {
+            Some((rx, ry, rz)) => (pick(rx, x, extreme), pick(ry, y, extreme), pick(rz, z, extreme)),
+            None => (x, y, z),
+        });
+    });
 
-    fn max(&self) -> Option<(Scalar, Scalar, Scalar)> {
-        let mut iter = self.iter();
-        let mut max = *iter.next()?;
-
-        for item in iter {
-            max = if PartialOrd::gt(&max, item) { max } else { *item };
-        }
-
-        // Not empty, so `len() - 1` can't underflow.
-        Some(((self.len() - 1) as Scalar, max, Scalar::zero()))
-    }
+    result
 }
 
 #[cfg(test)]

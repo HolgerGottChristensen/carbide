@@ -9,7 +9,8 @@ use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
-use crate::controller::ControllerSequence;
+use crate::controller::{ControllerSequence, DatasetController};
+use crate::sequence::IntoSequence;
 use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, Scales};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area, like
@@ -37,13 +38,16 @@ impl<C: ControllerSequence> Chart<C> {
     /// default is a linear scale unless a controller asks for another kind (see
     /// `DatasetController::default_scale`); the first controller to ask, in sequence order, wins.
     /// A bar chart's x scale is a `CategoryScale` this way.
-    pub fn new(controllers: C) -> Chart<C> {
+    ///
+    /// `controllers` is a sequence of controllers, or a single controller.
+    pub fn new<I: IntoSequence<dyn DatasetController, M, Sequence=C>, M>(controllers: I) -> Chart<C> {
+        let controllers = controllers.into_sequence();
         let mut scales = Scales::new();
 
         for id in [ScaleId::X, ScaleId::Y] {
             let mut default = None;
 
-            controllers.controllers(&mut |controller| {
+            controllers.foreach(&mut |_, controller| {
                 if default.is_none() {
                     default = controller.default_scale(&id);
                 }
@@ -83,7 +87,7 @@ impl<C: ControllerSequence> Chart<C> {
     fn fit_scales(&mut self, env: &mut Environment) {
         let mut bounds = ScaleBounds::default();
 
-        self.controllers.controllers(&mut |controller| {
+        self.controllers.foreach(&mut |_, controller| {
             controller.collect_bounds(&mut bounds, env);
         });
 
@@ -192,7 +196,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
         }
 
         let scales = &self.scales;
-        self.controllers.controllers(&mut |controller| {
+        self.controllers.foreach(&mut |_, controller| {
             controller.draw(&mut canvas, scales, chart_area);
         });
     }
@@ -200,12 +204,15 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
 #[cfg(test)]
 mod tests {
-    use carbide::draw::{Dimension, Scalar};
+    use carbide::color::RED;
+    use carbide::draw::{Dimension, Position, Scalar};
     use carbide::environment::Environment;
-    use carbide::state::{LocalState, State};
+    use carbide::state::{LocalState, Map1, ReadStateExtNew, State};
     use indexmap::IndexMap;
     use crate::controller::{BarController, ControllerSequence, LineController, ScatterController};
     use crate::dataset::DatasetExt;
+    use crate::sequence::Sequence;
+    use crate::DataColor;
     use crate::scale::{Axis, AxisPosition, LinearScale, ScaleId};
     use super::{Chart, SCALE_SPACING};
 
@@ -270,6 +277,97 @@ mod tests {
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 200.0, "Y should cover the large dataset after rebinding, but ends at {y_max}");
+    }
+
+    /// A dataset held in a state can change after the chart is built: the next fit follows it.
+    /// Options still work on it.
+    #[test]
+    fn a_dataset_in_a_state_can_change() {
+        let points = LocalState::new(vec![Position::new(0.0, 1.0), Position::new(1.0, 2.0)]);
+
+        let mut chart = Chart::new(ScatterController::new(points.clone().color(DataColor::Color(RED))));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 10.0, "Y should fit the first points, but reaches {y_max}");
+
+        points.clone().set_value(vec![Position::new(0.0, 1.0), Position::new(1.0, 50.0)]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 50.0, "Y should follow the changed points, but ends at {y_max}");
+    }
+
+    /// The datasets of a controller can be a state of datasets that are states themselves, so
+    /// datasets can be added at runtime, and each one can change on its own.
+    #[test]
+    fn datasets_in_a_state_can_be_added() {
+        let small = LocalState::new(vec![Position::new(0.0, 1.0), Position::new(1.0, 2.0)]);
+        let large = LocalState::new(vec![Position::new(4.0, 50.0), Position::new(5.0, 100.0)]);
+        let datasets: LocalState<Vec<LocalState<Vec<Position>>>> = LocalState::new(vec![small.clone()]);
+
+        let mut chart = Chart::new(ScatterController::new(datasets.clone()));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 10.0, "Y should fit the one dataset, but reaches {y_max}");
+
+        datasets.clone().set_value(vec![small.clone(), large.clone()]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 100.0, "Y should include the added dataset, but ends at {y_max}");
+
+        large.clone().set_value(vec![Position::new(4.0, 50.0), Position::new(5.0, 300.0)]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 300.0, "Y should follow a change inside an added dataset, but ends at {y_max}");
+    }
+
+    /// The controllers of a chart can be a state too, so controllers can be added at runtime.
+    #[test]
+    fn controllers_in_a_state_can_be_added() {
+        let small = ScatterController::new(vec![(0.0, 1.0), (1.0, 2.0)]);
+        let large = ScatterController::new(vec![(0.0, 50.0), (1.0, 100.0)]);
+        let controllers = LocalState::new(vec![small.clone()]);
+
+        let mut chart = Chart::new(controllers.clone());
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        assert_eq!(chart.controllers.count(), 1);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 10.0, "Y should fit the one controller, but reaches {y_max}");
+
+        controllers.clone().set_value(vec![small, large]);
+        chart.fit_scales(&mut env);
+        assert_eq!(chart.controllers.count(), 2);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 100.0, "Y should include the added controller, but ends at {y_max}");
+    }
+
+    /// Any other state, such as one mapped from a model, works once boxed with `as_dyn_read`.
+    /// Plain values in it still use their index as x.
+    #[test]
+    fn a_dataset_mapped_from_a_model() {
+        let model = LocalState::new(vec![2.0, 4.0, 6.0]);
+        let doubled = Map1::read_map(model.clone(), |values: &Vec<Scalar>| {
+            values.iter().map(|value| value * 2.0).collect::<Vec<Scalar>>()
+        }).as_dyn_read();
+
+        let mut chart = Chart::new(ScatterController::new(doubled));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 12.0, "Y should fit the doubled values, but ends at {y_max}");
+        let (_, x_max) = scale_range(&chart, ScaleId::X);
+        assert!(x_max >= 2.0 && x_max < 6.0, "X should be the indices 0..=2, but ends at {x_max}");
+
+        model.clone().set_value(vec![2.0, 4.0, 60.0]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 120.0, "Y should follow the model, but ends at {y_max}");
     }
 
     /// A dataset bound to a custom scale fits that scale, not `ScaleId::Y`, and a scale on the

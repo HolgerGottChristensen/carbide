@@ -4,7 +4,8 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::drawing::{collect_point_bounds, draw_lines, draw_points};
-use crate::DataSetSequence;
+use crate::{DataSet, DataSetSequence};
+use crate::sequence::IntoSequence;
 use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top, like
@@ -16,19 +17,20 @@ use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 /// values, use a `ScatterController` with `show_line(true)`, or set a `LinearScale` with
 /// `Chart::scale`.
 #[derive(Clone, Debug)]
-pub struct LineController<D: DataSetSequence> {
+pub struct LineController<D> {
     dataset_sequence: D,
 }
 
-impl<D: DataSetSequence> LineController<D> {
-    pub fn new(dataset: D) -> LineController<D> {
+impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
+    /// `datasets` is a sequence of datasets, or a single dataset.
+    pub fn new<I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
         LineController {
-            dataset_sequence: dataset,
+            dataset_sequence: datasets.into_sequence(),
         }
     }
 }
 
-impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for LineController<D> {
+impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineController<D> {
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
         collect_point_bounds(&self.dataset_sequence, bounds, env);
     }

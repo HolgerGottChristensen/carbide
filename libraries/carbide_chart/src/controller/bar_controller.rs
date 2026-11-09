@@ -4,7 +4,8 @@ use carbide_core::widget::canvas::CanvasContext;
 use indexmap::IndexMap;
 use crate::controller::DatasetController;
 use crate::controller::drawing::{dataset_color, dataset_scales};
-use crate::{DataColor, DataPoint, DataSet, DataSetSequence};
+use crate::{DataColor, DataSet, DataSetSequence};
+use crate::sequence::IntoSequence;
 use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
 /// Draws each dataset as vertical bars, one per point, growing from zero to the point's y. Based
@@ -19,16 +20,17 @@ use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 ///
 /// Bars in two different bar controllers on the same x scale are not grouped with each other.
 #[derive(Clone, Debug)]
-pub struct BarController<D: DataSetSequence> {
+pub struct BarController<D> {
     dataset_sequence: D,
     category_percentage: Scalar,
     bar_percentage: Scalar,
 }
 
-impl<D: DataSetSequence> BarController<D> {
-    pub fn new(dataset: D) -> BarController<D> {
+impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
+    /// `datasets` is a sequence of datasets, or a single dataset.
+    pub fn new<I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
         BarController {
-            dataset_sequence: dataset,
+            dataset_sequence: datasets.into_sequence(),
             category_percentage: 0.8,
             bar_percentage: 0.9,
         }
@@ -49,9 +51,9 @@ impl<D: DataSetSequence> BarController<D> {
     }
 }
 
-impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for BarController<D> {
+impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarController<D> {
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
-        self.dataset_sequence.datasets(|_dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             // An empty dataset has no bounds and contributes nothing.
             let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
                 return;
@@ -72,7 +74,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         let mut positions: IndexMap<ScaleId, Vec<Scalar>> = IndexMap::new();
         let mut places: Vec<Option<(ScaleId, usize)>> = vec![];
 
-        self.dataset_sequence.datasets(&mut |_dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             let options = dataset.options(ctx.env());
 
             let Some((x_scale, _)) = dataset_scales(scales, &options) else {
@@ -85,7 +87,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
             *group_size += 1;
 
             let x_positions = positions.entry(options.x_scale).or_default();
-            dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+            dataset.points(&mut |_index, point| {
                 x_positions.push(chart_area.left() + x_scale.normalize(point.x()) * chart_area.width());
             });
         });
@@ -100,7 +102,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         // Second pass: the bars.
         ctx.save();
 
-        self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let Some(&Some((ref x_id, group_index))) = places.get(dataset_index) else {
                 return;
             };
@@ -117,7 +119,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
             let y_pixel = |value: Scalar| chart_area.bottom() + (1.0 - y_scale.normalize(value)) * chart_area.height();
             let base = y_pixel(base_value(y_scale));
 
-            dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+            dataset.points(&mut |_index, point| {
                 let center = chart_area.left() + x_scale.normalize(point.x()) * chart_area.width();
                 let (left, width) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
                 let head = y_pixel(point.y());

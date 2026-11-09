@@ -6,7 +6,7 @@ use carbide::color::{Color, GREEN, RED, WHITE};
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataSetSequence};
+use crate::{DataColor, DataSetOptions, DataSetSequence};
 use crate::element::Stepped;
 use crate::scale::{Scale, ScaleBounds, Scales};
 
@@ -17,9 +17,9 @@ const PALETTE: [Color; 3] = [WHITE, GREEN, RED];
 /// bounds and contribute nothing.
 pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, env: &mut Environment)
 where
-    D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>,
+    D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
-    datasets.datasets(|_dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+    datasets.foreach(&mut |_dataset_index, dataset| {
         let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
             return;
         };
@@ -35,9 +35,9 @@ where
 /// line option in Chart.js).
 pub(crate) fn draw_lines<D>(datasets: &D, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect)
 where
-    D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>,
+    D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
-    datasets.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+    datasets.foreach(&mut |dataset_index, dataset| {
         let options = dataset.options(ctx.env());
 
         let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
@@ -50,7 +50,7 @@ where
         let mut prev_x = 0.0;
         let mut prev_y = 0.0;
 
-        dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+        dataset.points(&mut |_index, point| {
             let x = x_scale.normalize(point.x());
             let y = y_scale.normalize(point.y());
 
@@ -136,16 +136,16 @@ where
 /// otherwise the dataset's.
 pub(crate) fn draw_points<D>(datasets: &D, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect)
 where
-    D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar>,
+    D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
-    datasets.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
+    datasets.foreach(&mut |dataset_index, dataset| {
         let options = dataset.options(ctx.env());
 
         let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
             return;
         };
 
-        dataset.points(&mut |_index, point: &dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>| {
+        dataset.points(&mut |_index, point| {
             let x = x_scale.normalize(point.x());
             let y = y_scale.normalize(point.y());
             ctx.begin_path();

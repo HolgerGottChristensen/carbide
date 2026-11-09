@@ -1,7 +1,7 @@
 use carbide::draw::Scalar;
 use carbide::environment::{Environment};
 use carbide::state::{IntoReadState, ReadState};
-use crate::{DataColor, DataPoint, DataSet, DataSetOptions};
+use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataValue};
 use crate::element::Stepped;
 use crate::scale::ScaleId;
 
@@ -10,7 +10,6 @@ use crate::scale::ScaleId;
 #[derive(Debug, Clone)]
 pub struct OptionsDataset<T, C, S, XS, YS>
 where
-    T: DataSet + 'static,
     C: ReadState<T=DataColor>,
     S: ReadState<T=Stepped>,
     XS: ReadState<T=ScaleId>,
@@ -24,7 +23,7 @@ where
 }
 
 impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Stepped, ScaleId, ScaleId> {
-    pub fn new<T: DataSet + 'static>(dataset: T) -> OptionsDataset<T, DataColor, Stepped, ScaleId, ScaleId> {
+    pub fn new<T>(dataset: T) -> OptionsDataset<T, DataColor, Stepped, ScaleId, ScaleId> {
         OptionsDataset {
             inner: dataset,
             color: None,
@@ -37,7 +36,6 @@ impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Stepped, ScaleId, ScaleId>
 
 impl<T, C, S, XS, YS> OptionsDataset<T, C, S, XS, YS>
 where
-    T: DataSet + 'static,
     C: ReadState<T=DataColor>,
     S: ReadState<T=Stepped>,
     XS: ReadState<T=ScaleId>,
@@ -86,27 +84,25 @@ where
     }
 }
 
-impl<T, C, S, XS, YS> DataSet for OptionsDataset<T, C, S, XS, YS>
+/// Implemented directly rather than through `Sequence`, so it can override `options`: an
+/// `OptionsDataset` is not a sequence of points itself.
+impl<X: DataValue, Y: DataValue, Z: DataValue, T, C, S, XS, YS> DataSet<X, Y, Z> for OptionsDataset<T, C, S, XS, YS>
 where
-    T: DataSet + 'static,
+    T: DataSet<X, Y, Z>,
     C: ReadState<T=DataColor>,
     S: ReadState<T=Stepped>,
     XS: ReadState<T=ScaleId>,
     YS: ReadState<T=ScaleId>,
 {
-    type X = T::X;
-    type Y = T::Y;
-    type Z = T::Z;
-
-    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=Self::X, Y=Self::Y, Z=Self::Z>)) {
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>)) {
         self.inner.points(f);
     }
 
-    fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
+    fn min(&self) -> Option<(X, Y, Z)> {
         self.inner.min()
     }
 
-    fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
+    fn max(&self) -> Option<(X, Y, Z)> {
         self.inner.max()
     }
 

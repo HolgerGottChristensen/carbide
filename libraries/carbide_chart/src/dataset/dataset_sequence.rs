@@ -1,105 +1,23 @@
-use std::fmt::Debug;
 use crate::{DataSet, DataValue};
+use crate::sequence::{tuple_sequences, Sequence};
 
-pub trait DataSetSequence: Debug + 'static {
-    type X: DataValue;
-    type Y: DataValue;
-    type Z: DataValue;
+/// The datasets of one controller: any `Sequence` of datasets that share their point types.
+///
+/// Implemented for, with `D` any dataset that is `Clone`:
+/// - tuples `(D1,)` to `(D1, …, D12)`, each of its own dataset type;
+/// - `Vec<D>`;
+/// - `LocalState<Vec<D>>`;
+/// - `Box<dyn AnyReadState<T=Vec<D>>>`. Any other state of a `Vec` of datasets (a mapped state,
+///   `GlobalState`, `FieldState`, `ValueState`) is a sequence once boxed with `.as_dyn_read()`.
+///
+/// With a `Vec` or a state, the number of datasets can change at runtime:
+/// `LocalState<Vec<LocalState<Vec<Position>>>>` is a sequence of datasets. A type of your own
+/// becomes one by implementing `Sequence<dyn DataSet<X, Y, Z>>`.
+///
+/// A single dataset is not a `DataSetSequence`, but controllers take an `IntoSequence`, which
+/// turns a single dataset into the 1-tuple `(D,)`, so it can be passed on its own.
+pub trait DataSetSequence<X: DataValue, Y: DataValue, Z: DataValue>: Sequence<dyn DataSet<X, Y, Z>> {}
 
-    /// The smallest x, y and z over every dataset, or `None` when no dataset has points.
-    fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
-    /// The largest x, y and z over every dataset, or `None` when no dataset has points.
-    fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)>;
+impl<X: DataValue, Y: DataValue, Z: DataValue, S: Sequence<dyn DataSet<X, Y, Z>>> DataSetSequence<X, Y, Z> for S {}
 
-    fn datasets<'a, F: FnMut(usize, &'a dyn DataSet<X=Self::X, Y=Self::Y, Z=Self::Z>)>(&'a self, f: F) where Self::X: 'a, Self::Y: 'a, Self::Z: 'a;
-}
-
-#[derive(Copy, Clone)]
-enum Extreme {
-    Min,
-    Max,
-}
-
-fn pick<T: PartialOrd>(current: T, other: T, extreme: Extreme) -> T {
-    let keep_current = match extreme {
-        Extreme::Min => current < other,
-        Extreme::Max => current > other,
-    };
-
-    if keep_current { current } else { other }
-}
-
-/// Combines two optional (x, y, z) extremes component-wise. A `None` side (an empty dataset)
-/// contributes nothing.
-fn combine<X, Y, Z>(current: Option<(X, Y, Z)>, other: Option<(X, Y, Z)>, extreme: Extreme) -> Option<(X, Y, Z)>
-where
-    X: DataValue + PartialOrd,
-    Y: DataValue + PartialOrd,
-    Z: DataValue + PartialOrd,
-{
-    match (current, other) {
-        (Some((cx, cy, cz)), Some((ox, oy, oz))) => Some((pick(cx, ox, extreme), pick(cy, oy, extreme), pick(cz, oz, extreme))),
-        (current, None) => current,
-        (None, other) => other,
-    }
-}
-
-macro_rules! tuple_sequence_impl {
-    ($first_generic:ident $(, $generic:ident)*) => {
-        #[allow(non_snake_case)]
-        #[allow(unused_parens)]
-        #[allow(unused_mut)]
-        impl<X: DataValue + PartialOrd, Y: DataValue + PartialOrd, Z: DataValue + PartialOrd, $first_generic: DataSet<X=X, Y=Y, Z=Z> $(, $generic: DataSet<X=X, Y=Y, Z=Z>)*> DataSetSequence for ($first_generic $(, $generic)*) {
-            type X = X;
-            type Y = Y;
-            type Z = Z;
-
-            fn min(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
-                let ($first_generic $(, $generic)*) = self;
-                let mut min = $first_generic.min();
-
-                $(
-                    min = combine(min, $generic.min(), Extreme::Min);
-                )*
-
-                min
-            }
-
-            fn max(&self) -> Option<(Self::X, Self::Y, Self::Z)> {
-                let ($first_generic $(, $generic)*) = self;
-                let mut max = $first_generic.max();
-
-                $(
-                    max = combine(max, $generic.max(), Extreme::Max);
-                )*
-
-                max
-            }
-
-            fn datasets<'a, F: FnMut(usize, &'a dyn DataSet<X=Self::X, Y=Self::Y, Z=Self::Z>)>(&'a self, mut f: F) where Self::X: 'a, Self::Y: 'a, Self::Z: 'a {
-                let ($first_generic $(, $generic)*) = self;
-                let mut index = 0;
-
-                f(index, $first_generic);
-
-                $(
-                    index += 1;
-                    f(index, $generic);
-                )*
-            }
-        }
-    };
-}
-
-tuple_sequence_impl!(W1);
-tuple_sequence_impl!(W1, W2);
-tuple_sequence_impl!(W1, W2, W3);
-tuple_sequence_impl!(W1, W2, W3, W4);
-tuple_sequence_impl!(W1, W2, W3, W4, W5);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11);
-tuple_sequence_impl!(W1, W2, W3, W4, W5, W6, W7, W8, W9, W10, W11, W12);
+tuple_sequences!([X: DataValue, Y: DataValue, Z: DataValue,] dyn DataSet<X, Y, Z>);
