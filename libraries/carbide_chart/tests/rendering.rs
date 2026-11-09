@@ -4,7 +4,9 @@ use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 use support::{
-    bar_chart, bars_and_line_chart, example_chart, labelled_bar_chart, scatter_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
+    bar_chart, bars_and_line_chart, bars_on_linear_x_scale_chart, bars_on_secondary_y_scale_chart,
+    bars_with_x_scale_on_top_chart, example_chart, labelled_bar_chart, line_then_bars_chart, scales_on_all_four_sides_chart,
+    scatter_chart, scatter_with_lines_chart, two_bar_controllers_chart, vertical_category_scale_chart, vertical_category_scale_on_right_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
     stacked_scales_on_left_chart, stacked_scales_on_top_chart, two_y_scales_chart, x_scale_on_top_chart,
 };
 
@@ -89,6 +91,99 @@ fn stacked_scales_on_left() {
     let mut harness = Harness::new(stacked_scales_on_left_chart(), Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_scales_on_left");
+}
+
+/// The point clouds of `scatter_points_only` with `show_line(true)`, the second one also
+/// `stepped(After)`. Pins down that a scatter chart's lines connect the points in data order, not
+/// sorted by x, so they double back like Chart.js's `showLine`; and that stepped lines work on a
+/// scatter chart too.
+#[test]
+fn scatter_with_lines() {
+    let mut harness = Harness::new(scatter_with_lines_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("scatter_with_lines");
+}
+
+/// Bars on a secondary y scale: margin as bars on a `percent` scale on the right, revenue as a
+/// line on the default y scale on the left. Pins down that bars grow from zero on the scale they
+/// are bound to, whose range is stretched to include zero, while the line's scale is not.
+#[test]
+fn bars_on_secondary_y_scale() {
+    let mut harness = Harness::new(bars_on_secondary_y_scale_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_on_secondary_y_scale");
+}
+
+/// Bars with their category x scale at the top, labelled. Pins down a category scale's labels,
+/// tick marks and grid offset on the top side, with bars still growing up from zero at the
+/// bottom of the y scale.
+#[test]
+fn bars_with_x_scale_on_top() {
+    let mut harness = Harness::new(bars_with_x_scale_on_top_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_with_x_scale_on_top");
+}
+
+/// Bars at numeric x values (hours of the day) on an explicit linear x scale. Pins down the
+/// linear scale's offset of half a tick step at both ends, and bar widths taken from the smallest
+/// gap between bars or ticks.
+#[test]
+fn bars_on_linear_x_scale() {
+    let mut harness = Harness::new(bars_on_linear_x_scale_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_on_linear_x_scale");
+}
+
+/// A status over time on a labelled vertical category scale with grid offset. Pins down that
+/// vertical category scales run from top to bottom (the first label at the top), with labels on
+/// the left and grid lines between the categories.
+#[test]
+fn vertical_category_scale() {
+    let mut harness = Harness::new(vertical_category_scale_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("vertical_category_scale");
+}
+
+/// A temperature line on the default linear y scale, and a status line on a vertical category
+/// scale on the right, without grid lines. Pins down a category scale's labels on the right side
+/// next to a linear scale on the left.
+#[test]
+fn vertical_category_scale_on_right() {
+    let mut harness = Harness::new(vertical_category_scale_on_right_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("vertical_category_scale_on_right");
+}
+
+/// The data of `bars_and_line_on_shared_scales` with the controllers the other way round: the
+/// line controller first. Its default x scale wins, a category scale without grid offset, so grid
+/// lines run through the bar groups instead of between them; the bars still offset the scale.
+/// The line is also drawn first, under the bars.
+#[test]
+fn line_then_bars() {
+    let mut harness = Harness::new(line_then_bars_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("line_then_bars");
+}
+
+/// Two bar controllers on the same x scale. Bars are only grouped within one controller, so the
+/// second controller's bars are drawn over the first's in the same slot. This pins down that
+/// current behaviour; Chart.js groups bar datasets across controllers, so it changes if that is
+/// implemented.
+#[test]
+fn two_bar_controllers_on_one_x_scale() {
+    let mut harness = Harness::new(two_bar_controllers_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("two_bar_controllers_on_one_x_scale");
+}
+
+/// A scale on every side of the chart area at once: °C along the bottom and humidity on the left
+/// for one dataset, °F along the top and pressure on the right for the other. Pins down that each
+/// side's band is laid out independently and the chart area gives up all four.
+#[test]
+fn scales_on_all_four_sides() {
+    let mut harness = Harness::new(scales_on_all_four_sides_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("scales_on_all_four_sides");
 }
 
 /// A plain scatter chart: two datasets of (x, y) points with numeric x values, points only, as
@@ -182,6 +277,125 @@ mod support {
     const PERCENT: ScaleId = ScaleId::new("percent");
     const UNITS: ScaleId = ScaleId::new("units");
     const FAHRENHEIT: ScaleId = ScaleId::new("fahrenheit");
+    const STATUS: ScaleId = ScaleId::new("status");
+    const PRESSURE: ScaleId = ScaleId::new("pressure");
+
+    const STATUS_LABELS: [&str; 4] = ["Low", "Medium", "High", "Critical"];
+
+    /// Margin as bars on `percent` on the right, revenue as a line on Y on the left.
+    pub fn bars_on_secondary_y_scale_chart() -> impl Widget {
+        let margin = vec![0.12, 0.18, 0.15, 0.08, 0.22, 0.25, 0.31]
+            .y_scale(PERCENT)
+            .color(DataColor::Color(GREEN));
+        let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
+
+        Chart::new((
+            BarController::new(margin),
+            LineController::new(revenue),
+        ))
+            .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Chart.js's sample votes as bars, with the labelled category x scale at the top.
+    pub fn bars_with_x_scale_on_top_chart() -> impl Widget {
+        let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+        Chart::new(BarController::new(votes))
+            .scale(
+                ScaleId::X,
+                CategoryScale::new(Axis::Horizontal)
+                    .position(AxisPosition::Top)
+                    .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
+                    .grid_offset(true),
+            )
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Visitors per four-hour block of a day, as bars at numeric x values (the hour) on a
+    /// linear x scale.
+    pub fn bars_on_linear_x_scale_chart() -> impl Widget {
+        let visitors = vec![(0.0, 3.0), (4.0, 1.0), (8.0, 12.0), (12.0, 18.0), (16.0, 15.0), (20.0, 9.0), (24.0, 4.0)];
+
+        Chart::new(BarController::new(visitors))
+            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// A status per day (an index into `STATUS_LABELS`) on a vertical category y scale.
+    pub fn vertical_category_scale_chart() -> impl Widget {
+        let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0];
+
+        Chart::new(LineController::new(status))
+            .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(STATUS_LABELS).grid_offset(true))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// A temperature on the default y scale, and the status from `vertical_category_scale_chart`
+    /// on a category scale on the right.
+    pub fn vertical_category_scale_on_right_chart() -> impl Widget {
+        let temperature = vec![18.0, 21.0, 24.0, 29.0, 34.0, 30.0, 23.0];
+        let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0]
+            .y_scale(STATUS)
+            .color(DataColor::Color(RED));
+
+        Chart::new(LineController::new((temperature, status)))
+            .scale(STATUS, CategoryScale::new(Axis::Vertical).position(AxisPosition::Right).labels(STATUS_LABELS).grid_lines(false))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// `bars_and_line_chart` with the line controller before the bar controller.
+    pub fn line_then_bars_chart() -> impl Widget {
+        let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
+        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0];
+        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0, 25.0, 35.0]
+            .color(DataColor::Color(RED));
+
+        Chart::new((
+            LineController::new(profit),
+            BarController::new((revenue, costs)),
+        ))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Revenue and costs as bars in two separate bar controllers on the default scales.
+    pub fn two_bar_controllers_chart() -> impl Widget {
+        let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
+        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0]
+            .color(DataColor::Color(GREEN));
+
+        Chart::new((
+            BarController::new(revenue),
+            BarController::new(costs),
+        ))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Humidity by temperature in °C on the default scales (bottom and left), and air pressure by
+    /// temperature in °F on scales at the top and on the right.
+    pub fn scales_on_all_four_sides_chart() -> impl Widget {
+        let humidity = vec![(0.0, 82.0), (20.0, 70.0), (40.0, 64.0), (60.0, 55.0), (80.0, 48.0), (100.0, 40.0)];
+        let pressure = vec![(32.0, 1002.0), (68.0, 1008.0), (104.0, 1011.0), (140.0, 1016.0), (176.0, 1021.0), (212.0, 1026.0)]
+            .x_scale(FAHRENHEIT)
+            .y_scale(PRESSURE)
+            .color(DataColor::Color(GREEN));
+
+        Chart::new((
+            ScatterController::new(humidity).show_line(true),
+            ScatterController::new(pressure).show_line(true),
+        ))
+            .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false))
+            .scale(PRESSURE, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
 
     /// The example's two datasets, with the default x scale replaced by one at the top.
     pub fn x_scale_on_top_chart() -> impl Widget {
@@ -235,6 +449,17 @@ mod support {
         let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)];
 
         Chart::new(ScatterController::new((first, second)))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// `scatter_chart`'s points with lines through them in data order, the second dataset stepped.
+    pub fn scatter_with_lines_chart() -> impl Widget {
+        let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
+        let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)]
+            .stepped(Stepped::After);
+
+        Chart::new(ScatterController::new((first, second)).show_line(true))
             .border().color(BLUE)
             .locale(ValueState::new(locale!("da")))
     }
