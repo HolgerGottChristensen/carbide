@@ -165,10 +165,10 @@ fn line_then_bars() {
     harness.snapshot("line_then_bars");
 }
 
-/// Two bar controllers on the same x scale. Bars are only grouped within one controller, so the
-/// second controller's bars are drawn over the first's in the same slot. This pins down that
-/// current behaviour; Chart.js groups bar datasets across controllers, so it changes if that is
-/// implemented.
+/// Two bar controllers on the same x scale. Bars are grouped only within one controller, so
+/// separate controllers overlap: the second controller's bars are drawn over the first's in the
+/// same slot, like the layers of a `ZStack`. This is intended (unlike Chart.js, which groups
+/// across them); use one controller with several datasets for side-by-side bars.
 #[test]
 fn two_bar_controllers_on_one_x_scale() {
     let mut harness = Harness::new(two_bar_controllers_chart(), Dimension::new(600.0, 500.0));
