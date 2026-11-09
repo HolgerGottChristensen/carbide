@@ -28,7 +28,7 @@ pub trait DatasetController: Debug + 'static {
     /// `ScaleId::Y`), like the per-type `overrides.scales` in Chart.js: a bar chart wants a
     /// category scale along x. `Chart::new` asks its controllers in order and uses the first
     /// answer; scales set with `Chart::scale` replace it. `None` keeps the default linear scale.
-    fn default_scale(&self, _id: ScaleId) -> Option<Box<dyn Scale>> {
+    fn default_scale(&self, _id: &ScaleId) -> Option<Box<dyn Scale>> {
         None
     }
 }

@@ -116,8 +116,8 @@ where
         DataSetOptions {
             color: self.color.clone().map_or(options.color, |mut color| { color.sync(env); *color.value() }),
             stepped: self.stepped.clone().map_or(options.stepped, |mut stepped| { stepped.sync(env); *stepped.value() }),
-            x_scale: self.x_scale.clone().map_or(options.x_scale, |mut x_scale| { x_scale.sync(env); *x_scale.value() }),
-            y_scale: self.y_scale.clone().map_or(options.y_scale, |mut y_scale| { y_scale.sync(env); *y_scale.value() }),
+            x_scale: self.x_scale.clone().map_or(options.x_scale, |mut x_scale| { x_scale.sync(env); x_scale.value().clone() }),
+            y_scale: self.y_scale.clone().map_or(options.y_scale, |mut y_scale| { y_scale.sync(env); y_scale.value().clone() }),
         }
     }
 }

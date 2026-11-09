@@ -59,9 +59,9 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
 
             let options = dataset.options(env);
 
-            bounds.include(options.x_scale, x_min, x_max);
-            bounds.include(options.y_scale, y_min.min(0.0), y_max.max(0.0));
-            bounds.request_offset(options.x_scale);
+            bounds.include(&options.x_scale, x_min, x_max);
+            bounds.include(&options.y_scale, y_min.min(0.0), y_max.max(0.0));
+            bounds.request_offset(&options.x_scale);
         });
     }
 
@@ -80,8 +80,8 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
                 return;
             };
 
-            let group_size = group_sizes.entry(options.x_scale).or_insert(0);
-            places.push(Some((options.x_scale, *group_size)));
+            let group_size = group_sizes.entry(options.x_scale.clone()).or_insert(0);
+            places.push(Some((options.x_scale.clone(), *group_size)));
             *group_size += 1;
 
             let x_positions = positions.entry(options.x_scale).or_default();
@@ -92,7 +92,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
 
         let rulers: IndexMap<ScaleId, Scalar> = positions.into_iter()
             .filter_map(|(id, x_positions)| {
-                let scale = scales.get(id)?;
+                let scale = scales.get(&id)?;
                 Some((id, min_sample_size(x_positions, scale, chart_area)))
             })
             .collect();
@@ -101,7 +101,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         ctx.save();
 
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
-            let Some(Some((x_id, group_index))) = places.get(dataset_index).copied() else {
+            let Some(&Some((ref x_id, group_index))) = places.get(dataset_index) else {
                 return;
             };
 
@@ -111,8 +111,8 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
                 return;
             };
 
-            let group_size = group_sizes[&x_id];
-            let ruler = rulers.get(&x_id).copied().unwrap_or(chart_area.width());
+            let group_size = group_sizes[x_id];
+            let ruler = rulers.get(x_id).copied().unwrap_or(chart_area.width());
 
             let y_pixel = |value: Scalar| chart_area.bottom() + (1.0 - y_scale.normalize(value)) * chart_area.height();
             let base = y_pixel(base_value(y_scale));
@@ -145,8 +145,8 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
     /// Chart.js's bar `overrides` (`_index_: {type: 'category', offset: true, grid: {offset:
     /// true}}`). The offset itself is requested in `collect_bounds`, so it also applies to an x
     /// scale set with `Chart::scale`.
-    fn default_scale(&self, id: ScaleId) -> Option<Box<dyn Scale>> {
-        (id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal).grid_offset(true)) as Box<dyn Scale>)
+    fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
+        (*id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal).grid_offset(true)) as Box<dyn Scale>)
     }
 }
 

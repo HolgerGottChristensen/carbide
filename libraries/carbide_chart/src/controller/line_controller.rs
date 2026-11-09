@@ -45,7 +45,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
 
     /// A category x scale, without the bar chart's offset or grid offset: Chart.js's line
     /// `overrides` (`_index_: {type: 'category'}`).
-    fn default_scale(&self, id: ScaleId) -> Option<Box<dyn Scale>> {
-        (id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal)) as Box<dyn Scale>)
+    fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
+        (*id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal)) as Box<dyn Scale>)
     }
 }

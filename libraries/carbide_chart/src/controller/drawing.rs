@@ -26,8 +26,8 @@ where
 
         let options = dataset.options(env);
 
-        bounds.include(options.x_scale, x_min, x_max);
-        bounds.include(options.y_scale, y_min, y_max);
+        bounds.include(&options.x_scale, x_min, x_max);
+        bounds.include(&options.y_scale, y_min, y_max);
     });
 }
 
@@ -176,5 +176,5 @@ pub(crate) fn dataset_color(options: &DataSetOptions, dataset_index: usize) -> C
 /// The x and y scales a dataset is bound to, or `None` when the chart has no scale with one of
 /// those ids. The chart warns about unknown ids when it fits its scales (see `Chart::fit_scales`).
 pub(crate) fn dataset_scales<'a>(scales: &'a Scales, options: &DataSetOptions) -> Option<(&'a dyn Scale, &'a dyn Scale)> {
-    Some((scales.get(options.x_scale)?, scales.get(options.y_scale)?))
+    Some((scales.get(&options.x_scale)?, scales.get(&options.y_scale)?))
 }

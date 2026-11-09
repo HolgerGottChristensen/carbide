@@ -45,7 +45,7 @@ impl<C: ControllerSequence> Chart<C> {
 
             controllers.controllers(&mut |controller| {
                 if default.is_none() {
-                    default = controller.default_scale(id);
+                    default = controller.default_scale(&id);
                 }
             });
 
@@ -70,8 +70,10 @@ impl<C: ControllerSequence> Chart<C> {
     ///
     /// Scales on the same side of the chart area are stacked outwards, each in its own band:
     /// by `Scale::weight`, then in the order they were added, the first closest to the area.
-    pub fn scale(mut self, id: ScaleId, scale: impl Scale) -> Chart<C> {
-        self.scales.insert(id, scale);
+    ///
+    /// `id` is a `ScaleId`, or a `String` for a scale named at runtime.
+    pub fn scale(mut self, id: impl Into<ScaleId>, scale: impl Scale) -> Chart<C> {
+        self.scales.insert(id.into(), scale);
         self
     }
 
@@ -86,7 +88,8 @@ impl<C: ControllerSequence> Chart<C> {
         });
 
         for id in bounds.ids() {
-            if !self.scales.contains(id) && self.warned_scale_ids.insert(id) {
+            if !self.scales.contains(id) && !self.warned_scale_ids.contains(id) {
+                self.warned_scale_ids.insert(id.clone());
                 log::warn!("Chart has no scale with id {:?}; datasets bound to it are not drawn", id.name());
             }
         }
@@ -103,7 +106,7 @@ impl<C: ControllerSequence> Chart<C> {
         let mut offsets = IndexMap::new();
 
         let mut stack_side = |side: AxisPosition| -> Scalar {
-            let mut on_side: Vec<(i32, usize, ScaleId)> = self.scales.iter()
+            let mut on_side: Vec<(i32, usize, &ScaleId)> = self.scales.iter()
                 .enumerate()
                 .filter(|(_, (_, scale))| scale.axis_position() == side)
                 .map(|(index, (id, scale))| (scale.weight(), index, id))
@@ -113,7 +116,7 @@ impl<C: ControllerSequence> Chart<C> {
 
             let mut depth = 0.0;
             for (_, _, id) in on_side {
-                let size = sizes.get(&id).copied().unwrap_or(0.0);
+                let size = sizes.get(id).copied().unwrap_or(0.0);
 
                 // Spacing goes only between two bands: never against the chart area, and not
                 // next to a scale that takes no space.
@@ -121,7 +124,7 @@ impl<C: ControllerSequence> Chart<C> {
                     depth += SCALE_SPACING;
                 }
 
-                offsets.insert(id, depth);
+                offsets.insert(id.clone(), depth);
                 depth += size;
             }
 
@@ -154,8 +157,8 @@ struct ScaleLayout {
 }
 
 impl ScaleLayout {
-    fn offset(&self, id: ScaleId) -> Scalar {
-        self.offsets.get(&id).copied().unwrap_or(0.0)
+    fn offset(&self, id: &ScaleId) -> Scalar {
+        self.offsets.get(id).copied().unwrap_or(0.0)
     }
 }
 
@@ -174,7 +177,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
         let sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
-            .map(|(id, scale)| (id, scale.size(&mut canvas)))
+            .map(|(id, scale)| (id.clone(), scale.size(&mut canvas)))
             .collect();
 
         let layout = self.layout(&sizes);
@@ -221,7 +224,7 @@ mod tests {
 
         assert_eq!(scale_range(&split, ScaleId::X), scale_range(&combined, ScaleId::X));
         assert_eq!(scale_range(&split, ScaleId::Y), scale_range(&combined, ScaleId::Y));
-        assert_eq!(split.scales.get(ScaleId::Y).unwrap().ticks(), combined.scales.get(ScaleId::Y).unwrap().ticks());
+        assert_eq!(split.scales.get(&ScaleId::Y).unwrap().ticks(), combined.scales.get(&ScaleId::Y).unwrap().ticks());
 
         // Sanity check that the shared range really spans both controllers' data: the y range
         // must cover the first controller's -60 and the second controller's 92.
@@ -295,6 +298,25 @@ mod tests {
         assert_eq!(area.right(), 400.0 - 30.0 - 45.0, "right: padding + percent's band");
     }
 
+    /// Scales can be named from runtime data, one per data source here, and a dataset bound
+    /// with an owned id finds the scale added with an equal id.
+    #[test]
+    fn scales_named_at_runtime_fit_their_datasets() {
+        let source = String::from("sensor");
+        let id = ScaleId::owned(format!("{source}-y"));
+
+        let readings = vec![40.0, 55.0, 70.0].y_scale(id.clone());
+
+        let chart = fitted(
+            Chart::new(ScatterController::new(readings))
+                .scale(format!("{source}-y"), LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
+        );
+
+        let (min, max) = scale_range(&chart, id);
+        assert!(min <= 40.0 && max >= 70.0, "the runtime scale should fit the readings, got {min}..{max}");
+        assert_eq!(scale_range(&chart, ScaleId::Y), (0.0, 1.0), "Y has no data bound to it");
+    }
+
     /// Without a scale on the right there is no band there.
     #[test]
     fn default_scales_have_no_right_band() {
@@ -322,8 +344,8 @@ mod tests {
         chart.dimension = Dimension::new(400.0, 300.0);
         let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]));
 
-        assert_eq!(layout.offset(INNER), 0.0);
-        assert_eq!(layout.offset(OUTER), 40.0 + SCALE_SPACING);
+        assert_eq!(layout.offset(&INNER), 0.0);
+        assert_eq!(layout.offset(&OUTER), 40.0 + SCALE_SPACING);
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 40.0 - SCALE_SPACING - 25.0);
     }
 
@@ -341,7 +363,7 @@ mod tests {
         chart.dimension = Dimension::new(400.0, 300.0);
         let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]));
 
-        assert_eq!(layout.offset(OUTER), 0.0);
+        assert_eq!(layout.offset(&OUTER), 0.0);
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 25.0);
     }
 
@@ -359,9 +381,9 @@ mod tests {
         chart.dimension = Dimension::new(400.0, 300.0);
         let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]));
 
-        assert_eq!(layout.offset(ScaleId::Y), 0.0);
-        assert_eq!(layout.offset(LIGHT), 30.0 + SCALE_SPACING);
-        assert_eq!(layout.offset(HEAVY), 30.0 + SCALE_SPACING + 10.0 + SCALE_SPACING);
+        assert_eq!(layout.offset(&ScaleId::Y), 0.0);
+        assert_eq!(layout.offset(&LIGHT), 30.0 + SCALE_SPACING);
+        assert_eq!(layout.offset(&HEAVY), 30.0 + SCALE_SPACING + 10.0 + SCALE_SPACING);
         assert_eq!(layout.chart_area.left(), 30.0 + 30.0 + 10.0 + 20.0 + 2.0 * SCALE_SPACING);
     }
 
@@ -376,13 +398,13 @@ mod tests {
         let (y_min, _) = scale_range(&bars, ScaleId::Y);
         assert!(y_min <= 0.0, "bars should start the y scale at zero, but it starts at {y_min}");
 
-        let x = bars.scales.get(ScaleId::X).unwrap();
+        let x = bars.scales.get(&ScaleId::X).unwrap();
         assert!(x.normalize(0.0) > 0.0 && x.normalize(2.0) < 1.0, "the first and last bar should sit inside the chart area");
 
         let points = fitted(Chart::new(ScatterController::new(revenue)));
         let (y_min, _) = scale_range(&points, ScaleId::Y);
         assert!(y_min > 0.0, "without bars the y scale needn't include zero, but starts at {y_min}");
-        assert_eq!(points.scales.get(ScaleId::X).unwrap().normalize(0.0), 0.0);
+        assert_eq!(points.scales.get(&ScaleId::X).unwrap().normalize(0.0), 0.0);
     }
 
     /// A bar chart's default x scale is a category scale, so six bars get six whole ticks; a
@@ -393,16 +415,16 @@ mod tests {
         let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
 
         let bars = fitted(Chart::new(BarController::new(votes.clone())));
-        assert_eq!(bars.scales.get(ScaleId::X).unwrap().ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0]);
+        assert_eq!(bars.scales.get(&ScaleId::X).unwrap().ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0]);
 
         let points = fitted(Chart::new(ScatterController::new(votes.clone())));
-        assert!(points.scales.get(ScaleId::X).unwrap().ticks().contains(&0.5), "a linear x scale picks half steps here");
+        assert!(points.scales.get(&ScaleId::X).unwrap().ticks().contains(&0.5), "a linear x scale picks half steps here");
 
         let bars_on_linear = fitted(
             Chart::new(BarController::new(votes))
                 .scale(ScaleId::X, LinearScale::new(Axis::Horizontal))
         );
-        assert!(bars_on_linear.scales.get(ScaleId::X).unwrap().ticks().contains(&0.5), "an explicit scale replaces the default");
+        assert!(bars_on_linear.scales.get(&ScaleId::X).unwrap().ticks().contains(&0.5), "an explicit scale replaces the default");
     }
 
     /// A line chart's default x scale is a category scale like a bar chart's, but without the
@@ -413,17 +435,17 @@ mod tests {
         let values = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
 
         let lines = fitted(Chart::new(LineController::new(values.clone())));
-        let x = lines.scales.get(ScaleId::X).unwrap();
+        let x = lines.scales.get(&ScaleId::X).unwrap();
         assert_eq!(x.ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0]);
         assert_eq!(x.normalize(0.0), 0.0);
         assert_eq!(x.normalize(5.0), 1.0);
 
         let lines_and_bars = fitted(Chart::new((LineController::new(values.clone()), BarController::new(values))));
-        assert!(lines_and_bars.scales.get(ScaleId::X).unwrap().normalize(0.0) > 0.0, "bars offset the line chart's x scale");
+        assert!(lines_and_bars.scales.get(&ScaleId::X).unwrap().normalize(0.0) > 0.0, "bars offset the line chart's x scale");
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {
-        entries.iter().copied().collect()
+        entries.iter().cloned().collect()
     }
 
     fn fitted<C: ControllerSequence>(mut chart: Chart<C>) -> Chart<C> {
@@ -432,7 +454,7 @@ mod tests {
     }
 
     fn scale_range<C: ControllerSequence>(chart: &Chart<C>, id: ScaleId) -> (Scalar, Scalar) {
-        let range = chart.scales.get(id).expect("the chart should have the scale").range();
+        let range = chart.scales.get(&id).expect("the chart should have the scale").range();
         (range.start, range.end)
     }
 }

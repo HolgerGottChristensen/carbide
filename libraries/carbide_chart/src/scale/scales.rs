@@ -35,28 +35,34 @@ pub struct ScaleBounds {
 impl ScaleBounds {
     /// Asks for the scale `id` to be offset on this fit (see `Scale::set_offset`). Bar
     /// controllers request it for the scale their bars are spread along.
-    pub fn request_offset(&mut self, id: ScaleId) {
-        self.offsets.insert(id);
+    pub fn request_offset(&mut self, id: &ScaleId) {
+        if !self.offsets.contains(id) {
+            self.offsets.insert(id.clone());
+        }
     }
 
     /// Whether any controller requested an offset for the scale `id` on this fit.
-    pub fn offset_requested(&self, id: ScaleId) -> bool {
-        self.offsets.contains(&id)
+    pub fn offset_requested(&self, id: &ScaleId) -> bool {
+        self.offsets.contains(id)
     }
 
     /// Grows the bounds of the scale `id` to include `min..=max`.
-    pub fn include(&mut self, id: ScaleId, min: Scalar, max: Scalar) {
-        self.bounds.entry(id).or_default().include(min, max);
+    pub fn include(&mut self, id: &ScaleId, min: Scalar, max: Scalar) {
+        // Looked up by reference first, so an owned id is only cloned the first time it is seen.
+        match self.bounds.get_mut(id) {
+            Some(bounds) => bounds.include(min, max),
+            None => self.bounds.entry(id.clone()).or_default().include(min, max),
+        }
     }
 
     /// The bounds collected for the scale `id`; empty when nothing was reported for it.
-    pub fn get(&self, id: ScaleId) -> DataBounds {
-        self.bounds.get(&id).copied().unwrap_or_default()
+    pub fn get(&self, id: &ScaleId) -> DataBounds {
+        self.bounds.get(id).copied().unwrap_or_default()
     }
 
     /// Every scale id something was reported for, in the order they were first reported.
-    pub fn ids(&self) -> impl Iterator<Item=ScaleId> + '_ {
-        self.bounds.keys().copied()
+    pub fn ids(&self) -> impl Iterator<Item=&ScaleId> + '_ {
+        self.bounds.keys()
     }
 }
 
@@ -89,25 +95,25 @@ impl Scales {
     }
 
     /// The scale with the given id, if the chart has one.
-    pub fn get(&self, id: ScaleId) -> Option<&dyn Scale> {
-        self.scales.get(&id).map(|scale| scale.as_ref())
+    pub fn get(&self, id: &ScaleId) -> Option<&dyn Scale> {
+        self.scales.get(id).map(|scale| scale.as_ref())
     }
 
-    pub fn contains(&self, id: ScaleId) -> bool {
-        self.scales.contains_key(&id)
+    pub fn contains(&self, id: &ScaleId) -> bool {
+        self.scales.contains_key(id)
     }
 
     /// Every scale, in the order the chart draws them.
-    pub fn iter(&self) -> impl Iterator<Item=(ScaleId, &dyn Scale)> + '_ {
-        self.scales.iter().map(|(id, scale)| (*id, scale.as_ref()))
+    pub fn iter(&self) -> impl Iterator<Item=(&ScaleId, &dyn Scale)> + '_ {
+        self.scales.iter().map(|(id, scale)| (id, scale.as_ref()))
     }
 
     /// Sets each scale's range to the bounds collected for its id, and its offset to whether one
     /// was requested. A scale without any reported data gets the range `0..1`.
     pub fn fit(&mut self, bounds: &ScaleBounds) {
         for (id, scale) in &mut self.scales {
-            let (min, max) = bounds.get(*id).range().unwrap_or((0.0, 1.0));
-            scale.set_offset(bounds.offset_requested(*id));
+            let (min, max) = bounds.get(id).range().unwrap_or((0.0, 1.0));
+            scale.set_offset(bounds.offset_requested(id));
             scale.set_range(min, max);
         }
     }
@@ -127,7 +133,7 @@ mod tests {
     #[test]
     fn bounds_without_data_have_no_range() {
         assert_eq!(DataBounds::default().range(), None);
-        assert_eq!(ScaleBounds::default().get(ScaleId::X).range(), None);
+        assert_eq!(ScaleBounds::default().get(&ScaleId::X).range(), None);
     }
 
     #[test]
@@ -147,9 +153,9 @@ mod tests {
         scales.insert(ScaleId::new("right"), LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
         scales.insert(ScaleId::X, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top));
 
-        let order: Vec<ScaleId> = scales.iter().map(|(id, _)| id).collect();
+        let order: Vec<ScaleId> = scales.iter().map(|(id, _)| id.clone()).collect();
         assert_eq!(order, vec![ScaleId::X, ScaleId::Y, ScaleId::new("right")]);
-        assert_eq!(scales.get(ScaleId::X).unwrap().axis_position(), AxisPosition::Top);
+        assert_eq!(scales.get(&ScaleId::X).unwrap().axis_position(), AxisPosition::Top);
     }
 
     /// An offset pads the mapping by half a tick step at both ends without changing the ticks:
@@ -182,13 +188,13 @@ mod tests {
     #[test]
     fn bounds_are_collected_per_scale_id() {
         let mut bounds = ScaleBounds::default();
-        bounds.include(ScaleId::Y, 0.0, 10.0);
-        bounds.include(ScaleId::new("right"), 100.0, 200.0);
-        bounds.include(ScaleId::Y, -5.0, 5.0);
+        bounds.include(&ScaleId::Y, 0.0, 10.0);
+        bounds.include(&ScaleId::new("right"), 100.0, 200.0);
+        bounds.include(&ScaleId::Y, -5.0, 5.0);
 
-        assert_eq!(bounds.get(ScaleId::Y).range(), Some((-5.0, 10.0)));
-        assert_eq!(bounds.get(ScaleId::new("right")).range(), Some((100.0, 200.0)));
-        assert_eq!(bounds.get(ScaleId::X).range(), None);
-        assert_eq!(bounds.ids().collect::<Vec<_>>(), vec![ScaleId::Y, ScaleId::new("right")]);
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-5.0, 10.0)));
+        assert_eq!(bounds.get(&ScaleId::new("right")).range(), Some((100.0, 200.0)));
+        assert_eq!(bounds.get(&ScaleId::X).range(), None);
+        assert_eq!(bounds.ids().cloned().collect::<Vec<_>>(), vec![ScaleId::Y, ScaleId::new("right")]);
     }
 }
