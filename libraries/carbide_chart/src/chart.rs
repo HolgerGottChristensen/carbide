@@ -33,13 +33,33 @@ pub struct Chart<C> where C: ControllerSequence {
 }
 
 impl<C: ControllerSequence> Chart<C> {
+    /// A chart drawing `controllers` on the default scales, `ScaleId::X` and `ScaleId::Y`. Each
+    /// default is a linear scale unless a controller asks for another kind (see
+    /// `DatasetController::default_scale`); the first controller to ask, in sequence order, wins.
+    /// A bar chart's x scale is a `CategoryScale` this way.
     pub fn new(controllers: C) -> Chart<C> {
+        let mut scales = Scales::new();
+
+        for id in [ScaleId::X, ScaleId::Y] {
+            let mut default = None;
+
+            controllers.controllers(&mut |controller| {
+                if default.is_none() {
+                    default = controller.default_scale(id);
+                }
+            });
+
+            if let Some(scale) = default {
+                scales.insert_boxed(id, scale);
+            }
+        }
+
         Chart {
             id: Default::default(),
             position: Default::default(),
             dimension: Default::default(),
             controllers,
-            scales: Scales::new(),
+            scales,
             padding: EdgeInsets::all(30.0),
             warned_scale_ids: HashSet::new(),
         }
@@ -181,7 +201,7 @@ mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
     use indexmap::IndexMap;
-    use crate::controller::{BarController, ControllerSequence, ScatterController};
+    use crate::controller::{BarController, ControllerSequence, LineController, ScatterController};
     use crate::dataset::DatasetExt;
     use crate::scale::{Axis, AxisPosition, LinearScale, ScaleId};
     use super::{Chart, SCALE_SPACING};
@@ -363,6 +383,43 @@ mod tests {
         let (y_min, _) = scale_range(&points, ScaleId::Y);
         assert!(y_min > 0.0, "without bars the y scale needn't include zero, but starts at {y_min}");
         assert_eq!(points.scales.get(ScaleId::X).unwrap().normalize(0.0), 0.0);
+    }
+
+    /// A bar chart's default x scale is a category scale, so six bars get six whole ticks; a
+    /// scatter chart's stays linear and picks half steps for the same data (the case that made
+    /// bars too narrow). A scale set with `Chart::scale` replaces the bar chart's default.
+    #[test]
+    fn bar_charts_default_to_a_category_x_scale() {
+        let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+        let bars = fitted(Chart::new(BarController::new(votes.clone())));
+        assert_eq!(bars.scales.get(ScaleId::X).unwrap().ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0]);
+
+        let points = fitted(Chart::new(ScatterController::new(votes.clone())));
+        assert!(points.scales.get(ScaleId::X).unwrap().ticks().contains(&0.5), "a linear x scale picks half steps here");
+
+        let bars_on_linear = fitted(
+            Chart::new(BarController::new(votes))
+                .scale(ScaleId::X, LinearScale::new(Axis::Horizontal))
+        );
+        assert!(bars_on_linear.scales.get(ScaleId::X).unwrap().ticks().contains(&0.5), "an explicit scale replaces the default");
+    }
+
+    /// A line chart's default x scale is a category scale like a bar chart's, but without the
+    /// offset: the first and last points sit on the chart area's edges, as in Chart.js's line
+    /// chart. Bars added to it still offset it, as their `request_offset` applies to any scale.
+    #[test]
+    fn line_charts_default_to_a_category_x_scale_without_offset() {
+        let values = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+        let lines = fitted(Chart::new(LineController::new(values.clone())));
+        let x = lines.scales.get(ScaleId::X).unwrap();
+        assert_eq!(x.ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0]);
+        assert_eq!(x.normalize(0.0), 0.0);
+        assert_eq!(x.normalize(5.0), 1.0);
+
+        let lines_and_bars = fitted(Chart::new((LineController::new(values.clone()), BarController::new(values))));
+        assert!(lines_and_bars.scales.get(ScaleId::X).unwrap().normalize(0.0) > 0.0, "bars offset the line chart's x scale");
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {

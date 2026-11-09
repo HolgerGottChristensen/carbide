@@ -1,28 +1,51 @@
-use carbide::draw::Rect;
+use carbide::color::WHITE;
+use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::scale::{ScaleBounds, Scales};
+use crate::controller::drawing::{collect_point_bounds, draw_lines, draw_points};
+use crate::DataSetSequence;
+use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
-/// Placeholder for a line controller. It has no datasets yet, so it reports no bounds and draws
-/// nothing.
+/// Draws each dataset as a line through its points, in order, with the points on top, like
+/// Chart.js's line chart (`controller.line.js`, `showLine: true`). The line follows the dataset's
+/// `stepped` mode.
+///
+/// Its default x scale is a `CategoryScale`, as Chart.js's line `overrides` make the index scale a
+/// category scale: datasets are lists of values, each at its index. For data with numeric x
+/// values, use a `ScatterController` with `show_line(true)`, or set a `LinearScale` with
+/// `Chart::scale`.
 #[derive(Clone, Debug)]
-pub struct LineController;
+pub struct LineController<D: DataSetSequence> {
+    dataset_sequence: D,
+}
 
-impl LineController {
-    pub fn new() -> LineController {
-        LineController
+impl<D: DataSetSequence> LineController<D> {
+    pub fn new(dataset: D) -> LineController<D> {
+        LineController {
+            dataset_sequence: dataset,
+        }
     }
 }
 
-impl Default for LineController {
-    fn default() -> Self {
-        Self::new()
+impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController for LineController<D> {
+    fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
+        collect_point_bounds(&self.dataset_sequence, bounds, env);
     }
-}
 
-impl DatasetController for LineController {
-    fn collect_bounds(&self, _bounds: &mut ScaleBounds, _env: &mut Environment) {}
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
+        ctx.save();
+        ctx.set_fill_style(WHITE);
 
-    fn draw(&self, _ctx: &mut CanvasContext, _scales: &Scales, _area: Rect) {}
+        draw_lines(&self.dataset_sequence, ctx, scales, chart_area);
+        draw_points(&self.dataset_sequence, ctx, scales, chart_area);
+
+        ctx.restore();
+    }
+
+    /// A category x scale, without the bar chart's offset or grid offset: Chart.js's line
+    /// `overrides` (`_index_: {type: 'category'}`).
+    fn default_scale(&self, id: ScaleId) -> Option<Box<dyn Scale>> {
+        (id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal)) as Box<dyn Scale>)
+    }
 }

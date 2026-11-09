@@ -80,7 +80,12 @@ impl Scales {
     /// Adds `scale` under `id`. A scale already under `id` is replaced in place, so replacing a
     /// default scale keeps its place in the draw order.
     pub fn insert(&mut self, id: ScaleId, scale: impl Scale) {
-        self.scales.insert(id, Box::new(scale));
+        self.insert_boxed(id, Box::new(scale));
+    }
+
+    /// `insert` for a scale that is already boxed.
+    pub fn insert_boxed(&mut self, id: ScaleId, scale: Box<dyn Scale>) {
+        self.scales.insert(id, scale);
     }
 
     /// The scale with the given id, if the chart has one.

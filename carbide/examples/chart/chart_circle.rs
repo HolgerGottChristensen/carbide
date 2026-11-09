@@ -18,7 +18,7 @@ fn main() {
         Window::new(
             "Chart circle example - Carbide",
             Dimension::new(700.0, 700.0),
-            Chart::new(ScatterController::new(data))
+            Chart::new(ScatterController::new(data).show_line(true))
                 .border()
                 .padding(50.0)
                 .locale(ValueState::new(locale!("da")))

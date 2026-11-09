@@ -1,6 +1,6 @@
 use std::iter;
 
-use carbide::chart::{Chart, DatasetExt, ScatterController, Stepped};
+use carbide::chart::{Chart, DatasetExt, LineController, Stepped};
 use carbide::controls::{ControlsExt};
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::draw::{Dimension, Position, Scalar};
@@ -51,9 +51,9 @@ fn main() {
             "Chart example - Carbide",
             Dimension::new(700.0, 700.0),
             VStack::new((
-                //Chart::new(ScatterController::new(data2))
-                Chart::new(ScatterController::new((data7, data8)))
-                    //Chart::new(ScatterController::new((data3, data6)))
+                //Chart::new(LineController::new(data2))
+                Chart::new(LineController::new((data7, data8)))
+                    //Chart::new(LineController::new((data3, data6)))
                     .border()
                     .locale(ValueState::new(locale!("da"))),
                 Picker::new("Stepped:", stepped.clone(), (

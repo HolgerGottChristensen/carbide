@@ -1,3 +1,4 @@
+mod category_scale;
 mod linear_scale;
 mod percent_or_value;
 mod bounds;
@@ -13,6 +14,7 @@ use carbide::environment::Environment;
 use carbide::state::{ReadState, StateSync};
 use carbide_core::draw::Scalar;
 use carbide_core::widget::canvas::CanvasContext;
+pub use category_scale::CategoryScale;
 pub use linear_scale::*;
 pub use scales::*;
 pub use scale_id::ScaleId;
@@ -53,6 +55,19 @@ pub trait Scale: DynClone + Debug + 'static {
     /// in half. Scales that don't support it ignore it.
     fn set_offset(&mut self, _offset: bool) {}
 
+    /// The text shown for the tick at `value`: the number, formatted for the environment's
+    /// locale. A category scale shows its labels instead.
+    fn tick_label(&self, value: Scalar, env: &mut Environment) -> String {
+        format_tick(value, env)
+    }
+
+    /// Where grid lines and tick marks are drawn: on the ticks themselves, unless the scale puts
+    /// them between ticks instead (Chart.js's `grid.offset`, see `CategoryScale::grid_offset`).
+    /// Labels are always drawn on the ticks.
+    fn grid_line_values(&self) -> Vec<Scalar> {
+        self.ticks().to_vec()
+    }
+
     fn draw(&self, ctx: &mut CanvasContext, _env: &mut Environment, area: Rect) {
         self.draw_grid(ctx, area, 0.0);
         self.draw_border(ctx, area, 0.0);
@@ -70,7 +85,7 @@ pub trait Scale: DynClone + Debug + 'static {
 
         let mut label_extent: Scalar = 0.0;
         for tick in self.ticks() {
-            let label = format_tick(*tick, ctx.env());
+            let label = self.tick_label(*tick, ctx.env());
             let size = ctx.measure_text(&label);
 
             label_extent = label_extent.max(match self.axis() {
@@ -118,18 +133,31 @@ pub trait Scale: DynClone + Debug + 'static {
         ctx.set_fill_style(YELLOW);
         ctx.set_text_align(alignment);
 
-        ctx.begin_path();
+        // `along` is a value's coordinate along the axis; `across` a coordinate across it.
+        let along = |value: Scalar| {
+            let fraction = self.normalize(value);
 
-        for tick in self.ticks() {
-            let fraction = self.normalize(*tick);
-
-            // `along` is the tick's coordinate along the axis; `across` a coordinate across it.
-            let along = if horizontal {
+            if horizontal {
                 area.left() + fraction * area.width()
             } else {
                 area.bottom() + (1.0 - fraction) * area.height()
-            };
-            let point = |across: Scalar| if horizontal { (along, across) } else { (across, along) };
+            }
+        };
+        let point = |along: Scalar, across: Scalar| if horizontal { (along, across) } else { (across, along) };
+
+        ctx.begin_path();
+
+        for value in self.grid_line_values() {
+            let fraction = self.normalize(value);
+
+            // Lines that would fall outside the chart area are skipped, as in Chart.js's
+            // `getPixelForGridLine`.
+            if !(-1e-9..=1.0 + 1e-9).contains(&fraction) {
+                continue;
+            }
+
+            let along = along(value);
+            let point = |across: Scalar| point(along, across);
 
             // Drawn as one segment from the tick mark's end through the chart area when the band
             // touches the area, and as two separate segments when it is stacked further out.
@@ -156,10 +184,12 @@ pub trait Scale: DynClone + Debug + 'static {
                 let (x, y) = point(far_edge);
                 ctx.line_to(x, y);
             }
+        }
 
-            let value = &format_tick(*tick, ctx.env());
-            let (x, y) = point(tick_end);
-            ctx.fill_text(value, x, y);
+        for tick in self.ticks() {
+            let label = &self.tick_label(*tick, ctx.env());
+            let (x, y) = point(along(*tick), tick_end);
+            ctx.fill_text(label, x, y);
         }
 
         ctx.stroke();

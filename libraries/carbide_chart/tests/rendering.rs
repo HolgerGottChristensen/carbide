@@ -4,7 +4,7 @@ use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 use support::{
-    bar_chart, bars_and_line_chart, example_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
+    bar_chart, bars_and_line_chart, example_chart, labelled_bar_chart, scatter_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
     stacked_scales_on_left_chart, stacked_scales_on_top_chart, two_y_scales_chart, x_scale_on_top_chart,
 };
 
@@ -91,8 +91,18 @@ fn stacked_scales_on_left() {
     harness.snapshot("stacked_scales_on_left");
 }
 
+/// A plain scatter chart: two datasets of (x, y) points with numeric x values, points only, as
+/// Chart.js's scatter chart draws them by default (`showLine: false`). Pins down that the
+/// `ScatterController` draws no lines unless asked to, and keeps linear x and y scales.
+#[test]
+fn scatter_points_only() {
+    let mut harness = Harness::new(scatter_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("scatter_points_only");
+}
+
 /// Bars and a line in one chart, on the same scales: revenue and costs as grouped bars from a
-/// `BarController`, profit as a line from a `ScatterController` drawn over them. Pins down that
+/// `BarController`, profit as a line from a `LineController` drawn over them. Pins down that
 /// the two bar datasets sit side by side around each x value, that the first and last groups
 /// aren't cut off at the chart area's edges (the x scale's offset), that bars grow from zero,
 /// and that the line's points sit at the centre of each group, including the negative month.
@@ -111,6 +121,16 @@ fn bar_chart_single_dataset() {
     let mut harness = Harness::new(bar_chart(vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0]), Dimension::new(600.0, 500.0));
 
     harness.snapshot("bar_chart_single_dataset");
+}
+
+/// Chart.js's sample bar chart, with its category labels: votes for six colours. The x scale is
+/// set explicitly to a `CategoryScale` with labels, so the ticks show "Red", "Blue", ... instead
+/// of indices. Pins down label text on a category scale and grid lines between the bars.
+#[test]
+fn bar_chart_with_labels() {
+    let mut harness = Harness::new(labelled_bar_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bar_chart_with_labels");
 }
 
 /// One dataset with both positive and negative values. Pins down that every bar starts at zero,
@@ -151,7 +171,7 @@ fn bar_chart_all_negative() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DataColor, DataSetSequence, DatasetExt, LinearScale, ScaleId, ScatterController, Stepped};
+    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DataSetSequence, DatasetExt, LineController, LinearScale, ScaleId, ScatterController, Stepped};
     // `.border()` alone picks a random colour on every run, which makes snapshots flaky.
     use carbide_core::color::{BLUE, GREEN, RED};
     use carbide_core::draw::Scalar;
@@ -168,7 +188,7 @@ mod support {
         let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0];
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
-        Chart::new(ScatterController::new((data7, data8)))
+        Chart::new(LineController::new((data7, data8)))
             .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top))
             .border().color(BLUE)
             .locale(ValueState::new(locale!("da")))
@@ -183,8 +203,8 @@ mod support {
             .color(DataColor::Color(GREEN));
 
         Chart::new((
-            ScatterController::new(celsius),
-            ScatterController::new(fahrenheit),
+            ScatterController::new(celsius).show_line(true),
+            ScatterController::new(fahrenheit).show_line(true),
         ))
             .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false))
@@ -201,10 +221,35 @@ mod support {
             .color(DataColor::Color(RED));
 
         Chart::new((
-            ScatterController::new(revenue),
-            ScatterController::new(units),
+            LineController::new(revenue),
+            LineController::new(units),
         ))
             .scale(UNITS, LinearScale::new(Axis::Vertical).grid_lines(false))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Two clouds of (x, y) points with numeric x values, drawn as points only.
+    pub fn scatter_chart() -> impl Widget {
+        let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
+        let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)];
+
+        Chart::new(ScatterController::new((first, second)))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Chart.js's sample bar chart: votes for six colours, labelled on a category scale.
+    pub fn labelled_bar_chart() -> impl Widget {
+        let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+        Chart::new(BarController::new(votes))
+            .scale(
+                ScaleId::X,
+                CategoryScale::new(Axis::Horizontal)
+                    .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
+                    .grid_offset(true),
+            )
             .border().color(BLUE)
             .locale(ValueState::new(locale!("da")))
     }
@@ -230,7 +275,7 @@ mod support {
 
         Chart::new((
             BarController::new((revenue, costs)),
-            ScatterController::new(profit),
+            LineController::new(profit),
         ))
             .border().color(BLUE)
             .locale(ValueState::new(locale!("da")))
@@ -246,8 +291,8 @@ mod support {
             .color(DataColor::Color(GREEN));
 
         Chart::new((
-            ScatterController::new(celsius),
-            ScatterController::new(fahrenheit),
+            ScatterController::new(celsius).show_line(true),
+            ScatterController::new(fahrenheit).show_line(true),
         ))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).grid_lines(false))
             .border().color(BLUE)
@@ -267,9 +312,9 @@ mod support {
             .color(DataColor::Color(RED));
 
         Chart::new((
-            ScatterController::new(revenue),
-            ScatterController::new(margin),
-            ScatterController::new(units),
+            LineController::new(revenue),
+            LineController::new(margin),
+            LineController::new(units),
         ))
             .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
             .scale(UNITS, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).tick_marks(false))
@@ -286,8 +331,8 @@ mod support {
             .color(DataColor::Color(GREEN));
 
         Chart::new((
-            ScatterController::new(revenue),
-            ScatterController::new(margin),
+            LineController::new(revenue),
+            LineController::new(margin),
         ))
             .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
             .border().color(BLUE)
@@ -299,7 +344,7 @@ mod support {
         let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].stepped(stepped);
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
-        Chart::new(ScatterController::new((data7, data8)))
+        Chart::new(LineController::new((data7, data8)))
             .border().color(BLUE)
             .locale(ValueState::new(locale!("da")))
     }

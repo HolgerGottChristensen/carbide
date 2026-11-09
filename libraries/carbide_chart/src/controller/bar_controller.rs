@@ -1,12 +1,11 @@
-use carbide::color::{GREEN, RED, WHITE};
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::IndexMap;
 use crate::controller::DatasetController;
-use crate::controller::scatter_controller::dataset_scales;
+use crate::controller::drawing::{dataset_color, dataset_scales};
 use crate::{DataColor, DataPoint, DataSet, DataSetSequence};
-use crate::scale::{Scale, ScaleBounds, ScaleId, Scales};
+use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
 /// Draws each dataset as vertical bars, one per point, growing from zero to the point's y. Based
 /// on Chart.js's bar controller (`controller.bar.js`):
@@ -101,8 +100,6 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         // Second pass: the bars.
         ctx.save();
 
-        let colors = [WHITE, GREEN, RED];
-
         self.dataset_sequence.datasets(&mut |dataset_index, dataset: &dyn DataSet<X=Scalar, Y=Scalar, Z=Scalar>| {
             let Some(Some((x_id, group_index))) = places.get(dataset_index).copied() else {
                 return;
@@ -133,10 +130,7 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
                 ctx.close_path();
 
                 match point.color() {
-                    DataColor::Inherit => match options.color {
-                        DataColor::Inherit => ctx.set_fill_style(colors[dataset_index % colors.len()]),
-                        DataColor::Color(color) => ctx.set_fill_style(color),
-                    },
+                    DataColor::Inherit => ctx.set_fill_style(dataset_color(&options, dataset_index)),
                     DataColor::Color(color) => ctx.set_fill_style(color),
                 }
 
@@ -145,6 +139,14 @@ impl<D: DataSetSequence<X=Scalar, Y=Scalar, Z=Scalar> + Clone> DatasetController
         });
 
         ctx.restore();
+    }
+
+    /// Bar charts sit on a category scale along x, with grid lines between the bar groups, as in
+    /// Chart.js's bar `overrides` (`_index_: {type: 'category', offset: true, grid: {offset:
+    /// true}}`). The offset itself is requested in `collect_bounds`, so it also applies to an x
+    /// scale set with `Chart::scale`.
+    fn default_scale(&self, id: ScaleId) -> Option<Box<dyn Scale>> {
+        (id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal).grid_offset(true)) as Box<dyn Scale>)
     }
 }
 
