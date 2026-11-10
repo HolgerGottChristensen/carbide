@@ -4,7 +4,7 @@ use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 use support::{
-    equal_values_chart, single_point_chart,
+    controllers_chart, equal_values_chart, revenue_and_costs_bars, single_point_chart, trend_line,
     bar_chart, bars_and_line_chart, bars_on_linear_x_scale_chart, bars_on_secondary_y_scale_chart,
     bars_with_x_scale_on_top_chart, example_chart, labelled_bar_chart, line_then_bars_chart, scales_on_all_four_sides_chart,
     scatter_chart, scatter_with_lines_chart, two_bar_controllers_chart, vertical_category_scale_chart, vertical_category_scale_on_right_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
@@ -18,7 +18,7 @@ use support::{
 /// colors and the line path for one stepped mode.
 #[test]
 fn scatter_chart_stepped_modes() {
-    let stepped = LocalState::new(Stepped::None);
+    let mut stepped = LocalState::new(Stepped::None);
     let mut harness = Harness::new(example_chart(stepped.clone()), Dimension::new(600.0, 500.0));
 
     for (mode, name) in [
@@ -28,7 +28,7 @@ fn scatter_chart_stepped_modes() {
         (Stepped::Middle, "stepped_middle"),
         (Stepped::MiddleVertical, "stepped_middle_vertical"),
     ] {
-        stepped.clone().set_value(mode);
+        *stepped.value_mut() = mode;
         harness.snapshot(name);
     }
 }
@@ -260,13 +260,13 @@ fn grouped_bars_positive_and_negative() {
 /// bars in every month it has data for.
 #[test]
 fn data_changed_between_renders() {
-    let revenue = LocalState::new(vec![12.0, 19.0, 3.0, 5.0, 2.0]);
+    let mut revenue = LocalState::new(vec![12.0, 19.0, 3.0, 5.0, 2.0]);
     let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
 
     let mut harness = Harness::new(bar_chart((revenue.clone(), costs)), Dimension::new(600.0, 500.0));
     harness.snapshot("before_change");
 
-    revenue.clone().set_value(vec![12.0, 19.0, 30.0, 5.0, 24.0, 17.0]);
+    *revenue.value_mut() = vec![12.0, 19.0, 30.0, 5.0, 24.0, 17.0];
     harness.snapshot("after_change");
 }
 
@@ -278,12 +278,12 @@ fn data_changed_between_renders() {
 fn dataset_added_between_renders() {
     let revenue = vec![12.0, 19.0, 3.0, 5.0, 2.0];
     let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
-    let datasets = LocalState::new(vec![revenue.clone(), costs.clone()]);
+    let mut datasets = LocalState::new(vec![revenue.clone(), costs.clone()]);
 
     let mut harness = Harness::new(bar_chart(datasets.clone()), Dimension::new(600.0, 500.0));
     harness.snapshot("two_datasets");
 
-    datasets.clone().set_value(vec![revenue, costs, vec![15.0, 24.0, 9.0, 7.0, 4.0]]);
+    *datasets.value_mut() = vec![revenue, costs, vec![15.0, 24.0, 9.0, 7.0, 4.0]];
     harness.snapshot("three_datasets");
 }
 
@@ -308,6 +308,24 @@ fn line_with_equal_values() {
     harness.snapshot("line_with_equal_values");
 }
 
+/// A chart whose controllers are a state of boxed controllers of different types, with a line
+/// added over the bars between the two snapshots. Pins down that the chart follows a controller
+/// sequence changed after it is built: the line is drawn over the bars at the bars' centres, the
+/// y scale refits to include its larger values, and the bars keep the category x scale and grid
+/// lines they chose, since the first controller picked the default scales when the chart was built.
+#[test]
+fn controllers_added_between_renders() {
+    let bars = revenue_and_costs_bars();
+    let mut controllers = LocalState::new(vec![bars.clone()]);
+
+    let mut harness = Harness::new(controllers_chart(controllers.clone()), Dimension::new(600.0, 500.0));
+    harness.snapshot("bars_only");
+
+    let trend = trend_line();
+    *controllers.value_mut() = vec![bars, trend];
+    harness.snapshot("bars_and_line");
+}
+
 /// One dataset of only negative values. Zero is still included in the y scale, so it is the top
 /// of the scale and every bar hangs down from it.
 #[test]
@@ -322,7 +340,7 @@ fn bar_chart_all_negative() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DataSetSequence, DataSet, DatasetExt, IntoSequence, LineController, LinearScale, ScaleId, ScatterController, Stepped};
+    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DataSetSequence, DataSet, DatasetController, DatasetExt, IntoSequence, LineController, LinearScale, ScaleId, ScatterController, Stepped};
     // `.border()` alone picks a random colour on every run, which makes snapshots flaky.
     use carbide_core::color::{BLUE, GREEN, RED};
     use carbide_core::draw::Scalar;
@@ -500,6 +518,24 @@ mod support {
     }
 
     /// Two clouds of (x, y) points with numeric x values, drawn as points only.
+    /// A chart over a state of boxed controllers, so controllers of different types can be added
+    /// and removed after it is built.
+    pub fn controllers_chart(controllers: LocalState<Vec<Box<dyn DatasetController>>>) -> impl Widget {
+        Chart::new(controllers)
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// Revenue and costs as grouped bars, boxed to share a `Vec` with other controller types.
+    pub fn revenue_and_costs_bars() -> Box<dyn DatasetController> {
+        BarController::new((vec![12.0, 19.0, 3.0, 5.0, 2.0], vec![8.0, 11.0, 6.0, 4.0, 3.0])).boxed()
+    }
+
+    /// A red trend line, boxed to share a `Vec` with other controller types.
+    pub fn trend_line() -> Box<dyn DatasetController> {
+        LineController::new(vec![10.0, 16.0, 22.0, 18.0, 25.0].color(DataColor::Color(RED))).boxed()
+    }
+
     /// One point on linear scales: both scales start out with min equal to max.
     pub fn single_point_chart() -> impl Widget {
         Chart::new(ScatterController::new(vec![(2.0, 1.0)]))

@@ -260,7 +260,7 @@ mod tests {
     /// bound scale on the next fit.
     #[test]
     fn scale_binding_is_reactive() {
-        let binding = LocalState::new(ScaleId::new("elsewhere"));
+        let mut binding = LocalState::new(ScaleId::new("elsewhere"));
         let small = vec![1.0, 2.0];
         let large = vec![100.0, 200.0].y_scale(binding.clone());
 
@@ -273,7 +273,7 @@ mod tests {
         assert!(y_max < 100.0, "Y should only cover the small dataset, but reaches {y_max}");
 
         // Rebound to Y: the next fit includes the large values.
-        binding.clone().set_value(ScaleId::Y);
+        *binding.value_mut() = ScaleId::Y;
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 200.0, "Y should cover the large dataset after rebinding, but ends at {y_max}");
@@ -283,7 +283,7 @@ mod tests {
     /// Options still work on it.
     #[test]
     fn a_dataset_in_a_state_can_change() {
-        let points = LocalState::new(vec![Position::new(0.0, 1.0), Position::new(1.0, 2.0)]);
+        let mut points = LocalState::new(vec![Position::new(0.0, 1.0), Position::new(1.0, 2.0)]);
 
         let mut chart = Chart::new(ScatterController::new(points.clone().color(DataColor::Color(RED))));
         let mut env = Environment::new();
@@ -292,7 +292,7 @@ mod tests {
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max < 10.0, "Y should fit the first points, but reaches {y_max}");
 
-        points.clone().set_value(vec![Position::new(0.0, 1.0), Position::new(1.0, 50.0)]);
+        *points.value_mut() = vec![Position::new(0.0, 1.0), Position::new(1.0, 50.0)];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 50.0, "Y should follow the changed points, but ends at {y_max}");
@@ -303,8 +303,8 @@ mod tests {
     #[test]
     fn datasets_in_a_state_can_be_added() {
         let small = LocalState::new(vec![Position::new(0.0, 1.0), Position::new(1.0, 2.0)]);
-        let large = LocalState::new(vec![Position::new(4.0, 50.0), Position::new(5.0, 100.0)]);
-        let datasets: LocalState<Vec<LocalState<Vec<Position>>>> = LocalState::new(vec![small.clone()]);
+        let mut large = LocalState::new(vec![Position::new(4.0, 50.0), Position::new(5.0, 100.0)]);
+        let mut datasets: LocalState<Vec<LocalState<Vec<Position>>>> = LocalState::new(vec![small.clone()]);
 
         let mut chart = Chart::new(ScatterController::new(datasets.clone()));
         let mut env = Environment::new();
@@ -313,12 +313,12 @@ mod tests {
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max < 10.0, "Y should fit the one dataset, but reaches {y_max}");
 
-        datasets.clone().set_value(vec![small.clone(), large.clone()]);
+        *datasets.value_mut() = vec![small.clone(), large.clone()];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 100.0, "Y should include the added dataset, but ends at {y_max}");
 
-        large.clone().set_value(vec![Position::new(4.0, 50.0), Position::new(5.0, 300.0)]);
+        *large.value_mut() = vec![Position::new(4.0, 50.0), Position::new(5.0, 300.0)];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 300.0, "Y should follow a change inside an added dataset, but ends at {y_max}");
@@ -329,7 +329,7 @@ mod tests {
     fn controllers_in_a_state_can_be_added() {
         let small = ScatterController::new(vec![(0.0, 1.0), (1.0, 2.0)]);
         let large = ScatterController::new(vec![(0.0, 50.0), (1.0, 100.0)]);
-        let controllers = LocalState::new(vec![small.clone()]);
+        let mut controllers = LocalState::new(vec![small.clone()]);
 
         let mut chart = Chart::new(controllers.clone());
         let mut env = Environment::new();
@@ -339,7 +339,7 @@ mod tests {
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max < 10.0, "Y should fit the one controller, but reaches {y_max}");
 
-        controllers.clone().set_value(vec![small, large]);
+        *controllers.value_mut() = vec![small, large];
         chart.fit_scales(&mut env);
         assert_eq!(chart.controllers.count(), 2);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
@@ -360,7 +360,7 @@ mod tests {
         assert!(y_min <= 0.0 && y_max >= 50.0, "Y should cover the bars from zero and the line, got {y_min}..{y_max}");
         assert!(chart.scales.get(&ScaleId::X).unwrap().normalize(0.0) > 0.0, "the bars should offset the x scale");
 
-        let controllers = LocalState::new(vec![bars.clone()]);
+        let mut controllers = LocalState::new(vec![bars.clone()]);
         let mut chart = Chart::new(controllers.clone());
         let mut env = Environment::new();
 
@@ -368,7 +368,7 @@ mod tests {
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max < 40.0, "Y should fit only the bars, but reaches {y_max}");
 
-        controllers.clone().set_value(vec![bars, line.boxed()]);
+        *controllers.value_mut() = vec![bars, line.boxed()];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 50.0, "Y should include the added line, but ends at {y_max}");
@@ -394,7 +394,7 @@ mod tests {
         let (_, percent_max) = scale_range(&chart, PERCENT);
         assert!(percent_max < 1.0, "percent should fit only the margin, but ends at {percent_max}");
 
-        let datasets = LocalState::new(vec![positions]);
+        let mut datasets = LocalState::new(vec![positions]);
         let mut chart = Chart::new(ScatterController::new(datasets.clone()));
         let mut env = Environment::new();
 
@@ -402,7 +402,7 @@ mod tests {
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max < 25.0, "Y should fit only the positions, but reaches {y_max}");
 
-        datasets.clone().set_value(vec![vec![Position::new(0.0, 10.0)].boxed(), values]);
+        *datasets.value_mut() = vec![vec![Position::new(0.0, 10.0)].boxed(), values];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 25.0, "Y should include the added values, but ends at {y_max}");
@@ -412,7 +412,7 @@ mod tests {
     /// Plain values in it still use their index as x.
     #[test]
     fn a_dataset_mapped_from_a_model() {
-        let model = LocalState::new(vec![2.0, 4.0, 6.0]);
+        let mut model = LocalState::new(vec![2.0, 4.0, 6.0]);
         let doubled = Map1::read_map(model.clone(), |values: &Vec<Scalar>| {
             values.iter().map(|value| value * 2.0).collect::<Vec<Scalar>>()
         }).as_dyn_read();
@@ -426,7 +426,7 @@ mod tests {
         let (_, x_max) = scale_range(&chart, ScaleId::X);
         assert!(x_max >= 2.0 && x_max < 6.0, "X should be the indices 0..=2, but ends at {x_max}");
 
-        model.clone().set_value(vec![2.0, 4.0, 60.0]);
+        *model.value_mut() = vec![2.0, 4.0, 60.0];
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 120.0, "Y should follow the model, but ends at {y_max}");

@@ -377,14 +377,14 @@ mod tests {
     /// state shows on the next read.
     #[test]
     fn states_are_sequences() {
-        let local = LocalState::new(VALUES.to_vec());
+        let mut local = LocalState::new(VALUES.to_vec());
         assert_eq!(points(&local), INDEXED);
-        local.clone().set_value(vec![1.0]);
+        *local.value_mut() = vec![1.0];
         assert_eq!(points(&local), vec![(0.0, 1.0)]);
 
-        let global = GlobalState::new(VALUES.to_vec());
+        let mut global = GlobalState::new(VALUES.to_vec());
         assert_eq!(points(&global), INDEXED);
-        global.clone().set_value(vec![1.0]);
+        *global.value_mut() = vec![1.0];
         assert_eq!(points(&global), vec![(0.0, 1.0)]);
 
         assert_eq!(points(&ValueState::new(VALUES.to_vec())), INDEXED);
@@ -407,9 +407,9 @@ mod tests {
     /// Every state holds any collection, so every combination is a sequence.
     #[test]
     fn states_of_every_collection_are_sequences() {
-        let deque = LocalState::new(VecDeque::from(VALUES.to_vec()));
+        let mut deque = LocalState::new(VecDeque::from(VALUES.to_vec()));
         assert_eq!(points(&deque), INDEXED);
-        deque.clone().set_value(VecDeque::from(vec![1.0]));
+        *deque.value_mut() = VecDeque::from(vec![1.0]);
         assert_eq!(points(&deque), vec![(0.0, 1.0)]);
 
         assert_eq!(points(&LocalState::new(VALUES)), INDEXED);
@@ -450,9 +450,9 @@ mod tests {
         let readings = Readings { values: VALUES.to_vec() };
         assert_eq!(points(&readings), INDEXED);
 
-        let state = LocalState::new(readings);
+        let mut state = LocalState::new(readings);
         assert_eq!(points(&state), INDEXED);
-        state.clone().set_value(Readings { values: vec![1.0] });
+        *state.value_mut() = Readings { values: vec![1.0] };
         assert_eq!(points(&state), vec![(0.0, 1.0)]);
     }
 
