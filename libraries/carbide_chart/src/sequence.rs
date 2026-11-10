@@ -456,29 +456,74 @@ mod tests {
         assert_eq!(points(&state), vec![(0.0, 1.0)]);
     }
 
-    /// A state type of your own, implementing `CollectionState`, is a collection, and so a
-    /// sequence, without implementing `Sequence` itself. States of states work too.
+    /// A state type of your own, implementing `CollectionState` generically over the collection,
+    /// works with every collection: the standard ones, one of your own, and collections of
+    /// datasets. States of states work too.
     #[test]
     fn custom_states_are_sequences() {
         use std::cell::RefCell;
-        use super::CollectionState;
+        use super::{Collection, CollectionState};
 
-        /// A shared, swappable buffer of readings, standing in for a user's own state type.
+        /// A shared, swappable value, standing in for a user's own state type. It isn't a carbide
+        /// state: it lends its value through a `RefCell` borrow.
         #[derive(Clone, Debug)]
-        struct SharedReadings(Rc<RefCell<Vec<Scalar>>>);
+        struct Shared<C>(Rc<RefCell<C>>);
 
-        impl CollectionState for SharedReadings {
-            type Value = Vec<Scalar>;
+        impl<C> Shared<C> {
+            fn new(value: C) -> Shared<C> {
+                Shared(Rc::new(RefCell::new(value)))
+            }
 
-            fn with_collection(&self, f: &mut dyn FnMut(&Vec<Scalar>)) {
+            fn set(&self, value: C) {
+                *self.0.borrow_mut() = value;
+            }
+        }
+
+        impl<C: Collection> CollectionState for Shared<C> {
+            type Value = C;
+
+            fn with_collection(&self, f: &mut dyn FnMut(&C)) {
                 f(&self.0.borrow());
             }
         }
 
-        let readings = SharedReadings(Rc::new(RefCell::new(VALUES.to_vec())));
+        /// A collection type of your own, used inside the state of your own.
+        #[derive(Clone, Debug)]
+        struct Readings(Vec<Scalar>);
+
+        impl Collection for Readings {
+            type Item = Scalar;
+
+            fn visit_items(&self, f: &mut dyn FnMut(usize, &Scalar)) {
+                for (index, value) in self.0.iter().enumerate() {
+                    f(index, value);
+                }
+            }
+
+            fn len(&self) -> usize {
+                self.0.len()
+            }
+        }
+
+        let vec = Shared::new(VALUES.to_vec());
+        assert_eq!(points(&vec), INDEXED);
+        vec.set(vec![1.0]);
+        assert_eq!(points(&vec), vec![(0.0, 1.0)], "the state should be read through its current value");
+
+        assert_eq!(points(&Shared::new(VecDeque::from(VALUES.to_vec()))), INDEXED);
+        assert_eq!(points(&Shared::new(Rc::<[Scalar]>::from(VALUES))), INDEXED);
+        assert_eq!(points(&Shared::new(VALUES)), INDEXED);
+        assert_eq!(points(&Shared::new(vec![Position::new(1.0, 2.0)])), vec![(1.0, 2.0)]);
+
+        let readings = Shared::new(Readings(VALUES.to_vec()));
         assert_eq!(points(&readings), INDEXED);
-        readings.0.borrow_mut().truncate(1);
-        assert_eq!(points(&readings), vec![(0.0, 3.0)]);
+        readings.set(Readings(vec![1.0]));
+        assert_eq!(points(&readings), vec![(0.0, 1.0)]);
+
+        let datasets = Shared::new(VecDeque::from(vec![VALUES.to_vec(), VALUES.to_vec()]));
+        assert_eq!(dataset_count(&datasets), 2);
+        datasets.set(VecDeque::from(vec![VALUES.to_vec()]));
+        assert_eq!(dataset_count(&datasets), 1, "datasets can be removed through the state");
 
         let nested = LocalState::new(LocalState::new(VALUES.to_vec()));
         assert_eq!(points(&nested), INDEXED);
