@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use dyn_clone::DynClone;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
@@ -15,7 +16,15 @@ mod line_controller;
 mod scatter_controller;
 
 /// Draws a group of datasets on the scales the chart owns.
-pub trait DatasetController: Debug + 'static {
+///
+/// Controllers of different types can be mixed in a tuple, or, boxed with `.boxed()`, in a `Vec`
+/// or a state of a `Vec`: `vec![bars.boxed(), lines.boxed()]`.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a chart controller",
+    label = "not a controller",
+    note = "controllers are `BarController`, `LineController`, `ScatterController`, boxed controllers (`.boxed()`), and types implementing `DatasetController`",
+)]
+pub trait DatasetController: DynClone + Debug + 'static {
     /// Reports the data range of every dataset to the bounds of the scales it is bound to.
     /// `env` is for reading the datasets' options, which can be states.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment);
@@ -30,5 +39,34 @@ pub trait DatasetController: Debug + 'static {
     /// answer; scales set with `Chart::scale` replace it. `None` keeps the default linear scale.
     fn default_scale(&self, _id: &ScaleId) -> Option<Box<dyn Scale>> {
         None
+    }
+
+    /// Boxes the controller, so controllers of different types can share a `Vec` or a state of
+    /// a `Vec`, as the controllers of a chart.
+    fn boxed(self) -> Box<dyn DatasetController> where Self: Sized {
+        Box::new(self)
+    }
+}
+
+dyn_clone::clone_trait_object!(DatasetController);
+
+/// A boxed controller is a controller, so a `Vec<Box<dyn DatasetController>>` is a sequence of
+/// controllers of mixed types.
+impl DatasetController for Box<dyn DatasetController> {
+    fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
+        (**self).collect_bounds(bounds, env);
+    }
+
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect) {
+        (**self).draw(ctx, scales, area);
+    }
+
+    fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
+        (**self).default_scale(id)
+    }
+
+    /// Already boxed: returned as it is, not boxed again.
+    fn boxed(self) -> Box<dyn DatasetController> {
+        self
     }
 }

@@ -3,6 +3,12 @@ use carbide::math::Zero;
 use crate::DataColor;
 use crate::dataset::datavalue::DataValue;
 
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a data point",
+    label = "not a data point",
+    note = "data points are `Position`, `(x, y)` and `(x, y, z)` tuples of coordinates (`Scalar` or `usize`), and references to them",
+    note = "a plain `Scalar` is not a point on its own, but is the y value at its index inside a sequence",
+)]
 pub trait DataPoint {
     type X: DataValue;
     type Y: DataValue;

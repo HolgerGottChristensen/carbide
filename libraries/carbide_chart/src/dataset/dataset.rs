@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use dyn_clone::DynClone;
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use crate::DataColor;
@@ -17,7 +18,17 @@ use crate::sequence::{Sequence, SequenceItem};
 ///
 /// The point types are type parameters rather than associated types: a type could be a sequence
 /// of several kinds of point, so the blanket implementation can't pick one.
-pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: Debug + 'static {
+///
+/// Datasets of different types can be mixed in a tuple, or, boxed with `DatasetExt::boxed`, in
+/// a `Vec` or a state of a `Vec`. The point types are part of the boxed type,
+/// `Box<dyn DataSet<X, Y, Z>>`, so every dataset mixed this way has the same point types.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a dataset of points with `{X}`, `{Y}` and `{Z}` coordinates",
+    label = "not a dataset",
+    note = "a dataset is a sequence of data points: a `Vec`, array or other sequence of `Position`, `(x, y)` or `(x, y, z)` points, or of plain `Scalar` y values at their index",
+    note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
+)]
+pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: DynClone + Debug + 'static {
     fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>));
 
     /// The smallest x, y and z of the dataset's points, or `None` when it has no points.
@@ -37,6 +48,28 @@ pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: Debug + 'static {
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
         }
+    }
+}
+
+dyn_clone::clone_trait_object!(<X, Y, Z> DataSet<X, Y, Z> where X: DataValue, Y: DataValue, Z: DataValue);
+
+/// A boxed dataset is a dataset, so a `Vec<Box<dyn DataSet<X, Y, Z>>>` is a sequence of datasets
+/// of mixed types, all with points of the same types.
+impl<X: DataValue, Y: DataValue, Z: DataValue> DataSet<X, Y, Z> for Box<dyn DataSet<X, Y, Z>> {
+    fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>)) {
+        (**self).points(f);
+    }
+
+    fn min(&self) -> Option<(X, Y, Z)> {
+        (**self).min()
+    }
+
+    fn max(&self) -> Option<(X, Y, Z)> {
+        (**self).max()
+    }
+
+    fn options(&self, env: &mut Environment) -> DataSetOptions {
+        (**self).options(env)
     }
 }
 

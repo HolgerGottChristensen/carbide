@@ -88,7 +88,7 @@ where
 /// `OptionsDataset` is not a sequence of points itself.
 impl<X: DataValue, Y: DataValue, Z: DataValue, T, C, S, XS, YS> DataSet<X, Y, Z> for OptionsDataset<T, C, S, XS, YS>
 where
-    T: DataSet<X, Y, Z>,
+    T: DataSet<X, Y, Z> + Clone,
     C: ReadState<T=DataColor>,
     S: ReadState<T=Stepped>,
     XS: ReadState<T=ScaleId>,

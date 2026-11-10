@@ -209,7 +209,7 @@ mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, Map1, ReadStateExtNew, State};
     use indexmap::IndexMap;
-    use crate::controller::{BarController, ControllerSequence, LineController, ScatterController};
+    use crate::controller::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};
     use crate::dataset::DatasetExt;
     use crate::sequence::Sequence;
     use crate::DataColor;
@@ -344,6 +344,68 @@ mod tests {
         assert_eq!(chart.controllers.count(), 2);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 100.0, "Y should include the added controller, but ends at {y_max}");
+    }
+
+    /// Controllers of different types, boxed, share a `Vec` or a state of a `Vec`: a chart
+    /// whose chart types are chosen at runtime. Boxed controllers keep their behaviour: the bars
+    /// still pick the category x scale and include zero, and the line's values reach the y scale.
+    #[test]
+    fn boxed_controllers_of_different_types_can_be_mixed() {
+        let bars = BarController::new(vec![12.0, 19.0, 3.0]).boxed();
+        let line = LineController::new(vec![40.0, 50.0, 45.0]).boxed();
+
+        let chart = fitted(Chart::new(vec![bars.clone(), line.clone()]));
+        assert_eq!(chart.controllers.count(), 2);
+        let (y_min, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_min <= 0.0 && y_max >= 50.0, "Y should cover the bars from zero and the line, got {y_min}..{y_max}");
+        assert!(chart.scales.get(&ScaleId::X).unwrap().normalize(0.0) > 0.0, "the bars should offset the x scale");
+
+        let controllers = LocalState::new(vec![bars.clone()]);
+        let mut chart = Chart::new(controllers.clone());
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 40.0, "Y should fit only the bars, but reaches {y_max}");
+
+        controllers.clone().set_value(vec![bars, line.boxed()]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 50.0, "Y should include the added line, but ends at {y_max}");
+    }
+
+    /// Datasets of different types, boxed, share a `Vec` or a state of a `Vec` in one controller.
+    /// A boxed dataset keeps its options: the one bound to `percent` fits that scale, not Y.
+    #[test]
+    fn boxed_datasets_of_different_types_can_be_mixed() {
+        const PERCENT: ScaleId = ScaleId::new("percent");
+
+        let positions = vec![Position::new(0.0, 10.0), Position::new(1.0, 20.0)].boxed();
+        let values = LocalState::new(vec![15.0, 25.0]).boxed();
+        let margin = vec![0.2, 0.4].y_scale(PERCENT).boxed();
+
+        let chart = fitted(
+            Chart::new(ScatterController::new(vec![positions.clone(), values.clone(), margin]))
+                .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
+        );
+
+        let (y_min, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_min >= 5.0 && y_max >= 25.0, "Y should fit the positions and values only, got {y_min}..{y_max}");
+        let (_, percent_max) = scale_range(&chart, PERCENT);
+        assert!(percent_max < 1.0, "percent should fit only the margin, but ends at {percent_max}");
+
+        let datasets = LocalState::new(vec![positions]);
+        let mut chart = Chart::new(ScatterController::new(datasets.clone()));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 25.0, "Y should fit only the positions, but reaches {y_max}");
+
+        datasets.clone().set_value(vec![vec![Position::new(0.0, 10.0)].boxed(), values]);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 25.0, "Y should include the added values, but ends at {y_max}");
     }
 
     /// Any other state, such as one mapped from a model, works once boxed with `as_dyn_read`.

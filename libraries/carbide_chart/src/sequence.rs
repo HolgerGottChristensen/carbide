@@ -6,10 +6,27 @@
 //! out `&mut` to an item. That is what lets a state be a sequence: `LocalState<Vec<Position>>`
 //! is a dataset, and `LocalState<Vec<LocalState<Vec<Position>>>>` a sequence of datasets.
 
+use std::collections::VecDeque;
 use std::fmt::Debug;
-use carbide::state::{AnyReadState, LocalState, ReadState};
+use std::rc::Rc;
+use std::sync::Arc;
+use carbide::cell::ValueRefMut;
+use carbide::environment::Environment;
+use carbide::state::{
+    AnyReadState, AnyState, EnvMap1, EnvMap10, EnvMap11, EnvMap12, EnvMap2, EnvMap3, EnvMap4, EnvMap5,
+    EnvMap6, EnvMap7, EnvMap8, EnvMap9, FieldState, GlobalState, LocalState, RMap1, RMap10, RMap11,
+    RMap12, RMap2, RMap3, RMap4, RMap5, RMap6, RMap7, RMap8, RMap9, RWMap1, RWMap10, RWMap11, RWMap12,
+    RWMap2, RWMap3, RWMap4, RWMap5, RWMap6, RWMap7, RWMap8, RWMap9, RWOMap1, RWOMap10, RWOMap11,
+    RWOMap12, RWOMap2, RWOMap3, RWOMap4, RWOMap5, RWOMap6, RWOMap7, RWOMap8, RWOMap9, State,
+    StateContract, ValueState,
+};
 
 /// An ordered sequence of `T`s, visited in order with their index.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a sequence of `{T}`",
+    label = "not a sequence of `{T}`",
+    note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
+)]
 pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
     fn foreach(&self, f: &mut dyn FnMut(usize, &T));
 
@@ -20,19 +37,89 @@ pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
     }
 }
 
-/// A value that can be visited as a `T`, at `index` in its sequence. Containers (`Vec`, states
-/// of a `Vec`, tuples) are sequences of anything that is an item, so they are written once for
-/// points, datasets and controllers alike.
+/// A value that can be visited as a `T`, at `index` in its sequence. Containers (collections,
+/// states holding a collection, tuples) are sequences of anything that is an item, so they are
+/// written once for points, datasets and controllers alike.
 ///
 /// The index is passed in so an item can depend on its position: a plain `Scalar` is the point
 /// `(index, value)`.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be an item in a sequence of `{T}`",
+    label = "not an item of a sequence of `{T}`",
+    note = "the items are data points or plain `Scalar` y values in a dataset, datasets in a controller, and controllers in a chart",
+)]
 pub trait SequenceItem<T: ?Sized>: Debug + Clone + 'static {
     fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &T));
 }
 
-impl<T: ?Sized + 'static, I: SequenceItem<T>> Sequence<T> for Vec<I> {
+/// A container of items: what a sequence is made of, held directly or inside a state.
+///
+/// Every collection is a `Sequence` of anything its items are (`SequenceItem`), and so is every
+/// state holding one: `LocalState<VecDeque<Position>>` is a dataset, and
+/// `GlobalState<Rc<[Vec<Scalar>]>>` a sequence of datasets. Implementing `Collection` for a type
+/// of your own makes it, and every state of it, a sequence.
+///
+/// It is implemented once per collection type, not through a blanket implementation over
+/// `IntoIterator`: a blanket over a trait from another crate would conflict with the tuple
+/// implementations. As `Collection` belongs to this crate, the blanket implementations over it
+/// below don't conflict with anything.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a collection of items",
+    label = "not a collection",
+    note = "collections are `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, and any type implementing `Collection`",
+)]
+pub trait Collection: Debug + Clone + 'static {
+    type Item;
+
+    /// The items, in order.
+    fn items(&self) -> impl Iterator<Item=&Self::Item>;
+
+    fn len(&self) -> usize;
+}
+
+/// Implements `Collection` for a container whose items are visited through `.iter()`.
+macro_rules! collection {
+    ([$($generics:tt)*] $collection:ty) => {
+        impl<I: Debug + Clone + 'static, $($generics)*> Collection for $collection {
+            type Item = I;
+
+            fn items(&self) -> impl Iterator<Item=&I> {
+                self.iter()
+            }
+
+            fn len(&self) -> usize {
+                <[I]>::len(&self[..])
+            }
+        }
+    };
+}
+
+collection!([] Vec<I>);
+collection!([const N: usize] [I; N]);
+collection!([] Box<[I]>);
+// Shares its items without copying them: cloning an `Rc` only copies a pointer.
+collection!([] Rc<[I]>);
+// Shares its items without copying them, across threads.
+collection!([] Arc<[I]>);
+// Static data, borrowed rather than copied.
+collection!([] &'static [I]);
+
+impl<I: Debug + Clone + 'static> Collection for VecDeque<I> {
+    type Item = I;
+
+    fn items(&self) -> impl Iterator<Item=&I> {
+        self.iter()
+    }
+
+    fn len(&self) -> usize {
+        VecDeque::len(self)
+    }
+}
+
+/// Every collection is a sequence of anything its items are.
+impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: SequenceItem<T> {
     fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-        for (index, item) in self.iter().enumerate() {
+        for (index, item) in self.items().enumerate() {
             item.visit(index, f);
         }
     }
@@ -42,35 +129,94 @@ impl<T: ?Sized + 'static, I: SequenceItem<T>> Sequence<T> for Vec<I> {
     }
 }
 
-impl<T: ?Sized + 'static, I: SequenceItem<T>> Sequence<T> for LocalState<Vec<I>> {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-        for (index, item) in self.value().iter().enumerate() {
-            item.visit(index, f);
-        }
-    }
+// States. A state holding a collection is a sequence, read through its current value, so the
+// items and their number can change after the chart is built. Each state type is implemented once,
+// for every collection: a blanket over every `ReadState` is not possible from this crate (see
+// "Sequences for every state type" in `docs/multiple-controllers-and-scales.md`).
 
-    fn count(&self) -> usize {
-        self.value().len()
-    }
+/// Implements `Sequence` for a state holding any collection `C`, read through
+/// `AnyReadState::value_dyn`.
+macro_rules! state_sequence {
+    ([$($generics:tt)*] $state:ty $(where $($bounds:tt)*)?) => {
+        impl<T: ?Sized + 'static, C: Collection, $($generics)*> Sequence<T> for $state
+        where
+            C::Item: SequenceItem<T>,
+            $($($bounds)*)?
+        {
+            fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
+                for (index, item) in self.value_dyn().items().enumerate() {
+                    item.visit(index, f);
+                }
+            }
+
+            fn count(&self) -> usize {
+                self.value_dyn().len()
+            }
+        }
+    };
 }
 
-/// Any other read state, such as a mapped one, boxed with `.as_dyn_read()`.
-impl<T: ?Sized + 'static, I: SequenceItem<T>> Sequence<T> for Box<dyn AnyReadState<T=Vec<I>>> {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-        for (index, item) in self.value().iter().enumerate() {
-            item.visit(index, f);
-        }
-    }
+state_sequence!([] LocalState<C>);
+state_sequence!([] GlobalState<C>);
+state_sequence!([] ValueState<C>);
+state_sequence!([S: State<T=FROM>, FROM: StateContract] FieldState<S, FROM, C>);
+// Any read state, boxed with `.as_dyn_read()`: the way in for a state type not listed here.
+state_sequence!([] Box<dyn AnyReadState<T=C>>);
+state_sequence!([] Box<dyn AnyState<T=C>>);
 
-    fn count(&self) -> usize {
-        self.value().len()
-    }
+/// Implements `Sequence` for carbide's mapped states of one arity, mapping to any collection
+/// `C`: read maps (`Map1::read_map`), environment maps (`read_map_env`) and read-write maps
+/// (`map`, `map_owned`). The bounds repeat the ones on carbide's structs.
+macro_rules! map_sequences {
+    ($read_map:ident, $env_map:ident, $map:ident, $owned_map:ident; $($value:ident $source:ident),+) => {
+        state_sequence!(
+            [MAP, $($value: StateContract, $source: AnyReadState<T=$value> + Clone + 'static),+]
+            $read_map<MAP, $($value),+, C, $($source),+>
+            where MAP: Fn($(&$value),+) -> C + Clone + 'static
+        );
+        state_sequence!(
+            [MAP, $($value: StateContract, $source: AnyReadState<T=$value> + Clone + 'static),+]
+            $env_map<MAP, $($value),+, C, $($source),+>
+            where
+                C: Default,
+                MAP: Fn(&mut Environment, $(&$value),+) -> C + Clone + 'static
+        );
+        state_sequence!(
+            [MAP, REPLACE, $($value: StateContract, $source: AnyState<T=$value> + Clone + 'static),+]
+            $map<MAP, REPLACE, $($value),+, C, $($source),+>
+            where
+                MAP: Fn($(&$value),+) -> C + Clone + 'static,
+                REPLACE: Fn(C, $(ValueRefMut<$value>),+) + Clone + 'static
+        );
+        state_sequence!(
+            [MAP, REPLACE, $($value: StateContract, $source: AnyState<T=$value> + Clone + 'static),+]
+            $owned_map<MAP, REPLACE, $($value),+, C, $($source),+>
+            where
+                MAP: Fn($(&$value),+, &mut C) + Clone + 'static,
+                REPLACE: Fn(&C, $(ValueRefMut<$value>),+) + Clone + 'static
+        );
+    };
 }
+
+map_sequences!(RMap1, EnvMap1, RWMap1, RWOMap1; T1 S1);
+map_sequences!(RMap2, EnvMap2, RWMap2, RWOMap2; T1 S1, T2 S2);
+map_sequences!(RMap3, EnvMap3, RWMap3, RWOMap3; T1 S1, T2 S2, T3 S3);
+map_sequences!(RMap4, EnvMap4, RWMap4, RWOMap4; T1 S1, T2 S2, T3 S3, T4 S4);
+map_sequences!(RMap5, EnvMap5, RWMap5, RWOMap5; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5);
+map_sequences!(RMap6, EnvMap6, RWMap6, RWOMap6; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6);
+map_sequences!(RMap7, EnvMap7, RWMap7, RWOMap7; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7);
+map_sequences!(RMap8, EnvMap8, RWMap8, RWOMap8; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8);
+map_sequences!(RMap9, EnvMap9, RWMap9, RWOMap9; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9);
+map_sequences!(RMap10, EnvMap10, RWMap10, RWOMap10; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10);
+map_sequences!(RMap11, EnvMap11, RWMap11, RWOMap11; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11);
+map_sequences!(RMap12, EnvMap12, RWMap12, RWOMap12; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11, T12 S12);
 
 /// Marks the `IntoSequence` implementation for a single item, which becomes a sequence of one.
+#[doc(hidden)]
 pub struct One;
 
 /// Marks the `IntoSequence` implementation for a value that is already a sequence.
+#[doc(hidden)]
 pub struct Many;
 
 /// What a constructor takes where it wants a sequence: a sequence, or a single item, which
@@ -81,6 +227,12 @@ pub struct Many;
 /// both a sequence of its datasets and, being a dataset when its items are points, a sequence of
 /// one. The marker `M` keeps the two implementations apart, as Bevy's `IntoSystem<Marker>`; it is
 /// always inferred.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is neither a `{T}` nor a sequence of them",
+    label = "expected a `{T}`, or a sequence of them",
+    note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
+    note = "a tuple can mix item types; the other sequences hold items of one type, so box controllers of different types with `.boxed()` to mix them",
+)]
 pub trait IntoSequence<T: ?Sized, M> {
     type Sequence: Sequence<T>;
 
@@ -137,3 +289,159 @@ macro_rules! tuple_sequences {
 }
 
 pub(crate) use tuple_sequences;
+
+#[cfg(test)]
+mod tests {
+    use std::collections::VecDeque;
+    use std::rc::Rc;
+    use std::sync::Arc;
+    use carbide::draw::{Position, Scalar};
+    use carbide::environment::Environment;
+    use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExtNew, State, StateExtNew, StateSync, ValueState};
+    use crate::{DataSet, DataSetSequence};
+
+    /// The points of a dataset, as `(x, y)`.
+    fn points<D: DataSet<Scalar, Scalar, Scalar>>(dataset: &D) -> Vec<(Scalar, Scalar)> {
+        let mut points = vec![];
+        dataset.points(&mut |_, point| points.push((point.x(), point.y())));
+        points
+    }
+
+    fn dataset_count<S: DataSetSequence<Scalar, Scalar, Scalar>>(datasets: &S) -> usize {
+        let mut count = 0;
+        datasets.foreach(&mut |_, _| count += 1);
+        assert_eq!(count, datasets.count(), "`count` should agree with `foreach`");
+        count
+    }
+
+    const VALUES: [Scalar; 3] = [3.0, 5.0, 4.0];
+    const INDEXED: [(Scalar, Scalar); 3] = [(0.0, 3.0), (1.0, 5.0), (2.0, 4.0)];
+    static STATIC_VALUES: [Scalar; 3] = VALUES;
+
+    /// Every collection is a dataset of points (plain values at their index), and a sequence of
+    /// datasets.
+    #[test]
+    fn collections_are_sequences() {
+        assert_eq!(points(&VALUES.to_vec()), INDEXED);
+        assert_eq!(points(&VALUES), INDEXED);
+        assert_eq!(points(&VecDeque::from(VALUES.to_vec())), INDEXED);
+        assert_eq!(points(&Box::<[Scalar]>::from(VALUES)), INDEXED);
+        assert_eq!(points(&Rc::<[Scalar]>::from(VALUES)), INDEXED);
+        assert_eq!(points(&Arc::<[Scalar]>::from(VALUES)), INDEXED);
+        assert_eq!(points(&&STATIC_VALUES[..]), INDEXED);
+
+        let positions: Rc<[Position]> = Rc::from(vec![Position::new(1.0, 2.0)]);
+        assert_eq!(points(&positions), vec![(1.0, 2.0)]);
+
+        assert_eq!(dataset_count(&[VALUES.to_vec(), VALUES.to_vec()]), 2);
+        assert_eq!(dataset_count(&VecDeque::from(vec![VALUES.to_vec()])), 1);
+        assert_eq!(dataset_count(&Rc::<[Vec<Scalar>]>::from(vec![VALUES.to_vec(); 3])), 3);
+    }
+
+    /// Every state of a `Vec` is a dataset, read through its current value, so a change to the
+    /// state shows on the next read.
+    #[test]
+    fn states_are_sequences() {
+        let local = LocalState::new(VALUES.to_vec());
+        assert_eq!(points(&local), INDEXED);
+        local.clone().set_value(vec![1.0]);
+        assert_eq!(points(&local), vec![(0.0, 1.0)]);
+
+        let global = GlobalState::new(VALUES.to_vec());
+        assert_eq!(points(&global), INDEXED);
+        global.clone().set_value(vec![1.0]);
+        assert_eq!(points(&global), vec![(0.0, 1.0)]);
+
+        assert_eq!(points(&ValueState::new(VALUES.to_vec())), INDEXED);
+
+        #[derive(Clone, Debug)]
+        struct Model { readings: Vec<Scalar> }
+        let model = LocalState::new(Model { readings: VALUES.to_vec() });
+        let field = FieldState::new(model.clone(), |model: &Model| &model.readings, |model: &mut Model| &mut model.readings);
+        assert_eq!(points(&field), INDEXED);
+
+        let boxed_read = local.clone().as_dyn_read();
+        assert_eq!(points(&boxed_read), vec![(0.0, 1.0)]);
+        let boxed: Box<dyn AnyState<T=Vec<Scalar>>> = local.as_dyn();
+        assert_eq!(points(&boxed), vec![(0.0, 1.0)]);
+
+        let datasets = GlobalState::new(vec![VALUES.to_vec(), VALUES.to_vec()]);
+        assert_eq!(dataset_count(&datasets), 2);
+    }
+
+    /// Every state holds any collection, so every combination is a sequence.
+    #[test]
+    fn states_of_every_collection_are_sequences() {
+        let deque = LocalState::new(VecDeque::from(VALUES.to_vec()));
+        assert_eq!(points(&deque), INDEXED);
+        deque.clone().set_value(VecDeque::from(vec![1.0]));
+        assert_eq!(points(&deque), vec![(0.0, 1.0)]);
+
+        assert_eq!(points(&LocalState::new(VALUES)), INDEXED);
+        assert_eq!(points(&GlobalState::new(Rc::<[Scalar]>::from(VALUES))), INDEXED);
+        assert_eq!(points(&ValueState::new(Arc::<[Scalar]>::from(VALUES))), INDEXED);
+        assert_eq!(points(&LocalState::new(Box::<[Scalar]>::from(VALUES))), INDEXED);
+        assert_eq!(points(&LocalState::new(&STATIC_VALUES[..])), INDEXED);
+
+        let model = LocalState::new(VALUES.to_vec());
+        let shared = Map1::read_map(model.clone(), |values: &Vec<Scalar>| Rc::<[Scalar]>::from(values.as_slice()));
+        assert_eq!(points(&shared), INDEXED, "a mapped state can map to any collection");
+
+        let datasets = LocalState::new(VecDeque::from(vec![VALUES.to_vec(), VALUES.to_vec()]));
+        assert_eq!(dataset_count(&datasets), 2);
+    }
+
+    /// A collection type of your own, implementing `Collection`, is a sequence, and so is every
+    /// state holding it.
+    #[test]
+    fn custom_collections_are_sequences() {
+        #[derive(Clone, Debug)]
+        struct Readings { values: Vec<Scalar> }
+
+        impl super::Collection for Readings {
+            type Item = Scalar;
+
+            fn items(&self) -> impl Iterator<Item=&Scalar> {
+                self.values.iter()
+            }
+
+            fn len(&self) -> usize {
+                self.values.len()
+            }
+        }
+
+        let readings = Readings { values: VALUES.to_vec() };
+        assert_eq!(points(&readings), INDEXED);
+
+        let state = LocalState::new(readings);
+        assert_eq!(points(&state), INDEXED);
+        state.clone().set_value(Readings { values: vec![1.0] });
+        assert_eq!(points(&state), vec![(0.0, 1.0)]);
+    }
+
+    /// carbide's mapped states are datasets. Read and read-write maps compute their value when
+    /// read; an environment map only when synced, as there is no sync pass yet.
+    #[test]
+    fn mapped_states_are_sequences() {
+        let model = LocalState::new(VALUES.to_vec());
+        let double = |values: &Vec<Scalar>| values.iter().map(|value| value * 2.0).collect::<Vec<Scalar>>();
+        let doubled = vec![(0.0, 6.0), (1.0, 10.0), (2.0, 8.0)];
+
+        assert_eq!(points(&Map1::read_map(model.clone(), double)), doubled);
+
+        let mapped = Map1::map(model.clone(), double, |_doubled: Vec<Scalar>, _values| {});
+        assert_eq!(points(&mapped), doubled);
+
+        let owned = Map1::map_owned(model.clone(), move |values: &Vec<Scalar>, out: &mut Vec<Scalar>| *out = double(values), |_: &Vec<Scalar>, _values| {}, vec![]);
+        assert_eq!(points(&owned), doubled);
+
+        let mut env_mapped = Map1::read_map_env(model.clone(), move |_env: &mut Environment, values: &Vec<Scalar>| double(values));
+        assert_eq!(points(&env_mapped), vec![], "an environment map has no value before it is synced");
+        env_mapped.sync(&mut Environment::new());
+        assert_eq!(points(&env_mapped), doubled);
+
+        let two_models = LocalState::new(vec![1.0]);
+        let joined = carbide::state::Map2::read_map(model, two_models, |a: &Vec<Scalar>, b: &Vec<Scalar>| [a.clone(), b.clone()].concat());
+        assert_eq!(points(&joined).len(), 4, "maps of several states are sequences too");
+    }
+}

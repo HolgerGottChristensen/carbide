@@ -23,6 +23,13 @@ pub trait DatasetExt<X: DataValue, Y: DataValue, Z: DataValue>: DataSet<X, Y, Z>
     fn y_scale<YS: IntoReadState<ScaleId>>(self, y_scale: YS) -> OptionsDataset<Self, DataColor, Stepped, ScaleId, YS::Output> {
         OptionsDataset::new(self).y_scale(y_scale)
     }
+
+    /// Boxes the dataset, so datasets of different types can share a `Vec` or a state of a
+    /// `Vec`, as the datasets of one controller. The point types stay part of the type: only
+    /// datasets with the same `X`, `Y` and `Z` can be mixed.
+    fn boxed(self) -> Box<dyn DataSet<X, Y, Z>> {
+        Box::new(self)
+    }
 }
 
 impl<X: DataValue, Y: DataValue, Z: DataValue, T> DatasetExt<X, Y, Z> for T where T: DataSet<X, Y, Z> + Clone + Sized {}
