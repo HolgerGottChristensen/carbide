@@ -240,7 +240,7 @@ impl Scale for LinearScale {
         let mut factor: Scalar;
 
         if let Some(precision) = self.precision {
-            factor = 10i64.pow(precision as u32) as Scalar;
+            factor = rounding_factor(precision as u32);
             spacing = (spacing * factor).ceil() / factor;
         }
 
@@ -266,10 +266,10 @@ impl Scale for LinearScale {
         }
 
         if let Some(precision) = self.precision {
-            factor = 10u32.pow(precision as u32) as Scalar;
+            factor = rounding_factor(precision as u32);
         } else {
             let decimal_places = u32::max(decimal_places(spacing), decimal_places(nice_min)).min(10);
-            factor = 10u32.pow(decimal_places) as Scalar;
+            factor = rounding_factor(decimal_places);
         }
 
         nice_min = (nice_min * factor).round() / factor;
@@ -342,6 +342,14 @@ fn nice_num(range: Scalar) -> Scalar {
     nice_fraction * nice_range
 }
 
+/// `10^decimals`, the factor ticks are rounded with: `(value * factor).round() / factor` keeps
+/// `decimals` decimal places. A float, as Chart.js's `Math.pow(10, …)` in `generateTicks`; it
+/// used to be a `u32`, which overflows from 10 decimals, reached when floating-point noise makes
+/// a tick like 0.9500000000000001 look like it has many.
+fn rounding_factor(decimals: u32) -> Scalar {
+    Scalar::powi(10.0, decimals as i32)
+}
+
 fn almost_equals(x: Scalar, y: Scalar, epsilon: Scalar) -> bool {
     (x - y).abs() < epsilon
 }
@@ -360,4 +368,41 @@ fn decimal_places(x: Scalar) -> u32 {
     }
 
     p
+}
+#[cfg(test)]
+mod tests {
+    use carbide::draw::Scalar;
+    use crate::scale::{Axis, LinearScale, Scale};
+
+    /// A range where min equals max, as from a dataset of one point or of equal values, is
+    /// widened by 5% of the value (or by 1 at zero), as Chart.js's `handleTickRangeOptions`
+    /// does, and gets ticks around the value. It used to panic: rounding the ticks computed
+    /// `10u32.pow(10)`, which overflows, for a range like 0.95..1.05.
+    #[test]
+    fn equal_min_and_max_get_a_range_around_the_value() {
+        for value in [1.0, 0.0, -3.0, 0.1, 1234.5, 1e-7] {
+            let mut scale = LinearScale::new(Axis::Vertical);
+            scale.set_range(value, value);
+
+            let ticks = scale.ticks();
+            assert!(ticks.len() >= 2, "{value}: expected ticks around the value, got {ticks:?}");
+            assert!(scale.min() < value && value < scale.max(), "{value}: the value should be inside {}..{}", scale.min(), scale.max());
+
+            let normalized = scale.normalize(value);
+            assert!(normalized.is_finite() && normalized > 0.0 && normalized < 1.0, "{value}: normalized to {normalized}");
+        }
+    }
+
+    /// Ticks whose rounding needs ten or more decimals: the factor is a float, as in Chart.js,
+    /// so it can't overflow.
+    #[test]
+    fn ticks_with_many_decimals_do_not_overflow() {
+        let mut scale = LinearScale::new(Axis::Vertical);
+        scale.set_range(0.95, 1.05);
+        assert!(scale.ticks().len() >= 2);
+
+        let mut scale = LinearScale::new(Axis::Vertical);
+        scale.set_range(1e-9, 3e-9);
+        assert!(scale.ticks().iter().all(|tick: &Scalar| tick.is_finite()));
+    }
 }

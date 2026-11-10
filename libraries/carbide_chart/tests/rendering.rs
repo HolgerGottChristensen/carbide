@@ -4,6 +4,7 @@ use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 use support::{
+    equal_values_chart, single_point_chart,
     bar_chart, bars_and_line_chart, bars_on_linear_x_scale_chart, bars_on_secondary_y_scale_chart,
     bars_with_x_scale_on_top_chart, example_chart, labelled_bar_chart, line_then_bars_chart, scales_on_all_four_sides_chart,
     scatter_chart, scatter_with_lines_chart, two_bar_controllers_chart, vertical_category_scale_chart, vertical_category_scale_on_right_chart, stacked_horizontal_scales_chart, stacked_scales_chart,
@@ -286,6 +287,27 @@ fn dataset_added_between_renders() {
     harness.snapshot("three_datasets");
 }
 
+/// A single point, so both linear scales start out with no width (min equals max). Pins down that
+/// each is widened around the value, as Chart.js does (5% of the value, or 1 at zero), so the
+/// point sits inside the chart area with ticks on both sides. It used to panic while rounding
+/// the ticks.
+#[test]
+fn scatter_single_point() {
+    let mut harness = Harness::new(single_point_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("scatter_single_point");
+}
+
+/// A line whose values are all equal, so only the y scale starts out with no width. Pins down
+/// that y is widened around the value, putting the flat line in the middle of the chart area,
+/// while x keeps its categories.
+#[test]
+fn line_with_equal_values() {
+    let mut harness = Harness::new(equal_values_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("line_with_equal_values");
+}
+
 /// One dataset of only negative values. Zero is still included in the y scale, so it is the top
 /// of the scale and every bar hangs down from it.
 #[test]
@@ -478,6 +500,20 @@ mod support {
     }
 
     /// Two clouds of (x, y) points with numeric x values, drawn as points only.
+    /// One point on linear scales: both scales start out with min equal to max.
+    pub fn single_point_chart() -> impl Widget {
+        Chart::new(ScatterController::new(vec![(2.0, 1.0)]))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
+    /// A line through equal values: the y scale starts out with min equal to max.
+    pub fn equal_values_chart() -> impl Widget {
+        Chart::new(LineController::new(vec![5.0, 5.0, 5.0, 5.0]))
+            .border().color(BLUE)
+            .locale(ValueState::new(locale!("da")))
+    }
+
     pub fn scatter_chart() -> impl Widget {
         let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
         let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)];
