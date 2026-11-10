@@ -52,27 +52,31 @@ pub trait SequenceItem<T: ?Sized>: Debug + Clone + 'static {
     fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &T));
 }
 
-/// A container of items: what a sequence is made of, held directly or inside a state.
+/// A container of items: what a sequence is made of.
 ///
-/// Every collection is a `Sequence` of anything its items are (`SequenceItem`), and so is every
-/// state holding one: `LocalState<VecDeque<Position>>` is a dataset, and
-/// `GlobalState<Rc<[Vec<Scalar>]>>` a sequence of datasets. Implementing `Collection` for a type
-/// of your own makes it, and every state of it, a sequence.
+/// Every collection is a `Sequence` of anything its items are (`SequenceItem`). Implemented for
+/// `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, and for every
+/// `CollectionState`, so `LocalState<VecDeque<Position>>` is a dataset and
+/// `GlobalState<Rc<[Vec<Scalar>]>>` a sequence of datasets. Implementing it for a type of your own
+/// makes that type, and every state holding it, a sequence.
+///
+/// The items are visited through a callback rather than returned as an iterator: a state can only
+/// lend its value through a borrow guard that lives inside the call.
 ///
 /// It is implemented once per collection type, not through a blanket implementation over
 /// `IntoIterator`: a blanket over a trait from another crate would conflict with the tuple
 /// implementations. As `Collection` belongs to this crate, the blanket implementations over it
-/// below don't conflict with anything.
+/// don't conflict with anything.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` is not a collection of items",
     label = "not a collection",
-    note = "collections are `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, and any type implementing `Collection`",
+    note = "collections are `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, any state holding one (`CollectionState`), and any type implementing `Collection`",
 )]
 pub trait Collection: Debug + Clone + 'static {
     type Item;
 
-    /// The items, in order.
-    fn items(&self) -> impl Iterator<Item=&Self::Item>;
+    /// Calls `f` with each item and its index, in order.
+    fn visit_items(&self, f: &mut dyn FnMut(usize, &Self::Item));
 
     fn len(&self) -> usize;
 }
@@ -83,8 +87,10 @@ macro_rules! collection {
         impl<I: Debug + Clone + 'static, $($generics)*> Collection for $collection {
             type Item = I;
 
-            fn items(&self) -> impl Iterator<Item=&I> {
-                self.iter()
+            fn visit_items(&self, f: &mut dyn FnMut(usize, &I)) {
+                for (index, item) in self.iter().enumerate() {
+                    f(index, item);
+                }
             }
 
             fn len(&self) -> usize {
@@ -107,8 +113,10 @@ collection!([] &'static [I]);
 impl<I: Debug + Clone + 'static> Collection for VecDeque<I> {
     type Item = I;
 
-    fn items(&self) -> impl Iterator<Item=&I> {
-        self.iter()
+    fn visit_items(&self, f: &mut dyn FnMut(usize, &I)) {
+        for (index, item) in self.iter().enumerate() {
+            f(index, item);
+        }
     }
 
     fn len(&self) -> usize {
@@ -119,9 +127,7 @@ impl<I: Debug + Clone + 'static> Collection for VecDeque<I> {
 /// Every collection is a sequence of anything its items are.
 impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: SequenceItem<T> {
     fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-        for (index, item) in self.items().enumerate() {
-            item.visit(index, f);
-        }
+        self.visit_items(&mut |index, item| item.visit(index, f));
     }
 
     fn count(&self) -> usize {
@@ -129,66 +135,95 @@ impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: Sequen
     }
 }
 
-// States. A state holding a collection is a sequence, read through its current value, so the
-// items and their number can change after the chart is built. Each state type is implemented once,
-// for every collection: a blanket over every `ReadState` is not possible from this crate (see
-// "Sequences for every state type" in `docs/multiple-controllers-and-scales.md`).
+/// A state holding a collection. It is a collection of the same items, read through its current
+/// value, so the items and their number can change after the chart is built.
+///
+/// Implemented for carbide's states holding any collection: `LocalState`, `GlobalState`,
+/// `ValueState`, `FieldState`, the mapped states (`read_map`, `read_map_env`, `map`, `map_owned`)
+/// and `Box<dyn AnyReadState>` / `Box<dyn AnyState>`, through which any other carbide state fits
+/// with `.as_dyn_read()`. Implementing it for a state type of your own makes that state a
+/// collection, and so a sequence.
+///
+/// It is implemented once per state type. A blanket implementation over carbide's `ReadState` is
+/// not possible: a plain `Vec` is a constant `ReadState` in carbide, so it would be both a state
+/// and a collection, and the compiler must assume carbide could make tuples states one day (see
+/// "Sequences for every state type" in `docs/multiple-controllers-and-scales.md`).
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` is not a state holding a collection",
+    label = "not a state of a collection",
+    note = "states are `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, and read states boxed with `.as_dyn_read()`, each holding a collection",
+)]
+pub trait CollectionState: Debug + Clone + 'static {
+    type Value: Collection;
 
-/// Implements `Sequence` for a state holding any collection `C`, read through
+    /// Calls `f` with the collection the state holds now. A callback rather than a returned
+    /// reference, so any storage works: a carbide state lends its value through a `ValueRef`, a
+    /// `RefCell` through a `Ref`, a `Mutex` through a guard.
+    fn with_collection(&self, f: &mut dyn FnMut(&Self::Value));
+}
+
+/// A state holding a collection is a collection of the same items.
+impl<S: CollectionState> Collection for S {
+    type Item = <S::Value as Collection>::Item;
+
+    fn visit_items(&self, f: &mut dyn FnMut(usize, &Self::Item)) {
+        self.with_collection(&mut |collection| collection.visit_items(f));
+    }
+
+    fn len(&self) -> usize {
+        let mut len = 0;
+        self.with_collection(&mut |collection| len = collection.len());
+        len
+    }
+}
+
+/// Implements `CollectionState` for a carbide state holding any collection `C`, read through
 /// `AnyReadState::value_dyn`.
-macro_rules! state_sequence {
+macro_rules! collection_state {
     ([$($generics:tt)*] $state:ty $(where $($bounds:tt)*)?) => {
-        impl<T: ?Sized + 'static, C: Collection, $($generics)*> Sequence<T> for $state
-        where
-            C::Item: SequenceItem<T>,
-            $($($bounds)*)?
-        {
-            fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-                for (index, item) in self.value_dyn().items().enumerate() {
-                    item.visit(index, f);
-                }
-            }
+        impl<C: Collection, $($generics)*> CollectionState for $state $(where $($bounds)*)? {
+            type Value = C;
 
-            fn count(&self) -> usize {
-                self.value_dyn().len()
+            fn with_collection(&self, f: &mut dyn FnMut(&C)) {
+                f(&self.value_dyn());
             }
         }
     };
 }
 
-state_sequence!([] LocalState<C>);
-state_sequence!([] GlobalState<C>);
-state_sequence!([] ValueState<C>);
-state_sequence!([S: State<T=FROM>, FROM: StateContract] FieldState<S, FROM, C>);
-// Any read state, boxed with `.as_dyn_read()`: the way in for a state type not listed here.
-state_sequence!([] Box<dyn AnyReadState<T=C>>);
-state_sequence!([] Box<dyn AnyState<T=C>>);
+collection_state!([] LocalState<C>);
+collection_state!([] GlobalState<C>);
+collection_state!([] ValueState<C>);
+collection_state!([S: State<T=FROM>, FROM: StateContract] FieldState<S, FROM, C>);
+// Any read state, boxed with `.as_dyn_read()`: the way in for a carbide state not listed here.
+collection_state!([] Box<dyn AnyReadState<T=C>>);
+collection_state!([] Box<dyn AnyState<T=C>>);
 
-/// Implements `Sequence` for carbide's mapped states of one arity, mapping to any collection
-/// `C`: read maps (`Map1::read_map`), environment maps (`read_map_env`) and read-write maps
-/// (`map`, `map_owned`). The bounds repeat the ones on carbide's structs.
-macro_rules! map_sequences {
+/// Implements `CollectionState` for carbide's mapped states of one arity, mapping to any
+/// collection `C`: read maps (`Map1::read_map`), environment maps (`read_map_env`) and
+/// read-write maps (`map`, `map_owned`). The bounds repeat the ones on carbide's structs.
+macro_rules! map_states {
     ($read_map:ident, $env_map:ident, $map:ident, $owned_map:ident; $($value:ident $source:ident),+) => {
-        state_sequence!(
+        collection_state!(
             [MAP, $($value: StateContract, $source: AnyReadState<T=$value> + Clone + 'static),+]
             $read_map<MAP, $($value),+, C, $($source),+>
             where MAP: Fn($(&$value),+) -> C + Clone + 'static
         );
-        state_sequence!(
+        collection_state!(
             [MAP, $($value: StateContract, $source: AnyReadState<T=$value> + Clone + 'static),+]
             $env_map<MAP, $($value),+, C, $($source),+>
             where
                 C: Default,
                 MAP: Fn(&mut Environment, $(&$value),+) -> C + Clone + 'static
         );
-        state_sequence!(
+        collection_state!(
             [MAP, REPLACE, $($value: StateContract, $source: AnyState<T=$value> + Clone + 'static),+]
             $map<MAP, REPLACE, $($value),+, C, $($source),+>
             where
                 MAP: Fn($(&$value),+) -> C + Clone + 'static,
                 REPLACE: Fn(C, $(ValueRefMut<$value>),+) + Clone + 'static
         );
-        state_sequence!(
+        collection_state!(
             [MAP, REPLACE, $($value: StateContract, $source: AnyState<T=$value> + Clone + 'static),+]
             $owned_map<MAP, REPLACE, $($value),+, C, $($source),+>
             where
@@ -198,18 +233,18 @@ macro_rules! map_sequences {
     };
 }
 
-map_sequences!(RMap1, EnvMap1, RWMap1, RWOMap1; T1 S1);
-map_sequences!(RMap2, EnvMap2, RWMap2, RWOMap2; T1 S1, T2 S2);
-map_sequences!(RMap3, EnvMap3, RWMap3, RWOMap3; T1 S1, T2 S2, T3 S3);
-map_sequences!(RMap4, EnvMap4, RWMap4, RWOMap4; T1 S1, T2 S2, T3 S3, T4 S4);
-map_sequences!(RMap5, EnvMap5, RWMap5, RWOMap5; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5);
-map_sequences!(RMap6, EnvMap6, RWMap6, RWOMap6; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6);
-map_sequences!(RMap7, EnvMap7, RWMap7, RWOMap7; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7);
-map_sequences!(RMap8, EnvMap8, RWMap8, RWOMap8; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8);
-map_sequences!(RMap9, EnvMap9, RWMap9, RWOMap9; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9);
-map_sequences!(RMap10, EnvMap10, RWMap10, RWOMap10; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10);
-map_sequences!(RMap11, EnvMap11, RWMap11, RWOMap11; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11);
-map_sequences!(RMap12, EnvMap12, RWMap12, RWOMap12; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11, T12 S12);
+map_states!(RMap1, EnvMap1, RWMap1, RWOMap1; T1 S1);
+map_states!(RMap2, EnvMap2, RWMap2, RWOMap2; T1 S1, T2 S2);
+map_states!(RMap3, EnvMap3, RWMap3, RWOMap3; T1 S1, T2 S2, T3 S3);
+map_states!(RMap4, EnvMap4, RWMap4, RWOMap4; T1 S1, T2 S2, T3 S3, T4 S4);
+map_states!(RMap5, EnvMap5, RWMap5, RWOMap5; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5);
+map_states!(RMap6, EnvMap6, RWMap6, RWOMap6; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6);
+map_states!(RMap7, EnvMap7, RWMap7, RWOMap7; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7);
+map_states!(RMap8, EnvMap8, RWMap8, RWOMap8; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8);
+map_states!(RMap9, EnvMap9, RWMap9, RWOMap9; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9);
+map_states!(RMap10, EnvMap10, RWMap10, RWOMap10; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10);
+map_states!(RMap11, EnvMap11, RWMap11, RWOMap11; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11);
+map_states!(RMap12, EnvMap12, RWMap12, RWOMap12; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11, T12 S12);
 
 /// Marks the `IntoSequence` implementation for a single item, which becomes a sequence of one.
 #[doc(hidden)]
@@ -401,8 +436,10 @@ mod tests {
         impl super::Collection for Readings {
             type Item = Scalar;
 
-            fn items(&self) -> impl Iterator<Item=&Scalar> {
-                self.values.iter()
+            fn visit_items(&self, f: &mut dyn FnMut(usize, &Scalar)) {
+                for (index, value) in self.values.iter().enumerate() {
+                    f(index, value);
+                }
             }
 
             fn len(&self) -> usize {
@@ -417,6 +454,34 @@ mod tests {
         assert_eq!(points(&state), INDEXED);
         state.clone().set_value(Readings { values: vec![1.0] });
         assert_eq!(points(&state), vec![(0.0, 1.0)]);
+    }
+
+    /// A state type of your own, implementing `CollectionState`, is a collection, and so a
+    /// sequence, without implementing `Sequence` itself. States of states work too.
+    #[test]
+    fn custom_states_are_sequences() {
+        use std::cell::RefCell;
+        use super::CollectionState;
+
+        /// A shared, swappable buffer of readings, standing in for a user's own state type.
+        #[derive(Clone, Debug)]
+        struct SharedReadings(Rc<RefCell<Vec<Scalar>>>);
+
+        impl CollectionState for SharedReadings {
+            type Value = Vec<Scalar>;
+
+            fn with_collection(&self, f: &mut dyn FnMut(&Vec<Scalar>)) {
+                f(&self.0.borrow());
+            }
+        }
+
+        let readings = SharedReadings(Rc::new(RefCell::new(VALUES.to_vec())));
+        assert_eq!(points(&readings), INDEXED);
+        readings.0.borrow_mut().truncate(1);
+        assert_eq!(points(&readings), vec![(0.0, 3.0)]);
+
+        let nested = LocalState::new(LocalState::new(VALUES.to_vec()));
+        assert_eq!(points(&nested), INDEXED);
     }
 
     /// carbide's mapped states are datasets. Read and read-write maps compute their value when

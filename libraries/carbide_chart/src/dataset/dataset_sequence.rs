@@ -9,8 +9,9 @@ use crate::sequence::{tuple_sequences, Sequence};
 ///   `Arc<[D]>`, `&'static [D]`, and any type of your own implementing `Collection`;
 /// - states holding any of those collections: `LocalState`, `GlobalState`, `ValueState`,
 ///   `FieldState`, carbide's mapped states (`read_map`, `read_map_env`, `map`, `map_owned`), and
-///   `Box<dyn AnyReadState>` / `Box<dyn AnyState>`. Any other state is a sequence once boxed with
-///   `.as_dyn_read()`.
+///   `Box<dyn AnyReadState>` / `Box<dyn AnyState>`. Any other carbide state is a sequence once
+///   boxed with `.as_dyn_read()`, and a state type of your own once it implements
+///   `CollectionState`.
 ///
 /// Every item of a collection or state has the same type. To mix dataset types there, box them
 /// with `DatasetExt::boxed`: `vec![points.boxed(), values.boxed()]`. The point types stay part
