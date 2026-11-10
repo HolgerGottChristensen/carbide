@@ -31,6 +31,10 @@ impl<C: DatasetController + Clone> SequenceItem<dyn DatasetController> for C {
     fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DatasetController + 'static))) {
         f(index, self);
     }
+
+    fn sync(&mut self, env: &mut carbide::environment::Environment) -> bool {
+        DatasetController::sync(self, env)
+    }
 }
 
 tuple_sequences!([] dyn DatasetController);

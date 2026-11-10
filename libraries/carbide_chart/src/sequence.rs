@@ -12,13 +12,14 @@ use std::rc::Rc;
 use std::sync::Arc;
 use carbide::cell::ValueRefMut;
 use carbide::environment::Environment;
+use carbide::state::StateSync;
 use carbide::state::{
-    AnyReadState, AnyState, EnvMap1, EnvMap10, EnvMap11, EnvMap12, EnvMap2, EnvMap3, EnvMap4, EnvMap5,
+    AnyReadState, AnyState, CachedReadState, CachedState, EnvMap1, EnvMap10, EnvMap11, EnvMap12, EnvMap2, EnvMap3, EnvMap4, EnvMap5,
     EnvMap6, EnvMap7, EnvMap8, EnvMap9, FieldState, GlobalState, LocalState, RMap1, RMap10, RMap11,
     RMap12, RMap2, RMap3, RMap4, RMap5, RMap6, RMap7, RMap8, RMap9, RWMap1, RWMap10, RWMap11, RWMap12,
     RWMap2, RWMap3, RWMap4, RWMap5, RWMap6, RWMap7, RWMap8, RWMap9, RWOMap1, RWOMap10, RWOMap11,
     RWOMap12, RWOMap2, RWOMap3, RWOMap4, RWOMap5, RWOMap6, RWOMap7, RWOMap8, RWOMap9, State,
-    StateContract, ValueState,
+    ReadState, StateContract, ValueState,
 };
 
 /// An ordered sequence of `T`s, visited in order with their index.
@@ -29,6 +30,12 @@ use carbide::state::{
 )]
 pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
     fn foreach(&self, f: &mut dyn FnMut(usize, &T));
+
+    /// Syncs the states in the sequence with the environment: the sequence itself when it is a
+    /// state, and its items. Returns whether anything may have changed. The chart syncs its
+    /// controllers before every update, render and event, as carbide syncs a widget's states, so
+    /// reads afterwards see the current values without syncing.
+    fn sync(&mut self, env: &mut Environment) -> bool;
 
     fn count(&self) -> usize {
         let mut count = 0;
@@ -50,6 +57,13 @@ pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
 )]
 pub trait SequenceItem<T: ?Sized>: Debug + Clone + 'static {
     fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &T));
+
+    /// Syncs the states in the item with the environment, and returns whether anything may have
+    /// changed. By default there is nothing to sync: a data point or a plain `Scalar` holds no
+    /// states. Datasets and controllers sync theirs.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
 }
 
 /// A container of items: what a sequence is made of.
@@ -79,11 +93,25 @@ pub trait Collection: Debug + Clone + 'static {
     fn visit_items(&self, f: &mut dyn FnMut(usize, &Self::Item));
 
     fn len(&self) -> usize;
+
+    /// Syncs the collection itself with the environment, and returns whether it may have
+    /// changed. A plain container has nothing to sync; a state holding a collection syncs the
+    /// state.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
+
+    /// Calls `f` with each item, mutably, so the sequence can sync the items. By default no items
+    /// are visited: a container that shares its items (`Rc<[_]>`, `Arc<[_]>`, `&'static [_]`)
+    /// or only lends them for reading can't hand out `&mut`, so items inside it aren't synced.
+    fn visit_items_mut(&mut self, _f: &mut dyn FnMut(usize, &mut Self::Item)) {}
 }
 
-/// Implements `Collection` for a container whose items are visited through `.iter()`.
+/// Implements `Collection` for a container whose items are visited through `.iter()`. With
+/// `mut`, the container owns its items, so they are also visited mutably, through `.iter_mut()`,
+/// for syncing.
 macro_rules! collection {
-    ([$($generics:tt)*] $collection:ty) => {
+    (@impl [$($generics:tt)*] $collection:ty { $($extra:tt)* }) => {
         impl<I: Debug + Clone + 'static, $($generics)*> Collection for $collection {
             type Item = I;
 
@@ -96,13 +124,27 @@ macro_rules! collection {
             fn len(&self) -> usize {
                 <[I]>::len(&self[..])
             }
+
+            $($extra)*
         }
+    };
+    (mut [$($generics:tt)*] $collection:ty) => {
+        collection!(@impl [$($generics)*] $collection {
+            fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut I)) {
+                for (index, item) in self.iter_mut().enumerate() {
+                    f(index, item);
+                }
+            }
+        });
+    };
+    ([$($generics:tt)*] $collection:ty) => {
+        collection!(@impl [$($generics)*] $collection {});
     };
 }
 
-collection!([] Vec<I>);
-collection!([const N: usize] [I; N]);
-collection!([] Box<[I]>);
+collection!(mut [] Vec<I>);
+collection!(mut [const N: usize] [I; N]);
+collection!(mut [] Box<[I]>);
 // Shares its items without copying them: cloning an `Rc` only copies a pointer.
 collection!([] Rc<[I]>);
 // Shares its items without copying them, across threads.
@@ -122,12 +164,24 @@ impl<I: Debug + Clone + 'static> Collection for VecDeque<I> {
     fn len(&self) -> usize {
         VecDeque::len(self)
     }
+
+    fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut I)) {
+        for (index, item) in self.iter_mut().enumerate() {
+            f(index, item);
+        }
+    }
 }
 
 /// Every collection is a sequence of anything its items are.
 impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: SequenceItem<T> {
     fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
         self.visit_items(&mut |index, item| item.visit(index, f));
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut changed = Collection::sync(self, env);
+        self.visit_items_mut(&mut |_, item| changed |= <C::Item as SequenceItem<T>>::sync(item, env));
+        changed
     }
 
     fn count(&self) -> usize {
@@ -139,8 +193,9 @@ impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: Sequen
 /// value, so the items and their number can change after the chart is built.
 ///
 /// Implemented for carbide's states holding any collection: `LocalState`, `GlobalState`,
-/// `ValueState`, `FieldState`, the mapped states (`read_map`, `read_map_env`, `map`, `map_owned`)
-/// and `Box<dyn AnyReadState>` / `Box<dyn AnyState>`, through which any other carbide state fits
+/// `ValueState`, `FieldState`, the mapped states (`read_map`, `read_map_env`, `map`, `map_owned`),
+/// the cached states (`CachedReadState`, `CachedState`) and `Box<dyn AnyReadState>` /
+/// `Box<dyn AnyState>`, through which any other carbide state fits
 /// with `.as_dyn_read()`. Implementing it for a state type of your own makes that state a
 /// collection, and so a sequence.
 ///
@@ -160,6 +215,17 @@ pub trait CollectionState: Debug + Clone + 'static {
     /// reference, so any storage works: a carbide state lends its value through a `ValueRef`, a
     /// `RefCell` through a `Ref`, a `Mutex` through a guard.
     fn with_collection(&self, f: &mut dyn FnMut(&Self::Value));
+
+    /// Syncs the state with the environment, and returns whether it may have changed. By default
+    /// there's nothing to sync, and the answer is `true`: without a way to tell, the state may
+    /// always have changed.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        true
+    }
+
+    /// Calls `f` with the collection, mutably, so the items in it can be synced. By default it
+    /// isn't called: a state that only lends its value for reading keeps its items unsynced.
+    fn with_collection_mut(&mut self, _f: &mut dyn FnMut(&mut Self::Value)) {}
 }
 
 /// A state holding a collection is a collection of the same items.
@@ -175,29 +241,66 @@ impl<S: CollectionState> Collection for S {
         self.with_collection(&mut |collection| len = collection.len());
         len
     }
+
+    /// Syncs the state, then the collection it holds, in case that is a state too.
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut changed = CollectionState::sync(self, env);
+        self.with_collection_mut(&mut |collection| changed |= Collection::sync(collection, env));
+        changed
+    }
+
+    fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut Self::Item)) {
+        self.with_collection_mut(&mut |collection| collection.visit_items_mut(f));
+    }
 }
 
-/// Implements `CollectionState` for a carbide state holding any collection `C`, read through
-/// `AnyReadState::value_dyn`.
+/// Implements `CollectionState` for a carbide state holding any collection `C`: read through
+/// `AnyReadState::value_dyn`, synced through `StateSync::sync`. With `mut`, the state stores its
+/// value plainly and lends it mutably through `AnyState::value_dyn_mut`, so the items in it are
+/// synced too.
+///
+/// carbide's read-write maps (`map`, `map_owned`) and `Box<dyn AnyState>`, which could hold one,
+/// are not marked `mut`: borrowing a read-write map's value mutably writes it back into the
+/// states it maps from when the borrow ends, which syncing must not do.
 macro_rules! collection_state {
-    ([$($generics:tt)*] $state:ty $(where $($bounds:tt)*)?) => {
-        impl<C: Collection, $($generics)*> CollectionState for $state $(where $($bounds)*)? {
+    (@impl [$($generics:tt)*] $state:ty [$($bounds:tt)*] { $($extra:tt)* }) => {
+        impl<C: Collection, $($generics)*> CollectionState for $state where $($bounds)* {
             type Value = C;
 
             fn with_collection(&self, f: &mut dyn FnMut(&C)) {
                 f(&self.value_dyn());
             }
+
+            fn sync(&mut self, env: &mut Environment) -> bool {
+                StateSync::sync(self, env)
+            }
+
+            $($extra)*
         }
+    };
+    (mut [$($generics:tt)*] $state:ty $(where $($bounds:tt)*)?) => {
+        collection_state!(@impl [$($generics)*] $state [$($($bounds)*)?] {
+            fn with_collection_mut(&mut self, f: &mut dyn FnMut(&mut C)) {
+                f(&mut self.value_dyn_mut());
+            }
+        });
+    };
+    ([$($generics:tt)*] $state:ty $(where $($bounds:tt)*)?) => {
+        collection_state!(@impl [$($generics)*] $state [$($($bounds)*)?] {});
     };
 }
 
-collection_state!([] LocalState<C>);
-collection_state!([] GlobalState<C>);
-collection_state!([] ValueState<C>);
-collection_state!([S: State<T=FROM>, FROM: StateContract] FieldState<S, FROM, C>);
+collection_state!(mut [] LocalState<C>);
+collection_state!(mut [] GlobalState<C>);
+collection_state!(mut [] ValueState<C>);
+collection_state!(mut [S: State<T=FROM>, FROM: StateContract] FieldState<S, FROM, C>);
 // Any read state, boxed with `.as_dyn_read()`: the way in for a carbide state not listed here.
 collection_state!([] Box<dyn AnyReadState<T=C>>);
 collection_state!([] Box<dyn AnyState<T=C>>);
+// Cached states compute their value when synced and read the cached result afterwards, so a
+// mapping wrapped in one computes once per sync instead of on every read.
+collection_state!([S: ReadState<T=C>] CachedReadState<C, S>);
+collection_state!([S: State<T=C>] CachedState<C, S>);
 
 /// Implements `CollectionState` for carbide's mapped states of one arity, mapping to any
 /// collection `C`: read maps (`Map1::read_map`), environment maps (`read_map_env`) and
@@ -319,6 +422,14 @@ macro_rules! tuple_sequences {
             fn count(&self) -> usize {
                 [$($index),+].len()
             }
+
+            fn sync(&mut self, env: &mut carbide::environment::Environment) -> bool {
+                let mut changed = false;
+                $(
+                    changed |= <$name as $crate::sequence::SequenceItem<$item>>::sync(&mut self.$index, env);
+                )+
+                changed
+            }
         }
     };
 }
@@ -332,7 +443,7 @@ mod tests {
     use std::sync::Arc;
     use carbide::draw::{Position, Scalar};
     use carbide::environment::Environment;
-    use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExtNew, State, StateExtNew, StateSync, ValueState};
+    use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExtNew, State, StateExtNew, ValueState};
     use crate::{DataSet, DataSetSequence};
 
     /// The points of a dataset, as `(x, y)`.
@@ -529,8 +640,39 @@ mod tests {
         assert_eq!(points(&nested), INDEXED);
     }
 
+    /// A mapping wrapped in a cached state computes once per sync, however often the dataset is
+    /// read afterwards. Unwrapped, it computes on every read.
+    #[test]
+    fn cached_states_compute_once_per_sync() {
+        use std::cell::Cell;
+        use carbide::state::CachedReadState;
+
+        let model = LocalState::new(VALUES.to_vec());
+        let computed = Rc::new(Cell::new(0));
+        let counter = computed.clone();
+        let mapped = Map1::read_map(model, move |values: &Vec<Scalar>| {
+            counter.set(counter.get() + 1);
+            values.clone()
+        });
+
+        let mut cached = CachedReadState::new(mapped.clone());
+        DataSet::sync(&mut cached, &mut Environment::new());
+        computed.set(0);
+
+        assert_eq!(points(&cached), INDEXED);
+        assert!(cached.min().is_some() && cached.max().is_some());
+        assert_eq!(computed.get(), 0, "reads of a synced cached state shouldn't recompute");
+
+        DataSet::sync(&mut cached, &mut Environment::new());
+        assert_eq!(computed.get(), 1, "a sync should compute the mapping once");
+
+        computed.set(0);
+        let _ = (points(&mapped), mapped.min(), mapped.max());
+        assert_eq!(computed.get(), 3, "unwrapped, every read recomputes");
+    }
+
     /// carbide's mapped states are datasets. Read and read-write maps compute their value when
-    /// read; an environment map only when synced, as there is no sync pass yet.
+    /// read; an environment map only when synced, which the dataset's `sync` does.
     #[test]
     fn mapped_states_are_sequences() {
         let model = LocalState::new(VALUES.to_vec());
@@ -547,8 +689,8 @@ mod tests {
 
         let mut env_mapped = Map1::read_map_env(model.clone(), move |_env: &mut Environment, values: &Vec<Scalar>| double(values));
         assert_eq!(points(&env_mapped), vec![], "an environment map has no value before it is synced");
-        env_mapped.sync(&mut Environment::new());
-        assert_eq!(points(&env_mapped), doubled);
+        assert!(DataSet::sync(&mut env_mapped, &mut Environment::new()), "syncing a state reports that it may have changed");
+        assert_eq!(points(&env_mapped), doubled, "the dataset's sync syncs the environment map");
 
         let two_models = LocalState::new(vec![1.0]);
         let joined = carbide::state::Map2::read_map(model, two_models, |a: &Vec<Scalar>, b: &Vec<Scalar>| [a.clone(), b.clone()].concat());

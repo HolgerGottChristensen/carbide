@@ -106,14 +106,39 @@ where
         self.inner.max()
     }
 
-    fn options(&self, env: &mut Environment) -> DataSetOptions {
-        let options = self.inner.options(env);
+    /// Syncs the inner dataset and every option state.
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut changed = self.inner.sync(env);
+
+        if let Some(color) = &mut self.color {
+            changed |= color.sync(env);
+        }
+
+        if let Some(stepped) = &mut self.stepped {
+            changed |= stepped.sync(env);
+        }
+
+        if let Some(x_scale) = &mut self.x_scale {
+            changed |= x_scale.sync(env);
+        }
+
+        if let Some(y_scale) = &mut self.y_scale {
+            changed |= y_scale.sync(env);
+        }
+
+        changed
+    }
+
+    /// The inner dataset's options, with each option set here read from its state as it was last
+    /// synced.
+    fn options(&self) -> DataSetOptions {
+        let options = self.inner.options();
 
         DataSetOptions {
-            color: self.color.clone().map_or(options.color, |mut color| { color.sync(env); *color.value() }),
-            stepped: self.stepped.clone().map_or(options.stepped, |mut stepped| { stepped.sync(env); *stepped.value() }),
-            x_scale: self.x_scale.clone().map_or(options.x_scale, |mut x_scale| { x_scale.sync(env); x_scale.value().clone() }),
-            y_scale: self.y_scale.clone().map_or(options.y_scale, |mut y_scale| { y_scale.sync(env); y_scale.value().clone() }),
+            color: self.color.as_ref().map_or(options.color, |color| *color.value()),
+            stepped: self.stepped.as_ref().map_or(options.stepped, |stepped| *stepped.value()),
+            x_scale: self.x_scale.as_ref().map_or(options.x_scale, |x_scale| x_scale.value().clone()),
+            y_scale: self.y_scale.as_ref().map_or(options.y_scale, |y_scale| y_scale.value().clone()),
         }
     }
 }

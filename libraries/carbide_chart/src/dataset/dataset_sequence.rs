@@ -8,7 +8,8 @@ use crate::sequence::{tuple_sequences, Sequence};
 /// - collections (`Collection`): `Vec<D>`, `[D; N]`, `VecDeque<D>`, `Box<[D]>`, `Rc<[D]>`,
 ///   `Arc<[D]>`, `&'static [D]`, and any type of your own implementing `Collection`;
 /// - states holding any of those collections: `LocalState`, `GlobalState`, `ValueState`,
-///   `FieldState`, carbide's mapped states (`read_map`, `read_map_env`, `map`, `map_owned`), and
+///   `FieldState`, carbide's mapped states (`read_map`, `read_map_env`, `map`, `map_owned`), its
+///   cached states (`CachedReadState`, `CachedState`), and
 ///   `Box<dyn AnyReadState>` / `Box<dyn AnyState>`. Any other carbide state is a sequence once
 ///   boxed with `.as_dyn_read()`, and a state type of your own once it implements
 ///   `CollectionState`.

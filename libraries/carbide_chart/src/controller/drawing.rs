@@ -4,7 +4,6 @@
 
 use carbide::color::{Color, GREEN, RED, WHITE};
 use carbide::draw::{Rect, Scalar};
-use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, DataSetSequence};
 use crate::element::Stepped;
@@ -15,7 +14,7 @@ const PALETTE: [Color; 3] = [WHITE, GREEN, RED];
 
 /// Reports every dataset's x and y range to the scales it is bound to. Empty datasets have no
 /// bounds and contribute nothing.
-pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, env: &mut Environment)
+pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds)
 where
     D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
@@ -24,7 +23,7 @@ where
             return;
         };
 
-        let options = dataset.options(env);
+        let options = dataset.options();
 
         bounds.include(&options.x_scale, x_min, x_max);
         bounds.include(&options.y_scale, y_min, y_max);
@@ -38,7 +37,7 @@ where
     D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
     datasets.foreach(&mut |dataset_index, dataset| {
-        let options = dataset.options(ctx.env());
+        let options = dataset.options();
 
         let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
             return;
@@ -139,7 +138,7 @@ where
     D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
     datasets.foreach(&mut |dataset_index, dataset| {
-        let options = dataset.options(ctx.env());
+        let options = dataset.options();
 
         let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
             return;

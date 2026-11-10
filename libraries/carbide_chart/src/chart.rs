@@ -6,7 +6,7 @@ use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Dimension, Position, Rect, Scalar};
 use indexmap::IndexMap;
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::widget::{CommonWidget, WidgetId};
+use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
@@ -21,7 +21,7 @@ const SCALE_SPACING: Scalar = 8.0;
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
 /// in different controllers share a scale when they are bound to the same id.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Update)]
+#[carbide_exclude(Render, Update, Sync)]
 pub struct Chart<C> where C: ControllerSequence {
     #[id] id: WidgetId,
     position: Position,
@@ -170,6 +170,15 @@ impl<C: ControllerSequence> CommonWidget for Chart<C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
+/// Syncs every state below the chart, through its controllers and their datasets. carbide calls
+/// it before every update and event, and `render` calls it first, as carbide's default `render`
+/// does, so the scales are fitted and the datasets drawn from synced values.
+impl<C: ControllerSequence> WidgetSync for Chart<C> {
+    fn sync(&mut self, env: &mut Environment) {
+        self.controllers.sync(env);
+    }
+}
+
 impl<C: ControllerSequence> Update for Chart<C> {
     fn update(&mut self, ctx: &mut UpdateContext) {
         self.fit_scales(ctx.env);
@@ -178,6 +187,8 @@ impl<C: ControllerSequence> Update for Chart<C> {
 
 impl<C: ControllerSequence> Render for Chart<C> {
     fn render(&mut self, context: &mut RenderContext) {
+        self.sync(context.env);
+
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
         let sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
@@ -208,6 +219,7 @@ mod tests {
     use carbide::draw::{Dimension, Position, Scalar};
     use carbide::environment::Environment;
     use carbide::state::{LocalState, Map1, ReadStateExtNew, State};
+    use carbide::widget::WidgetSync;
     use indexmap::IndexMap;
     use crate::controller::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};
     use crate::dataset::DatasetExt;
@@ -406,6 +418,60 @@ mod tests {
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 25.0, "Y should include the added values, but ends at {y_max}");
+    }
+
+    /// A dataset mapped from the environment (`read_map_env`) only has a value once synced. The
+    /// chart syncs it, as carbide syncs the chart before every update and render, so the scales
+    /// fit the mapped values.
+    #[test]
+    fn the_chart_syncs_datasets_mapped_from_the_environment() {
+        let model = LocalState::new(vec![10.0, 20.0, 30.0]);
+        let mapped = Map1::read_map_env(model, |_env: &mut Environment, values: &Vec<Scalar>| values.clone());
+
+        let mut chart = Chart::new(ScatterController::new(mapped));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 10.0, "unsynced, the mapped dataset should have no values, but Y reaches {y_max}");
+
+        chart.sync(&mut env);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 30.0, "synced, Y should fit the mapped values, but ends at {y_max}");
+    }
+
+    /// The chart syncs datasets held inside a state too: a `LocalState` lends its collection
+    /// mutably, so the environment-mapped dataset in it is synced.
+    #[test]
+    fn the_chart_syncs_datasets_inside_a_state() {
+        let model = LocalState::new(vec![10.0, 20.0, 30.0]);
+        let mapped = Map1::read_map_env(model, |_env: &mut Environment, values: &Vec<Scalar>| values.clone());
+        let datasets = LocalState::new(vec![mapped]);
+
+        let mut chart = Chart::new(ScatterController::new(datasets));
+        let mut env = Environment::new();
+
+        chart.sync(&mut env);
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 30.0, "Y should fit the synced dataset inside the state, but ends at {y_max}");
+    }
+
+    /// `sync` reports whether anything may have changed: plain data never changes, while a state
+    /// may have, and says so until carbide can tell.
+    #[test]
+    fn sync_reports_whether_anything_may_have_changed() {
+        let mut env = Environment::new();
+
+        let mut plain = ScatterController::new((vec![1.0, 2.0], vec![(0.0, 1.0)]));
+        assert!(!DatasetController::sync(&mut plain, &mut env), "plain data has nothing that changes");
+
+        let mut with_state = ScatterController::new((vec![1.0, 2.0], LocalState::new(vec![3.0])));
+        assert!(DatasetController::sync(&mut with_state, &mut env), "a state may have changed");
+
+        let mut with_option_state = ScatterController::new(vec![1.0, 2.0].color(LocalState::new(DataColor::Color(RED))));
+        assert!(DatasetController::sync(&mut with_option_state, &mut env), "an option state may have changed");
     }
 
     /// Any other state, such as one mapped from a model, works once boxed with `as_dyn_read`.

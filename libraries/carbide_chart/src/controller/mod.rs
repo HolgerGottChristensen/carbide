@@ -25,8 +25,17 @@ mod scatter_controller;
     note = "controllers are `BarController`, `LineController`, `ScatterController`, boxed controllers (`.boxed()`), and types implementing `DatasetController`",
 )]
 pub trait DatasetController: DynClone + Debug + 'static {
-    /// Reports the data range of every dataset to the bounds of the scales it is bound to.
-    /// `env` is for reading the datasets' options, which can be states.
+    /// Syncs the states in the controller's datasets with the environment, and returns whether
+    /// anything may have changed. The chart calls it before every update, render and event, as
+    /// carbide syncs a widget's states, so `collect_bounds` and `draw` read synced values. The
+    /// default syncs nothing: a controller of your own should sync its datasets here.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
+
+    /// Reports the data range of every dataset to the bounds of the scales it is bound to. The
+    /// datasets have been synced by then; `env` is for anything else the controller reads from
+    /// the environment.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment);
 
     /// Draws the datasets inside `area`, each on the chart's fitted scales it is bound to.
@@ -53,6 +62,10 @@ dyn_clone::clone_trait_object!(DatasetController);
 /// A boxed controller is a controller, so a `Vec<Box<dyn DatasetController>>` is a sequence of
 /// controllers of mixed types.
 impl DatasetController for Box<dyn DatasetController> {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        (**self).sync(env)
+    }
+
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
         (**self).collect_bounds(bounds, env);
     }

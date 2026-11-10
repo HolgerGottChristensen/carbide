@@ -31,8 +31,12 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
 }
 
 impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineController<D> {
-    fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
-        collect_point_bounds(&self.dataset_sequence, bounds, env);
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.dataset_sequence.sync(env)
+    }
+
+    fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
+        collect_point_bounds(&self.dataset_sequence, bounds);
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

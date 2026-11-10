@@ -41,7 +41,15 @@ pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: DynClone + Debug + 
         extreme(self, Extreme::Max)
     }
 
-    fn options(&self, _env: &mut Environment) -> DataSetOptions {
+    /// Syncs the states in the dataset with the environment, and returns whether anything may
+    /// have changed. A dataset that is a sequence of points syncs as a sequence: the state
+    /// holding the points, and any states inside it.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
+
+    /// How the dataset is drawn. Options held in states are read as they were last synced.
+    fn options(&self) -> DataSetOptions {
         DataSetOptions {
             color: DataColor::Inherit,
             stepped: Stepped::None,
@@ -68,8 +76,12 @@ impl<X: DataValue, Y: DataValue, Z: DataValue> DataSet<X, Y, Z> for Box<dyn Data
         (**self).max()
     }
 
-    fn options(&self, env: &mut Environment) -> DataSetOptions {
-        (**self).options(env)
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        (**self).sync(env)
+    }
+
+    fn options(&self) -> DataSetOptions {
+        (**self).options()
     }
 }
 
@@ -77,6 +89,10 @@ impl<X: DataValue, Y: DataValue, Z: DataValue, S: Sequence<dyn DataPoint<X=X, Y=
     fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint<X=X, Y=Y, Z=Z>)) {
         // The sequence hands out `'static` trait objects; `f` takes them for any lifetime.
         self.foreach(&mut |index, point| f(index, point));
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        Sequence::<dyn DataPoint<X=X, Y=Y, Z=Z>>::sync(self, env)
     }
 }
 
@@ -102,6 +118,10 @@ impl SequenceItem<dyn DataPoint<X=Scalar, Y=Scalar, Z=Scalar>> for Scalar {
 impl<X: DataValue, Y: DataValue, Z: DataValue, D: DataSet<X, Y, Z> + Clone> SequenceItem<dyn DataSet<X, Y, Z>> for D {
     fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataSet<X, Y, Z> + 'static))) {
         f(index, self);
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        DataSet::sync(self, env)
     }
 }
 

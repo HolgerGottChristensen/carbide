@@ -52,14 +52,18 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
 }
 
 impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarController<D> {
-    fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment) {
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.dataset_sequence.sync(env)
+    }
+
+    fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             // An empty dataset has no bounds and contributes nothing.
             let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
                 return;
             };
 
-            let options = dataset.options(env);
+            let options = dataset.options();
 
             bounds.include(&options.x_scale, x_min, x_max);
             bounds.include(&options.y_scale, y_min.min(0.0), y_max.max(0.0));
@@ -75,7 +79,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
         let mut places: Vec<Option<(ScaleId, usize)>> = vec![];
 
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
-            let options = dataset.options(ctx.env());
+            let options = dataset.options();
 
             let Some((x_scale, _)) = dataset_scales(scales, &options) else {
                 places.push(None);
@@ -107,7 +111,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
                 return;
             };
 
-            let options = dataset.options(ctx.env());
+            let options = dataset.options();
 
             let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
                 return;
