@@ -2,6 +2,7 @@ use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
+use crate::controller::orientation::Orientation;
 use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
@@ -54,7 +55,7 @@ impl<D: DataSetSequence> DatasetController for ScatterController<D> {
     }
 
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false);
+        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical);
     }
 
     /// Each named dataset as a point in its colour, or, when lines are shown, a line, or a square
@@ -73,7 +74,7 @@ impl<D: DataSetSequence> DatasetController for ScatterController<D> {
         ctx.save();
 
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
-        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false);
+        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, Orientation::Vertical);
 
         let palette = Palette::new(ctx, self.palette_offset);
 

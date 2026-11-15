@@ -1,4 +1,4 @@
-use carbide::draw::{Rect, Scalar};
+use carbide::draw::{Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
@@ -8,8 +8,9 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
+use crate::controller::line_path::PathSink;
+use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::scale::{Axis, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
-use crate::DataSetOptions;
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
 /// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
@@ -40,7 +41,7 @@ pub struct BarController<D> {
     category_percentage: Scalar,
     bar_percentage: Scalar,
     palette_offset: usize,
-    horizontal: bool,
+    orientation: Orientation,
 }
 
 impl<D: DataSetSequence> BarController<D> {
@@ -51,7 +52,7 @@ impl<D: DataSetSequence> BarController<D> {
             category_percentage: 0.8,
             bar_percentage: 0.9,
             palette_offset: 0,
-            horizontal: false,
+            orientation: Orientation::Vertical,
         }
     }
 
@@ -59,25 +60,11 @@ impl<D: DataSetSequence> BarController<D> {
     /// the top on a category scale, and its bar grows along the x scale, from zero to the value.
     /// The data is read as for standing bars, so the same datasets draw either way.
     pub fn horizontal(mut self) -> BarController<D> {
-        self.horizontal = true;
+        self.orientation = Orientation::Horizontal;
         self
     }
 
-    /// The ids of the scale the categories run along and the scale the bars grow along.
-    fn index_and_value_scales<'a>(&self, options: &'a DataSetOptions) -> (&'a ScaleId, &'a ScaleId) {
-        if self.horizontal {
-            (&options.y_scale, &options.x_scale)
-        } else {
-            (&options.x_scale, &options.y_scale)
-        }
-    }
-
-    /// The axis the categories run along.
-    fn index_axis(&self) -> Axis {
-        if self.horizontal { Axis::Vertical } else { Axis::Horizontal }
-    }
-
-    /// How much of the smallest gap between neighbouring x values a point's group of bars takes
+    /// How much of the smallest gap between neighbouring categories a point's group of bars takes
     /// up. Defaults to 0.8.
     pub fn category_percentage(mut self, category_percentage: Scalar) -> BarController<D> {
         self.category_percentage = category_percentage;
@@ -115,7 +102,7 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_scale, value_scale) = self.index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation.index_and_value_scales(&options);
 
             bounds.request_kind(index_scale, ScaleKind::Category);
             bounds.request_offset(index_scale);
@@ -143,8 +130,8 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
-        let index_axis = self.index_axis();
-        let value_axis = if self.horizontal { Axis::Horizontal } else { Axis::Vertical };
+        let index_axis = self.orientation.index_axis();
+        let value_axis = self.orientation.value_axis();
 
         // First pass: which bars sit side by side (per index scale, a share for each stack and
         // each dataset without one, in sequence order), and every bar's position along the index
@@ -155,7 +142,7 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_id, _) = self.index_and_value_scales(&options);
+            let (index_id, _) = self.orientation.index_and_value_scales(&options);
 
             let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
@@ -194,7 +181,7 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
             };
 
             let options = dataset.options();
-            let (_, value_id) = self.index_and_value_scales(&options);
+            let (_, value_id) = self.orientation.index_and_value_scales(&options);
 
             let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                 return;
@@ -219,19 +206,13 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
                 let base = if start == 0.0 { zero } else { pixel(value_axis, value_scale, start, chart_area) };
                 let head = pixel(value_axis, value_scale, end, chart_area);
 
-                // The corners as (along the index axis, along the value axis), turned into
-                // (x, y) for the way the bars lie.
-                let corner = |along_index: Scalar, along_value: Scalar| {
-                    if self.horizontal { (along_value, along_index) } else { (along_index, along_value) }
-                };
-
+                // The corners in the index frame, along the index axis and along the value axis.
                 ctx.begin_path();
-                let (x0, y0) = corner(side, base);
-                ctx.move_to(x0, y0);
-                for (along_index, along_value) in [(side + thickness, base), (side + thickness, head), (side, head)] {
-                    let (cx, cy) = corner(along_index, along_value);
-                    ctx.line_to(cx, cy);
-                }
+                let mut path = Oriented { path: &mut *ctx, orientation: self.orientation };
+                path.move_to(Position::new(side, base));
+                path.line_to(Position::new(side + thickness, base));
+                path.line_to(Position::new(side + thickness, head));
+                path.line_to(Position::new(side, head));
                 ctx.close_path();
 
                 ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
@@ -241,23 +222,6 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
         });
 
         ctx.restore();
-    }
-}
-
-/// Where `value` on `scale` falls on the screen, along `axis`: an x for a horizontal axis, and a y
-/// for a vertical one, where a normalized 1 is the top of the chart area.
-fn pixel(axis: Axis, scale: &dyn Scale, value: Scalar, chart_area: Rect) -> Scalar {
-    match axis {
-        Axis::Vertical => chart_area.bottom() + (1.0 - scale.normalize(value)) * chart_area.height(),
-        _ => chart_area.left() + scale.normalize(value) * chart_area.width(),
-    }
-}
-
-/// The chart area's length along `axis`.
-fn length(axis: Axis, chart_area: Rect) -> Scalar {
-    match axis {
-        Axis::Vertical => chart_area.height(),
-        _ => chart_area.width(),
     }
 }
 

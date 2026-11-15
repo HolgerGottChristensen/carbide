@@ -10,19 +10,22 @@ use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, DataSetSequence, Fill, SpanGaps};
-use crate::controller::line_path::{trace_line, trace_line_reversed};
+use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
+use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::scale::{Scale, ScaleBounds, Scales};
+use crate::scale::{Axis, Scale, ScaleBounds, Scales};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
 use carbide::environment::Environment;
 
-/// Reports every dataset's x and y range to the scales it is bound to. With `fills`, when the
-/// controller draws lines, a filled dataset's baseline value is included too, so the area's base
-/// is on the chart; a `Fill::Stack` area with a line below it fills to that line, so it includes
-/// nothing. With `stacks`, a dataset in a stack reports the running totals it is drawn at instead
-/// of its own values. Empty datasets have no bounds and contribute nothing.
-pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool)
+/// Reports every dataset's x and y range to the scales it is bound to: the x range to its index
+/// scale and the y range to its value scale, as `orientation` picks them (see
+/// `Orientation::index_and_value_scales`). With `fills`, when the controller draws lines, a filled
+/// dataset's baseline value is included too, so the area's base is on the chart; a `Fill::Stack`
+/// area with a line below it fills to that line, so it includes nothing. With `stacks`, a dataset
+/// in a stack reports the running totals it is drawn at instead of its own values. Empty datasets
+/// have no bounds and contribute nothing.
+pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool, orientation: Orientation)
 where
     D: DataSetSequence,
 {
@@ -36,10 +39,11 @@ where
         };
 
         let options = dataset.options();
+        let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
         let key = StackKey::new(&options, dataset_index);
         let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
 
-        bounds.include(&options.x_scale, x_min, x_max);
+        bounds.include(index_scale, x_min, x_max);
 
         if stacks {
             dataset.points(&mut |_index, point| {
@@ -48,26 +52,29 @@ where
                 };
 
                 let (_, total) = sums.add(&key, x, y);
-                bounds.include(&options.y_scale, total, total);
+                bounds.include(value_scale, total, total);
             });
         } else {
-            bounds.include(&options.y_scale, y_min, y_max);
+            bounds.include(value_scale, y_min, y_max);
         }
 
         let fills_to_line = options.fill == Fill::Stack && has_line_below;
 
         if fills && !fills_to_line && let Some(baseline) = options.fill.baseline_value() {
-            bounds.include(&options.y_scale, baseline, baseline);
+            bounds.include(value_scale, baseline, baseline);
         }
     });
 }
 
-/// One dataset's line as it is drawn: its points that aren't missing, in pixels, at their running
-/// totals when it is stacked; the runs it is drawn in without a break (see `SpanGaps`); and the
-/// line below it in its stack, which a `Fill::Stack` area fills down to.
+/// One dataset's line as it is drawn: its points that aren't missing, in pixels in the index frame
+/// (see `Orientation`), at their running totals when it is stacked; the runs it is drawn in
+/// without a break (see `SpanGaps`); and the line below it in its stack, which a `Fill::Stack`
+/// area fills down to.
 pub(crate) struct DrawnLine {
     dataset_index: usize,
     options: DataSetOptions,
+    orientation: Orientation,
+    /// In the index frame: x along the categories and y along the values.
     points: Vec<Position>,
     colors: Vec<DataColor>,
     /// Each drawn point's index in its dataset, which colours by point go by.
@@ -118,10 +125,11 @@ fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize
 }
 
 /// The lines of a controller's datasets, in dataset order, mapped through their scales into
-/// `chart_area`. With `stacks`, datasets in the same stack are drawn at their running totals,
-/// one sum per stack (see `StackSums::single`), and each knows the line below it. Datasets bound
-/// to a scale the chart doesn't have are left out.
-pub(crate) fn drawn_lines<D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool) -> Vec<DrawnLine>
+/// `chart_area`, each point's x along its index scale and its y along its value scale, as
+/// `orientation` picks them. With `stacks`, datasets in the same stack are drawn at their running
+/// totals, one sum per stack (see `StackSums::single`), and each knows the line below it.
+/// Datasets bound to a scale the chart doesn't have are left out.
+pub(crate) fn drawn_lines<D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation) -> Vec<DrawnLine>
 where
     D: DataSetSequence,
 {
@@ -132,7 +140,8 @@ where
     datasets.foreach(&mut |dataset_index, dataset| {
         let options = dataset.options();
 
-        let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
+        let (index_id, value_id) = orientation.index_and_value_scales(&options);
+        let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
             return;
         };
 
@@ -152,8 +161,8 @@ where
             let y = if stacks { sums.add(&key, x, y).1 } else { y };
 
             points.push(Position::new(
-                chart_area.width() * x_scale.normalize(x) + chart_area.left(),
-                chart_area.height() * (1.0 - y_scale.normalize(y)) + chart_area.bottom(),
+                pixel(orientation.index_axis(), index_scale, x, chart_area),
+                pixel(orientation.value_axis(), value_scale, y, chart_area),
             ));
             colors.push(point.color());
             point_indices.push(point_index);
@@ -169,7 +178,7 @@ where
             tops.insert(key, lines.len());
         }
 
-        lines.push(DrawnLine { dataset_index, options, points, colors, point_indices, runs, below });
+        lines.push(DrawnLine { dataset_index, options, orientation, points, colors, point_indices, runs, below });
     });
 
     lines
@@ -190,9 +199,12 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
             continue;
         }
 
-        let Some(y_scale) = scales.get(&options.y_scale) else {
+        let (_, value_id) = line.orientation.index_and_value_scales(options);
+        let Some(value_scale) = scales.get(value_id) else {
             continue;
         };
+
+        let area = line.orientation.frame_area(chart_area);
 
         let Rgba(r, g, b, a) = Rgba::from(dataset_color(options, line.dataset_index, palette));
         let color = rgba(r, g, b, a * fill_opacity);
@@ -205,17 +217,18 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
             }
 
             ctx.begin_path();
-            trace_line(ctx, points, options.interpolation, chart_area);
+            let mut path = Oriented { path: &mut *ctx, orientation: line.orientation };
+            trace_line(&mut path, points, options.interpolation, area);
 
             let below = match (options.fill, line.below) {
                 (Fill::Stack, Some(below)) => Some(&lines[below]),
                 _ => None,
             };
 
-            if !below.is_some_and(|below| trace_lower_edge(ctx, below, points, chart_area)) {
-                let baseline = baseline_pixel(options.fill, y_scale, chart_area);
-                ctx.line_to(points[points.len() - 1].x, baseline);
-                ctx.line_to(points[0].x, baseline);
+            if !below.is_some_and(|below| trace_lower_edge(&mut path, below, points, area)) {
+                let baseline = baseline_pixel(options.fill, value_scale, line.orientation.value_axis(), chart_area);
+                path.line_to(Position::new(points[points.len() - 1].x, baseline));
+                path.line_to(Position::new(points[0].x, baseline));
             }
 
             ctx.close_path();
@@ -228,8 +241,8 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
 /// Traces the lower edge of a stacked area whose top is `top`, a run of the line above `below`:
 /// back along `below`'s drawn points within `top`'s span along x, each of `below`'s runs with its
 /// own interpolation, joined straight across its gaps. Returns `false`, tracing nothing, when
-/// `below` has no points in that span.
-fn trace_lower_edge(ctx: &mut CanvasContext, below: &DrawnLine, top: &[Position], chart_area: Rect) -> bool {
+/// `below` has no points in that span. Everything is in the index frame, `area` included.
+fn trace_lower_edge(path: &mut impl PathSink, below: &DrawnLine, top: &[Position], area: Rect) -> bool {
     let (left, right) = top.iter().fold((Scalar::INFINITY, Scalar::NEG_INFINITY), |(left, right), point| (left.min(point.x), right.max(point.x)));
     let mut traced = false;
 
@@ -242,7 +255,7 @@ fn trace_lower_edge(ctx: &mut CanvasContext, below: &DrawnLine, top: &[Position]
             .collect();
 
         if !points.is_empty() {
-            trace_line_reversed(ctx, &points, below.options.interpolation, chart_area);
+            trace_line_reversed(path, &points, below.options.interpolation, area);
             traced = true;
         }
     }
@@ -250,20 +263,20 @@ fn trace_lower_edge(ctx: &mut CanvasContext, below: &DrawnLine, top: &[Position]
     traced
 }
 
-/// The y pixel of a fill's baseline. Baseline values are included in the y bounds, but a scale
-/// can still end before one: a category scale with labels spans its labels, whatever the data.
-/// A value outside the scale's range then fills to the nearest end of it, as bars grow from the
-/// end nearest zero. `Fill::Stack` without a line below fills to zero.
-fn baseline_pixel(fill: Fill, y_scale: &dyn Scale, chart_area: Rect) -> Scalar {
-    // `Rect`'s top and bottom are swapped on screen (see `scale/axis.rs`): the larger y is the
-    // bottom edge.
+/// Where a fill's baseline is along `value_axis`, the axis the values grow along: a y for upright
+/// lines and an x for lying ones. Baseline values are included in the value scale's bounds, but a
+/// scale can still end before one: a category scale with labels spans its labels, whatever the
+/// data. A value outside the scale's range then fills to the nearest end of it, as bars grow from
+/// the end nearest zero. `Fill::Bottom` is the start of the value axis and `Fill::Top` its end.
+/// `Fill::Stack` without a line below fills to zero.
+fn baseline_pixel(fill: Fill, value_scale: &dyn Scale, value_axis: Axis, chart_area: Rect) -> Scalar {
     match fill {
-        Fill::Bottom => chart_area.top().max(chart_area.bottom()),
-        Fill::Top => chart_area.top().min(chart_area.bottom()),
+        Fill::Bottom => normalized_pixel(value_axis, 0.0, chart_area),
+        Fill::Top => normalized_pixel(value_axis, 1.0, chart_area),
         fill => {
             let value = fill.baseline_value().unwrap_or(0.0);
-            let (low, high) = (y_scale.min().min(y_scale.max()), y_scale.min().max(y_scale.max()));
-            chart_area.height() * (1.0 - y_scale.normalize(value.clamp(low, high))) + chart_area.bottom()
+            let (low, high) = (value_scale.min().min(value_scale.max()), value_scale.min().max(value_scale.max()));
+            pixel(value_axis, value_scale, value.clamp(low, high), chart_area)
         }
     }
 }
@@ -272,9 +285,12 @@ fn baseline_pixel(fill: Fill, y_scale: &dyn Scale, chart_area: Rect) -> Scalar {
 /// smooth, monotone or stepped), each unbroken run on its own (see `SpanGaps`).
 pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_area: Rect, palette: &Palette) {
     for line in lines {
+        let area = line.orientation.frame_area(chart_area);
+
         ctx.begin_path();
+        let mut path = Oriented { path: &mut *ctx, orientation: line.orientation };
         for run in &line.runs {
-            trace_line(ctx, &line.points[run.clone()], line.options.interpolation, chart_area);
+            trace_line(&mut path, &line.points[run.clone()], line.options.interpolation, area);
         }
         ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
         ctx.stroke();
@@ -286,6 +302,7 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
 pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette) {
     for line in lines {
         for ((point, color), point_index) in line.points.iter().zip(&line.colors).zip(line.point_indices.iter().copied()) {
+            let point = line.orientation.swap(*point);
             ctx.begin_path();
             ctx.circle(point.x, point.y, 7.0);
             ctx.set_fill_style(point_color(*color, &line.options, line.dataset_index, point_index, palette));
@@ -383,6 +400,7 @@ mod tests {
     use crate::scale::{ScaleBounds, ScaleId, Scales};
     use carbide::color::{BLUE, GREEN, RED, WHITE};
     use crate::{DataColor, DataSetOptions, Interpolation};
+    use crate::controller::orientation::Orientation;
     use super::{baseline_pixel, dataset_color, drawn_lines, point_color, Palette};
 
     const SALES: StackId = StackId::new("sales");
@@ -450,7 +468,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true);
+        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
 
         let below: Vec<Option<usize>> = lines.iter().map(|line| line.below).collect();
         assert_eq!(below, vec![None, None, Some(0), None, Some(0)]);
@@ -475,7 +493,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true);
+        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
 
         let y = scales.get(&ScaleId::Y).unwrap();
         let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();
@@ -493,9 +511,9 @@ mod tests {
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
 
         let pixel = |value: Scalar| area.height() * (1.0 - scale.normalize(value)) + area.bottom();
-        assert_eq!(baseline_pixel(Fill::Value(10.0), &scale, area), pixel(3.0), "a value past the last label should fill to it");
-        assert_eq!(baseline_pixel(Fill::Value(-5.0), &scale, area), pixel(0.0), "a value before the first label should fill to it");
-        assert_eq!(baseline_pixel(Fill::Value(2.0), &scale, area), pixel(2.0));
+        assert_eq!(baseline_pixel(Fill::Value(10.0), &scale, Axis::Vertical, area), pixel(3.0), "a value past the last label should fill to it");
+        assert_eq!(baseline_pixel(Fill::Value(-5.0), &scale, Axis::Vertical, area), pixel(0.0), "a value before the first label should fill to it");
+        assert_eq!(baseline_pixel(Fill::Value(2.0), &scale, Axis::Vertical, area), pixel(2.0));
     }
 
     fn options(color: DataColor) -> DataSetOptions {

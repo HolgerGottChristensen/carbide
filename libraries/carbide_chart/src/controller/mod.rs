@@ -15,6 +15,7 @@ mod controller_sequence;
 mod drawing;
 mod line_path;
 mod line_controller;
+mod orientation;
 mod scatter_controller;
 mod stacking;
 
