@@ -32,9 +32,10 @@ pub trait DatasetExt<X: DataValue, Y: DataValue, Z: DataValue>: DataSet<X, Y, Z>
         OptionsDataset::new(self).y_scale(y_scale)
     }
 
-    /// Stacks the dataset's bars on top of those of the datasets before it in the same controller
-    /// with the same `stack`, instead of beside them (see `StackId`). Line and scatter
-    /// controllers don't stack yet, and ignore it.
+    /// Stacks the dataset on the datasets before it in the same controller with the same
+    /// `stack` (see `StackId`). Bars stack on top of each other instead of beside each other;
+    /// lines are drawn at the running total, and with `Fill::Stack` fill down to the line below.
+    /// Scatter controllers don't stack, and ignore it.
     fn stack<ST: IntoReadState<StackId>>(self, stack: ST) -> OptionsDataset<Self, DataColor, Interpolation, Fill, ScaleId, ScaleId, ST::Output> {
         OptionsDataset::new(self).stack(stack)
     }

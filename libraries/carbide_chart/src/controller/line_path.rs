@@ -1,71 +1,139 @@
 //! The path of a line through a dataset's points, for each `Interpolation`. Points are in pixels,
 //! already mapped through the dataset's scales: a tension spline depends on distances, which
 //! only mean something once both axes are in the same units.
+//!
+//! The line is made of one segment between each pair of neighbouring points (`Segment`), which
+//! can be traced forwards, for the line itself, or backwards, for the lower edge of a stacked
+//! area, which runs back along the line below it.
 
 use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::element::{Interpolation, Stepped};
 
+/// Where a path is traced to: the canvas when drawing, or a list of commands in tests.
+pub(crate) trait PathSink {
+    fn move_to(&mut self, to: Position);
+    fn line_to(&mut self, to: Position);
+    fn bezier_curve_to(&mut self, control1: Position, control2: Position, to: Position);
+}
+
+impl PathSink for CanvasContext<'_, '_, '_> {
+    fn move_to(&mut self, to: Position) {
+        CanvasContext::move_to(self, to.x, to.y);
+    }
+
+    fn line_to(&mut self, to: Position) {
+        CanvasContext::line_to(self, to.x, to.y);
+    }
+
+    fn bezier_curve_to(&mut self, control1: Position, control2: Position, to: Position) {
+        CanvasContext::bezier_curve_to(self, control1, control2, to);
+    }
+}
+
 /// Adds the line through `points` to the current path, starting with a `move_to` at the first
 /// point. Curves are kept inside `area` (see `cap_control_points`).
-pub(crate) fn trace_line(ctx: &mut CanvasContext, points: &[Position], interpolation: Interpolation, area: Rect) {
+pub(crate) fn trace_line(path: &mut impl PathSink, points: &[Position], interpolation: Interpolation, area: Rect) {
     let Some(first) = points.first() else {
         return;
     };
 
-    ctx.move_to(first.x, first.y);
+    path.move_to(*first);
+
+    for (index, segment) in segments(points, interpolation, area).iter().enumerate() {
+        segment.trace(path, points[index + 1]);
+    }
+}
+
+/// Adds the line through `points` to the current path backwards, from the last point to the
+/// first, along exactly the same path `trace_line` draws. It continues the current path with a
+/// `line_to` the last point, so it can close an area whose top was traced forwards.
+pub(crate) fn trace_line_reversed(path: &mut impl PathSink, points: &[Position], interpolation: Interpolation, area: Rect) {
+    let Some(last) = points.last() else {
+        return;
+    };
+
+    path.line_to(*last);
+
+    for (index, segment) in segments(points, interpolation, area).iter().enumerate().rev() {
+        segment.trace_reversed(path, points[index]);
+    }
+}
+
+/// The path between two neighbouring points, without its end points.
+#[derive(Clone, Debug, PartialEq)]
+enum Segment {
+    Straight,
+    /// The corners of a step, in order from the first point to the second.
+    Corners(Vec<Position>),
+    /// A cubic Bézier curve, with its control points in order from the first point.
+    Curve(Position, Position),
+}
+
+impl Segment {
+    /// From the segment's first point, where the path is, to `to`.
+    fn trace(&self, path: &mut impl PathSink, to: Position) {
+        match self {
+            Segment::Straight => path.line_to(to),
+            Segment::Corners(corners) => {
+                for corner in corners {
+                    path.line_to(*corner);
+                }
+                path.line_to(to);
+            }
+            Segment::Curve(control1, control2) => path.bezier_curve_to(*control1, *control2, to),
+        }
+    }
+
+    /// From the segment's second point, where the path is, back to `to`, its first.
+    fn trace_reversed(&self, path: &mut impl PathSink, to: Position) {
+        match self {
+            Segment::Straight => path.line_to(to),
+            Segment::Corners(corners) => {
+                for corner in corners.iter().rev() {
+                    path.line_to(*corner);
+                }
+                path.line_to(to);
+            }
+            Segment::Curve(control1, control2) => path.bezier_curve_to(*control2, *control1, to),
+        }
+    }
+}
+
+/// The segments between each pair of neighbouring points, one fewer than the points.
+fn segments(points: &[Position], interpolation: Interpolation, area: Rect) -> Vec<Segment> {
+    let pairs = points.windows(2);
 
     match interpolation {
-        Interpolation::Linear => trace_straight(ctx, points),
+        Interpolation::Linear => pairs.map(|_| Segment::Straight).collect(),
         // A tension of 0 is a straight line.
-        Interpolation::Smooth { tension: 0.0 } => trace_straight(ctx, points),
-        Interpolation::Stepped(stepped) => {
-            for pair in points.windows(2) {
-                trace_step(ctx, pair[0], pair[1], stepped);
-            }
-        }
+        Interpolation::Smooth { tension: 0.0 } => pairs.map(|_| Segment::Straight).collect(),
+        Interpolation::Stepped(stepped) => pairs.map(|pair| Segment::Corners(step_corners(pair[0], pair[1], stepped))).collect(),
         Interpolation::Smooth { tension } => {
             let mut controls = spline_control_points(points, tension);
             cap_control_points(points, &mut controls, area);
-            trace_curves(ctx, points, &controls);
+            curves(&controls)
         }
         Interpolation::Monotone => {
             let mut controls = monotone_control_points(points);
             cap_control_points(points, &mut controls, area);
-            trace_curves(ctx, points, &controls);
+            curves(&controls)
         }
     }
 }
 
-/// Straight lines from each point to the next: the path is already at the first point.
-fn trace_straight(ctx: &mut CanvasContext, points: &[Position]) {
-    for point in &points[1..] {
-        ctx.line_to(point.x, point.y);
-    }
-}
-
-/// The step from `from` to `to`: the path is already at `from`.
-fn trace_step(ctx: &mut CanvasContext, from: Position, to: Position, stepped: Stepped) {
+/// The corners of the step from `from` to `to`.
+fn step_corners(from: Position, to: Position, stepped: Stepped) -> Vec<Position> {
     match stepped {
-        Stepped::Before => {
-            ctx.line_to(from.x, to.y);
-            ctx.line_to(to.x, to.y);
-        }
-        Stepped::After => {
-            ctx.line_to(to.x, from.y);
-            ctx.line_to(to.x, to.y);
-        }
+        Stepped::Before => vec![Position::new(from.x, to.y)],
+        Stepped::After => vec![Position::new(to.x, from.y)],
         Stepped::Middle => {
             let middle_x = (to.x - from.x) / 2.0 + from.x;
-            ctx.line_to(middle_x, from.y);
-            ctx.line_to(middle_x, to.y);
-            ctx.line_to(to.x, to.y);
+            vec![Position::new(middle_x, from.y), Position::new(middle_x, to.y)]
         }
         Stepped::MiddleVertical => {
             let middle_y = (to.y - from.y) / 2.0 + from.y;
-            ctx.line_to(from.x, middle_y);
-            ctx.line_to(to.x, middle_y);
-            ctx.line_to(to.x, to.y);
+            vec![Position::new(from.x, middle_y), Position::new(to.x, middle_y)]
         }
     }
 }
@@ -80,10 +148,8 @@ struct ControlPoints {
 
 /// One cubic Bézier curve per pair of neighbouring points, from the first point's `after` control
 /// point to the second point's `before`.
-fn trace_curves(ctx: &mut CanvasContext, points: &[Position], controls: &[ControlPoints]) {
-    for index in 1..points.len() {
-        ctx.bezier_curve_to(controls[index - 1].after, controls[index].before, points[index]);
-    }
+fn curves(controls: &[ControlPoints]) -> Vec<Segment> {
+    controls.windows(2).map(|pair| Segment::Curve(pair[0].after, pair[1].before)).collect()
 }
 
 /// Control points for a tension spline through `points`: at each point, the tangent is parallel to
@@ -249,7 +315,73 @@ fn sign(value: Scalar) -> i8 {
 #[cfg(test)]
 mod tests {
     use carbide::draw::{Dimension, Position, Rect};
-    use super::{cap_control_points, monotone_control_points, spline_control_points};
+    use crate::element::{Interpolation, Stepped};
+    use super::{cap_control_points, monotone_control_points, spline_control_points, trace_line, trace_line_reversed, PathSink};
+
+    /// The commands a path is traced with.
+    #[derive(Debug, PartialEq)]
+    enum Command {
+        Move(Position),
+        Line(Position),
+        Curve(Position, Position, Position),
+    }
+
+    impl PathSink for Vec<Command> {
+        fn move_to(&mut self, to: Position) {
+            self.push(Command::Move(to));
+        }
+
+        fn line_to(&mut self, to: Position) {
+            self.push(Command::Line(to));
+        }
+
+        fn bezier_curve_to(&mut self, control1: Position, control2: Position, to: Position) {
+            self.push(Command::Curve(control1, control2, to));
+        }
+    }
+
+    /// Traced in reverse, a line runs back along exactly the path it is drawn with: the same
+    /// points and step corners in the opposite order, and each curve with its control points
+    /// swapped, for every interpolation.
+    #[test]
+    fn reversed_lines_follow_the_same_path_backwards() {
+        let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
+        let points = positions(&[(0.0, 50.0), (20.0, 80.0), (45.0, 30.0), (70.0, 60.0), (100.0, 40.0)]);
+
+        for interpolation in [
+            Interpolation::Linear,
+            Interpolation::Smooth { tension: 0.4 },
+            Interpolation::Monotone,
+            Interpolation::Stepped(Stepped::Before),
+            Interpolation::Stepped(Stepped::Middle),
+            Interpolation::Stepped(Stepped::MiddleVertical),
+        ] {
+            let mut forward = vec![];
+            trace_line(&mut forward, &points, interpolation, area);
+            let mut reversed = vec![];
+            trace_line_reversed(&mut reversed, &points, interpolation, area);
+
+            // Where each command ends, starting with the forward `move_to` and the reversed
+            // `line_to` the last point.
+            let ends = |commands: &[Command]| -> Vec<Position> {
+                commands.iter().map(|command| match command {
+                    Command::Move(to) | Command::Line(to) | Command::Curve(_, _, to) => *to,
+                }).collect()
+            };
+            let mut forward_ends = ends(&forward);
+            forward_ends.reverse();
+            assert_eq!(ends(&reversed), forward_ends, "{interpolation:?}: the reversed path should visit the same points backwards");
+
+            let curves = |commands: &[Command]| -> Vec<(Position, Position)> {
+                commands.iter().filter_map(|command| match command {
+                    Command::Curve(control1, control2, _) => Some((*control1, *control2)),
+                    _ => None,
+                }).collect()
+            };
+            let swapped: Vec<(Position, Position)> = curves(&forward).into_iter().rev().map(|(control1, control2)| (control2, control1)).collect();
+            assert_eq!(curves(&reversed), swapped, "{interpolation:?}: each curve should be traced with its control points swapped");
+        }
+    }
 
     fn positions(points: &[(f64, f64)]) -> Vec<Position> {
         points.iter().map(|&(x, y)| Position::new(x, y)).collect()

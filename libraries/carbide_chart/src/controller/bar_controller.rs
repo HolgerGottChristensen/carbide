@@ -1,11 +1,11 @@
-use std::collections::HashMap;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::drawing::{dataset_color, dataset_scales};
-use crate::{DataColor, DataSet, DataSetOptions, DataSetSequence, StackId};
+use crate::controller::stacking::{StackKey, StackSums};
+use crate::{DataColor, DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
@@ -66,7 +66,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
     /// x scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        let mut stacks = StackSums::default();
+        let mut stacks = StackSums::split_by_sign();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -120,7 +120,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
             .collect();
 
         // Second pass: the bars, stacked in the same order as their bounds were collected.
-        let mut stacks = StackSums::default();
+        let mut stacks = StackSums::split_by_sign();
         ctx.save();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -167,46 +167,6 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
         });
 
         ctx.restore();
-    }
-}
-
-/// Which bars share one place in a slot: the datasets with the same stack on the same x and y
-/// scales, stacked into one bar, or a single dataset without a stack.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-enum StackKey {
-    Stacked { x_scale: ScaleId, y_scale: ScaleId, stack: StackId },
-    Alone(usize),
-}
-
-impl StackKey {
-    fn new(options: &DataSetOptions, dataset_index: usize) -> StackKey {
-        match &options.stack {
-            Some(stack) => StackKey::Stacked {
-                x_scale: options.x_scale.clone(),
-                y_scale: options.y_scale.clone(),
-                stack: stack.clone(),
-            },
-            None => StackKey::Alone(dataset_index),
-        }
-    }
-}
-
-/// How far each stack has reached at each x value, with positive and negative values summed
-/// apart, so each grows away from zero on its own side.
-#[derive(Default)]
-struct StackSums {
-    sums: HashMap<(StackKey, u64, bool), Scalar>,
-}
-
-impl StackSums {
-    /// Adds a bar of `y` to the stack `key` at `x`, and returns where it starts and ends: from the
-    /// stack's sum on `y`'s side so far, to that sum plus `y`. A bar on its own starts at zero.
-    fn add(&mut self, key: &StackKey, x: Scalar, y: Scalar) -> (Scalar, Scalar) {
-        // Adding 0.0 turns -0.0 into 0.0, so both find the same stack.
-        let sum = self.sums.entry((key.clone(), (x + 0.0).to_bits(), y >= 0.0)).or_insert(0.0);
-        let start = *sum;
-        *sum += y;
-        (start, *sum)
     }
 }
 

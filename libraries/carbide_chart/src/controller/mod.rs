@@ -15,6 +15,7 @@ mod drawing;
 mod line_path;
 mod line_controller;
 mod scatter_controller;
+mod stacking;
 
 /// Draws a group of datasets on the scales the chart owns.
 ///

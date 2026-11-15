@@ -23,13 +23,18 @@ pub enum Fill {
     Top,
     /// To the value. It is included in the y bounds, as zero is for `Origin`.
     Value(Scalar),
+    /// Down to the line of the dataset below it in its stack (see `DatasetExt::stack`), so a
+    /// stack of lines becomes a stacked area chart. The bottom dataset of a stack, a dataset
+    /// without a stack, and any dataset in a controller that doesn't stack fill to zero, as
+    /// `Origin` does.
+    Stack,
 }
 
 impl Fill {
     /// The value the area is filled to, when it is one: it is included in the y bounds.
     pub(crate) fn baseline_value(&self) -> Option<Scalar> {
         match self {
-            Fill::Origin => Some(0.0),
+            Fill::Origin | Fill::Stack => Some(0.0),
             Fill::Value(value) => Some(*value),
             Fill::None | Fill::Bottom | Fill::Top => None,
         }

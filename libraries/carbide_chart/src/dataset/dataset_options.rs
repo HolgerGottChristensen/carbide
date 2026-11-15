@@ -13,7 +13,7 @@ pub struct DataSetOptions {
     pub x_scale: ScaleId,
     /// The vertical scale the dataset is drawn on.
     pub y_scale: ScaleId,
-    /// The stack the dataset's bars are stacked in, by controllers that stack; `None` stands
-    /// alone.
+    /// The stack the dataset is stacked in, by controllers that stack (bars and lines); `None`
+    /// stands alone.
     pub stack: Option<StackId>,
 }

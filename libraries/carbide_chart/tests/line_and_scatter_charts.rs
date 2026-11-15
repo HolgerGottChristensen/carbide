@@ -8,7 +8,7 @@ use carbide_testing::Harness;
 
 mod common;
 
-use support::{example_chart, filled_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart};
+use support::{example_chart, filled_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -67,6 +67,21 @@ fn area_fill_modes() {
     }
 }
 
+/// Three monotone lines in one stack, first as lines, then filled as a stacked area chart. Pins
+/// down that each line is drawn at the running total of the datasets up to it, with one sum, so
+/// the middle dataset's dip below zero lowers the lines above it; that each area fills exactly
+/// between its line and the line below, following that line's curve back, and the bottom one
+/// down to zero; and that the y scale covers the totals.
+#[test]
+fn stacked_lines_and_areas() {
+    let mut fill = LocalState::new(Fill::None);
+    let mut harness = Harness::new(stacked_lines_chart(fill.clone()), Dimension::new(600.0, 500.0));
+    harness.snapshot("stacked_lines");
+
+    *fill.value_mut() = Fill::Stack;
+    harness.snapshot("stacked_areas");
+}
+
 /// A scatter chart with lines, filled to zero, its points in x order with numeric x values. Pins
 /// down that a scatter chart draws the area when it draws lines, under the line and its points,
 /// and that the y scale reaches down to zero for it.
@@ -103,7 +118,7 @@ fn scatter_with_lines() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, ScatterController, Stepped};
+    use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, ScatterController, StackId, Stepped};
     use carbide_core::state::LocalState;
     use carbide_core::widget::Widget;
     use crate::common::Framed;
@@ -125,6 +140,22 @@ mod support {
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
         Chart::new(LineController::new((data7, data8)))
+            .framed()
+    }
+
+    /// Visits per channel, stacked into one total: search, social (which dips below zero, as
+    /// refunds outweigh it one month) and email, all monotone and filled to `fill`.
+    pub fn stacked_lines_chart(fill: LocalState<Fill>) -> impl Widget {
+        const VISITS: StackId = StackId::new("visits");
+
+        let search = vec![30.0, 35.0, 32.0, 40.0, 45.0, 42.0, 50.0]
+            .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
+        let social = vec![10.0, 15.0, -8.0, 12.0, 20.0, 18.0, 25.0]
+            .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
+        let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
+            .interpolation(Interpolation::Monotone).fill(fill).stack(VISITS);
+
+        Chart::new(LineController::new((search, social, email)))
             .framed()
     }
 

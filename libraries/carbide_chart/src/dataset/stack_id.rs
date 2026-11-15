@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use carbide::impl_state_value;
 
-/// Names a stack of bars within one controller (see `DatasetExt::stack`). Datasets with the same
-/// stack id, on the same x and y scales, are stacked on top of each other in one bar; each stack
-/// sits beside the others, and beside datasets without one.
+/// Names a stack within one controller (see `DatasetExt::stack`). Datasets with the same stack
+/// id, on the same x and y scales, are stacked: bars on top of each other in one bar, each stack
+/// beside the others and beside datasets without one; lines at their running totals.
 ///
 /// Ids known at compile time are `const` (`StackId::new("costs")`); ids built from runtime data
 /// use `StackId::owned` or `From<String>`.
