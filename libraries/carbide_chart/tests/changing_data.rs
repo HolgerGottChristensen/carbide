@@ -1,5 +1,6 @@
 //! Charts whose data, datasets or controllers change after the chart is built.
 
+use carbide_chart::{DatasetExt, StackId};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
@@ -59,6 +60,26 @@ fn controllers_added_between_renders() {
     let trend = trend_line();
     *controllers.value_mut() = vec![bars, trend];
     harness.snapshot("bars_and_line");
+}
+
+/// Grouped bars whose second dataset's stack is a state, changed between the two snapshots: it
+/// starts in a stack of its own, beside the first dataset, and is then moved into the first
+/// dataset's stack. Pins down that the chart follows a stack changed after it is built: each
+/// month goes from two bars side by side to one stacked bar, and the y scale refits to reach the
+/// stacked totals.
+#[test]
+fn stack_changed_between_renders() {
+    const COSTS: StackId = StackId::new("costs");
+
+    let mut stack = LocalState::new(StackId::new("labour"));
+    let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
+    let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(stack.clone());
+
+    let mut harness = Harness::new(bar_chart((materials, labour)), Dimension::new(600.0, 500.0));
+    harness.snapshot("apart");
+
+    *stack.value_mut() = COSTS;
+    harness.snapshot("stacked");
 }
 
 // ===============================

@@ -8,7 +8,7 @@ use carbide_testing::Harness;
 mod common;
 
 use common::bar_chart;
-use support::{bars_on_linear_x_scale_chart, two_stacks_chart};
+use support::{bars_on_linear_x_scale_chart, same_stack_on_two_y_scales_chart, two_stacks_chart};
 
 /// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the
 /// single-dataset bar width, the x scale's offset at both ends, and bars growing up from zero at
@@ -136,14 +136,40 @@ fn bars_coloured_by_point() {
     harness.snapshot("bars_coloured_by_point");
 }
 
+/// Materials and labour stacked on the default y scale, and units produced with the same stack id
+/// on a second y scale on the right. Pins down that a stack is the datasets with the same id on
+/// the same scales: the units aren't added onto the costs, but stand as their own bar beside the
+/// costs stack, measured on the right-hand scale, which only reaches the units.
+#[test]
+fn same_stack_on_two_y_scales() {
+    let mut harness = Harness::new(same_stack_on_two_y_scales_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("same_stack_on_two_y_scales");
+}
+
 // ===============================
 //  Utility
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, BarController, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId};
+    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId};
     use carbide_core::widget::Widget;
     use crate::common::Framed;
+
+    const COSTS: StackId = StackId::new("costs");
+    const UNITS: ScaleId = ScaleId::new("units");
+
+    /// Materials and labour in the costs stack on Y, and units produced, also in the costs stack,
+    /// but on a `units` scale on the right.
+    pub fn same_stack_on_two_y_scales_chart() -> impl Widget {
+        let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
+        let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(COSTS);
+        let units = vec![1800.0, 2100.0, 2600.0, 1500.0, 3000.0].stack(COSTS).y_scale(UNITS);
+
+        Chart::new(BarController::new((materials, labour, units)))
+            .scale(UNITS, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
+            .framed()
+    }
 
     const LAST_YEAR: StackId = StackId::new("last year");
     const THIS_YEAR: StackId = StackId::new("this year");

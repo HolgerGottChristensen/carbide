@@ -233,6 +233,29 @@ mod tests {
     use crate::scale::{ScaleBounds, ScaleId};
     use super::{bar_slot, BarController};
 
+    /// The same stack id on two y scales makes two stacks: a stack is the datasets with the same
+    /// id on the same x and y scales, so each y scale only reaches its own dataset's values. The
+    /// same holds for stacked lines.
+    #[test]
+    fn the_same_stack_on_two_y_scales_makes_two_stacks() {
+        const COSTS: StackId = StackId::new("costs");
+        const RIGHT: ScaleId = ScaleId::new("right");
+
+        let bars = BarController::new((vec![10.0, 20.0].stack(COSTS), vec![5.0, 8.0].stack(COSTS).y_scale(RIGHT)));
+        let mut bounds = ScaleBounds::default();
+        bars.collect_bounds(&mut bounds, &mut Environment::new());
+
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 20.0)), "Y should only reach the first dataset");
+        assert_eq!(bounds.get(&RIGHT).range(), Some((0.0, 8.0)), "the right scale should only reach the second dataset, not the sum");
+
+        let lines = crate::LineController::new((vec![10.0, 20.0].stack(COSTS), vec![5.0, 8.0].stack(COSTS).y_scale(RIGHT)));
+        let mut bounds = ScaleBounds::default();
+        lines.collect_bounds(&mut bounds, &mut Environment::new());
+
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((10.0, 20.0)));
+        assert_eq!(bounds.get(&RIGHT).range(), Some((5.0, 8.0)), "lines on another y scale don't stack either");
+    }
+
     /// Stacked datasets report the sums they reach, positive and negative values each on their own
     /// side of zero; a dataset without a stack reports its own values.
     #[test]

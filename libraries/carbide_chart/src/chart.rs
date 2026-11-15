@@ -225,7 +225,7 @@ mod tests {
     use crate::controller::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};
     use crate::dataset::DatasetExt;
     use crate::sequence::Sequence;
-    use crate::DataColor;
+    use crate::{DataColor, StackId};
     use crate::scale::{Axis, AxisPosition, CategoryScale, LinearScale, ScaleId};
     use super::{Chart, SCALE_SPACING};
 
@@ -290,6 +290,32 @@ mod tests {
         chart.fit_scales(&mut env);
         let (_, y_max) = scale_range(&chart, ScaleId::Y);
         assert!(y_max >= 200.0, "Y should cover the large dataset after rebinding, but ends at {y_max}");
+    }
+
+    /// A dataset's stack is a state: moving a dataset into another's stack makes its bars add up
+    /// with that dataset's on the next fit, and moving it out again separates them.
+    #[test]
+    fn stack_is_reactive() {
+        let mut stack = LocalState::new(StackId::new("alone"));
+        let first = vec![10.0, 20.0].stack(StackId::new("costs"));
+        let second = vec![5.0, 8.0].stack(stack.clone());
+
+        let mut chart = Chart::new(BarController::new((first, second)));
+        let mut env = Environment::new();
+
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 28.0, "in separate stacks the bars don't add up, but Y reaches {y_max}");
+
+        *stack.value_mut() = StackId::new("costs");
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max >= 28.0, "in one stack Y should reach 20 + 8, but ends at {y_max}");
+
+        *stack.value_mut() = StackId::new("alone");
+        chart.fit_scales(&mut env);
+        let (_, y_max) = scale_range(&chart, ScaleId::Y);
+        assert!(y_max < 28.0, "moved out again, the bars should no longer add up, but Y reaches {y_max}");
     }
 
     /// A dataset held in a state can change after the chart is built: the next fit follows it.
