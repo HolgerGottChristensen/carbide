@@ -8,31 +8,39 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
-use crate::scale::{Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{Axis, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::DataSetOptions;
 
-/// Draws each dataset as vertical bars, one per point, growing from zero to the point's y. A missing
-/// value (see `DataPoint::is_missing`) has no bar, and leaves its place in the slot empty:
+/// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
+/// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
+/// along the dataset's x scale and the values up its y scale. `horizontal` lays them down, with
+/// the same data: the categories run down the dataset's y scale and the values along its x scale.
 ///
-/// - The x scale gets an offset (half a tick step at each end), so the first and last bars aren't
-///   cut in half at the chart area's edges.
-/// - Zero is always included in the y bounds, so every bar has a base to grow from.
-/// - The datasets in this controller that share an x scale are grouped side by side. Each point
-///   gets a slot `category_percentage` of the smallest gap between neighbouring x values or ticks;
-///   the slot is split evenly between the bars beside each other, and each bar is
+/// The index scale is the one the categories run along, and the value scale the one the bars grow
+/// along. A missing value (see `DataPoint::is_missing`) has no bar, and leaves its place in the
+/// slot empty:
+///
+/// - The index scale gets an offset (half a tick step at each end), so the first and last bars
+///   aren't cut in half at the chart area's edges.
+/// - Zero is always included in the value scale's bounds, so every bar has a base to grow from.
+/// - The datasets in this controller that share an index scale are grouped side by side. Each
+///   point gets a slot `category_percentage` of the smallest gap between neighbouring categories
+///   or ticks; the slot is split evenly between the bars beside each other, and each bar is
 ///   `bar_percentage` of its share.
 /// - Datasets with the same stack (`DatasetExt::stack`) and the same x and y scales are stacked
-///   into one bar, in dataset order, the first at the bottom. Positive values stack upwards from
-///   zero and negative values downwards, each on their own. A stack takes one share of the slot,
-///   like a dataset without a stack, and the y bounds cover the stacked sums.
+///   into one bar, in dataset order, the first nearest zero. Positive values stack away from zero
+///   one way and negative values the other, each on their own. A stack takes one share of the
+///   slot, like a dataset without a stack, and the value scale's bounds cover the stacked sums.
 ///
-/// Bars in two different bar controllers on the same x scale are neither grouped nor stacked with
-/// each other.
+/// Bars in two different bar controllers on the same index scale are neither grouped nor stacked
+/// with each other.
 #[derive(Clone, Debug)]
 pub struct BarController<D> {
     dataset_sequence: D,
     category_percentage: Scalar,
     bar_percentage: Scalar,
     palette_offset: usize,
+    horizontal: bool,
 }
 
 impl<D: DataSetSequence> BarController<D> {
@@ -43,7 +51,30 @@ impl<D: DataSetSequence> BarController<D> {
             category_percentage: 0.8,
             bar_percentage: 0.9,
             palette_offset: 0,
+            horizontal: false,
         }
+    }
+
+    /// Lays the bars down: each point's category runs down the dataset's y scale, the first at
+    /// the top on a category scale, and its bar grows along the x scale, from zero to the value.
+    /// The data is read as for standing bars, so the same datasets draw either way.
+    pub fn horizontal(mut self) -> BarController<D> {
+        self.horizontal = true;
+        self
+    }
+
+    /// The ids of the scale the categories run along and the scale the bars grow along.
+    fn index_and_value_scales<'a>(&self, options: &'a DataSetOptions) -> (&'a ScaleId, &'a ScaleId) {
+        if self.horizontal {
+            (&options.y_scale, &options.x_scale)
+        } else {
+            (&options.x_scale, &options.y_scale)
+        }
+    }
+
+    /// The axis the categories run along.
+    fn index_axis(&self) -> Axis {
+        if self.horizontal { Axis::Vertical } else { Axis::Horizontal }
     }
 
     /// How much of the smallest gap between neighbouring x values a point's group of bars takes
@@ -75,19 +106,20 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
         self.dataset_sequence.sync(env)
     }
 
-    /// Bars sit on a category scale along x, offset so the first and last bars aren't cut in
-    /// half, with grid lines between the bar groups. The offset and grid offset are asked of any
-    /// x scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
+    /// Bars sit on a category index scale, offset so the first and last bars aren't cut in half,
+    /// with grid lines between the bar groups. The offset and grid offset are asked of any index
+    /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         let mut stacks = StackSums::split_by_sign();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
+            let (index_scale, value_scale) = self.index_and_value_scales(&options);
 
-            bounds.request_kind(&options.x_scale, ScaleKind::Category);
-            bounds.request_offset(&options.x_scale);
-            bounds.request_grid_offset(&options.x_scale);
+            bounds.request_kind(index_scale, ScaleKind::Category);
+            bounds.request_offset(index_scale);
+            bounds.request_grid_offset(index_scale);
 
             // Each bar spans from where its stack has reached to where it takes it, and every bar
             // includes zero, its base. A missing value has no bar and adds nothing to its stack.
@@ -99,8 +131,8 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
 
                 let (start, end) = stacks.add(&key, x, y);
 
-                bounds.include(&options.x_scale, x, x);
-                bounds.include(&options.y_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                bounds.include(index_scale, x, x);
+                bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
             });
         });
     }
@@ -111,38 +143,42 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
-        // First pass: which bars sit side by side (per x scale, a share for each stack and each
-        // dataset without one, in sequence order), and every bar's x position, for the smallest
-        // gap between neighbours.
+        let index_axis = self.index_axis();
+        let value_axis = if self.horizontal { Axis::Horizontal } else { Axis::Vertical };
+
+        // First pass: which bars sit side by side (per index scale, a share for each stack and
+        // each dataset without one, in sequence order), and every bar's position along the index
+        // axis, for the smallest gap between neighbours.
         let mut groups: IndexMap<ScaleId, IndexSet<StackKey>> = IndexMap::new();
         let mut positions: IndexMap<ScaleId, Vec<Scalar>> = IndexMap::new();
         let mut places: Vec<Option<(ScaleId, usize)>> = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
+            let (index_id, _) = self.index_and_value_scales(&options);
 
-            let Some((x_scale, _)) = dataset_scales(scales, &options) else {
+            let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
                 return;
             };
 
-            let (group_index, _) = groups.entry(options.x_scale.clone()).or_default().insert_full(StackKey::new(&options, dataset_index));
-            places.push(Some((options.x_scale.clone(), group_index)));
+            let (group_index, _) = groups.entry(index_id.clone()).or_default().insert_full(StackKey::new(&options, dataset_index));
+            places.push(Some((index_id.clone(), group_index)));
 
-            let x_positions = positions.entry(options.x_scale).or_default();
+            let index_positions = positions.entry(index_id.clone()).or_default();
             dataset.points(&mut |_index, point| {
                 let (Some(x), Some(_)) = (point.x(), point.y()) else {
                     return;
                 };
 
-                x_positions.push(chart_area.left() + x_scale.normalize(x) * chart_area.width());
+                index_positions.push(pixel(index_axis, index_scale, x, chart_area));
             });
         });
 
         let rulers: IndexMap<ScaleId, Scalar> = positions.into_iter()
-            .filter_map(|(id, x_positions)| {
+            .filter_map(|(id, index_positions)| {
                 let scale = scales.get(&id)?;
-                Some((id, min_sample_size(x_positions, scale, chart_area)))
+                Some((id, min_sample_size(index_positions, scale, index_axis, chart_area)))
             })
             .collect();
 
@@ -153,22 +189,21 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
         ctx.save();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
-            let Some(&Some((ref x_id, group_index))) = places.get(dataset_index) else {
+            let Some(&Some((ref index_id, group_index))) = places.get(dataset_index) else {
                 return;
             };
 
             let options = dataset.options();
+            let (_, value_id) = self.index_and_value_scales(&options);
 
-            let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
+            let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                 return;
             };
 
-            let group_size = groups[x_id].len();
+            let group_size = groups[index_id].len();
             let key = StackKey::new(&options, dataset_index);
-            let ruler = rulers.get(x_id).copied().unwrap_or(chart_area.width());
-
-            let y_pixel = |value: Scalar| chart_area.bottom() + (1.0 - y_scale.normalize(value)) * chart_area.height();
-            let zero = y_pixel(base_value(y_scale));
+            let ruler = rulers.get(index_id).copied().unwrap_or(length(index_axis, chart_area));
+            let zero = pixel(value_axis, value_scale, base_value(value_scale), chart_area);
 
             dataset.points(&mut |point_index, point| {
                 // A missing value leaves its place in the slot empty.
@@ -176,19 +211,27 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
                     return;
                 };
 
-                let center = chart_area.left() + x_scale.normalize(x) * chart_area.width();
-                let (left, width) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
+                let center = pixel(index_axis, index_scale, x, chart_area);
+                let (side, thickness) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
 
                 // The first bar of a stack grows from zero, or the end of the range nearest it.
                 let (start, end) = stacks.add(&key, x, y);
-                let base = if start == 0.0 { zero } else { y_pixel(start) };
-                let head = y_pixel(end);
+                let base = if start == 0.0 { zero } else { pixel(value_axis, value_scale, start, chart_area) };
+                let head = pixel(value_axis, value_scale, end, chart_area);
+
+                // The corners as (along the index axis, along the value axis), turned into
+                // (x, y) for the way the bars lie.
+                let corner = |along_index: Scalar, along_value: Scalar| {
+                    if self.horizontal { (along_value, along_index) } else { (along_index, along_value) }
+                };
 
                 ctx.begin_path();
-                ctx.move_to(left, base);
-                ctx.line_to(left + width, base);
-                ctx.line_to(left + width, head);
-                ctx.line_to(left, head);
+                let (x0, y0) = corner(side, base);
+                ctx.move_to(x0, y0);
+                for (along_index, along_value) in [(side + thickness, base), (side + thickness, head), (side, head)] {
+                    let (cx, cy) = corner(along_index, along_value);
+                    ctx.line_to(cx, cy);
+                }
                 ctx.close_path();
 
                 ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
@@ -201,23 +244,40 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
     }
 }
 
-/// The value bars grow from: zero when it is inside the y scale's range, otherwise the end of the
-/// range nearest to zero.
-fn base_value(y_scale: &dyn Scale) -> Scalar {
-    0.0_f64.clamp(y_scale.min(), y_scale.max())
+/// Where `value` on `scale` falls on the screen, along `axis`: an x for a horizontal axis, and a y
+/// for a vertical one, where a normalized 1 is the top of the chart area.
+fn pixel(axis: Axis, scale: &dyn Scale, value: Scalar, chart_area: Rect) -> Scalar {
+    match axis {
+        Axis::Vertical => chart_area.bottom() + (1.0 - scale.normalize(value)) * chart_area.height(),
+        _ => chart_area.left() + scale.normalize(value) * chart_area.width(),
+    }
 }
 
-/// The smallest gap, in pixels, between neighbouring bar positions or neighbouring ticks of the x
-/// scale, capped at the chart area's width. It sets how wide a point's group of bars can be without
-/// overlapping the next point's.
-fn min_sample_size(mut x_positions: Vec<Scalar>, x_scale: &dyn Scale, chart_area: Rect) -> Scalar {
-    let mut min = chart_area.width();
+/// The chart area's length along `axis`.
+fn length(axis: Axis, chart_area: Rect) -> Scalar {
+    match axis {
+        Axis::Vertical => chart_area.height(),
+        _ => chart_area.width(),
+    }
+}
 
-    let mut tick_positions: Vec<Scalar> = x_scale.ticks().iter()
-        .map(|tick| chart_area.left() + x_scale.normalize(*tick) * chart_area.width())
+/// The value bars grow from: zero when it is inside the value scale's range, otherwise the end of
+/// the range nearest to zero.
+fn base_value(value_scale: &dyn Scale) -> Scalar {
+    0.0_f64.clamp(value_scale.min(), value_scale.max())
+}
+
+/// The smallest gap, in pixels, between neighbouring bar positions or neighbouring ticks of the
+/// index scale, along `index_axis`, capped at the chart area's length along it. It sets how thick a
+/// point's group of bars can be without overlapping the next point's.
+fn min_sample_size(mut index_positions: Vec<Scalar>, index_scale: &dyn Scale, index_axis: Axis, chart_area: Rect) -> Scalar {
+    let mut min = length(index_axis, chart_area);
+
+    let mut tick_positions: Vec<Scalar> = index_scale.ticks().iter()
+        .map(|tick| pixel(index_axis, index_scale, *tick, chart_area))
         .collect();
 
-    for positions in [&mut x_positions, &mut tick_positions] {
+    for positions in [&mut index_positions, &mut tick_positions] {
         positions.sort_by(Scalar::total_cmp);
 
         for pair in positions.windows(2) {
@@ -233,9 +293,10 @@ fn min_sample_size(mut x_positions: Vec<Scalar>, x_scale: &dyn Scale, chart_area
     min
 }
 
-/// The left edge and width of one bar: the group's slot is `category_percentage` of `ruler`,
-/// centred on the point's x; it is split into `group_size` equal shares, and the bar is
-/// `bar_percentage` of share number `group_index`, centred in it.
+/// Where one bar starts along the index axis, and how thick it is: the group's slot is
+/// `category_percentage` of `ruler`, centred on the point's category; it is split into
+/// `group_size` equal shares, and the bar is `bar_percentage` of share number `group_index`,
+/// centred in it. Share 0 is at the smaller pixel: the left, or the top for lying bars.
 fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_size: usize, category_percentage: Scalar, bar_percentage: Scalar) -> (Scalar, Scalar) {
     let slot = ruler * category_percentage;
     let share = slot / group_size.max(1) as Scalar;
@@ -250,7 +311,7 @@ mod tests {
     use carbide::environment::Environment;
     use crate::{DatasetExt, StackId};
     use crate::controller::DatasetController;
-    use crate::scale::{ScaleBounds, ScaleId};
+    use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
     use super::{bar_slot, BarController};
 
     /// A missing value has no bar: it adds nothing to the bounds, or to its stack.
@@ -311,6 +372,28 @@ mod tests {
         let mut unstacked = ScaleBounds::default();
         BarController::new((vec![10.0, 20.0], vec![5.0, 30.0])).collect_bounds(&mut unstacked, &mut Environment::new());
         assert_eq!(unstacked.get(&ScaleId::Y).range(), Some((0.0, 30.0)), "without a stack, bars don't add up");
+    }
+
+    /// Lying bars read the same data as standing ones, with the scales swapped: the categories
+    /// run along the dataset's y scale, which is asked to be an offset category scale with grid
+    /// lines between the groups, and the stacked values along its x scale.
+    #[test]
+    fn horizontal_bars_put_the_categories_on_the_y_scale() {
+        const COSTS: StackId = StackId::new("costs");
+        let bars = BarController::new((vec![10.0, -20.0].stack(COSTS), vec![5.0, -4.0].stack(COSTS))).horizontal();
+
+        let mut bounds = ScaleBounds::default();
+        bars.collect_bounds(&mut bounds, &mut Environment::new());
+
+        let y = bounds.get(&ScaleId::Y);
+        assert_eq!(y.range(), Some((0.0, 1.0)), "the categories are the points' x values");
+        assert_eq!(y.kind(), Some(ScaleKind::Category));
+        assert!(y.offset() && y.grid_offset());
+
+        let x = bounds.get(&ScaleId::X);
+        assert_eq!(x.range(), Some((-24.0, 15.0)), "the values, stacked, with zero");
+        assert_eq!(x.kind(), None, "the value scale is left to its default");
+        assert!(!x.offset() && !x.grid_offset());
     }
 
     /// One dataset: the bar is `bar_percentage` of `category_percentage` of the ruler, centred on
