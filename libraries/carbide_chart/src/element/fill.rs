@@ -24,9 +24,10 @@ pub enum Fill {
     /// To the value. It is included in the y bounds, as zero is for `Origin`.
     Value(Scalar),
     /// Down to the line of the dataset below it in its stack (see `DatasetExt::stack`), so a
-    /// stack of lines becomes a stacked area chart. The bottom dataset of a stack, a dataset
-    /// without a stack, and any dataset in a controller that doesn't stack fill to zero, as
-    /// `Origin` does.
+    /// stack of lines becomes a stacked area chart. The line below needn't be filled itself: an
+    /// unfilled line with a `Stack` area on it makes a single band between the two lines. The
+    /// bottom dataset of a stack, a dataset without a stack, and any dataset in a controller that
+    /// doesn't stack fill to zero, as `Origin` does, and only they include zero in the y bounds.
     Stack,
 }
 

@@ -4,7 +4,7 @@
 //! area under it, for datasets that `fill`.
 
 use carbide::color::{Color, GREEN, RED, WHITE};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
@@ -21,13 +21,16 @@ const FILL_OPACITY: f32 = 0.3;
 
 /// Reports every dataset's x and y range to the scales it is bound to. With `fills`, when the
 /// controller draws lines, a filled dataset's baseline value is included too, so the area's base
-/// is on the chart. With `stacks`, a dataset in a stack reports the running totals it is drawn
-/// at instead of its own values. Empty datasets have no bounds and contribute nothing.
+/// is on the chart; a `Fill::Stack` area with a line below it fills to that line, so it includes
+/// nothing. With `stacks`, a dataset in a stack reports the running totals it is drawn at instead
+/// of its own values. Empty datasets have no bounds and contribute nothing.
 pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool)
 where
     D: DataSetSequence<Scalar, Scalar, Scalar>,
 {
     let mut sums = StackSums::single();
+    // The stacks that already have a non-empty line, which a later `Fill::Stack` fills down to.
+    let mut filled_stacks: HashSet<StackKey> = HashSet::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
         let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
@@ -35,11 +38,12 @@ where
         };
 
         let options = dataset.options();
+        let key = StackKey::new(&options, dataset_index);
+        let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
 
         bounds.include(&options.x_scale, x_min, x_max);
 
         if stacks {
-            let key = StackKey::new(&options, dataset_index);
             dataset.points(&mut |_index, point| {
                 let (_, total) = sums.add(&key, point.x(), point.y());
                 bounds.include(&options.y_scale, total, total);
@@ -48,7 +52,9 @@ where
             bounds.include(&options.y_scale, y_min, y_max);
         }
 
-        if fills && let Some(baseline) = options.fill.baseline_value() {
+        let fills_to_line = options.fill == Fill::Stack && has_line_below;
+
+        if fills && !fills_to_line && let Some(baseline) = options.fill.baseline_value() {
             bounds.include(&options.y_scale, baseline, baseline);
         }
     });
@@ -259,7 +265,10 @@ mod tests {
         assert_eq!(y_range(&ScatterController::new((first, second))), Some((-30.0, 20.0)), "scatter charts don't stack");
 
         let areas = (vec![10.0, 20.0].stack(SALES).fill(Fill::Stack), vec![5.0, 8.0].stack(SALES).fill(Fill::Stack));
-        assert_eq!(y_range(&LineController::new(areas)), Some((0.0, 28.0)));
+        assert_eq!(y_range(&LineController::new(areas)), Some((0.0, 28.0)), "the bottom area fills down to zero");
+
+        let band = (vec![10.0, 20.0].stack(SALES), vec![5.0, 8.0].stack(SALES).fill(Fill::Stack));
+        assert_eq!(y_range(&LineController::new(band)), Some((10.0, 28.0)), "an area filled to the line below doesn't reach zero");
     }
 
     /// Each stacked line knows the line below it in its stack: not one in another stack or

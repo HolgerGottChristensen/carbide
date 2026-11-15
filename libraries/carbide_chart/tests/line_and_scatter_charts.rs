@@ -8,7 +8,7 @@ use carbide_testing::Harness;
 
 mod common;
 
-use support::{example_chart, filled_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
+use support::{band_chart, example_chart, filled_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -80,6 +80,32 @@ fn stacked_lines_and_areas() {
 
     *fill.value_mut() = Fill::Stack;
     harness.snapshot("stacked_areas");
+}
+
+/// A temperature range as one band: the daily minimum as a plain line, and the spread up to the
+/// maximum stacked on it as a line filled with `Fill::Stack`. Pins down that a stacked area fills
+/// down to the line below even when that line has no fill of its own, so the only filled area is
+/// the band bounded by the two lines; and that the y scale covers the band, not zero, as nothing
+/// fills down to it.
+#[test]
+fn area_between_stacked_lines() {
+    let mut harness = Harness::new(band_chart(Interpolation::Linear, Interpolation::Linear), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("area_between_stacked_lines");
+}
+
+/// The band of `area_between_stacked_lines` with a monotone lower line and a stepped upper line.
+/// Pins down that each edge of the band follows its own line as drawn: the top edge steps with
+/// the upper line, and the bottom edge runs back along the lower line's curve, so the band fits
+/// exactly between them.
+#[test]
+fn area_between_stacked_lines_of_different_interpolations() {
+    let mut harness = Harness::new(
+        band_chart(Interpolation::Monotone, Interpolation::Stepped(Stepped::Middle)),
+        Dimension::new(600.0, 500.0),
+    );
+
+    harness.snapshot("area_between_stacked_lines_of_different_interpolations");
 }
 
 /// A scatter chart with lines, filled to zero, its points in x order with numeric x values. Pins
@@ -156,6 +182,24 @@ mod support {
             .interpolation(Interpolation::Monotone).fill(fill).stack(VISITS);
 
         Chart::new(LineController::new((search, social, email)))
+            .framed()
+    }
+
+    /// A week's temperatures as a band: the daily minimum as a line with `lower` interpolation,
+    /// and the spread to the maximum stacked on it with `upper` interpolation, filled down to the
+    /// minimum.
+    pub fn band_chart(lower: Interpolation, upper: Interpolation) -> impl Widget {
+        const RANGE: StackId = StackId::new("range");
+
+        let minimum = vec![5.0, 7.0, 6.0, 9.0, 12.0, 11.0, 8.0]
+            .interpolation(lower)
+            .stack(RANGE);
+        let spread = vec![6.0, 5.0, 8.0, 7.0, 6.0, 9.0, 7.0]
+            .interpolation(upper)
+            .fill(Fill::Stack)
+            .stack(RANGE);
+
+        Chart::new(LineController::new((minimum, spread)))
             .framed()
     }
 
