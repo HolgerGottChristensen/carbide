@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentFontSize};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
@@ -8,6 +8,7 @@ use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 use indexmap::IndexMap;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
+use carbide_core::text::{FontSize, FontWeight};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
@@ -246,6 +247,17 @@ struct ChartLayout {
     legend: Option<(LegendPosition, Rect)>,
 }
 
+/// The font size of the chart title when the environment has no `Title2` size.
+const TITLE_FONT_SIZE: FontSize = 20;
+
+/// Sets the canvas's text style to the chart title's: bold, at the environment's `Title2` size, so
+/// it stands out above the labels and follows the font sizes set around the chart.
+fn set_title_font(canvas: &mut CanvasContext) {
+    let size = canvas.env().value(&EnvironmentFontSize::Title2).unwrap_or(TITLE_FONT_SIZE);
+    canvas.set_font_size(size);
+    canvas.set_font_weight(FontWeight::Bold);
+}
+
 impl ChartLayout {
     fn offset(&self, id: &ScaleId) -> Scalar {
         self.offsets.get(id).copied().unwrap_or(0.0)
@@ -304,7 +316,13 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let title = self.title.as_ref().map(|title| title.value_dyn().clone());
 
         let decorations = Decorations {
-            title: title.as_ref().map(|title| canvas.measure_text(title).height),
+            title: title.as_ref().map(|title| {
+                canvas.save();
+                set_title_font(&mut canvas);
+                let size = canvas.measure_text(title);
+                canvas.restore();
+                size.height
+            }),
             legend: (!legend_items.is_empty()).then_some((legend_position, legend_layout.size)),
         };
 
@@ -325,6 +343,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
             canvas.save();
             canvas.set_fill_style(color);
             canvas.set_text_align(Alignment::Top);
+            set_title_font(&mut canvas);
             canvas.fill_text(title, position.x, position.y);
             canvas.restore();
         }
