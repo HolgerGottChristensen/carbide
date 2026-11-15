@@ -3,7 +3,8 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{dataset_scales, point_color, Palette};
+use crate::controller::drawing::{dataset_scales, legend_items, point_color, Palette};
+use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
@@ -102,6 +103,11 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
                 bounds.include(&options.y_scale, start.min(end).min(0.0), start.max(end).max(0.0));
             });
         });
+    }
+
+    /// Each named dataset as a square in its colour.
+    fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
+        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |_| LegendMarker::Square);
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

@@ -2,7 +2,9 @@ use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, Palette};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, legend_items, Palette};
+use crate::legend::{LegendItem, LegendMarker};
+use crate::Fill;
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, Scales};
@@ -53,6 +55,18 @@ impl<D: DataSetSequence> DatasetController for ScatterController<D> {
 
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false);
+    }
+
+    /// Each named dataset as a point in its colour, or, when lines are shown, a line, or a square
+    /// when it is filled.
+    fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
+        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |options| {
+            match (self.show_line, options.fill) {
+                (false, _) => LegendMarker::Point,
+                (true, Fill::None) => LegendMarker::Line,
+                (true, _) => LegendMarker::Square,
+            }
+        });
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

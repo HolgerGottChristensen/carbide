@@ -7,6 +7,7 @@ pub use bar_controller::BarController;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;
+use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};
 
 mod bar_controller;
@@ -47,6 +48,11 @@ pub trait DatasetController: DynClone + Debug + 'static {
     /// A dataset bound to a scale the chart doesn't have is skipped.
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect);
 
+    /// Adds an entry to `items` for each of the controller's datasets that has a name (see
+    /// `DatasetExt::label`), in the colour it is drawn in, for the chart's legend (see
+    /// `Chart::legend`). `env` holds the chart's `SeriesStyle`. The default adds nothing.
+    fn legend_items(&self, _env: &Environment, _items: &mut Vec<LegendItem>) {}
+
     /// Boxes the controller, so controllers of different types can share a `Vec` or a state of
     /// a `Vec`, as the controllers of a chart.
     fn boxed(self) -> Box<dyn DatasetController> where Self: Sized {
@@ -69,6 +75,10 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect) {
         (**self).draw(ctx, scales, area);
+    }
+
+    fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
+        (**self).legend_items(env, items);
     }
 
     /// Already boxed: returned as it is, not boxed again.

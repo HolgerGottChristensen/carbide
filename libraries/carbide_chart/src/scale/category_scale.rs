@@ -1,6 +1,8 @@
 use std::ops::Range;
 
 use carbide::draw::Scalar;
+use carbide::environment::Environment;
+use carbide::state::IntoReadState;
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 
@@ -87,6 +89,12 @@ impl CategoryScale {
         self
     }
 
+    /// See `LinearScale::title`.
+    pub fn title(mut self, title: impl IntoReadState<String>) -> CategoryScale {
+        self.axis_options = self.axis_options.with_title(title);
+        self
+    }
+
     /// The value at the start of the mapped range and the range's length.
     fn start_and_length(&self) -> (Scalar, Scalar) {
         let count = self.max - self.min + 1.0;
@@ -104,6 +112,10 @@ impl Scale for CategoryScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.axis_options.sync(env)
     }
 
     fn normalize(&self, value: Scalar) -> Scalar {

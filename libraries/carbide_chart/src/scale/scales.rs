@@ -1,4 +1,5 @@
 use carbide::draw::Scalar;
+use carbide::environment::Environment;
 use indexmap::IndexMap;
 
 use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId};
@@ -176,6 +177,16 @@ impl Scales {
     /// Every scale, in the order the chart draws them.
     pub fn iter(&self) -> impl Iterator<Item=(&ScaleId, &dyn Scale)> + '_ {
         self.scales.iter().map(|(id, scale)| (id, scale.as_ref()))
+    }
+
+    /// Syncs the states in every scale with the environment (see `Scale::sync`), and returns
+    /// whether anything may have changed.
+    pub fn sync(&mut self, env: &mut Environment) -> bool {
+        let mut changed = false;
+        for scale in self.scales.values_mut() {
+            changed |= scale.sync(env);
+        }
+        changed
     }
 
     /// Fits each scale to what was asked of its id: its offset and grid offset, then its range.

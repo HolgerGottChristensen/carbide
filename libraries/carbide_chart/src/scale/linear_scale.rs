@@ -1,6 +1,8 @@
 use std::ops::Range;
 
 use carbide::draw::Scalar;
+use carbide::environment::Environment;
+use carbide::state::IntoReadState;
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 
@@ -58,6 +60,14 @@ impl LinearScale {
         self
     }
 
+    /// Gives the scale's axis a title, a text or a state of one. A horizontal axis draws it centred
+    /// under (or over) its labels; a vertical one, as text can't be rotated, horizontally above
+    /// the chart area, lined up with its band.
+    pub fn title(mut self, title: impl IntoReadState<String>) -> LinearScale {
+        self.axis_options = self.axis_options.with_title(title);
+        self
+    }
+
     fn tick_limits(&self) -> u32 {
         11
     }
@@ -85,6 +95,10 @@ impl Scale for LinearScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.axis_options.sync(env)
     }
 
     /// With an offset, the mapped range is widened by half a tick step at both ends.

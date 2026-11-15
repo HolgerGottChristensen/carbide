@@ -1,17 +1,20 @@
+use carbide::environment::Environment;
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 use crate::scale::{Axis, AxisPosition};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order
-/// among the scales on that side, and whether it draws grid lines and tick marks. Every scale type
-/// holds one and hands it out with `Scale::axis_options`; the axis code (`scale/axis.rs`) reads it,
-/// so it is laid out and drawn the same way for every scale. The scales' builder methods
-/// (`LinearScale::position` and so on) set it.
-#[derive(Clone, Copy, Debug, PartialEq)]
+/// among the scales on that side, whether it draws grid lines and tick marks, and its title. Every
+/// scale type holds one and hands it out with `Scale::axis_options`; the axis code
+/// (`scale/axis.rs`) reads it, so it is laid out and drawn the same way for every scale. The
+/// scales' builder methods (`LinearScale::position` and so on) set it.
+#[derive(Clone, Debug)]
 pub struct AxisOptions {
     axis: Axis,
     position: AxisPosition,
     weight: i32,
     grid_lines: bool,
     tick_marks: bool,
+    title: Option<Box<dyn AnyReadState<T=String>>>,
 }
 
 impl AxisOptions {
@@ -24,6 +27,7 @@ impl AxisOptions {
             weight: 0,
             grid_lines: true,
             tick_marks: true,
+            title: None,
         }
     }
 
@@ -50,6 +54,17 @@ impl AxisOptions {
         self.tick_marks
     }
 
+    /// The axis's title, as its state was last synced, or `None` when it has none.
+    pub fn title(&self) -> Option<String> {
+        self.title.as_ref().map(|title| title.value_dyn().clone())
+    }
+
+    /// Syncs the states in the options with the environment, and returns whether anything may
+    /// have changed. Scales call it from `Scale::sync`.
+    pub fn sync(&mut self, env: &mut Environment) -> bool {
+        self.title.as_mut().is_some_and(|title| title.sync(env))
+    }
+
     /// Puts the axis on `position`. Horizontal axes go above or below the chart area, vertical
     /// axes left or right of it; any other side is logged and the axis keeps its current side.
     pub fn with_position(mut self, position: AxisPosition) -> AxisOptions {
@@ -74,6 +89,12 @@ impl AxisOptions {
 
     pub fn with_tick_marks(mut self, tick_marks: bool) -> AxisOptions {
         self.tick_marks = tick_marks;
+        self
+    }
+
+    /// Gives the axis a title, a text or a state of one.
+    pub fn with_title(mut self, title: impl IntoReadState<String>) -> AxisOptions {
+        self.title = Some(title.into_read_state().as_dyn_read());
         self
     }
 }

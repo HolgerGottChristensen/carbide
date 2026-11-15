@@ -3,18 +3,27 @@ use carbide::environment::Environment;
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
-use carbide_core::draw::{Dimension, Position, Rect, Scalar};
+use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 use indexmap::IndexMap;
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
+use crate::legend::{self, LegendPosition};
 use crate::sequence::IntoSequence;
+use crate::style::axis_style;
 use crate::scale::{axis, AxisPosition, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
+
+/// The gap between the chart title or the legend and what is inside it.
+const DECORATION_SPACING: Scalar = 12.0;
+
+/// The gap between the row of vertical axis titles and the chart area below it.
+const TITLE_ROW_SPACING: Scalar = 6.0;
 
 /// A container that owns the scales and draws a sequence of controllers on them. Each dataset
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
@@ -27,7 +36,9 @@ pub struct Chart<C> where C: ControllerSequence {
     dimension: Dimension,
     controllers: C,
     scales: Scales,
-    padding: EdgeInsets,
+    padding: Box<dyn AnyReadState<T=EdgeInsets>>,
+    title: Option<Box<dyn AnyReadState<T=String>>>,
+    legend: Box<dyn AnyReadState<T=LegendPosition>>,
     /// Unknown scale ids already warned about, so each is logged once, not every update.
     warned_scale_ids: HashSet<ScaleId>,
     /// The default scales not replaced with `Chart::scale`, and the kind each is now. Each fit
@@ -50,7 +61,9 @@ impl<C: ControllerSequence> Chart<C> {
             dimension: Default::default(),
             controllers: controllers.into_sequence(),
             scales: Scales::new(),
-            padding: EdgeInsets::all(30.0),
+            padding: IntoReadState::<EdgeInsets>::into_read_state(EdgeInsets::all(30.0)).as_dyn_read(),
+            title: None,
+            legend: IntoReadState::<LegendPosition>::into_read_state(LegendPosition::Hidden).as_dyn_read(),
             warned_scale_ids: HashSet::new(),
             default_kinds: [(ScaleId::X, ScaleKind::Linear), (ScaleId::Y, ScaleKind::Linear)].into_iter().collect(),
         }
@@ -69,6 +82,27 @@ impl<C: ControllerSequence> Chart<C> {
         let id = id.into();
         self.default_kinds.shift_remove(&id);
         self.scales.insert(id, scale);
+        self
+    }
+
+    /// Gives the chart a title, a text or a state of one, drawn centred above everything else.
+    pub fn title(mut self, title: impl IntoReadState<String>) -> Chart<C> {
+        self.title = Some(title.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// The space between the chart's edges and what it draws, an `EdgeInsets` or a number for
+    /// every side, or a state of one. Defaults to 30 on every side.
+    pub fn padding(mut self, padding: impl IntoReadState<EdgeInsets>) -> Chart<C> {
+        self.padding = padding.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Shows a legend on the given side of the chart, a `LegendPosition` or a state of one:
+    /// each dataset with a name (`DatasetExt::label`), next to a marker in its colour. Defaults to
+    /// `LegendPosition::Hidden`.
+    pub fn legend(mut self, position: impl IntoReadState<LegendPosition>) -> Chart<C> {
+        self.legend = position.into_read_state().as_dyn_read();
         self
     }
 
@@ -102,12 +136,59 @@ impl<C: ControllerSequence> Chart<C> {
         self.scales.fit(&bounds);
     }
 
-    /// Lays the scales out around the chart area: on each side, the scales are sorted by weight,
-    /// ties kept in the order they were added, and stacked outwards from the chart area, each
-    /// taking a band as wide as its measured `sizes` entry (see `Scale::size`), with
-    /// `SCALE_SPACING` between neighbouring bands. The chart area is what the padding and every
-    /// side's bands leave over.
-    fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>) -> ScaleLayout {
+    /// Lays out everything around the chart area, from the outside in: the padding, the chart
+    /// title along the top, the legend on its side, the row of vertical axis titles above the
+    /// chart area, and the scales' bands. On each side, the scales are sorted by weight, ties kept
+    /// in the order they were added, and stacked outwards from the chart area, each taking a band
+    /// as wide as its measured `sizes` entry (see `axis::size`), with `SCALE_SPACING` between
+    /// neighbouring bands. The chart area is what is left over.
+    fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>, decorations: &Decorations) -> ChartLayout {
+        let padding = *self.padding.value_dyn();
+
+        // The space left, as screen edges: `top` is the smaller y.
+        let mut top = padding.top;
+        let mut bottom = self.dimension.height - padding.bottom;
+        let mut left = padding.left;
+        let mut right = self.dimension.width - padding.right;
+
+        let title = decorations.title.map(|height| {
+            let position = Position::new((left + right) / 2.0, top);
+            top += height + DECORATION_SPACING;
+            position
+        });
+
+        let legend = decorations.legend.map(|(position, size)| {
+            let area = match position {
+                LegendPosition::Top | LegendPosition::Hidden => {
+                    let area = Rect::new(Position::new(left, top), Dimension::new(right - left, size.height));
+                    top += size.height + DECORATION_SPACING;
+                    area
+                }
+                LegendPosition::Bottom => {
+                    let area = Rect::new(Position::new(left, bottom - size.height), Dimension::new(right - left, size.height));
+                    bottom -= size.height + DECORATION_SPACING;
+                    area
+                }
+                LegendPosition::Left => {
+                    let area = Rect::new(Position::new(left, top), Dimension::new(size.width, bottom - top));
+                    left += size.width + DECORATION_SPACING;
+                    area
+                }
+                LegendPosition::Right => {
+                    let area = Rect::new(Position::new(right - size.width, top), Dimension::new(size.width, bottom - top));
+                    right -= size.width + DECORATION_SPACING;
+                    area
+                }
+            };
+
+            (position, area)
+        });
+
+        let title_row = top + decorations.title_row;
+        if decorations.title_row > 0.0 {
+            top = title_row + TITLE_ROW_SPACING;
+        }
+
         let mut offsets = IndexMap::new();
 
         let mut stack_side = |side: AxisPosition| -> Scalar {
@@ -136,32 +217,47 @@ impl<C: ControllerSequence> Chart<C> {
             depth
         };
 
-        let left = stack_side(AxisPosition::Left);
-        let right = stack_side(AxisPosition::Right);
-        let top = stack_side(AxisPosition::Top);
-        let bottom = stack_side(AxisPosition::Bottom);
+        let left_bands = stack_side(AxisPosition::Left);
+        let right_bands = stack_side(AxisPosition::Right);
+        let top_bands = stack_side(AxisPosition::Top);
+        let bottom_bands = stack_side(AxisPosition::Bottom);
 
         let chart_area = Rect::new(
-            Position::new(self.padding.left + left, self.padding.top + top),
+            Position::new(left + left_bands, top + top_bands),
             Dimension::new(
-                self.dimension.width - self.padding.left - self.padding.right - left - right,
-                self.dimension.height - self.padding.top - self.padding.bottom - top - bottom,
+                right - left - left_bands - right_bands,
+                bottom - top - top_bands - bottom_bands,
             )
         );
 
-        ScaleLayout { chart_area, offsets }
+        ChartLayout { chart_area, offsets, title, legend, title_row }
     }
 }
 
-/// Where everything goes for one render: the area the datasets are drawn in, and for each scale
-/// the distance from that area to the inner edge of its band.
-#[derive(Debug)]
-struct ScaleLayout {
-    chart_area: Rect,
-    offsets: IndexMap<ScaleId, Scalar>,
+/// The sizes of what surrounds the scales, measured for one render.
+#[derive(Debug, Default)]
+struct Decorations {
+    /// The chart title's height, when it has one.
+    title: Option<Scalar>,
+    /// The legend's side and size, when it is shown and has items.
+    legend: Option<(LegendPosition, Dimension)>,
+    /// The height of the row of vertical axis titles above the chart area, or 0 without any.
+    title_row: Scalar,
 }
 
-impl ScaleLayout {
+/// Where everything goes for one render: the area the datasets are drawn in, for each scale the
+/// distance from that area to the inner edge of its band, the top centre of the chart title, the
+/// legend's side and area, and the bottom of the row of vertical axis titles.
+#[derive(Debug)]
+struct ChartLayout {
+    chart_area: Rect,
+    offsets: IndexMap<ScaleId, Scalar>,
+    title: Option<Position>,
+    legend: Option<(LegendPosition, Rect)>,
+    title_row: Scalar,
+}
+
+impl ChartLayout {
     fn offset(&self, id: &ScaleId) -> Scalar {
         self.offsets.get(id).copied().unwrap_or(0.0)
     }
@@ -171,11 +267,19 @@ impl<C: ControllerSequence> CommonWidget for Chart<C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
-/// Syncs every state below the chart, through its controllers and their datasets. carbide calls
-/// it before every update and event, and `render` calls it first, as carbide's default `render`
-/// does, so the scales are fitted and the datasets drawn from synced values.
+/// Syncs every state of the chart: its title, padding and legend position, its scales, and its
+/// controllers and their datasets. carbide calls it before every update and event, and `render`
+/// calls it first, as carbide's default `render` does, so the scales are fitted and everything is
+/// drawn from synced values.
 impl<C: ControllerSequence> WidgetSync for Chart<C> {
     fn sync(&mut self, env: &mut Environment) {
+        self.padding.sync(env);
+        self.legend.sync(env);
+        if let Some(title) = &mut self.title {
+            title.sync(env);
+        }
+
+        self.scales.sync(env);
         self.controllers.sync(env);
     }
 }
@@ -196,7 +300,30 @@ impl<C: ControllerSequence> Render for Chart<C> {
             .map(|(id, scale)| (id.clone(), axis::size(scale, &mut canvas)))
             .collect();
 
-        let layout = self.layout(&sizes);
+        // The legend's items, from every controller, in order.
+        let legend_position = *self.legend.value_dyn();
+        let mut legend_items = vec![];
+        if legend_position != LegendPosition::Hidden {
+            let env = canvas.env();
+            self.controllers.foreach(&mut |_, controller| controller.legend_items(env, &mut legend_items));
+        }
+
+        let padding = *self.padding.value_dyn();
+        let legend_width = self.dimension.width - padding.left - padding.right;
+        let legend_layout = legend::layout(&legend_items, legend_position, legend_width, |text| canvas.measure_text(text));
+
+        let title = self.title.as_ref().map(|title| title.value_dyn().clone());
+
+        let decorations = Decorations {
+            title: title.as_ref().map(|title| canvas.measure_text(title).height),
+            legend: (!legend_items.is_empty()).then_some((legend_position, legend_layout.size)),
+            title_row: self.scales.iter()
+                .filter_map(|(_, scale)| axis::vertical_title_size(scale, &mut canvas))
+                .map(|size| size.height)
+                .fold(0.0, Scalar::max),
+        };
+
+        let layout = self.layout(&sizes, &decorations);
         let chart_area = layout.chart_area;
 
         for (id, scale) in self.scales.iter() {
@@ -205,6 +332,20 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
         for (id, scale) in self.scales.iter() {
             axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id));
+            axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id], layout.title_row);
+        }
+
+        if let (Some(title), Some(position)) = (&title, layout.title) {
+            let color = axis_style(canvas.env()).label_color(canvas.env());
+            canvas.save();
+            canvas.set_fill_style(color);
+            canvas.set_text_align(Alignment::Top);
+            canvas.fill_text(title, position.x, position.y);
+            canvas.restore();
+        }
+
+        if let Some((position, area)) = layout.legend {
+            legend::draw(&legend_items, &legend_layout, position, &mut canvas, area);
         }
 
         let scales = &self.scales;
@@ -217,7 +358,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
 #[cfg(test)]
 mod tests {
     use carbide::color::RED;
-    use carbide::draw::{Dimension, Position, Scalar};
+    use carbide::draw::{Dimension, Position, Rect, Scalar};
     use carbide::environment::Environment;
     use carbide::state::{LocalState, Map1, ReadStateExtNew, State};
     use carbide::widget::WidgetSync;
@@ -227,7 +368,7 @@ mod tests {
     use crate::sequence::Sequence;
     use crate::{DataColor, StackId};
     use crate::scale::{Axis, AxisPosition, CategoryScale, LinearScale, ScaleId};
-    use super::{Chart, SCALE_SPACING};
+    use super::{Chart, Decorations, SCALE_SPACING};
 
     /// Datasets spread over several controllers share the chart's scales: they fit exactly as
     /// they would with every dataset in one controller.
@@ -546,7 +687,7 @@ mod tests {
         assert!(y_min >= 100.0, "Y should fit only the revenue, but starts at {y_min}");
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let area = chart.layout(&sizes(&[(ScaleId::Y, 35.0), (PERCENT, 45.0)])).chart_area;
+        let area = chart.layout(&sizes(&[(ScaleId::Y, 35.0), (PERCENT, 45.0)]), &Decorations::default()).chart_area;
         assert_eq!(area.left(), 30.0 + 35.0, "left: padding + Y's band");
         assert_eq!(area.right(), 400.0 - 30.0 - 45.0, "right: padding + percent's band");
     }
@@ -570,13 +711,112 @@ mod tests {
         assert_eq!(scale_range(&chart, ScaleId::Y), (0.0, 1.0), "Y has no data bound to it");
     }
 
+    /// Decorations are laid out from the outside in: the chart title along the top, then the
+    /// legend on its side, then the row of vertical axis titles above the chart area, each taking
+    /// its size and a gap off the space left, and the scale bands inside that.
+    #[test]
+    fn decorations_are_laid_out_from_the_outside_in() {
+        use crate::LegendPosition;
+        use super::{DECORATION_SPACING, TITLE_ROW_SPACING};
+
+        let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])));
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
+
+        let decorations = Decorations { title: Some(14.0), legend: Some((LegendPosition::Top, Dimension::new(340.0, 16.0))), title_row: 14.0 };
+        let layout = chart.layout(&bands, &decorations);
+
+        assert_eq!(layout.title, Some(Position::new(200.0, 30.0)), "the title is centred along the top, inside the padding");
+        let (side, legend) = layout.legend.unwrap();
+        assert_eq!(side, LegendPosition::Top);
+        assert_eq!((legend.left(), legend.bottom(), legend.width(), legend.height()), (30.0, 30.0 + 14.0 + DECORATION_SPACING, 340.0, 16.0), "the legend sits under the title, across the chart");
+        let row = 30.0 + 14.0 + DECORATION_SPACING + 16.0 + DECORATION_SPACING + 14.0;
+        assert_eq!(layout.title_row, row, "the axis title row comes under the legend");
+        assert_eq!(layout.chart_area.bottom(), row + TITLE_ROW_SPACING, "the chart area starts under the row");
+        assert_eq!(layout.chart_area.left(), 30.0 + 35.0, "nothing came off the sides");
+
+        for (side, check) in [
+            (LegendPosition::Left, Box::new(|area: Rect| area.left() == 30.0 + 50.0 + DECORATION_SPACING + 35.0) as Box<dyn Fn(Rect) -> bool>),
+            (LegendPosition::Right, Box::new(|area: Rect| area.right() == 400.0 - 30.0 - 50.0 - DECORATION_SPACING)),
+            (LegendPosition::Bottom, Box::new(|area: Rect| area.top() == 300.0 - 30.0 - 16.0 - DECORATION_SPACING - 20.0)),
+        ] {
+            let decorations = Decorations { legend: Some((side, Dimension::new(50.0, 16.0))), ..Decorations::default() };
+            let layout = chart.layout(&bands, &decorations);
+            assert!(check(layout.chart_area), "a legend on the {side:?} should take its size and a gap off that side: {:?}", layout.chart_area);
+        }
+    }
+
+    /// The padding, the title and the legend position are states: the chart reads them as they
+    /// were last synced.
+    #[test]
+    fn padding_and_legend_are_states() {
+        use crate::LegendPosition;
+
+        let mut padding = LocalState::new(10.0);
+        let mut legend = LocalState::new(LegendPosition::Hidden);
+        let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])).padding(padding.clone()).legend(legend.clone()));
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
+
+        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 10.0 + 35.0);
+
+        *padding.value_mut() = 40.0;
+        *legend.value_mut() = LegendPosition::Right;
+        chart.sync(&mut Environment::new());
+
+        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 40.0 + 35.0);
+        assert_eq!(*chart.legend.value_dyn(), LegendPosition::Right);
+    }
+
+    /// A scale's axis title is a state, synced with the chart, so a changed title is drawn on the
+    /// next render.
+    #[test]
+    fn axis_titles_are_states() {
+        let mut title = LocalState::new("Revenue".to_string());
+        let mut chart = Chart::new(ScatterController::new(vec![1.0, 2.0])).scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title(title.clone()));
+
+        chart.sync(&mut Environment::new());
+        assert_eq!(chart.scales.get(&ScaleId::Y).unwrap().axis_options().title().as_deref(), Some("Revenue"));
+
+        *title.value_mut() = "Costs".to_string();
+        chart.sync(&mut Environment::new());
+        assert_eq!(chart.scales.get(&ScaleId::Y).unwrap().axis_options().title().as_deref(), Some("Costs"));
+    }
+
+    /// Controllers add a legend entry for each dataset with a name, in order, marked after what
+    /// they draw: bars as squares, lines as lines (squares when filled), scatter points as points.
+    #[test]
+    fn controllers_report_their_named_datasets_for_the_legend() {
+        use crate::{Fill, LegendMarker};
+
+        let bars = BarController::new((vec![1.0].label("Revenue"), vec![2.0]));
+        let lines = LineController::new((vec![1.0].label("Trend"), vec![2.0].fill(Fill::Origin).label("Area")));
+        let points = ScatterController::new(vec![(1.0, 2.0)].label("Readings"));
+
+        let env = Environment::new();
+        let mut items = vec![];
+        bars.legend_items(&env, &mut items);
+        lines.legend_items(&env, &mut items);
+        points.legend_items(&env, &mut items);
+        ScatterController::new(vec![(1.0, 2.0)].label("Joined")).show_line(true).legend_items(&env, &mut items);
+
+        let entries: Vec<(&str, LegendMarker)> = items.iter().map(|item| (item.label.as_str(), item.marker)).collect();
+        assert_eq!(entries, vec![
+            ("Revenue", LegendMarker::Square),
+            ("Trend", LegendMarker::Line),
+            ("Area", LegendMarker::Square),
+            ("Readings", LegendMarker::Point),
+            ("Joined", LegendMarker::Line),
+        ], "the dataset without a name is left out");
+    }
+
     /// Without a scale on the right there is no band there.
     #[test]
     fn default_scales_have_no_right_band() {
         let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]));
+        let layout = chart.layout(&sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]), &Decorations::default());
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0);
         assert_eq!(layout.chart_area.left(), 30.0 + 35.0);
         assert_eq!(layout.chart_area.height(), 300.0 - 30.0 - 30.0 - 20.0, "X's band comes off the height");
@@ -595,7 +835,7 @@ mod tests {
             .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]));
+        let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]), &Decorations::default());
 
         assert_eq!(layout.offset(&INNER), 0.0);
         assert_eq!(layout.offset(&OUTER), 40.0 + SCALE_SPACING);
@@ -614,7 +854,7 @@ mod tests {
             .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]));
+        let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]), &Decorations::default());
 
         assert_eq!(layout.offset(&OUTER), 0.0);
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 25.0);
@@ -632,7 +872,7 @@ mod tests {
             .scale(LIGHT, LinearScale::new(Axis::Vertical).weight(1));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]));
+        let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]), &Decorations::default());
 
         assert_eq!(layout.offset(&ScaleId::Y), 0.0);
         assert_eq!(layout.offset(&LIGHT), 30.0 + SCALE_SPACING);

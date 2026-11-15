@@ -13,7 +13,9 @@ use crate::{DataColor, DataSetOptions, DataSetSequence, Fill, SpanGaps};
 use crate::controller::line_path::{trace_line, trace_line_reversed};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::scale::{Scale, ScaleBounds, Scales};
+use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
+use carbide::environment::Environment;
 
 /// Reports every dataset's x and y range to the scales it is bound to. With `fills`, when the
 /// controller draws lines, a filled dataset's baseline value is included too, so the area's base
@@ -302,7 +304,12 @@ impl Palette {
     /// The palette of the `SeriesStyle` in `ctx`'s environment, for a controller starting at
     /// `offset`.
     pub(crate) fn new(ctx: &mut CanvasContext, offset: usize) -> Palette {
-        Palette { colors: series_style(ctx.env()).palette(ctx.env()), offset }
+        Palette::from_env(ctx.env(), offset)
+    }
+
+    /// The palette of the `SeriesStyle` in `env`, for a controller starting at `offset`.
+    pub(crate) fn from_env(env: &Environment, offset: usize) -> Palette {
+        Palette { colors: series_style(env).palette(env), offset }
     }
 
     /// The colour for a dataset or point by its `index` in the controller, shifted by the
@@ -343,6 +350,22 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
         (DataColor::ByPoint, _) | (DataColor::ByDataSet, DataColor::ByPoint) => palette.by_index(point_index),
         (DataColor::ByDataSet, _) => dataset_color(options, dataset_index, palette),
     }
+}
+
+/// Adds a legend entry for each of `datasets` that has a name, in the colour its line, area or
+/// bars are drawn in (see `dataset_color`), with the marker `marker` gives for its options.
+pub(crate) fn legend_items<D: DataSetSequence>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(&DataSetOptions) -> LegendMarker) {
+    datasets.foreach(&mut |dataset_index, dataset| {
+        let options = dataset.options();
+
+        if let Some(label) = &options.label {
+            items.push(LegendItem {
+                label: label.clone(),
+                color: dataset_color(&options, dataset_index, palette),
+                marker: marker(&options),
+            });
+        }
+    });
 }
 
 /// The x and y scales a dataset is bound to, or `None` when the chart has no scale with one of
@@ -484,6 +507,7 @@ mod tests {
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
             stack: None,
+            label: None,
         }
     }
 

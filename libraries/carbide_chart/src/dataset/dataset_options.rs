@@ -18,4 +18,6 @@ pub struct DataSetOptions {
     /// The stack the dataset is stacked in, by controllers that stack (bars and lines); `None`
     /// stands alone.
     pub stack: Option<StackId>,
+    /// The dataset's name, shown in the legend; a dataset without one isn't in it.
+    pub label: Option<String>,
 }

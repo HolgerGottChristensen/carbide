@@ -58,6 +58,7 @@ pub trait DataSet: DynClone + Debug + 'static {
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
             stack: None,
+            label: None,
         }
     }
 }

@@ -8,6 +8,7 @@ mod scale_id;
 use std::fmt::Debug;
 use dyn_clone::DynClone;
 use std::ops::Range;
+use carbide::environment::Environment;
 use carbide_core::draw::Scalar;
 pub use axis_options::AxisOptions;
 pub use category_scale::CategoryScale;
@@ -23,9 +24,17 @@ pub trait Scale: DynClone + Debug + 'static {
     /// The direction the scale runs in.
     fn axis(&self) -> Axis;
 
-    /// Where and how the scale's axis is laid out and drawn: its side, its weight, and whether it
-    /// draws grid lines and tick marks.
+    /// Where and how the scale's axis is laid out and drawn: its side, its weight, whether it
+    /// draws grid lines and tick marks, and its title.
     fn axis_options(&self) -> &AxisOptions;
+
+    /// Syncs the states in the scale with the environment, such as its axis title (see
+    /// `AxisOptions::sync`), and returns whether anything may have changed. The chart calls it
+    /// before every update, render and event. The default syncs nothing: a scale of your own
+    /// with states syncs them here.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
 
     /// Where `value` falls along the scale, from 0 at the start of the chart area to 1 at its
     /// end. Controllers and the grid map values to positions through this, so a scale's offset
