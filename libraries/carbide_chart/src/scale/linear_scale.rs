@@ -2,17 +2,14 @@ use std::ops::Range;
 
 use carbide::draw::Scalar;
 
-use crate::scale::{Axis, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 
 const MIN_TICK_SPACING: f64 = 1e-14;
 
 #[derive(Clone, Debug)]
 pub struct LinearScale {
     axis: Axis,
-    position: AxisPosition,
-    weight: i32,
-    grid_lines: bool,
-    tick_marks: bool,
+    axis_options: AxisOptions,
     offset: bool,
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
@@ -23,10 +20,7 @@ impl LinearScale {
     pub fn new(axis: Axis) -> LinearScale {
         LinearScale {
             axis,
-            position: axis.default_position(),
-            weight: 0,
-            grid_lines: true,
-            tick_marks: true,
+            axis_options: AxisOptions::new(axis),
             offset: false,
             range: 0.0..1.0,
             nice_range: 0.0..1.0,
@@ -38,19 +32,14 @@ impl LinearScale {
     /// it, vertical scales left or right of it; any other side is logged and the scale keeps its
     /// current position.
     pub fn position(mut self, position: AxisPosition) -> LinearScale {
-        if self.axis.allows(position) {
-            self.position = position;
-        } else {
-            log::warn!("A {:?} scale can't be positioned {:?}; keeping {:?}", self.axis, position, self.position);
-        }
-
+        self.axis_options = self.axis_options.with_position(position);
         self
     }
 
     /// Orders the scale among the scales on the same side: a higher weight is placed further
-    /// away from the chart area. Defaults to 0. See `Scale::weight`.
+    /// away from the chart area. Defaults to 0. See `AxisOptions::weight`.
     pub fn weight(mut self, weight: i32) -> LinearScale {
-        self.weight = weight;
+        self.axis_options = self.axis_options.with_weight(weight);
         self
     }
 
@@ -58,14 +47,14 @@ impl LinearScale {
     /// for secondary scales so their lines don't interleave with the primary scale's; the labels
     /// stay.
     pub fn grid_lines(mut self, grid_lines: bool) -> LinearScale {
-        self.grid_lines = grid_lines;
+        self.axis_options = self.axis_options.with_grid_lines(grid_lines);
         self
     }
 
     /// Whether the scale draws tick marks in its band, between the chart area and its labels.
     /// Defaults to `true`.
     pub fn tick_marks(mut self, tick_marks: bool) -> LinearScale {
-        self.tick_marks = tick_marks;
+        self.axis_options = self.axis_options.with_tick_marks(tick_marks);
         self
     }
 
@@ -94,12 +83,8 @@ impl Scale for LinearScale {
         self.axis
     }
 
-    fn axis_position(&self) -> AxisPosition {
-        self.position
-    }
-
-    fn weight(&self) -> i32 {
-        self.weight
+    fn axis_options(&self) -> &AxisOptions {
+        &self.axis_options
     }
 
     /// With an offset, the mapped range is widened by half a tick step at both ends.
@@ -143,14 +128,6 @@ impl Scale for LinearScale {
 
         self.widen_empty_range();
         self.recalculate_ticks();
-    }
-
-    fn display_ticks(&self) -> bool {
-        self.tick_marks
-    }
-
-    fn display_grid(&self) -> bool {
-        self.grid_lines
     }
 
     fn range(&self) -> Range<Scalar> {

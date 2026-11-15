@@ -95,8 +95,8 @@ fn filled_stepped_and_smooth_lines() {
 }
 
 /// A filled line coloured `ByPoint`. Pins down that each point takes the palette colour for its
-/// index, wrapping around, while the line and its area, drawn once for the whole dataset, keep
-/// the dataset's own palette colour (white, as the first dataset).
+/// index, while the line and its area, drawn once for the whole dataset, keep the dataset's own
+/// palette colour (blue, as the first dataset).
 #[test]
 fn points_coloured_by_point() {
     let values = vec![12.0, 19.0, 8.0, 15.0, 10.0, 17.0]

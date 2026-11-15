@@ -271,7 +271,7 @@ fn monotone_control_points(points: &[Position]) -> Vec<ControlPoints> {
 /// the chart area doesn't bulge out of it. Control points next to a point outside the area are
 /// left alone.
 fn cap_control_points(points: &[Position], controls: &mut [ControlPoints], area: Rect) {
-    // `Rect`'s top and bottom are swapped on screen (see `Scale::draw_grid`), so take both ends.
+    // `Rect`'s top and bottom are swapped on screen (see `scale/axis.rs`), so take both ends.
     let (left, right) = (area.left().min(area.right()), area.left().max(area.right()));
     let (top, bottom) = (area.top().min(area.bottom()), area.top().max(area.bottom()));
 

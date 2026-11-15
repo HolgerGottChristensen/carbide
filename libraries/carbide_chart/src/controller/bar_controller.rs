@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{dataset_scales, point_color};
+use crate::controller::drawing::{dataset_scales, point_color, Palette};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
@@ -30,6 +30,7 @@ pub struct BarController<D> {
     dataset_sequence: D,
     category_percentage: Scalar,
     bar_percentage: Scalar,
+    palette_offset: usize,
 }
 
 impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
@@ -39,6 +40,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
             dataset_sequence: datasets.into_sequence(),
             category_percentage: 0.8,
             bar_percentage: 0.9,
+            palette_offset: 0,
         }
     }
 
@@ -46,6 +48,16 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
     /// up. Defaults to 0.8.
     pub fn category_percentage(mut self, category_percentage: Scalar) -> BarController<D> {
         self.category_percentage = category_percentage;
+        self
+    }
+
+    /// Starts the colours of this controller's datasets `offset` colours into the palette:
+    /// dataset `i` takes palette colour `offset + i`, and so do the points of a dataset coloured
+    /// by point. Defaults to 0. A chart with several controllers sets it so their datasets don't
+    /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
+    /// colour themselves (`DataColor::Palette`) aren't shifted.
+    pub fn palette_offset(mut self, offset: usize) -> BarController<D> {
+        self.palette_offset = offset;
         self
     }
 
@@ -119,8 +131,10 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
             })
             .collect();
 
-        // Second pass: the bars, stacked in the same order as their bounds were collected.
+        // Second pass: the bars, stacked in the same order as their bounds were collected, in the
+        // colours of the chart's `SeriesStyle`.
         let mut stacks = StackSums::split_by_sign();
+        let palette = Palette::new(ctx, self.palette_offset);
         ctx.save();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -157,7 +171,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
                 ctx.line_to(left, head);
                 ctx.close_path();
 
-                ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index));
+                ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
 
                 ctx.fill();
             });

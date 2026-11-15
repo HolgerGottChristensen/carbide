@@ -52,8 +52,7 @@ fn vertical_category_scale_on_right() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DatasetExt, LineController, ScaleId};
-    use carbide_core::color::RED;
+    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LineController, ScaleId};
     use carbide_core::widget::Widget;
     use crate::common::Framed;
 
@@ -104,8 +103,7 @@ mod support {
     pub fn vertical_category_scale_on_right_chart() -> impl Widget {
         let temperature = vec![18.0, 21.0, 24.0, 29.0, 34.0, 30.0, 23.0];
         let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0]
-            .y_scale(STATUS)
-            .color(DataColor::Color(RED));
+            .y_scale(STATUS);
 
         Chart::new(LineController::new((temperature, status)))
             .scale(STATUS, CategoryScale::new(Axis::Vertical).position(AxisPosition::Right).labels(STATUS_LABELS).grid_lines(false))

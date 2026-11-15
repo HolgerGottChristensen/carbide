@@ -11,7 +11,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
 use crate::sequence::IntoSequence;
-use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{axis, AxisPosition, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -113,8 +113,8 @@ impl<C: ControllerSequence> Chart<C> {
         let mut stack_side = |side: AxisPosition| -> Scalar {
             let mut on_side: Vec<(i32, usize, &ScaleId)> = self.scales.iter()
                 .enumerate()
-                .filter(|(_, (_, scale))| scale.axis_position() == side)
-                .map(|(index, (id, scale))| (scale.weight(), index, id))
+                .filter(|(_, (_, scale))| scale.axis_options().position() == side)
+                .map(|(index, (id, scale))| (scale.axis_options().weight(), index, id))
                 .collect();
 
             on_side.sort_by_key(|(weight, index, _)| (*weight, *index));
@@ -193,18 +193,18 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
         let sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
-            .map(|(id, scale)| (id.clone(), scale.size(&mut canvas)))
+            .map(|(id, scale)| (id.clone(), axis::size(scale, &mut canvas)))
             .collect();
 
         let layout = self.layout(&sizes);
         let chart_area = layout.chart_area;
 
         for (id, scale) in self.scales.iter() {
-            scale.draw_grid(&mut canvas, chart_area, layout.offset(id));
+            axis::draw_grid(scale, &mut canvas, chart_area, layout.offset(id));
         }
 
         for (id, scale) in self.scales.iter() {
-            scale.draw_border(&mut canvas, chart_area, layout.offset(id));
+            axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id));
         }
 
         let scales = &self.scales;

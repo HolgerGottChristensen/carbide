@@ -57,24 +57,22 @@ fn bars_on_secondary_y_scale() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DataColor, DatasetExt, LineController, LinearScale, ScaleId};
-    use carbide_core::color::{GREEN, RED};
+    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DatasetExt, LineController, LinearScale, ScaleId};
     use carbide_core::widget::Widget;
     use crate::common::Framed;
 
     const PERCENT: ScaleId = ScaleId::new("percent");
 
     /// Revenue and costs as grouped bars, and profit (revenue minus costs, negative in one month)
-    /// as a red line over them, all on the default scales.
+    /// as a line over them, its colours starting after the bars' two, all on the default scales.
     pub fn bars_and_line_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
         let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0];
-        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0, 25.0, 35.0]
-            .color(DataColor::Color(RED));
+        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0, 25.0, 35.0];
 
         Chart::new((
             BarController::new((revenue, costs)),
-            LineController::new(profit),
+            LineController::new(profit).palette_offset(2),
         ))
             .framed()
     }
@@ -83,11 +81,10 @@ mod support {
     pub fn line_then_bars_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
         let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0];
-        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0, 25.0, 35.0]
-            .color(DataColor::Color(RED));
+        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0, 25.0, 35.0];
 
         Chart::new((
-            LineController::new(profit),
+            LineController::new(profit).palette_offset(2),
             BarController::new((revenue, costs)),
         ))
             .framed()
@@ -96,12 +93,11 @@ mod support {
     /// Revenue and costs as bars in two separate bar controllers on the default scales.
     pub fn two_bar_controllers_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
-        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0]
-            .color(DataColor::Color(GREEN));
+        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0, 150.0, 155.0];
 
         Chart::new((
             BarController::new(revenue),
-            BarController::new(costs),
+            BarController::new(costs).palette_offset(1),
         ))
             .framed()
     }
@@ -110,12 +106,12 @@ mod support {
     pub fn bars_on_secondary_y_scale_chart() -> impl Widget {
         let margin = vec![0.12, 0.18, 0.15, 0.08, 0.22, 0.25, 0.31]
             .y_scale(PERCENT)
-            .color(DataColor::Color(GREEN));
+;
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
 
         Chart::new((
             BarController::new(margin),
-            LineController::new(revenue),
+            LineController::new(revenue).palette_offset(1),
         ))
             .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
             .framed()

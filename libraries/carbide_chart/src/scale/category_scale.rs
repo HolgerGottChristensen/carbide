@@ -1,9 +1,8 @@
 use std::ops::Range;
 
 use carbide::draw::Scalar;
-use carbide::environment::Environment;
 
-use crate::scale::{format_tick, Axis, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 
 /// A scale of evenly spaced categories, one tick per index. Data values are category indices: a
 /// `Vec<Scalar>` dataset's points are at 0, 1, 2, ..., so with `labels(["Red", "Blue", ...])` index
@@ -20,10 +19,7 @@ use crate::scale::{format_tick, Axis, AxisPosition, Scale};
 #[derive(Clone, Debug)]
 pub struct CategoryScale {
     axis: Axis,
-    position: AxisPosition,
-    weight: i32,
-    grid_lines: bool,
-    tick_marks: bool,
+    axis_options: AxisOptions,
     offset: bool,
     /// Set with `grid_offset`; when `None`, the scale follows what controllers request.
     grid_offset: Option<bool>,
@@ -38,10 +34,7 @@ impl CategoryScale {
     pub fn new(axis: Axis) -> CategoryScale {
         let mut scale = CategoryScale {
             axis,
-            position: axis.default_position(),
-            weight: 0,
-            grid_lines: true,
-            tick_marks: true,
+            axis_options: AxisOptions::new(axis),
             offset: false,
             grid_offset: None,
             grid_offset_requested: false,
@@ -72,30 +65,25 @@ impl CategoryScale {
 
     /// See `LinearScale::position`.
     pub fn position(mut self, position: AxisPosition) -> CategoryScale {
-        if self.axis.allows(position) {
-            self.position = position;
-        } else {
-            log::warn!("A {:?} scale can't be positioned {:?}; keeping {:?}", self.axis, position, self.position);
-        }
-
+        self.axis_options = self.axis_options.with_position(position);
         self
     }
 
-    /// See `Scale::weight`.
+    /// See `LinearScale::weight`.
     pub fn weight(mut self, weight: i32) -> CategoryScale {
-        self.weight = weight;
+        self.axis_options = self.axis_options.with_weight(weight);
         self
     }
 
     /// See `LinearScale::grid_lines`.
     pub fn grid_lines(mut self, grid_lines: bool) -> CategoryScale {
-        self.grid_lines = grid_lines;
+        self.axis_options = self.axis_options.with_grid_lines(grid_lines);
         self
     }
 
     /// See `LinearScale::tick_marks`.
     pub fn tick_marks(mut self, tick_marks: bool) -> CategoryScale {
-        self.tick_marks = tick_marks;
+        self.axis_options = self.axis_options.with_tick_marks(tick_marks);
         self
     }
 
@@ -114,12 +102,8 @@ impl Scale for CategoryScale {
         self.axis
     }
 
-    fn axis_position(&self) -> AxisPosition {
-        self.position
-    }
-
-    fn weight(&self) -> i32 {
-        self.weight
+    fn axis_options(&self) -> &AxisOptions {
+        &self.axis_options
     }
 
     fn normalize(&self, value: Scalar) -> Scalar {
@@ -142,14 +126,13 @@ impl Scale for CategoryScale {
         self.grid_offset_requested = requested;
     }
 
-    fn tick_label(&self, value: Scalar, env: &mut Environment) -> String {
+    /// The category's name, for an index with a label; other indices show their number.
+    fn label(&self, value: Scalar) -> Option<String> {
         if value >= 0.0 {
-            if let Some(label) = self.labels.get(value as usize) {
-                return label.clone();
-            }
+            self.labels.get(value as usize).cloned()
+        } else {
+            None
         }
-
-        format_tick(value, env)
     }
 
     fn grid_line_values(&self) -> Vec<Scalar> {
@@ -158,7 +141,7 @@ impl Scale for CategoryScale {
         }
 
         // Between each pair of neighbouring categories, plus one before the first and one after
-        // the last; `draw_grid` skips those that fall outside the chart area.
+        // the last; the axis skips those that fall outside the chart area.
         let mut values: Vec<Scalar> = self.ticks.iter().map(|tick| tick - 0.5).collect();
         if let Some(last) = self.ticks.last() {
             values.push(last + 0.5);
@@ -192,14 +175,6 @@ impl Scale for CategoryScale {
         self.recalculate_ticks();
     }
 
-    fn display_ticks(&self) -> bool {
-        self.tick_marks
-    }
-
-    fn display_grid(&self) -> bool {
-        self.grid_lines
-    }
-
     fn recalculate_ticks(&mut self) {
         let count = (self.max - self.min) as usize + 1;
         self.ticks = (0..count).map(|index| self.min + index as Scalar).collect();
@@ -216,7 +191,6 @@ impl Scale for CategoryScale {
 
 #[cfg(test)]
 mod tests {
-    use carbide::environment::Environment;
     use crate::scale::{Axis, Scale};
     use super::CategoryScale;
 
@@ -252,9 +226,9 @@ mod tests {
 
         assert_eq!(scale.ticks(), &[0.0, 1.0, 2.0]);
 
-        let mut env = Environment::new();
-        assert_eq!(scale.tick_label(0.0, &mut env), "Red");
-        assert_eq!(scale.tick_label(2.0, &mut env), "Yellow");
+        assert_eq!(scale.label(0.0).as_deref(), Some("Red"));
+        assert_eq!(scale.label(2.0).as_deref(), Some("Yellow"));
+        assert_eq!(scale.label(3.0), None, "an index without a label shows its number");
     }
 
     /// With `grid_offset`, grid lines sit between categories and one past each end; with an

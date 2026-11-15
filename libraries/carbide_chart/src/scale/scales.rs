@@ -228,7 +228,7 @@ mod tests {
 
         let order: Vec<ScaleId> = scales.iter().map(|(id, _)| id.clone()).collect();
         assert_eq!(order, vec![ScaleId::X, ScaleId::Y, ScaleId::new("right")]);
-        assert_eq!(scales.get(&ScaleId::X).unwrap().axis_position(), AxisPosition::Top);
+        assert_eq!(scales.get(&ScaleId::X).unwrap().axis_options().position(), AxisPosition::Top);
     }
 
     /// An offset pads the mapping by half a tick step at both ends without changing the ticks:
@@ -252,10 +252,10 @@ mod tests {
     #[test]
     fn positions_must_fit_the_axis() {
         let horizontal = LinearScale::new(Axis::Horizontal).position(AxisPosition::Left);
-        assert_eq!(horizontal.axis_position(), AxisPosition::Bottom);
+        assert_eq!(horizontal.axis_options().position(), AxisPosition::Bottom);
 
         let vertical = LinearScale::new(Axis::Vertical).position(AxisPosition::Top);
-        assert_eq!(vertical.axis_position(), AxisPosition::Left);
+        assert_eq!(vertical.axis_options().position(), AxisPosition::Left);
     }
 
     #[test]

@@ -1,9 +1,8 @@
-use carbide::color::WHITE;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, Palette};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, ScaleKind, Scales};
@@ -22,6 +21,7 @@ use crate::scale::{ScaleBounds, ScaleKind, Scales};
 #[derive(Clone, Debug)]
 pub struct LineController<D> {
     pub(crate) dataset_sequence: D,
+    palette_offset: usize,
 }
 
 impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
@@ -29,7 +29,18 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
     pub fn new<I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
         LineController {
             dataset_sequence: datasets.into_sequence(),
+            palette_offset: 0,
         }
+    }
+
+    /// Starts the colours of this controller's datasets `offset` colours into the palette:
+    /// dataset `i` takes palette colour `offset + i`, and so do the points of a dataset coloured
+    /// by point. Defaults to 0. A chart with several controllers sets it so their datasets don't
+    /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
+    /// colour themselves (`DataColor::Palette`) aren't shifted.
+    pub fn palette_offset(mut self, offset: usize) -> LineController<D> {
+        self.palette_offset = offset;
+        self
     }
 }
 
@@ -50,12 +61,12 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineContr
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
         ctx.save();
-        ctx.set_fill_style(WHITE);
 
         let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true);
-        draw_fills(&lines, ctx, scales, chart_area);
-        draw_lines(&lines, ctx, chart_area);
-        draw_points(&lines, ctx);
+        let palette = Palette::new(ctx, self.palette_offset);
+        draw_fills(&lines, ctx, scales, chart_area, &palette);
+        draw_lines(&lines, ctx, chart_area, &palette);
+        draw_points(&lines, ctx, &palette);
 
         ctx.restore();
     }

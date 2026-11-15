@@ -29,7 +29,7 @@ fn data_changed_between_renders() {
 /// Grouped bars whose datasets are a state of a `Vec`, with a third dataset added between the two
 /// snapshots. Pins down that the chart follows a dataset sequence changed after it is built: each
 /// month's slot splits three ways instead of two, the new dataset takes the next palette colour
-/// (red), and the y scale refits to include its larger values.
+/// (orange), and the y scale refits to include its larger values.
 #[test]
 fn dataset_added_between_renders() {
     let revenue = vec![12.0, 19.0, 3.0, 5.0, 2.0];
@@ -66,8 +66,7 @@ fn controllers_added_between_renders() {
 // ===============================
 
 mod support {
-    use carbide_chart::{BarController, Chart, DataColor, DatasetController, DatasetExt, LineController};
-    use carbide_core::color::RED;
+    use carbide_chart::{BarController, Chart, DatasetController, LineController};
     use carbide_core::state::LocalState;
     use carbide_core::widget::Widget;
     use crate::common::Framed;
@@ -84,8 +83,9 @@ mod support {
         BarController::new((vec![12.0, 19.0, 3.0, 5.0, 2.0], vec![8.0, 11.0, 6.0, 4.0, 3.0])).boxed()
     }
 
-    /// A red trend line, boxed to share a `Vec` with other controller types.
+    /// A trend line, its colours starting after the bars' two (orange), boxed to share a `Vec`
+    /// with other controller types.
     pub fn trend_line() -> Box<dyn DatasetController> {
-        LineController::new(vec![10.0, 16.0, 22.0, 18.0, 25.0].color(DataColor::Color(RED))).boxed()
+        LineController::new(vec![10.0, 16.0, 22.0, 18.0, 25.0]).palette_offset(2).boxed()
     }
 }

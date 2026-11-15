@@ -39,7 +39,7 @@ fn bar_chart_all_negative() {
 }
 
 /// Three grouped datasets with both positive and negative values. Pins down that each group
-/// splits its slot three ways in dataset order (white, green, red), and that bars on either side
+/// splits its slot three ways in dataset order (blue, green, orange), and that bars on either side
 /// of zero in the same group share the zero line.
 #[test]
 fn grouped_bars_positive_and_negative() {
@@ -65,7 +65,7 @@ fn bars_on_linear_x_scale() {
 
 /// Materials and labour stacked into one costs bar, beside a revenue bar on its own. Pins down
 /// that a stack takes one share of each month's slot, like a single dataset, so there are two
-/// bars per month; that the first dataset in the stack is at the bottom (materials, white, under
+/// bars per month; that the first dataset in the stack is at the bottom (materials, blue, under
 /// labour, green); and that the y scale reaches the stacked costs, not just each dataset's values.
 #[test]
 fn stacked_bars() {
@@ -99,7 +99,8 @@ fn stacked_bars_positive_and_negative() {
 /// Two named stacks side by side in one controller: last year's and this year's sales, each
 /// stacked from the same two products. Pins down that each stack takes its own share of the slot,
 /// so there are two bars per month; that datasets join only the stack they name, whatever their
-/// order in the controller; and that each stack's products keep their own colours.
+/// order in the controller; and that each product keeps the palette colour it picks
+/// (`DataColor::Palette`) in both stacks.
 #[test]
 fn two_stacks_side_by_side() {
     let mut harness = Harness::new(two_stacks_chart(), Dimension::new(600.0, 500.0));
@@ -125,10 +126,11 @@ fn stacked_bars_of_different_lengths() {
 
 /// One dataset coloured `ByPoint`: each bar takes the next palette colour by its index, instead
 /// of the whole dataset taking one. Pins down that the colours follow the bars' order and wrap
-/// around at the end of the palette (white, green, red, then white again for the fourth bar).
+/// around at the end of the palette: the default palette has nine colours, so the tenth bar is
+/// blue again, like the first.
 #[test]
 fn bars_coloured_by_point() {
-    let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0].color(DataColor::ByPoint);
+    let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0, 9.0, 14.0, 7.0, 11.0].color(DataColor::ByPoint);
     let mut harness = Harness::new(bar_chart(votes), Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_coloured_by_point");
@@ -140,7 +142,6 @@ fn bars_coloured_by_point() {
 
 mod support {
     use carbide_chart::{Axis, BarController, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId};
-    use carbide_core::color::{GREEN, WHITE};
     use carbide_core::widget::Widget;
     use crate::common::Framed;
 
@@ -148,13 +149,14 @@ mod support {
     const THIS_YEAR: StackId = StackId::new("this year");
 
     /// Sales of two products, stacked per year, with the datasets interleaved: this year's
-    /// product A comes between last year's two products. Product A is white and B green in both
-    /// years.
+    /// product A comes between last year's two products. Each product picks its palette colour
+    /// itself (`DataColor::Palette`), A the first and B the second, so it keeps that colour in
+    /// both years.
     pub fn two_stacks_chart() -> impl Widget {
-        let last_year_a = vec![30.0, 35.0, 40.0, 38.0, 45.0].stack(LAST_YEAR).color(DataColor::Color(WHITE));
-        let this_year_a = vec![36.0, 40.0, 48.0, 50.0, 55.0].stack(THIS_YEAR).color(DataColor::Color(WHITE));
-        let last_year_b = vec![20.0, 18.0, 25.0, 22.0, 30.0].stack(LAST_YEAR).color(DataColor::Color(GREEN));
-        let this_year_b = vec![25.0, 28.0, 30.0, 35.0, 33.0].stack(THIS_YEAR).color(DataColor::Color(GREEN));
+        let last_year_a = vec![30.0, 35.0, 40.0, 38.0, 45.0].stack(LAST_YEAR).color(DataColor::Palette(0));
+        let this_year_a = vec![36.0, 40.0, 48.0, 50.0, 55.0].stack(THIS_YEAR).color(DataColor::Palette(0));
+        let last_year_b = vec![20.0, 18.0, 25.0, 22.0, 30.0].stack(LAST_YEAR).color(DataColor::Palette(1));
+        let this_year_b = vec![25.0, 28.0, 30.0, 35.0, 33.0].stack(THIS_YEAR).color(DataColor::Palette(1));
 
         Chart::new(BarController::new((last_year_a, this_year_a, last_year_b, this_year_b)))
             .framed()

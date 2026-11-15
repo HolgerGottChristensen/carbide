@@ -1,9 +1,8 @@
-use carbide::color::WHITE;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, Palette};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, Scales};
@@ -17,6 +16,7 @@ use crate::scale::{ScaleBounds, Scales};
 pub struct ScatterController<D> {
     dataset_sequence: D,
     show_line: bool,
+    palette_offset: usize,
 }
 
 impl<D: DataSetSequence<Scalar, Scalar, Scalar>> ScatterController<D> {
@@ -25,7 +25,18 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> ScatterController<D> {
         ScatterController {
             dataset_sequence: datasets.into_sequence(),
             show_line: false,
+            palette_offset: 0,
         }
+    }
+
+    /// Starts the colours of this controller's datasets `offset` colours into the palette:
+    /// dataset `i` takes palette colour `offset + i`, and so do the points of a dataset coloured
+    /// by point. Defaults to 0. A chart with several controllers sets it so their datasets don't
+    /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
+    /// colour themselves (`DataColor::Palette`) aren't shifted.
+    pub fn palette_offset(mut self, offset: usize) -> ScatterController<D> {
+        self.palette_offset = offset;
+        self
     }
 
     /// Also draws a line through each dataset's points, under the points. Defaults to `false`.
@@ -46,17 +57,18 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for ScatterCo
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
         ctx.save();
-        ctx.set_fill_style(WHITE);
 
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
         let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false);
 
+        let palette = Palette::new(ctx, self.palette_offset);
+
         if self.show_line {
-            draw_fills(&lines, ctx, scales, chart_area);
-            draw_lines(&lines, ctx, chart_area);
+            draw_fills(&lines, ctx, scales, chart_area, &palette);
+            draw_lines(&lines, ctx, chart_area, &palette);
         }
 
-        draw_points(&lines, ctx);
+        draw_points(&lines, ctx, &palette);
 
         ctx.restore();
     }

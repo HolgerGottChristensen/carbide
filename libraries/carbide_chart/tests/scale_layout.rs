@@ -83,8 +83,7 @@ fn scales_on_all_four_sides() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, Chart, DataColor, DatasetExt, LineController, LinearScale, ScaleId, ScatterController};
-    use carbide_core::color::{GREEN, RED};
+    use carbide_chart::{Axis, AxisPosition, Chart, DatasetExt, LineController, LinearScale, ScaleId, ScatterController};
     use carbide_core::widget::Widget;
     use crate::common::Framed;
 
@@ -98,12 +97,11 @@ mod support {
     pub fn two_y_scales_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
         let margin = vec![0.12, 0.18, 0.15, 0.08, 0.22, 0.25, 0.31]
-            .y_scale(PERCENT)
-            .color(DataColor::Color(GREEN));
+            .y_scale(PERCENT);
 
         Chart::new((
             LineController::new(revenue),
-            LineController::new(margin),
+            LineController::new(margin).palette_offset(1),
         ))
             .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right))
             .framed()
@@ -125,16 +123,14 @@ mod support {
     pub fn stacked_scales_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
         let margin = vec![0.12, 0.18, 0.15, 0.08, 0.22, 0.25, 0.31]
-            .y_scale(PERCENT)
-            .color(DataColor::Color(GREEN));
+            .y_scale(PERCENT);
         let units = vec![1800.0, 2100.0, 2600.0, 1500.0, 3000.0, 3400.0, 3900.0]
-            .y_scale(UNITS)
-            .color(DataColor::Color(RED));
+            .y_scale(UNITS);
 
         Chart::new((
             LineController::new(revenue),
-            LineController::new(margin),
-            LineController::new(units),
+            LineController::new(margin).palette_offset(1),
+            LineController::new(units).palette_offset(2),
         ))
             .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
             .scale(UNITS, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).tick_marks(false))
@@ -146,12 +142,11 @@ mod support {
     pub fn stacked_scales_on_left_chart() -> impl Widget {
         let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0, 175.0, 190.0];
         let units = vec![1800.0, 2100.0, 2600.0, 1500.0, 3000.0, 3400.0, 3900.0]
-            .y_scale(UNITS)
-            .color(DataColor::Color(RED));
+            .y_scale(UNITS);
 
         Chart::new((
             LineController::new(revenue),
-            LineController::new(units),
+            LineController::new(units).palette_offset(1),
         ))
             .scale(UNITS, LinearScale::new(Axis::Vertical).grid_lines(false))
             .framed()
@@ -163,12 +158,11 @@ mod support {
     pub fn stacked_horizontal_scales_chart() -> impl Widget {
         let celsius = vec![(0.0, 2.0), (20.0, 5.0), (40.0, 4.0), (60.0, 8.0), (80.0, 7.0), (100.0, 9.0)];
         let fahrenheit = vec![(32.0, 3.0), (68.0, 6.0), (104.0, 5.5), (140.0, 7.5), (176.0, 9.5), (212.0, 8.0)]
-            .x_scale(FAHRENHEIT)
-            .color(DataColor::Color(GREEN));
+            .x_scale(FAHRENHEIT);
 
         Chart::new((
             ScatterController::new(celsius).show_line(true),
-            ScatterController::new(fahrenheit).show_line(true),
+            ScatterController::new(fahrenheit).show_line(true).palette_offset(1),
         ))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).grid_lines(false))
             .framed()
@@ -179,12 +173,11 @@ mod support {
     pub fn stacked_scales_on_top_chart() -> impl Widget {
         let celsius = vec![(0.0, 2.0), (20.0, 5.0), (40.0, 4.0), (60.0, 8.0), (80.0, 7.0), (100.0, 9.0)];
         let fahrenheit = vec![(32.0, 3.0), (68.0, 6.0), (104.0, 5.5), (140.0, 7.5), (176.0, 9.5), (212.0, 8.0)]
-            .x_scale(FAHRENHEIT)
-            .color(DataColor::Color(GREEN));
+            .x_scale(FAHRENHEIT);
 
         Chart::new((
             ScatterController::new(celsius).show_line(true),
-            ScatterController::new(fahrenheit).show_line(true),
+            ScatterController::new(fahrenheit).show_line(true).palette_offset(1),
         ))
             .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false))
@@ -197,12 +190,11 @@ mod support {
         let humidity = vec![(0.0, 82.0), (20.0, 70.0), (40.0, 64.0), (60.0, 55.0), (80.0, 48.0), (100.0, 40.0)];
         let pressure = vec![(32.0, 1002.0), (68.0, 1008.0), (104.0, 1011.0), (140.0, 1016.0), (176.0, 1021.0), (212.0, 1026.0)]
             .x_scale(FAHRENHEIT)
-            .y_scale(PRESSURE)
-            .color(DataColor::Color(GREEN));
+            .y_scale(PRESSURE);
 
         Chart::new((
             ScatterController::new(humidity).show_line(true),
-            ScatterController::new(pressure).show_line(true),
+            ScatterController::new(pressure).show_line(true).palette_offset(1),
         ))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false))
             .scale(PRESSURE, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))

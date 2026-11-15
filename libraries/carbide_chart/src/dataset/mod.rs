@@ -21,15 +21,22 @@ pub use dataset_ext::*;
 /// (`DataPoint::color`), which overrides its dataset's.
 #[derive(Debug, Copy, Clone)]
 pub enum DataColor {
-    /// The palette colour for the dataset's index in its controller. The default.
+    /// The palette colour for the dataset's index in its controller, shifted by the controller's
+    /// palette offset (`BarController::palette_offset` and the like). The default.
     ByDataSet,
-    /// This colour.
+    /// This colour, whatever the chart's style.
     Color(Color),
-    /// A palette colour per point, by the point's index in its dataset, so each bar or point of
-    /// the dataset gets the next colour, and the same index always gets the same colour. A
-    /// line's stroke and its filled area, which are one shape for the whole dataset, keep the
-    /// palette colour for the dataset's index, as with `Inherit`.
+    /// A palette colour per point, by the point's index in its dataset (shifted by the
+    /// controller's palette offset), so each bar or point of the dataset gets the next colour,
+    /// and the same index always gets the same colour. A line's stroke and its filled area,
+    /// which are one shape for the whole dataset, keep the palette colour for the dataset's
+    /// index, as with `ByDataSet`.
     ByPoint,
+    /// The palette's colour at this index, wrapping around at its end, whatever the dataset's
+    /// index and the controller's palette offset. It follows the chart's `SeriesStyle`, as
+    /// `ByDataSet` does, but picks the colour itself: datasets in different controllers or
+    /// stacks can share a colour, or keep one while datasets are added before them.
+    Palette(usize),
 }
 
 impl From<Color> for DataColor {
