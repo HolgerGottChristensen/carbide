@@ -3,7 +3,7 @@ use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::controller::drawing::{collect_point_bounds, draw_lines, draw_points};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, ScaleKind, Scales};
@@ -40,13 +40,14 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineContr
             bounds.request_kind(&dataset.options().x_scale, ScaleKind::Category);
         });
 
-        collect_point_bounds(&self.dataset_sequence, bounds);
+        collect_point_bounds(&self.dataset_sequence, bounds, true);
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
         ctx.save();
         ctx.set_fill_style(WHITE);
 
+        draw_fills(&self.dataset_sequence, ctx, scales, chart_area);
         draw_lines(&self.dataset_sequence, ctx, scales, chart_area);
         draw_points(&self.dataset_sequence, ctx, scales, chart_area);
 

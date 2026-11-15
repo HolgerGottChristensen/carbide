@@ -3,7 +3,7 @@ use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
-use crate::controller::drawing::{collect_point_bounds, draw_lines, draw_points};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, Scales};
@@ -41,7 +41,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for ScatterCo
     }
 
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        collect_point_bounds(&self.dataset_sequence, bounds);
+        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line);
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
@@ -49,6 +49,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for ScatterCo
         ctx.set_fill_style(WHITE);
 
         if self.show_line {
+            draw_fills(&self.dataset_sequence, ctx, scales, chart_area);
             draw_lines(&self.dataset_sequence, ctx, scales, chart_area);
         }
 
