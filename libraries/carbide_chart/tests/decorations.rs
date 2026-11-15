@@ -7,13 +7,13 @@ use carbide_testing::Harness;
 
 mod common;
 
-use support::{axis_titles_chart, everything_chart, legend_chart, title_and_padding_chart};
+use support::{axis_titles_chart, everything_chart, legend_chart, stacked_axis_titles_chart, title_and_padding_chart};
 
 /// A title on a scale on each side: °C along the bottom and humidity on the left for one dataset,
-/// °F along the top and pressure on the right for the other. Pins down that a horizontal axis's
-/// title is centred under (or over) its labels, in its band, which grows to fit it; and that a
-/// vertical axis's title, as text can't be rotated, is drawn horizontally above the chart area,
-/// starting at its band's outer edge, with the chart area moved down to make room.
+/// °F along the top and pressure on the right for the other. Pins down that every axis's title is
+/// centred along the chart area at the outer edge of its band, which grows to fit it; and that a
+/// vertical axis's title is turned along the axis, reading upwards on the left and downwards on
+/// the right.
 #[test]
 fn axis_titles() {
     let mut harness = Harness::new(axis_titles_chart(), Dimension::new(600.0, 500.0));
@@ -53,13 +53,26 @@ fn legend_positions() {
 }
 
 /// A chart title, a legend on top, and titles on both axes together. Pins down the order from the
-/// outside in: the title above the legend, the legend above the row of vertical axis titles, and
-/// the chart area below that, with the horizontal axis's title under its labels.
+/// outside in: the title above the legend and the chart area below that, with the vertical axis's
+/// title turned along it and the horizontal axis's labels under the chart area.
 #[test]
 fn title_legend_and_axis_titles_together() {
     let mut harness = Harness::new(everything_chart(), Dimension::new(600.0, 500.0));
 
     harness.snapshot("title_legend_and_axis_titles_together");
+}
+
+/// Two stacked scales with titles on every side: four datasets, each on its own x and y scale, an
+/// inner and an outer scale at the bottom, the top, the left and the right. Pins down that each
+/// title sits at the outer edge of its own band, centred along the chart area, so the inner
+/// scale's title lies between the two scales' labels; that the vertical titles are turned, reading
+/// upwards on the left and downwards on the right; and that every band grows by its title, so no
+/// title overlaps the labels of the scale stacked outside it.
+#[test]
+fn stacked_axis_titles() {
+    let mut harness = Harness::new(stacked_axis_titles_chart(), Dimension::new(700.0, 600.0));
+
+    harness.snapshot("stacked_axis_titles");
 }
 
 // ===============================
@@ -91,6 +104,49 @@ mod support {
             .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Humidity (%)"))
             .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false).title("Temperature (°F)"))
             .scale(PRESSURE, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).title("Pressure (hPa)"))
+            .framed()
+    }
+
+    /// Four datasets, each on its own pair of scales: the default ones (inner bottom and left), a
+    /// second pair stacked outside them, an inner pair on the top and right, and a second pair
+    /// stacked outside those. Every scale has a title; only the default scales draw grid lines.
+    pub fn stacked_axis_titles_chart() -> impl Widget {
+        const BOTTOM_OUTER: ScaleId = ScaleId::new("bottom outer");
+        const LEFT_OUTER: ScaleId = ScaleId::new("left outer");
+        const TOP_INNER: ScaleId = ScaleId::new("top inner");
+        const TOP_OUTER: ScaleId = ScaleId::new("top outer");
+        const RIGHT_INNER: ScaleId = ScaleId::new("right inner");
+        const RIGHT_OUTER: ScaleId = ScaleId::new("right outer");
+
+        let inner = vec![(0.0, 2.0), (25.0, 6.0), (50.0, 4.0), (75.0, 8.0), (100.0, 7.0)];
+        let outer = vec![(0.0, 300.0), (1.0, 500.0), (2.0, 450.0), (3.0, 700.0), (4.0, 650.0)]
+            .x_scale(BOTTOM_OUTER)
+            .y_scale(LEFT_OUTER);
+        let top = vec![(-10.0, 0.2), (-5.0, 0.6), (0.0, 0.3), (5.0, 0.9), (10.0, 0.5)]
+            .x_scale(TOP_INNER)
+            .y_scale(RIGHT_INNER);
+        let top_outer = vec![(1000.0, 40.0), (2000.0, 25.0), (3000.0, 55.0), (4000.0, 35.0), (5000.0, 60.0)]
+            .x_scale(TOP_OUTER)
+            .y_scale(RIGHT_OUTER);
+
+        let secondary = |axis: Axis, position: AxisPosition, title: &'static str| {
+            LinearScale::new(axis).position(position).grid_lines(false).title(title)
+        };
+
+        Chart::new((
+            ScatterController::new(inner).show_line(true),
+            ScatterController::new(outer).show_line(true).palette_offset(1),
+            ScatterController::new(top).show_line(true).palette_offset(2),
+            ScatterController::new(top_outer).show_line(true).palette_offset(3),
+        ))
+            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Bottom inner (%)"))
+            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Left inner (units)"))
+            .scale(BOTTOM_OUTER, secondary(Axis::Horizontal, AxisPosition::Bottom, "Bottom outer (quarter)"))
+            .scale(LEFT_OUTER, secondary(Axis::Vertical, AxisPosition::Left, "Left outer (€)"))
+            .scale(TOP_INNER, secondary(Axis::Horizontal, AxisPosition::Top, "Top inner (°C)"))
+            .scale(TOP_OUTER, secondary(Axis::Horizontal, AxisPosition::Top, "Top outer (m)"))
+            .scale(RIGHT_INNER, secondary(Axis::Vertical, AxisPosition::Right, "Right inner (ratio)"))
+            .scale(RIGHT_OUTER, secondary(Axis::Vertical, AxisPosition::Right, "Right outer (kg)"))
             .framed()
     }
 

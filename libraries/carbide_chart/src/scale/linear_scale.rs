@@ -60,9 +60,9 @@ impl LinearScale {
         self
     }
 
-    /// Gives the scale's axis a title, a text or a state of one. A horizontal axis draws it centred
-    /// under (or over) its labels; a vertical one, as text can't be rotated, horizontally above
-    /// the chart area, lined up with its band.
+    /// Gives the scale's axis a title, a text or a state of one, drawn centred along the axis
+    /// beyond its labels. A vertical axis turns it along the axis: on the left it reads from
+    /// bottom to top, on the right from top to bottom.
     pub fn title(mut self, title: impl IntoReadState<String>) -> LinearScale {
         self.axis_options = self.axis_options.with_title(title);
         self

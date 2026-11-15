@@ -9,7 +9,8 @@
 //! `Rect`'s y grows downwards on screen, so `area.bottom()` is the screen's top edge of the area
 //! and `area.top()` its bottom edge.
 
-use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
+use carbide::draw::{Alignment, Angle, Position, Rect, Scalar};
+use carbide::math::Vector3;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::scale::{Axis, AxisPosition, Scale};
@@ -18,7 +19,7 @@ use crate::style::axis_style;
 /// How far tick marks reach out from the inner edge of their scale's band.
 const TICK_LENGTH: Scalar = 10.0;
 
-/// The gap between a horizontal axis's labels and its title.
+/// The gap between an axis's labels and its title.
 const TITLE_GAP: Scalar = 4.0;
 
 /// The text shown for the tick at `value`: the scale's own label for it if it has one (a category
@@ -28,9 +29,9 @@ pub(crate) fn tick_label(scale: &dyn Scale, value: Scalar, env: &mut Environment
 }
 
 /// How far the scale's band reaches out from the chart area: its tick marks plus its widest tick
-/// label for a vertical scale, or its tallest for a horizontal one, plus a horizontal scale's
-/// title. Scales on the same side are stacked outwards, each in its own band. A vertical scale's
-/// title isn't in its band, but above the chart area (see `vertical_title_size`).
+/// label for a vertical scale, or its tallest for a horizontal one, plus its title's height (a
+/// vertical scale's title is turned along the axis, so its height also lies across it). Scales on
+/// the same side are stacked outwards, each in its own band.
 pub(crate) fn size(scale: &dyn Scale, ctx: &mut CanvasContext) -> Scalar {
     if scale.axis() == Axis::Radial {
         return 0.0;
@@ -50,37 +51,32 @@ pub(crate) fn size(scale: &dyn Scale, ctx: &mut CanvasContext) -> Scalar {
     }
 
     let title_extent = match (scale.axis(), scale.axis_options().title()) {
-        (Axis::Horizontal, Some(title)) => TITLE_GAP + ctx.measure_text(&title).height,
+        (Axis::Horizontal | Axis::Vertical, Some(title)) => TITLE_GAP + ctx.measure_text(&title).height,
         _ => 0.0,
     };
 
     tick_length + label_extent + title_extent
 }
 
-/// The size of a vertical scale's title, which is drawn horizontally above the chart area, as
-/// text can't be rotated; `None` for a horizontal scale or one without a title.
-pub(crate) fn vertical_title_size(scale: &dyn Scale, ctx: &mut CanvasContext) -> Option<Dimension> {
-    match (scale.axis(), scale.axis_options().title()) {
-        (Axis::Vertical, Some(title)) => Some(ctx.measure_text(&title)),
-        _ => None,
-    }
-}
-
-/// Draws the scale's title, in the `AxisStyle`'s label colour. A horizontal scale's title is
-/// centred along the chart area, at the outer edge of its band, `size` (see `size`) from its inner
-/// edge. A vertical scale's title sits on `title_row`, the bottom of the row above the chart area,
-/// starting at its band's outer edge and running inwards: from the left edge of a band on the
-/// left, to the right edge of a band on the right.
-pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar, size: Scalar, title_row: Scalar) {
+/// Draws the scale's title, in the `AxisStyle`'s label colour, centred along the chart area at the
+/// outer edge of its band, `size` (see `size`) from its inner edge. A vertical scale's title is
+/// turned along the axis: on the left it reads from bottom to top, on the right from top to
+/// bottom, so the top of the text faces the chart area on both sides.
+pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar, size: Scalar) {
     let Some(title) = scale.axis_options().title() else {
         return;
     };
 
-    let (x, y, alignment) = match (scale.axis(), scale.axis_options().position()) {
-        (Axis::Horizontal, AxisPosition::Top) => (area.left() + area.width() / 2.0, area.bottom() - offset - size, Alignment::Top),
-        (Axis::Horizontal, _) => (area.left() + area.width() / 2.0, area.top() + offset + size, Alignment::Bottom),
-        (Axis::Vertical, AxisPosition::Right) => (area.right() + offset + size, title_row, Alignment::BottomTrailing),
-        (Axis::Vertical, _) => (area.left() - offset - size, title_row, Alignment::BottomLeading),
+    let height = ctx.measure_text(&title).height;
+    let middle_x = area.left() + area.width() / 2.0;
+    let middle_y = area.bottom() + area.height() / 2.0;
+
+    // Where the middle of the title goes, and how far it is turned.
+    let (x, y, degrees) = match (scale.axis(), scale.axis_options().position()) {
+        (Axis::Horizontal, AxisPosition::Top) => (middle_x, area.bottom() - offset - size + height / 2.0, 0.0),
+        (Axis::Horizontal, _) => (middle_x, area.top() + offset + size - height / 2.0, 0.0),
+        (Axis::Vertical, AxisPosition::Right) => (area.right() + offset + size - height / 2.0, middle_y, 90.0),
+        (Axis::Vertical, _) => (area.left() - offset - size + height / 2.0, middle_y, -90.0),
         (Axis::Radial, _) => return,
     };
 
@@ -88,9 +84,11 @@ pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect,
     let color = style.label_color(ctx.env());
 
     ctx.save();
+    ctx.translate(Vector3::new(x, y, 0.0));
+    ctx.rotate(Angle::Degrees(degrees));
     ctx.set_fill_style(color);
-    ctx.set_text_align(alignment);
-    ctx.fill_text(&title, x, y);
+    ctx.set_text_align(Alignment::Center);
+    ctx.fill_text(&title, 0.0, 0.0);
     ctx.restore();
 }
 

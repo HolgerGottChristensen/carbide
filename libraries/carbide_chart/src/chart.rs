@@ -22,9 +22,6 @@ const SCALE_SPACING: Scalar = 8.0;
 /// The gap between the chart title or the legend and what is inside it.
 const DECORATION_SPACING: Scalar = 12.0;
 
-/// The gap between the row of vertical axis titles and the chart area below it.
-const TITLE_ROW_SPACING: Scalar = 6.0;
-
 /// A container that owns the scales and draws a sequence of controllers on them. Each dataset
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
 /// in different controllers share a scale when they are bound to the same id.
@@ -137,8 +134,8 @@ impl<C: ControllerSequence> Chart<C> {
     }
 
     /// Lays out everything around the chart area, from the outside in: the padding, the chart
-    /// title along the top, the legend on its side, the row of vertical axis titles above the
-    /// chart area, and the scales' bands. On each side, the scales are sorted by weight, ties kept
+    /// title along the top, the legend on its side, and the scales' bands, which hold their
+    /// titles. On each side, the scales are sorted by weight, ties kept
     /// in the order they were added, and stacked outwards from the chart area, each taking a band
     /// as wide as its measured `sizes` entry (see `axis::size`), with `SCALE_SPACING` between
     /// neighbouring bands. The chart area is what is left over.
@@ -184,11 +181,6 @@ impl<C: ControllerSequence> Chart<C> {
             (position, area)
         });
 
-        let title_row = top + decorations.title_row;
-        if decorations.title_row > 0.0 {
-            top = title_row + TITLE_ROW_SPACING;
-        }
-
         let mut offsets = IndexMap::new();
 
         let mut stack_side = |side: AxisPosition| -> Scalar {
@@ -230,7 +222,7 @@ impl<C: ControllerSequence> Chart<C> {
             )
         );
 
-        ChartLayout { chart_area, offsets, title, legend, title_row }
+        ChartLayout { chart_area, offsets, title, legend }
     }
 }
 
@@ -241,20 +233,17 @@ struct Decorations {
     title: Option<Scalar>,
     /// The legend's side and size, when it is shown and has items.
     legend: Option<(LegendPosition, Dimension)>,
-    /// The height of the row of vertical axis titles above the chart area, or 0 without any.
-    title_row: Scalar,
 }
 
 /// Where everything goes for one render: the area the datasets are drawn in, for each scale the
-/// distance from that area to the inner edge of its band, the top centre of the chart title, the
-/// legend's side and area, and the bottom of the row of vertical axis titles.
+/// distance from that area to the inner edge of its band, the top centre of the chart title, and
+/// the legend's side and area.
 #[derive(Debug)]
 struct ChartLayout {
     chart_area: Rect,
     offsets: IndexMap<ScaleId, Scalar>,
     title: Option<Position>,
     legend: Option<(LegendPosition, Rect)>,
-    title_row: Scalar,
 }
 
 impl ChartLayout {
@@ -317,10 +306,6 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let decorations = Decorations {
             title: title.as_ref().map(|title| canvas.measure_text(title).height),
             legend: (!legend_items.is_empty()).then_some((legend_position, legend_layout.size)),
-            title_row: self.scales.iter()
-                .filter_map(|(_, scale)| axis::vertical_title_size(scale, &mut canvas))
-                .map(|size| size.height)
-                .fold(0.0, Scalar::max),
         };
 
         let layout = self.layout(&sizes, &decorations);
@@ -332,7 +317,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
         for (id, scale) in self.scales.iter() {
             axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id));
-            axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id], layout.title_row);
+            axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id]);
         }
 
         if let (Some(title), Some(position)) = (&title, layout.title) {
@@ -712,27 +697,25 @@ mod tests {
     }
 
     /// Decorations are laid out from the outside in: the chart title along the top, then the
-    /// legend on its side, then the row of vertical axis titles above the chart area, each taking
-    /// its size and a gap off the space left, and the scale bands inside that.
+    /// legend on its side, each taking its size and a gap off the space left, and the scale bands
+    /// inside that.
     #[test]
     fn decorations_are_laid_out_from_the_outside_in() {
         use crate::LegendPosition;
-        use super::{DECORATION_SPACING, TITLE_ROW_SPACING};
+        use super::DECORATION_SPACING;
 
         let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])));
         chart.dimension = Dimension::new(400.0, 300.0);
         let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
 
-        let decorations = Decorations { title: Some(14.0), legend: Some((LegendPosition::Top, Dimension::new(340.0, 16.0))), title_row: 14.0 };
+        let decorations = Decorations { title: Some(14.0), legend: Some((LegendPosition::Top, Dimension::new(340.0, 16.0))) };
         let layout = chart.layout(&bands, &decorations);
 
         assert_eq!(layout.title, Some(Position::new(200.0, 30.0)), "the title is centred along the top, inside the padding");
         let (side, legend) = layout.legend.unwrap();
         assert_eq!(side, LegendPosition::Top);
         assert_eq!((legend.left(), legend.bottom(), legend.width(), legend.height()), (30.0, 30.0 + 14.0 + DECORATION_SPACING, 340.0, 16.0), "the legend sits under the title, across the chart");
-        let row = 30.0 + 14.0 + DECORATION_SPACING + 16.0 + DECORATION_SPACING + 14.0;
-        assert_eq!(layout.title_row, row, "the axis title row comes under the legend");
-        assert_eq!(layout.chart_area.bottom(), row + TITLE_ROW_SPACING, "the chart area starts under the row");
+        assert_eq!(layout.chart_area.bottom(), 30.0 + 14.0 + DECORATION_SPACING + 16.0 + DECORATION_SPACING, "the chart area starts under the legend");
         assert_eq!(layout.chart_area.left(), 30.0 + 35.0, "nothing came off the sides");
 
         for (side, check) in [
