@@ -4,6 +4,7 @@
 use carbide_core::color::{BLUE, GREEN, RED, WHITE, YELLOW};
 use carbide_core::draw::{Alignment, Angle, Dimension};
 use carbide_core::math::Vector3;
+use carbide_core::text::{FontStyle, FontWeight, TextDecoration};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::{HStack, Rectangle, WidgetExt};
 use carbide_testing::Harness;
@@ -160,6 +161,72 @@ fn canvas_text_transforms() {
     let mut harness = Harness::new(canvas, Dimension::new(300.0, 300.0));
 
     harness.snapshot("canvas_text_transforms");
+}
+
+/// Text as the text style starts out, then larger, bold, and in a whole replaced style. Pins down
+/// that `fill_text` draws with the current text style, and that `measure_text` measures with it,
+/// so a 28 high line takes about twice the room of a 14 high one. Italic and underlined text are
+/// left out, as the text renderer draws neither yet.
+#[test]
+fn canvas_text_styles() {
+    let canvas = Canvas::new(|ctx: &mut CanvasContext| {
+        ctx.set_fill_style(WHITE);
+        ctx.set_text_align(Alignment::TopLeading);
+        ctx.fill_text("Plain", 20.0, 20.0);
+        let plain = ctx.measure_text("Plain");
+
+        ctx.set_font_size(28);
+        ctx.fill_text("Large", 20.0, 50.0);
+        let large = ctx.measure_text("Plain");
+        assert!(large.height > 1.8 * plain.height, "28 is about twice as high as 14: {large:?} against {plain:?}");
+
+        ctx.set_font_size(14);
+        ctx.set_font_weight(FontWeight::Bold);
+        ctx.fill_text("Bold", 20.0, 100.0);
+
+        let mut replaced = ctx.get_text_style().clone();
+        replaced.font_size = 20;
+        replaced.font_weight = FontWeight::Normal;
+        ctx.set_text_style(replaced);
+        ctx.set_fill_style(GREEN);
+        ctx.fill_text("Replaced", 20.0, 140.0);
+    })
+        .frame(300.0, 300.0);
+
+    let mut harness = Harness::new(canvas, Dimension::new(300.0, 300.0));
+
+    harness.snapshot("canvas_text_styles");
+}
+
+/// Text drawn large and bold between `save` and `restore`, then again after `restore`. Pins down
+/// that the text style is part of the saved state: after `restore` every part of it, the family,
+/// size, weight, font style and decoration, is back as it was before `save`, and the text is
+/// drawn in it.
+#[test]
+fn canvas_text_style_save_restore() {
+    let canvas = Canvas::new(|ctx: &mut CanvasContext| {
+        ctx.set_fill_style(WHITE);
+        ctx.set_text_align(Alignment::TopLeading);
+        let before = ctx.get_text_style().clone();
+
+        ctx.save();
+        ctx.set_font_size(32);
+        ctx.set_font_weight(FontWeight::Bold);
+        ctx.set_font_style(FontStyle::Italic);
+        ctx.set_text_decoration(TextDecoration::Underline);
+        ctx.set_font_family("DejaVu Sans");
+        ctx.set_fill_style(RED);
+        ctx.fill_text("Saved", 20.0, 20.0);
+        ctx.restore();
+
+        assert_eq!(ctx.get_text_style(), &before, "restore brings back the style from before save");
+        ctx.fill_text("Restored", 20.0, 80.0);
+    })
+        .frame(300.0, 300.0);
+
+    let mut harness = Harness::new(canvas, Dimension::new(300.0, 300.0));
+
+    harness.snapshot("canvas_text_style_save_restore");
 }
 
 /// A 100×100 square rotated 30° around x and 40° around y about its centre, twice side by side:

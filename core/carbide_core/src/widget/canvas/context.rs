@@ -10,7 +10,7 @@ use crate::mouse_position::MousePositionEnvironmentExt;
 use crate::render::{RenderContext, Style};
 use crate::state::{IntoReadState, ReadState, StateSync};
 use crate::text::text_wrap::Wrap;
-use crate::text::{FontStyle, FontWeight, TextDecoration, TextStyle};
+use crate::text::{FontSize, FontStyle, FontWeight, TextDecoration, TextStyle};
 use crate::widget::ShapeStyle;
 use std::fmt::{Debug, Formatter};
 
@@ -37,6 +37,9 @@ pub struct ContextState {
     dash_mode: StrokeDashMode,
     miter_limit: Scalar,
     text_alignment: Alignment,
+    /// The style `fill_text` draws with and `measure_text` measures with. Its `color` is not used:
+    /// text is drawn in the fill style.
+    text_style: TextStyle,
     clip_count: u32,
     /// The transform `fill`, `stroke` and `fill_text` apply to what they draw, in the canvas's
     /// own coordinates. Saved and restored with the rest of the state.
@@ -60,6 +63,16 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
                 dash_mode: StrokeDashMode::Pretty,
                 miter_limit: 4.0, //StrokeOptions::DEFAULT_MITER_LIMIT,
                 text_alignment: Alignment::TopLeading,
+                text_style: TextStyle {
+                    family: "Noto Sans".to_string(),
+                    font_size: 14,
+                    line_height: 1.0,
+                    font_style: FontStyle::Normal,
+                    font_weight: FontWeight::Normal,
+                    text_decoration: TextDecoration::None,
+                    color: None,
+                    wrap: Wrap::Character,
+                },
                 clip_count: 0,
                 transform: Matrix4::identity(),
             },
@@ -403,30 +416,54 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.text_alignment = alignment;
     }
 
-    /// The style `fill_text` draws with and `measure_text` measures with.
-    fn text_style() -> TextStyle {
-        TextStyle {
-            family: "Noto Sans".to_string(),
-            font_size: 14,
-            line_height: 1.0,
-            font_style: FontStyle::Normal,
-            font_weight: FontWeight::Normal,
-            text_decoration: TextDecoration::None,
-            color: None,
-            wrap: Wrap::Character,
-        }
+    /// The style `fill_text` draws with and `measure_text` measures with: Noto Sans at 14,
+    /// normal weight and style, without decoration, unless set. Saved and restored with the rest
+    /// of the state.
+    pub fn get_text_style(&self) -> &TextStyle {
+        &self.current_state.text_style
+    }
+
+    /// Replaces the style `fill_text` draws with and `measure_text` measures with. The style's
+    /// `color` is not used: text is drawn in the fill style (see `set_fill_style`).
+    pub fn set_text_style(&mut self, style: TextStyle) {
+        self.current_state.text_style = style;
+    }
+
+    /// Sets the font family of the text style, such as "Noto Sans".
+    pub fn set_font_family(&mut self, family: impl Into<String>) {
+        self.current_state.text_style.family = family.into();
+    }
+
+    /// Sets the font size of the text style.
+    pub fn set_font_size(&mut self, size: FontSize) {
+        self.current_state.text_style.font_size = size;
+    }
+
+    /// Sets the font weight of the text style.
+    pub fn set_font_weight(&mut self, weight: FontWeight) {
+        self.current_state.text_style.font_weight = weight;
+    }
+
+    /// Sets the font style of the text style: normal or italic.
+    pub fn set_font_style(&mut self, style: FontStyle) {
+        self.current_state.text_style.font_style = style;
+    }
+
+    /// Sets the decoration of the text style: none, underline, overline or strike-through.
+    pub fn set_text_decoration(&mut self, decoration: TextDecoration) {
+        self.current_state.text_style.text_decoration = decoration;
     }
 
     /// The size `text` takes up when drawn with `fill_text`.
     pub fn measure_text(&mut self, text: &str) -> Dimension {
-        self.render_context.measure_text(text, &Self::text_style(), None)
+        self.render_context.measure_text(text, &self.current_state.text_style, None)
     }
 
     /// Draws `text` at (`x`, `y`), placed by the current text alignment, with the current transform
     /// applied (see `set_transform`): a rotation turns the text around the origin, so rotate
     /// around the text's position to turn it in place.
     pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
-        let text_style = Self::text_style();
+        let text_style = self.current_state.text_style.clone();
 
         let size = self.render_context.measure_text(text, &text_style, None);
 
