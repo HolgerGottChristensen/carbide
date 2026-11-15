@@ -51,7 +51,7 @@ pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: DynClone + Debug + 
     /// How the dataset is drawn. Options held in states are read as they were last synced.
     fn options(&self) -> DataSetOptions {
         DataSetOptions {
-            color: DataColor::Inherit,
+            color: DataColor::ByDataSet,
             interpolation: Interpolation::Linear,
             fill: Fill::None,
             x_scale: ScaleId::X,

@@ -188,30 +188,42 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
     }
 }
 
-/// Draws a filled circle at each of each line's points, in the point's colour if it has one,
-/// otherwise the dataset's.
+/// Draws a filled circle at each of each line's points, in its colour (see `point_color`).
 pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext) {
     for line in lines {
-        for (point, color) in line.points.iter().zip(&line.colors) {
+        for (point_index, (point, color)) in line.points.iter().zip(&line.colors).enumerate() {
             ctx.begin_path();
             ctx.circle(point.x, point.y, 7.0);
-
-            match color {
-                DataColor::Inherit => ctx.set_fill_style(dataset_color(&line.options, line.dataset_index)),
-                DataColor::Color(color) => ctx.set_fill_style(*color),
-            }
-
+            ctx.set_fill_style(point_color(*color, &line.options, line.dataset_index, point_index));
             ctx.fill();
         }
     }
 }
 
-/// The dataset's own colour, or the palette's colour for its index in the controller.
+/// The dataset's own colour, or the palette's colour for its index in the controller. This is
+/// the colour of everything drawn once for the whole dataset, such as a line and its area, so a
+/// dataset coloured `ByPoint` uses its palette colour here too.
 pub(crate) fn dataset_color(options: &DataSetOptions, dataset_index: usize) -> Color {
     match options.color {
-        DataColor::Inherit => PALETTE[dataset_index % PALETTE.len()],
+        DataColor::ByDataSet | DataColor::ByPoint => palette_color(dataset_index),
         DataColor::Color(color) => color,
     }
+}
+
+/// The colour of one bar or point: the point's own colour if it sets one, otherwise its
+/// dataset's. A dataset coloured `ByPoint` gives each point the palette colour for its index in
+/// the dataset (`point_index`), as does a point coloured `ByPoint` itself.
+pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_index: usize, point_index: usize) -> Color {
+    match (color, options.color) {
+        (DataColor::Color(color), _) => color,
+        (DataColor::ByPoint, _) | (DataColor::ByDataSet, DataColor::ByPoint) => palette_color(point_index),
+        (DataColor::ByDataSet, _) => dataset_color(options, dataset_index),
+    }
+}
+
+/// The palette's colour for `index`, wrapping around at its end.
+fn palette_color(index: usize) -> Color {
+    PALETTE[index % PALETTE.len()]
 }
 
 /// The x and y scales a dataset is bound to, or `None` when the chart has no scale with one of
@@ -227,7 +239,9 @@ mod tests {
     use crate::{Axis, CategoryScale, DatasetExt, Fill, LineController, Scale, ScatterController, StackId};
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, Scales};
-    use super::{baseline_pixel, drawn_lines};
+    use carbide::color::{BLUE, GREEN, RED, WHITE};
+    use crate::{DataColor, DataSetOptions, Interpolation};
+    use super::{baseline_pixel, dataset_color, drawn_lines, point_color};
 
     const SALES: StackId = StackId::new("sales");
 
@@ -340,5 +354,33 @@ mod tests {
         assert_eq!(baseline_pixel(Fill::Value(10.0), &scale, area), pixel(3.0), "a value past the last label should fill to it");
         assert_eq!(baseline_pixel(Fill::Value(-5.0), &scale, area), pixel(0.0), "a value before the first label should fill to it");
         assert_eq!(baseline_pixel(Fill::Value(2.0), &scale, area), pixel(2.0));
+    }
+
+    fn options(color: DataColor) -> DataSetOptions {
+        DataSetOptions {
+            color,
+            interpolation: Interpolation::Linear,
+            fill: Fill::None,
+            x_scale: ScaleId::X,
+            y_scale: ScaleId::Y,
+            stack: None,
+        }
+    }
+
+    /// A dataset coloured `ByPoint` gives each point the palette colour for its index in the
+    /// dataset, wrapping at the palette's end, while what is drawn once for the whole dataset
+    /// keeps the palette colour for the dataset's index. A point's own colour always wins.
+    #[test]
+    fn points_coloured_by_point_cycle_through_the_palette() {
+        let by_point = options(DataColor::ByPoint);
+
+        let colours: Vec<_> = (0..4).map(|point_index| point_color(DataColor::ByDataSet, &by_point, 1, point_index)).collect();
+        assert_eq!(colours, vec![WHITE, GREEN, RED, WHITE], "by the point's index, not the dataset's");
+        assert_eq!(dataset_color(&by_point, 1), GREEN, "the line and its area keep the dataset's palette colour");
+
+        assert_eq!(point_color(DataColor::Color(BLUE), &by_point, 1, 2), BLUE, "a point's own colour wins");
+        assert_eq!(point_color(DataColor::ByPoint, &options(DataColor::ByDataSet), 0, 2), RED, "a point can ask for its palette colour itself");
+        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::ByDataSet), 1, 2), GREEN, "otherwise points take the dataset's colour");
+        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::Color(BLUE)), 1, 2), BLUE);
     }
 }

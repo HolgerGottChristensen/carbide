@@ -1,14 +1,14 @@
 //! Line and scatter charts: points, lines through them, straight, smooth or stepped, and the
 //! areas under them.
 
-use carbide_chart::{Fill, Interpolation, Stepped};
+use carbide_chart::{DataColor, DatasetExt, Fill, Interpolation, Stepped};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
 
-use support::{band_chart, example_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
+use support::{band_chart, example_chart, filled_values_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -94,6 +94,19 @@ fn filled_stepped_and_smooth_lines() {
     harness.snapshot("smooth");
 }
 
+/// A filled line coloured `ByPoint`. Pins down that each point takes the palette colour for its
+/// index, wrapping around, while the line and its area, drawn once for the whole dataset, keep
+/// the dataset's own palette colour (white, as the first dataset).
+#[test]
+fn points_coloured_by_point() {
+    let values = vec![12.0, 19.0, 8.0, 15.0, 10.0, 17.0]
+        .color(DataColor::ByPoint)
+        .fill(Fill::Origin);
+    let mut harness = Harness::new(filled_values_chart(values), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("points_coloured_by_point");
+}
+
 /// A temperature range as one band: the daily minimum as a plain line, and the spread up to the
 /// maximum stacked on it as a line filled with `Fill::Stack`. Pins down that a stacked area fills
 /// down to the line below even when that line has no fill of its own, so the only filled area is
@@ -156,7 +169,8 @@ fn scatter_with_lines() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, ScatterController, StackId, Stepped};
+    use carbide_chart::{Chart, DataSet, DatasetExt, Fill, Interpolation, LineController, ScatterController, StackId, Stepped};
+    use carbide_core::draw::Scalar;
     use carbide_core::state::LocalState;
     use carbide_core::widget::Widget;
     use crate::common::Framed;
@@ -167,6 +181,12 @@ mod support {
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
         Chart::new(LineController::new((data7, data8)))
+            .framed()
+    }
+
+    /// A line chart of a single dataset, as given.
+    pub fn filled_values_chart<D: DataSet<Scalar, Scalar, Scalar> + Clone>(values: D) -> impl Widget {
+        Chart::new(LineController::new(values))
             .framed()
     }
 

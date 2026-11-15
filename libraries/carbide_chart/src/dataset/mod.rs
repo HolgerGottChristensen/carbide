@@ -17,10 +17,19 @@ pub use stack_id::StackId;
 pub use dataset_options::*;
 pub use dataset_ext::*;
 
+/// The colour of a dataset, set with `DatasetExt::color`, or of a single point
+/// (`DataPoint::color`), which overrides its dataset's.
 #[derive(Debug, Copy, Clone)]
 pub enum DataColor {
-    Inherit,
-    Color(Color)
+    /// The palette colour for the dataset's index in its controller. The default.
+    ByDataSet,
+    /// This colour.
+    Color(Color),
+    /// A palette colour per point, by the point's index in its dataset, so each bar or point of
+    /// the dataset gets the next colour, and the same index always gets the same colour. A
+    /// line's stroke and its filled area, which are one shape for the whole dataset, keep the
+    /// palette colour for the dataset's index, as with `Inherit`.
+    ByPoint,
 }
 
 impl From<Color> for DataColor {

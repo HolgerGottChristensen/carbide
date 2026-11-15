@@ -3,9 +3,9 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{dataset_color, dataset_scales};
+use crate::controller::drawing::{dataset_scales, point_color};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::{DataColor, DataSet, DataSetSequence};
+use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
@@ -141,7 +141,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
             let y_pixel = |value: Scalar| chart_area.bottom() + (1.0 - y_scale.normalize(value)) * chart_area.height();
             let zero = y_pixel(base_value(y_scale));
 
-            dataset.points(&mut |_index, point| {
+            dataset.points(&mut |point_index, point| {
                 let center = chart_area.left() + x_scale.normalize(point.x()) * chart_area.width();
                 let (left, width) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
 
@@ -157,10 +157,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
                 ctx.line_to(left, head);
                 ctx.close_path();
 
-                match point.color() {
-                    DataColor::Inherit => ctx.set_fill_style(dataset_color(&options, dataset_index)),
-                    DataColor::Color(color) => ctx.set_fill_style(color),
-                }
+                ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index));
 
                 ctx.fill();
             });

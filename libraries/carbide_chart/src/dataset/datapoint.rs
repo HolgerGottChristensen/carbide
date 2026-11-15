@@ -21,7 +21,7 @@ pub trait DataPoint {
     }
 
     fn color(&self) -> DataColor {
-        DataColor::Inherit
+        DataColor::ByDataSet
     }
 }
 
@@ -40,6 +40,10 @@ impl<T> DataPoint for &T where T: DataPoint {
 
     fn z(&self) -> Self::Z {
         T::z(self)
+    }
+
+    fn color(&self) -> DataColor {
+        T::color(self)
     }
 }
 
@@ -86,5 +90,44 @@ impl<X: DataValue, Y: DataValue, Z: DataValue> DataPoint for (X, Y, Z) {
 
     fn z(&self) -> Z {
         self.2
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use carbide::color::RED;
+    use carbide::draw::Scalar;
+    use crate::{DataColor, DataPoint};
+
+    /// A point with a colour of its own, as a user's data type would be.
+    struct Reading(Scalar);
+
+    impl DataPoint for Reading {
+        type X = Scalar;
+        type Y = Scalar;
+        type Z = Scalar;
+
+        fn x(&self) -> Scalar {
+            0.0
+        }
+
+        fn y(&self) -> Scalar {
+            self.0
+        }
+
+        fn color(&self) -> DataColor {
+            DataColor::Color(RED)
+        }
+    }
+
+    /// A point held by reference is the same point: its colour comes through too, not just its
+    /// coordinates.
+    #[test]
+    fn points_by_reference_keep_their_colour() {
+        let reading = Reading(4.0);
+        let by_reference = &reading;
+
+        assert!(matches!(DataPoint::color(&by_reference), DataColor::Color(color) if color == RED));
+        assert_eq!(DataPoint::y(&by_reference), 4.0);
     }
 }

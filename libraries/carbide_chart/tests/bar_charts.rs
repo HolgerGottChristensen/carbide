@@ -1,7 +1,7 @@
 //! Bar charts on their own: bars growing from zero, grouped datasets splitting a slot, stacked
 //! bars, and bar widths on a linear x scale.
 
-use carbide_chart::{DatasetExt, StackId};
+use carbide_chart::{DataColor, DatasetExt, StackId};
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
 
@@ -121,6 +121,17 @@ fn stacked_bars_of_different_lengths() {
     let mut harness = Harness::new(bar_chart((materials, labour)), Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_bars_of_different_lengths");
+}
+
+/// One dataset coloured `ByPoint`: each bar takes the next palette colour by its index, instead
+/// of the whole dataset taking one. Pins down that the colours follow the bars' order and wrap
+/// around at the end of the palette (white, green, red, then white again for the fourth bar).
+#[test]
+fn bars_coloured_by_point() {
+    let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0].color(DataColor::ByPoint);
+    let mut harness = Harness::new(bar_chart(votes), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_coloured_by_point");
 }
 
 // ===============================
