@@ -1,18 +1,32 @@
 //! Category scales: labels, grid lines between categories, and category scales on every axis.
 
+use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LineController, ScaleId};
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
 
 mod common;
 
-use support::{bars_with_x_scale_on_top_chart, labelled_bar_chart, vertical_category_scale_chart, vertical_category_scale_on_right_chart};
+use common::Framed;
+use support::STATUS_LABELS;
 
 /// A bar chart of votes for six colours, with the colours as category labels. The x scale is
 /// set explicitly to a `CategoryScale` with labels, so the ticks show "Red", "Blue", ... instead
 /// of indices. Pins down label text on a category scale and grid lines between the bars.
 #[test]
 fn bar_chart_with_labels() {
-    let mut harness = Harness::new(labelled_bar_chart(), Dimension::new(600.0, 500.0));
+    // Votes for six colours as bars, labelled on a category scale.
+    let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+    let chart = Chart::new(BarController::new(votes))
+        .scale(
+            ScaleId::X,
+            CategoryScale::new(Axis::Horizontal)
+                .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
+                .grid_offset(true),
+        )
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bar_chart_with_labels");
 }
@@ -22,7 +36,20 @@ fn bar_chart_with_labels() {
 /// bottom of the y scale.
 #[test]
 fn bars_with_x_scale_on_top() {
-    let mut harness = Harness::new(bars_with_x_scale_on_top_chart(), Dimension::new(600.0, 500.0));
+    // Votes for six colours as bars, with the labelled category x scale at the top.
+    let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
+
+    let chart = Chart::new(BarController::new(votes))
+        .scale(
+            ScaleId::X,
+            CategoryScale::new(Axis::Horizontal)
+                .position(AxisPosition::Top)
+                .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
+                .grid_offset(true),
+        )
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_with_x_scale_on_top");
 }
@@ -32,7 +59,14 @@ fn bars_with_x_scale_on_top() {
 /// the left and grid lines between the categories.
 #[test]
 fn vertical_category_scale() {
-    let mut harness = Harness::new(vertical_category_scale_chart(), Dimension::new(600.0, 500.0));
+    // A status per day (an index into `STATUS_LABELS`) on a vertical category y scale.
+    let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0];
+
+    let chart = Chart::new(LineController::new(status))
+        .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(STATUS_LABELS).grid_offset(true))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("vertical_category_scale");
 }
@@ -42,7 +76,18 @@ fn vertical_category_scale() {
 /// next to a linear scale on the left.
 #[test]
 fn vertical_category_scale_on_right() {
-    let mut harness = Harness::new(vertical_category_scale_on_right_chart(), Dimension::new(600.0, 500.0));
+    const STATUS: ScaleId = ScaleId::new("status");
+    // A temperature on the default y scale, and the status from `vertical_category_scale_chart`
+    // on a category scale on the right.
+    let temperature = vec![18.0, 21.0, 24.0, 29.0, 34.0, 30.0, 23.0];
+    let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0]
+        .y_scale(STATUS);
+
+    let chart = Chart::new(LineController::new((temperature, status)))
+        .scale(STATUS, CategoryScale::new(Axis::Vertical).position(AxisPosition::Right).labels(STATUS_LABELS).grid_lines(false))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("vertical_category_scale_on_right");
 }
@@ -52,61 +97,6 @@ fn vertical_category_scale_on_right() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LineController, ScaleId};
-    use carbide_core::widget::Widget;
-    use crate::common::Framed;
 
-    const STATUS: ScaleId = ScaleId::new("status");
-
-    const STATUS_LABELS: [&str; 4] = ["Low", "Medium", "High", "Critical"];
-
-    /// Votes for six colours as bars, labelled on a category scale.
-    pub fn labelled_bar_chart() -> impl Widget {
-        let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
-
-        Chart::new(BarController::new(votes))
-            .scale(
-                ScaleId::X,
-                CategoryScale::new(Axis::Horizontal)
-                    .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
-                    .grid_offset(true),
-            )
-            .framed()
-    }
-
-    /// Votes for six colours as bars, with the labelled category x scale at the top.
-    pub fn bars_with_x_scale_on_top_chart() -> impl Widget {
-        let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
-
-        Chart::new(BarController::new(votes))
-            .scale(
-                ScaleId::X,
-                CategoryScale::new(Axis::Horizontal)
-                    .position(AxisPosition::Top)
-                    .labels(["Red", "Blue", "Yellow", "Green", "Purple", "Orange"])
-                    .grid_offset(true),
-            )
-            .framed()
-    }
-
-    /// A status per day (an index into `STATUS_LABELS`) on a vertical category y scale.
-    pub fn vertical_category_scale_chart() -> impl Widget {
-        let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0];
-
-        Chart::new(LineController::new(status))
-            .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(STATUS_LABELS).grid_offset(true))
-            .framed()
-    }
-
-    /// A temperature on the default y scale, and the status from `vertical_category_scale_chart`
-    /// on a category scale on the right.
-    pub fn vertical_category_scale_on_right_chart() -> impl Widget {
-        let temperature = vec![18.0, 21.0, 24.0, 29.0, 34.0, 30.0, 23.0];
-        let status = vec![0.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0]
-            .y_scale(STATUS);
-
-        Chart::new(LineController::new((temperature, status)))
-            .scale(STATUS, CategoryScale::new(Axis::Vertical).position(AxisPosition::Right).labels(STATUS_LABELS).grid_lines(false))
-            .framed()
-    }
+    pub const STATUS_LABELS: [&str; 4] = ["Low", "Medium", "High", "Critical"];
 }

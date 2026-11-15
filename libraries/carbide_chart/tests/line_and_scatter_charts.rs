@@ -1,14 +1,15 @@
 //! Line and scatter charts: points, lines through them, straight, smooth or stepped, and the
 //! areas under them.
 
-use carbide_chart::{DataColor, DatasetExt, Fill, Interpolation, SpanGaps, Stepped};
+use carbide_chart::{Chart, DataColor, DatasetExt, Fill, Interpolation, LineController, ScatterController, SpanGaps, StackId, Stepped};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
 
-use support::{band_chart, example_chart, gaps_chart, stacked_area_over_a_gap_chart, filled_values_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
+use common::Framed;
+use support::{band_chart, example_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -53,8 +54,17 @@ fn smooth_line_modes() {
 /// value baseline is drawn at 50.
 #[test]
 fn area_fill_modes() {
+    // The example's data with `data7` as a monotone line filled to `fill`.
     let mut fill = LocalState::new(Fill::Origin);
-    let mut harness = Harness::new(filled_chart(fill.clone()), Dimension::new(600.0, 500.0));
+    let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0]
+        .interpolation(Interpolation::Monotone)
+        .fill(fill.clone());
+    let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
+
+    let chart = Chart::new(LineController::new((data7, data8)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     for (mode, name) in [
         (Fill::Origin, "origin"),
@@ -74,8 +84,22 @@ fn area_fill_modes() {
 /// down to zero; and that the y scale covers the totals.
 #[test]
 fn stacked_lines_and_areas() {
+    // Visits per channel, stacked into one total: search, social (which dips below zero, as
+    // refunds outweigh it one month) and email, all monotone and filled to `fill`.
+    const VISITS: StackId = StackId::new("visits");
     let mut fill = LocalState::new(Fill::None);
-    let mut harness = Harness::new(stacked_lines_chart(fill.clone()), Dimension::new(600.0, 500.0));
+
+    let search = vec![30.0, 35.0, 32.0, 40.0, 45.0, 42.0, 50.0]
+        .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
+    let social = vec![10.0, 15.0, -8.0, 12.0, 20.0, 18.0, 25.0]
+        .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
+    let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
+        .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
+
+    let chart = Chart::new(LineController::new((search, social, email)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("stacked_lines");
 
     *fill.value_mut() = Fill::Stack;
@@ -87,6 +111,16 @@ fn stacked_lines_and_areas() {
 /// interpolations too: along every step, and along the spline where it overshoots the points.
 #[test]
 fn filled_stepped_and_smooth_lines() {
+    // The example's `data7` alone, with `interpolation`, filled to zero.
+    let filled_line_chart = |interpolation: Interpolation| {
+        let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0]
+            .interpolation(interpolation)
+            .fill(Fill::Origin);
+
+        Chart::new(LineController::new(data7))
+            .framed()
+    };
+
     let mut harness = Harness::new(filled_line_chart(Interpolation::Stepped(Stepped::Middle)), Dimension::new(600.0, 500.0));
     harness.snapshot("stepped");
 
@@ -102,7 +136,11 @@ fn points_coloured_by_point() {
     let values = vec![12.0, 19.0, 8.0, 15.0, 10.0, 17.0]
         .color(DataColor::ByPoint)
         .fill(Fill::Origin);
-    let mut harness = Harness::new(filled_values_chart(values), Dimension::new(600.0, 500.0));
+
+    let chart = Chart::new(LineController::new(values))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("points_coloured_by_point");
 }
@@ -114,8 +152,18 @@ fn points_coloured_by_point() {
 /// along x) is joined and the two-month gap (3 apart) breaks.
 #[test]
 fn gaps() {
+    // Monthly sales with one missing month, then two missing in a row, as a filled monotone line
+    // that spans gaps as `span_gaps` says.
     let mut span_gaps = LocalState::new(SpanGaps::Never);
-    let mut harness = Harness::new(gaps_chart(span_gaps.clone()), Dimension::new(600.0, 500.0));
+    let sales = vec![Some(12.0), Some(15.0), None, Some(10.0), Some(14.0), None, None, Some(9.0), Some(13.0), Some(11.0)]
+        .interpolation(Interpolation::Monotone)
+        .fill(Fill::Origin)
+        .span_gaps(span_gaps.clone());
+
+    let chart = Chart::new(LineController::new(sales))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     for (mode, name) in [
         (SpanGaps::Never, "never"),
@@ -133,7 +181,20 @@ fn gaps() {
 /// the lower line's points straight across the gap.
 #[test]
 fn stacked_area_over_a_gap() {
-    let mut harness = Harness::new(stacked_area_over_a_gap_chart(), Dimension::new(600.0, 500.0));
+    // Two stacked areas; the lower one has no value in the fourth month.
+    const VISITS: StackId = StackId::new("visits");
+
+    let search = vec![Some(30.0), Some(35.0), Some(32.0), None, Some(45.0), Some(42.0), Some(50.0)]
+        .fill(Fill::Stack)
+        .stack(VISITS);
+    let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
+        .fill(Fill::Stack)
+        .stack(VISITS);
+
+    let chart = Chart::new(LineController::new((search, email)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_area_over_a_gap");
 }
@@ -169,7 +230,14 @@ fn area_between_stacked_lines_of_different_interpolations() {
 /// and that the y scale reaches down to zero for it.
 #[test]
 fn scatter_filled_to_zero() {
-    let mut harness = Harness::new(filled_scatter_chart(), Dimension::new(600.0, 500.0));
+    // Readings at uneven x values, in x order, as a scatter chart with lines filled to zero.
+    let readings = vec![(-10.0, 2.0), (-6.0, 7.0), (-1.0, 4.0), (3.0, 9.0), (7.0, 5.0), (10.0, 8.0)]
+        .fill(Fill::Origin);
+
+    let chart = Chart::new(ScatterController::new(readings).show_line(true))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("filled_scatter_chart");
 }
@@ -179,7 +247,14 @@ fn scatter_filled_to_zero() {
 /// unless asked to, and keeps linear x and y scales.
 #[test]
 fn scatter_points_only() {
-    let mut harness = Harness::new(scatter_chart(), Dimension::new(600.0, 500.0));
+    // Two clouds of (x, y) points with numeric x values, drawn as points only.
+    let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
+    let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)];
+
+    let chart = Chart::new(ScatterController::new((first, second)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("scatter_points_only");
 }
@@ -190,7 +265,15 @@ fn scatter_points_only() {
 /// lines work on a scatter chart too.
 #[test]
 fn scatter_with_lines() {
-    let mut harness = Harness::new(scatter_with_lines_chart(), Dimension::new(600.0, 500.0));
+    // `scatter_chart`'s points with lines through them in data order, the second dataset stepped.
+    let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
+    let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)]
+        .interpolation(Interpolation::Stepped(Stepped::After));
+
+    let chart = Chart::new(ScatterController::new((first, second)).show_line(true))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("scatter_with_lines");
 }
@@ -200,7 +283,7 @@ fn scatter_with_lines() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Chart, DataSet, DatasetExt, Fill, Interpolation, LineController, ScatterController, SpanGaps, StackId, Stepped};
+    use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, StackId};
     use carbide_core::state::LocalState;
     use carbide_core::widget::Widget;
     use crate::common::Framed;
@@ -211,76 +294,6 @@ mod support {
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
         Chart::new(LineController::new((data7, data8)))
-            .framed()
-    }
-
-    /// A line chart of a single dataset, as given.
-    pub fn filled_values_chart<D: DataSet + Clone>(values: D) -> impl Widget {
-        Chart::new(LineController::new(values))
-            .framed()
-    }
-
-    /// Monthly sales with one missing month, then two missing in a row, as a filled monotone line
-    /// that spans gaps as `span_gaps` says.
-    pub fn gaps_chart(span_gaps: LocalState<SpanGaps>) -> impl Widget {
-        let sales = vec![Some(12.0), Some(15.0), None, Some(10.0), Some(14.0), None, None, Some(9.0), Some(13.0), Some(11.0)]
-            .interpolation(Interpolation::Monotone)
-            .fill(Fill::Origin)
-            .span_gaps(span_gaps);
-
-        Chart::new(LineController::new(sales))
-            .framed()
-    }
-
-    /// Two stacked areas; the lower one has no value in the fourth month.
-    pub fn stacked_area_over_a_gap_chart() -> impl Widget {
-        const VISITS: StackId = StackId::new("visits");
-
-        let search = vec![Some(30.0), Some(35.0), Some(32.0), None, Some(45.0), Some(42.0), Some(50.0)]
-            .fill(Fill::Stack)
-            .stack(VISITS);
-        let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
-            .fill(Fill::Stack)
-            .stack(VISITS);
-
-        Chart::new(LineController::new((search, email)))
-            .framed()
-    }
-
-    /// The example's `data7` alone, with `interpolation`, filled to zero.
-    pub fn filled_line_chart(interpolation: Interpolation) -> impl Widget {
-        let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0]
-            .interpolation(interpolation)
-            .fill(Fill::Origin);
-
-        Chart::new(LineController::new(data7))
-            .framed()
-    }
-
-    /// The example's data with `data7` as a monotone line filled to `fill`.
-    pub fn filled_chart(fill: LocalState<Fill>) -> impl Widget {
-        let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0]
-            .interpolation(Interpolation::Monotone)
-            .fill(fill);
-        let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
-
-        Chart::new(LineController::new((data7, data8)))
-            .framed()
-    }
-
-    /// Visits per channel, stacked into one total: search, social (which dips below zero, as
-    /// refunds outweigh it one month) and email, all monotone and filled to `fill`.
-    pub fn stacked_lines_chart(fill: LocalState<Fill>) -> impl Widget {
-        const VISITS: StackId = StackId::new("visits");
-
-        let search = vec![30.0, 35.0, 32.0, 40.0, 45.0, 42.0, 50.0]
-            .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
-        let social = vec![10.0, 15.0, -8.0, 12.0, 20.0, 18.0, 25.0]
-            .interpolation(Interpolation::Monotone).fill(fill.clone()).stack(VISITS);
-        let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
-            .interpolation(Interpolation::Monotone).fill(fill).stack(VISITS);
-
-        Chart::new(LineController::new((search, social, email)))
             .framed()
     }
 
@@ -299,34 +312,6 @@ mod support {
             .stack(RANGE);
 
         Chart::new(LineController::new((minimum, spread)))
-            .framed()
-    }
-
-    /// Readings at uneven x values, in x order, as a scatter chart with lines filled to zero.
-    pub fn filled_scatter_chart() -> impl Widget {
-        let readings = vec![(-10.0, 2.0), (-6.0, 7.0), (-1.0, 4.0), (3.0, 9.0), (7.0, 5.0), (10.0, 8.0)]
-            .fill(Fill::Origin);
-
-        Chart::new(ScatterController::new(readings).show_line(true))
-            .framed()
-    }
-
-    /// Two clouds of (x, y) points with numeric x values, drawn as points only.
-    pub fn scatter_chart() -> impl Widget {
-        let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
-        let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)];
-
-        Chart::new(ScatterController::new((first, second)))
-            .framed()
-    }
-
-    /// `scatter_chart`'s points with lines through them in data order, the second dataset stepped.
-    pub fn scatter_with_lines_chart() -> impl Widget {
-        let first = vec![(-10.0, 0.0), (0.0, 10.0), (10.0, 5.0), (0.5, 5.5), (-4.0, 7.5), (6.0, -2.0), (3.0, 3.0)];
-        let second = vec![(-8.0, -4.0), (-2.0, 2.0), (2.5, -6.0), (7.5, 8.0), (9.0, 1.5), (-6.5, 4.0)]
-            .interpolation(Interpolation::Stepped(Stepped::After));
-
-        Chart::new(ScatterController::new((first, second)).show_line(true))
             .framed()
     }
 }

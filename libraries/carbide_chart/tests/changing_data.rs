@@ -1,14 +1,13 @@
 //! Charts whose data, datasets or controllers change after the chart is built.
 
-use carbide_chart::{DatasetExt, StackId};
+use carbide_chart::{BarController, Chart, DatasetController, DatasetExt, LineController, StackId};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
 
-use common::bar_chart;
-use support::{controllers_chart, revenue_and_costs_bars, trend_line};
+use common::{bar_chart, Framed};
 
 /// Grouped bars whose first dataset is held in a state, changed between the two snapshots: its
 /// values grow past the old y range, and a sixth month is appended. Pins down that the chart
@@ -51,13 +50,22 @@ fn dataset_added_between_renders() {
 /// lines between the bar groups, as both controllers ask for a category scale.
 #[test]
 fn controllers_added_between_renders() {
-    let bars = revenue_and_costs_bars();
+    // Revenue and costs as grouped bars, boxed to share a `Vec` with other controller types.
+    let bars = BarController::new((vec![12.0, 19.0, 3.0, 5.0, 2.0], vec![8.0, 11.0, 6.0, 4.0, 3.0])).boxed();
     let mut controllers = LocalState::new(vec![bars.clone()]);
 
-    let mut harness = Harness::new(controllers_chart(controllers.clone()), Dimension::new(600.0, 500.0));
+
+    // A chart over the state of boxed controllers, so controllers of different types can be added
+    // and removed after it is built.
+    let chart = Chart::new(controllers.clone())
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("bars_only");
 
-    let trend = trend_line();
+    // A trend line, its colours starting after the bars' two (orange), boxed to share a `Vec`
+    // with other controller types.
+    let trend = LineController::new(vec![10.0, 16.0, 22.0, 18.0, 25.0]).palette_offset(2).boxed();
     *controllers.value_mut() = vec![bars, trend];
     harness.snapshot("bars_and_line");
 }
@@ -82,31 +90,3 @@ fn stack_changed_between_renders() {
     harness.snapshot("stacked");
 }
 
-// ===============================
-//  Utility
-// ===============================
-
-mod support {
-    use carbide_chart::{BarController, Chart, DatasetController, LineController};
-    use carbide_core::state::LocalState;
-    use carbide_core::widget::Widget;
-    use crate::common::Framed;
-
-    /// A chart over a state of boxed controllers, so controllers of different types can be added
-    /// and removed after it is built.
-    pub fn controllers_chart(controllers: LocalState<Vec<Box<dyn DatasetController>>>) -> impl Widget {
-        Chart::new(controllers)
-            .framed()
-    }
-
-    /// Revenue and costs as grouped bars, boxed to share a `Vec` with other controller types.
-    pub fn revenue_and_costs_bars() -> Box<dyn DatasetController> {
-        BarController::new((vec![12.0, 19.0, 3.0, 5.0, 2.0], vec![8.0, 11.0, 6.0, 4.0, 3.0])).boxed()
-    }
-
-    /// A trend line, its colours starting after the bars' two (orange), boxed to share a `Vec`
-    /// with other controller types.
-    pub fn trend_line() -> Box<dyn DatasetController> {
-        LineController::new(vec![10.0, 16.0, 22.0, 18.0, 25.0]).palette_offset(2).boxed()
-    }
-}

@@ -1,14 +1,14 @@
 //! Bar charts on their own: bars growing from zero, grouped datasets splitting a slot, stacked
 //! bars, and bar widths on a linear x scale.
 
-use carbide_chart::{DataColor, DatasetExt, StackId};
+use carbide_chart::{Axis, AxisPosition, BarController, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId};
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
 
 mod common;
 
-use common::bar_chart;
-use support::{bars_on_linear_x_scale_chart, same_stack_on_two_y_scales_chart, two_stacks_chart};
+use common::{bar_chart, Framed};
+use support::COSTS;
 
 /// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the
 /// single-dataset bar width, the x scale's offset at both ends, and bars growing up from zero at
@@ -58,7 +58,15 @@ fn grouped_bars_positive_and_negative() {
 /// gap between bars or ticks.
 #[test]
 fn bars_on_linear_x_scale() {
-    let mut harness = Harness::new(bars_on_linear_x_scale_chart(), Dimension::new(600.0, 500.0));
+    // Visitors per four-hour block of a day, as bars at numeric x values (the hour) on a
+    // linear x scale.
+    let visitors = vec![(0.0, 3.0), (4.0, 1.0), (8.0, 12.0), (12.0, 18.0), (16.0, 15.0), (20.0, 9.0), (24.0, 4.0)];
+
+    let chart = Chart::new(BarController::new(visitors))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_on_linear_x_scale");
 }
@@ -103,7 +111,21 @@ fn stacked_bars_positive_and_negative() {
 /// (`DataColor::Palette`) in both stacks.
 #[test]
 fn two_stacks_side_by_side() {
-    let mut harness = Harness::new(two_stacks_chart(), Dimension::new(600.0, 500.0));
+    const THIS_YEAR: StackId = StackId::new("this year");
+    const LAST_YEAR: StackId = StackId::new("last year");
+    // Sales of two products, stacked per year, with the datasets interleaved: this year's
+    // product A comes between last year's two products. Each product picks its palette colour
+    // itself (`DataColor::Palette`), A the first and B the second, so it keeps that colour in
+    // both years.
+    let last_year_a = vec![30.0, 35.0, 40.0, 38.0, 45.0].stack(LAST_YEAR).color(DataColor::Palette(0));
+    let this_year_a = vec![36.0, 40.0, 48.0, 50.0, 55.0].stack(THIS_YEAR).color(DataColor::Palette(0));
+    let last_year_b = vec![20.0, 18.0, 25.0, 22.0, 30.0].stack(LAST_YEAR).color(DataColor::Palette(1));
+    let this_year_b = vec![25.0, 28.0, 30.0, 35.0, 33.0].stack(THIS_YEAR).color(DataColor::Palette(1));
+
+    let chart = Chart::new(BarController::new((last_year_a, this_year_a, last_year_b, this_year_b)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("two_stacks_side_by_side");
 }
@@ -142,7 +164,18 @@ fn bars_coloured_by_point() {
 /// costs stack, measured on the right-hand scale, which only reaches the units.
 #[test]
 fn same_stack_on_two_y_scales() {
-    let mut harness = Harness::new(same_stack_on_two_y_scales_chart(), Dimension::new(600.0, 500.0));
+    const UNITS: ScaleId = ScaleId::new("units");
+    // Materials and labour in the costs stack on Y, and units produced, also in the costs stack,
+    // but on a `units` scale on the right.
+    let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
+    let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(COSTS);
+    let units = vec![1800.0, 2100.0, 2600.0, 1500.0, 3000.0].stack(COSTS).y_scale(UNITS);
+
+    let chart = Chart::new(BarController::new((materials, labour, units)))
+        .scale(UNITS, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("same_stack_on_two_y_scales");
 }
@@ -166,49 +199,7 @@ fn bars_with_missing_values() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId};
-    use carbide_core::widget::Widget;
-    use crate::common::Framed;
+    use carbide_chart::StackId;
 
-    const COSTS: StackId = StackId::new("costs");
-    const UNITS: ScaleId = ScaleId::new("units");
-
-    /// Materials and labour in the costs stack on Y, and units produced, also in the costs stack,
-    /// but on a `units` scale on the right.
-    pub fn same_stack_on_two_y_scales_chart() -> impl Widget {
-        let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
-        let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(COSTS);
-        let units = vec![1800.0, 2100.0, 2600.0, 1500.0, 3000.0].stack(COSTS).y_scale(UNITS);
-
-        Chart::new(BarController::new((materials, labour, units)))
-            .scale(UNITS, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false))
-            .framed()
-    }
-
-    const LAST_YEAR: StackId = StackId::new("last year");
-    const THIS_YEAR: StackId = StackId::new("this year");
-
-    /// Sales of two products, stacked per year, with the datasets interleaved: this year's
-    /// product A comes between last year's two products. Each product picks its palette colour
-    /// itself (`DataColor::Palette`), A the first and B the second, so it keeps that colour in
-    /// both years.
-    pub fn two_stacks_chart() -> impl Widget {
-        let last_year_a = vec![30.0, 35.0, 40.0, 38.0, 45.0].stack(LAST_YEAR).color(DataColor::Palette(0));
-        let this_year_a = vec![36.0, 40.0, 48.0, 50.0, 55.0].stack(THIS_YEAR).color(DataColor::Palette(0));
-        let last_year_b = vec![20.0, 18.0, 25.0, 22.0, 30.0].stack(LAST_YEAR).color(DataColor::Palette(1));
-        let this_year_b = vec![25.0, 28.0, 30.0, 35.0, 33.0].stack(THIS_YEAR).color(DataColor::Palette(1));
-
-        Chart::new(BarController::new((last_year_a, this_year_a, last_year_b, this_year_b)))
-            .framed()
-    }
-
-    /// Visitors per four-hour block of a day, as bars at numeric x values (the hour) on a
-    /// linear x scale.
-    pub fn bars_on_linear_x_scale_chart() -> impl Widget {
-        let visitors = vec![(0.0, 3.0), (4.0, 1.0), (8.0, 12.0), (12.0, 18.0), (16.0, 15.0), (20.0, 9.0), (24.0, 4.0)];
-
-        Chart::new(BarController::new(visitors))
-            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal))
-            .framed()
-    }
+    pub const COSTS: StackId = StackId::new("costs");
 }

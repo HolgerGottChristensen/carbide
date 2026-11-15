@@ -1,13 +1,13 @@
 //! What surrounds the chart area: axis titles, the chart title, the legend and the padding.
 
-use carbide_chart::LegendPosition;
+use carbide_chart::{Axis, AxisPosition, BarController, Chart, DatasetExt, Fill, LegendPosition, LineController, LinearScale, ScaleId, ScatterController};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
 
-use support::{axis_titles_chart, everything_chart, legend_chart, stacked_axis_titles_chart, title_and_padding_chart};
+use common::Framed;
 
 /// A title on a scale on each side: °C along the bottom and humidity on the left for one dataset,
 /// °F along the top and pressure on the right for the other. Pins down that every axis's title is
@@ -16,7 +16,26 @@ use support::{axis_titles_chart, everything_chart, legend_chart, stacked_axis_ti
 /// the right.
 #[test]
 fn axis_titles() {
-    let mut harness = Harness::new(axis_titles_chart(), Dimension::new(600.0, 500.0));
+    const PRESSURE: ScaleId = ScaleId::new("pressure");
+    const FAHRENHEIT: ScaleId = ScaleId::new("fahrenheit");
+    // Humidity by °C on the default scales, and pressure by °F on scales at the top and on the
+    // right, every scale with a title.
+    let humidity = vec![(0.0, 82.0), (20.0, 70.0), (40.0, 64.0), (60.0, 55.0), (80.0, 48.0), (100.0, 40.0)];
+    let pressure = vec![(32.0, 1002.0), (68.0, 1008.0), (104.0, 1011.0), (140.0, 1016.0), (176.0, 1021.0), (212.0, 1026.0)]
+        .x_scale(FAHRENHEIT)
+        .y_scale(PRESSURE);
+
+    let chart = Chart::new((
+        ScatterController::new(humidity).show_line(true),
+        ScatterController::new(pressure).show_line(true).palette_offset(1),
+    ))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Temperature (°C)"))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Humidity (%)"))
+        .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false).title("Temperature (°F)"))
+        .scale(PRESSURE, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).title("Pressure (hPa)"))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("axis_titles");
 }
@@ -26,7 +45,13 @@ fn axis_titles() {
 /// gap, and reaches closer to the chart's edges.
 #[test]
 fn chart_title_and_padding() {
-    let mut harness = Harness::new(title_and_padding_chart(), Dimension::new(600.0, 500.0));
+    // Monthly revenue as bars, with a title and a padding of 10.
+    let chart = Chart::new(BarController::new(vec![120.0, 135.0, 150.0, 110.0, 160.0]))
+        .title("Monthly revenue")
+        .padding(10.0)
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("chart_title_and_padding");
 }
@@ -38,8 +63,22 @@ fn chart_title_and_padding() {
 /// a row across the top or bottom, centred, or a column down the left or right, centred.
 #[test]
 fn legend_positions() {
+    // Revenue and costs as named bars, profit as a named filled line, and a target line without a
+    // name, with the legend on `position`.
     let mut position = LocalState::new(LegendPosition::Top);
-    let mut harness = Harness::new(legend_chart(position.clone()), Dimension::new(600.0, 500.0));
+    let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0].label("Revenue");
+    let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0].label("Costs");
+    let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0].fill(Fill::Origin).label("Profit");
+    let target = vec![130.0, 130.0, 140.0, 140.0, 150.0];
+
+    let chart = Chart::new((
+        BarController::new((revenue, costs)),
+        LineController::new((profit, target)).palette_offset(2),
+    ))
+        .legend(position.clone())
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     for (side, name) in [
         (LegendPosition::Top, "top"),
@@ -57,7 +96,22 @@ fn legend_positions() {
 /// title turned along it and the horizontal axis's labels under the chart area.
 #[test]
 fn title_legend_and_axis_titles_together() {
-    let mut harness = Harness::new(everything_chart(), Dimension::new(600.0, 500.0));
+    // The chart of `legend_positions` without the target line, with the legend on top, a title,
+    // and titles on both axes.
+    let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0].label("Revenue");
+    let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0].label("Costs");
+    let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0].fill(Fill::Origin).label("Profit");
+
+    let chart = Chart::new((
+        BarController::new((revenue, costs)),
+        LineController::new(profit).palette_offset(2),
+    ))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Amount (€)"))
+        .title("Revenue, costs and profit")
+        .legend(LegendPosition::Top)
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("title_legend_and_axis_titles_together");
 }
@@ -70,123 +124,49 @@ fn title_legend_and_axis_titles_together() {
 /// title overlaps the labels of the scale stacked outside it.
 #[test]
 fn stacked_axis_titles() {
-    let mut harness = Harness::new(stacked_axis_titles_chart(), Dimension::new(700.0, 600.0));
+    // Four datasets, each on its own pair of scales: the default ones (inner bottom and left), a
+    // second pair stacked outside them, an inner pair on the top and right, and a second pair
+    // stacked outside those. Every scale has a title; only the default scales draw grid lines.
+    const BOTTOM_OUTER: ScaleId = ScaleId::new("bottom outer");
+    const LEFT_OUTER: ScaleId = ScaleId::new("left outer");
+    const TOP_INNER: ScaleId = ScaleId::new("top inner");
+    const TOP_OUTER: ScaleId = ScaleId::new("top outer");
+    const RIGHT_INNER: ScaleId = ScaleId::new("right inner");
+    const RIGHT_OUTER: ScaleId = ScaleId::new("right outer");
+
+    let inner = vec![(0.0, 2.0), (25.0, 6.0), (50.0, 4.0), (75.0, 8.0), (100.0, 7.0)];
+    let outer = vec![(0.0, 300.0), (1.0, 500.0), (2.0, 450.0), (3.0, 700.0), (4.0, 650.0)]
+        .x_scale(BOTTOM_OUTER)
+        .y_scale(LEFT_OUTER);
+    let top = vec![(-10.0, 0.2), (-5.0, 0.6), (0.0, 0.3), (5.0, 0.9), (10.0, 0.5)]
+        .x_scale(TOP_INNER)
+        .y_scale(RIGHT_INNER);
+    let top_outer = vec![(1000.0, 40.0), (2000.0, 25.0), (3000.0, 55.0), (4000.0, 35.0), (5000.0, 60.0)]
+        .x_scale(TOP_OUTER)
+        .y_scale(RIGHT_OUTER);
+
+    let secondary = |axis: Axis, position: AxisPosition, title: &'static str| {
+        LinearScale::new(axis).position(position).grid_lines(false).title(title)
+    };
+
+    let chart = Chart::new((
+        ScatterController::new(inner).show_line(true),
+        ScatterController::new(outer).show_line(true).palette_offset(1),
+        ScatterController::new(top).show_line(true).palette_offset(2),
+        ScatterController::new(top_outer).show_line(true).palette_offset(3),
+    ))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Bottom inner (%)"))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Left inner (units)"))
+        .scale(BOTTOM_OUTER, secondary(Axis::Horizontal, AxisPosition::Bottom, "Bottom outer (quarter)"))
+        .scale(LEFT_OUTER, secondary(Axis::Vertical, AxisPosition::Left, "Left outer (€)"))
+        .scale(TOP_INNER, secondary(Axis::Horizontal, AxisPosition::Top, "Top inner (°C)"))
+        .scale(TOP_OUTER, secondary(Axis::Horizontal, AxisPosition::Top, "Top outer (m)"))
+        .scale(RIGHT_INNER, secondary(Axis::Vertical, AxisPosition::Right, "Right inner (ratio)"))
+        .scale(RIGHT_OUTER, secondary(Axis::Vertical, AxisPosition::Right, "Right outer (kg)"))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(700.0, 600.0));
 
     harness.snapshot("stacked_axis_titles");
 }
 
-// ===============================
-//  Utility
-// ===============================
-
-mod support {
-    use carbide_chart::{Axis, AxisPosition, BarController, Chart, DatasetExt, Fill, LegendPosition, LineController, LinearScale, ScaleId, ScatterController};
-    use carbide_core::state::LocalState;
-    use carbide_core::widget::Widget;
-    use crate::common::Framed;
-
-    const FAHRENHEIT: ScaleId = ScaleId::new("fahrenheit");
-    const PRESSURE: ScaleId = ScaleId::new("pressure");
-
-    /// Humidity by °C on the default scales, and pressure by °F on scales at the top and on the
-    /// right, every scale with a title.
-    pub fn axis_titles_chart() -> impl Widget {
-        let humidity = vec![(0.0, 82.0), (20.0, 70.0), (40.0, 64.0), (60.0, 55.0), (80.0, 48.0), (100.0, 40.0)];
-        let pressure = vec![(32.0, 1002.0), (68.0, 1008.0), (104.0, 1011.0), (140.0, 1016.0), (176.0, 1021.0), (212.0, 1026.0)]
-            .x_scale(FAHRENHEIT)
-            .y_scale(PRESSURE);
-
-        Chart::new((
-            ScatterController::new(humidity).show_line(true),
-            ScatterController::new(pressure).show_line(true).palette_offset(1),
-        ))
-            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Temperature (°C)"))
-            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Humidity (%)"))
-            .scale(FAHRENHEIT, LinearScale::new(Axis::Horizontal).position(AxisPosition::Top).grid_lines(false).title("Temperature (°F)"))
-            .scale(PRESSURE, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).title("Pressure (hPa)"))
-            .framed()
-    }
-
-    /// Four datasets, each on its own pair of scales: the default ones (inner bottom and left), a
-    /// second pair stacked outside them, an inner pair on the top and right, and a second pair
-    /// stacked outside those. Every scale has a title; only the default scales draw grid lines.
-    pub fn stacked_axis_titles_chart() -> impl Widget {
-        const BOTTOM_OUTER: ScaleId = ScaleId::new("bottom outer");
-        const LEFT_OUTER: ScaleId = ScaleId::new("left outer");
-        const TOP_INNER: ScaleId = ScaleId::new("top inner");
-        const TOP_OUTER: ScaleId = ScaleId::new("top outer");
-        const RIGHT_INNER: ScaleId = ScaleId::new("right inner");
-        const RIGHT_OUTER: ScaleId = ScaleId::new("right outer");
-
-        let inner = vec![(0.0, 2.0), (25.0, 6.0), (50.0, 4.0), (75.0, 8.0), (100.0, 7.0)];
-        let outer = vec![(0.0, 300.0), (1.0, 500.0), (2.0, 450.0), (3.0, 700.0), (4.0, 650.0)]
-            .x_scale(BOTTOM_OUTER)
-            .y_scale(LEFT_OUTER);
-        let top = vec![(-10.0, 0.2), (-5.0, 0.6), (0.0, 0.3), (5.0, 0.9), (10.0, 0.5)]
-            .x_scale(TOP_INNER)
-            .y_scale(RIGHT_INNER);
-        let top_outer = vec![(1000.0, 40.0), (2000.0, 25.0), (3000.0, 55.0), (4000.0, 35.0), (5000.0, 60.0)]
-            .x_scale(TOP_OUTER)
-            .y_scale(RIGHT_OUTER);
-
-        let secondary = |axis: Axis, position: AxisPosition, title: &'static str| {
-            LinearScale::new(axis).position(position).grid_lines(false).title(title)
-        };
-
-        Chart::new((
-            ScatterController::new(inner).show_line(true),
-            ScatterController::new(outer).show_line(true).palette_offset(1),
-            ScatterController::new(top).show_line(true).palette_offset(2),
-            ScatterController::new(top_outer).show_line(true).palette_offset(3),
-        ))
-            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Bottom inner (%)"))
-            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Left inner (units)"))
-            .scale(BOTTOM_OUTER, secondary(Axis::Horizontal, AxisPosition::Bottom, "Bottom outer (quarter)"))
-            .scale(LEFT_OUTER, secondary(Axis::Vertical, AxisPosition::Left, "Left outer (€)"))
-            .scale(TOP_INNER, secondary(Axis::Horizontal, AxisPosition::Top, "Top inner (°C)"))
-            .scale(TOP_OUTER, secondary(Axis::Horizontal, AxisPosition::Top, "Top outer (m)"))
-            .scale(RIGHT_INNER, secondary(Axis::Vertical, AxisPosition::Right, "Right inner (ratio)"))
-            .scale(RIGHT_OUTER, secondary(Axis::Vertical, AxisPosition::Right, "Right outer (kg)"))
-            .framed()
-    }
-
-    /// Monthly revenue as bars, with a title and a padding of 10.
-    pub fn title_and_padding_chart() -> impl Widget {
-        Chart::new(BarController::new(vec![120.0, 135.0, 150.0, 110.0, 160.0]))
-            .title("Monthly revenue")
-            .padding(10.0)
-            .framed()
-    }
-
-    /// Revenue and costs as named bars, profit as a named filled line, and a target line without a
-    /// name, with the legend on `position`.
-    pub fn legend_chart(position: LocalState<LegendPosition>) -> impl Widget {
-        let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0].label("Revenue");
-        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0].label("Costs");
-        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0].fill(Fill::Origin).label("Profit");
-        let target = vec![130.0, 130.0, 140.0, 140.0, 150.0];
-
-        Chart::new((
-            BarController::new((revenue, costs)),
-            LineController::new((profit, target)).palette_offset(2),
-        ))
-            .legend(position)
-            .framed()
-    }
-
-    /// The chart of `legend_chart` with the legend on top, a title, and titles on both axes.
-    pub fn everything_chart() -> impl Widget {
-        let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0].label("Revenue");
-        let costs = vec![100.0, 120.0, 125.0, 130.0, 140.0].label("Costs");
-        let profit = vec![20.0, 15.0, 25.0, -20.0, 20.0].fill(Fill::Origin).label("Profit");
-
-        Chart::new((
-            BarController::new((revenue, costs)),
-            LineController::new(profit).palette_offset(2),
-        ))
-            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Amount (€)"))
-            .title("Revenue, costs and profit")
-            .legend(LegendPosition::Top)
-            .framed()
-    }
-}
