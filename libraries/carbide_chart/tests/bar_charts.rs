@@ -147,6 +147,20 @@ fn same_stack_on_two_y_scales() {
     harness.snapshot("same_stack_on_two_y_scales");
 }
 
+/// Two grouped datasets with missing values: revenue has no value in the second month, costs
+/// none in the fourth. Pins down that a missing value has no bar but keeps its place in the slot,
+/// so the other dataset's bar stays where it is, and that the missing values add nothing to the
+/// y scale.
+#[test]
+fn bars_with_missing_values() {
+    let revenue = vec![Some(12.0), None, Some(3.0), Some(5.0), Some(2.0)];
+    let costs = vec![Some(8.0), Some(11.0), Some(6.0), None, Some(3.0)];
+
+    let mut harness = Harness::new(bar_chart((revenue, costs)), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_with_missing_values");
+}
+
 // ===============================
 //  Utility
 // ===============================

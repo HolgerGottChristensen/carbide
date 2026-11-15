@@ -1,14 +1,14 @@
 //! Line and scatter charts: points, lines through them, straight, smooth or stepped, and the
 //! areas under them.
 
-use carbide_chart::{DataColor, DatasetExt, Fill, Interpolation, Stepped};
+use carbide_chart::{DataColor, DatasetExt, Fill, Interpolation, SpanGaps, Stepped};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
 
-use support::{band_chart, example_chart, filled_values_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
+use support::{band_chart, example_chart, gaps_chart, stacked_area_over_a_gap_chart, filled_values_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -107,6 +107,37 @@ fn points_coloured_by_point() {
     harness.snapshot("points_coloured_by_point");
 }
 
+/// A filled monotone line with missing values: one missing month, then two in a row. Drawn once
+/// per `SpanGaps` mode. Pins down that with `Never` the line, its curve and its area break at
+/// both gaps, leaving the points around them on their own; with `Always` they run across both, as
+/// one curve through the points that are there; and with `Within(2.5)` the one-month gap (2 apart
+/// along x) is joined and the two-month gap (3 apart) breaks.
+#[test]
+fn gaps() {
+    let mut span_gaps = LocalState::new(SpanGaps::Never);
+    let mut harness = Harness::new(gaps_chart(span_gaps.clone()), Dimension::new(600.0, 500.0));
+
+    for (mode, name) in [
+        (SpanGaps::Never, "never"),
+        (SpanGaps::Always, "always"),
+        (SpanGaps::Within(2.5), "within"),
+    ] {
+        *span_gaps.value_mut() = mode;
+        harness.snapshot(name);
+    }
+}
+
+/// Two stacked areas, the lower one missing a value in the middle. Pins down that the lower line
+/// and its area break at the gap; that the missing value adds nothing to the stack, so the upper
+/// line dips to its own value there; and that the upper area stays whole, its lower edge joining
+/// the lower line's points straight across the gap.
+#[test]
+fn stacked_area_over_a_gap() {
+    let mut harness = Harness::new(stacked_area_over_a_gap_chart(), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("stacked_area_over_a_gap");
+}
+
 /// A temperature range as one band: the daily minimum as a plain line, and the spread up to the
 /// maximum stacked on it as a line filled with `Fill::Stack`. Pins down that a stacked area fills
 /// down to the line below even when that line has no fill of its own, so the only filled area is
@@ -169,8 +200,7 @@ fn scatter_with_lines() {
 // ===============================
 
 mod support {
-    use carbide_chart::{Chart, DataSet, DatasetExt, Fill, Interpolation, LineController, ScatterController, StackId, Stepped};
-    use carbide_core::draw::Scalar;
+    use carbide_chart::{Chart, DataSet, DatasetExt, Fill, Interpolation, LineController, ScatterController, SpanGaps, StackId, Stepped};
     use carbide_core::state::LocalState;
     use carbide_core::widget::Widget;
     use crate::common::Framed;
@@ -185,8 +215,35 @@ mod support {
     }
 
     /// A line chart of a single dataset, as given.
-    pub fn filled_values_chart<D: DataSet<Scalar, Scalar, Scalar> + Clone>(values: D) -> impl Widget {
+    pub fn filled_values_chart<D: DataSet + Clone>(values: D) -> impl Widget {
         Chart::new(LineController::new(values))
+            .framed()
+    }
+
+    /// Monthly sales with one missing month, then two missing in a row, as a filled monotone line
+    /// that spans gaps as `span_gaps` says.
+    pub fn gaps_chart(span_gaps: LocalState<SpanGaps>) -> impl Widget {
+        let sales = vec![Some(12.0), Some(15.0), None, Some(10.0), Some(14.0), None, None, Some(9.0), Some(13.0), Some(11.0)]
+            .interpolation(Interpolation::Monotone)
+            .fill(Fill::Origin)
+            .span_gaps(span_gaps);
+
+        Chart::new(LineController::new(sales))
+            .framed()
+    }
+
+    /// Two stacked areas; the lower one has no value in the fourth month.
+    pub fn stacked_area_over_a_gap_chart() -> impl Widget {
+        const VISITS: StackId = StackId::new("visits");
+
+        let search = vec![Some(30.0), Some(35.0), Some(32.0), None, Some(45.0), Some(42.0), Some(50.0)]
+            .fill(Fill::Stack)
+            .stack(VISITS);
+        let email = vec![12.0, 8.0, 15.0, 10.0, 14.0, 20.0, 16.0]
+            .fill(Fill::Stack)
+            .stack(VISITS);
+
+        Chart::new(LineController::new((search, email)))
             .framed()
     }
 

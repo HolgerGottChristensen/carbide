@@ -445,14 +445,14 @@ mod tests {
     use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExtNew, State, StateExtNew, ValueState};
     use crate::{DataSet, DataSetSequence};
 
-    /// The points of a dataset, as `(x, y)`.
-    fn points<D: DataSet<Scalar, Scalar, Scalar>>(dataset: &D) -> Vec<(Scalar, Scalar)> {
+    /// The points of a dataset, as `(x, y)`. None of the datasets here have missing points.
+    fn points<D: DataSet>(dataset: &D) -> Vec<(Scalar, Scalar)> {
         let mut points = vec![];
-        dataset.points(&mut |_, point| points.push((point.x(), point.y())));
+        dataset.points(&mut |_, point| points.push((point.x().expect("no missing x"), point.y().expect("no missing y"))));
         points
     }
 
-    fn dataset_count<S: DataSetSequence<Scalar, Scalar, Scalar>>(datasets: &S) -> usize {
+    fn dataset_count<S: DataSetSequence>(datasets: &S) -> usize {
         let mut count = 0;
         datasets.foreach(&mut |_, _| count += 1);
         assert_eq!(count, datasets.count(), "`count` should agree with `foreach`");

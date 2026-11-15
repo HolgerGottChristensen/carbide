@@ -9,7 +9,8 @@ use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
-/// Draws each dataset as vertical bars, one per point, growing from zero to the point's y:
+/// Draws each dataset as vertical bars, one per point, growing from zero to the point's y. A missing
+/// value (see `DataPoint::is_missing`) has no bar, and leaves its place in the slot empty:
 ///
 /// - The x scale gets an offset (half a tick step at each end), so the first and last bars aren't
 ///   cut in half at the chart area's edges.
@@ -33,9 +34,9 @@ pub struct BarController<D> {
     palette_offset: usize,
 }
 
-impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
+impl<D: DataSetSequence> BarController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset.
-    pub fn new<I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
+    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
         BarController {
             dataset_sequence: datasets.into_sequence(),
             category_percentage: 0.8,
@@ -68,7 +69,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
     }
 }
 
-impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarController<D> {
+impl<D: DataSetSequence> DatasetController for BarController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }
@@ -88,12 +89,16 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
             bounds.request_grid_offset(&options.x_scale);
 
             // Each bar spans from where its stack has reached to where it takes it, and every bar
-            // includes zero, its base.
+            // includes zero, its base. A missing value has no bar and adds nothing to its stack.
             let key = StackKey::new(&options, dataset_index);
             dataset.points(&mut |_index, point| {
-                let (start, end) = stacks.add(&key, point.x(), point.y());
+                let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                    return;
+                };
 
-                bounds.include(&options.x_scale, point.x(), point.x());
+                let (start, end) = stacks.add(&key, x, y);
+
+                bounds.include(&options.x_scale, x, x);
                 bounds.include(&options.y_scale, start.min(end).min(0.0), start.max(end).max(0.0));
             });
         });
@@ -120,7 +125,11 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
 
             let x_positions = positions.entry(options.x_scale).or_default();
             dataset.points(&mut |_index, point| {
-                x_positions.push(chart_area.left() + x_scale.normalize(point.x()) * chart_area.width());
+                let (Some(x), Some(_)) = (point.x(), point.y()) else {
+                    return;
+                };
+
+                x_positions.push(chart_area.left() + x_scale.normalize(x) * chart_area.width());
             });
         });
 
@@ -156,11 +165,16 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
             let zero = y_pixel(base_value(y_scale));
 
             dataset.points(&mut |point_index, point| {
-                let center = chart_area.left() + x_scale.normalize(point.x()) * chart_area.width();
+                // A missing value leaves its place in the slot empty.
+                let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                    return;
+                };
+
+                let center = chart_area.left() + x_scale.normalize(x) * chart_area.width();
                 let (left, width) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
 
                 // The first bar of a stack grows from zero, or the end of the range nearest it.
-                let (start, end) = stacks.add(&key, point.x(), point.y());
+                let (start, end) = stacks.add(&key, x, y);
                 let base = if start == 0.0 { zero } else { y_pixel(start) };
                 let head = y_pixel(end);
 
@@ -232,6 +246,19 @@ mod tests {
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId};
     use super::{bar_slot, BarController};
+
+    /// A missing value has no bar: it adds nothing to the bounds, or to its stack.
+    #[test]
+    fn missing_values_have_no_bar() {
+        const COSTS: StackId = StackId::new("costs");
+        let values: Vec<Option<f64>> = vec![Some(4.0), None, Some(-2.0)];
+
+        let mut bounds = ScaleBounds::default();
+        BarController::new((values.clone().stack(COSTS), vec![1.0, 30.0, 1.0].stack(COSTS))).collect_bounds(&mut bounds, &mut Environment::new());
+
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-2.0, 30.0)), "at x = 1 the stack is just the 30");
+        assert_eq!(bounds.get(&ScaleId::X).range(), Some((0.0, 2.0)));
+    }
 
     /// The same stack id on two y scales makes two stacks: a stack is the datasets with the same
     /// id on the same x and y scales, so each y scale only reaches its own dataset's values. The

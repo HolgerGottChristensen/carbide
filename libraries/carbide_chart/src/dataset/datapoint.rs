@@ -1,44 +1,54 @@
 use carbide::draw::{Position, Scalar};
-use carbide::math::Zero;
 use crate::DataColor;
 use crate::dataset::datavalue::DataValue;
 
+/// One datum, as a controller reads it to draw a bar or a point: its coordinates as numbers, each
+/// `None` when it is missing, and optionally a colour of its own.
+///
+/// Implemented for `Position`, for `(x, y)` and `(x, y, z)` tuples of any coordinate types
+/// (`DataValue`, so `(Scalar, Option<Scalar>)` is a point whose y may be missing), for `Option`
+/// of a point (`None` is a missing point), and for references to points. A type of your own
+/// becomes a point by saying what its coordinates are.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` is not a data point",
     label = "not a data point",
-    note = "data points are `Position`, `(x, y)` and `(x, y, z)` tuples of coordinates (`Scalar` or `usize`), and references to them",
-    note = "a plain `Scalar` is not a point on its own, but is the y value at its index inside a sequence",
+    note = "data points are `Position`, `(x, y)` and `(x, y, z)` tuples of coordinates (`Scalar`, `usize`, `Option` of a coordinate, or any `DataValue`), `Option` of a point, and references to them",
+    note = "a plain `Scalar` or `Option<Scalar>` is not a point on its own, but is the y value at its index inside a sequence",
 )]
 pub trait DataPoint {
-    type X: DataValue;
-    type Y: DataValue;
-    type Z: DataValue;
+    /// The point's x, or `None` when it is missing.
+    fn x(&self) -> Option<Scalar>;
 
-    fn x(&self) -> Self::X;
-    fn y(&self) -> Self::Y;
-    fn z(&self) -> Self::Z {
-        Self::Z::zero()
+    /// The point's y, or `None` when it is missing.
+    fn y(&self) -> Option<Scalar>;
+
+    /// The point's z, for charts with a third coordinate. `None` by default.
+    fn z(&self) -> Option<Scalar> {
+        None
     }
 
+    /// The point's own colour, which overrides its dataset's (see `DataColor`).
     fn color(&self) -> DataColor {
         DataColor::ByDataSet
     }
+
+    /// Whether the point is missing: its x or y is. A missing point is not drawn, adds nothing to
+    /// its dataset's bounds or stack, and leaves a gap in a line (see `SpanGaps`).
+    fn is_missing(&self) -> bool {
+        self.x().is_none() || self.y().is_none()
+    }
 }
 
-impl<T> DataPoint for &T where T: DataPoint {
-    type X = T::X;
-    type Y = T::Y;
-    type Z = T::Z;
-
-    fn x(&self) -> Self::X {
+impl<T: DataPoint + ?Sized> DataPoint for &T {
+    fn x(&self) -> Option<Scalar> {
         T::x(self)
     }
 
-    fn y(&self) -> Self::Y {
+    fn y(&self) -> Option<Scalar> {
         T::y(self)
     }
 
-    fn z(&self) -> Self::Z {
+    fn z(&self) -> Option<Scalar> {
         T::z(self)
     }
 
@@ -48,71 +58,74 @@ impl<T> DataPoint for &T where T: DataPoint {
 }
 
 impl DataPoint for Position {
-    type X = Scalar;
-    type Y = Scalar;
-    type Z = Scalar;
-
-    fn x(&self) -> Scalar {
-        self.x
+    fn x(&self) -> Option<Scalar> {
+        self.x.value()
     }
 
-    fn y(&self) -> Scalar {
-        self.y
+    fn y(&self) -> Option<Scalar> {
+        self.y.value()
     }
 }
 
 impl<X: DataValue, Y: DataValue> DataPoint for (X, Y) {
-    type X = X;
-    type Y = Y;
-    type Z = X;
-
-    fn x(&self) -> X {
-        self.0
+    fn x(&self) -> Option<Scalar> {
+        self.0.value()
     }
 
-    fn y(&self) -> Y {
-        self.1
+    fn y(&self) -> Option<Scalar> {
+        self.1.value()
     }
 }
 
 impl<X: DataValue, Y: DataValue, Z: DataValue> DataPoint for (X, Y, Z) {
-    type X = X;
-    type Y = Y;
-    type Z = Z;
-
-    fn x(&self) -> X {
-        self.0
+    fn x(&self) -> Option<Scalar> {
+        self.0.value()
     }
 
-    fn y(&self) -> Y {
-        self.1
+    fn y(&self) -> Option<Scalar> {
+        self.1.value()
     }
 
-    fn z(&self) -> Z {
-        self.2
+    fn z(&self) -> Option<Scalar> {
+        self.2.value()
+    }
+}
+
+/// `None` is a missing point, with no coordinates; `Some` is the point inside it.
+impl<P: DataPoint> DataPoint for Option<P> {
+    fn x(&self) -> Option<Scalar> {
+        self.as_ref().and_then(DataPoint::x)
+    }
+
+    fn y(&self) -> Option<Scalar> {
+        self.as_ref().and_then(DataPoint::y)
+    }
+
+    fn z(&self) -> Option<Scalar> {
+        self.as_ref().and_then(DataPoint::z)
+    }
+
+    fn color(&self) -> DataColor {
+        self.as_ref().map_or(DataColor::ByDataSet, DataPoint::color)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use carbide::color::RED;
-    use carbide::draw::Scalar;
+    use carbide::draw::{Position, Scalar};
     use crate::{DataColor, DataPoint};
 
     /// A point with a colour of its own, as a user's data type would be.
     struct Reading(Scalar);
 
     impl DataPoint for Reading {
-        type X = Scalar;
-        type Y = Scalar;
-        type Z = Scalar;
-
-        fn x(&self) -> Scalar {
-            0.0
+        fn x(&self) -> Option<Scalar> {
+            Some(0.0)
         }
 
-        fn y(&self) -> Scalar {
-            self.0
+        fn y(&self) -> Option<Scalar> {
+            Some(self.0)
         }
 
         fn color(&self) -> DataColor {
@@ -128,6 +141,23 @@ mod tests {
         let by_reference = &reading;
 
         assert!(matches!(DataPoint::color(&by_reference), DataColor::Color(color) if color == RED));
-        assert_eq!(DataPoint::y(&by_reference), 4.0);
+        assert_eq!(DataPoint::y(&by_reference), Some(4.0));
+    }
+
+    /// A coordinate is missing when it is `None`, or a NaN, which can't be drawn; a point is
+    /// missing when its x or y is. Coordinates of different types mix in one point.
+    #[test]
+    fn missing_coordinates_make_missing_points() {
+        assert_eq!((2.0, Some(3.0)).y(), Some(3.0));
+        assert!((2.0, None::<Scalar>).is_missing());
+        assert!((None::<Scalar>, 3.0).is_missing());
+        assert!((Scalar::NAN, 3.0).is_missing(), "a NaN is missing too");
+        assert!(!(4usize, 3.0).is_missing());
+        assert_eq!((4usize, 3.0).x(), Some(4.0));
+
+        assert!(None::<Position>.is_missing(), "`None` is a missing point");
+        assert_eq!(Some(Position::new(1.0, 2.0)).y(), Some(2.0));
+        assert_eq!((1.0, 2.0, Some(5.0)).z(), Some(5.0));
+        assert_eq!((1.0, 2.0).z(), None);
     }
 }

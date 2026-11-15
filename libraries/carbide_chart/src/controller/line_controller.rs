@@ -1,4 +1,4 @@
-use carbide::draw::{Rect, Scalar};
+use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
@@ -24,9 +24,9 @@ pub struct LineController<D> {
     palette_offset: usize,
 }
 
-impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
+impl<D: DataSetSequence> LineController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset.
-    pub fn new<I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
+    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
         LineController {
             dataset_sequence: datasets.into_sequence(),
             palette_offset: 0,
@@ -44,7 +44,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> LineController<D> {
     }
 }
 
-impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineController<D> {
+impl<D: DataSetSequence> DatasetController for LineController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }

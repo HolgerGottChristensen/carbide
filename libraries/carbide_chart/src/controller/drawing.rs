@@ -5,10 +5,11 @@
 
 use carbide::color::Color;
 use std::collections::{HashMap, HashSet};
+use std::ops::Range;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, DataSetSequence, Fill};
+use crate::{DataColor, DataSetOptions, DataSetSequence, Fill, SpanGaps};
 use crate::controller::line_path::{trace_line, trace_line_reversed};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::scale::{Scale, ScaleBounds, Scales};
@@ -21,14 +22,14 @@ use crate::style::series_style;
 /// of its own values. Empty datasets have no bounds and contribute nothing.
 pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool)
 where
-    D: DataSetSequence<Scalar, Scalar, Scalar>,
+    D: DataSetSequence,
 {
     let mut sums = StackSums::single();
     // The stacks that already have a non-empty line, which a later `Fill::Stack` fills down to.
     let mut filled_stacks: HashSet<StackKey> = HashSet::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
-        let (Some((x_min, y_min, _)), Some((x_max, y_max, _))) = (dataset.min(), dataset.max()) else {
+        let (Some((x_min, y_min)), Some((x_max, y_max))) = (dataset.min(), dataset.max()) else {
             return;
         };
 
@@ -40,7 +41,11 @@ where
 
         if stacks {
             dataset.points(&mut |_index, point| {
-                let (_, total) = sums.add(&key, point.x(), point.y());
+                let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                    return;
+                };
+
+                let (_, total) = sums.add(&key, x, y);
                 bounds.include(&options.y_scale, total, total);
             });
         } else {
@@ -55,15 +60,59 @@ where
     });
 }
 
-/// One dataset's line as it is drawn: its points in pixels, at their running totals when it is
-/// stacked, and the line below it in its stack, which a `Fill::Stack` area fills down to.
+/// One dataset's line as it is drawn: its points that aren't missing, in pixels, at their running
+/// totals when it is stacked; the runs it is drawn in without a break (see `SpanGaps`); and the
+/// line below it in its stack, which a `Fill::Stack` area fills down to.
 pub(crate) struct DrawnLine {
     dataset_index: usize,
     options: DataSetOptions,
     points: Vec<Position>,
     colors: Vec<DataColor>,
+    /// Each drawn point's index in its dataset, which colours by point go by.
+    point_indices: Vec<usize>,
+    /// The unbroken runs of the line, as ranges of `points`.
+    runs: Vec<Range<usize>>,
     /// The index, in the controller's lines, of the line below this one in its stack.
     below: Option<usize>,
+}
+
+/// Splits a line into the runs it is drawn in without a break. `points` holds, for each of the
+/// dataset's points in order, its x value, or `None` when it is missing; the runs are ranges over
+/// the points that aren't missing. `SpanGaps::Never` breaks at every missing point; `Always`
+/// never breaks; `Within(max)` breaks between two neighbouring points further apart along x than
+/// `max`, whether or not missing points lie between them.
+fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize>> {
+    let mut runs = vec![];
+    let mut start = 0;
+    let mut drawn = 0;
+    let mut previous_x: Option<Scalar> = None;
+
+    for point in points {
+        match point {
+            None => {
+                if span_gaps == SpanGaps::Never && drawn > start {
+                    runs.push(start..drawn);
+                    start = drawn;
+                }
+            }
+            Some(x) => {
+                if let (SpanGaps::Within(max), Some(previous)) = (span_gaps, previous_x)
+                    && (x - previous).abs() > max && drawn > start {
+                        runs.push(start..drawn);
+                        start = drawn;
+                    }
+
+                drawn += 1;
+                previous_x = Some(*x);
+            }
+        }
+    }
+
+    if drawn > start {
+        runs.push(start..drawn);
+    }
+
+    runs
 }
 
 /// The lines of a controller's datasets, in dataset order, mapped through their scales into
@@ -72,7 +121,7 @@ pub(crate) struct DrawnLine {
 /// to a scale the chart doesn't have are left out.
 pub(crate) fn drawn_lines<D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool) -> Vec<DrawnLine>
 where
-    D: DataSetSequence<Scalar, Scalar, Scalar>,
+    D: DataSetSequence,
 {
     let mut lines: Vec<DrawnLine> = vec![];
     let mut sums = StackSums::single();
@@ -88,16 +137,28 @@ where
         let key = StackKey::new(&options, dataset_index);
         let mut points = vec![];
         let mut colors = vec![];
+        let mut point_indices = vec![];
+        let mut xs = vec![];
 
-        dataset.points(&mut |_index, point| {
-            let y = if stacks { sums.add(&key, point.x(), point.y()).1 } else { point.y() };
+        dataset.points(&mut |point_index, point| {
+            // A missing point isn't drawn, adds nothing to its stack, and may break the line.
+            let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                xs.push(None);
+                return;
+            };
+
+            let y = if stacks { sums.add(&key, x, y).1 } else { y };
 
             points.push(Position::new(
-                chart_area.width() * x_scale.normalize(point.x()) + chart_area.left(),
+                chart_area.width() * x_scale.normalize(x) + chart_area.left(),
                 chart_area.height() * (1.0 - y_scale.normalize(y)) + chart_area.bottom(),
             ));
             colors.push(point.color());
+            point_indices.push(point_index);
+            xs.push(Some(x));
         });
+
+        let runs = split_runs(&xs, options.span_gaps);
 
         let below = if stacks && matches!(key, StackKey::Stacked { .. }) { tops.get(&key).copied() } else { None };
 
@@ -106,24 +167,24 @@ where
             tops.insert(key, lines.len());
         }
 
-        lines.push(DrawnLine { dataset_index, options, points, colors, below });
+        lines.push(DrawnLine { dataset_index, options, points, colors, point_indices, runs, below });
     });
 
     lines
 }
 
-/// Fills the area between each filled line and its `Fill` baseline, in the dataset's colour,
-/// at the `SeriesStyle`'s fill opacity. The area's top follows the line exactly, through `trace_line`, then closes along
-/// the baseline, or, for `Fill::Stack`, back along the line below it in its stack, traced in
-/// reverse with that line's own interpolation, so the area fits exactly between the two drawn
-/// lines. A line needs two points to have an area.
+/// Fills the area between each run of each filled line and its `Fill` baseline, in the dataset's
+/// colour, at the `SeriesStyle`'s fill opacity. The area's top follows the run exactly, through
+/// `trace_line`, then closes along the baseline, or, for `Fill::Stack`, back along the line below
+/// it in its stack, traced in reverse with that line's own interpolation, so the area fits
+/// exactly between the two drawn lines. A run needs two points to have an area.
 pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
     let fill_opacity = series_style(ctx.env()).fill_opacity();
 
     for line in lines {
         let options = &line.options;
 
-        if options.fill == Fill::None || line.points.len() < 2 {
+        if options.fill == Fill::None {
             continue;
         }
 
@@ -131,29 +192,60 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
             continue;
         };
 
-        let (first, last) = (line.points[0], line.points[line.points.len() - 1]);
-
-        ctx.begin_path();
-        trace_line(ctx, &line.points, options.interpolation, chart_area);
-
-        match (options.fill, line.below) {
-            (Fill::Stack, Some(below)) => {
-                let below = &lines[below];
-                trace_line_reversed(ctx, &below.points, below.options.interpolation, chart_area);
-            }
-            (fill, _) => {
-                let baseline = baseline_pixel(fill, y_scale, chart_area);
-                ctx.line_to(last.x, baseline);
-                ctx.line_to(first.x, baseline);
-            }
-        }
-
-        ctx.close_path();
-
         let Rgba(r, g, b, a) = Rgba::from(dataset_color(options, line.dataset_index, palette));
-        ctx.set_fill_style(rgba(r, g, b, a * fill_opacity));
-        ctx.fill();
+        let color = rgba(r, g, b, a * fill_opacity);
+
+        for run in &line.runs {
+            let points = &line.points[run.clone()];
+
+            if points.len() < 2 {
+                continue;
+            }
+
+            ctx.begin_path();
+            trace_line(ctx, points, options.interpolation, chart_area);
+
+            let below = match (options.fill, line.below) {
+                (Fill::Stack, Some(below)) => Some(&lines[below]),
+                _ => None,
+            };
+
+            if !below.is_some_and(|below| trace_lower_edge(ctx, below, points, chart_area)) {
+                let baseline = baseline_pixel(options.fill, y_scale, chart_area);
+                ctx.line_to(points[points.len() - 1].x, baseline);
+                ctx.line_to(points[0].x, baseline);
+            }
+
+            ctx.close_path();
+            ctx.set_fill_style(color);
+            ctx.fill();
+        }
     }
+}
+
+/// Traces the lower edge of a stacked area whose top is `top`, a run of the line above `below`:
+/// back along `below`'s drawn points within `top`'s span along x, each of `below`'s runs with its
+/// own interpolation, joined straight across its gaps. Returns `false`, tracing nothing, when
+/// `below` has no points in that span.
+fn trace_lower_edge(ctx: &mut CanvasContext, below: &DrawnLine, top: &[Position], chart_area: Rect) -> bool {
+    let (left, right) = top.iter().fold((Scalar::INFINITY, Scalar::NEG_INFINITY), |(left, right), point| (left.min(point.x), right.max(point.x)));
+    let mut traced = false;
+
+    for run in below.runs.iter().rev() {
+        // Half a pixel either way, so points on the span's ends count as inside despite rounding.
+        let points: Vec<Position> = below.points[run.clone()]
+            .iter()
+            .filter(|point| point.x >= left - 0.5 && point.x <= right + 0.5)
+            .copied()
+            .collect();
+
+        if !points.is_empty() {
+            trace_line_reversed(ctx, &points, below.options.interpolation, chart_area);
+            traced = true;
+        }
+    }
+
+    traced
 }
 
 /// The y pixel of a fill's baseline. Baseline values are included in the y bounds, but a scale
@@ -175,20 +267,23 @@ fn baseline_pixel(fill: Fill, y_scale: &dyn Scale, chart_area: Rect) -> Scalar {
 }
 
 /// Draws each line through its points, in order, with its dataset's `interpolation` (straight,
-/// smooth, monotone or stepped).
+/// smooth, monotone or stepped), each unbroken run on its own (see `SpanGaps`).
 pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_area: Rect, palette: &Palette) {
     for line in lines {
         ctx.begin_path();
-        trace_line(ctx, &line.points, line.options.interpolation, chart_area);
+        for run in &line.runs {
+            trace_line(ctx, &line.points[run.clone()], line.options.interpolation, chart_area);
+        }
         ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
         ctx.stroke();
     }
 }
 
-/// Draws a filled circle at each of each line's points, in its colour (see `point_color`).
+/// Draws a filled circle at each of each line's points that isn't missing, in its colour (see
+/// `point_color`).
 pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette) {
     for line in lines {
-        for (point_index, (point, color)) in line.points.iter().zip(&line.colors).enumerate() {
+        for ((point, color), point_index) in line.points.iter().zip(&line.colors).zip(line.point_indices.iter().copied()) {
             ctx.begin_path();
             ctx.circle(point.x, point.y, 7.0);
             ctx.set_fill_style(point_color(*color, &line.options, line.dataset_index, point_index, palette));
@@ -385,6 +480,7 @@ mod tests {
             color,
             interpolation: Interpolation::Linear,
             fill: Fill::None,
+            span_gaps: crate::SpanGaps::Never,
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
             stack: None,
@@ -425,5 +521,45 @@ mod tests {
         assert_eq!(point_color(DataColor::Palette(0), &options(DataColor::ByDataSet), 1, 1, &palette), WHITE, "a point can pick a colour itself");
         assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::Palette(1)), 1, 1, &palette), GREEN, "its points take the dataset's picked colour");
         assert_eq!(dataset_color(&options(DataColor::Color(BLUE)), 0, &palette), BLUE);
+    }
+
+    /// A line breaks into runs at missing points with `SpanGaps::Never`, joins across them with
+    /// `Always`, and with `Within` breaks only across gaps wider than the limit along x, also where
+    /// no point is missing.
+    #[test]
+    fn lines_split_into_runs_at_gaps() {
+        use super::split_runs;
+        use crate::SpanGaps;
+
+        // x: 0 1 _ 3 4 _ _ 7 8, then a point far away at 20 with nothing missing before it.
+        let points = [Some(0.0), Some(1.0), None, Some(3.0), Some(4.0), None, None, Some(7.0), Some(8.0), Some(20.0)];
+
+        assert_eq!(split_runs(&points, SpanGaps::Never), vec![0..2, 2..4, 4..7]);
+        assert_eq!(split_runs(&points, SpanGaps::Always), vec![0..7]);
+        assert_eq!(split_runs(&points, SpanGaps::Within(2.5)), vec![0..4, 4..6, 6..7], "gaps of 2 join; gaps of 3 and 12 break");
+
+        assert_eq!(split_runs(&[None, Some(1.0), None], SpanGaps::Never), vec![0..1], "missing ends make no empty runs");
+        assert_eq!(split_runs(&[None, None], SpanGaps::Never), Vec::<std::ops::Range<usize>>::new());
+    }
+
+    /// A missing value in a stacked line adds nothing to the stack and is left out of the bounds,
+    /// instead of making them NaN.
+    #[test]
+    fn missing_values_add_nothing_to_a_stack() {
+        let lower: Vec<Option<Scalar>> = vec![Some(10.0), None, Some(10.0)];
+        let upper = vec![5.0, 5.0, 5.0].stack(SALES);
+
+        assert_eq!(y_range(&LineController::new((lower.stack(SALES), upper))), Some((5.0, 15.0)), "the upper line dips to 5 where the lower one is missing");
+    }
+
+    /// Datasets of different point types share a controller, as points are read as numbers:
+    /// plain values next to optional ones in one tuple.
+    #[test]
+    fn datasets_of_different_point_types_share_a_controller() {
+        let plain = vec![1.0, 2.0, 3.0];
+        let optional: Vec<Option<Scalar>> = vec![Some(10.0), None, Some(-4.0)];
+        let points = vec![(0.0, 5.0), (2.0, 6.0)];
+
+        assert_eq!(y_range(&LineController::new((plain, optional, points))), Some((-4.0, 10.0)));
     }
 }

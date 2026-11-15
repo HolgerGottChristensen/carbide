@@ -4,7 +4,6 @@
 
 use carbide_chart::{BarController, Chart, DataSet, DataSetSequence, IntoSequence};
 use carbide_core::color::BLUE;
-use carbide_core::draw::Scalar;
 use carbide_core::state::ValueState;
 use carbide_core::widget::Widget;
 use carbide_fluent::{locale, LocaleExt};
@@ -25,8 +24,8 @@ impl<W: Widget> Framed for W {}
 /// points on top.
 pub fn bar_chart<I, M, D>(datasets: I) -> impl Widget
 where
-    I: IntoSequence<dyn DataSet<Scalar, Scalar, Scalar>, M, Sequence=D>,
-    D: DataSetSequence<Scalar, Scalar, Scalar>,
+    I: IntoSequence<dyn DataSet, M, Sequence=D>,
+    D: DataSetSequence,
 {
     Chart::new(BarController::new(datasets))
         .framed()
