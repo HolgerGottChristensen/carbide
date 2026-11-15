@@ -28,9 +28,9 @@ fn x_scale_on_top() {
     harness.snapshot("x_scale_on_top");
 }
 
-/// Two scales on the right, as in Chart.js: the first added sits against the chart area, the
-/// second in its own band outside it. Pins down that neither scale's ticks, labels or border
-/// overlap the other's, and that the chart area gives up both bands.
+/// Two scales on the right: the first added sits against the chart area, the second in its own band
+/// outside it. Pins down that neither scale's ticks, labels or border overlap the other's, and that
+/// the chart area gives up both bands.
 #[test]
 fn stacked_scales_on_one_side() {
     let mut harness = Harness::new(stacked_scales_chart(), Dimension::new(600.0, 500.0));

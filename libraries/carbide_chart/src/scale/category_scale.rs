@@ -5,18 +5,17 @@ use carbide::environment::Environment;
 
 use crate::scale::{format_tick, Axis, AxisPosition, Scale};
 
-/// A scale of evenly spaced categories, one tick per index, like Chart.js's category scale
-/// (`scale.category.js`). Data values are category indices: a `Vec<Scalar>` dataset's points are
-/// at 0, 1, 2, ..., so with `labels(["Red", "Blue", ...])` index 0 is shown as "Red". Ticks are
-/// never fractional, which is what bar charts need: it is their default x scale (see
-/// `BarController`).
+/// A scale of evenly spaced categories, one tick per index. Data values are category indices: a
+/// `Vec<Scalar>` dataset's points are at 0, 1, 2, ..., so with `labels(["Red", "Blue", ...])` index
+/// 0 is shown as "Red". Ticks are never fractional, which is what bar charts need: it is their
+/// default x scale (see `BarController`).
 ///
 /// - Without labels, the scale spans the data's indices; with labels, it spans every label, even
-///   ones without data (Chart.js's default `bounds: 'ticks'`).
+///   ones without data.
 /// - With an offset (see `Scale::set_offset`), half a category is added at both ends.
 /// - With `grid_offset`, grid lines and tick marks sit between categories instead of on them,
 ///   while labels stay centred on their category.
-/// - Vertical category scales run from top to bottom, as in Chart.js.
+/// - Vertical category scales run from top to bottom, so they read like a list.
 #[derive(Clone, Debug)]
 pub struct CategoryScale {
     axis: Axis,
@@ -59,9 +58,8 @@ impl CategoryScale {
         self
     }
 
-    /// Draws grid lines and tick marks between categories instead of through them, like
-    /// Chart.js's `grid.offset`. Bar charts' default category scale turns it on, so the lines
-    /// separate the bar groups.
+    /// Draws grid lines and tick marks between categories instead of through them. Bar charts'
+    /// default category scale turns it on, so the lines separate the bar groups.
     pub fn grid_offset(mut self, grid_offset: bool) -> CategoryScale {
         self.grid_offset = grid_offset;
         self
@@ -96,8 +94,7 @@ impl CategoryScale {
         self
     }
 
-    /// The value at the start of the mapped range and the range's length (Chart.js's
-    /// `_startValue` and `_valueRange`).
+    /// The value at the start of the mapped range and the range's length.
     fn start_and_length(&self) -> (Scalar, Scalar) {
         let count = self.max - self.min + 1.0;
         let length = (count - if self.offset { 0.0 } else { 1.0 }).max(1.0);
@@ -124,8 +121,8 @@ impl Scale for CategoryScale {
         let (start, length) = self.start_and_length();
         let decimal = (value - start) / length;
 
-        // Vertical category scales are reversed in Chart.js, so the first category is at the
-        // top. A normalized 1 is the top of the chart area.
+        // Vertical category scales are reversed, so the first category is at the top. A
+        // normalized 1 is the top of the chart area.
         match self.axis {
             Axis::Vertical => 1.0 - decimal,
             Axis::Horizontal | Axis::Radial => decimal,
@@ -264,8 +261,8 @@ mod tests {
         assert_eq!(scale.normalize(2.5), 1.0);
     }
 
-    /// Vertical category scales run top to bottom, as in Chart.js: the first category maps to
-    /// the top (normalized 1).
+    /// Vertical category scales run top to bottom: the first category maps to the top (normalized
+    /// 1).
     #[test]
     fn vertical_categories_run_top_to_bottom() {
         let mut scale = CategoryScale::new(Axis::Vertical);

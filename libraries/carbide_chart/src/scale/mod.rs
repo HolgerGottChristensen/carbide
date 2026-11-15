@@ -31,9 +31,9 @@ pub trait Scale: DynClone + Debug + 'static {
         self.axis().default_position()
     }
 
-    /// Orders scales on the same side of the chart area, as Chart.js's `weight` does: a higher
-    /// weight puts the scale further away from the chart area. Scales with the same weight keep
-    /// the order they were added to the chart in, the first one closest to the area.
+    /// Orders scales on the same side of the chart area: a higher weight puts the scale further
+    /// away from the chart area. Scales with the same weight keep the order they were added to the
+    /// chart in, the first one closest to the area.
     fn weight(&self) -> i32 {
         0
     }
@@ -46,11 +46,10 @@ pub trait Scale: DynClone + Debug + 'static {
         (value - range.start) / (range.end - range.start)
     }
 
-    /// Pads the mapping by half a tick step at both ends, so values on the first and last tick
-    /// sit inside the chart area instead of on its edges, like Chart.js's `offset`. The chart
-    /// sets it on every fit, for the scales a controller requested it on (see
-    /// `ScaleBounds::request_offset`); bar charts use it so their first and last bars aren't cut
-    /// in half. Scales that don't support it ignore it.
+    /// Pads the mapping by half a tick step at both ends, so values on the first and last tick sit
+    /// inside the chart area instead of on its edges. The chart sets it on every fit, for the
+    /// scales a controller requested it on (see `ScaleBounds::request_offset`); bar charts use it
+    /// so their first and last bars aren't cut in half. Scales that don't support it ignore it.
     fn set_offset(&mut self, _offset: bool) {}
 
     /// The text shown for the tick at `value`: the number, formatted for the environment's
@@ -60,8 +59,8 @@ pub trait Scale: DynClone + Debug + 'static {
     }
 
     /// Where grid lines and tick marks are drawn: on the ticks themselves, unless the scale puts
-    /// them between ticks instead (Chart.js's `grid.offset`, see `CategoryScale::grid_offset`).
-    /// Labels are always drawn on the ticks.
+    /// them between ticks instead (see `CategoryScale::grid_offset`). Labels are always drawn on
+    /// the ticks.
     fn grid_line_values(&self) -> Vec<Scalar> {
         self.ticks().to_vec()
     }
@@ -104,8 +103,7 @@ pub trait Scale: DynClone + Debug + 'static {
 
     /// Draws the scale's grid lines across the chart area (if `display_grid`), its tick marks in
     /// its band (if `display_ticks`), and its tick labels. Turning the grid lines off keeps the
-    /// labels, like Chart.js's `grid.drawOnChartArea: false`, which is what secondary scales
-    /// usually want.
+    /// labels, which is what secondary scales usually want.
     fn draw_grid(&self, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
         // Per side: the chart area's edge the band starts at, which way is outwards across the
         // axis (+1 or -1), the opposite edge the grid lines run to, and how labels hang off the
@@ -148,8 +146,7 @@ pub trait Scale: DynClone + Debug + 'static {
         for value in self.grid_line_values() {
             let fraction = self.normalize(value);
 
-            // Lines that would fall outside the chart area are skipped, as in Chart.js's
-            // `getPixelForGridLine`.
+            // Lines that would fall outside the chart area are skipped.
             if !(-1e-9..=1.0 + 1e-9).contains(&fraction) {
                 continue;
             }

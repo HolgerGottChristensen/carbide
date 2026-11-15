@@ -1,5 +1,6 @@
 use carbide_derive::StateValue;
 
+/// Where a stepped line turns between two points (see `Interpolation::Stepped`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, StateValue)]
 pub enum Stepped {
     /// Move Y then X
@@ -10,6 +11,4 @@ pub enum Stepped {
     Middle,
     /// Move Y half way then X
     MiddleVertical,
-    /// Move X and Y
-    None,
 }

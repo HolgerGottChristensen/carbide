@@ -8,12 +8,11 @@ use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{ScaleBounds, Scales};
 
-/// Draws each dataset's points, like Chart.js's scatter chart (`controller.scatter.js`): points
-/// only by default (`showLine: false`). With `show_line(true)` it also draws a line through them
-/// in order, following the dataset's `stepped` mode, as a line chart does.
+/// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line
+/// through them in order, following the dataset's `interpolation`, as a line chart does.
 ///
-/// Its x and y scales stay linear, as Chart.js's scatter `overrides` make them, so it suits data
-/// with numeric x values. For lists of values at their indices, use a `LineController`.
+/// Its x and y scales stay linear, so it suits data with numeric x values. For lists of values at
+/// their indices, use a `LineController`.
 #[derive(Clone, Debug)]
 pub struct ScatterController<D> {
     dataset_sequence: D,
@@ -29,8 +28,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> ScatterController<D> {
         }
     }
 
-    /// Also draws a line through each dataset's points, under the points, like Chart.js's
-    /// `showLine`. Defaults to `false`.
+    /// Also draws a line through each dataset's points, under the points. Defaults to `false`.
     pub fn show_line(mut self, show_line: bool) -> ScatterController<D> {
         self.show_line = show_line;
         self

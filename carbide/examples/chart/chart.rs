@@ -1,6 +1,6 @@
 use std::iter;
 
-use carbide::chart::{Chart, DatasetExt, LineController, Stepped};
+use carbide::chart::{Chart, DatasetExt, Interpolation, LineController, Stepped};
 use carbide::controls::{ControlsExt};
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::draw::{Dimension, Position, Scalar};
@@ -13,7 +13,7 @@ fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
-    let stepped = LocalState::new(Stepped::None);
+    let interpolation = LocalState::new(Interpolation::Linear);
 
     let _data1 = iter::repeat_with(|| {
         Position::new(rand::random::<Scalar>() * 100.0, rand::random::<Scalar>())
@@ -43,7 +43,7 @@ fn main() {
         .map(f64::cos)
         .collect::<Vec<_>>();
 
-    let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].stepped(stepped.clone());
+    let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0].interpolation(interpolation.clone());
     let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
     application.set_scene(
@@ -56,12 +56,14 @@ fn main() {
                     //Chart::new(LineController::new((data3, data6)))
                     .border()
                     .locale(ValueState::new(locale!("da"))),
-                Picker::new("Stepped:", stepped.clone(), (
-                    Text::new("None").tag(Stepped::None),
-                    Text::new("Before").tag(Stepped::Before),
-                    Text::new("After").tag(Stepped::After),
-                    Text::new("Middle").tag(Stepped::Middle),
-                    Text::new("MiddleVertical").tag(Stepped::MiddleVertical),
+                Picker::new("Interpolation:", interpolation.clone(), (
+                    Text::new("Linear").tag(Interpolation::Linear),
+                    Text::new("Smooth").tag(Interpolation::Smooth { tension: 0.4 }),
+                    Text::new("Monotone").tag(Interpolation::Monotone),
+                    Text::new("Stepped before").tag(Interpolation::Stepped(Stepped::Before)),
+                    Text::new("Stepped after").tag(Interpolation::Stepped(Stepped::After)),
+                    Text::new("Stepped middle").tag(Interpolation::Stepped(Stepped::Middle)),
+                    Text::new("Stepped middle vertical").tag(Interpolation::Stepped(Stepped::MiddleVertical)),
                 )).picker_style(MenuStyle)
             )).padding(50.0)
         ));

@@ -6,7 +6,7 @@ use crate::DataColor;
 use crate::dataset::datapoint::DataPoint;
 use crate::dataset::dataset_options::DataSetOptions;
 use crate::dataset::datavalue::DataValue;
-use crate::element::Stepped;
+use crate::element::Interpolation;
 use crate::scale::ScaleId;
 use crate::sequence::{Sequence, SequenceItem};
 
@@ -52,7 +52,7 @@ pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: DynClone + Debug + 
     fn options(&self) -> DataSetOptions {
         DataSetOptions {
             color: DataColor::Inherit,
-            stepped: Stepped::None,
+            interpolation: Interpolation::Linear,
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
         }

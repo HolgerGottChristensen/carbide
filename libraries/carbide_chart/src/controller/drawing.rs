@@ -1,12 +1,12 @@
-//! Drawing shared by the line and scatter controllers, which differ only in which parts they
-//! draw by default, as in Chart.js: a line chart draws the line through each dataset's points and
-//! the points; a scatter chart draws the points, and the line only with `show_line`.
+//! Drawing shared by the line and scatter controllers, which differ only in which parts they draw
+//! by default: a line chart draws the line through each dataset's points and the points; a scatter
+//! chart draws the points, and the line only with `show_line`.
 
 use carbide::color::{Color, GREEN, RED, WHITE};
-use carbide::draw::{Rect, Scalar};
+use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, DataSetSequence};
-use crate::element::Stepped;
+use crate::controller::line_path::trace_line;
 use crate::scale::{Scale, ScaleBounds, Scales};
 
 /// The colours datasets get, by index, when they don't set one.
@@ -30,8 +30,8 @@ where
     });
 }
 
-/// Draws a line through each dataset's points, in order, with the dataset's `stepped` mode (a
-/// line option in Chart.js).
+/// Draws a line through each dataset's points, in order, with the dataset's `interpolation`
+/// (straight, smooth, monotone or stepped).
 pub(crate) fn draw_lines<D>(datasets: &D, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect)
 where
     D: DataSetSequence<Scalar, Scalar, Scalar>,
@@ -43,89 +43,17 @@ where
             return;
         };
 
-        ctx.begin_path();
-
-        let mut first_in_dataset = true;
-        let mut prev_x = 0.0;
-        let mut prev_y = 0.0;
-
+        // Curves need each point's neighbours, so the points are mapped to pixels first.
+        let mut points = vec![];
         dataset.points(&mut |_index, point| {
-            let x = x_scale.normalize(point.x());
-            let y = y_scale.normalize(point.y());
-
-            if first_in_dataset {
-                ctx.move_to(
-                    chart_area.width() * x + chart_area.left(),
-                    chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                );
-                first_in_dataset = false;
-                prev_x = x;
-                prev_y = y;
-            } else {
-                match options.stepped {
-                    Stepped::Before => {
-                        ctx.line_to(
-                            chart_area.width() * prev_x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                    }
-                    Stepped::After => {
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - prev_y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                    }
-                    Stepped::Middle => {
-                        let middle_x = (x - prev_x) / 2.0 + prev_x;
-                        ctx.line_to(
-                            chart_area.width() * middle_x + chart_area.left(),
-                            chart_area.height() * (1.0 - prev_y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * middle_x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                    }
-                    Stepped::MiddleVertical => {
-                        let middle_y = (y - prev_y) / 2.0 + prev_y;
-                        ctx.line_to(
-                            chart_area.width() * prev_x + chart_area.left(),
-                            chart_area.height() * (1.0 - middle_y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - middle_y) + chart_area.bottom(),
-                        );
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                    }
-                    Stepped::None => {
-                        ctx.line_to(
-                            chart_area.width() * x + chart_area.left(),
-                            chart_area.height() * (1.0 - y) + chart_area.bottom(),
-                        );
-                    }
-                }
-
-                prev_x = x;
-                prev_y = y;
-            }
+            points.push(Position::new(
+                chart_area.width() * x_scale.normalize(point.x()) + chart_area.left(),
+                chart_area.height() * (1.0 - y_scale.normalize(point.y())) + chart_area.bottom(),
+            ));
         });
 
+        ctx.begin_path();
+        trace_line(ctx, &points, options.interpolation, chart_area);
         ctx.set_stroke_style(dataset_color(&options, dataset_index));
         ctx.stroke();
     });

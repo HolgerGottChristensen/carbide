@@ -55,15 +55,15 @@ impl LinearScale {
     }
 
     /// Whether the scale draws grid lines across the chart area. Defaults to `true`. Turn it off
-    /// for secondary scales so their lines don't interleave with the primary scale's, like
-    /// Chart.js's `grid.drawOnChartArea: false`; the labels stay.
+    /// for secondary scales so their lines don't interleave with the primary scale's; the labels
+    /// stay.
     pub fn grid_lines(mut self, grid_lines: bool) -> LinearScale {
         self.grid_lines = grid_lines;
         self
     }
 
     /// Whether the scale draws tick marks in its band, between the chart area and its labels.
-    /// Defaults to `true`, like Chart.js's `grid.drawTicks`.
+    /// Defaults to `true`.
     pub fn tick_marks(mut self, tick_marks: bool) -> LinearScale {
         self.tick_marks = tick_marks;
         self
@@ -74,8 +74,7 @@ impl LinearScale {
     }
 
     /// Widens a range with no width, as from a single point or equal values, by 5% of the value
-    /// at both ends, or by 1 at zero, as Chart.js's `handleTickRangeOptions` does, so the value
-    /// sits inside the scale with ticks around it.
+    /// at both ends, or by 1 at zero, so the value sits inside the scale with ticks around it.
     fn widen_empty_range(&mut self) {
         if self.range.start == self.range.end {
             let offset = if self.range.end == 0.0 {
@@ -103,8 +102,7 @@ impl Scale for LinearScale {
         self.weight
     }
 
-    /// With an offset, the mapped range is widened by half a tick step at both ends, as in
-    /// Chart.js's `LinearScaleBase::configure`.
+    /// With an offset, the mapped range is widened by half a tick step at both ends.
     fn normalize(&self, value: Scalar) -> Scalar {
         let mut start = self.nice_range.start;
         let mut end = self.nice_range.end;
@@ -160,8 +158,7 @@ impl Scale for LinearScale {
     }
 
     /// Picks a "nice" spacing (1, 2 or 5 times a power of ten) giving at most `tick_limits`
-    /// ticks, and rounds the range out to whole steps, as Chart.js's `generateTicks`
-    /// (`src/scales/scale.linearbase.js`) does with its default options.
+    /// ticks, and rounds the range out to whole steps.
     fn recalculate_ticks(&mut self) {
         let range_min = self.range.start;
         let range_max = self.range.end;
@@ -242,8 +239,7 @@ fn nice_num(range: Scalar) -> Scalar {
 }
 
 /// `10^decimals`, the factor ticks are rounded with: `(value * factor).round() / factor` keeps
-/// `decimals` decimal places. A float, as Chart.js's `Math.pow(10, …)` in `generateTicks`; it
-/// used to be a `u32`, which overflows from 10 decimals, reached when floating-point noise makes
+/// `decimals` decimal places. A float: it used to be a `u32`, which overflows from 10 decimals, reached when floating-point noise makes
 /// a tick like 0.9500000000000001 look like it has many.
 fn rounding_factor(decimals: u32) -> Scalar {
     Scalar::powi(10.0, decimals as i32)
@@ -252,9 +248,7 @@ fn rounding_factor(decimals: u32) -> Scalar {
 /// The largest whole number of `step`s at or below `x`: `floor(x / step)`, except that a quotient
 /// within floating-point noise of a whole number counts as that number. Without this, a value
 /// already on a step can come out a step short: 1.9 / 0.05 is 37.99999999999999, which floors to
-/// 37, so a scale meant to start at 1.9 started at 1.85. matplotlib's `_Edge_integer.le`
-/// (`lib/matplotlib/ticker.py`) does the same; Chart.js floors plainly (`generateTicks` in
-/// `src/scales/scale.linearbase.js`).
+/// 37, so a scale meant to start at 1.9 started at 1.85.
 fn steps_at_or_below(x: Scalar, step: Scalar) -> Scalar {
     let quotient = x / step;
     let whole = quotient.round();
@@ -263,7 +257,7 @@ fn steps_at_or_below(x: Scalar, step: Scalar) -> Scalar {
 }
 
 /// The smallest whole number of `step`s at or above `x`: `ceil(x / step)`, with the same snapping
-/// as `steps_at_or_below` (matplotlib's `_Edge_integer.ge`).
+/// as `steps_at_or_below`.
 fn steps_at_or_above(x: Scalar, step: Scalar) -> Scalar {
     let quotient = x / step;
     let whole = quotient.round();
@@ -272,8 +266,8 @@ fn steps_at_or_above(x: Scalar, step: Scalar) -> Scalar {
 }
 
 /// How close to a whole number a quotient must be to count as one. Floating-point error grows
-/// with the size of the numbers, so the tolerance does too, from 1e-10, as in matplotlib's
-/// `_Edge_integer.closeto`; it stays under half a step, so it never snaps to the wrong neighbour.
+/// with the size of the numbers, so the tolerance does too, from 1e-10; it stays under half a
+/// step, so it never snaps to the wrong neighbour.
 fn step_tolerance(quotient: Scalar) -> Scalar {
     (quotient.abs() * 1e-12).clamp(1e-10, 0.4999)
 }
@@ -303,8 +297,7 @@ mod tests {
     use crate::scale::{Axis, LinearScale, Scale};
 
     /// A range where min equals max, as from a dataset of one point or of equal values, is
-    /// widened by 5% of the value (or by 1 at zero), as Chart.js's `handleTickRangeOptions`
-    /// does, and gets ticks around the value. It used to panic: rounding the ticks computed
+    /// widened by 5% of the value (or by 1 at zero), and gets ticks around the value. It used to panic: rounding the ticks computed
     /// `10u32.pow(10)`, which overflows, for a range like 0.95..1.05.
     #[test]
     fn equal_min_and_max_get_a_range_around_the_value() {
@@ -335,8 +328,8 @@ mod tests {
         assert!((scale.ticks()[0] - 1.9).abs() < 1e-12, "the first tick should be 1.9, not {}", scale.ticks()[0]);
     }
 
-    /// Ticks whose rounding needs ten or more decimals: the factor is a float, as in Chart.js,
-    /// so it can't overflow.
+    /// Ticks whose rounding needs ten or more decimals: the factor is a float, so it can't
+    /// overflow.
     #[test]
     fn ticks_with_many_decimals_do_not_overflow() {
         let mut scale = LinearScale::new(Axis::Vertical);

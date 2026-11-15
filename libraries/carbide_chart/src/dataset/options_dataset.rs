@@ -2,7 +2,7 @@ use carbide::draw::Scalar;
 use carbide::environment::{Environment};
 use carbide::state::{IntoReadState, ReadState};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataValue};
-use crate::element::Stepped;
+use crate::element::Interpolation;
 use crate::scale::ScaleId;
 
 /// A dataset with options set through `DatasetExt`. Every option is a state, synced with the
@@ -12,23 +12,23 @@ use crate::scale::ScaleId;
 pub struct OptionsDataset<T, C, S, XS, YS>
 where
     C: ReadState<T=DataColor>,
-    S: ReadState<T=Stepped>,
+    S: ReadState<T=Interpolation>,
     XS: ReadState<T=ScaleId>,
     YS: ReadState<T=ScaleId>,
 {
     inner: T,
     color: Option<C>,
-    stepped: Option<S>,
+    interpolation: Option<S>,
     x_scale: Option<XS>,
     y_scale: Option<YS>,
 }
 
-impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Stepped, ScaleId, ScaleId> {
-    pub fn new<T>(dataset: T) -> OptionsDataset<T, DataColor, Stepped, ScaleId, ScaleId> {
+impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Interpolation, ScaleId, ScaleId> {
+    pub fn new<T>(dataset: T) -> OptionsDataset<T, DataColor, Interpolation, ScaleId, ScaleId> {
         OptionsDataset {
             inner: dataset,
             color: None,
-            stepped: None,
+            interpolation: None,
             x_scale: None,
             y_scale: None,
         }
@@ -38,7 +38,7 @@ impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Stepped, ScaleId, ScaleId>
 impl<T, C, S, XS, YS> OptionsDataset<T, C, S, XS, YS>
 where
     C: ReadState<T=DataColor>,
-    S: ReadState<T=Stepped>,
+    S: ReadState<T=Interpolation>,
     XS: ReadState<T=ScaleId>,
     YS: ReadState<T=ScaleId>,
 {
@@ -46,17 +46,19 @@ where
         OptionsDataset {
             inner: self.inner,
             color: Some(color.into_read_state()),
-            stepped: self.stepped,
+            interpolation: self.interpolation,
             x_scale: self.x_scale,
             y_scale: self.y_scale,
         }
     }
 
-    pub fn stepped<S2: IntoReadState<Stepped>>(self, stepped: S2) -> OptionsDataset<T, C, S2::Output, XS, YS> {
+    /// Draws the line between the points with `interpolation` instead of straight lines (see
+    /// `Interpolation`).
+    pub fn interpolation<S2: IntoReadState<Interpolation>>(self, interpolation: S2) -> OptionsDataset<T, C, S2::Output, XS, YS> {
         OptionsDataset {
             inner: self.inner,
             color: self.color,
-            stepped: Some(stepped.into_read_state()),
+            interpolation: Some(interpolation.into_read_state()),
             x_scale: self.x_scale,
             y_scale: self.y_scale,
         }
@@ -67,7 +69,7 @@ where
         OptionsDataset {
             inner: self.inner,
             color: self.color,
-            stepped: self.stepped,
+            interpolation: self.interpolation,
             x_scale: Some(x_scale.into_read_state()),
             y_scale: self.y_scale,
         }
@@ -78,7 +80,7 @@ where
         OptionsDataset {
             inner: self.inner,
             color: self.color,
-            stepped: self.stepped,
+            interpolation: self.interpolation,
             x_scale: self.x_scale,
             y_scale: Some(y_scale.into_read_state()),
         }
@@ -91,7 +93,7 @@ impl<X: DataValue, Y: DataValue, Z: DataValue, T, C, S, XS, YS> DataSet<X, Y, Z>
 where
     T: DataSet<X, Y, Z> + Clone,
     C: ReadState<T=DataColor>,
-    S: ReadState<T=Stepped>,
+    S: ReadState<T=Interpolation>,
     XS: ReadState<T=ScaleId>,
     YS: ReadState<T=ScaleId>,
 {
@@ -115,8 +117,8 @@ where
             changed |= color.sync(env);
         }
 
-        if let Some(stepped) = &mut self.stepped {
-            changed |= stepped.sync(env);
+        if let Some(interpolation) = &mut self.interpolation {
+            changed |= interpolation.sync(env);
         }
 
         if let Some(x_scale) = &mut self.x_scale {
@@ -137,7 +139,7 @@ where
 
         DataSetOptions {
             color: self.color.as_ref().map_or(options.color, |color| *color.value()),
-            stepped: self.stepped.as_ref().map_or(options.stepped, |stepped| *stepped.value()),
+            interpolation: self.interpolation.as_ref().map_or(options.interpolation, |interpolation| *interpolation.value()),
             x_scale: self.x_scale.as_ref().map_or(options.x_scale, |x_scale| x_scale.value().clone()),
             y_scale: self.y_scale.as_ref().map_or(options.y_scale, |y_scale| y_scale.value().clone()),
         }

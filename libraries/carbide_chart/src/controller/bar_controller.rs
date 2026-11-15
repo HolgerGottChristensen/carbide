@@ -8,12 +8,11 @@ use crate::{DataColor, DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
-/// Draws each dataset as vertical bars, one per point, growing from zero to the point's y. Based
-/// on Chart.js's bar controller (`controller.bar.js`):
+/// Draws each dataset as vertical bars, one per point, growing from zero to the point's y:
 ///
 /// - The x scale gets an offset (half a tick step at each end), so the first and last bars aren't
 ///   cut in half at the chart area's edges.
-/// - Zero is always included in the y bounds, like Chart.js's `beginAtZero: true` for bars.
+/// - Zero is always included in the y bounds, so every bar has a base to grow from.
 /// - The datasets in this controller that share an x scale are grouped side by side. Each point
 ///   gets a slot `category_percentage` of the smallest gap between neighbouring x values or ticks;
 ///   the slot is split evenly between the datasets, and each bar is `bar_percentage` of its share.
@@ -37,14 +36,13 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> BarController<D> {
     }
 
     /// How much of the smallest gap between neighbouring x values a point's group of bars takes
-    /// up. Defaults to 0.8, as in Chart.js.
+    /// up. Defaults to 0.8.
     pub fn category_percentage(mut self, category_percentage: Scalar) -> BarController<D> {
         self.category_percentage = category_percentage;
         self
     }
 
-    /// How much of its share of the group's slot each bar takes up. Defaults to 0.9, as in
-    /// Chart.js.
+    /// How much of its share of the group's slot each bar takes up. Defaults to 0.9.
     pub fn bar_percentage(mut self, bar_percentage: Scalar) -> BarController<D> {
         self.bar_percentage = bar_percentage;
         self
@@ -147,24 +145,23 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for BarContro
         ctx.restore();
     }
 
-    /// Bar charts sit on a category scale along x, with grid lines between the bar groups, as in
-    /// Chart.js's bar `overrides` (`_index_: {type: 'category', offset: true, grid: {offset:
-    /// true}}`). The offset itself is requested in `collect_bounds`, so it also applies to an x
-    /// scale set with `Chart::scale`.
+    /// Bar charts sit on a category scale along x, with grid lines between the bar groups. The
+    /// offset itself is requested in `collect_bounds`, so it also applies to an x scale set with
+    /// `Chart::scale`.
     fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
         (*id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal).grid_offset(true)) as Box<dyn Scale>)
     }
 }
 
 /// The value bars grow from: zero when it is inside the y scale's range, otherwise the end of the
-/// range nearest to zero (Chart.js's `getBaseValue`).
+/// range nearest to zero.
 fn base_value(y_scale: &dyn Scale) -> Scalar {
     0.0_f64.clamp(y_scale.min(), y_scale.max())
 }
 
 /// The smallest gap, in pixels, between neighbouring bar positions or neighbouring ticks of the x
-/// scale, capped at the chart area's width (Chart.js's `computeMinSampleSize`). It sets how wide
-/// a point's group of bars can be without overlapping the next point's.
+/// scale, capped at the chart area's width. It sets how wide a point's group of bars can be without
+/// overlapping the next point's.
 fn min_sample_size(mut x_positions: Vec<Scalar>, x_scale: &dyn Scale, chart_area: Rect) -> Scalar {
     let mut min = chart_area.width();
 
@@ -190,8 +187,7 @@ fn min_sample_size(mut x_positions: Vec<Scalar>, x_scale: &dyn Scale, chart_area
 
 /// The left edge and width of one bar: the group's slot is `category_percentage` of `ruler`,
 /// centred on the point's x; it is split into `group_size` equal shares, and the bar is
-/// `bar_percentage` of share number `group_index`, centred in it. Chart.js's
-/// `computeFitCategoryTraits` and `_calculateBarIndexPixels`.
+/// `bar_percentage` of share number `group_index`, centred in it.
 fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_size: usize, category_percentage: Scalar, bar_percentage: Scalar) -> (Scalar, Scalar) {
     let slot = ruler * category_percentage;
     let share = slot / group_size.max(1) as Scalar;

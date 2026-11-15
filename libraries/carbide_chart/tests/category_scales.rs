@@ -7,7 +7,7 @@ mod common;
 
 use support::{bars_with_x_scale_on_top_chart, labelled_bar_chart, vertical_category_scale_chart, vertical_category_scale_on_right_chart};
 
-/// Chart.js's sample bar chart, with its category labels: votes for six colours. The x scale is
+/// A bar chart of votes for six colours, with the colours as category labels. The x scale is
 /// set explicitly to a `CategoryScale` with labels, so the ticks show "Red", "Blue", ... instead
 /// of indices. Pins down label text on a category scale and grid lines between the bars.
 #[test]
@@ -61,7 +61,7 @@ mod support {
 
     const STATUS_LABELS: [&str; 4] = ["Low", "Medium", "High", "Critical"];
 
-    /// Chart.js's sample bar chart: votes for six colours, labelled on a category scale.
+    /// Votes for six colours as bars, labelled on a category scale.
     pub fn labelled_bar_chart() -> impl Widget {
         let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
 
@@ -75,7 +75,7 @@ mod support {
             .framed()
     }
 
-    /// Chart.js's sample votes as bars, with the labelled category x scale at the top.
+    /// Votes for six colours as bars, with the labelled category x scale at the top.
     pub fn bars_with_x_scale_on_top_chart() -> impl Widget {
         let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];
 

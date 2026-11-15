@@ -8,14 +8,12 @@ use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
 use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
 
-/// Draws each dataset as a line through its points, in order, with the points on top, like
-/// Chart.js's line chart (`controller.line.js`, `showLine: true`). The line follows the dataset's
-/// `stepped` mode.
+/// Draws each dataset as a line through its points, in order, with the points on top. The line
+/// follows the dataset's `interpolation`: straight by default, or smooth, monotone or stepped.
 ///
-/// Its default x scale is a `CategoryScale`, as Chart.js's line `overrides` make the index scale a
-/// category scale: datasets are lists of values, each at its index. For data with numeric x
-/// values, use a `ScatterController` with `show_line(true)`, or set a `LinearScale` with
-/// `Chart::scale`.
+/// Its default x scale is a `CategoryScale`, as its datasets are usually lists of values, each at
+/// its index. For data with numeric x values, use a `ScatterController` with `show_line(true)`, or
+/// set a `LinearScale` with `Chart::scale`.
 #[derive(Clone, Debug)]
 pub struct LineController<D> {
     dataset_sequence: D,
@@ -49,8 +47,7 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineContr
         ctx.restore();
     }
 
-    /// A category x scale, without the bar chart's offset or grid offset: Chart.js's line
-    /// `overrides` (`_index_: {type: 'category'}`).
+    /// A category x scale, without the bar chart's offset or grid offset.
     fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
         (*id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal)) as Box<dyn Scale>)
     }

@@ -13,8 +13,7 @@ use crate::controller::{ControllerSequence, DatasetController};
 use crate::sequence::IntoSequence;
 use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, Scales};
 
-/// The gap between the bands of two scales stacked on the same side of the chart area, like
-/// ag-charts' axis `spacing`.
+/// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
 
 /// A container that owns the scales and draws a sequence of controllers on them. Each dataset
@@ -101,11 +100,11 @@ impl<C: ControllerSequence> Chart<C> {
         self.scales.fit(&bounds);
     }
 
-    /// Lays the scales out around the chart area the way Chart.js lays out its boxes
-    /// (`core.layouts.js`): on each side, the scales are sorted by weight, ties kept in the order
-    /// they were added, and stacked outwards from the chart area, each taking a band as wide as
-    /// its measured `sizes` entry (see `Scale::size`), with `SCALE_SPACING` between neighbouring
-    /// bands. The chart area is what the padding and every side's bands leave over.
+    /// Lays the scales out around the chart area: on each side, the scales are sorted by weight,
+    /// ties kept in the order they were added, and stacked outwards from the chart area, each
+    /// taking a band as wide as its measured `sizes` entry (see `Scale::size`), with
+    /// `SCALE_SPACING` between neighbouring bands. The chart area is what the padding and every
+    /// side's bands leave over.
     fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>) -> ScaleLayout {
         let mut offsets = IndexMap::new();
 
@@ -654,8 +653,8 @@ mod tests {
     }
 
     /// A line chart's default x scale is a category scale like a bar chart's, but without the
-    /// offset: the first and last points sit on the chart area's edges, as in Chart.js's line
-    /// chart. Bars added to it still offset it, as their `request_offset` applies to any scale.
+    /// offset: the first and last points sit on the chart area's edges. Bars added to it still
+    /// offset it, as their `request_offset` applies to any scale.
     #[test]
     fn line_charts_default_to_a_category_x_scale_without_offset() {
         let values = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0];

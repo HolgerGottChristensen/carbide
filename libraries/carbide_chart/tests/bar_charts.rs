@@ -9,8 +9,7 @@ mod common;
 use common::bar_chart;
 use support::bars_on_linear_x_scale_chart;
 
-/// A plain bar chart: one dataset of positive values, nothing else on the chart (the data from
-/// Chart.js's sample bar chart). Pins down the single-dataset bar width, the x scale's offset at
+/// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the single-dataset bar width, the x scale's offset at
 /// both ends, and bars growing up from zero at the bottom of the y scale.
 #[test]
 fn bar_chart_single_dataset() {

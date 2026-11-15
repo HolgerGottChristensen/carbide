@@ -8,9 +8,8 @@ mod common;
 use support::{equal_values_chart, single_point_chart};
 
 /// A single point, so both linear scales start out with no width (min equals max). Pins down that
-/// each is widened around the value, as Chart.js does (5% of the value, or 1 at zero), so the
-/// point sits inside the chart area with ticks on both sides. It used to panic while rounding
-/// the ticks.
+/// each is widened around the value (by 5% of the value, or 1 at zero), so the point sits inside
+/// the chart area with ticks on both sides. It used to panic while rounding the ticks.
 #[test]
 fn scatter_single_point() {
     let mut harness = Harness::new(single_point_chart(), Dimension::new(600.0, 500.0));

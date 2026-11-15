@@ -363,8 +363,7 @@ pub struct Many;
 ///
 /// A single item can't simply be a `Sequence` of one itself: a `Vec` of datasets would then be
 /// both a sequence of its datasets and, being a dataset when its items are points, a sequence of
-/// one. The marker `M` keeps the two implementations apart, as Bevy's `IntoSystem<Marker>`; it is
-/// always inferred.
+/// one. The marker `M` keeps the two implementations apart; it is always inferred.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` is neither a `{T}` nor a sequence of them",
     label = "expected a `{T}`, or a sequence of them",
