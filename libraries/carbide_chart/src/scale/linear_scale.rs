@@ -3,8 +3,6 @@ use std::ops::Range;
 use carbide::draw::Scalar;
 
 use crate::scale::{Axis, AxisPosition, Scale};
-use crate::scale::bounds::Bounds;
-use crate::scale::percent_or_value::PercentOrValue;
 
 const MIN_TICK_SPACING: f64 = 1e-14;
 
@@ -16,17 +14,9 @@ pub struct LinearScale {
     grid_lines: bool,
     tick_marks: bool,
     offset: bool,
-    min: Option<Scalar>,
-    max: Option<Scalar>,
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
     ticks: Vec<Scalar>,
-    begin_at_zero: bool,
-    grace: PercentOrValue,
-    include_bounds: bool,
-    step_size: Option<f64>,
-    precision: Option<i8>,
-    bounds: Bounds,
 }
 
 impl LinearScale {
@@ -38,17 +28,9 @@ impl LinearScale {
             grid_lines: true,
             tick_marks: true,
             offset: false,
-            min: None,
-            max: None,
             range: 0.0..1.0,
             nice_range: 0.0..1.0,
             ticks: vec![],
-            begin_at_zero: false,
-            grace: PercentOrValue::None,
-            include_bounds: true,
-            step_size: None,
-            precision: None,
-            bounds: Bounds::Ticks,
         }
     }
 
@@ -91,16 +73,10 @@ impl LinearScale {
         11
     }
 
-    fn calculate_begin_zero(&mut self) {
-        if self.begin_at_zero {
-            // If both are negative, we set the max to 0.0, otherwise we set min to 0.0
-            if self.range.start.is_sign_negative() && self.range.end.is_sign_negative() {
-                self.range.end = 0.0;
-            } else {
-                self.range.start = 0.0;
-            }
-        }
-
+    /// Widens a range with no width, as from a single point or equal values, by 5% of the value
+    /// at both ends, or by 1 at zero, as Chart.js's `handleTickRangeOptions` does, so the value
+    /// sits inside the scale with ticks around it.
+    fn widen_empty_range(&mut self) {
         if self.range.start == self.range.end {
             let offset = if self.range.end == 0.0 {
                 1.0
@@ -109,27 +85,7 @@ impl LinearScale {
             };
 
             self.range.end += offset;
-
-            if !self.begin_at_zero {
-                self.range.start -= offset;
-            }
-        }
-    }
-
-    fn calculate_grace(&mut self) {
-        // Add additional grace to the scale, in both directions, unless we need the start or end is zero
-        let change = match self.grace {
-            PercentOrValue::Percent(percent) => { percent * (self.range.end - self.range.start) / 2.0 }
-            PercentOrValue::Value(value) => { value }
-            PercentOrValue::None => { 0.0 }
-        };
-
-        if !self.begin_at_zero || self.range.start != 0.0 {
-            self.range.start -= change.abs();
-        }
-
-        if !self.begin_at_zero || self.range.end != 0.0 {
-            self.range.end += change.abs();
+            self.range.start -= offset;
         }
     }
 }
@@ -187,9 +143,7 @@ impl Scale for LinearScale {
             self.range.end = 1.0;
         }
 
-        self.calculate_begin_zero();
-
-        self.calculate_grace();
+        self.widen_empty_range();
         self.recalculate_ticks();
     }
 
@@ -205,22 +159,17 @@ impl Scale for LinearScale {
         self.nice_range.clone()
     }
 
+    /// Picks a "nice" spacing (1, 2 or 5 times a power of ten) giving at most `tick_limits`
+    /// ticks, and rounds the range out to whole steps, as Chart.js's `generateTicks`
+    /// (`src/scales/scale.linearbase.js`) does with its default options.
     fn recalculate_ticks(&mut self) {
         let range_min = self.range.start;
         let range_max = self.range.end;
-        let _min = self.min;
-        let _max = self.max;
-
-        let max_ticks = self.tick_limits().max(2);
-        let mut ticks = vec![];
 
         // We have one less space between ticks than ticks
-        let max_spaces = max_ticks - 1;
-        //let max_digits = 3;
-        let unit = 1 as Scalar;
-        //let min_spacing = (self.max - self.min) / (max_digits + 1) as Scalar;
+        let max_spaces = self.tick_limits().max(2) - 1;
 
-        let mut spacing = nice_num((range_max - range_min) / max_spaces as Scalar / unit) * unit;
+        let mut spacing = nice_num((range_max - range_min) / max_spaces as Scalar);
 
         // Beyond MIN_TICK_SPACING floating point numbers being to lose precision
         // such that we can't do the math necessary to generate ticks
@@ -230,85 +179,35 @@ impl Scale for LinearScale {
             return;
         }
 
-        let mut num_spaces = (steps_at_or_above(range_max, spacing) - steps_at_or_below(range_min, spacing)) as u32;
+        let num_spaces = (steps_at_or_above(range_max, spacing) - steps_at_or_below(range_min, spacing)) as u32;
 
         if num_spaces > max_spaces {
             // If the calculated num of spaces exceeds maxNumSpaces, recalculate it
-            spacing = nice_num(num_spaces as Scalar * spacing / max_spaces as Scalar / unit) * unit;
+            spacing = nice_num(num_spaces as Scalar * spacing / max_spaces as Scalar);
         }
 
-        let mut factor: Scalar;
-
-        if let Some(precision) = self.precision {
-            factor = rounding_factor(precision as u32);
-            spacing = (spacing * factor).ceil() / factor;
-        }
-
-        let mut nice_min: f64;
-        let mut nice_max: f64;
-
-        if self.bounds == Bounds::Ticks {
-            nice_min = steps_at_or_below(range_min, spacing) * spacing;
-            nice_max = steps_at_or_above(range_max, spacing) * spacing;
-        } else {
-            nice_min = range_min;
-            nice_max = range_max;
-        }
-
+        let mut nice_min = steps_at_or_below(range_min, spacing) * spacing;
+        let mut nice_max = steps_at_or_above(range_max, spacing) * spacing;
 
         let num_spaces_float = (nice_max - nice_min) / spacing;
 
         // If very close to our rounded value, use it.
-        if almost_equals(num_spaces_float, num_spaces_float.round(), spacing / 1000.0) {
-            num_spaces = num_spaces_float.round() as u32;
+        let num_spaces = if almost_equals(num_spaces_float, num_spaces_float.round(), spacing / 1000.0) {
+            num_spaces_float.round() as u32
         } else {
-            num_spaces = num_spaces_float.ceil() as u32;
-        }
+            num_spaces_float.ceil() as u32
+        };
 
-        if let Some(precision) = self.precision {
-            factor = rounding_factor(precision as u32);
-        } else {
-            let decimal_places = u32::max(decimal_places(spacing), decimal_places(nice_min)).min(10);
-            factor = rounding_factor(decimal_places);
-        }
+        let decimal_places = u32::max(decimal_places(spacing), decimal_places(nice_min)).min(10);
+        let factor = rounding_factor(decimal_places);
 
         nice_min = (nice_min * factor).round() / factor;
         nice_max = (nice_max * factor).round() / factor;
 
-        let mut j = 0;
-
-        if let Some(min) = self.min {
-            if self.include_bounds && nice_min != min {
-                ticks.push(min);
-
-                if nice_min < min {
-                    j += 1;
-                }
-            } else {
-                j += 1;
-            }
-        }
-
-        for k in j..num_spaces as i32 {
-            let tick_value = ((nice_min + k as Scalar * spacing) * factor) / factor;
-
-            if let Some(max) = self.max
-                && tick_value > max {
-                    break;
-                }
-
-            ticks.push(tick_value);
-        }
-
-        if let Some(max) = self.max {
-            if self.include_bounds && nice_max != max {
-                todo!()
-            } else if nice_max == max {
-                ticks.push(nice_max);
-            }
-        } else {
-            ticks.push(nice_max);
-        }
+        let mut ticks: Vec<Scalar> = (0..num_spaces)
+            .map(|k| ((nice_min + k as Scalar * spacing) * factor) / factor)
+            .collect();
+        ticks.push(nice_max);
 
         self.nice_range = nice_min..nice_max;
         self.ticks = ticks;

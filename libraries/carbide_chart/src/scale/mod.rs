@@ -1,7 +1,5 @@
 mod category_scale;
 mod linear_scale;
-mod percent_or_value;
-mod bounds;
 mod scales;
 mod scale_id;
 
