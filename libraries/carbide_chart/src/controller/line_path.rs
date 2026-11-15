@@ -465,4 +465,20 @@ mod tests {
         assert!(monotone_control_points(&same).iter().all(|c| c.before.x.is_finite() && c.after.y.is_finite()));
         assert_eq!(monotone_control_points(&positions(&[(1.0, 2.0)])).len(), 1);
     }
+
+    /// A smooth line with a tension of 0 is a straight line: it is traced with the same straight
+    /// segments as `Linear`, not with curves whose control points sit on the points.
+    #[test]
+    fn smooth_lines_without_tension_are_straight() {
+        let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
+        let points = positions(&[(0.0, 50.0), (20.0, 80.0), (45.0, 30.0), (100.0, 40.0)]);
+
+        let mut linear = vec![];
+        trace_line(&mut linear, &points, Interpolation::Linear, area);
+        let mut flat = vec![];
+        trace_line(&mut flat, &points, Interpolation::Smooth { tension: 0.0 }, area);
+
+        assert_eq!(flat, linear);
+        assert!(flat.iter().all(|command| !matches!(command, Command::Curve(..))));
+    }
 }

@@ -159,9 +159,10 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
     }
 }
 
-/// The y pixel of a fill's baseline. A value outside the scale's range (possible on a scale set
-/// with `Chart::scale`) fills to the nearest end of it, as bars grow from the end nearest zero.
-/// `Fill::Stack` without a line below fills to zero.
+/// The y pixel of a fill's baseline. Baseline values are included in the y bounds, but a scale
+/// can still end before one: a category scale with labels spans its labels, whatever the data.
+/// A value outside the scale's range then fills to the nearest end of it, as bars grow from the
+/// end nearest zero. `Fill::Stack` without a line below fills to zero.
 fn baseline_pixel(fill: Fill, y_scale: &dyn Scale, chart_area: Rect) -> Scalar {
     // `Rect`'s top and bottom are swapped on screen (see `Scale::draw_grid`): the larger y is the
     // bottom edge.
@@ -223,10 +224,10 @@ pub(crate) fn dataset_scales<'a>(scales: &'a Scales, options: &DataSetOptions) -
 mod tests {
     use carbide::draw::{Dimension, Position, Rect, Scalar};
     use carbide::environment::Environment;
-    use crate::{DatasetExt, Fill, LineController, ScatterController, StackId};
+    use crate::{Axis, CategoryScale, DatasetExt, Fill, LineController, Scale, ScatterController, StackId};
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, Scales};
-    use super::drawn_lines;
+    use super::{baseline_pixel, drawn_lines};
 
     const SALES: StackId = StackId::new("sales");
 
@@ -301,5 +302,43 @@ mod tests {
         let y = scales.get(&ScaleId::Y).unwrap();
         let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();
         assert_eq!(lines[4].points[0].y, pixel(30.0), "the top line should sit at 10 + 20, the total of its stack");
+    }
+
+    /// Datasets in a stack are matched by x value: where the dataset below has no point, the one
+    /// above adds to nothing, so its line dips to its own value there.
+    #[test]
+    fn stacked_lines_dip_where_the_line_below_has_no_point() {
+        let controller = LineController::new((
+            vec![10.0, 10.0].stack(SALES),
+            vec![5.0, 5.0, 5.0].stack(SALES),
+        ));
+
+        let mut bounds = ScaleBounds::default();
+        controller.collect_bounds(&mut bounds, &mut Environment::new());
+        let mut scales = Scales::new();
+        scales.fit(&bounds);
+
+        let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
+        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true);
+
+        let y = scales.get(&ScaleId::Y).unwrap();
+        let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();
+        let top: Vec<Scalar> = lines[1].points.iter().map(|point| point.y).collect();
+        assert_eq!(top, vec![pixel(15.0), pixel(15.0), pixel(5.0)], "the top line should dip to 5 where the line below ends");
+    }
+
+    /// A fill baseline outside the y scale's range fills to the nearest end of it. Baselines are
+    /// included in the bounds, but a category scale with labels spans its labels whatever the
+    /// data, so a value above the last label fills to the top of the scale.
+    #[test]
+    fn fill_baselines_outside_the_scale_fill_to_its_nearest_end() {
+        let mut scale = CategoryScale::new(Axis::Vertical).labels(["Low", "Medium", "High", "Critical"]);
+        scale.set_range(0.0, 10.0);
+        let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
+
+        let pixel = |value: Scalar| area.height() * (1.0 - scale.normalize(value)) + area.bottom();
+        assert_eq!(baseline_pixel(Fill::Value(10.0), &scale, area), pixel(3.0), "a value past the last label should fill to it");
+        assert_eq!(baseline_pixel(Fill::Value(-5.0), &scale, area), pixel(0.0), "a value before the first label should fill to it");
+        assert_eq!(baseline_pixel(Fill::Value(2.0), &scale, area), pixel(2.0));
     }
 }

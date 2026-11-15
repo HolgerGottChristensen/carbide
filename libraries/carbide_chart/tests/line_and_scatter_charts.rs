@@ -8,7 +8,7 @@ use carbide_testing::Harness;
 
 mod common;
 
-use support::{band_chart, example_chart, filled_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
+use support::{band_chart, example_chart, filled_chart, filled_line_chart, filled_scatter_chart, scatter_chart, scatter_with_lines_chart, stacked_lines_chart};
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's
 /// `interpolation` driven by a state, Danish locale, bordered) and snapshots it with straight lines
@@ -80,6 +80,18 @@ fn stacked_lines_and_areas() {
 
     *fill.value_mut() = Fill::Stack;
     harness.snapshot("stacked_areas");
+}
+
+/// The example data's first dataset filled to zero, once stepped (middle) and once smooth
+/// (tension 0.4). Pins down that an area's top follows the line exactly for these
+/// interpolations too: along every step, and along the spline where it overshoots the points.
+#[test]
+fn filled_stepped_and_smooth_lines() {
+    let mut harness = Harness::new(filled_line_chart(Interpolation::Stepped(Stepped::Middle)), Dimension::new(600.0, 500.0));
+    harness.snapshot("stepped");
+
+    let mut harness = Harness::new(filled_line_chart(Interpolation::Smooth { tension: 0.4 }), Dimension::new(600.0, 500.0));
+    harness.snapshot("smooth");
 }
 
 /// A temperature range as one band: the daily minimum as a plain line, and the spread up to the
@@ -155,6 +167,16 @@ mod support {
         let data8 = vec![-5.0, -10.0, 13.0, 92.0, 10.0, -53.0, 33.0];
 
         Chart::new(LineController::new((data7, data8)))
+            .framed()
+    }
+
+    /// The example's `data7` alone, with `interpolation`, filled to zero.
+    pub fn filled_line_chart(interpolation: Interpolation) -> impl Widget {
+        let data7 = vec![75.0, 70.0, 80.0, -60.0, 75.0, 98.0, -100.0]
+            .interpolation(interpolation)
+            .fill(Fill::Origin);
+
+        Chart::new(LineController::new(data7))
             .framed()
     }
 
