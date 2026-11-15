@@ -55,6 +55,7 @@ pub trait DataSet<X: DataValue, Y: DataValue, Z: DataValue>: DynClone + Debug + 
             interpolation: Interpolation::Linear,
             x_scale: ScaleId::X,
             y_scale: ScaleId::Y,
+            stack: None,
         }
     }
 }

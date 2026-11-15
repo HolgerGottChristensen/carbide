@@ -1,6 +1,7 @@
-//! Bar charts on their own: bars growing from zero, grouped datasets splitting a slot, and bar
-//! widths on a linear x scale.
+//! Bar charts on their own: bars growing from zero, grouped datasets splitting a slot, stacked
+//! bars, and bar widths on a linear x scale.
 
+use carbide_chart::{DatasetExt, StackId};
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
 
@@ -9,8 +10,9 @@ mod common;
 use common::bar_chart;
 use support::bars_on_linear_x_scale_chart;
 
-/// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the single-dataset bar width, the x scale's offset at
-/// both ends, and bars growing up from zero at the bottom of the y scale.
+/// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the
+/// single-dataset bar width, the x scale's offset at both ends, and bars growing up from zero at
+/// the bottom of the y scale.
 #[test]
 fn bar_chart_single_dataset() {
     let mut harness = Harness::new(bar_chart(vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0]), Dimension::new(600.0, 500.0));
@@ -59,6 +61,39 @@ fn bars_on_linear_x_scale() {
     let mut harness = Harness::new(bars_on_linear_x_scale_chart(), Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_on_linear_x_scale");
+}
+
+/// Materials and labour stacked into one costs bar, beside a revenue bar on its own. Pins down
+/// that a stack takes one share of each month's slot, like a single dataset, so there are two
+/// bars per month; that the first dataset in the stack is at the bottom (materials, white, under
+/// labour, green); and that the y scale reaches the stacked costs, not just each dataset's values.
+#[test]
+fn stacked_bars() {
+    const COSTS: StackId = StackId::new("costs");
+
+    let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
+    let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(COSTS);
+    let revenue = vec![120.0, 115.0, 150.0, 98.0, 160.0];
+
+    let mut harness = Harness::new(bar_chart((materials, labour, revenue)), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("stacked_bars");
+}
+
+/// Three datasets of mixed signs in one stack. Pins down that positive values stack upwards from
+/// zero and negative values downwards, each on their own: a negative value in the middle dataset
+/// hangs from zero, or from the negatives below it, never from the top of the positive bars.
+#[test]
+fn stacked_bars_positive_and_negative() {
+    const NET: StackId = StackId::new("net");
+
+    let income = vec![20.0, 15.0, 30.0, 10.0, 25.0].stack(NET);
+    let expenses = vec![-12.0, -18.0, -10.0, -25.0, 8.0].stack(NET);
+    let adjustments = vec![5.0, -4.0, 8.0, -3.0, -6.0].stack(NET);
+
+    let mut harness = Harness::new(bar_chart((income, expenses, adjustments)), Dimension::new(600.0, 500.0));
+
+    harness.snapshot("stacked_bars_positive_and_negative");
 }
 
 // ===============================

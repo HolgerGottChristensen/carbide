@@ -6,7 +6,7 @@ use crate::controller::DatasetController;
 use crate::controller::drawing::{collect_point_bounds, draw_lines, draw_points};
 use crate::{DataSet, DataSetSequence};
 use crate::sequence::IntoSequence;
-use crate::scale::{Axis, CategoryScale, Scale, ScaleBounds, ScaleId, Scales};
+use crate::scale::{ScaleBounds, ScaleKind, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
 /// follows the dataset's `interpolation`: straight by default, or smooth, monotone or stepped.
@@ -33,7 +33,13 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineContr
         self.dataset_sequence.sync(env)
     }
 
+    /// Asks for a category x scale, without the bar chart's offset or grid offset, then reports
+    /// each dataset's range.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
+            bounds.request_kind(&dataset.options().x_scale, ScaleKind::Category);
+        });
+
         collect_point_bounds(&self.dataset_sequence, bounds);
     }
 
@@ -45,10 +51,5 @@ impl<D: DataSetSequence<Scalar, Scalar, Scalar>> DatasetController for LineContr
         draw_points(&self.dataset_sequence, ctx, scales, chart_area);
 
         ctx.restore();
-    }
-
-    /// A category x scale, without the bar chart's offset or grid offset.
-    fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
-        (*id == ScaleId::X).then(|| Box::new(CategoryScale::new(Axis::Horizontal)) as Box<dyn Scale>)
     }
 }

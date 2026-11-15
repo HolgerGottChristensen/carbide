@@ -46,8 +46,8 @@ fn dataset_added_between_renders() {
 /// A chart whose controllers are a state of boxed controllers of different types, with a line
 /// added over the bars between the two snapshots. Pins down that the chart follows a controller
 /// sequence changed after it is built: the line is drawn over the bars at the bars' centres, the
-/// y scale refits to include its larger values, and the bars keep the category x scale and grid
-/// lines they chose, since the first controller picked the default scales when the chart was built.
+/// y scale refits to include its larger values, and the x scale stays a category scale with grid
+/// lines between the bar groups, as both controllers ask for a category scale.
 #[test]
 fn controllers_added_between_renders() {
     let bars = revenue_and_costs_bars();

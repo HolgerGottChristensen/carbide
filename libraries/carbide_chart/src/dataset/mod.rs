@@ -5,6 +5,7 @@ mod dataset_sequence;
 mod dataset_options;
 mod dataset_ext;
 mod options_dataset;
+mod stack_id;
 
 use carbide::draw::Color;
 use carbide::impl_state_value;
@@ -12,6 +13,7 @@ pub use datapoint::*;
 pub use dataset::*;
 pub use datavalue::*;
 pub use dataset_sequence::*;
+pub use stack_id::StackId;
 pub use dataset_options::*;
 pub use dataset_ext::*;
 

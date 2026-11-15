@@ -7,7 +7,7 @@ pub use bar_controller::BarController;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;
-use crate::scale::{Scale, ScaleBounds, ScaleId, Scales};
+use crate::scale::{ScaleBounds, Scales};
 
 mod bar_controller;
 mod controller_sequence;
@@ -34,22 +34,17 @@ pub trait DatasetController: DynClone + Debug + 'static {
         false
     }
 
-    /// Reports the data range of every dataset to the bounds of the scales it is bound to. The
-    /// datasets have been synced by then; `env` is for anything else the controller reads from
-    /// the environment.
+    /// Reports what the controller needs from the scales its datasets are bound to: each
+    /// dataset's data range (`ScaleBounds::include`), and anything its kind of chart asks of a
+    /// scale, such as an offset, grid lines between ticks, or a category scale for the default x
+    /// scale (see `ScaleBounds`). It runs on every fit, so the requests follow the controllers
+    /// and datasets as they change. The datasets have been synced by then; `env` is for anything
+    /// else the controller reads from the environment.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment);
 
     /// Draws the datasets inside `area`, each on the chart's fitted scales it is bound to.
     /// A dataset bound to a scale the chart doesn't have is skipped.
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect);
-
-    /// The scale this kind of chart wants for the default scale `id` (`ScaleId::X` or
-    /// `ScaleId::Y`): a bar chart wants a category scale along x. `Chart::new` asks its controllers
-    /// in order and uses the first answer; scales set with `Chart::scale` replace it. `None` keeps
-    /// the default linear scale.
-    fn default_scale(&self, _id: &ScaleId) -> Option<Box<dyn Scale>> {
-        None
-    }
 
     /// Boxes the controller, so controllers of different types can share a `Vec` or a state of
     /// a `Vec`, as the controllers of a chart.
@@ -73,10 +68,6 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect) {
         (**self).draw(ctx, scales, area);
-    }
-
-    fn default_scale(&self, id: &ScaleId) -> Option<Box<dyn Scale>> {
-        (**self).default_scale(id)
     }
 
     /// Already boxed: returned as it is, not boxed again.

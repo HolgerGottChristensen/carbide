@@ -13,8 +13,9 @@ use crate::scale::{format_tick, Axis, AxisPosition, Scale};
 /// - Without labels, the scale spans the data's indices; with labels, it spans every label, even
 ///   ones without data.
 /// - With an offset (see `Scale::set_offset`), half a category is added at both ends.
-/// - With `grid_offset`, grid lines and tick marks sit between categories instead of on them,
-///   while labels stay centred on their category.
+/// - With a grid offset, grid lines and tick marks sit between categories instead of on them,
+///   while labels stay centred on their category. It is on when set with `grid_offset(true)`, or,
+///   when not set, when a controller asks for it (see `Scale::set_grid_offset_requested`).
 /// - Vertical category scales run from top to bottom, so they read like a list.
 #[derive(Clone, Debug)]
 pub struct CategoryScale {
@@ -24,7 +25,9 @@ pub struct CategoryScale {
     grid_lines: bool,
     tick_marks: bool,
     offset: bool,
-    grid_offset: bool,
+    /// Set with `grid_offset`; when `None`, the scale follows what controllers request.
+    grid_offset: Option<bool>,
+    grid_offset_requested: bool,
     labels: Vec<String>,
     min: Scalar,
     max: Scalar,
@@ -40,7 +43,8 @@ impl CategoryScale {
             grid_lines: true,
             tick_marks: true,
             offset: false,
-            grid_offset: false,
+            grid_offset: None,
+            grid_offset_requested: false,
             labels: vec![],
             min: 0.0,
             max: 0.0,
@@ -58,10 +62,11 @@ impl CategoryScale {
         self
     }
 
-    /// Draws grid lines and tick marks between categories instead of through them. Bar charts'
-    /// default category scale turns it on, so the lines separate the bar groups.
+    /// Draws grid lines and tick marks between categories instead of through them, or through
+    /// them with `false`. Without it, the scale follows the controllers drawn on it: bar charts
+    /// ask for grid lines between categories, so the lines separate the bar groups.
     pub fn grid_offset(mut self, grid_offset: bool) -> CategoryScale {
-        self.grid_offset = grid_offset;
+        self.grid_offset = Some(grid_offset);
         self
     }
 
@@ -133,6 +138,10 @@ impl Scale for CategoryScale {
         self.offset = offset;
     }
 
+    fn set_grid_offset_requested(&mut self, requested: bool) {
+        self.grid_offset_requested = requested;
+    }
+
     fn tick_label(&self, value: Scalar, env: &mut Environment) -> String {
         if value >= 0.0 {
             if let Some(label) = self.labels.get(value as usize) {
@@ -144,7 +153,7 @@ impl Scale for CategoryScale {
     }
 
     fn grid_line_values(&self) -> Vec<Scalar> {
-        if !self.grid_offset {
+        if !self.grid_offset.unwrap_or(self.grid_offset_requested) {
             return self.ticks.clone();
         }
 

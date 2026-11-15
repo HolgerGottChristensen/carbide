@@ -11,7 +11,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
 use crate::sequence::IntoSequence;
-use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, Scales};
+use crate::scale::{AxisPosition, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -30,41 +30,29 @@ pub struct Chart<C> where C: ControllerSequence {
     padding: EdgeInsets,
     /// Unknown scale ids already warned about, so each is logged once, not every update.
     warned_scale_ids: HashSet<ScaleId>,
+    /// The default scales not replaced with `Chart::scale`, and the kind each is now. Each fit
+    /// rebuilds one when the controllers ask for another kind.
+    default_kinds: IndexMap<ScaleId, ScaleKind>,
 }
 
 impl<C: ControllerSequence> Chart<C> {
     /// A chart drawing `controllers` on the default scales, `ScaleId::X` and `ScaleId::Y`. Each
     /// default is a linear scale unless a controller asks for another kind (see
-    /// `DatasetController::default_scale`); the first controller to ask, in sequence order, wins.
-    /// A bar chart's x scale is a `CategoryScale` this way.
+    /// `ScaleBounds::request_kind`); the first to ask wins. A bar or line chart's x scale is a
+    /// `CategoryScale` this way. The kind is decided on every fit, so it follows controllers
+    /// added or removed after the chart is built.
     ///
     /// `controllers` is a sequence of controllers, or a single controller.
     pub fn new<I: IntoSequence<dyn DatasetController, M, Sequence=C>, M>(controllers: I) -> Chart<C> {
-        let controllers = controllers.into_sequence();
-        let mut scales = Scales::new();
-
-        for id in [ScaleId::X, ScaleId::Y] {
-            let mut default = None;
-
-            controllers.foreach(&mut |_, controller| {
-                if default.is_none() {
-                    default = controller.default_scale(&id);
-                }
-            });
-
-            if let Some(scale) = default {
-                scales.insert_boxed(id, scale);
-            }
-        }
-
         Chart {
             id: Default::default(),
             position: Default::default(),
             dimension: Default::default(),
-            controllers,
-            scales,
+            controllers: controllers.into_sequence(),
+            scales: Scales::new(),
             padding: EdgeInsets::all(30.0),
             warned_scale_ids: HashSet::new(),
+            default_kinds: [(ScaleId::X, ScaleKind::Linear), (ScaleId::Y, ScaleKind::Linear)].into_iter().collect(),
         }
     }
 
@@ -75,14 +63,18 @@ impl<C: ControllerSequence> Chart<C> {
     /// by `Scale::weight`, then in the order they were added, the first closest to the area.
     ///
     /// `id` is a `ScaleId`, or a `String` for a scale named at runtime.
+    /// A default scale replaced this way is never rebuilt, whatever kind controllers ask for;
+    /// it still gets their offset and grid offset requests.
     pub fn scale(mut self, id: impl Into<ScaleId>, scale: impl Scale) -> Chart<C> {
-        self.scales.insert(id.into(), scale);
+        let id = id.into();
+        self.default_kinds.shift_remove(&id);
+        self.scales.insert(id, scale);
         self
     }
 
-    /// Collects the bounds every controller reports for each scale id, then fits each scale to
-    /// the bounds collected for it. Data bound to an id the chart has no scale for is not drawn;
-    /// it is logged once per id.
+    /// Collects what every controller asks of each scale id, rebuilds a default scale whose
+    /// requested kind changed, then fits each scale to its requests. Data bound to an id the chart
+    /// has no scale for is not drawn; it is logged once per id.
     fn fit_scales(&mut self, env: &mut Environment) {
         let mut bounds = ScaleBounds::default();
 
@@ -95,6 +87,16 @@ impl<C: ControllerSequence> Chart<C> {
                 self.warned_scale_ids.insert(id.clone());
                 log::warn!("Chart has no scale with id {:?}; datasets bound to it are not drawn", id.name());
             }
+        }
+
+        for (id, kind) in &mut self.default_kinds {
+            let requested = bounds.get(id).kind().unwrap_or(ScaleKind::Linear);
+
+            if requested != *kind
+                && let Some(axis) = self.scales.get(id).map(|scale| scale.axis()) {
+                    self.scales.insert_boxed(id.clone(), requested.build(axis));
+                    *kind = requested;
+                }
         }
 
         self.scales.fit(&bounds);
@@ -224,7 +226,7 @@ mod tests {
     use crate::dataset::DatasetExt;
     use crate::sequence::Sequence;
     use crate::DataColor;
-    use crate::scale::{Axis, AxisPosition, LinearScale, ScaleId};
+    use crate::scale::{Axis, AxisPosition, CategoryScale, LinearScale, ScaleId};
     use super::{Chart, SCALE_SPACING};
 
     /// Datasets spread over several controllers share the chart's scales: they fit exactly as
@@ -667,6 +669,64 @@ mod tests {
 
         let lines_and_bars = fitted(Chart::new((LineController::new(values.clone()), BarController::new(values))));
         assert!(lines_and_bars.scales.get(&ScaleId::X).unwrap().normalize(0.0) > 0.0, "bars offset the line chart's x scale");
+    }
+
+    /// Bars get grid lines between their groups whichever controller comes first: the grid
+    /// offset is a request any controller can make, not part of the first controller's default
+    /// scale.
+    #[test]
+    fn bars_get_grid_lines_between_groups_in_any_controller_order() {
+        let values = vec![12.0, 19.0, 3.0];
+
+        for chart in [
+            fitted(Chart::new((LineController::new(values.clone()).boxed(), BarController::new(values.clone()).boxed()))),
+            fitted(Chart::new((BarController::new(values.clone()).boxed(), LineController::new(values.clone()).boxed()))),
+        ] {
+            let x = chart.scales.get(&ScaleId::X).unwrap();
+            assert_eq!(x.ticks(), &[0.0, 1.0, 2.0], "the x scale should be a category scale");
+            assert_eq!(x.grid_line_values(), vec![-0.5, 0.5, 1.5, 2.5], "grid lines should sit between the bar groups");
+        }
+
+        let lines = fitted(Chart::new(LineController::new(values)));
+        assert_eq!(lines.scales.get(&ScaleId::X).unwrap().grid_line_values(), vec![0.0, 1.0, 2.0], "without bars, grid lines sit on the categories");
+    }
+
+    /// A category scale set with `Chart::scale` gets the bars' grid offset unless it sets one
+    /// itself, and is never replaced by a default.
+    #[test]
+    fn explicit_category_scales_get_grid_offset_unless_set() {
+        let votes = vec![12.0, 19.0, 3.0];
+
+        let unset = fitted(Chart::new(BarController::new(votes.clone())).scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(["Red", "Blue", "Yellow"])));
+        assert_eq!(unset.scales.get(&ScaleId::X).unwrap().grid_line_values(), vec![-0.5, 0.5, 1.5, 2.5]);
+
+        let off = fitted(Chart::new(BarController::new(votes)).scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).grid_offset(false)));
+        assert_eq!(off.scales.get(&ScaleId::X).unwrap().grid_line_values(), vec![0.0, 1.0, 2.0], "an explicit setting wins over the request");
+    }
+
+    /// The default scales follow the controllers on every fit: a chart whose controllers start
+    /// empty gets a category x scale once bars are added, and a linear one again once they are
+    /// removed.
+    #[test]
+    fn default_scales_follow_the_controllers() {
+        let mut controllers: LocalState<Vec<Box<dyn DatasetController>>> = LocalState::new(vec![]);
+        let mut chart = Chart::new(controllers.clone());
+        let mut env = Environment::new();
+
+        let x_ticks = |chart: &Chart<LocalState<Vec<Box<dyn DatasetController>>>>| chart.scales.get(&ScaleId::X).unwrap().ticks().to_vec();
+        // A linear scale picks fractional steps for these small ranges; a category scale never does.
+        let linear = |ticks: Vec<Scalar>| ticks.iter().any(|tick| tick.fract() != 0.0);
+
+        chart.fit_scales(&mut env);
+        assert!(linear(x_ticks(&chart)), "with no controllers, x should be linear: {:?}", x_ticks(&chart));
+
+        *controllers.value_mut() = vec![BarController::new(vec![1.0, 2.0, 3.0]).boxed()];
+        chart.fit_scales(&mut env);
+        assert_eq!(x_ticks(&chart), vec![0.0, 1.0, 2.0], "bars should make x a category scale");
+
+        *controllers.value_mut() = vec![ScatterController::new(vec![1.0, 2.0, 3.0]).boxed()];
+        chart.fit_scales(&mut env);
+        assert!(linear(x_ticks(&chart)), "without bars, x should be linear again: {:?}", x_ticks(&chart));
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {

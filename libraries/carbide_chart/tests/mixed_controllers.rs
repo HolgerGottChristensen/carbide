@@ -1,5 +1,5 @@
-//! Several controllers in one chart: sharing scales, draw order, and which controller picks the
-//! default scales.
+//! Several controllers in one chart: sharing scales, draw order, and how their requests to the
+//! scales combine.
 
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
@@ -21,9 +21,9 @@ fn bars_and_line_on_shared_scales() {
 }
 
 /// The data of `bars_and_line_on_shared_scales` with the controllers the other way round: the
-/// line controller first. Its default x scale wins, a category scale without grid offset, so grid
-/// lines run through the bar groups instead of between them; the bars still offset the scale.
-/// The line is also drawn first, under the bars.
+/// line controller first. Pins down that the bars' requests still reach the shared x scale: grid
+/// lines sit between the bar groups and the scale is offset, as with the bars first. Only the
+/// layering changes: the line is drawn first, under the bars.
 #[test]
 fn line_then_bars() {
     let mut harness = Harness::new(line_then_bars_chart(), Dimension::new(600.0, 500.0));

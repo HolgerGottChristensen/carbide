@@ -52,6 +52,12 @@ pub trait Scale: DynClone + Debug + 'static {
     /// so their first and last bars aren't cut in half. Scales that don't support it ignore it.
     fn set_offset(&mut self, _offset: bool) {}
 
+    /// Whether a controller asked for grid lines between ticks instead of on them, set by the
+    /// chart on every fit (see `ScaleBounds::request_grid_offset`). Bar charts ask for it so grid
+    /// lines separate the bar groups. A scale whose grid offset was set explicitly keeps that
+    /// setting; scales that don't support it ignore it.
+    fn set_grid_offset_requested(&mut self, _requested: bool) {}
+
     /// The text shown for the tick at `value`: the number, formatted for the environment's
     /// locale. A category scale shows its labels instead.
     fn tick_label(&self, value: Scalar, env: &mut Environment) -> String {
