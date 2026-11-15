@@ -230,7 +230,7 @@ impl Scale for LinearScale {
             return;
         }
 
-        let mut num_spaces = (f64::ceil(range_max / spacing) - f64::floor(range_min / spacing)) as u32;
+        let mut num_spaces = (steps_at_or_above(range_max, spacing) - steps_at_or_below(range_min, spacing)) as u32;
 
         if num_spaces > max_spaces {
             // If the calculated num of spaces exceeds maxNumSpaces, recalculate it
@@ -248,8 +248,8 @@ impl Scale for LinearScale {
         let mut nice_max: f64;
 
         if self.bounds == Bounds::Ticks {
-            nice_min = (range_min / spacing).floor() * spacing;
-            nice_max = (range_max / spacing).ceil() * spacing;
+            nice_min = steps_at_or_below(range_min, spacing) * spacing;
+            nice_max = steps_at_or_above(range_max, spacing) * spacing;
         } else {
             nice_min = range_min;
             nice_max = range_max;
@@ -350,6 +350,35 @@ fn rounding_factor(decimals: u32) -> Scalar {
     Scalar::powi(10.0, decimals as i32)
 }
 
+/// The largest whole number of `step`s at or below `x`: `floor(x / step)`, except that a quotient
+/// within floating-point noise of a whole number counts as that number. Without this, a value
+/// already on a step can come out a step short: 1.9 / 0.05 is 37.99999999999999, which floors to
+/// 37, so a scale meant to start at 1.9 started at 1.85. matplotlib's `_Edge_integer.le`
+/// (`lib/matplotlib/ticker.py`) does the same; Chart.js floors plainly (`generateTicks` in
+/// `src/scales/scale.linearbase.js`).
+fn steps_at_or_below(x: Scalar, step: Scalar) -> Scalar {
+    let quotient = x / step;
+    let whole = quotient.round();
+
+    if almost_equals(quotient, whole, step_tolerance(quotient)) { whole } else { quotient.floor() }
+}
+
+/// The smallest whole number of `step`s at or above `x`: `ceil(x / step)`, with the same snapping
+/// as `steps_at_or_below` (matplotlib's `_Edge_integer.ge`).
+fn steps_at_or_above(x: Scalar, step: Scalar) -> Scalar {
+    let quotient = x / step;
+    let whole = quotient.round();
+
+    if almost_equals(quotient, whole, step_tolerance(quotient)) { whole } else { quotient.ceil() }
+}
+
+/// How close to a whole number a quotient must be to count as one. Floating-point error grows
+/// with the size of the numbers, so the tolerance does too, from 1e-10, as in matplotlib's
+/// `_Edge_integer.closeto`; it stays under half a step, so it never snaps to the wrong neighbour.
+fn step_tolerance(quotient: Scalar) -> Scalar {
+    (quotient.abs() * 1e-12).clamp(1e-10, 0.4999)
+}
+
 fn almost_equals(x: Scalar, y: Scalar, epsilon: Scalar) -> bool {
     (x - y).abs() < epsilon
 }
@@ -391,6 +420,20 @@ mod tests {
             let normalized = scale.normalize(value);
             assert!(normalized.is_finite() && normalized > 0.0 && normalized < 1.0, "{value}: normalized to {normalized}");
         }
+    }
+
+    /// A single point at 2 is widened to 1.9..2.1 with a step of 0.05. 1.9 / 0.05 is
+    /// 37.99999999999999 in floating point, which used to floor to 37 and start the scale a step
+    /// early, at 1.85, so the point wasn't centred.
+    #[test]
+    fn a_range_already_on_a_step_is_not_widened_by_noise() {
+        let mut scale = LinearScale::new(Axis::Horizontal);
+        scale.set_range(2.0, 2.0);
+
+        assert!((scale.min() - 1.9).abs() < 1e-12, "the scale should start at 1.9, not {}", scale.min());
+        assert!((scale.max() - 2.1).abs() < 1e-12, "the scale should end at 2.1, not {}", scale.max());
+        assert!((scale.normalize(2.0) - 0.5).abs() < 1e-9, "the point should be centred");
+        assert!((scale.ticks()[0] - 1.9).abs() < 1e-12, "the first tick should be 1.9, not {}", scale.ticks()[0]);
     }
 
     /// Ticks whose rounding needs ten or more decimals: the factor is a float, as in Chart.js,

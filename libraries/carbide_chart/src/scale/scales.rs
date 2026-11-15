@@ -67,8 +67,8 @@ impl ScaleBounds {
 }
 
 /// The scales a chart owns, keyed by id, in insertion order: the order the chart draws and lays
-/// them out in. For now only the default `ScaleId::X` and `ScaleId::Y` scales; custom scales come
-/// later (see `docs/multiple-controllers-and-scales.md`).
+/// them out in: the default `ScaleId::X` and `ScaleId::Y` scales, and any added with
+/// `Chart::scale`.
 #[derive(Clone, Debug)]
 pub struct Scales {
     scales: IndexMap<ScaleId, Box<dyn Scale>>,

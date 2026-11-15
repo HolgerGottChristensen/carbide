@@ -5,8 +5,9 @@ use crate::{DataColor, DataPoint, DataSet, DataSetOptions, DataValue};
 use crate::element::Stepped;
 use crate::scale::ScaleId;
 
-/// A dataset with options set through `DatasetExt`. Every option is a state, read from the
-/// environment each time the chart asks for the options.
+/// A dataset with options set through `DatasetExt`. Every option is a state, synced with the
+/// rest of the dataset (see `DataSet::sync`) and read as it was last synced when the chart asks
+/// for the options.
 #[derive(Debug, Clone)]
 pub struct OptionsDataset<T, C, S, XS, YS>
 where
