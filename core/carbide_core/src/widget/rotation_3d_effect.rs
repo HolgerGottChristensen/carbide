@@ -1,4 +1,4 @@
-use cgmath::{perspective, Deg, Matrix4, Point3, Vector3};
+use cgmath::{perspective, BaseFloat, Deg, Matrix4, Point3, Vector3};
 
 use carbide_macro::carbide_default_builder2;
 use crate::CommonWidgetImpl;
@@ -6,6 +6,34 @@ use crate::draw::{Alignment, Angle, Dimension, Position, Rect};
 use crate::render::{Render, RenderContext};
 use crate::state::{IntoReadState, ReadState};
 use crate::widget::{CommonWidget, Empty, Widget, WidgetId, WidgetSync};
+
+/// The field of view `Rotation3DEffect` and `CanvasContext::rotate_3d` see a rotation with,
+/// unless told otherwise.
+pub(crate) const DEFAULT_FOV: f64 = 1.15;
+
+/// The rotation `Rotation3DEffect` applies, around the origin: a rotation by `rotation_x` around
+/// the x axis and `rotation_y` around the y axis, seen in perspective with the field of view `fov`
+/// from a point in front of the screen chosen so the plane of the screen keeps its size. Shared
+/// with `CanvasContext::rotate_3d`, so both rotate the same way; generic over the float type, as
+/// the widget works in `f32` and the canvas in `Scalar`.
+pub(crate) fn rotation_3d_matrix<S: BaseFloat>(rotation_x: Deg<S>, rotation_y: Deg<S>, fov: S) -> Matrix4<S> {
+    let number = |value: f64| S::from(value).expect("a small constant fits any float");
+
+    let perspective = perspective(Deg(fov), S::one(), S::one(), number(10.0));
+    let angle_to_screen_center = number(90.0);
+
+    let outer_angle = number(180.0) - (fov / number(2.0)) - angle_to_screen_center;
+
+    let z = outer_angle.to_radians().tan();
+    let up: Vector3<S> = Vector3::unit_y();
+    let target: Point3<S> = Point3::new(S::zero(), S::zero(), S::zero());
+    let eye: Point3<S> = Point3::new(S::zero(), S::zero(), z);
+
+    let view = Matrix4::look_at_rh(eye, target, up);
+    let matrix = Matrix4::from_angle_x(rotation_x);
+    let matrix = matrix * Matrix4::from_angle_y(rotation_y);
+    perspective * view * matrix
+}
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render)]
@@ -35,7 +63,7 @@ impl Rotation3DEffect<Angle, Angle, Empty> {
             anchor: Alignment::Center,
             rotation_x: rotation_x.into_read_state(),
             rotation_y: rotation_y.into_read_state(),
-            fov: 1.15,
+            fov: DEFAULT_FOV,
         }
     }
 }
@@ -62,21 +90,11 @@ impl<R1: ReadState<T = Angle>, R2: ReadState<T = Angle>, C: Widget> Render for R
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
         // I do not understand why the fov needs to be 1.15, because my intuition says it should be 45deg
-        let fov = self.fov as f32;
-        let perspective = perspective(Deg(fov), 1.0, 1.0, 10.0);
-        let angle_to_screen_center = 90.0;
-
-        let outer_angle = 180.0 - (fov / 2.0) - angle_to_screen_center;
-
-        let z = outer_angle.to_radians().tan();
-        let up: Vector3<f32> = cgmath::Vector3::unit_y();
-        let target: Point3<f32> = Point3::new(0.0, 0.0, 0.0);
-        let eye: Point3<f32> = Point3::new(0.0, 0.0, z);
-
-        let view = Matrix4::look_at_rh(eye, target, up);
-        let matrix = Matrix4::from_angle_x(Deg(self.rotation_x.value().degrees() as f32));
-        let matrix = matrix * Matrix4::from_angle_y(Deg(self.rotation_y.value().degrees() as f32));
-        let matrix = perspective * view * matrix;
+        let matrix = rotation_3d_matrix(
+            Deg(self.rotation_x.value().degrees() as f32),
+            Deg(self.rotation_y.value().degrees() as f32),
+            self.fov as f32,
+        );
         let bounding_box = Rect::new(self.position, self.dimension);
 
 

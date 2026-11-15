@@ -2,6 +2,8 @@ use crate::animation::AnimationManager;
 use crate::draw::path::PathBuilder;
 use crate::draw::stroke::{LineCap, LineJoin, StrokeDashCap, StrokeDashMode, StrokeDashPattern, StrokeOptions};
 use crate::draw::{Alignment, Angle, Dimension, Position, Scalar};
+use crate::math::{Deg, Matrix4, SquareMatrix, Vector3};
+use crate::widget::rotation_3d_effect::{rotation_3d_matrix, DEFAULT_FOV};
 use crate::draw::{Color, DrawShape};
 use crate::environment::Environment;
 use crate::mouse_position::MousePositionEnvironmentExt;
@@ -36,6 +38,9 @@ pub struct ContextState {
     miter_limit: Scalar,
     text_alignment: Alignment,
     clip_count: u32,
+    /// The transform `fill`, `stroke` and `fill_text` apply to what they draw, in the canvas's
+    /// own coordinates. Saved and restored with the rest of the state.
+    transform: Matrix4<Scalar>,
 }
 
 impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
@@ -56,6 +61,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
                 miter_limit: 4.0, //StrokeOptions::DEFAULT_MITER_LIMIT,
                 text_alignment: Alignment::TopLeading,
                 clip_count: 0,
+                transform: Matrix4::identity(),
             },
             state_stack: vec![],
             position,
@@ -136,6 +142,74 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.current_state.miter_limit = limit;
     }
 
+    /// The current transform, which `fill`, `stroke` and `fill_text` apply to what they draw.
+    pub fn get_transform(&self) -> Matrix4<Scalar> {
+        self.current_state.transform
+    }
+
+    /// Replaces the current transform with `transform`. `fill`, `stroke` and `fill_text` apply it
+    /// to what they draw, in the canvas's own coordinates, so the canvas's top left corner is the
+    /// origin. It is part of the state `save` and `restore` keep.
+    pub fn set_transform(&mut self, transform: Matrix4<Scalar>) {
+        self.current_state.transform = transform;
+    }
+
+    /// Resets the current transform to the identity: paths are drawn as they are built.
+    pub fn reset_transform(&mut self) {
+        self.set_transform(Matrix4::identity());
+    }
+
+    /// Adds `transform` to the current one, by multiplying it on the right: `transform` is applied
+    /// to what is drawn first, then the transforms set before it, as with an HTML canvas.
+    pub fn transform(&mut self, transform: Matrix4<Scalar>) {
+        self.current_state.transform = self.current_state.transform * transform;
+    }
+
+    /// Adds a translation by `offset` to the current transform (see `transform`).
+    pub fn translate(&mut self, offset: Vector3<Scalar>) {
+        self.transform(Matrix4::from_translation(offset));
+    }
+
+    /// Adds a scale by `factors` along x, y and z to the current transform (see `transform`).
+    /// It scales around the origin, so a scale by 2 also moves what is drawn away from it.
+    pub fn scale(&mut self, factors: Vector3<Scalar>) {
+        self.transform(Matrix4::from_nonuniform_scale(factors.x, factors.y, factors.z));
+    }
+
+    /// Adds a rotation by `angle` around the z axis, out of the canvas, to the current transform
+    /// (see `transform`). It rotates around the origin; positive angles turn from the x axis
+    /// towards the y axis, clockwise on screen, as y grows downwards.
+    pub fn rotate(&mut self, angle: Angle) {
+        self.transform(Matrix4::from_angle_z(Deg(angle.degrees())));
+    }
+
+    /// Adds a rotation by `rotation_x` around the x axis and `rotation_y` around the y axis, seen
+    /// in perspective, to the current transform (see `transform`): the same rotation the
+    /// `Rotation3DEffect` widget applies, with its default field of view. It rotates around the
+    /// origin, so translate to where it should turn around first, as the widget's anchor does.
+    pub fn rotate_3d(&mut self, rotation_x: Angle, rotation_y: Angle) {
+        self.transform(rotation_3d_matrix(Deg(rotation_x.degrees()), Deg(rotation_y.degrees()), DEFAULT_FOV));
+    }
+
+    /// Runs `draw` with the current transform applied, moved to where the canvas is drawn: paths
+    /// are built with the canvas's position added (see `move_to`), so the transform is applied
+    /// around that position, as the canvas's origin. Without a transform, `draw` runs as it is, so
+    /// an untransformed canvas renders exactly as it did before transforms existed.
+    fn with_transform(&mut self, draw: impl FnOnce(&mut RenderContext)) {
+        if self.current_state.transform == Matrix4::identity() {
+            draw(self.render_context);
+            return;
+        }
+
+        let origin = Vector3::new(self.position.x, self.position.y, 0.0);
+        let transform = Matrix4::from_translation(origin) * self.current_state.transform * Matrix4::from_translation(-origin);
+
+        // The renderer works in `f32`; the transform is kept in `Scalar` until it is drawn.
+        let transform = transform.cast::<f32>().expect("an f64 matrix always casts to f32");
+
+        self.render_context.transform(transform, draw);
+    }
+
     pub fn set_fill_style<C: IntoReadState<Style>>(&mut self, style: C) {
         let mut read_state = style.into_read_state();
         read_state.sync(self.render_context.env);
@@ -168,6 +242,7 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         todo!()
     }
 
+    /// Fills the current path, with the current transform applied (see `set_transform`).
     pub fn fill(&mut self) {
         #[derive(Clone, Debug)]
         struct FillShape {
@@ -181,12 +256,16 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         }
 
         let path = self.path_builder.path().clone();
+        let style = self.current_state.fill_color.convert(self.position, self.dimension);
 
-        self.render_context.style(self.current_state.fill_color.convert(self.position, self.dimension), |ctx| {
-            ctx.shape(FillShape { path }, ShapeStyle::Fill)
+        self.with_transform(|ctx| {
+            ctx.style(style, |ctx| {
+                ctx.shape(FillShape { path }, ShapeStyle::Fill)
+            })
         });
     }
 
+    /// Strokes the current path, with the current transform applied (see `set_transform`).
     pub fn stroke(&mut self) {
         #[derive(Clone, Debug)]
         struct StrokeShape {
@@ -222,10 +301,15 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         });
 
         let path = self.path_builder.path().clone();
+        let style = self.current_state.stroke_color.convert(self.position, self.dimension);
 
-        self.render_context.style(self.current_state.stroke_color.convert(self.position, self.dimension), |ctx| {
-            ctx.stroke_dash_pattern(dashes, |ctx| {
-                ctx.shape(StrokeShape { path }, stroke_options)
+        // The transform applies to the stroke as drawn, so a scale also scales the line's width,
+        // as with an HTML canvas.
+        self.with_transform(|ctx| {
+            ctx.style(style, |ctx| {
+                ctx.stroke_dash_pattern(dashes, |ctx| {
+                    ctx.shape(StrokeShape { path }, stroke_options)
+                })
             })
         });
     }
@@ -338,6 +422,9 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         self.render_context.measure_text(text, &Self::text_style(), None)
     }
 
+    /// Draws `text` at (`x`, `y`), placed by the current text alignment, with the current transform
+    /// applied (see `set_transform`): a rotation turns the text around the origin, so rotate
+    /// around the text's position to turn it in place.
     pub fn fill_text(&mut self, text: &str, x: Scalar, y: Scalar) {
         let text_style = Self::text_style();
 
@@ -360,8 +447,12 @@ impl<'a, 'b, 'c: 'b> CanvasContext<'a, 'b, 'c> {
         };
 
         let style = self.current_state.fill_color.convert(position + self.position, size);
-        self.render_context.style(style, |render_context| {
-            render_context.text(text, &text_style, position + self.position, None);
+        let position = position + self.position;
+
+        self.with_transform(|render_context| {
+            render_context.style(style, |render_context| {
+                render_context.text(text, &text_style, position, None);
+            });
         });
     }
 }
