@@ -1,10 +1,52 @@
+use std::fmt::Debug;
 use std::ops::Range;
 
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use carbide::state::IntoReadState;
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
+use dyn_clone::DynClone;
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
+use crate::sequence::{Sequence, SequenceItem};
+
+/// A category scale's labels, boxed: any sequence of strings (see `CategoryScale::labels`).
+trait Labels: DynClone + Debug {
+    fn foreach(&self, f: &mut dyn FnMut(usize, &str));
+
+    fn sync(&mut self, env: &mut Environment) -> bool;
+
+    fn count(&self) -> usize;
+}
+
+dyn_clone::clone_trait_object!(Labels);
+
+impl<S: Sequence<str>> Labels for S {
+    fn foreach(&self, f: &mut dyn FnMut(usize, &str)) {
+        Sequence::<str>::foreach(self, &mut |index, text| f(index, text));
+    }
+
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        Sequence::<str>::sync(self, env)
+    }
+
+    fn count(&self) -> usize {
+        Sequence::<str>::count(self)
+    }
+}
+
+/// A label is an item of a sequence of labels.
+impl SequenceItem<str> for String {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &str)) {
+        f(index, self);
+    }
+}
+
+/// A label is an item of a sequence of labels.
+impl SequenceItem<str> for &'static str {
+    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &str)) {
+        f(index, self);
+    }
+}
 
 /// A scale of evenly spaced categories, one tick per index. Data values are category indices: a
 /// `Vec<Scalar>` dataset's points are at 0, 1, 2, ..., so with `labels(["Red", "Blue", ...])` index
@@ -18,15 +60,19 @@ use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 ///   while labels stay centred on their category. It is on when set with `grid_offset(true)`, or,
 ///   when not set, when a controller asks for it (see `Scale::set_grid_offset_requested`).
 /// - Vertical category scales run from top to bottom, so they read like a list.
+///
+/// The labels and the grid offset, like the axis options, can be states, read as they were last
+/// synced: the chart refits its scales on every update, so changed labels change the categories
+/// the scale spans.
 #[derive(Clone, Debug)]
 pub struct CategoryScale {
     axis: Axis,
     axis_options: AxisOptions,
     offset: bool,
     /// Set with `grid_offset`; when `None`, the scale follows what controllers request.
-    grid_offset: Option<bool>,
+    grid_offset: Option<Box<dyn AnyReadState<T=bool>>>,
     grid_offset_requested: bool,
-    labels: Vec<String>,
+    labels: Box<dyn Labels>,
     min: Scalar,
     max: Scalar,
     ticks: Vec<Scalar>,
@@ -40,7 +86,7 @@ impl CategoryScale {
             offset: false,
             grid_offset: None,
             grid_offset_requested: false,
-            labels: vec![],
+            labels: Box::new(Vec::<String>::new()),
             min: 0.0,
             max: 0.0,
             ticks: vec![],
@@ -50,41 +96,56 @@ impl CategoryScale {
         scale
     }
 
-    /// The names of the categories, in index order. The tick for index `i` shows `labels[i]`;
+    /// The names of the categories, in index order. The tick for index `i` shows label `i`;
     /// indices without a label show their number.
-    pub fn labels<L: Into<String>>(mut self, labels: impl IntoIterator<Item=L>) -> CategoryScale {
-        self.labels = labels.into_iter().map(Into::into).collect();
+    ///
+    /// The labels are a sequence of strings, as a dataset is a sequence of points: an array or
+    /// `Vec` of `&'static str` or `String`, or a state holding a collection of them, such as a
+    /// `LocalState<Vec<String>>` or a state mapped from a model, so the categories can change
+    /// after the chart is built.
+    pub fn labels(mut self, labels: impl Sequence<str>) -> CategoryScale {
+        self.labels = Box::new(labels);
         self
     }
 
     /// Draws grid lines and tick marks between categories instead of through them, or through
-    /// them with `false`. Without it, the scale follows the controllers drawn on it: bar charts
-    /// ask for grid lines between categories, so the lines separate the bar groups.
-    pub fn grid_offset(mut self, grid_offset: bool) -> CategoryScale {
-        self.grid_offset = Some(grid_offset);
+    /// them with `false`; a value or a state of one. Without it, the scale follows the
+    /// controllers drawn on it: bar charts ask for grid lines between categories, so the lines
+    /// separate the bar groups.
+    pub fn grid_offset(mut self, grid_offset: impl IntoReadState<bool>) -> CategoryScale {
+        self.grid_offset = Some(grid_offset.into_read_state().as_dyn_read());
         self
     }
 
+    /// Whether grid lines and tick marks sit between the categories: as set with `grid_offset`,
+    /// or else as the controllers asked.
+    fn has_grid_offset(&self) -> bool {
+        match &self.grid_offset {
+            Some(grid_offset) => *grid_offset.value_dyn(),
+            None => self.grid_offset_requested,
+        }
+    }
+
     /// See `LinearScale::position`.
-    pub fn position(mut self, position: AxisPosition) -> CategoryScale {
+    pub fn position(mut self, position: impl IntoReadState<AxisPosition>) -> CategoryScale {
         self.axis_options = self.axis_options.with_position(position);
         self
     }
 
     /// See `LinearScale::weight`.
-    pub fn weight(mut self, weight: i32) -> CategoryScale {
+    pub fn weight(mut self, weight: impl IntoReadState<i32>) -> CategoryScale {
         self.axis_options = self.axis_options.with_weight(weight);
         self
     }
 
     /// See `LinearScale::grid_lines`.
-    pub fn grid_lines(mut self, grid_lines: bool) -> CategoryScale {
+    pub fn grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> CategoryScale {
         self.axis_options = self.axis_options.with_grid_lines(grid_lines);
         self
     }
 
     /// See `LinearScale::tick_marks`.
-    pub fn tick_marks(mut self, tick_marks: bool) -> CategoryScale {
+    pub fn tick_marks(mut self, tick_marks: impl IntoReadState<bool>) -> CategoryScale {
         self.axis_options = self.axis_options.with_tick_marks(tick_marks);
         self
     }
@@ -115,7 +176,10 @@ impl Scale for CategoryScale {
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.axis_options.sync(env)
+        let mut changed = self.axis_options.sync(env);
+        changed |= self.labels.sync(env);
+        changed |= self.grid_offset.as_mut().is_some_and(|grid_offset| grid_offset.sync(env));
+        changed
     }
 
     fn normalize(&self, value: Scalar) -> Scalar {
@@ -140,15 +204,23 @@ impl Scale for CategoryScale {
 
     /// The category's name, for an index with a label; other indices show their number.
     fn label(&self, value: Scalar) -> Option<String> {
-        if value >= 0.0 {
-            self.labels.get(value as usize).cloned()
-        } else {
-            None
+        if value < 0.0 {
+            return None;
         }
+
+        let wanted = value as usize;
+        let mut label = None;
+        self.labels.foreach(&mut |index, text| {
+            if index == wanted {
+                label = Some(text.to_string());
+            }
+        });
+
+        label
     }
 
     fn grid_line_values(&self) -> Vec<Scalar> {
-        if !self.grid_offset.unwrap_or(self.grid_offset_requested) {
+        if !self.has_grid_offset() {
             return self.ticks.clone();
         }
 
@@ -173,7 +245,9 @@ impl Scale for CategoryScale {
     /// Fits the scale to the data's indices, rounded to whole categories; with labels, to every
     /// label instead.
     fn set_range(&mut self, min: Scalar, max: Scalar) {
-        if self.labels.is_empty() {
+        let label_count = self.labels.count();
+
+        if label_count == 0 {
             let min = if min.is_finite() { min.round().max(0.0) } else { 0.0 };
             let max = if max.is_finite() { max.round() } else { min };
 
@@ -181,7 +255,7 @@ impl Scale for CategoryScale {
             self.max = max.max(min);
         } else {
             self.min = 0.0;
-            self.max = (self.labels.len() - 1) as Scalar;
+            self.max = (label_count - 1) as Scalar;
         }
 
         self.recalculate_ticks();
@@ -203,8 +277,45 @@ impl Scale for CategoryScale {
 
 #[cfg(test)]
 mod tests {
+    use carbide::environment::Environment;
+    use carbide::state::{LocalState, State};
     use crate::scale::{Axis, Scale};
     use super::CategoryScale;
+
+    /// The labels can be a state: after a sync, the scale names its ticks with the new labels,
+    /// and a refit spans as many categories as there are labels now.
+    #[test]
+    fn labels_can_be_a_state() {
+        let mut labels = LocalState::new(vec!["Low".to_string(), "High".to_string()]);
+        let mut scale = CategoryScale::new(Axis::Horizontal).labels(labels.clone());
+        scale.sync(&mut Environment::new());
+        scale.set_range(0.0, 0.0);
+        assert_eq!((scale.min(), scale.max()), (0.0, 1.0));
+        assert_eq!(scale.label(1.0).as_deref(), Some("High"));
+
+        labels.value_mut().insert(1, "Medium".to_string());
+        scale.sync(&mut Environment::new());
+        scale.set_range(0.0, 0.0);
+        assert_eq!((scale.min(), scale.max()), (0.0, 2.0), "three labels span three categories");
+        assert_eq!(scale.label(1.0).as_deref(), Some("Medium"));
+        assert_eq!(scale.label(2.0).as_deref(), Some("High"));
+        assert_eq!(scale.label(3.0), None, "an index past the labels has none");
+    }
+
+    /// The grid offset can be a state, and set either way it wins over what controllers ask for.
+    #[test]
+    fn grid_offset_can_be_a_state() {
+        let mut grid_offset = LocalState::new(false);
+        let mut scale = CategoryScale::new(Axis::Horizontal).grid_offset(grid_offset.clone());
+        scale.set_grid_offset_requested(true);
+        scale.sync(&mut Environment::new());
+        scale.set_range(0.0, 2.0);
+        assert_eq!(scale.grid_line_values(), vec![0.0, 1.0, 2.0], "set to false, the lines go through the categories");
+
+        *grid_offset.value_mut() = true;
+        scale.sync(&mut Environment::new());
+        assert_eq!(scale.grid_line_values(), vec![-0.5, 0.5, 1.5, 2.5]);
+    }
 
     /// One tick per index, never fractional: the case that gave `LinearScale` ticks every 0.5.
     #[test]

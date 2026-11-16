@@ -2,6 +2,7 @@
 
 use carbide_chart::{Axis, AxisPosition, Chart, DatasetExt, LineController, LinearScale, ScaleId, ScatterController};
 use carbide_core::draw::Dimension;
+use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
@@ -174,6 +175,48 @@ fn scales_on_all_four_sides() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("scales_on_all_four_sides");
+}
+
+/// A line on scales whose options are states, rendered once as set and once after every option
+/// changed: the y scale moves from the left to the right and its weight puts it outside a second
+/// scale there, the x scale moves to the top, and the y scale's grid lines and tick marks are
+/// turned off. Pins down that the chart reads every option as it was last synced, so a changed
+/// option moves the band and the chart area with it on the next render.
+#[test]
+fn scale_options_change_between_renders() {
+    let mut y_position = LocalState::new(AxisPosition::Left);
+    let mut y_weight = LocalState::new(0);
+    let mut grid_lines = LocalState::new(true);
+    let mut tick_marks = LocalState::new(true);
+    let mut x_position = LocalState::new(AxisPosition::Bottom);
+
+    // Revenue on the default scales, and a margin line on a percent scale fixed on the right.
+    let revenue = vec![120.0, 135.0, 150.0, 110.0, 160.0];
+    let margin = vec![0.12, 0.18, 0.15, 0.08, 0.22].y_scale(PERCENT);
+
+    let chart = Chart::new((
+        LineController::new(revenue),
+        LineController::new(margin).palette_offset(1),
+    ))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical)
+            .position(y_position.clone())
+            .weight(y_weight.clone())
+            .grid_lines(grid_lines.clone())
+            .tick_marks(tick_marks.clone())
+            .title("Revenue"))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).position(x_position.clone()))
+        .scale(PERCENT, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).grid_lines(false).title("Margin"))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("as_set");
+
+    *y_position.value_mut() = AxisPosition::Right;
+    *y_weight.value_mut() = 1;
+    *grid_lines.value_mut() = false;
+    *tick_marks.value_mut() = false;
+    *x_position.value_mut() = AxisPosition::Top;
+    harness.snapshot("changed");
 }
 
 // ===============================

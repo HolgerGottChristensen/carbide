@@ -30,32 +30,33 @@ impl LinearScale {
         }
     }
 
-    /// Draws the scale on the given side of the chart area. Horizontal scales go above or below
-    /// it, vertical scales left or right of it; any other side is logged and the scale keeps its
-    /// current position.
-    pub fn position(mut self, position: AxisPosition) -> LinearScale {
+    /// Draws the scale on the given side of the chart area, a side or a state of one. Horizontal
+    /// scales go above or below it, vertical scales left or right of it; any other side is logged
+    /// and the scale is drawn on its default side.
+    pub fn position(mut self, position: impl IntoReadState<AxisPosition>) -> LinearScale {
         self.axis_options = self.axis_options.with_position(position);
         self
     }
 
     /// Orders the scale among the scales on the same side: a higher weight is placed further
-    /// away from the chart area. Defaults to 0. See `AxisOptions::weight`.
-    pub fn weight(mut self, weight: i32) -> LinearScale {
+    /// away from the chart area. Defaults to 0. A value or a state of one. See
+    /// `AxisOptions::weight`.
+    pub fn weight(mut self, weight: impl IntoReadState<i32>) -> LinearScale {
         self.axis_options = self.axis_options.with_weight(weight);
         self
     }
 
     /// Whether the scale draws grid lines across the chart area. Defaults to `true`. Turn it off
     /// for secondary scales so their lines don't interleave with the primary scale's; the labels
-    /// stay.
-    pub fn grid_lines(mut self, grid_lines: bool) -> LinearScale {
+    /// stay. A value or a state of one.
+    pub fn grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> LinearScale {
         self.axis_options = self.axis_options.with_grid_lines(grid_lines);
         self
     }
 
     /// Whether the scale draws tick marks in its band, between the chart area and its labels.
-    /// Defaults to `true`.
-    pub fn tick_marks(mut self, tick_marks: bool) -> LinearScale {
+    /// Defaults to `true`. A value or a state of one.
+    pub fn tick_marks(mut self, tick_marks: impl IntoReadState<bool>) -> LinearScale {
         self.axis_options = self.axis_options.with_tick_marks(tick_marks);
         self
     }

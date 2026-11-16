@@ -2,6 +2,7 @@
 
 use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LineController, ScaleId};
 use carbide_core::draw::Dimension;
+use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
@@ -90,6 +91,29 @@ fn vertical_category_scale_on_right() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("vertical_category_scale_on_right");
+}
+
+/// Bars on a category scale whose labels and grid offset are states, rendered once as set and
+/// once after a label was renamed, a fifth one added and the grid offset turned off. Pins down
+/// that the scale names its ticks with the labels as last synced, spans every label, so the new
+/// one gets a category without data, and draws its grid lines through the categories once the
+/// grid offset is off.
+#[test]
+fn category_labels_change_between_renders() {
+    let mut labels = LocalState::new(STATUS_LABELS.iter().map(|label| label.to_string()).collect::<Vec<String>>());
+    let mut grid_offset = LocalState::new(true);
+
+    let chart = Chart::new(BarController::new(vec![4.0, 9.0, 6.0, 2.0]))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(labels.clone()).grid_offset(grid_offset.clone()))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("as_set");
+
+    labels.value_mut()[1] = "Moderate".to_string();
+    labels.value_mut().push("Unknown".to_string());
+    *grid_offset.value_mut() = false;
+    harness.snapshot("changed");
 }
 
 // ===============================

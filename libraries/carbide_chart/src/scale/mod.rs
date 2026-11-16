@@ -10,6 +10,7 @@ use dyn_clone::DynClone;
 use std::ops::Range;
 use carbide::environment::Environment;
 use carbide_core::draw::Scalar;
+use carbide_derive::StateValue;
 pub use axis_options::AxisOptions;
 pub use category_scale::CategoryScale;
 pub use linear_scale::*;
@@ -108,7 +109,7 @@ impl Axis {
 }
 
 /// The side of the chart area a scale is drawn on.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, StateValue)]
 pub enum AxisPosition {
     Left,
     Right,

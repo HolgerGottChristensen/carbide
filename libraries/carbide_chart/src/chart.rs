@@ -770,6 +770,24 @@ mod tests {
         assert_eq!(*chart.legend.value_dyn(), LegendPosition::Right);
     }
 
+    /// A scale's options are states, synced with the chart, so the layout follows them: moving
+    /// the y scale to the right moves its band, and the chart area with it.
+    #[test]
+    fn scale_options_are_states() {
+        let mut position = LocalState::new(AxisPosition::Left);
+        let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])).scale(ScaleId::Y, LinearScale::new(Axis::Vertical).position(position.clone())));
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
+
+        chart.sync(&mut Environment::new());
+        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 30.0 + 35.0, "the y band is on the left");
+
+        *position.value_mut() = AxisPosition::Right;
+        chart.sync(&mut Environment::new());
+        let area = chart.layout(&bands, &Decorations::default()).chart_area;
+        assert_eq!((area.left(), area.right()), (30.0, 400.0 - 30.0 - 35.0), "the y band moved to the right");
+    }
+
     /// A scale's axis title is a state, synced with the chart, so a changed title is drawn on the
     /// next render.
     #[test]
