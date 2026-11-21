@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::DataValue;
+use crate::dataset::datavalue::{DataValue, ValueKind};
 use crate::sequence::SequenceItem;
 
 /// A data point with an open, a high, a low and a close value, such as a trading period's prices.
@@ -45,6 +45,14 @@ impl<X: DataValue, V: DataValue> DataPoint for Ohlc<X, V> {
 
     fn y(&self) -> Option<Scalar> {
         self.close.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        V::KIND
     }
 }
 

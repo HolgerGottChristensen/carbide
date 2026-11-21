@@ -25,7 +25,7 @@ const TITLE_GAP: Scalar = 4.0;
 /// The text shown for the tick at `value`: the scale's own label for it if it has one (a category
 /// scale's names), otherwise the number, formatted for the environment's locale.
 pub(crate) fn tick_label(scale: &dyn Scale, value: Scalar, env: &mut Environment) -> String {
-    scale.label(value).unwrap_or_else(|| format_number(value, env))
+    scale.label(value, env).unwrap_or_else(|| format_number(value, env))
 }
 
 /// How far the scale's band reaches out from the chart area: its tick marks plus its widest tick

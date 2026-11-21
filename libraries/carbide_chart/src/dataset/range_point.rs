@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::DataValue;
+use crate::dataset::datavalue::{DataValue, ValueKind};
 use crate::sequence::SequenceItem;
 
 /// A data point with a low and a high value next to its x and y: the two ends of a floating bar,
@@ -58,6 +58,14 @@ impl<X: DataValue, V: DataValue> DataPoint for Range<X, V> {
     fn y(&self) -> Option<Scalar> {
         self.high.value()
     }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        V::KIND
+    }
 }
 
 impl<X: DataValue, V: DataValue> RangePoint for Range<X, V> {
@@ -87,6 +95,14 @@ impl<X: DataValue, V: DataValue> DataPoint for Estimate<X, V> {
 
     fn y(&self) -> Option<Scalar> {
         self.y.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        V::KIND
     }
 }
 
@@ -121,6 +137,14 @@ impl<X: DataValue, V: DataValue> DataPoint for Spread<X, V> {
 
     fn y(&self) -> Option<Scalar> {
         self.y.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        V::KIND
     }
 }
 

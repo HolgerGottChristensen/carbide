@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::DataValue;
+use crate::dataset::datavalue::{DataValue, ValueKind};
 use crate::sequence::SequenceItem;
 
 /// A data point with a size next to its x and y, such as a bubble's value. Marks that draw sizes
@@ -41,6 +41,14 @@ impl<X: DataValue, Y: DataValue, S: DataValue> DataPoint for Bubble<X, Y, S> {
 
     fn y(&self) -> Option<Scalar> {
         self.y.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        Y::KIND
     }
 
     fn z(&self) -> Option<Scalar> {

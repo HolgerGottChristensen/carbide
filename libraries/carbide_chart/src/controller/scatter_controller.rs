@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{report_value_kinds, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
@@ -97,6 +97,8 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// replaces reports only what the mark draws, as its other points aren't drawn, unless a line
     /// runs through all its points (`show_line`).
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
+        report_value_kinds(&self.dataset_sequence, bounds, Orientation::Vertical);
+
         let replaced = self.replaced_points();
         collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical, |dataset_index| {
             self.show_line || !replaced.contains(&dataset_index)

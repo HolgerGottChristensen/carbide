@@ -1,6 +1,6 @@
 use carbide::draw::{Position, Scalar};
 use crate::DataColor;
-use crate::dataset::datavalue::DataValue;
+use crate::dataset::datavalue::{DataValue, ValueKind};
 
 /// One datum, as a controller reads it to draw a bar or a point: its coordinates as numbers, each
 /// `None` when it is missing, and optionally a colour of its own.
@@ -32,6 +32,17 @@ pub trait DataPoint {
         DataColor::ByDataSet
     }
 
+    /// What the point's x is (see `DataValue::KIND`), for the chart to pick a default scale for
+    /// it. `ValueKind::Number` by default; a point whose x is a date says `ValueKind::Time`.
+    fn x_kind(&self) -> ValueKind {
+        ValueKind::Number
+    }
+
+    /// What the point's y is (see `x_kind`).
+    fn y_kind(&self) -> ValueKind {
+        ValueKind::Number
+    }
+
     /// Whether the point is missing: its x or y is. A missing point is not drawn, adds nothing to
     /// its dataset's bounds or stack, and leaves a gap in a line (see `SpanGaps`).
     fn is_missing(&self) -> bool {
@@ -55,6 +66,14 @@ impl<T: DataPoint + ?Sized> DataPoint for &T {
     fn color(&self) -> DataColor {
         T::color(self)
     }
+
+    fn x_kind(&self) -> ValueKind {
+        T::x_kind(self)
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        T::y_kind(self)
+    }
 }
 
 impl DataPoint for Position {
@@ -75,6 +94,14 @@ impl<X: DataValue, Y: DataValue> DataPoint for (X, Y) {
     fn y(&self) -> Option<Scalar> {
         self.1.value()
     }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        Y::KIND
+    }
 }
 
 impl<X: DataValue, Y: DataValue, Z: DataValue> DataPoint for (X, Y, Z) {
@@ -88,6 +115,14 @@ impl<X: DataValue, Y: DataValue, Z: DataValue> DataPoint for (X, Y, Z) {
 
     fn z(&self) -> Option<Scalar> {
         self.2.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        Y::KIND
     }
 }
 
@@ -107,6 +142,14 @@ impl<P: DataPoint> DataPoint for Option<P> {
 
     fn color(&self) -> DataColor {
         self.as_ref().map_or(DataColor::ByDataSet, DataPoint::color)
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        self.as_ref().map_or(ValueKind::Number, DataPoint::x_kind)
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        self.as_ref().map_or(ValueKind::Number, DataPoint::y_kind)
     }
 }
 

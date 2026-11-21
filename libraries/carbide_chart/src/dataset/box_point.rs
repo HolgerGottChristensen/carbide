@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::DataValue;
+use crate::dataset::datavalue::{DataValue, ValueKind};
 use crate::sequence::SequenceItem;
 
 /// A data point with the five statistics a box plot draws: the minimum, the first quartile, the
@@ -50,6 +50,14 @@ impl<X: DataValue, V: DataValue> DataPoint for BoxStats<X, V> {
 
     fn y(&self) -> Option<Scalar> {
         self.median.value()
+    }
+
+    fn x_kind(&self) -> ValueKind {
+        X::KIND
+    }
+
+    fn y_kind(&self) -> ValueKind {
+        V::KIND
     }
 }
 

@@ -396,6 +396,33 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
     }
 }
 
+/// Reports what each dataset's values are (see `ScaleBounds::report_value_kind`): the kind of its
+/// first point with an x and a y, the x for the scale its x is placed on and the y for the scale
+/// its y is placed on, as `orientation` places them. Every dataset reports, whether or not its
+/// points are drawn, as its marks are drawn on the same scales.
+pub(crate) fn report_value_kinds<T, D>(datasets: &D, bounds: &mut ScaleBounds, orientation: Orientation)
+where
+    T: AsDataSet + ?Sized,
+    D: Sequence<T>,
+{
+    datasets.foreach(&mut |_dataset_index, dataset| {
+        let dataset = dataset.as_dataset();
+        let mut kinds = None;
+        dataset.points(&mut |_index, point| {
+            if kinds.is_none() && point.x().is_some() && point.y().is_some() {
+                kinds = Some((point.x_kind(), point.y_kind()));
+            }
+        });
+
+        if let Some((x_kind, y_kind)) = kinds {
+            let options = dataset.options();
+            let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
+            bounds.report_value_kind(index_scale, x_kind);
+            bounds.report_value_kind(value_scale, y_kind);
+        }
+    });
+}
+
 /// Adds a legend entry for each of `datasets` that has a name: the entry the dataset's first mark
 /// to give one asks for (`mark_entry`, which reads the marks with the context it is given), or
 /// else the colour its line, area or bars are drawn in (see `dataset_color`), with the marker

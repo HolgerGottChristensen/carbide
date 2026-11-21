@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{report_value_kinds, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
@@ -172,6 +172,8 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
+        report_value_kinds(&self.dataset_sequence, bounds, self.orientation);
+
         let replaced = self.replaced_lines();
         let offsets = self.stack_offsets(&replaced);
 

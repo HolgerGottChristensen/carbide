@@ -13,6 +13,7 @@ authors = [
 carbide_derive.workspace = true
 carbide_core.workspace = true
 carbide_fluent = { workspace = true, optional = true }
+chrono.workspace = true
 dyn-clone.workspace = true
 indexmap.workspace = true
 log.workspace = true

@@ -2,7 +2,8 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use indexmap::IndexMap;
 
-use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId};
+use crate::ValueKind;
+use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId, TimeScale};
 
 /// The data range reported for one scale while the chart collects bounds: the union of every
 /// range included so far, or `None` when no dataset has reported anything yet.
@@ -34,6 +35,9 @@ pub enum ScaleKind {
     Linear,
     /// A `CategoryScale`, for values that are indices into a list.
     Category,
+    /// A `TimeScale`, for dates. The default for a scale whose data are dates, whatever a
+    /// controller asks for (see `ScaleRequest::default_kind`).
+    Time,
 }
 
 impl ScaleKind {
@@ -42,6 +46,7 @@ impl ScaleKind {
         match self {
             ScaleKind::Linear => Box::new(LinearScale::new(axis)),
             ScaleKind::Category => Box::new(CategoryScale::new(axis)),
+            ScaleKind::Time => Box::new(TimeScale::new(axis)),
         }
     }
 }
@@ -51,13 +56,15 @@ impl ScaleKind {
 ///
 /// - the range is the union of every range included;
 /// - the offset and the grid offset are on if anyone asks for them;
-/// - the kind is the first one asked for, in controller and dataset order.
+/// - the kind is the first one asked for, in controller and dataset order;
+/// - the value kind is the first one reported, in controller and dataset order.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ScaleRequest {
     bounds: DataBounds,
     offset: bool,
     grid_offset: bool,
     kind: Option<ScaleKind>,
+    value_kind: Option<ValueKind>,
 }
 
 impl ScaleRequest {
@@ -79,6 +86,22 @@ impl ScaleRequest {
     /// The first kind of scale asked for, if any.
     pub fn kind(&self) -> Option<ScaleKind> {
         self.kind
+    }
+
+    /// What the first dataset reported its values on the scale to be, if any did (see
+    /// `ScaleBounds::report_value_kind`).
+    pub fn value_kind(&self) -> Option<ValueKind> {
+        self.value_kind
+    }
+
+    /// The kind of scale the chart builds for a default scale with this request: a time scale
+    /// when the data on it are dates, as ag-charts picks a time axis for dates, otherwise the kind
+    /// a controller asked for, or a linear scale when none did.
+    pub fn default_kind(&self) -> ScaleKind {
+        match self.value_kind {
+            Some(ValueKind::Time) => ScaleKind::Time,
+            Some(ValueKind::Number) | None => self.kind.unwrap_or(ScaleKind::Linear),
+        }
     }
 }
 
@@ -124,6 +147,15 @@ impl ScaleBounds {
     pub fn request_kind(&mut self, id: &ScaleId, kind: ScaleKind) {
         let request = self.request_mut(id);
         request.kind.get_or_insert(kind);
+    }
+
+    /// Reports what the values placed on the scale `id` are, such as dates, so the chart can pick
+    /// a default scale for them (see `ScaleRequest::default_kind`). Controllers report the kind of
+    /// each dataset's first point with an x and a y (`DataPoint::x_kind`, `y_kind`) for the scales
+    /// its x and y are placed on. The first kind reported wins.
+    pub fn report_value_kind(&mut self, id: &ScaleId, kind: ValueKind) {
+        let request = self.request_mut(id);
+        request.value_kind.get_or_insert(kind);
     }
 
     /// What was asked of the scale `id`; empty when nothing was.

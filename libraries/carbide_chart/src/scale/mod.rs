@@ -2,6 +2,7 @@ pub(crate) mod axis;
 mod axis_options;
 mod category_scale;
 mod linear_scale;
+mod time_scale;
 mod scales;
 mod scale_id;
 
@@ -14,6 +15,7 @@ use carbide_derive::StateValue;
 pub use axis_options::AxisOptions;
 pub use category_scale::CategoryScale;
 pub use linear_scale::*;
+pub use time_scale::{TimeScale, TimeScaleZone, TimeUnit};
 pub use scales::*;
 pub use scale_id::ScaleId;
 
@@ -57,9 +59,10 @@ pub trait Scale: DynClone + Debug + 'static {
     /// setting; scales that don't support it ignore it.
     fn set_grid_offset_requested(&mut self, _requested: bool) {}
 
-    /// The scale's own text for the tick at `value`, such as a category's name. `None`, the
-    /// default, shows the number, formatted for the environment's locale.
-    fn label(&self, _value: Scalar) -> Option<String> {
+    /// The scale's own text for the tick at `value`, such as a category's name or a date, which
+    /// it can format for the locale in `env`. `None`, the default, shows the number, formatted for
+    /// the environment's locale.
+    fn label(&self, _value: Scalar, _env: &mut Environment) -> Option<String> {
         None
     }
 

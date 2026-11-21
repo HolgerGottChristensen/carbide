@@ -122,7 +122,7 @@ impl<C: ControllerSequence> Chart<C> {
         }
 
         for (id, kind) in &mut self.default_kinds {
-            let requested = bounds.get(id).kind().unwrap_or(ScaleKind::Linear);
+            let requested = bounds.get(id).default_kind();
 
             if requested != *kind
                 && let Some(axis) = self.scales.get(id).map(|scale| scale.axis()) {
@@ -1013,6 +1013,39 @@ mod tests {
         *controllers.value_mut() = vec![ScatterController::new(vec![1.0, 2.0, 3.0]).boxed()];
         chart.fit_scales(&mut env);
         assert!(linear(x_ticks(&chart)), "without bars, x should be linear again: {:?}", x_ticks(&chart));
+    }
+
+    /// Dates make a default scale a time scale, whatever the controller asks for: the x of a bar
+    /// chart, which would be a category scale, and the y of lying bars, where the dates go.
+    /// Numbers keep the scales the controllers ask for, and a scale set on the chart is kept.
+    #[test]
+    fn dates_get_a_default_time_scale() {
+        use chrono::{DateTime, FixedOffset, TimeZone};
+        use crate::ScaleKind;
+
+        fn kinds<C: ControllerSequence>(chart: &Chart<C>) -> (Option<ScaleKind>, Option<ScaleKind>) {
+            (chart.default_kinds.get(&ScaleId::X).copied(), chart.default_kinds.get(&ScaleId::Y).copied())
+        }
+
+        let utc = FixedOffset::east_opt(0).unwrap();
+        let days: Vec<(DateTime<FixedOffset>, Scalar)> = (1..=3)
+            .map(|day| (utc.with_ymd_and_hms(2026, 3, day, 0, 0, 0).unwrap(), day as Scalar))
+            .collect();
+
+        let lines = fitted(Chart::new(LineController::new(days.clone())));
+        assert_eq!(kinds(&lines), (Some(ScaleKind::Time), Some(ScaleKind::Linear)));
+
+        let bars = fitted(Chart::new(BarController::new(days.clone())));
+        assert_eq!(kinds(&bars), (Some(ScaleKind::Time), Some(ScaleKind::Linear)), "dates win over the category scale bars ask for");
+
+        let lying = fitted(Chart::new(BarController::new(days.clone()).horizontal()));
+        assert_eq!(kinds(&lying), (Some(ScaleKind::Linear), Some(ScaleKind::Time)), "lying bars place their dates on the y scale");
+
+        let numbers = fitted(Chart::new(BarController::new(vec![1.0, 2.0])));
+        assert_eq!(kinds(&numbers).0, Some(ScaleKind::Category));
+
+        let explicit = fitted(Chart::new(LineController::new(days)).scale(ScaleId::X, LinearScale::new(Axis::Horizontal)));
+        assert!(explicit.scales.get(&ScaleId::X).unwrap().ticks()[0] > 1e9, "a scale set on the chart is kept, and places the dates as numbers");
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {

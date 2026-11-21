@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{dataset_scales, first_mark_entry, legend_items, point_color, Palette};
+use crate::controller::drawing::{report_value_kinds, dataset_scales, first_mark_entry, legend_items, point_color, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
@@ -99,6 +99,8 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
+        report_value_kinds(&self.dataset_sequence, bounds, self.orientation);
+
         let mut stacks = StackSums::split_by_sign();
         let offsets = self.stack_offsets(self.has_overlays());
 

@@ -203,7 +203,7 @@ impl Scale for CategoryScale {
     }
 
     /// The category's name, for an index with a label; other indices show their number.
-    fn label(&self, value: Scalar) -> Option<String> {
+    fn label(&self, value: Scalar, _env: &mut Environment) -> Option<String> {
         if value < 0.0 {
             return None;
         }
@@ -291,15 +291,15 @@ mod tests {
         scale.sync(&mut Environment::new());
         scale.set_range(0.0, 0.0);
         assert_eq!((scale.min(), scale.max()), (0.0, 1.0));
-        assert_eq!(scale.label(1.0).as_deref(), Some("High"));
+        assert_eq!(scale.label(1.0, &mut Environment::new()).as_deref(), Some("High"));
 
         labels.value_mut().insert(1, "Medium".to_string());
         scale.sync(&mut Environment::new());
         scale.set_range(0.0, 0.0);
         assert_eq!((scale.min(), scale.max()), (0.0, 2.0), "three labels span three categories");
-        assert_eq!(scale.label(1.0).as_deref(), Some("Medium"));
-        assert_eq!(scale.label(2.0).as_deref(), Some("High"));
-        assert_eq!(scale.label(3.0), None, "an index past the labels has none");
+        assert_eq!(scale.label(1.0, &mut Environment::new()).as_deref(), Some("Medium"));
+        assert_eq!(scale.label(2.0, &mut Environment::new()).as_deref(), Some("High"));
+        assert_eq!(scale.label(3.0, &mut Environment::new()), None, "an index past the labels has none");
     }
 
     /// The grid offset can be a state, and set either way it wins over what controllers ask for.
@@ -349,9 +349,9 @@ mod tests {
 
         assert_eq!(scale.ticks(), &[0.0, 1.0, 2.0]);
 
-        assert_eq!(scale.label(0.0).as_deref(), Some("Red"));
-        assert_eq!(scale.label(2.0).as_deref(), Some("Yellow"));
-        assert_eq!(scale.label(3.0), None, "an index without a label shows its number");
+        assert_eq!(scale.label(0.0, &mut Environment::new()).as_deref(), Some("Red"));
+        assert_eq!(scale.label(2.0, &mut Environment::new()).as_deref(), Some("Yellow"));
+        assert_eq!(scale.label(3.0, &mut Environment::new()), None, "an index without a label shows its number");
     }
 
     /// With `grid_offset`, grid lines sit between categories and one past each end; with an

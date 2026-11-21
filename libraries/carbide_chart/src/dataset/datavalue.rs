@@ -13,6 +13,10 @@ use carbide::draw::Scalar;
     note = "coordinates are `Scalar` (f64), `usize`, `Option` of a coordinate (where `None` is missing), and types implementing `DataValue`",
 )]
 pub trait DataValue: Clone + Debug + 'static {
+    /// What the values of this type are, for the chart to pick a default scale for them: a date
+    /// (`ValueKind::Time`) gets a `TimeScale`. `ValueKind::Number` by default.
+    const KIND: ValueKind = ValueKind::Number;
+
     /// The number the value stands for, or `None` when it is missing. A missing value is not
     /// drawn, adds nothing to its dataset's bounds or stack, and leaves a gap in a line (see
     /// `SpanGaps`).
@@ -34,9 +38,22 @@ impl DataValue for usize {
 
 /// `None` is missing; `Some` is the value inside it.
 impl<T: DataValue> DataValue for Option<T> {
+    const KIND: ValueKind = T::KIND;
+
     fn value(&self) -> Option<Scalar> {
         self.as_ref().and_then(DataValue::value)
     }
+}
+
+/// What a coordinate's values are, for the chart to pick a default scale for them (see
+/// `DataValue::KIND`). Each kind is read as a number either way.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
+pub enum ValueKind {
+    /// A plain number, placed on a linear or a category scale. The default.
+    #[default]
+    Number,
+    /// A moment in time, as seconds since the Unix epoch, placed on a `TimeScale`.
+    Time,
 }
 
 #[cfg(test)]
