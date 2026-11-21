@@ -94,7 +94,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         let palette = Palette::new(ctx, self.palette_offset);
         draw_fills(&lines, ctx, scales, chart_area, &palette);
         draw_lines(&lines, ctx, chart_area, &palette);
-        draw_points(&lines, ctx, &palette);
+        draw_points(&lines, ctx, &palette, |_| true);
 
         ctx.restore();
     }

@@ -2,7 +2,7 @@ use carbide::draw::Scalar;
 use carbide::environment::{Environment};
 use carbide::state::{IntoReadState, ReadState};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
-use crate::dataset::RangePoint;
+use crate::dataset::{RangePoint, SizedPoint};
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
 use crate::sequence::Sequence;
@@ -220,6 +220,30 @@ where
     /// Syncs the points; the option states are synced with the dataset (`DataSet::sync`).
     fn sync(&mut self, env: &mut Environment) -> bool {
         Sequence::<dyn RangePoint>::sync(&mut self.inner, env)
+    }
+}
+
+/// A dataset of sized points with options is still a sequence of them, so a sized mark can be
+/// added after the options.
+impl<T, C, S, F, G, XS, YS, ST, L> Sequence<dyn SizedPoint> for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: Sequence<dyn SizedPoint>,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{
+    fn foreach(&self, f: &mut dyn FnMut(usize, &(dyn SizedPoint + 'static))) {
+        self.inner.foreach(f);
+    }
+
+    /// Syncs the points; the option states are synced with the dataset (`DataSet::sync`).
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        Sequence::<dyn SizedPoint>::sync(&mut self.inner, env)
     }
 }
 

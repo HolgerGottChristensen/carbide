@@ -11,17 +11,20 @@
 //! Which controllers a dataset can be drawn by is checked when compiling. Each layout family has
 //! a dataset trait (`BarDataSet`, `LineDataSet`, `ScatterDataSet`), which its controllers require. A plain dataset
 //! implements all of them; a dataset with a mark implements a family's trait only when the mark
-//! can be drawn in that family (`BarMark`). So a mark given to a controller that can't draw it is
+//! can be drawn in that family (`BarMark`, `ScatterMark`). So a mark given to a controller that can't draw it is
 //! a compile error, not a dataset that silently draws nothing.
 //!
 //! The marks that read more than an x and a y are extension methods on datasets of points that
-//! have those values: `RangeDataSetExt` on datasets of `RangePoint`s.
+//! have those values: `RangeDataSetExt` on datasets of `RangePoint`s, and `SizedDataSetExt` on
+//! datasets of `SizedPoint`s.
 
 mod bar_mark;
 mod families;
 mod marked;
 mod range_mark;
 mod error_bars;
+mod scatter_mark;
+mod bubble_mark;
 
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark};
 pub use families::{BarDataSet, IntoBoxed, LineDataSet, ScatterDataSet};
@@ -29,9 +32,11 @@ pub(crate) use families::AsDataSet;
 pub use marked::Marked;
 pub use range_mark::RangeMark;
 pub use error_bars::ErrorBars;
+pub use scatter_mark::{DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale};
+pub use bubble_mark::BubbleMark;
 
 use crate::DataSet;
-use crate::dataset::RangePoint;
+use crate::dataset::{RangePoint, SizedPoint};
 use crate::sequence::Sequence;
 
 /// Whether a mark replaces the glyph its controller draws by default, or is drawn on top of it.
@@ -63,6 +68,33 @@ pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
 }
 
 impl<D: DataSet + Sequence<dyn RangePoint>> RangeDataSetExt for D {}
+
+/// Marks for datasets of `SizedPoint`s: points with a size.
+pub trait SizedDataSetExt: DataSet + Sequence<dyn SizedPoint> + Sized {
+    /// Draws each point as a bubble whose area is proportional to its size, instead of a point.
+    /// The scatter controller maps the sizes of all its datasets through one size scale, so
+    /// bubbles compare across datasets (see `ScatterController::radius_range`).
+    ///
+    /// ```
+    /// use carbide_chart::{Bubble, ScatterController, SizedDataSetExt};
+    ///
+    /// let cities = vec![Bubble { x: 3.0, y: 70.0, size: 1.2 }, Bubble { x: 5.0, y: 75.0, size: 0.4 }];
+    /// ScatterController::new(cities.bubbles());
+    /// ```
+    ///
+    /// Only scatter controllers draw bubbles:
+    ///
+    /// ```compile_fail
+    /// use carbide_chart::{BarController, SizedDataSetExt};
+    ///
+    /// BarController::new(vec![(0.0, 4.0, 2.0)].bubbles());
+    /// ```
+    fn bubbles(self) -> Marked<Self, BubbleMark> {
+        Marked::new(self, BubbleMark::default())
+    }
+}
+
+impl<D: DataSet + Sequence<dyn SizedPoint>> SizedDataSetExt for D {}
 
 #[cfg(test)]
 mod tests {
@@ -151,6 +183,22 @@ mod tests {
 
         let datasets: Vec<Box<dyn BarDataSet>> = vec![plain.boxed(), ranges.range().boxed(), measured.error_bars().boxed()];
         assert_eq!(bounds(BarController::new(datasets)).get(&ScaleId::Y).range(), Some((0.0, 11.0)));
+    }
+
+    /// Bubbles cover the same x and y as the points they replace; their sizes don't reach the
+    /// scales. Tuples with a third value and `Bubble`s are both sized points, and options and the
+    /// mark combine in either order.
+    #[test]
+    fn bubbles_are_bounded_by_their_points() {
+        use crate::{Bubble, ScatterController, SizedDataSetExt};
+
+        let tuples = vec![(1.0, 10.0, 500.0), (4.0, 2.0, 50.0)];
+        let structs = vec![Bubble { x: 2.0, y: 7.0, size: 1.0 }];
+
+        let bounds = bounds(ScatterController::new((tuples.clone().bubbles(), structs.label("cities").bubbles(), tuples.bubbles().color(DataColor::Palette(3)))));
+
+        assert_eq!(bounds.get(&ScaleId::X).range(), Some((1.0, 4.0)));
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 10.0)), "the sizes don't reach the y scale");
     }
 
     /// A state of marked datasets is a sequence of bar datasets, so marked datasets can be added

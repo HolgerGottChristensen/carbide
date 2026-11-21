@@ -1,0 +1,180 @@
+use std::fmt::Debug;
+use carbide::color::Color;
+use carbide::draw::{Position, Rect, Scalar};
+use carbide::draw::color::{rgba, Rgba};
+use carbide_core::widget::canvas::CanvasContext;
+use crate::{DataColor, DataSetOptions};
+use crate::controller::drawing::{point_color, Palette};
+use crate::controller::orientation::pixel;
+use crate::mark::MarkRole;
+use crate::scale::{Axis, Scale};
+use crate::style::series_style;
+
+/// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
+/// what lets a dataset with this mark be drawn by a `ScatterController` (see `ScatterDataSet`).
+///
+/// The dataset's points are always in its scales' bounds, as without a mark; a mark reports only
+/// what it draws beyond them. A primary mark is drawn instead of the controller's points, after
+/// the lines; an overlay on top of every dataset's points.
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be drawn by a scatter controller for `{D}`",
+    label = "not a scatter mark for this dataset",
+    note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, and types of your own implementing `ScatterMark`",
+)]
+pub trait ScatterMark<D: ?Sized>: Clone + Debug + 'static {
+    /// Whether the mark replaces the points or is drawn on top of them.
+    fn role(&self) -> MarkRole;
+
+    /// Calls `f` with each x and y the mark draws beyond the dataset's points, for the scale
+    /// bounds. By default it draws nothing beyond them.
+    fn bounds(&self, _data: &D, _f: &mut dyn FnMut(Scalar, Scalar)) {}
+
+    /// Calls `f` with each size the mark draws, so the controller can map every dataset's sizes
+    /// through one size scale (see `ScatterCanvas::radius`). By default it draws none.
+    fn sizes(&self, _data: &D, _f: &mut dyn FnMut(Scalar)) {}
+
+    /// Draws the mark for each of the dataset's points.
+    fn draw(&self, data: &D, canvas: &mut ScatterCanvas);
+}
+
+/// A scatter mark together with the dataset it draws, as a scatter controller reads it from a
+/// dataset's `ScatterDataSet::scatter_marks`.
+pub trait DatasetScatterMark {
+    fn role(&self) -> MarkRole;
+
+    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar));
+
+    fn sizes(&self, f: &mut dyn FnMut(Scalar));
+
+    fn draw(&self, canvas: &mut ScatterCanvas);
+}
+
+pub(crate) struct BoundScatterMark<'a, M, D> {
+    pub(crate) mark: &'a M,
+    pub(crate) data: &'a D,
+}
+
+impl<M: ScatterMark<D>, D> DatasetScatterMark for BoundScatterMark<'_, M, D> {
+    fn role(&self) -> MarkRole {
+        self.mark.role()
+    }
+
+    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar)) {
+        self.mark.bounds(self.data, f);
+    }
+
+    fn sizes(&self, f: &mut dyn FnMut(Scalar)) {
+        self.mark.sizes(self.data, f);
+    }
+
+    fn draw(&self, canvas: &mut ScatterCanvas) {
+        self.mark.draw(self.data, canvas);
+    }
+}
+
+/// How a scatter controller turns sizes into radii, shared by all its datasets so their sizes
+/// compare: a circle's area is proportional to its size, the largest size in the controller gets
+/// `max_radius`, and no circle is smaller than `min_radius`, so small sizes stay visible.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct SizeScale {
+    pub(crate) min_radius: Scalar,
+    pub(crate) max_radius: Scalar,
+    /// The largest size among the controller's datasets, if any is positive.
+    pub(crate) max_size: Option<Scalar>,
+}
+
+impl SizeScale {
+    /// The radius for `size`, in pixels: `None` for a size that is negative or not a number, as a
+    /// size below zero has no area. A size of zero gets the smallest radius.
+    pub fn radius(&self, size: Scalar) -> Option<Scalar> {
+        if !(size >= 0.0) {
+            return None;
+        }
+
+        let radius = match self.max_size {
+            Some(max_size) => self.max_radius * (size / max_size).sqrt(),
+            None => self.min_radius,
+        };
+
+        Some(radius.max(self.min_radius))
+    }
+}
+
+/// What a scatter mark draws on: the dataset's x and y scales, its colours, and the controller's
+/// size scale.
+pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
+    pub(crate) ctx: &'x mut CanvasContext<'a, 'b, 'c>,
+    pub(crate) x_scale: &'x dyn Scale,
+    pub(crate) y_scale: &'x dyn Scale,
+    pub(crate) area: Rect,
+    pub(crate) options: &'x DataSetOptions,
+    pub(crate) dataset_index: usize,
+    pub(crate) palette: &'x Palette,
+    pub(crate) sizes: SizeScale,
+}
+
+impl ScatterCanvas<'_, '_, '_, '_> {
+    /// Where the point at `x` and `y` on the dataset's scales falls on the screen.
+    pub fn position(&self, x: Scalar, y: Scalar) -> Position {
+        Position::new(
+            pixel(Axis::Horizontal, self.x_scale, x, self.area),
+            pixel(Axis::Vertical, self.y_scale, y, self.area),
+        )
+    }
+
+    /// The radius for `size` on the controller's size scale (see `SizeScale::radius`).
+    pub fn radius(&self, size: Scalar) -> Option<Scalar> {
+        self.sizes.radius(size)
+    }
+
+    /// The colour of the point at `point_index`, whose own colour is `color` (see
+    /// `DataPoint::color`), as a point would be drawn in.
+    pub fn point_color(&self, point_index: usize, color: DataColor) -> Color {
+        point_color(color, self.options, self.dataset_index, point_index, self.palette)
+    }
+
+    /// `color` at the `SeriesStyle`'s fill opacity, for shapes that may overlap, so the ones
+    /// behind show through.
+    pub fn translucent(&mut self, color: Color) -> Color {
+        let fill_opacity = series_style(self.ctx.env()).fill_opacity();
+        let Rgba(r, g, b, a) = Rgba::from(color);
+        rgba(r, g, b, a * fill_opacity)
+    }
+
+    /// Fills a circle around `center`, and outlines it `outline_width` wide.
+    pub fn circle(&mut self, center: Position, radius: Scalar, fill: Color, outline: Color, outline_width: Scalar) {
+        self.ctx.save();
+        self.ctx.begin_path();
+        // The canvas takes a circle's diameter.
+        self.ctx.circle(center.x, center.y, radius * 2.0);
+        self.ctx.set_fill_style(fill);
+        self.ctx.fill();
+        self.ctx.set_line_width(outline_width);
+        self.ctx.set_stroke_style(outline);
+        self.ctx.stroke();
+        self.ctx.restore();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SizeScale;
+
+    /// Areas are proportional to sizes: the largest size gets the largest radius, a quarter of it
+    /// half the radius. Tiny and zero sizes get the smallest radius, and negative or NaN sizes no
+    /// circle at all.
+    #[test]
+    fn sizes_map_to_areas() {
+        let scale = SizeScale { min_radius: 4.0, max_radius: 30.0, max_size: Some(100.0) };
+
+        assert_eq!(scale.radius(100.0), Some(30.0));
+        assert_eq!(scale.radius(25.0), Some(15.0), "a quarter of the area is half the radius");
+        assert_eq!(scale.radius(1.0), Some(4.0), "3px would be too small, so it gets the smallest radius");
+        assert_eq!(scale.radius(0.0), Some(4.0));
+        assert_eq!(scale.radius(-5.0), None, "a negative size has no area");
+        assert_eq!(scale.radius(f64::NAN), None);
+
+        let no_sizes = SizeScale { max_size: None, ..scale };
+        assert_eq!(no_sizes.radius(0.0), Some(4.0), "without a positive size, every circle is the smallest");
+    }
+}

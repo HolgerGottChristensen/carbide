@@ -1,7 +1,7 @@
-//! Marks drawn in a bar controller's slots: floating bars in place of bars, and error bars on top
-//! of them.
+//! Marks: floating bars in place of bars and error bars on top of them, in a bar controller's
+//! slots, and bubbles in place of a scatter controller's points.
 
-use carbide_chart::{BarController, Chart, Estimate, Range, RangeDataSetExt};
+use carbide_chart::{BarController, Bubble, Chart, Estimate, Range, RangeDataSetExt, ScatterController, SizedDataSetExt};
 use carbide_core::draw::Dimension;
 use carbide_testing::Harness;
 
@@ -70,4 +70,29 @@ fn horizontal_marks() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("horizontal_marks");
+}
+
+/// Countries as bubbles: income along x, life expectancy up y, and population as the bubble's
+/// size, in two datasets for two continents. Pins down that a bubble's area is proportional to its
+/// size, with the largest size of either dataset at the largest radius, so bubbles compare across
+/// datasets; that the bubbles are translucent with an outline, so overlapping ones show through;
+/// and that the scales fit the bubbles' centres.
+#[test]
+fn bubbles() {
+    let first = vec![
+        Bubble { x: 12.0, y: 71.0, size: 140.0 },
+        Bubble { x: 25.0, y: 78.0, size: 35.0 },
+        Bubble { x: 40.0, y: 81.0, size: 8.0 },
+        Bubble { x: 18.0, y: 74.0, size: 60.0 },
+    ];
+    let second = vec![
+        Bubble { x: 45.0, y: 82.0, size: 10.0 },
+        Bubble { x: 30.0, y: 80.0, size: 20.0 },
+        Bubble { x: 22.0, y: 76.0, size: 2.0 },
+    ];
+
+    let chart = Chart::new(ScatterController::new((first.bubbles(), second.bubbles()))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bubbles");
 }

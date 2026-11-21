@@ -4,7 +4,7 @@ use carbide::state::ReadState;
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
 use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
-use crate::mark::DatasetBarMark;
+use crate::mark::{DatasetBarMark, DatasetScatterMark};
 use crate::scale::ScaleId;
 use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 
@@ -59,8 +59,9 @@ pub trait LineDataSet: DataSet {}
 
 dyn_clone::clone_trait_object!(LineDataSet);
 
-/// A dataset a `ScatterController` can draw: a plain dataset. No mark can be drawn in scatter
-/// charts yet, so a dataset with a mark isn't one.
+/// A dataset a `ScatterController` can draw: a plain dataset, or one whose marks can all be drawn
+/// by scatter controllers (`ScatterMark`), such as bubbles. The scatter controller reads the marks
+/// through `scatter_marks`.
 ///
 /// Scatter charts are a family of their own, apart from line charts: their points sit freely on
 /// two numeric scales, in any order, with no index to group, stack or lay down along, so the
@@ -68,7 +69,8 @@ dyn_clone::clone_trait_object!(LineDataSet);
 /// scatter points, and a mark that suits both implements both families.
 ///
 /// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
-/// dataset inside is one, and for `Box<dyn ScatterDataSet>`, which mixes dataset types in a `Vec`.
+/// dataset inside is one, for marked datasets (`Marked`) when the mark is a `ScatterMark`, and for
+/// `Box<dyn ScatterDataSet>`, which mixes dataset types in a `Vec`.
 ///
 /// A dataset with a mark scatter charts can't draw doesn't compile:
 ///
@@ -81,10 +83,14 @@ dyn_clone::clone_trait_object!(LineDataSet);
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller",
     label = "not a scatter dataset",
-    note = "scatter controllers draw plain datasets; marks such as `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` and `.error_bars()` are drawn by bar controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn ScatterDataSet>`",
 )]
-pub trait ScatterDataSet: DataSet {}
+pub trait ScatterDataSet: DataSet {
+    /// Calls `f` with each of the dataset's marks, in the order they were added. A plain dataset
+    /// has none, and is drawn as points.
+    fn scatter_marks(&self, _f: &mut dyn FnMut(&dyn DatasetScatterMark)) {}
+}
 
 dyn_clone::clone_trait_object!(ScatterDataSet);
 
@@ -135,7 +141,11 @@ where
     YS: ReadState<T=ScaleId>,
     ST: ReadState<T=StackId>,
     L: ReadState<T=String>,
-{}
+{
+    fn scatter_marks(&self, f: &mut dyn FnMut(&dyn DatasetScatterMark)) {
+        self.inner().scatter_marks(f);
+    }
+}
 
 /// Forwards every `DataSet` method of a boxed dataset of one family to the dataset inside.
 macro_rules! boxed_dataset {
@@ -201,7 +211,11 @@ boxed_dataset!(BarDataSet {
 
 boxed_dataset!(LineDataSet {});
 
-boxed_dataset!(ScatterDataSet {});
+boxed_dataset!(ScatterDataSet {
+    fn scatter_marks(&self, f: &mut dyn FnMut(&dyn DatasetScatterMark)) {
+        (**self).scatter_marks(f);
+    }
+});
 
 /// A dataset as the plain `DataSet` it is, whichever family a controller reads it as, so drawing
 /// code shared between families takes any of them.

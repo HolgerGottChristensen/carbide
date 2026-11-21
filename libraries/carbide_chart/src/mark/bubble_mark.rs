@@ -1,0 +1,51 @@
+use carbide::draw::Scalar;
+use crate::dataset::SizedPoint;
+use crate::mark::{MarkRole, ScatterCanvas, ScatterMark};
+use crate::sequence::Sequence;
+
+/// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
+/// `SizedDataSetExt::bubbles`). The controller maps the sizes of all its datasets through one size
+/// scale (see `ScatterController::radius_range`), so bubbles compare across datasets. A bubble is
+/// filled translucent, so bubbles behind it show through, and outlined in its colour. A point
+/// missing its x, y or size, or with a negative size, isn't drawn.
+#[derive(Copy, Clone, Debug)]
+pub struct BubbleMark {
+    /// How wide the outline is, in pixels.
+    pub outline_width: Scalar,
+}
+
+impl Default for BubbleMark {
+    fn default() -> BubbleMark {
+        BubbleMark { outline_width: 1.5 }
+    }
+}
+
+impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
+    fn role(&self) -> MarkRole {
+        MarkRole::Primary
+    }
+
+    fn sizes(&self, data: &D, f: &mut dyn FnMut(Scalar)) {
+        data.foreach(&mut |_index, point| {
+            if let (Some(_), Some(_), Some(size)) = (point.x(), point.y(), point.size()) {
+                f(size);
+            }
+        });
+    }
+
+    fn draw(&self, data: &D, canvas: &mut ScatterCanvas) {
+        data.foreach(&mut |point_index, point| {
+            let (Some(x), Some(y), Some(size)) = (point.x(), point.y(), point.size()) else {
+                return;
+            };
+
+            let Some(radius) = canvas.radius(size) else {
+                return;
+            };
+
+            let color = canvas.point_color(point_index, point.color());
+            let fill = canvas.translucent(color);
+            canvas.circle(canvas.position(x, y), radius, fill, color, self.outline_width);
+        });
+    }
+}

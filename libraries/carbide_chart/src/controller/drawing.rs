@@ -304,9 +304,9 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
 }
 
 /// Draws a filled circle at each of each line's points that isn't missing, in its colour (see
-/// `point_color`).
-pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette) {
-    for line in lines {
+/// `point_color`), for the lines whose dataset index `drawn` accepts.
+pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette, drawn: impl Fn(usize) -> bool) {
+    for line in lines.iter().filter(|line| drawn(line.dataset_index)) {
         for ((point, color), point_index) in line.points.iter().zip(&line.colors).zip(line.point_indices.iter().copied()) {
             let point = line.orientation.swap(*point);
             ctx.begin_path();
