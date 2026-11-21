@@ -1,6 +1,6 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, MarkRole};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Overlay};
 use crate::sequence::Sequence;
 
 /// Draws a whisker from each point's low to its high value, with a cap at each end, on top of the
@@ -25,13 +25,11 @@ impl Default for ErrorBars {
     }
 }
 
-impl Mark for ErrorBars {}
+impl Mark for ErrorBars {
+    type Role = Overlay;
+}
 
 impl<D: Sequence<dyn RangePoint>> BarMark<D> for ErrorBars {
-    fn role(&self) -> MarkRole {
-        MarkRole::Overlay
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let (Some(x), Some(_), Some(low), Some(high)) = (point.x(), point.y(), point.low(), point.high()) {
@@ -66,10 +64,6 @@ impl<D: Sequence<dyn RangePoint>> BarMark<D> for ErrorBars {
 /// Whiskers through a line's points, each the same length across, on top of every dataset's lines
 /// and points.
 impl<D: Sequence<dyn RangePoint>> LineMark<D> for ErrorBars {
-    fn role(&self) -> MarkRole {
-        MarkRole::Overlay
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let (Some(x), Some(_), Some(low), Some(high)) = (point.x(), point.y(), point.low(), point.high()) {

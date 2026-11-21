@@ -8,7 +8,7 @@ use crate::controller::band::{clip, flatten, strips};
 use crate::controller::drawing::{dataset_color, resolve_color, split_runs, Palette};
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
-use crate::mark::{Mark, MarkRole};
+use crate::mark::{Mark, MarkRole, Role};
 use crate::scale::Scale;
 use crate::style::{axis_style, series_style};
 
@@ -25,9 +25,6 @@ use crate::style::{axis_style, series_style};
     note = "line marks are `RangeMark` (`.range()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`",
 )]
 pub trait LineMark<D: ?Sized>: Mark {
-    /// Whether the mark replaces the line or is drawn on top of it.
-    fn role(&self) -> MarkRole;
-
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
     /// the scale bounds, before any stacking: the controller moves an overlay's values with its
     /// stacked line. Points the mark doesn't draw are left out.
@@ -54,7 +51,7 @@ pub(crate) struct BoundLineMark<'a, M, D> {
 
 impl<M: LineMark<D>, D> DatasetLineMark for BoundLineMark<'_, M, D> {
     fn role(&self) -> MarkRole {
-        self.mark.role()
+        <M::Role as Role>::ROLE
     }
 
     fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {

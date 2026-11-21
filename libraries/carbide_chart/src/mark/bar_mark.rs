@@ -10,7 +10,7 @@ use crate::legend::LegendMarker;
 use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{pixel, Oriented, Orientation};
-use crate::mark::{Mark, MarkRole};
+use crate::mark::{Mark, MarkRole, Role};
 use crate::scale::Scale;
 use crate::style::{axis_style, series_style};
 
@@ -25,9 +25,6 @@ use crate::style::{axis_style, series_style};
     note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `BarMark`",
 )]
 pub trait BarMark<D: ?Sized>: Mark {
-    /// Whether the mark replaces the bar or is drawn on top of it.
-    fn role(&self) -> MarkRole;
-
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
     /// the scale bounds, before any stacking: the controller moves an overlay's values with its
     /// stacked bars. Points the mark doesn't draw are left out.
@@ -89,7 +86,7 @@ pub(crate) struct BoundBarMark<'a, M, D> {
 
 impl<M: BarMark<D>, D> DatasetBarMark for BoundBarMark<'_, M, D> {
     fn role(&self) -> MarkRole {
-        self.mark.role()
+        <M::Role as Role>::ROLE
     }
 
     fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {

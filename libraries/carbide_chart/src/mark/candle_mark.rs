@@ -5,7 +5,7 @@ use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::OhlcPoint;
 use crate::legend::LegendMarker;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Mark, MarkRole, Marked};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Mark, Marked, Primary};
 use crate::sequence::Sequence;
 
 /// How a `CandleMark` draws each period.
@@ -68,6 +68,8 @@ impl<R: ReadState<T=DataColor>, F: ReadState<T=DataColor>> CandleMark<R, F> {
 }
 
 impl<R: ReadState<T=DataColor>, F: ReadState<T=DataColor>> Mark for CandleMark<R, F> {
+    type Role = Primary;
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         let rising = self.rising_color.as_mut().is_some_and(|color| color.sync(env));
         let falling = self.falling_color.as_mut().is_some_and(|color| color.sync(env));
@@ -95,10 +97,6 @@ fn prices(point: &dyn OhlcPoint) -> Option<(Scalar, Scalar, Scalar, Scalar, Scal
 }
 
 impl<D: Sequence<dyn OhlcPoint>, R: ReadState<T=DataColor>, F: ReadState<T=DataColor>> BarMark<D> for CandleMark<R, F> {
-    fn role(&self) -> MarkRole {
-        MarkRole::Primary
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let Some((x, open, high, low, close)) = prices(point) {

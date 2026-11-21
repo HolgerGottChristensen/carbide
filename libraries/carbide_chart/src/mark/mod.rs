@@ -6,7 +6,7 @@
 //! A mark either replaces that default glyph (`MarkRole::Primary`, such as `RangeDataSetExt::range`,
 //! a floating bar), or is drawn on top of it (`MarkRole::Overlay`, such as
 //! `RangeDataSetExt::error_bars`). A dataset has at most one replacing mark and any number of
-//! overlays.
+//! overlays; a second replacing mark doesn't compile (see `WithoutPrimaryMark`).
 //!
 //! Which controllers a dataset can be drawn by is checked when compiling. Each layout family has
 //! a dataset trait (`BarDataSet`, `LineDataSet`, `ScatterDataSet`), which its controllers require.
@@ -34,7 +34,7 @@ mod bubble_mark;
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark, LegendContext};
 pub use families::{BarDataSet, IntoBoxed, LineDataSet, ScatterDataSet};
 pub(crate) use families::AsDataSet;
-pub use marked::Marked;
+pub use marked::{Marked, WithoutPrimaryMark};
 pub use range_mark::RangeMark;
 pub use error_bars::ErrorBars;
 pub use scatter_mark::{DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale};
@@ -53,6 +53,11 @@ use crate::sequence::Sequence;
 /// value that can be cloned, printed, and synced. A mark's options can be states, as a dataset's
 /// can, and its dataset syncs them before every update, render and event (see `DataSet::sync`).
 pub trait Mark: Clone + Debug + 'static {
+    /// Whether the mark replaces the glyph its controller draws by default (`Primary`), or is
+    /// drawn on top of it (`Overlay`), in every controller that draws it. As a type, so a dataset
+    /// can't be given a second replacing mark (see `WithoutPrimaryMark`).
+    type Role: Role;
+
     /// Syncs the states in the mark's options with the environment, and returns whether anything
     /// may have changed. The default syncs nothing: a mark without states has nothing to sync.
     fn sync(&mut self, _env: &mut Environment) -> bool {
@@ -72,6 +77,35 @@ pub enum MarkRole {
     Overlay,
 }
 
+/// A mark's `MarkRole` as a type, for `Mark::Role`: `Primary` or `Overlay`.
+pub trait Role: sealed::Sealed + 'static {
+    /// The role as a value, for the controllers reading marks through trait objects.
+    const ROLE: MarkRole;
+}
+
+/// The role of a mark drawn instead of its controller's default glyph (`MarkRole::Primary`).
+#[derive(Copy, Clone, Debug)]
+pub enum Primary {}
+
+/// The role of a mark drawn on top of its dataset's glyph (`MarkRole::Overlay`).
+#[derive(Copy, Clone, Debug)]
+pub enum Overlay {}
+
+impl Role for Primary {
+    const ROLE: MarkRole = MarkRole::Primary;
+}
+
+impl Role for Overlay {
+    const ROLE: MarkRole = MarkRole::Overlay;
+}
+
+mod sealed {
+    pub trait Sealed {}
+
+    impl Sealed for super::Primary {}
+    impl Sealed for super::Overlay {}
+}
+
 /// Marks for datasets of `RangePoint`s: points with a low and a high value.
 pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
     /// Draws the ranges from each point's low to its high value. In a bar controller, each point
@@ -79,7 +113,7 @@ pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
     /// band between its lows and its highs instead of a line. The value scale's bounds cover the
     /// ranges, without zero. Datasets drawn as ranges don't stack: in a bar controller each takes
     /// its own share of the slot.
-    fn range(self) -> Marked<Self, RangeMark> {
+    fn range(self) -> Marked<Self, RangeMark> where Self: WithoutPrimaryMark {
         Marked::new(self, RangeMark::default())
     }
 
@@ -113,7 +147,7 @@ pub trait SizedDataSetExt: DataSet + Sequence<dyn SizedPoint> + Sized {
     ///
     /// BarController::new(vec![(0.0, 4.0, 2.0)].bubbles());
     /// ```
-    fn bubbles(self) -> Marked<Self, BubbleMark> {
+    fn bubbles(self) -> Marked<Self, BubbleMark> where Self: WithoutPrimaryMark {
         Marked::new(self, BubbleMark::default())
     }
 }
@@ -142,7 +176,7 @@ pub trait BoxDataSetExt: DataSet + Sequence<dyn BoxPoint> + Sized {
     /// let waits = vec![BoxStats { x: 0.0, min: 2.0, q1: 4.0, median: 5.0, q3: 7.0, max: 11.0 }];
     /// LineController::new(waits.box_plot());
     /// ```
-    fn box_plot(self) -> Marked<Self, BoxMark> {
+    fn box_plot(self) -> Marked<Self, BoxMark> where Self: WithoutPrimaryMark {
         Marked::new(self, BoxMark::default())
     }
 }
@@ -161,14 +195,14 @@ pub trait OhlcDataSetExt: DataSet + Sequence<dyn OhlcPoint> + Sized {
     /// let prices = vec![Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 }];
     /// BarController::new(prices.candles());
     /// ```
-    fn candles(self) -> Marked<Self, CandleMark> {
+    fn candles(self) -> Marked<Self, CandleMark> where Self: WithoutPrimaryMark {
         Marked::new(self, CandleMark::new(CandleGlyph::Candlestick))
     }
 
     /// Draws each point as an OHLC bar in a bar controller's slot, instead of a bar: a line from
     /// the low to the high, with a tick at the open on one side and at the close on the other, in
     /// the rising or the falling colour (see `CandleMark`).
-    fn ohlc(self) -> Marked<Self, CandleMark> {
+    fn ohlc(self) -> Marked<Self, CandleMark> where Self: WithoutPrimaryMark {
         Marked::new(self, CandleMark::new(CandleGlyph::Ohlc))
     }
 }

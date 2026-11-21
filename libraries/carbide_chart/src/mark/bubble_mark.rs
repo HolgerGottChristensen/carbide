@@ -1,6 +1,6 @@
 use carbide::draw::Scalar;
 use crate::dataset::SizedPoint;
-use crate::mark::{Mark, MarkRole, ScatterCanvas, ScatterMark, SizeScale};
+use crate::mark::{Mark, Primary, ScatterCanvas, ScatterMark, SizeScale};
 use crate::sequence::Sequence;
 
 /// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
@@ -20,13 +20,11 @@ impl Default for BubbleMark {
     }
 }
 
-impl Mark for BubbleMark {}
+impl Mark for BubbleMark {
+    type Role = Primary;
+}
 
 impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
-    fn role(&self) -> MarkRole {
-        MarkRole::Primary
-    }
-
     /// The centres of the bubbles it draws.
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {

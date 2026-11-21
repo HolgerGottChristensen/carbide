@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, MarkRole, Marked};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Marked, Primary};
 use crate::sequence::Sequence;
 
 /// Draws a dataset's ranges, from each point's low to its high value (see `RangeDataSetExt::range`):
@@ -35,6 +35,8 @@ impl<C: ReadState<T=DataColor>> RangeMark<C> {
 }
 
 impl<C: ReadState<T=DataColor>> Mark for RangeMark<C> {
+    type Role = Primary;
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         match &mut self.inverted_color {
             Some(color) => color.sync(env),
@@ -56,10 +58,6 @@ impl<D, C: ReadState<T=DataColor>> Marked<D, RangeMark<C>> {
 /// Floating bars, each in its point's colour, or in the inverted colour where its high is below its
 /// low and one is set.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for RangeMark<C> {
-    fn role(&self) -> MarkRole {
-        MarkRole::Primary
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) {
@@ -90,10 +88,6 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Rang
 /// in the inverted colour, when one is set. The edges follow the dataset's `interpolation`, and the
 /// band breaks at missing points as the dataset's `span_gaps` says, as a line does.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for RangeMark<C> {
-    fn role(&self) -> MarkRole {
-        MarkRole::Primary
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) {

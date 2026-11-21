@@ -1,12 +1,15 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use crate::{DataPoint, DataSet, DataSetOptions};
-use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
+use carbide::state::ReadState;
+use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
+use crate::element::{Fill, Interpolation, SpanGaps};
+use crate::scale::ScaleId;
+use crate::dataset::{BoxPoint, OhlcPoint, OptionsDataset, RangePoint, SizedPoint};
 use crate::mark::bar_mark::BoundBarMark;
 use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
-use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, Mark, ScatterDataSet, ScatterMark};
+use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, Mark, Overlay, ScatterDataSet, ScatterMark};
 use crate::sequence::Sequence;
 
 /// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`. It
@@ -107,3 +110,52 @@ impl<D: LineDataSet + Clone, M: LineMark<D>> LineDataSet for Marked<D, M> {
         f(&BoundLineMark { mark: &self.mark, data: &self.inner });
     }
 }
+
+/// A dataset without a mark that replaces its glyph (`MarkRole::Primary`), so one can be added:
+/// the methods that add a replacing mark (`.range()`, `.box_plot()`, `.candles()`, `.ohlc()`,
+/// `.bubbles()`) require it. A dataset has at most one replacing mark, and any number of overlays
+/// (`.error_bars()`), so a second replacing mark is a compile error rather than a mark that is
+/// silently not drawn.
+///
+/// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
+/// dataset inside is one, and for marked datasets (`Marked`) when the mark is an overlay.
+///
+/// ```
+/// use carbide_chart::{BarController, Estimate, RangeDataSetExt};
+///
+/// let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
+/// BarController::new(measured.error_bars().range());
+/// ```
+///
+/// ```compile_fail
+/// use carbide_chart::{BarController, Range, RangeDataSetExt};
+///
+/// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+/// BarController::new(temperatures.range().range());
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` already has a mark that replaces its glyph",
+    label = "already has a replacing mark",
+    note = "a dataset has at most one replacing mark (`.range()`, `.box_plot()`, `.candles()`, `.ohlc()`, `.bubbles()`), and any number of overlays (`.error_bars()`)",
+)]
+pub trait WithoutPrimaryMark {}
+
+/// A plain dataset has no marks.
+impl<S: Sequence<dyn DataPoint>> WithoutPrimaryMark for S {}
+
+/// A marked dataset still has no replacing mark when its mark is an overlay.
+impl<D: WithoutPrimaryMark, M: Mark<Role = Overlay>> WithoutPrimaryMark for Marked<D, M> {}
+
+/// Options keep what the dataset inside has.
+impl<T, C, S, F, G, XS, YS, ST, L> WithoutPrimaryMark for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: WithoutPrimaryMark,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{}

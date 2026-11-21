@@ -6,7 +6,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions};
 use crate::controller::drawing::{point_color, Palette};
 use crate::controller::orientation::pixel;
-use crate::mark::{Mark, MarkRole};
+use crate::mark::{Mark, MarkRole, Role};
 use crate::scale::{Axis, Scale};
 use crate::style::series_style;
 
@@ -23,9 +23,6 @@ use crate::style::series_style;
     note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, and types of your own implementing `ScatterMark`",
 )]
 pub trait ScatterMark<D: ?Sized>: Mark {
-    /// Whether the mark replaces the points or is drawn on top of them.
-    fn role(&self) -> MarkRole;
-
     /// Calls `f` with each x and y the mark draws, for the scale bounds: for a primary mark, the
     /// points it draws in place of the dataset's; for an overlay, anything beyond them.
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar));
@@ -57,7 +54,7 @@ pub(crate) struct BoundScatterMark<'a, M, D> {
 
 impl<M: ScatterMark<D>, D> DatasetScatterMark for BoundScatterMark<'_, M, D> {
     fn role(&self) -> MarkRole {
-        self.mark.role()
+        <M::Role as Role>::ROLE
     }
 
     fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar)) {

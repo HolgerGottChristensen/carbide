@@ -1,6 +1,6 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::BoxPoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, MarkRole};
+use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, Primary};
 use crate::sequence::Sequence;
 
 /// Draws each point as a box plot, in place of a bar (see `BoxDataSetExt::box_plot`): a box from
@@ -22,7 +22,9 @@ impl Default for BoxMark {
     }
 }
 
-impl Mark for BoxMark {}
+impl Mark for BoxMark {
+    type Role = Primary;
+}
 
 /// The five values of a box point, in order from the smallest, when none is missing.
 fn statistics(point: &dyn BoxPoint) -> Option<(Scalar, [Scalar; 5])> {
@@ -30,10 +32,6 @@ fn statistics(point: &dyn BoxPoint) -> Option<(Scalar, [Scalar; 5])> {
 }
 
 impl<D: Sequence<dyn BoxPoint>> BarMark<D> for BoxMark {
-    fn role(&self) -> MarkRole {
-        MarkRole::Primary
-    }
-
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
             if let Some((x, values)) = statistics(point) {
