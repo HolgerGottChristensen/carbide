@@ -61,7 +61,7 @@ pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
     /// ranges, without zero. Datasets drawn as ranges don't stack: in a bar controller each takes
     /// its own share of the slot.
     fn range(self) -> Marked<Self, RangeMark> {
-        Marked::new(self, RangeMark)
+        Marked::new(self, RangeMark::default())
     }
 
     /// Draws a whisker from each point's low to its high value on top of its bar, with a cap at

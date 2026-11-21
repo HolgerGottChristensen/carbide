@@ -339,3 +339,54 @@ fn horizontal_range_band() {
 
     harness.snapshot("horizontal_range_band");
 }
+
+/// A straight band and a monotone band whose highs and lows cross twice, with an inverted colour.
+/// Pins down that the parts where the line through the highs runs below the line through the lows
+/// are filled in the inverted colour, split exactly where the lines cross, on straight and on
+/// curved edges alike, while the edges keep the dataset's colour.
+#[test]
+fn inverted_range_bands() {
+    let straight = vec![
+        Range { x: 0.0, low: 10.0, high: 16.0 },
+        Range { x: 1.0, low: 12.0, high: 15.0 },
+        Range { x: 2.0, low: 14.0, high: 11.0 },
+        Range { x: 3.0, low: 13.0, high: 9.0 },
+        Range { x: 4.0, low: 11.0, high: 14.0 },
+        Range { x: 5.0, low: 10.0, high: 17.0 },
+    ];
+    let curved = vec![
+        Range { x: 0.0, low: 2.0, high: 7.0 },
+        Range { x: 1.0, low: 4.0, high: 6.0 },
+        Range { x: 2.0, low: 6.0, high: 3.0 },
+        Range { x: 3.0, low: 5.0, high: 2.0 },
+        Range { x: 4.0, low: 3.0, high: 6.0 },
+        Range { x: 5.0, low: 2.0, high: 8.0 },
+    ];
+
+    let chart = Chart::new(LineController::new((
+        straight.range().inverted_color(DataColor::Palette(3)),
+        curved.range().inverted_color(DataColor::Palette(3)).interpolation(Interpolation::Monotone),
+    ))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("inverted_range_bands");
+}
+
+/// Floating bars, some of whose highs are below their lows, with an inverted colour. Pins down
+/// that only the inverted bars take the inverted colour, and that they span the same values as if
+/// their ends were the other way round.
+#[test]
+fn inverted_floating_bars() {
+    let changes = vec![
+        Range { x: 0.0, low: 4.0, high: 10.0 },
+        Range { x: 1.0, low: 10.0, high: 7.0 },
+        Range { x: 2.0, low: 7.0, high: 13.0 },
+        Range { x: 3.0, low: 13.0, high: 5.0 },
+        Range { x: 4.0, low: 5.0, high: 9.0 },
+    ];
+
+    let chart = Chart::new(BarController::new(changes.range().inverted_color(DataColor::Palette(3)))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("inverted_floating_bars");
+}

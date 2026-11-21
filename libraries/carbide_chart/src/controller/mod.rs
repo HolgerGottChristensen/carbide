@@ -13,6 +13,7 @@ use crate::scale::{ScaleBounds, Scales};
 
 mod bar_controller;
 mod controller_sequence;
+pub(crate) mod band;
 pub(crate) mod drawing;
 pub(crate) mod line_path;
 mod line_controller;

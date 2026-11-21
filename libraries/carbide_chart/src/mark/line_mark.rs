@@ -3,9 +3,10 @@ use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::DataSetOptions;
-use crate::controller::drawing::{dataset_color, split_runs, Palette};
-use crate::controller::line_path::{trace_line, trace_line_reversed};
+use crate::{DataColor, DataSetOptions};
+use crate::controller::band::{clip, flatten, strips};
+use crate::controller::drawing::{dataset_color, resolve_color, split_runs, Palette};
+use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::mark::MarkRole;
 use crate::scale::Scale;
@@ -99,6 +100,12 @@ impl LineCanvas<'_, '_, '_, '_> {
         dataset_color(self.options, self.dataset_index, self.palette)
     }
 
+    /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
+    /// colour by dataset or by point, the dataset's colour.
+    pub fn resolve(&self, color: DataColor) -> Color {
+        resolve_color(color, self.options, self.dataset_index, self.palette)
+    }
+
     /// `color` at the `SeriesStyle`'s fill opacity, for areas, so the grid and areas behind show
     /// through.
     pub fn translucent(&mut self, color: Color) -> Color {
@@ -120,6 +127,52 @@ impl LineCanvas<'_, '_, '_, '_> {
         self.ctx.close_path();
         self.ctx.set_fill_style(color);
         self.ctx.fill();
+    }
+
+    /// Fills the band between the line through `highs` and the line through `lows`, as
+    /// `fill_between` does, in `color`. With an `inverted` colour, the parts where the line through
+    /// the highs runs below the line through the lows are filled in it instead. A band that never
+    /// inverts is filled exactly as by `fill_between`.
+    pub fn fill_band(&mut self, highs: &[Position], lows: &[Position], color: Color, inverted: Option<Color>) {
+        let Some(inverted) = inverted else {
+            self.fill_between(highs, lows, color);
+            return;
+        };
+
+        let area = self.orientation.frame_area(self.area);
+        let interpolation = self.options.interpolation;
+        let (high_line, low_line) = (flatten(highs, interpolation, area), flatten(lows, interpolation, area));
+
+        // Which way the values grow along y in the frame: up the screen for upright lines, whose
+        // pixels grow downwards, and along it for lying ones.
+        let higher_is_greater = self.position(0.0, self.value_scale.max()).y >= self.position(0.0, self.value_scale.min()).y;
+        let strips = strips(&high_line, &low_line, higher_is_greater);
+
+        if !strips.iter().any(|strip| strip.inverted) {
+            self.fill_between(highs, lows, color);
+            return;
+        }
+
+        for strip in strips {
+            let (top, bottom) = (clip(&high_line, strip.start, strip.end), clip(&low_line, strip.start, strip.end));
+            let (Some(first), Some(last)) = (top.first(), bottom.last()) else {
+                continue;
+            };
+
+            self.ctx.begin_path();
+            let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
+            path.move_to(*first);
+            for point in &top[1..] {
+                path.line_to(*point);
+            }
+            path.line_to(*last);
+            for point in bottom.iter().rev().skip(1) {
+                path.line_to(*point);
+            }
+            self.ctx.close_path();
+            self.ctx.set_fill_style(if strip.inverted { inverted } else { color });
+            self.ctx.fill();
+        }
     }
 
     /// Strokes the line through `points`, in the index frame.

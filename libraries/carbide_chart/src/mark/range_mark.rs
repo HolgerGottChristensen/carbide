@@ -1,15 +1,37 @@
 use carbide::draw::Scalar;
+use crate::DataColor;
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, MarkRole};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, MarkRole, Marked};
 use crate::sequence::Sequence;
 
 /// Draws a dataset's ranges, from each point's low to its high value (see `RangeDataSetExt::range`):
 /// in a bar controller, each point as a floating bar in place of a bar growing from zero; in a
 /// line controller, a band between the line through the lows and the line through the highs, in
 /// place of the line. A point missing its x, low or high isn't drawn, and leaves a gap in a band.
+///
+/// Where a range is inverted, its high below its low, it is drawn like any other by default. With
+/// `inverted_color`, those parts take another colour: the floating bars whose high is below their
+/// low, and the parts of a band where the line through the highs runs below the line through the
+/// lows, so a crossing shows.
 #[derive(Copy, Clone, Debug, Default)]
-pub struct RangeMark;
+pub struct RangeMark {
+    /// The colour of the inverted parts, or `None` to draw them as the rest.
+    pub inverted_color: Option<DataColor>,
+}
 
+impl<D> Marked<D, RangeMark> {
+    /// Draws the inverted parts of the ranges in `color`: floating bars whose high is below their
+    /// low, and the parts of a band where the highs run below the lows (see `RangeMark`). A palette
+    /// colour (`DataColor::Palette`) follows the chart's `SeriesStyle`. Set it right after
+    /// `.range()`, before other options.
+    pub fn inverted_color(mut self, color: impl Into<DataColor>) -> Marked<D, RangeMark> {
+        self.mark_mut().inverted_color = Some(color.into());
+        self
+    }
+}
+
+/// Floating bars, each in its point's colour, or in the inverted colour where its high is below its
+/// low and one is set.
 impl<D: Sequence<dyn RangePoint>> BarMark<D> for RangeMark {
     fn role(&self) -> MarkRole {
         MarkRole::Primary
@@ -30,7 +52,10 @@ impl<D: Sequence<dyn RangePoint>> BarMark<D> for RangeMark {
             };
 
             let slot = slots.slot(x);
-            let color = canvas.point_color(point_index, point.color());
+            let color = match self.inverted_color {
+                Some(inverted) if high < low => canvas.point_color(point_index, inverted),
+                _ => canvas.point_color(point_index, point.color()),
+            };
             let (from, to) = (canvas.value_pixel(low), canvas.value_pixel(high));
             canvas.fill_rect(slot.side, slot.thickness, from, to, color);
         });
@@ -38,7 +63,8 @@ impl<D: Sequence<dyn RangePoint>> BarMark<D> for RangeMark {
 }
 
 /// A band in place of the line: filled between the lows and the highs, translucent, with both
-/// edges stroked in the dataset's colour. The edges follow the dataset's `interpolation`, and the
+/// edges stroked in the dataset's colour, and the parts where the highs run below the lows filled
+/// in the inverted colour, when one is set. The edges follow the dataset's `interpolation`, and the
 /// band breaks at missing points as the dataset's `span_gaps` says, as a line does.
 impl<D: Sequence<dyn RangePoint>> LineMark<D> for RangeMark {
     fn role(&self) -> MarkRole {
@@ -70,10 +96,14 @@ impl<D: Sequence<dyn RangePoint>> LineMark<D> for RangeMark {
 
         let color = canvas.color();
         let fill = canvas.translucent(color);
+        let inverted = self.inverted_color.map(|inverted| {
+            let inverted = canvas.resolve(inverted);
+            canvas.translucent(inverted)
+        });
         let runs = canvas.runs(&xs);
 
         for run in &runs {
-            canvas.fill_between(&highs[run.clone()], &lows[run.clone()], fill);
+            canvas.fill_band(&highs[run.clone()], &lows[run.clone()], fill, inverted);
         }
 
         for run in &runs {

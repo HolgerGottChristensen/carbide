@@ -373,6 +373,17 @@ pub(crate) fn dataset_color(options: &DataSetOptions, dataset_index: usize, pale
     }
 }
 
+/// The colour `color` stands for in a dataset: a fixed colour, or a palette colour, picked or by
+/// the dataset's index, as for `dataset_color`. A colour by point, which needs a point, is the
+/// dataset's colour here.
+pub(crate) fn resolve_color(color: DataColor, options: &DataSetOptions, dataset_index: usize, palette: &Palette) -> Color {
+    match color {
+        DataColor::Color(color) => color,
+        DataColor::Palette(index) => palette.at(index),
+        DataColor::ByDataSet | DataColor::ByPoint => dataset_color(options, dataset_index, palette),
+    }
+}
+
 /// The colour of one bar or point: the point's own colour if it sets one, otherwise its
 /// dataset's. A dataset coloured `ByPoint` gives each point the palette colour for its index in
 /// the dataset (`point_index`), as does a point coloured `ByPoint` itself.

@@ -27,6 +27,11 @@ impl<D, M> Marked<D, M> {
     pub(crate) fn new(inner: D, mark: M) -> Marked<D, M> {
         Marked { inner, mark }
     }
+
+    /// The mark, for its options.
+    pub(crate) fn mark_mut(&mut self) -> &mut M {
+        &mut self.mark
+    }
 }
 
 impl<D: DataSet + Clone, M: Clone + Debug + 'static> DataSet for Marked<D, M> {
