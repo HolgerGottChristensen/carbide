@@ -18,7 +18,7 @@ pub struct ErrorBars {
 
 impl Default for ErrorBars {
     fn default() -> ErrorBars {
-        ErrorBars { cap_percentage: 0.4, line_width: 1.5 }
+        ErrorBars { cap_percentage: 0.4, line_width: 2.0 }
     }
 }
 

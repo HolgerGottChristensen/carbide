@@ -16,7 +16,7 @@ pub struct BubbleMark {
 
 impl Default for BubbleMark {
     fn default() -> BubbleMark {
-        BubbleMark { outline_width: 1.5 }
+        BubbleMark { outline_width: 2.0 }
     }
 }
 
