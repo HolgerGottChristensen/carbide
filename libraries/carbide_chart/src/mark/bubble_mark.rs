@@ -1,6 +1,9 @@
+use carbide::color::Color;
 use carbide::draw::Scalar;
+use crate::DataColor;
+use crate::legend::LegendMarker;
 use crate::dataset::SizedPoint;
-use crate::mark::{Mark, Primary, ScatterCanvas, ScatterMark, SizeScale};
+use crate::mark::{LegendContext, Mark, Primary, ScatterCanvas, ScatterMark, SizeScale};
 use crate::sequence::Sequence;
 
 /// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
@@ -40,6 +43,11 @@ impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
                 f(size);
             }
         });
+    }
+
+    /// A bubble in the dataset's colour, in place of a point.
+    fn legend(&self, _data: &D, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        Some((legend.resolve(DataColor::ByDataSet), LegendMarker::Bubble))
     }
 
     fn draw(&self, data: &D, canvas: &mut ScatterCanvas) {

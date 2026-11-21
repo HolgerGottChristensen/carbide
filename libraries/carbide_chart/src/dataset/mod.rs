@@ -20,7 +20,7 @@ pub use dataset_sequence::*;
 pub use stack_id::StackId;
 pub use dataset_options::*;
 pub use dataset_ext::*;
-pub use range_point::{Estimate, Range, RangePoint};
+pub use range_point::{Estimate, Range, RangePoint, Spread};
 pub use sized_point::{Bubble, SizedPoint};
 pub use box_point::{BoxPoint, BoxStats};
 pub use ohlc_point::{Ohlc, OhlcPoint};

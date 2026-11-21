@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, legend_items, Palette};
+use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
@@ -194,12 +194,20 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     }
 
     /// Each named dataset as a line in its colour, or a square when it is filled or a mark, such
-    /// as a band, replaces its line.
+    /// as a band, replaces its line, unless one of its marks gives an entry of its own
+    /// (`LineMark::legend`).
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         let replaced = self.replaced_lines();
-        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |dataset_index, options| {
-            if options.fill == Fill::None && !replaced.contains(&dataset_index) { LegendMarker::Line } else { LegendMarker::Square }
-        });
+        legend_items(
+            &self.dataset_sequence,
+            env,
+            &Palette::from_env(env, self.palette_offset),
+            items,
+            |dataset_index, options| {
+                if options.fill == Fill::None && !replaced.contains(&dataset_index) { LegendMarker::Line } else { LegendMarker::Square }
+            },
+            |dataset, context| first_mark_entry(|f| dataset.line_marks(&mut |mark| f(mark.legend(context)))),
+        );
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

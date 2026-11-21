@@ -3,10 +3,11 @@
 //! is in the legend when it has a name (`DatasetExt::label`).
 
 use carbide::color::Color;
+use carbide::draw::color::{rgba, Rgba};
 use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::StateValue;
-use crate::style::axis_style;
+use crate::style::{axis_style, series_style};
 
 /// The side of the chart the legend is drawn on, or `Hidden`, the default. On the top or bottom
 /// the items wrap into centred rows across the chart; on the left or right they stack in a column,
@@ -41,12 +42,17 @@ pub enum LegendMarker {
     Line,
     /// A point, for points without a line.
     Point,
+    /// A circle filled at the `SeriesStyle`'s fill opacity and outlined in the entry's colour, as
+    /// bubbles are drawn.
+    Bubble,
 }
 
 /// The width and height of a marker.
 const MARKER_SIZE: Scalar = 12.0;
 /// The diameter of a point marker, the same as a chart's points.
 const POINT_DIAMETER: Scalar = 7.0;
+/// How wide a bubble marker's outline is, as wide as a bubble's.
+const BUBBLE_OUTLINE_WIDTH: Scalar = 2.0;
 /// The gap between a marker and its name.
 const MARKER_GAP: Scalar = 6.0;
 /// The gap between two items side by side.
@@ -194,6 +200,17 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
                 ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
                 ctx.set_fill_style(item.color);
                 ctx.fill();
+            }
+            LegendMarker::Bubble => {
+                let fill_opacity = series_style(ctx.env()).fill_opacity();
+                let Rgba(r, g, b, a) = Rgba::from(item.color);
+                // Inset by half the outline, so the outline stays within the marker's square.
+                ctx.circle(x + MARKER_SIZE / 2.0, middle, MARKER_SIZE - BUBBLE_OUTLINE_WIDTH);
+                ctx.set_fill_style(rgba(r, g, b, a * fill_opacity));
+                ctx.fill();
+                ctx.set_line_width(BUBBLE_OUTLINE_WIDTH);
+                ctx.set_stroke_style(item.color);
+                ctx.stroke();
             }
         }
 

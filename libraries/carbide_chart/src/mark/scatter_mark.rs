@@ -4,11 +4,12 @@ use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions};
-use crate::controller::drawing::{point_color, Palette};
+use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::orientation::pixel;
-use crate::mark::{Mark, MarkRole, Role};
+use crate::legend::LegendMarker;
+use crate::mark::{LegendContext, Mark, MarkRole, Role};
 use crate::scale::{Axis, Scale};
-use crate::style::series_style;
+use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `ScatterController` (see `ScatterDataSet`).
@@ -20,7 +21,7 @@ use crate::style::series_style;
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller for `{D}`",
     label = "not a scatter mark for this dataset",
-    note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, and types of your own implementing `ScatterMark`",
+    note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `ScatterMark`",
 )]
 pub trait ScatterMark<D: ?Sized>: Mark {
     /// Calls `f` with each x and y the mark draws, for the scale bounds: for a primary mark, the
@@ -33,6 +34,13 @@ pub trait ScatterMark<D: ?Sized>: Mark {
 
     /// Draws the mark for each of the dataset's points.
     fn draw(&self, data: &D, canvas: &mut ScatterCanvas);
+
+    /// The colour and marker of the dataset's legend entry, when the mark changes how the dataset
+    /// looks, or `None`, the default, for the controller's own entry. The first mark of a dataset
+    /// that gives one decides it.
+    fn legend(&self, _data: &D, _legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        None
+    }
 }
 
 /// A scatter mark together with the dataset it draws, as a scatter controller reads it from a
@@ -45,6 +53,8 @@ pub trait DatasetScatterMark {
     fn sizes(&self, f: &mut dyn FnMut(Scalar));
 
     fn draw(&self, canvas: &mut ScatterCanvas);
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)>;
 }
 
 pub(crate) struct BoundScatterMark<'a, M, D> {
@@ -67,6 +77,10 @@ impl<M: ScatterMark<D>, D> DatasetScatterMark for BoundScatterMark<'_, M, D> {
 
     fn draw(&self, canvas: &mut ScatterCanvas) {
         self.mark.draw(self.data, canvas);
+    }
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        self.mark.legend(self.data, legend)
     }
 }
 
@@ -135,6 +149,40 @@ impl ScatterCanvas<'_, '_, '_, '_> {
     /// `DataPoint::color`), as a point would be drawn in.
     pub fn point_color(&self, point_index: usize, color: DataColor) -> Color {
         point_color(color, self.options, self.dataset_index, point_index, self.palette)
+    }
+
+    /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
+    /// colour by dataset or by point, the dataset's colour.
+    pub fn resolve(&self, color: DataColor) -> Color {
+        resolve_color(color, self.options, self.dataset_index, self.palette)
+    }
+
+    /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's
+    /// label colour, so they stand out on any point.
+    pub fn ink(&mut self) -> Color {
+        let env = self.ctx.env();
+        axis_style(env).label_color(env)
+    }
+
+    /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
+    /// with `stroke_lines_added`, so a mark can draw many lines without collecting them first.
+    pub fn begin_lines(&mut self) {
+        self.ctx.begin_path();
+    }
+
+    /// Adds the straight line from `from` to `to`, in pixels, to the path `begin_lines` started.
+    pub fn add_line(&mut self, from: Position, to: Position) {
+        self.ctx.move_to(from.x, from.y);
+        self.ctx.line_to(to.x, to.y);
+    }
+
+    /// Strokes the lines added since `begin_lines`, `width` wide.
+    pub fn stroke_lines_added(&mut self, width: Scalar, color: Color) {
+        self.ctx.save();
+        self.ctx.set_line_width(width);
+        self.ctx.set_stroke_style(color);
+        self.ctx.stroke();
+        self.ctx.restore();
     }
 
     /// `color` at the `SeriesStyle`'s fill opacity, for shapes that may overlap, so the ones

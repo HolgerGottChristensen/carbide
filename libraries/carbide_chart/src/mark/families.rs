@@ -24,7 +24,7 @@ use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a bar controller",
     label = "not a bar dataset",
-    note = "bar controllers draw plain datasets, and datasets whose marks are bar marks (`.range()`, `.error_bars()`)",
+    note = "bar controllers draw plain datasets, and datasets whose marks are bar marks (`.range()`, `.error_bars()`, `.box_plot()`, `.candles()`, `.ohlc()`); bubbles are drawn by scatter controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn BarDataSet>`",
 )]
 pub trait BarDataSet: DataSet {
@@ -85,18 +85,25 @@ dyn_clone::clone_trait_object!(LineDataSet);
 /// dataset inside is one, for marked datasets (`Marked`) when the mark is a `ScatterMark`, and for
 /// `Box<dyn ScatterDataSet>`, which mixes dataset types in a `Vec`.
 ///
-/// A dataset with a mark scatter charts can't draw doesn't compile:
-///
-/// ```compile_fail
+/// ```
 /// use carbide_chart::{Estimate, ScatterController, RangeDataSetExt};
 ///
 /// let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
 /// ScatterController::new(measured.error_bars());
 /// ```
+///
+/// A dataset with a mark scatter charts can't draw doesn't compile:
+///
+/// ```compile_fail
+/// use carbide_chart::{Range, ScatterController, RangeDataSetExt};
+///
+/// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+/// ScatterController::new(temperatures.range());
+/// ```
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller",
     label = "not a scatter dataset",
-    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` and `.error_bars()` are drawn by bar and line controllers",
+    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`, `.error_bars()`); `.range()` is drawn by bar and line controllers, box plots and candlesticks by bar controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn ScatterDataSet>`",
 )]
 pub trait ScatterDataSet: DataSet {

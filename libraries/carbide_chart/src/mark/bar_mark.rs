@@ -22,7 +22,7 @@ use crate::style::{axis_style, series_style};
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn in a bar controller's slots for `{D}`",
     label = "not a bar mark for this dataset",
-    note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `BarMark`",
+    note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, `BoxMark` (`.box_plot()`) on datasets of `BoxPoint`s, `CandleMark` (`.candles()`, `.ohlc()`) on datasets of `OhlcPoint`s, and types of your own implementing `BarMark`",
 )]
 pub trait BarMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
@@ -40,8 +40,9 @@ pub trait BarMark<D: ?Sized>: Mark {
     }
 }
 
-/// What a bar mark can read to decide its legend entry's colours: the dataset's colours and the
-/// chart's `SeriesStyle`.
+/// What a mark can read to decide its dataset's legend entry (`BarMark::legend`,
+/// `LineMark::legend`, `ScatterMark::legend`): the dataset's colours and the chart's
+/// `SeriesStyle`.
 pub struct LegendContext<'a, 'e> {
     pub(crate) env: &'a Environment<'e>,
     pub(crate) options: &'a DataSetOptions,
@@ -171,6 +172,12 @@ impl BarCanvas<'_, '_, '_, '_> {
     /// `DataPoint::color`), as a bar would be drawn in.
     pub fn point_color(&self, point_index: usize, color: DataColor) -> Color {
         point_color(color, self.options, self.dataset_index, point_index, self.palette)
+    }
+
+    /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
+    /// colour by dataset or by point, the dataset's colour.
+    pub fn resolve(&self, color: DataColor) -> Color {
+        resolve_color(color, self.options, self.dataset_index, self.palette)
     }
 
     /// `color` at the `SeriesStyle`'s fill opacity, for shapes the grid should show through, such

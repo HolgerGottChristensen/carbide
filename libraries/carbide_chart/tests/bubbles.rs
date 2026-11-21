@@ -1,6 +1,6 @@
 //! Bubble charts: scatter points drawn as bubbles whose area is proportional to their size.
 
-use carbide_chart::{Bubble, Chart, DataColor, DataPoint, ScatterController, SizedDataSetExt, SizedPoint};
+use carbide_chart::{Bubble, Chart, DataColor, DataPoint, DatasetExt, LegendPosition, ScatterController, SizedDataSetExt, SizedPoint};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -150,4 +150,24 @@ fn from_a_type_of_your_own() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("from_a_type_of_your_own");
+}
+
+/// Bubbles beside plain scatter points, both named, with the legend on top. Pins down that the
+/// bubbles' legend entry is a bubble, filled translucent and outlined in the dataset's colour, as
+/// the bubbles are drawn, while the plain points keep a point.
+#[test]
+fn in_the_legend() {
+    let cities = vec![
+        Bubble { x: 1.0, y: 3.0, size: 20.0 },
+        Bubble { x: 2.5, y: 5.0, size: 60.0 },
+        Bubble { x: 4.0, y: 4.0, size: 35.0 },
+    ];
+    let readings = vec![(1.5, 2.0), (3.0, 4.5), (4.5, 3.0)];
+
+    let chart = Chart::new(ScatterController::new((cities.bubbles().label("Cities"), readings.label("Readings"))))
+        .legend(LegendPosition::Top)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("in_the_legend");
 }

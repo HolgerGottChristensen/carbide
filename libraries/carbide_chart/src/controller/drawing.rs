@@ -10,7 +10,7 @@ use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, Fill, SpanGaps};
-use crate::mark::AsDataSet;
+use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
@@ -396,21 +396,43 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
     }
 }
 
-/// Adds a legend entry for each of `datasets` that has a name, in the colour its line, area or
-/// bars are drawn in (see `dataset_color`), with the marker `marker` gives for its index and
-/// options.
-pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(usize, &DataSetOptions) -> LegendMarker) {
+/// Adds a legend entry for each of `datasets` that has a name: the entry the dataset's first mark
+/// to give one asks for (`mark_entry`, which reads the marks with the context it is given), or
+/// else the colour its line, area or bars are drawn in (see `dataset_color`), with the marker
+/// `marker` gives for its index and options.
+pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
+    datasets: &D,
+    env: &Environment,
+    palette: &Palette,
+    items: &mut Vec<LegendItem>,
+    marker: impl Fn(usize, &DataSetOptions) -> LegendMarker,
+    mark_entry: impl Fn(&T, &LegendContext) -> Option<(Color, LegendMarker)>,
+) {
     datasets.foreach(&mut |dataset_index, dataset| {
         let options = dataset.as_dataset().options();
 
-        if let Some(label) = &options.label {
-            items.push(LegendItem {
-                label: label.clone(),
-                color: dataset_color(&options, dataset_index, palette),
-                marker: marker(dataset_index, &options),
-            });
+        let Some(label) = options.label.clone() else {
+            return;
+        };
+
+        let context = LegendContext { env, options: &options, dataset_index, palette };
+        let (color, marker) = mark_entry(dataset, &context)
+            .unwrap_or_else(|| (dataset_color(&options, dataset_index, palette), marker(dataset_index, &options)));
+
+        items.push(LegendItem { label, color, marker });
+    });
+}
+
+/// The legend entry of the first of a dataset's marks to give one, from `marks`, which calls its
+/// argument with each mark's entry.
+pub(crate) fn first_mark_entry(marks: impl FnOnce(&mut dyn FnMut(Option<(Color, LegendMarker)>))) -> Option<(Color, LegendMarker)> {
+    let mut entry = None;
+    marks(&mut |own| {
+        if entry.is_none() {
+            entry = own;
         }
     });
+    entry
 }
 
 /// The x and y scales a dataset is bound to, or `None` when the chart has no scale with one of

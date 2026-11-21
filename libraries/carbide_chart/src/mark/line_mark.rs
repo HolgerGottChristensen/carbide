@@ -8,7 +8,8 @@ use crate::controller::band::{clip, flatten, strips};
 use crate::controller::drawing::{dataset_color, resolve_color, split_runs, Palette};
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
-use crate::mark::{Mark, MarkRole, Role};
+use crate::legend::LegendMarker;
+use crate::mark::{LegendContext, Mark, MarkRole, Role};
 use crate::scale::Scale;
 use crate::style::{axis_style, series_style};
 
@@ -22,7 +23,7 @@ use crate::style::{axis_style, series_style};
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a line controller for `{D}`",
     label = "not a line mark for this dataset",
-    note = "line marks are `RangeMark` (`.range()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`",
+    note = "line marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`",
 )]
 pub trait LineMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
@@ -32,6 +33,13 @@ pub trait LineMark<D: ?Sized>: Mark {
 
     /// Draws the mark for the dataset's points.
     fn draw(&self, data: &D, canvas: &mut LineCanvas);
+
+    /// The colour and marker of the dataset's legend entry, when the mark changes how the dataset
+    /// looks, or `None`, the default, for the controller's own entry. The first mark of a dataset
+    /// that gives one decides it.
+    fn legend(&self, _data: &D, _legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        None
+    }
 }
 
 /// A line mark together with the dataset it draws, as a line controller reads it from a dataset's
@@ -42,6 +50,8 @@ pub trait DatasetLineMark {
     fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     fn draw(&self, canvas: &mut LineCanvas);
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)>;
 }
 
 pub(crate) struct BoundLineMark<'a, M, D> {
@@ -60,6 +70,10 @@ impl<M: LineMark<D>, D> DatasetLineMark for BoundLineMark<'_, M, D> {
 
     fn draw(&self, canvas: &mut LineCanvas) {
         self.mark.draw(self.data, canvas);
+    }
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        self.mark.legend(self.data, legend)
     }
 }
 

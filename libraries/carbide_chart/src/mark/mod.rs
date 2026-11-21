@@ -118,8 +118,11 @@ pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
     }
 
     /// Draws a whisker from each point's low to its high value, with a cap at each end, on top of
-    /// its bar in a bar controller and through its point in a line controller. The value scale's
-    /// bounds cover the whiskers, and on stacked bars or lines they move with the stack.
+    /// its bar in a bar controller and through its point in a line or scatter controller. On
+    /// scatter points, a point with an x low and an x high (`RangePoint::x_low`, `x_high`, such as
+    /// a `Spread`) also gets a level whisker between them; each whisker is drawn only where both
+    /// its ends are there. The scales' bounds cover the whiskers, and on stacked bars or lines
+    /// they move with the stack.
     fn error_bars(self) -> Marked<Self, ErrorBars> {
         Marked::new(self, ErrorBars::default())
     }
@@ -409,6 +412,90 @@ mod tests {
         assert_eq!(items[1].color, style.rising_color(&env), "only the falling colour is the dataset's own");
         assert_eq!(items[1].marker, LegendMarker::Split(palette[4]));
         assert_eq!((items[2].color, items[2].marker), (palette[2], LegendMarker::Square), "a box plot keeps its dataset's colour");
+    }
+
+    /// Error bars on scatter points add both ends of each whisker to the scales' bounds, beyond
+    /// the points, and a point missing its low or high adds only itself.
+    #[test]
+    fn error_bars_on_scatter_points_add_their_whiskers_to_the_bounds() {
+        use crate::ScatterController;
+
+        let measured = vec![
+            Estimate { x: 1.0, y: 6.0, low: 2.0, high: 9.0 },
+            Estimate { x: 3.0, y: 4.0, low: 3.0, high: f64::NAN },
+        ];
+        let bounds = bounds(ScatterController::new(measured.error_bars()));
+
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 9.0)), "the whiskers reach beyond the points");
+        assert_eq!(bounds.get(&ScaleId::X).range(), Some((1.0, 3.0)));
+    }
+
+    /// On scatter points, a point's interval along x adds both its ends to the x scale's bounds,
+    /// and each interval counts only where both its ends are there: a point can have either, both
+    /// or neither.
+    #[test]
+    fn error_bars_on_scatter_points_reach_along_both_axes() {
+        use crate::{ScatterController, Spread};
+
+        let measured: Vec<Spread<f64, Option<f64>>> = vec![
+            Spread { x: 2.0, y: Some(5.0), x_low: 1.0, x_high: 4.0, low: Some(3.0), high: Some(8.0) },
+            Spread { x: 6.0, y: Some(4.0), x_low: 5.0, x_high: 9.0, low: Some(1.0), high: None },
+        ];
+        let both = bounds(ScatterController::new(measured.error_bars()));
+
+        assert_eq!(both.get(&ScaleId::X).range(), Some((1.0, 9.0)), "both points' x intervals");
+        assert_eq!(both.get(&ScaleId::Y).range(), Some((3.0, 8.0)), "the second point's y interval lacks its high, so it adds nothing");
+
+        let only_along_x: Vec<Spread<Option<f64>, f64>> = vec![
+            Spread { x: Some(2.0), y: 5.0, x_low: None, x_high: Some(4.0), low: 3.0, high: 8.0 },
+            Spread { x: Some(6.0), y: 4.0, x_low: Some(5.0), x_high: Some(7.0), low: 3.5, high: 4.5 },
+        ];
+        let partial = bounds(ScatterController::new(only_along_x.error_bars()));
+        assert_eq!(partial.get(&ScaleId::X).range(), Some((2.0, 7.0)), "the first point's x interval lacks its low");
+    }
+
+    /// The whiskers' colour is the chart's label colour until the dataset sets its own, a value or
+    /// a state, synced with the dataset.
+    #[test]
+    fn whisker_colours_are_states() {
+        let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
+        let mut env = Environment::new();
+
+        assert!(measured.clone().error_bars().mark().whisker_color().is_none());
+
+        let mut color = LocalState::new(DataColor::Palette(1));
+        let mut marked = measured.error_bars().whisker_color(color.clone());
+        assert!(marked.sync(&mut env));
+        assert!(matches!(marked.mark().whisker_color(), Some(DataColor::Palette(1))));
+
+        *color.value_mut() = DataColor::ByDataSet;
+        marked.sync(&mut env);
+        assert!(matches!(marked.mark().whisker_color(), Some(DataColor::ByDataSet)));
+    }
+
+    /// A bubble dataset's legend entry is a bubble in its colour, as it draws no points, while
+    /// plain scatter points keep a point, and error bars, an overlay, leave the entry as it is.
+    #[test]
+    fn bubbles_show_a_bubble_in_the_legend() {
+        use crate::{Bubble, LegendItem, LegendMarker, ScatterController, SizedDataSetExt};
+        use crate::style::series_style;
+
+        let cities = vec![Bubble { x: 3.0, y: 70.0, size: 1.2 }];
+        let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
+        let env = Environment::new();
+        let palette = series_style(&env).palette(&env);
+
+        let controller = ScatterController::new((
+            cities.bubbles().label("cities"),
+            vec![(1.0, 2.0)].label("readings"),
+            measured.error_bars().label("measured"),
+        ));
+        let mut items: Vec<LegendItem> = vec![];
+        controller.legend_items(&env, &mut items);
+
+        assert_eq!((items[0].color, items[0].marker), (palette[0], LegendMarker::Bubble));
+        assert_eq!((items[1].color, items[1].marker), (palette[1], LegendMarker::Point));
+        assert_eq!((items[2].color, items[2].marker), (palette[2], LegendMarker::Point), "an overlay keeps the controller's entry");
     }
 
     /// Error bars on a line go through its points, and on stacked lines they move with the stack:
