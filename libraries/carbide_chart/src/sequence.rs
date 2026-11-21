@@ -2,9 +2,12 @@
 //! level below: a `DataSet` is a sequence of `DataPoint`s, a `DataSetSequence` a sequence of
 //! `DataSet`s, and a `ControllerSequence` a sequence of `DatasetController`s.
 //!
-//! Unlike carbide's widget `Sequence`, this one only iterates, through `&self`, and never hands
-//! out `&mut` to an item. That is what lets a state be a sequence: `LocalState<Vec<Position>>`
-//! is a dataset, and `LocalState<Vec<LocalState<Vec<Position>>>>` a sequence of datasets.
+//! Unlike carbide's widget `Sequence`, reading one goes only through `&self`, handing each item
+//! to a callback, and never asks for an item by index. That is what lets a state be a sequence:
+//! a state lends its value only through a borrow guard that lives inside the call, so
+//! `LocalState<Vec<Position>>` is a dataset, and `LocalState<Vec<LocalState<Vec<Position>>>>` a
+//! sequence of datasets. Only `sync` reaches the items mutably, through the containers that can
+//! lend them so (`Collection::visit_items_mut`, `CollectionState::with_collection_mut`).
 
 use std::collections::VecDeque;
 use std::fmt::Debug;

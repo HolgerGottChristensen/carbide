@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
@@ -8,7 +7,7 @@ use crate::controller::band::{clip, flatten, strips};
 use crate::controller::drawing::{dataset_color, resolve_color, split_runs, Palette};
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
-use crate::mark::MarkRole;
+use crate::mark::{Mark, MarkRole};
 use crate::scale::Scale;
 use crate::style::series_style;
 
@@ -24,7 +23,7 @@ use crate::style::series_style;
     label = "not a line mark for this dataset",
     note = "line marks are `RangeMark` (`.range()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`",
 )]
-pub trait LineMark<D: ?Sized>: Clone + Debug + 'static {
+pub trait LineMark<D: ?Sized>: Mark {
     /// Whether the mark replaces the line or is drawn on top of it.
     fn role(&self) -> MarkRole;
 

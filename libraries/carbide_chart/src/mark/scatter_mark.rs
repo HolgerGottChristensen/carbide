@@ -6,7 +6,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions};
 use crate::controller::drawing::{point_color, Palette};
 use crate::controller::orientation::pixel;
-use crate::mark::MarkRole;
+use crate::mark::{Mark, MarkRole};
 use crate::scale::{Axis, Scale};
 use crate::style::series_style;
 
@@ -22,7 +22,7 @@ use crate::style::series_style;
     label = "not a scatter mark for this dataset",
     note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, and types of your own implementing `ScatterMark`",
 )]
-pub trait ScatterMark<D: ?Sized>: Clone + Debug + 'static {
+pub trait ScatterMark<D: ?Sized>: Mark {
     /// Whether the mark replaces the points or is drawn on top of them.
     fn role(&self) -> MarkRole;
 

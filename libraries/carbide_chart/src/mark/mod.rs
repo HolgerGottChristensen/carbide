@@ -37,9 +37,22 @@ pub use scatter_mark::{DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale
 pub use bubble_mark::BubbleMark;
 pub use line_mark::{DatasetLineMark, LineCanvas, LineMark};
 
+use std::fmt::Debug;
+use carbide::environment::Environment;
 use crate::DataSet;
 use crate::dataset::{RangePoint, SizedPoint};
 use crate::sequence::Sequence;
+
+/// What every mark is, whichever controllers draw it (`BarMark`, `LineMark`, `ScatterMark`): a
+/// value that can be cloned, printed, and synced. A mark's options can be states, as a dataset's
+/// can, and its dataset syncs them before every update, render and event (see `DataSet::sync`).
+pub trait Mark: Clone + Debug + 'static {
+    /// Syncs the states in the mark's options with the environment, and returns whether anything
+    /// may have changed. The default syncs nothing: a mark without states has nothing to sync.
+    fn sync(&mut self, _env: &mut Environment) -> bool {
+        false
+    }
+}
 
 /// Whether a mark replaces the glyph its controller draws by default, or is drawn on top of it.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -104,7 +117,7 @@ impl<D: DataSet + Sequence<dyn SizedPoint>> SizedDataSetExt for D {}
 mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
-    use crate::{BarController, BarDataSet, DataColor, DatasetExt, Estimate, Range, RangeDataSetExt, StackId};
+    use crate::{BarController, BarDataSet, DataColor, DataSet, DatasetExt, Estimate, Range, RangeDataSetExt, StackId};
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
 
@@ -197,6 +210,28 @@ mod tests {
         let lying = bounds(LineController::new(temperatures.range()).horizontal());
         assert_eq!(lying.get(&ScaleId::X).range(), Some((4.0, 18.0)));
         assert_eq!(lying.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
+    }
+
+    /// A mark's options can be states, synced with its dataset: syncing a dataset whose inverted
+    /// colour is a state reports that it may have changed, and the mark reads the state's current
+    /// colour. A mark without options has nothing to sync. (As everywhere in carbide, any option
+    /// set, even to a plain value, reports that it may have changed, until states can tell.)
+    #[test]
+    fn marks_sync_their_option_states_with_the_dataset() {
+        let ranges = vec![Range { x: 0.0, low: 6.0, high: 2.0 }];
+        let mut env = Environment::new();
+
+        let mut plain = ranges.clone().range();
+        assert!(!plain.sync(&mut env), "neither the points nor the mark hold a state");
+
+        let mut color = LocalState::new(DataColor::Palette(3));
+        let mut stateful = ranges.range().inverted_color(color.clone());
+        assert!(stateful.sync(&mut env), "the mark's state may have changed");
+        assert!(matches!(stateful.mark().inverted_color(), Some(DataColor::Palette(3))));
+
+        *color.value_mut() = DataColor::Palette(5);
+        stateful.sync(&mut env);
+        assert!(matches!(stateful.mark().inverted_color(), Some(DataColor::Palette(5))));
     }
 
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.

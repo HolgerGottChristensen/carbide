@@ -1,6 +1,6 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, MarkRole};
+use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, MarkRole};
 use crate::sequence::Sequence;
 
 /// Draws a whisker from each point's low to its high value, through the middle of its bar, with a
@@ -21,6 +21,8 @@ impl Default for ErrorBars {
         ErrorBars { cap_percentage: 0.4, line_width: 1.5 }
     }
 }
+
+impl Mark for ErrorBars {}
 
 impl<D: Sequence<dyn RangePoint>> BarMark<D> for ErrorBars {
     fn role(&self) -> MarkRole {

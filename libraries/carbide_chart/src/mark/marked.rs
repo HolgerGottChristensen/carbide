@@ -6,7 +6,7 @@ use crate::dataset::{RangePoint, SizedPoint};
 use crate::mark::bar_mark::BoundBarMark;
 use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
-use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, ScatterDataSet, ScatterMark};
+use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, Mark, ScatterDataSet, ScatterMark};
 use crate::sequence::Sequence;
 
 /// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`. It
@@ -28,13 +28,19 @@ impl<D, M> Marked<D, M> {
         Marked { inner, mark }
     }
 
-    /// The mark, for its options.
-    pub(crate) fn mark_mut(&mut self) -> &mut M {
-        &mut self.mark
+    /// The mark, to read its options.
+    pub fn mark(&self) -> &M {
+        &self.mark
+    }
+
+    /// The same dataset with its mark replaced by what `f` makes of it, to change a mark's
+    /// options, and with them its type.
+    pub(crate) fn map_mark<M2>(self, f: impl FnOnce(M) -> M2) -> Marked<D, M2> {
+        Marked { inner: self.inner, mark: f(self.mark) }
     }
 }
 
-impl<D: DataSet + Clone, M: Clone + Debug + 'static> DataSet for Marked<D, M> {
+impl<D: DataSet + Clone, M: Mark> DataSet for Marked<D, M> {
     fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint)) {
         self.inner.points(f);
     }
@@ -47,8 +53,10 @@ impl<D: DataSet + Clone, M: Clone + Debug + 'static> DataSet for Marked<D, M> {
         self.inner.max()
     }
 
+    /// Syncs the dataset inside, and the mark's options.
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.inner.sync(env)
+        let changed = self.inner.sync(env);
+        self.mark.sync(env) | changed
     }
 
     fn options(&self) -> DataSetOptions {

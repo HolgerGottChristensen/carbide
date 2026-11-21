@@ -7,7 +7,7 @@ use crate::{DataColor, DataSetOptions};
 use crate::controller::drawing::{point_color, Palette};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{pixel, Oriented, Orientation};
-use crate::mark::MarkRole;
+use crate::mark::{Mark, MarkRole};
 use crate::scale::Scale;
 use crate::style::axis_style;
 
@@ -21,7 +21,7 @@ use crate::style::axis_style;
     label = "not a bar mark for this dataset",
     note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `BarMark`",
 )]
-pub trait BarMark<D: ?Sized>: Clone + Debug + 'static {
+pub trait BarMark<D: ?Sized>: Mark {
     /// Whether the mark replaces the bar or is drawn on top of it.
     fn role(&self) -> MarkRole;
 
