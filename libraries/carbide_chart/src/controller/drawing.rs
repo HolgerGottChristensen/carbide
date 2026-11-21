@@ -26,8 +26,9 @@ use carbide::environment::Environment;
 /// dataset's baseline value is included too, so the area's base is on the chart; a `Fill::Stack`
 /// area with a line below it fills to that line, so it includes nothing. With `stacks`, a dataset
 /// in a stack reports the running totals it is drawn at instead of its own values. Empty datasets
-/// have no bounds and contribute nothing.
-pub(crate) fn collect_point_bounds<T, D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool, orientation: Orientation)
+/// have no bounds and contribute nothing, and neither do the datasets `counted` turns down, whose
+/// points the controller doesn't draw.
+pub(crate) fn collect_point_bounds<T, D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool, orientation: Orientation, counted: impl Fn(usize) -> bool)
 where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
@@ -37,6 +38,10 @@ where
     let mut filled_stacks: HashSet<StackKey> = HashSet::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
+        if !counted(dataset_index) {
+            return;
+        }
+
         let dataset = dataset.as_dataset();
         let (Some((x_min, y_min)), Some((x_max, y_max))) = (dataset.min(), dataset.max()) else {
             return;

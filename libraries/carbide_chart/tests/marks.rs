@@ -130,7 +130,8 @@ fn bubbles_beside_points() {
 
 /// Sizes at the edges of what a bubble can show, on a radius range of 6 to 24 pixels: the
 /// largest size at 24, a quarter of it at 12, a tiny size and a zero size at the smallest radius,
-/// and a negative and a missing size without a bubble. Pins down the size scale's limits.
+/// and a negative and a missing size without a bubble. Pins down the size scale's limits, and that
+/// the points without a bubble are left out of the x scale, which ends at the last bubble.
 #[test]
 fn bubble_sizes_at_the_limits() {
     let sizes: Vec<Bubble<f64, f64, Option<f64>>> = vec![

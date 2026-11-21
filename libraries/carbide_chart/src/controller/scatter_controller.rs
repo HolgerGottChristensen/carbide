@@ -66,15 +66,34 @@ impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
     }
 }
 
+impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
+    /// The indices of the datasets whose points a mark replaces.
+    fn replaced_points(&self) -> Vec<usize> {
+        let mut replaced = vec![];
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            let mut primary = false;
+            dataset.scatter_marks(&mut |mark| primary |= mark.role() == MarkRole::Primary);
+            if primary {
+                replaced.push(dataset_index);
+            }
+        });
+        replaced
+    }
+}
+
 impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }
 
-    /// Reports each dataset's points, as a plain dataset's, and anything its marks draw beyond
-    /// them.
+    /// Reports each dataset's points, and what its marks draw. A dataset whose points a mark
+    /// replaces reports only what the mark draws, as its other points aren't drawn, unless a line
+    /// runs through all its points (`show_line`).
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical);
+        let replaced = self.replaced_points();
+        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical, |dataset_index| {
+            self.show_line || !replaced.contains(&dataset_index)
+        });
 
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             let options = dataset.options();
@@ -113,15 +132,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         }
 
         // The points of datasets whose points a mark replaces are drawn by the mark instead.
-        let mut replaced = vec![];
-        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
-            let mut primary = false;
-            dataset.scatter_marks(&mut |mark| primary |= mark.role() == MarkRole::Primary);
-            if primary {
-                replaced.push(dataset_index);
-            }
-        });
-
+        let replaced = self.replaced_points();
         draw_points(&lines, ctx, &palette, |dataset_index| !replaced.contains(&dataset_index));
 
         // One size scale for every dataset's marks, so their sizes compare.

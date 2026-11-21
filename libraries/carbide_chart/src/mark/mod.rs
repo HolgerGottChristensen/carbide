@@ -185,9 +185,9 @@ mod tests {
         assert_eq!(bounds(BarController::new(datasets)).get(&ScaleId::Y).range(), Some((0.0, 11.0)));
     }
 
-    /// Bubbles cover the same x and y as the points they replace; their sizes don't reach the
-    /// scales. Tuples with a third value and `Bubble`s are both sized points, and options and the
-    /// mark combine in either order.
+    /// Bubbles cover the x and y of the points they replace; their sizes don't reach the scales.
+    /// Tuples with a third value and `Bubble`s are both sized points, and options and the mark
+    /// combine in either order.
     #[test]
     fn bubbles_are_bounded_by_their_points() {
         use crate::{Bubble, ScatterController, SizedDataSetExt};
@@ -199,6 +199,28 @@ mod tests {
 
         assert_eq!(bounds.get(&ScaleId::X).range(), Some((1.0, 4.0)));
         assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 10.0)), "the sizes don't reach the y scale");
+    }
+
+    /// A point without a bubble, its size negative or missing, isn't drawn, so it isn't in the
+    /// bounds either, unless a line runs through it.
+    #[test]
+    fn points_without_a_bubble_are_left_out_of_the_bounds() {
+        use crate::{Bubble, ScatterController, SizedDataSetExt};
+
+        let sizes: Vec<Bubble<f64, f64, Option<f64>>> = vec![
+            Bubble { x: 1.0, y: 5.0, size: Some(10.0) },
+            Bubble { x: 2.0, y: 9.0, size: Some(0.0) },
+            Bubble { x: 3.0, y: 50.0, size: Some(-4.0) },
+            Bubble { x: 4.0, y: -20.0, size: None },
+        ];
+
+        let without_line = bounds(ScatterController::new(sizes.clone().bubbles()));
+        assert_eq!(without_line.get(&ScaleId::X).range(), Some((1.0, 2.0)), "a size of zero still has a bubble");
+        assert_eq!(without_line.get(&ScaleId::Y).range(), Some((5.0, 9.0)));
+
+        let with_line = bounds(ScatterController::new(sizes.bubbles()).show_line(true));
+        assert_eq!(with_line.get(&ScaleId::X).range(), Some((1.0, 4.0)), "the line runs through every point");
+        assert_eq!(with_line.get(&ScaleId::Y).range(), Some((-20.0, 50.0)));
     }
 
     /// A state of marked datasets is a sequence of bar datasets, so marked datasets can be added

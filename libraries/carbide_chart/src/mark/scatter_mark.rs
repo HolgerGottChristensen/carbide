@@ -13,9 +13,10 @@ use crate::style::series_style;
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `ScatterController` (see `ScatterDataSet`).
 ///
-/// The dataset's points are always in its scales' bounds, as without a mark; a mark reports only
-/// what it draws beyond them. A primary mark is drawn instead of the controller's points, after
-/// the lines; an overlay on top of every dataset's points.
+/// A primary mark is drawn instead of the controller's points, after the lines, and reports what
+/// it draws to the scales' bounds instead of the points: points it doesn't draw are left out,
+/// unless a line runs through them (`ScatterController::show_line`). An overlay is drawn on top of
+/// every dataset's points, and adds what it draws to the points' bounds.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller for `{D}`",
     label = "not a scatter mark for this dataset",
@@ -25,9 +26,9 @@ pub trait ScatterMark<D: ?Sized>: Clone + Debug + 'static {
     /// Whether the mark replaces the points or is drawn on top of them.
     fn role(&self) -> MarkRole;
 
-    /// Calls `f` with each x and y the mark draws beyond the dataset's points, for the scale
-    /// bounds. By default it draws nothing beyond them.
-    fn bounds(&self, _data: &D, _f: &mut dyn FnMut(Scalar, Scalar)) {}
+    /// Calls `f` with each x and y the mark draws, for the scale bounds: for a primary mark, the
+    /// points it draws in place of the dataset's; for an overlay, anything beyond them.
+    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar));
 
     /// Calls `f` with each size the mark draws, so the controller can map every dataset's sizes
     /// through one size scale (see `ScatterCanvas::radius`). By default it draws none.
@@ -84,10 +85,16 @@ pub struct SizeScale {
 }
 
 impl SizeScale {
-    /// The radius for `size`, in pixels: `None` for a size that is negative or not a number, as a
-    /// size below zero has no area. A size of zero gets the smallest radius.
+    /// Whether a circle can be drawn for `size`: not for a size that is negative or not a number,
+    /// as a size below zero has no area.
+    pub fn has_circle(size: Scalar) -> bool {
+        size >= 0.0
+    }
+
+    /// The radius for `size`, in pixels: `None` for a size without a circle (see `has_circle`). A
+    /// size of zero gets the smallest radius.
     pub fn radius(&self, size: Scalar) -> Option<Scalar> {
-        if !(size >= 0.0) {
+        if !SizeScale::has_circle(size) {
             return None;
         }
 

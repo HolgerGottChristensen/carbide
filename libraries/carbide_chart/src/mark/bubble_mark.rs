@@ -1,13 +1,13 @@
 use carbide::draw::Scalar;
 use crate::dataset::SizedPoint;
-use crate::mark::{MarkRole, ScatterCanvas, ScatterMark};
+use crate::mark::{MarkRole, ScatterCanvas, ScatterMark, SizeScale};
 use crate::sequence::Sequence;
 
 /// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
 /// `SizedDataSetExt::bubbles`). The controller maps the sizes of all its datasets through one size
 /// scale (see `ScatterController::radius_range`), so bubbles compare across datasets. A bubble is
 /// filled translucent, so bubbles behind it show through, and outlined in its colour. A point
-/// missing its x, y or size, or with a negative size, isn't drawn.
+/// missing its x, y or size, or with a negative size, isn't drawn, and isn't in the scales' bounds.
 #[derive(Copy, Clone, Debug)]
 pub struct BubbleMark {
     /// How wide the outline is, in pixels.
@@ -23,6 +23,15 @@ impl Default for BubbleMark {
 impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
     fn role(&self) -> MarkRole {
         MarkRole::Primary
+    }
+
+    /// The centres of the bubbles it draws.
+    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar)) {
+        data.foreach(&mut |_index, point| {
+            if let (Some(x), Some(y), Some(size)) = (point.x(), point.y(), point.size()) && SizeScale::has_circle(size) {
+                f(x, y);
+            }
+        });
     }
 
     fn sizes(&self, data: &D, f: &mut dyn FnMut(Scalar)) {

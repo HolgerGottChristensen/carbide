@@ -77,7 +77,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             bounds.request_kind(index_scale, ScaleKind::Category);
         });
 
-        collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation);
+        collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation, |_| true);
     }
 
     /// Each named dataset as a line in its colour, or a square when it is filled.
