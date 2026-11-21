@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use crate::{DataPoint, DataSet, DataSetOptions};
-use crate::dataset::{RangePoint, SizedPoint};
+use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
 use crate::mark::bar_mark::BoundBarMark;
 use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
@@ -64,29 +64,25 @@ impl<D: DataSet + Clone, M: Mark> DataSet for Marked<D, M> {
     }
 }
 
-/// A marked dataset of range points is still a sequence of them, so another range mark can be
-/// added to it.
-impl<D: Sequence<dyn RangePoint>, M: Clone + Debug + 'static> Sequence<dyn RangePoint> for Marked<D, M> {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &(dyn RangePoint + 'static))) {
-        self.inner.foreach(f);
-    }
+/// A marked dataset is still a sequence of whatever kind of point the dataset inside is, so
+/// another mark for that kind can be added to it.
+macro_rules! point_sequences {
+    ($($point:ident),+) => {
+        $(
+            impl<D: Sequence<dyn $point>, M: Clone + Debug + 'static> Sequence<dyn $point> for Marked<D, M> {
+                fn foreach(&self, f: &mut dyn FnMut(usize, &(dyn $point + 'static))) {
+                    self.inner.foreach(f);
+                }
 
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        Sequence::<dyn RangePoint>::sync(&mut self.inner, env)
-    }
+                fn sync(&mut self, env: &mut Environment) -> bool {
+                    Sequence::<dyn $point>::sync(&mut self.inner, env)
+                }
+            }
+        )+
+    };
 }
 
-/// A marked dataset of sized points is still a sequence of them, so another sized mark can be
-/// added to it.
-impl<D: Sequence<dyn SizedPoint>, M: Clone + Debug + 'static> Sequence<dyn SizedPoint> for Marked<D, M> {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &(dyn SizedPoint + 'static))) {
-        self.inner.foreach(f);
-    }
-
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        Sequence::<dyn SizedPoint>::sync(&mut self.inner, env)
-    }
-}
+point_sequences!(RangePoint, SizedPoint, BoxPoint, OhlcPoint);
 
 /// Drawn by bar controllers when the dataset inside is, and the mark can be drawn in bar slots.
 impl<D: BarDataSet + Clone, M: BarMark<D>> BarDataSet for Marked<D, M> {

@@ -16,7 +16,8 @@
 //!
 //! The marks that read more than an x and a y are extension methods on datasets of points that
 //! have those values: `RangeDataSetExt` on datasets of `RangePoint`s, and `SizedDataSetExt` on
-//! datasets of `SizedPoint`s.
+//! datasets of `SizedPoint`s, `BoxDataSetExt` on datasets of `BoxPoint`s, and `OhlcDataSetExt` on
+//! datasets of `OhlcPoint`s.
 
 mod bar_mark;
 mod families;
@@ -25,6 +26,8 @@ mod range_mark;
 mod error_bars;
 mod scatter_mark;
 mod line_mark;
+mod box_mark;
+mod candle_mark;
 mod bubble_mark;
 
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark};
@@ -36,11 +39,13 @@ pub use error_bars::ErrorBars;
 pub use scatter_mark::{DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale};
 pub use bubble_mark::BubbleMark;
 pub use line_mark::{DatasetLineMark, LineCanvas, LineMark};
+pub use box_mark::BoxMark;
+pub use candle_mark::{CandleGlyph, CandleMark};
 
 use std::fmt::Debug;
 use carbide::environment::Environment;
 use crate::DataSet;
-use crate::dataset::{RangePoint, SizedPoint};
+use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
 use crate::sequence::Sequence;
 
 /// What every mark is, whichever controllers draw it (`BarMark`, `LineMark`, `ScatterMark`): a
@@ -112,6 +117,61 @@ pub trait SizedDataSetExt: DataSet + Sequence<dyn SizedPoint> + Sized {
 }
 
 impl<D: DataSet + Sequence<dyn SizedPoint>> SizedDataSetExt for D {}
+
+/// Marks for datasets of `BoxPoint`s: points with a minimum, quartiles, a median and a maximum.
+pub trait BoxDataSetExt: DataSet + Sequence<dyn BoxPoint> + Sized {
+    /// Draws each point as a box plot in a bar controller's slot, instead of a bar: a box from the
+    /// first to the third quartile, the median across it, and whiskers out to the minimum and the
+    /// maximum (see `BoxMark`). The value scale's bounds cover the whiskers, without zero. Box
+    /// plots don't stack: each dataset takes its own share of the slot, side by side.
+    ///
+    /// ```
+    /// use carbide_chart::{BarController, BoxDataSetExt, BoxStats};
+    ///
+    /// let waits = vec![BoxStats { x: 0.0, min: 2.0, q1: 4.0, median: 5.0, q3: 7.0, max: 11.0 }];
+    /// BarController::new(waits.box_plot());
+    /// ```
+    ///
+    /// Only bar controllers draw box plots:
+    ///
+    /// ```compile_fail
+    /// use carbide_chart::{BoxDataSetExt, BoxStats, LineController};
+    ///
+    /// let waits = vec![BoxStats { x: 0.0, min: 2.0, q1: 4.0, median: 5.0, q3: 7.0, max: 11.0 }];
+    /// LineController::new(waits.box_plot());
+    /// ```
+    fn box_plot(self) -> Marked<Self, BoxMark> {
+        Marked::new(self, BoxMark::default())
+    }
+}
+
+impl<D: DataSet + Sequence<dyn BoxPoint>> BoxDataSetExt for D {}
+
+/// Marks for datasets of `OhlcPoint`s: points with an open, a high, a low and a close.
+pub trait OhlcDataSetExt: DataSet + Sequence<dyn OhlcPoint> + Sized {
+    /// Draws each point as a candlestick in a bar controller's slot, instead of a bar: a body from
+    /// the open to the close and a wick from the low to the high, in the rising or the falling
+    /// colour (see `CandleMark`). The value scale's bounds cover the wicks, without zero.
+    ///
+    /// ```
+    /// use carbide_chart::{BarController, Ohlc, OhlcDataSetExt};
+    ///
+    /// let prices = vec![Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 }];
+    /// BarController::new(prices.candles());
+    /// ```
+    fn candles(self) -> Marked<Self, CandleMark> {
+        Marked::new(self, CandleMark::new(CandleGlyph::Candlestick))
+    }
+
+    /// Draws each point as an OHLC bar in a bar controller's slot, instead of a bar: a line from
+    /// the low to the high, with a tick at the open on one side and at the close on the other, in
+    /// the rising or the falling colour (see `CandleMark`).
+    fn ohlc(self) -> Marked<Self, CandleMark> {
+        Marked::new(self, CandleMark::new(CandleGlyph::Ohlc))
+    }
+}
+
+impl<D: DataSet + Sequence<dyn OhlcPoint>> OhlcDataSetExt for D {}
 
 #[cfg(test)]
 mod tests {
@@ -232,6 +292,58 @@ mod tests {
         *color.value_mut() = DataColor::Palette(5);
         stateful.sync(&mut env);
         assert!(matches!(stateful.mark().inverted_color(), Some(DataColor::Palette(5))));
+    }
+
+    /// Box plots and candlesticks report their whole span to the value scale, from the minimum or
+    /// low to the maximum or high, without zero, and ask the index scale for the bars' category
+    /// scale and offsets. They don't stack, even with a stack id.
+    #[test]
+    fn box_plots_and_candles_report_their_whole_span() {
+        use crate::{BoxDataSetExt, BoxStats, Ohlc, OhlcDataSetExt};
+
+        const ALL: StackId = StackId::new("all");
+        let waits = vec![
+            BoxStats { x: 0.0, min: 2.0, q1: 4.0, median: 5.0, q3: 7.0, max: 11.0 },
+            BoxStats { x: 1.0, min: 3.0, q1: 5.0, median: 6.0, q3: 9.0, max: 14.0 },
+        ];
+        let boxes = bounds(BarController::new((waits.clone().box_plot().stack(ALL), waits.box_plot().stack(ALL))));
+        assert_eq!(boxes.get(&ScaleId::Y).range(), Some((2.0, 14.0)), "not stacked, and without zero");
+        assert_eq!(boxes.get(&ScaleId::X).kind(), Some(ScaleKind::Category));
+
+        let prices = vec![
+            Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 },
+            Ohlc { x: 1.0, open: 11.5, high: 13.0, low: 8.0, close: 9.5 },
+        ];
+        let candles = bounds(BarController::new(prices.clone().candles()));
+        assert_eq!(candles.get(&ScaleId::Y).range(), Some((8.0, 13.0)));
+        let bars = bounds(BarController::new(prices.clone().ohlc()));
+        assert_eq!(bars.get(&ScaleId::Y).range(), Some((8.0, 13.0)));
+
+        let closes = bounds(crate::LineController::new(prices));
+        assert_eq!(closes.get(&ScaleId::Y).range(), Some((9.5, 11.5)), "without a mark, a line runs through the closes");
+    }
+
+    /// The rising and falling colours of candlesticks can be states, synced with the dataset and
+    /// read as last synced. Without them, the mark leaves the colours to the `SeriesStyle`.
+    #[test]
+    fn candle_colours_are_states() {
+        use crate::{CandleGlyph, Ohlc, OhlcDataSetExt};
+
+        let prices = vec![Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 }];
+        let mut env = Environment::new();
+
+        let plain = prices.clone().ohlc();
+        assert_eq!(plain.mark().glyph(), CandleGlyph::Ohlc);
+        assert!(plain.mark().rising_color().is_none() && plain.mark().falling_color().is_none());
+
+        let mut rising = LocalState::new(DataColor::Palette(1));
+        let mut candles = prices.candles().rising_color(rising.clone()).falling_color(DataColor::Palette(4));
+        assert!(candles.sync(&mut env));
+        assert!(matches!((candles.mark().rising_color(), candles.mark().falling_color()), (Some(DataColor::Palette(1)), Some(DataColor::Palette(4)))));
+
+        *rising.value_mut() = DataColor::Palette(6);
+        candles.sync(&mut env);
+        assert!(matches!(candles.mark().rising_color(), Some(DataColor::Palette(6))));
     }
 
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.

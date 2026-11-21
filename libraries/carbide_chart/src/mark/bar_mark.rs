@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use carbide::color::Color;
+use carbide::draw::color::{rgba, Rgba};
 use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions};
@@ -9,7 +10,7 @@ use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::mark::{Mark, MarkRole};
 use crate::scale::Scale;
-use crate::style::axis_style;
+use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn in a bar controller's slots, for datasets of type `D`. Implementing
 /// it is what lets a dataset with this mark be drawn by a `BarController` (see `BarDataSet`).
@@ -132,6 +133,26 @@ impl BarCanvas<'_, '_, '_, '_> {
     /// `DataPoint::color`), as a bar would be drawn in.
     pub fn point_color(&self, point_index: usize, color: DataColor) -> Color {
         point_color(color, self.options, self.dataset_index, point_index, self.palette)
+    }
+
+    /// `color` at the `SeriesStyle`'s fill opacity, for shapes the grid should show through, such
+    /// as a box plot's box.
+    pub fn translucent(&mut self, color: Color) -> Color {
+        let fill_opacity = series_style(self.ctx.env()).fill_opacity();
+        let Rgba(r, g, b, a) = Rgba::from(color);
+        rgba(r, g, b, a * fill_opacity)
+    }
+
+    /// The `SeriesStyle`'s colour for rising candlesticks and OHLC bars.
+    pub fn rising_color(&mut self) -> Color {
+        let env = self.ctx.env();
+        series_style(env).rising_color(env)
+    }
+
+    /// The `SeriesStyle`'s colour for falling candlesticks and OHLC bars.
+    pub fn falling_color(&mut self) -> Color {
+        let env = self.ctx.env();
+        series_style(env).falling_color(env)
     }
 
     /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's

@@ -47,6 +47,18 @@ pub trait SeriesStyle: WidgetStyle {
     fn fill_opacity(&self) -> f32 {
         0.3
     }
+
+    /// The colour of a rising candlestick or OHLC bar, whose close is above its open (see
+    /// `OhlcDataSetExt`). The environment's green by default.
+    fn rising_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::Green)
+    }
+
+    /// The colour of a falling candlestick or OHLC bar, whose close isn't above its open. The
+    /// environment's red by default.
+    fn falling_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::Red)
+    }
 }
 
 clone_trait_object!(AxisStyle);
@@ -118,10 +130,18 @@ impl AxisStyle for DebugStyle {
     }
 }
 
-/// White, green and red.
+/// White, green and red, with green rising and red falling candles.
 impl SeriesStyle for DebugStyle {
     fn palette(&self, _env: &Environment) -> Vec<Color> {
         vec![WHITE, GREEN, RED]
+    }
+
+    fn rising_color(&self, _env: &Environment) -> Color {
+        GREEN
+    }
+
+    fn falling_color(&self, _env: &Environment) -> Color {
+        RED
     }
 }
 

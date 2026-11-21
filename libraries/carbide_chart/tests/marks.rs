@@ -1,8 +1,8 @@
-//! Marks: floating bars in place of bars and error bars on top of them, in a bar controller's
-//! slots; bands in place of a line controller's lines; and bubbles in place of a scatter
-//! controller's points.
+//! Marks: floating bars, box plots, candlesticks and OHLC bars in place of bars and error bars on
+//! top of them, in a bar controller's slots; bands in place of a line controller's lines; and
+//! bubbles in place of a scatter controller's points.
 
-use carbide_chart::{BarController, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId, Stepped};
+use carbide_chart::{BarController, BoxDataSetExt, BoxStats, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Ohlc, OhlcDataSetExt, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId, Stepped};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -389,4 +389,88 @@ fn inverted_floating_bars() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("inverted_floating_bars");
+}
+
+/// Two grouped datasets of box plots over three categories. Pins down that each box runs from the
+/// first to the third quartile with the median across it, that the whiskers reach the minimum and
+/// the maximum and end in caps half the box wide, that the two datasets sit side by side in each
+/// slot, and that the y scale fits the whiskers without reaching down to zero.
+#[test]
+fn box_plots() {
+    let before = vec![
+        BoxStats { x: 0.0, min: 12.0, q1: 18.0, median: 22.0, q3: 27.0, max: 35.0 },
+        BoxStats { x: 1.0, min: 15.0, q1: 20.0, median: 25.0, q3: 29.0, max: 38.0 },
+        BoxStats { x: 2.0, min: 10.0, q1: 16.0, median: 19.0, q3: 24.0, max: 31.0 },
+    ];
+    let after = vec![
+        BoxStats { x: 0.0, min: 9.0, q1: 13.0, median: 16.0, q3: 20.0, max: 26.0 },
+        BoxStats { x: 1.0, min: 11.0, q1: 14.0, median: 18.0, q3: 22.0, max: 30.0 },
+        BoxStats { x: 2.0, min: 8.0, q1: 11.0, median: 13.0, q3: 17.0, max: 23.0 },
+    ];
+
+    let chart = Chart::new(BarController::new((before.box_plot(), after.box_plot()))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("box_plots");
+}
+
+/// Lying box plots. Pins down that the boxes, medians, whiskers and caps follow the controller's
+/// orientation: the categories down the y scale, the values along the x scale, the caps across.
+#[test]
+fn horizontal_box_plots() {
+    let response_times = vec![
+        BoxStats { x: 0.0, min: 80.0, q1: 120.0, median: 150.0, q3: 190.0, max: 260.0 },
+        BoxStats { x: 1.0, min: 60.0, q1: 90.0, median: 110.0, q3: 140.0, max: 200.0 },
+        BoxStats { x: 2.0, min: 100.0, q1: 160.0, median: 210.0, q3: 250.0, max: 340.0 },
+    ];
+
+    let chart = Chart::new(BarController::new(response_times.box_plot()).horizontal()).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("horizontal_box_plots");
+}
+
+/// Eight trading days as candlesticks, rising and falling, with one flat day. Pins down that each
+/// body runs from the open to the close and each wick from the low to the high, that rising days
+/// are drawn in the style's rising colour (green) and falling ones in its falling colour (red), a
+/// flat day included as falling and drawn as a line, and that the y scale fits the wicks.
+#[test]
+fn candlesticks() {
+    let prices = vec![
+        Ohlc { x: 0.0, open: 100.0, high: 104.0, low: 98.0, close: 103.0 },
+        Ohlc { x: 1.0, open: 103.0, high: 106.0, low: 101.0, close: 102.0 },
+        Ohlc { x: 2.0, open: 102.0, high: 103.0, low: 96.0, close: 97.0 },
+        Ohlc { x: 3.0, open: 97.0, high: 99.0, low: 95.0, close: 98.5 },
+        Ohlc { x: 4.0, open: 98.5, high: 101.0, low: 97.0, close: 98.5 },
+        Ohlc { x: 5.0, open: 98.5, high: 105.0, low: 98.0, close: 104.5 },
+        Ohlc { x: 6.0, open: 104.5, high: 108.0, low: 103.0, close: 107.0 },
+        Ohlc { x: 7.0, open: 107.0, high: 107.5, low: 102.0, close: 103.5 },
+    ];
+
+    let chart = Chart::new(BarController::new(prices.candles())).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("candlesticks");
+}
+
+/// The same trading days as OHLC bars, in colours of their own. Pins down that each bar is a line
+/// from the low to the high with the open ticked to the left and the close to the right, and that
+/// a dataset's own rising and falling colours replace the style's.
+#[test]
+fn ohlc_bars_in_colours_of_their_own() {
+    let prices = vec![
+        Ohlc { x: 0.0, open: 100.0, high: 104.0, low: 98.0, close: 103.0 },
+        Ohlc { x: 1.0, open: 103.0, high: 106.0, low: 101.0, close: 102.0 },
+        Ohlc { x: 2.0, open: 102.0, high: 103.0, low: 96.0, close: 97.0 },
+        Ohlc { x: 3.0, open: 97.0, high: 99.0, low: 95.0, close: 98.5 },
+        Ohlc { x: 4.0, open: 98.5, high: 101.0, low: 97.0, close: 98.5 },
+        Ohlc { x: 5.0, open: 98.5, high: 105.0, low: 98.0, close: 104.5 },
+        Ohlc { x: 6.0, open: 104.5, high: 108.0, low: 103.0, close: 107.0 },
+        Ohlc { x: 7.0, open: 107.0, high: 107.5, low: 102.0, close: 103.5 },
+    ];
+
+    let chart = Chart::new(BarController::new(prices.ohlc().rising_color(DataColor::Palette(0)).falling_color(DataColor::Palette(2)))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("ohlc_bars_in_colours_of_their_own");
 }

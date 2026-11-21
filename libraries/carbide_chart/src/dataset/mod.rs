@@ -8,6 +8,8 @@ mod options_dataset;
 mod stack_id;
 mod range_point;
 mod sized_point;
+mod box_point;
+mod ohlc_point;
 
 use carbide::draw::Color;
 use carbide::impl_state_value;
@@ -20,6 +22,8 @@ pub use dataset_options::*;
 pub use dataset_ext::*;
 pub use range_point::{Estimate, Range, RangePoint};
 pub use sized_point::{Bubble, SizedPoint};
+pub use box_point::{BoxPoint, BoxStats};
+pub use ohlc_point::{Ohlc, OhlcPoint};
 pub(crate) use options_dataset::OptionsDataset;
 
 /// The colour of a dataset, set with `DatasetExt::color`, or of a single point
