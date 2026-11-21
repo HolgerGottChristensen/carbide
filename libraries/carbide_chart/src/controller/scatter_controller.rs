@@ -6,8 +6,8 @@ use crate::controller::orientation::Orientation;
 use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::{DataSet, DataSetSequence};
-use crate::sequence::IntoSequence;
+use crate::mark::ScatterDataSet;
+use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{ScaleBounds, Scales};
 
 /// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line
@@ -22,9 +22,9 @@ pub struct ScatterController<D> {
     palette_offset: usize,
 }
 
-impl<D: DataSetSequence> ScatterController<D> {
+impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset.
-    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> ScatterController<D> {
+    pub fn new<I: IntoSequence<dyn ScatterDataSet, M, Sequence=D>, M>(datasets: I) -> ScatterController<D> {
         ScatterController {
             dataset_sequence: datasets.into_sequence(),
             show_line: false,
@@ -49,7 +49,7 @@ impl<D: DataSetSequence> ScatterController<D> {
     }
 }
 
-impl<D: DataSetSequence> DatasetController for ScatterController<D> {
+impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }

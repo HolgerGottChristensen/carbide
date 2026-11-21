@@ -6,11 +6,13 @@ mod dataset;
 mod sequence;
 mod style;
 mod legend;
+mod mark;
 
 pub use dataset::*;
 pub use chart::Chart;
 pub use controller::*;
 pub use element::*;
+pub use mark::{BarCanvas, BarDataSet, BarMark, BarSlot, BarSlots, DatasetBarMark, ErrorBars, IntoBoxed, LineDataSet, MarkRole, Marked, RangeDataSetExt, RangeMark, ScatterDataSet};
 pub use style::{AxisStyle, ChartStyleExt, SeriesStyle};
 pub use legend::{LegendItem, LegendMarker, LegendPosition};
 pub use sequence::{Collection, CollectionState, IntoSequence, Many, One, Sequence, SequenceItem};

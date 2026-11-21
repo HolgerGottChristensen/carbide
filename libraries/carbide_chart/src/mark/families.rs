@@ -1,0 +1,228 @@
+use carbide::draw::Scalar;
+use carbide::environment::Environment;
+use carbide::state::ReadState;
+use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
+use crate::dataset::OptionsDataset;
+use crate::element::{Fill, Interpolation, SpanGaps};
+use crate::mark::DatasetBarMark;
+use crate::scale::ScaleId;
+use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
+
+/// A dataset a `BarController` can draw: a plain dataset, or one whose marks can all be drawn in
+/// bar slots (`BarMark`). The bar controller reads the marks through `bar_marks`.
+///
+/// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
+/// dataset inside is one, for marked datasets (`Marked`) when the mark is a `BarMark`, and for
+/// `Box<dyn BarDataSet>`, which mixes dataset types in a `Vec`.
+///
+/// ```
+/// use carbide_chart::{BarController, Range, RangeDataSetExt};
+///
+/// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+/// BarController::new(temperatures.range());
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be drawn by a bar controller",
+    label = "not a bar dataset",
+    note = "bar controllers draw plain datasets, and datasets whose marks are bar marks (`.range()`, `.error_bars()`)",
+    note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn BarDataSet>`",
+)]
+pub trait BarDataSet: DataSet {
+    /// Calls `f` with each of the dataset's marks, in the order they were added. A plain dataset
+    /// has none, and is drawn as bars.
+    fn bar_marks(&self, _f: &mut dyn FnMut(&dyn DatasetBarMark)) {}
+}
+
+dyn_clone::clone_trait_object!(BarDataSet);
+
+/// A dataset a `LineController` can draw: a plain dataset. No mark can be drawn in lines yet, so a
+/// dataset with a mark isn't one.
+///
+/// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
+/// dataset inside is one, and for `Box<dyn LineDataSet>`, which mixes dataset types in a `Vec`.
+///
+/// A dataset with a mark lines can't draw doesn't compile:
+///
+/// ```compile_fail
+/// use carbide_chart::{LineController, Range, RangeDataSetExt};
+///
+/// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+/// LineController::new(temperatures.range());
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be drawn by a line controller",
+    label = "not a line dataset",
+    note = "line controllers draw plain datasets; marks such as `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn LineDataSet>`",
+)]
+pub trait LineDataSet: DataSet {}
+
+dyn_clone::clone_trait_object!(LineDataSet);
+
+/// A dataset a `ScatterController` can draw: a plain dataset. No mark can be drawn in scatter
+/// charts yet, so a dataset with a mark isn't one.
+///
+/// Scatter charts are a family of their own, apart from line charts: their points sit freely on
+/// two numeric scales, in any order, with no index to group, stack or lay down along, so the
+/// marks that suit them differ. A band along the categories suits lines, a size per point suits
+/// scatter points, and a mark that suits both implements both families.
+///
+/// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
+/// dataset inside is one, and for `Box<dyn ScatterDataSet>`, which mixes dataset types in a `Vec`.
+///
+/// A dataset with a mark scatter charts can't draw doesn't compile:
+///
+/// ```compile_fail
+/// use carbide_chart::{Estimate, ScatterController, RangeDataSetExt};
+///
+/// let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
+/// ScatterController::new(measured.error_bars());
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be drawn by a scatter controller",
+    label = "not a scatter dataset",
+    note = "scatter controllers draw plain datasets; marks such as `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn ScatterDataSet>`",
+)]
+pub trait ScatterDataSet: DataSet {}
+
+dyn_clone::clone_trait_object!(ScatterDataSet);
+
+impl<S: Sequence<dyn DataPoint>> BarDataSet for S {}
+
+impl<S: Sequence<dyn DataPoint>> LineDataSet for S {}
+
+impl<S: Sequence<dyn DataPoint>> ScatterDataSet for S {}
+
+impl<T, C, S, F, G, XS, YS, ST, L> BarDataSet for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: BarDataSet + Clone,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{
+    fn bar_marks(&self, f: &mut dyn FnMut(&dyn DatasetBarMark)) {
+        self.inner().bar_marks(f);
+    }
+}
+
+impl<T, C, S, F, G, XS, YS, ST, L> LineDataSet for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: LineDataSet + Clone,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{}
+
+impl<T, C, S, F, G, XS, YS, ST, L> ScatterDataSet for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: ScatterDataSet + Clone,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{}
+
+/// Forwards every `DataSet` method of a boxed dataset of one family to the dataset inside.
+macro_rules! boxed_dataset {
+    ($family:ident { $($extra:tt)* }) => {
+        impl DataSet for Box<dyn $family> {
+            fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint)) {
+                (**self).points(f);
+            }
+
+            fn min(&self) -> Option<(Scalar, Scalar)> {
+                (**self).min()
+            }
+
+            fn max(&self) -> Option<(Scalar, Scalar)> {
+                (**self).max()
+            }
+
+            fn sync(&mut self, env: &mut Environment) -> bool {
+                (**self).sync(env)
+            }
+
+            fn options(&self) -> DataSetOptions {
+                (**self).options()
+            }
+        }
+
+        impl $family for Box<dyn $family> {
+            $($extra)*
+        }
+
+        /// A dataset of this family is an item of a sequence of them.
+        impl<D: $family + Clone> SequenceItem<dyn $family> for D {
+            fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn $family + 'static))) {
+                f(index, self);
+            }
+
+            fn sync(&mut self, env: &mut Environment) -> bool {
+                DataSet::sync(self, env)
+            }
+        }
+
+        impl AsDataSet for dyn $family {
+            fn as_dataset(&self) -> &dyn DataSet {
+                self
+            }
+        }
+
+        impl<D: $family + Clone> IntoBoxed<dyn $family> for D {
+            fn into_boxed(self) -> Box<dyn $family> {
+                Box::new(self)
+            }
+        }
+
+        tuple_sequences!([] dyn $family);
+    };
+}
+
+boxed_dataset!(BarDataSet {
+    fn bar_marks(&self, f: &mut dyn FnMut(&dyn DatasetBarMark)) {
+        (**self).bar_marks(f);
+    }
+});
+
+boxed_dataset!(LineDataSet {});
+
+boxed_dataset!(ScatterDataSet {});
+
+/// A dataset as the plain `DataSet` it is, whichever family a controller reads it as, so drawing
+/// code shared between families takes any of them.
+pub(crate) trait AsDataSet {
+    fn as_dataset(&self) -> &dyn DataSet;
+}
+
+impl AsDataSet for dyn DataSet {
+    fn as_dataset(&self) -> &dyn DataSet {
+        self
+    }
+}
+
+/// A dataset boxed as one family's trait object, `Box<dyn BarDataSet>`, `Box<dyn LineDataSet>` or
+/// `Box<dyn ScatterDataSet>`, or as a plain `Box<dyn DataSet>` (see `DatasetExt::boxed`).
+pub trait IntoBoxed<B: ?Sized> {
+    fn into_boxed(self) -> Box<B>;
+}
+
+impl<D: DataSet + Clone> IntoBoxed<dyn DataSet> for D {
+    fn into_boxed(self) -> Box<dyn DataSet> {
+        Box::new(self)
+    }
+}

@@ -6,8 +6,8 @@ use crate::controller::orientation::Orientation;
 use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::{DataSet, DataSetSequence};
-use crate::sequence::IntoSequence;
+use crate::mark::LineDataSet;
+use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{ScaleBounds, ScaleKind, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
@@ -34,9 +34,9 @@ pub struct LineController<D> {
     orientation: Orientation,
 }
 
-impl<D: DataSetSequence> LineController<D> {
+impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset.
-    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
+    pub fn new<I: IntoSequence<dyn LineDataSet, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
         LineController {
             dataset_sequence: datasets.into_sequence(),
             palette_offset: 0,
@@ -63,7 +63,7 @@ impl<D: DataSetSequence> LineController<D> {
     }
 }
 
-impl<D: DataSetSequence> DatasetController for LineController<D> {
+impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }

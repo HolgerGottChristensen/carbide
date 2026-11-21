@@ -2,8 +2,10 @@ use carbide::draw::Scalar;
 use carbide::environment::{Environment};
 use carbide::state::{IntoReadState, ReadState};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
+use crate::dataset::RangePoint;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
+use crate::sequence::Sequence;
 
 /// A dataset with options set through `DatasetExt`. Every option is a state, synced with the
 /// rest of the dataset (see `DataSet::sync`) and read as it was last synced when the chart asks
@@ -177,6 +179,47 @@ where
             stack: self.stack,
             label: Some(label.into_read_state()),
         }
+    }
+}
+
+impl<T, C, S, F, G, XS, YS, ST, L> OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{
+    /// The dataset the options are set on.
+    pub(crate) fn inner(&self) -> &T {
+        &self.inner
+    }
+}
+
+/// A dataset of range points with options is still a sequence of them, so a range mark can be
+/// added after the options.
+impl<T, C, S, F, G, XS, YS, ST, L> Sequence<dyn RangePoint> for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: Sequence<dyn RangePoint>,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{
+    fn foreach(&self, f: &mut dyn FnMut(usize, &(dyn RangePoint + 'static))) {
+        self.inner.foreach(f);
+    }
+
+    /// Syncs the points; the option states are synced with the dataset (`DataSet::sync`).
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        Sequence::<dyn RangePoint>::sync(&mut self.inner, env)
     }
 }
 

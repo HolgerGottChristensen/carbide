@@ -9,7 +9,9 @@ use std::ops::Range;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, DataSetSequence, Fill, SpanGaps};
+use crate::{DataColor, DataSetOptions, Fill, SpanGaps};
+use crate::mark::AsDataSet;
+use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
@@ -25,15 +27,17 @@ use carbide::environment::Environment;
 /// area with a line below it fills to that line, so it includes nothing. With `stacks`, a dataset
 /// in a stack reports the running totals it is drawn at instead of its own values. Empty datasets
 /// have no bounds and contribute nothing.
-pub(crate) fn collect_point_bounds<D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool, orientation: Orientation)
+pub(crate) fn collect_point_bounds<T, D>(datasets: &D, bounds: &mut ScaleBounds, fills: bool, stacks: bool, orientation: Orientation)
 where
-    D: DataSetSequence,
+    T: AsDataSet + ?Sized,
+    D: Sequence<T>,
 {
     let mut sums = StackSums::single();
     // The stacks that already have a non-empty line, which a later `Fill::Stack` fills down to.
     let mut filled_stacks: HashSet<StackKey> = HashSet::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
+        let dataset = dataset.as_dataset();
         let (Some((x_min, y_min)), Some((x_max, y_max))) = (dataset.min(), dataset.max()) else {
             return;
         };
@@ -129,15 +133,17 @@ fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize
 /// `orientation` picks them. With `stacks`, datasets in the same stack are drawn at their running
 /// totals, one sum per stack (see `StackSums::single`), and each knows the line below it.
 /// Datasets bound to a scale the chart doesn't have are left out.
-pub(crate) fn drawn_lines<D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation) -> Vec<DrawnLine>
+pub(crate) fn drawn_lines<T, D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation) -> Vec<DrawnLine>
 where
-    D: DataSetSequence,
+    T: AsDataSet + ?Sized,
+    D: Sequence<T>,
 {
     let mut lines: Vec<DrawnLine> = vec![];
     let mut sums = StackSums::single();
     let mut tops: HashMap<StackKey, usize> = HashMap::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
+        let dataset = dataset.as_dataset();
         let options = dataset.options();
 
         let (index_id, value_id) = orientation.index_and_value_scales(&options);
@@ -371,9 +377,9 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
 
 /// Adds a legend entry for each of `datasets` that has a name, in the colour its line, area or
 /// bars are drawn in (see `dataset_color`), with the marker `marker` gives for its options.
-pub(crate) fn legend_items<D: DataSetSequence>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(&DataSetOptions) -> LegendMarker) {
+pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(&DataSetOptions) -> LegendMarker) {
     datasets.foreach(&mut |dataset_index, dataset| {
-        let options = dataset.options();
+        let options = dataset.as_dataset().options();
 
         if let Some(label) = &options.label {
             items.push(LegendItem {
@@ -395,7 +401,7 @@ pub(crate) fn dataset_scales<'a>(scales: &'a Scales, options: &DataSetOptions) -
 mod tests {
     use carbide::draw::{Dimension, Position, Rect, Scalar};
     use carbide::environment::Environment;
-    use crate::{Axis, CategoryScale, DatasetExt, Fill, LineController, Scale, ScatterController, StackId};
+    use crate::{Axis, CategoryScale, DatasetExt, Fill, LineController, LineDataSet, Scale, ScatterController, StackId};
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, Scales};
     use carbide::color::{BLUE, GREEN, RED, WHITE};
@@ -468,7 +474,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
 
         let below: Vec<Option<usize>> = lines.iter().map(|line| line.below).collect();
         assert_eq!(below, vec![None, None, Some(0), None, Some(0)]);
@@ -493,7 +499,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
 
         let y = scales.get(&ScaleId::Y).unwrap();
         let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();

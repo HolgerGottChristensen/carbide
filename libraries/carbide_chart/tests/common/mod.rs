@@ -2,7 +2,7 @@
 //! declares `mod common;`, so not every file uses every helper.
 #![allow(dead_code)]
 
-use carbide_chart::{BarController, Chart, DataSet, DataSetSequence, IntoSequence};
+use carbide_chart::{BarController, BarDataSet, Chart, IntoSequence, Sequence};
 use carbide_core::color::BLUE;
 use carbide_core::state::ValueState;
 use carbide_core::widget::Widget;
@@ -24,8 +24,8 @@ impl<W: Widget> Framed for W {}
 /// points on top.
 pub fn bar_chart<I, M, D>(datasets: I) -> impl Widget
 where
-    I: IntoSequence<dyn DataSet, M, Sequence=D>,
-    D: DataSetSequence,
+    I: IntoSequence<dyn BarDataSet, M, Sequence=D>,
+    D: Sequence<dyn BarDataSet>,
 {
     Chart::new(BarController::new(datasets))
         .framed()

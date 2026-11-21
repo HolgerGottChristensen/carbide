@@ -6,8 +6,9 @@ use crate::controller::DatasetController;
 use crate::controller::drawing::{dataset_scales, legend_items, point_color, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::{DataSet, DataSetSequence};
-use crate::sequence::IntoSequence;
+use crate::DataSetOptions;
+use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
+use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::scale::{Axis, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
@@ -44,9 +45,9 @@ pub struct BarController<D> {
     orientation: Orientation,
 }
 
-impl<D: DataSetSequence> BarController<D> {
+impl<D: Sequence<dyn BarDataSet>> BarController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset.
-    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
+    pub fn new<I: IntoSequence<dyn BarDataSet, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
         BarController {
             dataset_sequence: datasets.into_sequence(),
             category_percentage: 0.8,
@@ -88,7 +89,7 @@ impl<D: DataSetSequence> BarController<D> {
     }
 }
 
-impl<D: DataSetSequence> DatasetController for BarController<D> {
+impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }
@@ -108,18 +109,29 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
             bounds.request_offset(index_scale);
             bounds.request_grid_offset(index_scale);
 
-            // Each bar spans from where its stack has reached to where it takes it, and every bar
-            // includes zero, its base. A missing value has no bar and adds nothing to its stack.
-            let key = StackKey::new(&options, dataset_index);
-            dataset.points(&mut |_index, point| {
-                let (Some(x), Some(y)) = (point.x(), point.y()) else {
-                    return;
-                };
+            // A dataset whose bars a mark replaces reports the mark's values instead of its bars.
+            if !has_primary_mark(dataset) {
+                // Each bar spans from where its stack has reached to where it takes it, and every
+                // bar includes zero, its base. A missing value has no bar and adds nothing to its
+                // stack.
+                let key = StackKey::new(&options, dataset_index);
+                dataset.points(&mut |_index, point| {
+                    let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                        return;
+                    };
 
-                let (start, end) = stacks.add(&key, x, y);
+                    let (start, end) = stacks.add(&key, x, y);
 
-                bounds.include(index_scale, x, x);
-                bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                    bounds.include(index_scale, x, x);
+                    bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                });
+            }
+
+            dataset.bar_marks(&mut |mark| {
+                mark.bounds(&mut |x, low, high| {
+                    bounds.include(index_scale, x, x);
+                    bounds.include(value_scale, low, high);
+                });
             });
         });
     }
@@ -149,7 +161,7 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
                 return;
             };
 
-            let (group_index, _) = groups.entry(index_id.clone()).or_default().insert_full(StackKey::new(&options, dataset_index));
+            let (group_index, _) = groups.entry(index_id.clone()).or_default().insert_full(slot_key(dataset, &options, dataset_index));
             places.push(Some((index_id.clone(), group_index)));
 
             let index_positions = positions.entry(index_id.clone()).or_default();
@@ -170,58 +182,110 @@ impl<D: DataSetSequence> DatasetController for BarController<D> {
             .collect();
 
         // Second pass: the bars, stacked in the same order as their bounds were collected, in the
-        // colours of the chart's `SeriesStyle`.
+        // colours of the chart's `SeriesStyle`, or the marks that replace them. Third pass: the
+        // overlays, on top of every dataset's bars.
         let mut stacks = StackSums::split_by_sign();
         let palette = Palette::new(ctx, self.palette_offset);
         ctx.save();
 
-        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
-            let Some(&Some((ref index_id, group_index))) = places.get(dataset_index) else {
-                return;
-            };
-
-            let options = dataset.options();
-            let (_, value_id) = self.orientation.index_and_value_scales(&options);
-
-            let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
-                return;
-            };
-
-            let group_size = groups[index_id].len();
-            let key = StackKey::new(&options, dataset_index);
-            let ruler = rulers.get(index_id).copied().unwrap_or(length(index_axis, chart_area));
-            let zero = pixel(value_axis, value_scale, base_value(value_scale), chart_area);
-
-            dataset.points(&mut |point_index, point| {
-                // A missing value leaves its place in the slot empty.
-                let (Some(x), Some(y)) = (point.x(), point.y()) else {
+        for role in [MarkRole::Primary, MarkRole::Overlay] {
+            self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+                let Some(&Some((ref index_id, group_index))) = places.get(dataset_index) else {
                     return;
                 };
 
-                let center = pixel(index_axis, index_scale, x, chart_area);
-                let (side, thickness) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
+                let options = dataset.options();
+                let (_, value_id) = self.orientation.index_and_value_scales(&options);
 
-                // The first bar of a stack grows from zero, or the end of the range nearest it.
-                let (start, end) = stacks.add(&key, x, y);
-                let base = if start == 0.0 { zero } else { pixel(value_axis, value_scale, start, chart_area) };
-                let head = pixel(value_axis, value_scale, end, chart_area);
+                let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
+                    return;
+                };
 
-                // The corners in the index frame, along the index axis and along the value axis.
-                ctx.begin_path();
-                let mut path = Oriented { path: &mut *ctx, orientation: self.orientation };
-                path.move_to(Position::new(side, base));
-                path.line_to(Position::new(side + thickness, base));
-                path.line_to(Position::new(side + thickness, head));
-                path.line_to(Position::new(side, head));
-                ctx.close_path();
+                let group_size = groups[index_id].len();
+                let ruler = rulers.get(index_id).copied().unwrap_or(length(index_axis, chart_area));
 
-                ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
+                let slots = BarSlots {
+                    orientation: self.orientation,
+                    index_scale,
+                    area: chart_area,
+                    ruler,
+                    group_index,
+                    group_size,
+                    category_percentage: self.category_percentage,
+                    bar_percentage: self.bar_percentage,
+                };
 
-                ctx.fill();
+                let mut canvas = BarCanvas {
+                    ctx: &mut *ctx,
+                    orientation: self.orientation,
+                    value_scale,
+                    area: chart_area,
+                    options: &options,
+                    dataset_index,
+                    palette: &palette,
+                };
+
+                dataset.bar_marks(&mut |mark| {
+                    if mark.role() == role {
+                        mark.draw(&slots, &mut canvas);
+                    }
+                });
+
+                if role == MarkRole::Overlay || has_primary_mark(dataset) {
+                    return;
+                }
+
+                let key = StackKey::new(&options, dataset_index);
+                let zero = pixel(value_axis, value_scale, base_value(value_scale), chart_area);
+
+                dataset.points(&mut |point_index, point| {
+                    // A missing value leaves its place in the slot empty.
+                    let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                        return;
+                    };
+
+                    let center = pixel(index_axis, index_scale, x, chart_area);
+                    let (side, thickness) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
+
+                    // The first bar of a stack grows from zero, or the end of the range nearest it.
+                    let (start, end) = stacks.add(&key, x, y);
+                    let base = if start == 0.0 { zero } else { pixel(value_axis, value_scale, start, chart_area) };
+                    let head = pixel(value_axis, value_scale, end, chart_area);
+
+                    // The corners in the index frame, along the index axis and along the value axis.
+                    ctx.begin_path();
+                    let mut path = Oriented { path: &mut *ctx, orientation: self.orientation };
+                    path.move_to(Position::new(side, base));
+                    path.line_to(Position::new(side + thickness, base));
+                    path.line_to(Position::new(side + thickness, head));
+                    path.line_to(Position::new(side, head));
+                    ctx.close_path();
+
+                    ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
+
+                    ctx.fill();
+                });
             });
-        });
+        }
 
         ctx.restore();
+    }
+}
+
+/// Whether one of the dataset's marks replaces its bars.
+fn has_primary_mark(dataset: &dyn BarDataSet) -> bool {
+    let mut primary = false;
+    dataset.bar_marks(&mut |mark| primary |= mark.role() == MarkRole::Primary);
+    primary
+}
+
+/// Which share of the slot a dataset takes: its stack's, or its own when it has no stack, or when
+/// a mark replaces its bars, as those don't stack.
+fn slot_key(dataset: &dyn BarDataSet, options: &DataSetOptions, dataset_index: usize) -> StackKey {
+    if has_primary_mark(dataset) {
+        StackKey::Alone(dataset_index)
+    } else {
+        StackKey::new(options, dataset_index)
     }
 }
 
@@ -261,7 +325,7 @@ fn min_sample_size(mut index_positions: Vec<Scalar>, index_scale: &dyn Scale, in
 /// `category_percentage` of `ruler`, centred on the point's category; it is split into
 /// `group_size` equal shares, and the bar is `bar_percentage` of share number `group_index`,
 /// centred in it. Share 0 is at the smaller pixel: the left, or the top for lying bars.
-fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_size: usize, category_percentage: Scalar, bar_percentage: Scalar) -> (Scalar, Scalar) {
+pub(crate) fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_size: usize, category_percentage: Scalar, bar_percentage: Scalar) -> (Scalar, Scalar) {
     let slot = ruler * category_percentage;
     let share = slot / group_size.max(1) as Scalar;
     let share_center = center - slot / 2.0 + share * group_index as Scalar + share / 2.0;

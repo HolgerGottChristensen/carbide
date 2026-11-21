@@ -370,7 +370,7 @@ mod tests {
     use crate::controller::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};
     use crate::dataset::DatasetExt;
     use crate::sequence::Sequence;
-    use crate::{DataColor, StackId};
+    use crate::{DataColor, ScatterDataSet, StackId};
     use crate::scale::{Axis, AxisPosition, CategoryScale, LinearScale, ScaleId};
     use super::{Chart, Decorations, SCALE_SPACING};
 
@@ -564,8 +564,8 @@ mod tests {
     fn boxed_datasets_of_different_types_can_be_mixed() {
         const PERCENT: ScaleId = ScaleId::new("percent");
 
-        let positions = vec![Position::new(0.0, 10.0), Position::new(1.0, 20.0)].boxed();
-        let values = LocalState::new(vec![15.0, 25.0]).boxed();
+        let positions = vec![Position::new(0.0, 10.0), Position::new(1.0, 20.0)].boxed::<dyn ScatterDataSet>();
+        let values = LocalState::new(vec![15.0, 25.0]).boxed::<dyn ScatterDataSet>();
         let margin = vec![0.2, 0.4].y_scale(PERCENT).boxed();
 
         let chart = fitted(

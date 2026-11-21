@@ -3,6 +3,7 @@ use crate::{DataColor, DataSet, StackId};
 use crate::dataset::options_dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
+use crate::mark::IntoBoxed;
 
 
 pub trait DatasetExt: DataSet + Clone + Sized {
@@ -54,9 +55,13 @@ pub trait DatasetExt: DataSet + Clone + Sized {
     }
 
     /// Boxes the dataset, so datasets of different types can share a `Vec` or a state of a
-    /// `Vec`, as the datasets of one controller.
-    fn boxed(self) -> Box<dyn DataSet> {
-        Box::new(self)
+    /// `Vec`, as the datasets of one controller. The box is for one kind of controller:
+    /// `Box<dyn BarDataSet>` for bar controllers, `Box<dyn LineDataSet>` for line controllers,
+    /// `Box<dyn ScatterDataSet>` for scatter controllers. The controller can't infer which, so
+    /// name it once, on one of the boxes or on the `Vec`'s type, and the boxes next to it follow:
+    /// `vec![bars.boxed::<dyn BarDataSet>(), more_bars.boxed()]`.
+    fn boxed<B: ?Sized>(self) -> Box<B> where Self: IntoBoxed<B> {
+        self.into_boxed()
     }
 }
 
