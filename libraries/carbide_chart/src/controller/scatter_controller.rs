@@ -109,7 +109,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// Each named dataset as a point in its colour, or, when lines are shown, a line, or a square
     /// when it is filled.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |options| {
+        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |_, options| {
             match (self.show_line, options.fill) {
                 (false, _) => LegendMarker::Point,
                 (true, Fill::None) => LegendMarker::Line,
@@ -122,7 +122,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         ctx.save();
 
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
-        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, Orientation::Vertical);
+        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, Orientation::Vertical, |_| true);
 
         let palette = Palette::new(ctx, self.palette_offset);
 

@@ -142,7 +142,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
     /// Each named dataset as a square in its colour.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |_| LegendMarker::Square);
+        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |_, _| LegendMarker::Square);
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

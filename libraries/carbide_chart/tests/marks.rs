@@ -1,7 +1,8 @@
 //! Marks: floating bars in place of bars and error bars on top of them, in a bar controller's
-//! slots, and bubbles in place of a scatter controller's points.
+//! slots; bands in place of a line controller's lines; and bubbles in place of a scatter
+//! controller's points.
 
-use carbide_chart::{BarController, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId};
+use carbide_chart::{BarController, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId, Stepped};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -264,4 +265,77 @@ fn bubbles_from_a_type_of_your_own() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bubbles_from_a_type_of_your_own");
+}
+
+/// A month's temperature range as a band, with the month's average as a line through it, in one
+/// line controller. Pins down that the band fills between the line through the lows and the line
+/// through the highs, translucent, with both edges stroked; that it is drawn under the other
+/// dataset's line; and that the y scale fits the band without reaching down to zero.
+#[test]
+fn range_band() {
+    let temperatures = vec![
+        Range { x: 0.0, low: 2.0, high: 9.0 },
+        Range { x: 1.0, low: 3.0, high: 11.0 },
+        Range { x: 2.0, low: 6.0, high: 15.0 },
+        Range { x: 3.0, low: 9.0, high: 19.0 },
+        Range { x: 4.0, low: 12.0, high: 22.0 },
+        Range { x: 5.0, low: 11.0, high: 20.0 },
+    ];
+    let average = vec![5.5, 7.0, 10.5, 14.0, 17.0, 15.5];
+
+    let chart = Chart::new(LineController::new((temperatures.range(), average))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("range_band");
+}
+
+/// A monotone band with a missing high in the middle, beside a stepped band. Pins down that a
+/// band's edges follow its dataset's interpolation, both edges alike, and that a missing low or
+/// high breaks the band into two, as a missing value breaks a line.
+#[test]
+fn range_bands_with_curves_and_a_gap() {
+    let monotone: Vec<Range<f64, Option<f64>>> = vec![
+        Range { x: 0.0, low: Some(10.0), high: Some(14.0) },
+        Range { x: 1.0, low: Some(12.0), high: Some(18.0) },
+        Range { x: 2.0, low: Some(11.0), high: Some(16.0) },
+        Range { x: 3.0, low: Some(13.0), high: None },
+        Range { x: 4.0, low: Some(15.0), high: Some(21.0) },
+        Range { x: 5.0, low: Some(14.0), high: Some(19.0) },
+        Range { x: 6.0, low: Some(17.0), high: Some(23.0) },
+    ];
+    let stepped = vec![
+        Range { x: 0.0, low: 2.0, high: 5.0 },
+        Range { x: 1.0, low: 3.0, high: 7.0 },
+        Range { x: 2.0, low: 5.0, high: 6.0 },
+        Range { x: 3.0, low: 4.0, high: 9.0 },
+        Range { x: 4.0, low: 6.0, high: 8.0 },
+        Range { x: 5.0, low: 3.0, high: 6.0 },
+        Range { x: 6.0, low: 5.0, high: 10.0 },
+    ];
+
+    let chart = Chart::new(LineController::new((
+        monotone.range().interpolation(Interpolation::Monotone),
+        stepped.range().interpolation(Interpolation::Stepped(Stepped::Middle)),
+    ))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("range_bands_with_curves_and_a_gap");
+}
+
+/// A lying band with a lying line through it. Pins down that the band follows the controller's
+/// orientation, the categories running down the y scale and the band spreading along the x scale.
+#[test]
+fn horizontal_range_band() {
+    let durations = vec![
+        Range { x: 0.0, low: 3.0, high: 8.0 },
+        Range { x: 1.0, low: 5.0, high: 12.0 },
+        Range { x: 2.0, low: 4.0, high: 9.0 },
+        Range { x: 3.0, low: 7.0, high: 15.0 },
+    ];
+    let median = vec![5.0, 8.0, 6.5, 11.0];
+
+    let chart = Chart::new(LineController::new((durations.range(), median)).horizontal()).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("horizontal_range_band");
 }

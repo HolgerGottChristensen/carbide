@@ -4,14 +4,16 @@ use carbide::environment::Environment;
 use crate::{DataPoint, DataSet, DataSetOptions};
 use crate::dataset::{RangePoint, SizedPoint};
 use crate::mark::bar_mark::BoundBarMark;
+use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
-use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetScatterMark, ScatterDataSet, ScatterMark};
+use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, ScatterDataSet, ScatterMark};
 use crate::sequence::Sequence;
 
 /// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`. It
 /// draws like the dataset inside it, plus the mark, and can be drawn by the controllers whose
-/// family the mark belongs to: by a bar controller when the mark is a `BarMark`, and by a scatter
-/// controller when it is a `ScatterMark`.
+/// family the mark belongs to: by a bar controller when the mark is a `BarMark`, by a line
+/// controller when it is a `LineMark`, and by a scatter controller when it is a `ScatterMark`. A
+/// mark that is several, such as `RangeMark`, can be drawn by each of them.
 ///
 /// It is still a sequence of whatever points the dataset inside is, so marks and options can be
 /// added in any order: `data.error_bars().color(..)` and `data.color(..).error_bars()` both work.
@@ -86,5 +88,13 @@ impl<D: ScatterDataSet + Clone, M: ScatterMark<D>> ScatterDataSet for Marked<D, 
     fn scatter_marks(&self, f: &mut dyn FnMut(&dyn DatasetScatterMark)) {
         self.inner.scatter_marks(f);
         f(&BoundScatterMark { mark: &self.mark, data: &self.inner });
+    }
+}
+
+/// Drawn by line controllers when the dataset inside is, and the mark can be drawn by them.
+impl<D: LineDataSet + Clone, M: LineMark<D>> LineDataSet for Marked<D, M> {
+    fn line_marks(&self, f: &mut dyn FnMut(&dyn DatasetLineMark)) {
+        self.inner.line_marks(f);
+        f(&BoundLineMark { mark: &self.mark, data: &self.inner });
     }
 }

@@ -99,7 +99,7 @@ pub(crate) struct DrawnLine {
 /// the points that aren't missing. `SpanGaps::Never` breaks at every missing point; `Always`
 /// never breaks; `Within(max)` breaks between two neighbouring points further apart along x than
 /// `max`, whether or not missing points lie between them.
-fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize>> {
+pub(crate) fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize>> {
     let mut runs = vec![];
     let mut start = 0;
     let mut drawn = 0;
@@ -137,8 +137,9 @@ fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<Range<usize
 /// `chart_area`, each point's x along its index scale and its y along its value scale, as
 /// `orientation` picks them. With `stacks`, datasets in the same stack are drawn at their running
 /// totals, one sum per stack (see `StackSums::single`), and each knows the line below it.
-/// Datasets bound to a scale the chart doesn't have are left out.
-pub(crate) fn drawn_lines<T, D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation) -> Vec<DrawnLine>
+/// Datasets bound to a scale the chart doesn't have are left out, and so are the datasets
+/// `counted` turns down, whose lines a mark replaces; they don't stack either.
+pub(crate) fn drawn_lines<T, D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation, counted: impl Fn(usize) -> bool) -> Vec<DrawnLine>
 where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
@@ -148,6 +149,10 @@ where
     let mut tops: HashMap<StackKey, usize> = HashMap::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {
+        if !counted(dataset_index) {
+            return;
+        }
+
         let dataset = dataset.as_dataset();
         let options = dataset.options();
 
@@ -381,8 +386,9 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
 }
 
 /// Adds a legend entry for each of `datasets` that has a name, in the colour its line, area or
-/// bars are drawn in (see `dataset_color`), with the marker `marker` gives for its options.
-pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(&DataSetOptions) -> LegendMarker) {
+/// bars are drawn in (see `dataset_color`), with the marker `marker` gives for its index and
+/// options.
+pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, palette: &Palette, items: &mut Vec<LegendItem>, marker: impl Fn(usize, &DataSetOptions) -> LegendMarker) {
     datasets.foreach(&mut |dataset_index, dataset| {
         let options = dataset.as_dataset().options();
 
@@ -390,7 +396,7 @@ pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, 
             items.push(LegendItem {
                 label: label.clone(),
                 color: dataset_color(&options, dataset_index, palette),
-                marker: marker(&options),
+                marker: marker(dataset_index, &options),
             });
         }
     });
@@ -479,7 +485,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical, |_| true);
 
         let below: Vec<Option<usize>> = lines.iter().map(|line| line.below).collect();
         assert_eq!(below, vec![None, None, Some(0), None, Some(0)]);
@@ -504,7 +510,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical, |_| true);
 
         let y = scales.get(&ScaleId::Y).unwrap();
         let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();

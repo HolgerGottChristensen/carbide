@@ -11,7 +11,7 @@
 //! Which controllers a dataset can be drawn by is checked when compiling. Each layout family has
 //! a dataset trait (`BarDataSet`, `LineDataSet`, `ScatterDataSet`), which its controllers require. A plain dataset
 //! implements all of them; a dataset with a mark implements a family's trait only when the mark
-//! can be drawn in that family (`BarMark`, `ScatterMark`). So a mark given to a controller that can't draw it is
+//! can be drawn in that family (`BarMark`, `LineMark`, `ScatterMark`). So a mark given to a controller that can't draw it is
 //! a compile error, not a dataset that silently draws nothing.
 //!
 //! The marks that read more than an x and a y are extension methods on datasets of points that
@@ -24,6 +24,7 @@ mod marked;
 mod range_mark;
 mod error_bars;
 mod scatter_mark;
+mod line_mark;
 mod bubble_mark;
 
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark};
@@ -34,6 +35,7 @@ pub use range_mark::RangeMark;
 pub use error_bars::ErrorBars;
 pub use scatter_mark::{DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale};
 pub use bubble_mark::BubbleMark;
+pub use line_mark::{DatasetLineMark, LineCanvas, LineMark};
 
 use crate::DataSet;
 use crate::dataset::{RangePoint, SizedPoint};
@@ -53,9 +55,11 @@ pub enum MarkRole {
 
 /// Marks for datasets of `RangePoint`s: points with a low and a high value.
 pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
-    /// Draws each point as a floating bar from its low to its high value, instead of a bar
-    /// growing from zero. The value scale's bounds cover the ranges, without zero. Datasets drawn
-    /// as ranges don't stack: each takes its own share of the slot.
+    /// Draws the ranges from each point's low to its high value. In a bar controller, each point
+    /// is a floating bar instead of a bar growing from zero; in a line controller, the dataset is a
+    /// band between its lows and its highs instead of a line. The value scale's bounds cover the
+    /// ranges, without zero. Datasets drawn as ranges don't stack: in a bar controller each takes
+    /// its own share of the slot.
     fn range(self) -> Marked<Self, RangeMark> {
         Marked::new(self, RangeMark)
     }
@@ -164,6 +168,35 @@ mod tests {
 
         let bounds = bounds(BarController::new(measured.error_bars()));
         assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 12.0)));
+    }
+
+    /// The same range dataset draws in a bar controller and in a line controller. In a line
+    /// controller its band reports the lows and highs, without zero, and doesn't stack, even with a
+    /// stack id; lying down, the band's values go on the x scale. Its legend entry is a square, as
+    /// for a filled area.
+    #[test]
+    fn ranges_in_lines_report_their_bands() {
+        use crate::{LegendMarker, LineController};
+
+        const SPAN: StackId = StackId::new("span");
+        let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }, Range { x: 1.0, low: 7.0, high: 18.0 }];
+        let average = vec![8.0, 12.0];
+
+        let bars = bounds(BarController::new(temperatures.clone().range()));
+        assert_eq!(bars.get(&ScaleId::Y).range(), Some((4.0, 18.0)));
+
+        let lines = LineController::new((temperatures.clone().range().stack(SPAN).label("range"), average.stack(SPAN)));
+        let line_bounds = bounds(lines.clone());
+        assert_eq!(line_bounds.get(&ScaleId::Y).range(), Some((4.0, 18.0)), "the band doesn't stack under the average, which stays at 8 to 12");
+        assert_eq!(line_bounds.get(&ScaleId::X).kind(), Some(ScaleKind::Category));
+
+        let mut legend = vec![];
+        lines.legend_items(&Environment::new(), &mut legend);
+        assert!(matches!(legend.as_slice(), [item] if item.marker == LegendMarker::Square), "{legend:?}");
+
+        let lying = bounds(LineController::new(temperatures.range()).horizontal());
+        assert_eq!(lying.get(&ScaleId::X).range(), Some((4.0, 18.0)));
+        assert_eq!(lying.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
     }
 
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.

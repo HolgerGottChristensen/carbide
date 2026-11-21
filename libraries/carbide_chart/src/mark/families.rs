@@ -4,7 +4,7 @@ use carbide::state::ReadState;
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
 use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
-use crate::mark::{DatasetBarMark, DatasetScatterMark};
+use crate::mark::{DatasetBarMark, DatasetLineMark, DatasetScatterMark};
 use crate::scale::ScaleId;
 use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 
@@ -35,27 +35,40 @@ pub trait BarDataSet: DataSet {
 
 dyn_clone::clone_trait_object!(BarDataSet);
 
-/// A dataset a `LineController` can draw: a plain dataset. No mark can be drawn in lines yet, so a
-/// dataset with a mark isn't one.
+/// A dataset a `LineController` can draw: a plain dataset, or one whose marks can all be drawn by
+/// line controllers (`LineMark`), such as a band (`.range()`). The line controller reads the marks
+/// through `line_marks`.
 ///
 /// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
-/// dataset inside is one, and for `Box<dyn LineDataSet>`, which mixes dataset types in a `Vec`.
+/// dataset inside is one, for marked datasets (`Marked`) when the mark is a `LineMark`, and for
+/// `Box<dyn LineDataSet>`, which mixes dataset types in a `Vec`.
 ///
-/// A dataset with a mark lines can't draw doesn't compile:
-///
-/// ```compile_fail
+/// ```
 /// use carbide_chart::{LineController, Range, RangeDataSetExt};
 ///
 /// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
 /// LineController::new(temperatures.range());
 /// ```
+///
+/// A dataset with a mark lines can't draw doesn't compile:
+///
+/// ```compile_fail
+/// use carbide_chart::{Estimate, LineController, RangeDataSetExt};
+///
+/// let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
+/// LineController::new(measured.error_bars());
+/// ```
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a line controller",
     label = "not a line dataset",
-    note = "line controllers draw plain datasets; marks such as `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "line controllers draw plain datasets, and datasets whose marks are line marks (`.range()`); `.error_bars()` is drawn by bar controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn LineDataSet>`",
 )]
-pub trait LineDataSet: DataSet {}
+pub trait LineDataSet: DataSet {
+    /// Calls `f` with each of the dataset's marks, in the order they were added. A plain dataset
+    /// has none, and is drawn as a line.
+    fn line_marks(&self, _f: &mut dyn FnMut(&dyn DatasetLineMark)) {}
+}
 
 dyn_clone::clone_trait_object!(LineDataSet);
 
@@ -83,7 +96,7 @@ dyn_clone::clone_trait_object!(LineDataSet);
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller",
     label = "not a scatter dataset",
-    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` is drawn by bar and line controllers, and `.error_bars()` by bar controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn ScatterDataSet>`",
 )]
 pub trait ScatterDataSet: DataSet {
@@ -128,7 +141,11 @@ where
     YS: ReadState<T=ScaleId>,
     ST: ReadState<T=StackId>,
     L: ReadState<T=String>,
-{}
+{
+    fn line_marks(&self, f: &mut dyn FnMut(&dyn DatasetLineMark)) {
+        self.inner().line_marks(f);
+    }
+}
 
 impl<T, C, S, F, G, XS, YS, ST, L> ScatterDataSet for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
 where
@@ -209,7 +226,11 @@ boxed_dataset!(BarDataSet {
     }
 });
 
-boxed_dataset!(LineDataSet {});
+boxed_dataset!(LineDataSet {
+    fn line_marks(&self, f: &mut dyn FnMut(&dyn DatasetLineMark)) {
+        (**self).line_marks(f);
+    }
+});
 
 boxed_dataset!(ScatterDataSet {
     fn scatter_marks(&self, f: &mut dyn FnMut(&dyn DatasetScatterMark)) {

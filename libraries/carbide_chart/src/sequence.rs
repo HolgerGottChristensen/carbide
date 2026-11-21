@@ -369,7 +369,7 @@ pub struct Many;
     label = "expected a `{T}`, or a sequence of them",
     note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
     note = "a tuple can mix item types; the other sequences hold items of one type, so box items of different types with `.boxed()` to mix them",
-    note = "a dataset with a mark is a `dyn BarDataSet`, `dyn LineDataSet` or `dyn ScatterDataSet` only when the mark can be drawn by that kind of controller: `.range()` and `.error_bars()` are drawn by bar controllers",
+    note = "a dataset with a mark is a `dyn BarDataSet`, `dyn LineDataSet` or `dyn ScatterDataSet` only when the mark can be drawn by that kind of controller: `.range()` is drawn by bar and line controllers, `.error_bars()` by bar controllers, and `.bubbles()` by scatter controllers",
 )]
 pub trait IntoSequence<T: ?Sized, M> {
     type Sequence: Sequence<T>;
