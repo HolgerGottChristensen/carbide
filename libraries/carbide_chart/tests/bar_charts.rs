@@ -7,7 +7,7 @@ use carbide_testing::Harness;
 
 mod common;
 
-use common::{bar_chart, Framed};
+use common::Framed;
 use support::COSTS;
 
 /// A plain bar chart: one dataset of positive values, nothing else on the chart. Pins down the
@@ -15,7 +15,8 @@ use support::COSTS;
 /// the bottom of the y scale.
 #[test]
 fn bar_chart_single_dataset() {
-    let mut harness = Harness::new(bar_chart(vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0]), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0])).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bar_chart_single_dataset");
 }
@@ -24,7 +25,8 @@ fn bar_chart_single_dataset() {
 /// in the middle of the y scale: positive bars grow up from it, negative ones hang down from it.
 #[test]
 fn bar_chart_positive_and_negative() {
-    let mut harness = Harness::new(bar_chart(vec![-12.0, 19.0, -3.0, 5.0, -2.0, 8.0]), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(vec![-12.0, 19.0, -3.0, 5.0, -2.0, 8.0])).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bar_chart_positive_and_negative");
 }
@@ -33,7 +35,8 @@ fn bar_chart_positive_and_negative() {
 /// of the scale and every bar hangs down from it.
 #[test]
 fn bar_chart_all_negative() {
-    let mut harness = Harness::new(bar_chart(vec![-5.0, -12.0, -8.0, -20.0, -3.0]), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(vec![-5.0, -12.0, -8.0, -20.0, -3.0])).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bar_chart_all_negative");
 }
@@ -48,7 +51,8 @@ fn grouped_bars_positive_and_negative() {
         vec![-28.0, 48.0, -40.0, 19.0, 86.0],
         vec![35.0, -10.0, 22.0, 60.0, -45.0],
     );
-    let mut harness = Harness::new(bar_chart(datasets), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(datasets)).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("grouped_bars_positive_and_negative");
 }
@@ -83,7 +87,9 @@ fn stacked_bars() {
     let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(COSTS);
     let revenue = vec![120.0, 115.0, 150.0, 98.0, 160.0];
 
-    let mut harness = Harness::new(bar_chart((materials, labour, revenue)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((materials, labour, revenue))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_bars");
 }
@@ -99,7 +105,9 @@ fn stacked_bars_positive_and_negative() {
     let expenses = vec![-12.0, -18.0, -10.0, -25.0, 8.0].stack(NET);
     let adjustments = vec![5.0, -4.0, 8.0, -3.0, -6.0].stack(NET);
 
-    let mut harness = Harness::new(bar_chart((income, expenses, adjustments)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((income, expenses, adjustments))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_bars_positive_and_negative");
 }
@@ -141,7 +149,9 @@ fn stacked_bars_of_different_lengths() {
     let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
     let labour = vec![60.0, 62.0, 70.0].stack(COSTS);
 
-    let mut harness = Harness::new(bar_chart((materials, labour)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((materials, labour))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_bars_of_different_lengths");
 }
@@ -153,7 +163,8 @@ fn stacked_bars_of_different_lengths() {
 #[test]
 fn bars_coloured_by_point() {
     let votes = vec![12.0, 19.0, 3.0, 5.0, 2.0, 3.0, 9.0, 14.0, 7.0, 11.0].color(DataColor::ByPoint);
-    let mut harness = Harness::new(bar_chart(votes), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(votes)).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_coloured_by_point");
 }
@@ -189,7 +200,9 @@ fn bars_with_missing_values() {
     let revenue = vec![Some(12.0), None, Some(3.0), Some(5.0), Some(2.0)];
     let costs = vec![Some(8.0), Some(11.0), Some(6.0), None, Some(3.0)];
 
-    let mut harness = Harness::new(bar_chart((revenue, costs)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((revenue, costs))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_with_missing_values");
 }

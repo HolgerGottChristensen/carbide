@@ -7,7 +7,7 @@ use carbide_testing::Harness;
 
 mod common;
 
-use common::{bar_chart, Framed};
+use common::Framed;
 
 /// Grouped bars whose first dataset is held in a state, changed between the two snapshots: its
 /// values grow past the old y range, and a sixth month is appended. Pins down that the chart
@@ -19,7 +19,9 @@ fn data_changed_between_renders() {
     let mut revenue = LocalState::new(vec![12.0, 19.0, 3.0, 5.0, 2.0]);
     let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
 
-    let mut harness = Harness::new(bar_chart((revenue.clone(), costs)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((revenue.clone(), costs))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("before_change");
 
     *revenue.value_mut() = vec![12.0, 19.0, 30.0, 5.0, 24.0, 17.0];
@@ -36,7 +38,9 @@ fn dataset_added_between_renders() {
     let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0];
     let mut datasets = LocalState::new(vec![revenue.clone(), costs.clone()]);
 
-    let mut harness = Harness::new(bar_chart(datasets.clone()), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new(datasets.clone())).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("two_datasets");
 
     *datasets.value_mut() = vec![revenue, costs, vec![15.0, 24.0, 9.0, 7.0, 4.0]];
@@ -83,7 +87,9 @@ fn stack_changed_between_renders() {
     let materials = vec![40.0, 45.0, 50.0, 42.0, 55.0].stack(COSTS);
     let labour = vec![60.0, 62.0, 70.0, 65.0, 80.0].stack(stack.clone());
 
-    let mut harness = Harness::new(bar_chart((materials, labour)), Dimension::new(600.0, 500.0));
+    let chart = Chart::new(BarController::new((materials, labour))).framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("apart");
 
     *stack.value_mut() = COSTS;

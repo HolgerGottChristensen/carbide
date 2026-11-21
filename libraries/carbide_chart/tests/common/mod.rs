@@ -2,7 +2,6 @@
 //! declares `mod common;`, so not every file uses every helper.
 #![allow(dead_code)]
 
-use carbide_chart::{BarController, BarDataSet, Chart, IntoSequence, Sequence};
 use carbide_core::color::BLUE;
 use carbide_core::state::ValueState;
 use carbide_core::widget::Widget;
@@ -19,14 +18,3 @@ pub trait Framed: Widget + Sized {
 }
 
 impl<W: Widget> Framed for W {}
-
-/// A chart with only a `BarController` for `datasets` on the default scales: no lines or
-/// points on top.
-pub fn bar_chart<I, M, D>(datasets: I) -> impl Widget
-where
-    I: IntoSequence<dyn BarDataSet, M, Sequence=D>,
-    D: Sequence<dyn BarDataSet>,
-{
-    Chart::new(BarController::new(datasets))
-        .framed()
-}
