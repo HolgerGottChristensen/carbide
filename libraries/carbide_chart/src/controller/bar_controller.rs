@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
@@ -6,7 +5,7 @@ use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::drawing::{dataset_color, dataset_scales, point_color, Palette};
 use crate::legend::{LegendItem, LegendMarker};
-use crate::controller::stacking::{StackKey, StackSums};
+use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
 use crate::mark::{BarCanvas, BarDataSet, BarSlots, LegendContext, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
@@ -101,7 +100,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         let mut stacks = StackSums::split_by_sign();
-        let offsets = self.stack_offsets();
+        let offsets = self.stack_offsets(self.has_overlays());
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -132,7 +131,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
             // A mark's values move with the dataset's bars where they are stacked.
             dataset.bar_marks(&mut |mark| {
                 mark.bounds(&mut |x, low, high| {
-                    let offset = stack_offset(&offsets[dataset_index], x);
+                    let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
                     bounds.include(value_scale, low + offset, high + offset);
                 });
@@ -212,9 +211,13 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         let palette = Palette::new(ctx, self.palette_offset);
         ctx.save();
 
-        let offsets = self.stack_offsets();
+        // Overlays are drawn in a pass of their own, and only read the stack offsets, so a chart
+        // without them needs neither.
+        let has_overlays = self.has_overlays();
+        let offsets = self.stack_offsets(has_overlays);
+        let roles: &[MarkRole] = if has_overlays { &[MarkRole::Primary, MarkRole::Overlay] } else { &[MarkRole::Primary] };
 
-        for role in [MarkRole::Primary, MarkRole::Overlay] {
+        for &role in roles {
             self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
                 let Some(&Some((ref index_id, group_index))) = places.get(dataset_index) else {
                     return;
@@ -239,7 +242,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     group_size,
                     category_percentage: self.category_percentage,
                     bar_percentage: self.bar_percentage,
-                    stack_offsets: &offsets[dataset_index],
+                    stack_offsets: offsets.dataset(dataset_index),
                 };
 
                 let mut canvas = BarCanvas {
@@ -300,36 +303,56 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 }
 
 impl<D: Sequence<dyn BarDataSet>> BarController<D> {
-    /// How far stacking moves each dataset's bars, by dataset index and then by x value: where the
-    /// bar ends, less the point's own value. Datasets and x values that don't stack aren't in it,
-    /// and are moved by zero. The sums run in the same order as the bars are stacked.
-    fn stack_offsets(&self) -> Vec<HashMap<u64, Scalar>> {
+    /// Whether any dataset has an overlay mark, drawn on top of the bars.
+    fn has_overlays(&self) -> bool {
+        let mut overlays = false;
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| overlays |= has_overlay_mark(dataset));
+        overlays
+    }
+
+    /// How far stacking moves the bars of the stacked datasets with overlay marks (see
+    /// `StackOffsets`), with the sums in the same order as the bars are stacked. Empty without
+    /// overlays (`has_overlays`), and for datasets that don't stack.
+    fn stack_offsets(&self, has_overlays: bool) -> StackOffsets {
+        let mut offsets = StackOffsets::default();
+
+        if !has_overlays {
+            return offsets;
+        }
+
         let mut stacks = StackSums::split_by_sign();
-        let mut offsets = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
-            let mut dataset_offsets = HashMap::new();
-
-            if !has_primary_mark(dataset) {
-                let key = StackKey::new(&dataset.options(), dataset_index);
-                dataset.points(&mut |_index, point| {
-                    if let (Some(x), Some(y)) = (point.x(), point.y()) {
-                        let (_, end) = stacks.add(&key, x, y);
-                        dataset_offsets.insert((x + 0.0).to_bits(), end - y);
-                    }
-                });
+            // Bars a mark replaces don't stack, and a dataset alone adds to no one else's sums.
+            if has_primary_mark(dataset) {
+                return;
             }
 
-            offsets.push(dataset_offsets);
+            let key = StackKey::new(&dataset.options(), dataset_index);
+            if !matches!(key, StackKey::Stacked { .. }) {
+                return;
+            }
+
+            let recorded = has_overlay_mark(dataset);
+            dataset.points(&mut |_index, point| {
+                if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                    let (_, end) = stacks.add(&key, x, y);
+                    if recorded {
+                        offsets.record(dataset_index, x, end - y);
+                    }
+                }
+            });
         });
 
         offsets
     }
 }
 
-/// How far stacking moves the bar at `x` (see `BarController::stack_offsets`).
-pub(crate) fn stack_offset(offsets: &HashMap<u64, Scalar>, x: Scalar) -> Scalar {
-    offsets.get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0)
+/// Whether one of the dataset's marks is drawn on top of its bars.
+fn has_overlay_mark(dataset: &dyn BarDataSet) -> bool {
+    let mut overlay = false;
+    dataset.bar_marks(&mut |mark| overlay |= mark.role() == MarkRole::Overlay);
+    overlay
 }
 
 /// Whether one of the dataset's marks replaces its bars.
@@ -401,6 +424,28 @@ mod tests {
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
     use super::{bar_slot, BarController};
+
+    /// The stack offsets are only worked out for what reads them: stacked datasets with an overlay
+    /// mark. A chart without overlays, or with overlays only on datasets that don't stack, gets
+    /// none, so it allocates nothing for them on its updates and renders.
+    #[test]
+    fn stack_offsets_are_only_kept_for_stacked_overlays() {
+        use crate::{Estimate, RangeDataSetExt};
+
+        const COSTS: StackId = StackId::new("costs");
+        let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
+
+        let plain = BarController::new((vec![10.0].stack(COSTS), vec![5.0].stack(COSTS)));
+        assert!(!plain.has_overlays() && plain.stack_offsets(plain.has_overlays()).is_empty(), "stacked bars without overlays need no offsets");
+
+        let unstacked = BarController::new((vec![10.0], measured.clone().error_bars()));
+        assert!(unstacked.stack_offsets(unstacked.has_overlays()).is_empty(), "error bars that don't stack are moved by zero");
+
+        let stacked = BarController::new((vec![10.0].stack(COSTS), measured.error_bars().stack(COSTS)));
+        let offsets = stacked.stack_offsets(stacked.has_overlays());
+        assert!(offsets.dataset(0).is_none(), "the bottom dataset has no overlay, so nothing reads its offsets");
+        assert_eq!(super::stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on top of the 10 below them");
+    }
 
     /// A missing value has no bar: it adds nothing to the bounds, or to its stack.
     #[test]

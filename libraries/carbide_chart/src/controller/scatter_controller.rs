@@ -81,6 +81,13 @@ impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
     }
 }
 
+/// Whether one of the dataset's marks has `role`, or, with `None`, whether it has any mark.
+fn has_mark(dataset: &dyn ScatterDataSet, role: Option<MarkRole>) -> bool {
+    let mut found = false;
+    dataset.scatter_marks(&mut |mark| found |= role.is_none_or(|role| mark.role() == role));
+    found
+}
+
 impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
@@ -96,6 +103,10 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         });
 
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
+            if !has_mark(dataset, None) {
+                return;
+            }
+
             let options = dataset.options();
             dataset.scatter_marks(&mut |mark| {
                 mark.bounds(&mut |x, y| {
@@ -151,6 +162,11 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         // The marks replacing points, then the overlays on top of everything.
         for role in [MarkRole::Primary, MarkRole::Overlay] {
             self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+                // Datasets without such marks are passed over without reading their options.
+                if !has_mark(dataset, Some(role)) {
+                    return;
+                }
+
                 let options = dataset.options();
                 let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
                     return;

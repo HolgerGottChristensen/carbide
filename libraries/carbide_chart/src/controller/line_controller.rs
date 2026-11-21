@@ -1,5 +1,4 @@
-use std::collections::HashMap;
-use carbide::draw::{Rect, Scalar};
+use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
@@ -8,7 +7,7 @@ use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, d
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
-use crate::controller::stacking::{StackKey, StackSums};
+use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{ScaleBounds, ScaleKind, Scales};
 
@@ -83,38 +82,53 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
         replaced
     }
 
-    /// How far stacking moves each dataset's line, by dataset index and then by x value: where
-    /// the line is drawn, less the point's own value, with one running sum per stack, as the lines
-    /// are stacked. Datasets whose line a mark replaces don't stack, and aren't in it.
-    fn stack_offsets(&self) -> Vec<HashMap<u64, Scalar>> {
-        let replaced = self.replaced_lines();
+    /// How far stacking moves the lines of the stacked datasets with overlay marks (see
+    /// `StackOffsets`), with one running sum per stack, as the lines are stacked. Empty when no
+    /// dataset has an overlay, and for datasets that don't stack, including those whose line a mark
+    /// replaces (`replaced`).
+    fn stack_offsets(&self, replaced: &[usize]) -> StackOffsets {
+        let mut offsets = StackOffsets::default();
+
+        let mut overlays = false;
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| overlays |= has_mark(dataset, MarkRole::Overlay));
+        if !overlays {
+            return offsets;
+        }
+
         let mut sums = StackSums::single();
-        let mut offsets = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
-            let mut dataset_offsets = HashMap::new();
-
-            if !replaced.contains(&dataset_index) {
-                let key = StackKey::new(&dataset.options(), dataset_index);
-                dataset.points(&mut |_index, point| {
-                    if let (Some(x), Some(y)) = (point.x(), point.y()) {
-                        let (_, total) = sums.add(&key, x, y);
-                        dataset_offsets.insert((x + 0.0).to_bits(), total - y);
-                    }
-                });
+            if replaced.contains(&dataset_index) {
+                return;
             }
 
-            offsets.push(dataset_offsets);
+            let key = StackKey::new(&dataset.options(), dataset_index);
+            if !matches!(key, StackKey::Stacked { .. }) {
+                return;
+            }
+
+            let recorded = has_mark(dataset, MarkRole::Overlay);
+            dataset.points(&mut |_index, point| {
+                if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                    let (_, total) = sums.add(&key, x, y);
+                    if recorded {
+                        offsets.record(dataset_index, x, total - y);
+                    }
+                }
+            });
         });
 
         offsets
     }
 
     /// Draws every dataset's marks with `role`, in dataset order, each on its dataset's scales.
-    fn draw_marks(&self, role: MarkRole, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
-        let offsets = self.stack_offsets();
-
+    /// Datasets without such marks are passed over without reading their options.
+    fn draw_marks(&self, role: MarkRole, offsets: &StackOffsets, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            if !has_mark(dataset, role) {
+                return;
+            }
+
             let options = dataset.options();
             let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
             let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
@@ -130,7 +144,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 options: &options,
                 dataset_index,
                 palette,
-                stack_offsets: &offsets[dataset_index],
+                stack_offsets: offsets.dataset(dataset_index),
             };
 
             dataset.line_marks(&mut |mark| {
@@ -142,6 +156,13 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     }
 }
 
+/// Whether one of the dataset's marks has `role`.
+fn has_mark(dataset: &dyn LineDataSet, role: MarkRole) -> bool {
+    let mut found = false;
+    dataset.line_marks(&mut |mark| found |= mark.role() == role);
+    found
+}
+
 impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
@@ -151,7 +172,8 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        let offsets = self.stack_offsets();
+        let replaced = self.replaced_lines();
+        let offsets = self.stack_offsets(&replaced);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -161,14 +183,13 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             // A mark's values move with the dataset's line where it is stacked.
             dataset.line_marks(&mut |mark| {
                 mark.bounds(&mut |x, low, high| {
-                    let offset = offsets[dataset_index].get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0);
+                    let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
                     bounds.include(value_scale, low + offset, high + offset);
                 });
             });
         });
 
-        let replaced = self.replaced_lines();
         collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation, |dataset_index| !replaced.contains(&dataset_index));
     }
 
@@ -190,11 +211,12 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
 
         // Marks replacing lines are usually areas, so they go first, under every line; overlays
         // go on top of everything.
-        self.draw_marks(MarkRole::Primary, ctx, scales, chart_area, &palette);
+        let offsets = self.stack_offsets(&replaced);
+        self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &palette);
         draw_fills(&lines, ctx, scales, chart_area, &palette);
         draw_lines(&lines, ctx, chart_area, &palette);
         draw_points(&lines, ctx, &palette, |_| true);
-        self.draw_marks(MarkRole::Overlay, ctx, scales, chart_area, &palette);
+        self.draw_marks(MarkRole::Overlay, &offsets, ctx, scales, chart_area, &palette);
 
         ctx.restore();
     }
@@ -207,6 +229,28 @@ mod tests {
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
     use super::LineController;
+
+    /// The stack offsets are only worked out for stacked datasets with an overlay mark, as for bar
+    /// controllers. Plain stacked lines, and error bars on lines that don't stack, get none.
+    #[test]
+    fn stack_offsets_are_only_kept_for_stacked_overlays() {
+        use crate::{Estimate, RangeDataSetExt, StackId};
+        use crate::controller::stacking::stack_offset;
+
+        const ALL: StackId = StackId::new("all");
+        let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
+
+        let plain = LineController::new((vec![10.0].stack(ALL), vec![5.0].stack(ALL)));
+        assert!(plain.stack_offsets(&plain.replaced_lines()).is_empty());
+
+        let unstacked = LineController::new((vec![10.0], measured.clone().error_bars()));
+        assert!(unstacked.stack_offsets(&unstacked.replaced_lines()).is_empty());
+
+        let stacked = LineController::new((vec![10.0].stack(ALL), measured.error_bars().stack(ALL)));
+        let offsets = stacked.stack_offsets(&stacked.replaced_lines());
+        assert!(offsets.dataset(0).is_none());
+        assert_eq!(stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on the line at the total of 15");
+    }
 
     /// A horizontal line reads the same data as an upright one, with the scales swapped: the
     /// categories go on the dataset's y scale, which is asked to be a category scale, without the

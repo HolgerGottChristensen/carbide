@@ -60,6 +60,40 @@ impl StackSums {
     }
 }
 
+/// How far stacking moves the bars or line of the datasets whose overlay marks need it, such as
+/// error bars, by dataset index and x value: where the bar ends or the line is drawn, less the
+/// point's own value. Datasets and x values that aren't in it are moved by zero: those that don't
+/// stack, and those without an overlay mark, as nothing else reads it. A chart without stacked
+/// overlays leaves it empty, which allocates nothing.
+#[derive(Debug, Default)]
+pub(crate) struct StackOffsets {
+    by_dataset: HashMap<usize, HashMap<u64, Scalar>>,
+}
+
+impl StackOffsets {
+    /// Records that stacking moves the dataset at `dataset_index` by `offset` at `x`.
+    pub(crate) fn record(&mut self, dataset_index: usize, x: Scalar, offset: Scalar) {
+        // Adding 0.0 turns -0.0 into 0.0, as for the sums.
+        self.by_dataset.entry(dataset_index).or_default().insert((x + 0.0).to_bits(), offset);
+    }
+
+    /// The offsets of one dataset, or `None` when it isn't moved.
+    pub(crate) fn dataset(&self, dataset_index: usize) -> Option<&HashMap<u64, Scalar>> {
+        self.by_dataset.get(&dataset_index)
+    }
+
+    /// Whether no dataset is moved.
+    #[cfg(test)]
+    pub(crate) fn is_empty(&self) -> bool {
+        self.by_dataset.is_empty()
+    }
+}
+
+/// How far stacking moves a dataset at `x`, given its offsets (see `StackOffsets::dataset`).
+pub(crate) fn stack_offset(offsets: Option<&HashMap<u64, Scalar>>, x: Scalar) -> Scalar {
+    offsets.and_then(|offsets| offsets.get(&(x + 0.0).to_bits())).copied().unwrap_or(0.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{StackKey, StackSums};

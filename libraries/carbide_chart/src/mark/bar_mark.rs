@@ -137,7 +137,7 @@ pub struct BarSlots<'a> {
     pub(crate) group_size: usize,
     pub(crate) category_percentage: Scalar,
     pub(crate) bar_percentage: Scalar,
-    pub(crate) stack_offsets: &'a HashMap<u64, Scalar>,
+    pub(crate) stack_offsets: Option<&'a HashMap<u64, Scalar>>,
 }
 
 impl BarSlots<'_> {
@@ -146,7 +146,7 @@ impl BarSlots<'_> {
         let center = pixel(self.orientation.index_axis(), self.index_scale, x, self.area);
         let (side, thickness) = crate::controller::bar_slot(center, self.ruler, self.group_index, self.group_size, self.category_percentage, self.bar_percentage);
 
-        let stack_offset = crate::controller::stack_offset(self.stack_offsets, x);
+        let stack_offset = crate::controller::stacking::stack_offset(self.stack_offsets, x);
 
         BarSlot { center, side, thickness, stack_offset }
     }
@@ -217,18 +217,35 @@ impl BarCanvas<'_, '_, '_, '_> {
         self.ctx.fill();
     }
 
-    /// Strokes the straight lines between each pair of `segments`, `width` wide.
-    pub fn stroke_lines(&mut self, segments: &[(Position, Position)], width: Scalar, color: Color) {
-        self.ctx.save();
+    /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
+    /// with `stroke_lines_added`, so a mark can draw many lines without collecting them first.
+    pub fn begin_lines(&mut self) {
         self.ctx.begin_path();
+    }
+
+    /// Adds the straight line from `from` to `to`, in the index frame, to the path `begin_lines`
+    /// started.
+    pub fn add_line(&mut self, from: Position, to: Position) {
         let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
-        for (from, to) in segments {
-            path.move_to(*from);
-            path.line_to(*to);
-        }
+        path.move_to(from);
+        path.line_to(to);
+    }
+
+    /// Strokes the lines added since `begin_lines`, `width` wide.
+    pub fn stroke_lines_added(&mut self, width: Scalar, color: Color) {
+        self.ctx.save();
         self.ctx.set_line_width(width);
         self.ctx.set_stroke_style(color);
         self.ctx.stroke();
         self.ctx.restore();
+    }
+
+    /// Strokes the straight lines between each pair of `segments`, `width` wide.
+    pub fn stroke_lines(&mut self, segments: &[(Position, Position)], width: Scalar, color: Color) {
+        self.begin_lines();
+        for (from, to) in segments {
+            self.add_line(*from, *to);
+        }
+        self.stroke_lines_added(width, color);
     }
 }

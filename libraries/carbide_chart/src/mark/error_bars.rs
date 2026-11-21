@@ -41,7 +41,7 @@ impl<D: Sequence<dyn RangePoint>> BarMark<D> for ErrorBars {
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
-        let mut segments = vec![];
+        canvas.begin_lines();
 
         data.foreach(&mut |_index, point| {
             let (Some(x), Some(_), Some(low), Some(high)) = (point.x(), point.y(), point.low(), point.high()) else {
@@ -53,13 +53,13 @@ impl<D: Sequence<dyn RangePoint>> BarMark<D> for ErrorBars {
             let cap = slot.thickness * self.cap_percentage / 2.0;
             let (low, high) = (canvas.value_pixel(low + slot.stack_offset), canvas.value_pixel(high + slot.stack_offset));
 
-            segments.push((Position::new(middle, low), Position::new(middle, high)));
-            segments.push((Position::new(middle - cap, low), Position::new(middle + cap, low)));
-            segments.push((Position::new(middle - cap, high), Position::new(middle + cap, high)));
+            canvas.add_line(Position::new(middle, low), Position::new(middle, high));
+            canvas.add_line(Position::new(middle - cap, low), Position::new(middle + cap, low));
+            canvas.add_line(Position::new(middle - cap, high), Position::new(middle + cap, high));
         });
 
         let ink = canvas.ink();
-        canvas.stroke_lines(&segments, self.line_width, ink);
+        canvas.stroke_lines_added(self.line_width, ink);
     }
 }
 
@@ -79,8 +79,8 @@ impl<D: Sequence<dyn RangePoint>> LineMark<D> for ErrorBars {
     }
 
     fn draw(&self, data: &D, canvas: &mut LineCanvas) {
-        let mut segments = vec![];
         let cap = self.line_cap_length / 2.0;
+        canvas.begin_lines();
 
         data.foreach(&mut |_index, point| {
             let (Some(x), Some(_), Some(low), Some(high)) = (point.x(), point.y(), point.low(), point.high()) else {
@@ -90,12 +90,12 @@ impl<D: Sequence<dyn RangePoint>> LineMark<D> for ErrorBars {
             let offset = canvas.stack_offset(x);
             let (low, high) = (canvas.position(x, low + offset), canvas.position(x, high + offset));
 
-            segments.push((low, high));
-            segments.push((Position::new(low.x - cap, low.y), Position::new(low.x + cap, low.y)));
-            segments.push((Position::new(high.x - cap, high.y), Position::new(high.x + cap, high.y)));
+            canvas.add_line(low, high);
+            canvas.add_line(Position::new(low.x - cap, low.y), Position::new(low.x + cap, low.y));
+            canvas.add_line(Position::new(high.x - cap, high.y), Position::new(high.x + cap, high.y));
         });
 
         let ink = canvas.ink();
-        canvas.stroke_lines(&segments, self.line_width, ink);
+        canvas.stroke_lines_added(self.line_width, ink);
     }
 }

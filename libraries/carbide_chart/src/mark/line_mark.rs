@@ -78,7 +78,7 @@ pub struct LineCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) options: &'x DataSetOptions,
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
-    pub(crate) stack_offsets: &'x HashMap<u64, Scalar>,
+    pub(crate) stack_offsets: Option<&'x HashMap<u64, Scalar>>,
 }
 
 impl LineCanvas<'_, '_, '_, '_> {
@@ -86,7 +86,7 @@ impl LineCanvas<'_, '_, '_, '_> {
     /// the line is drawn, less the point's own value, or zero when it doesn't stack. A mark drawn
     /// on a stacked line adds it to the values it draws, so it moves with the line.
     pub fn stack_offset(&self, x: Scalar) -> Scalar {
-        self.stack_offsets.get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0)
+        crate::controller::stacking::stack_offset(self.stack_offsets, x)
     }
 
     /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's
@@ -96,20 +96,36 @@ impl LineCanvas<'_, '_, '_, '_> {
         axis_style(env).label_color(env)
     }
 
-    /// Strokes the straight lines between each pair of `segments`, in the index frame, `width`
-    /// wide.
-    pub fn stroke_lines(&mut self, segments: &[(Position, Position)], width: Scalar, color: Color) {
-        self.ctx.save();
+    /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
+    /// with `stroke_lines_added`, so a mark can draw many lines without collecting them first.
+    pub fn begin_lines(&mut self) {
         self.ctx.begin_path();
+    }
+
+    /// Adds the straight line from `from` to `to`, in the index frame, to the path `begin_lines`
+    /// started.
+    pub fn add_line(&mut self, from: Position, to: Position) {
         let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
-        for (from, to) in segments {
-            path.move_to(*from);
-            path.line_to(*to);
-        }
+        path.move_to(from);
+        path.line_to(to);
+    }
+
+    /// Strokes the lines added since `begin_lines`, `width` wide.
+    pub fn stroke_lines_added(&mut self, width: Scalar, color: Color) {
+        self.ctx.save();
         self.ctx.set_line_width(width);
         self.ctx.set_stroke_style(color);
         self.ctx.stroke();
         self.ctx.restore();
+    }
+
+    /// Strokes the straight lines between each pair of `segments`, `width` wide.
+    pub fn stroke_lines(&mut self, segments: &[(Position, Position)], width: Scalar, color: Color) {
+        self.begin_lines();
+        for (from, to) in segments {
+            self.add_line(*from, *to);
+        }
+        self.stroke_lines_added(width, color);
     }
 
     /// Where the point at `x`, its category, and `value` falls, in the index frame.

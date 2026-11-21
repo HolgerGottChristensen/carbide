@@ -4,7 +4,7 @@ use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 pub use bar_controller::BarController;
-pub(crate) use bar_controller::{bar_slot, stack_offset};
+pub(crate) use bar_controller::bar_slot;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;
@@ -19,7 +19,7 @@ pub(crate) mod line_path;
 mod line_controller;
 pub(crate) mod orientation;
 mod scatter_controller;
-mod stacking;
+pub(crate) mod stacking;
 
 /// Draws a group of datasets on the scales the chart owns.
 ///
