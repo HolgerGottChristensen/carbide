@@ -169,4 +169,3 @@ fn stacked_axis_titles() {
 
     harness.snapshot("stacked_axis_titles");
 }
-

@@ -95,4 +95,3 @@ fn stack_changed_between_renders() {
     *stack.value_mut() = COSTS;
     harness.snapshot("stacked");
 }
-
