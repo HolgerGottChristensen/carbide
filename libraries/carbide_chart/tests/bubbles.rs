@@ -1,6 +1,6 @@
 //! Bubble charts: scatter points drawn as bubbles whose area is proportional to their size.
 
-use carbide_chart::{Bubble, Chart, DataColor, DataPoint, DatasetExt, LegendPosition, ScatterController, SizedDataSetExt, SizedPoint};
+use carbide_chart::{Value, Bubble, Chart, DataColor, DataPoint, DatasetExt, LegendPosition, ScatterController, SizedDataSetExt, SizedPoint};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -119,12 +119,12 @@ fn from_a_type_of_your_own() {
     }
 
     impl DataPoint for Country {
-        fn x(&self) -> Option<Scalar> {
-            Some(self.income)
+        fn x(&self) -> Option<Value<'_>> {
+            Some(Value::Number(self.income))
         }
 
-        fn y(&self) -> Option<Scalar> {
-            Some(self.life_expectancy)
+        fn y(&self) -> Option<Value<'_>> {
+            Some(Value::Number(self.life_expectancy))
         }
 
         fn color(&self) -> DataColor {

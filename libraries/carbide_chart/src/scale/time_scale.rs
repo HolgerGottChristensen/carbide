@@ -8,7 +8,7 @@ use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew};
 use carbide_derive::StateValue;
 use chrono::{DateTime, Datelike, FixedOffset, Local, Months, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Timelike};
 
-use crate::{DataValue, ValueKind};
+use crate::{DataValue, Value};
 use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
 
 /// The time zone a `TimeScale` places its ticks in and shows its labels in: whole days start at
@@ -167,9 +167,9 @@ type DateFormat = Arc<dyn Fn(DateTime<FixedOffset>, TimeUnit) -> String>;
 /// - With an offset (see `Scale::set_offset`), half a step is added at both ends, so bars on the
 ///   first and last tick aren't cut in half.
 ///
-/// It is the chart's default x or y scale when the data placed on it are dates (`ValueKind::Time`,
-/// as chrono's `DateTime` is): the controllers report the kind of their datasets' values (see
-/// `ScaleBounds::report_value_kind`). Set it on the chart (`Chart::scale`) to give it options, such
+/// It is the chart's default x or y scale when the data placed on it are dates (`Value::Time`,
+/// as chrono's `DateTime` is): the controllers report their datasets' values (see
+/// `ScaleBounds::report_value`). Set it on the chart (`Chart::scale`) to give it options, such
 /// as its time zone, or for a scale other than the default x and y.
 #[derive(Clone)]
 pub struct TimeScale {
@@ -428,10 +428,8 @@ fn format_date(date: DateTime<FixedOffset>, unit: TimeUnit, _env: &mut Environme
 /// A moment in time is a coordinate: the seconds since the Unix epoch, with fractions, which a
 /// `TimeScale` places and labels as a date.
 impl<Tz: TimeZone + 'static> DataValue for DateTime<Tz> where Tz::Offset: 'static {
-    const KIND: ValueKind = ValueKind::Time;
-
-    fn value(&self) -> Option<Scalar> {
-        Some(self.timestamp() as Scalar + self.timestamp_subsec_nanos() as Scalar / 1e9)
+    fn value(&self) -> Option<Value<'_>> {
+        Some(Value::Time(self.timestamp() as Scalar + self.timestamp_subsec_nanos() as Scalar / 1e9))
     }
 }
 
@@ -441,7 +439,7 @@ mod tests {
     use carbide::environment::Environment;
     use chrono::{DateTime, FixedOffset, TimeZone};
 
-    use crate::DataValue;
+    use crate::{DataValue, Value};
     use crate::scale::{Axis, Scale};
     use super::{TimeScale, TimeScaleZone, TimeUnit};
 
@@ -450,7 +448,7 @@ mod tests {
     }
 
     fn at(zone: FixedOffset, year: i32, month: u32, day: u32, hour: u32, minute: u32) -> Scalar {
-        zone.with_ymd_and_hms(year, month, day, hour, minute, 0).unwrap().value().unwrap()
+        zone.with_ymd_and_hms(year, month, day, hour, minute, 0).unwrap().value().and_then(Value::number).unwrap()
     }
 
     fn fitted(axis: Axis, zone: FixedOffset, min: Scalar, max: Scalar) -> TimeScale {
@@ -463,13 +461,13 @@ mod tests {
     #[test]
     fn dates_are_timestamps() {
         let noon: DateTime<FixedOffset> = utc().with_ymd_and_hms(1970, 1, 2, 12, 0, 0).unwrap();
-        assert_eq!(noon.value(), Some(129_600.0));
+        assert_eq!(noon.value(), Some(Value::Time(129_600.0)));
 
         let east = FixedOffset::east_opt(2 * 3_600).unwrap();
-        assert_eq!(east.with_ymd_and_hms(1970, 1, 2, 14, 0, 0).unwrap().value(), Some(129_600.0), "the same moment in another zone");
+        assert_eq!(east.with_ymd_and_hms(1970, 1, 2, 14, 0, 0).unwrap().value(), Some(Value::Time(129_600.0)), "the same moment in another zone");
 
         let later = noon + chrono::TimeDelta::milliseconds(250);
-        assert_eq!(later.value(), Some(129_600.25));
+        assert_eq!(later.value(), Some(Value::Time(129_600.25)));
     }
 
     /// The step grows with the range, from seconds to years, and ticks fall on round times: whole

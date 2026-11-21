@@ -5,6 +5,7 @@ mod linear_scale;
 mod time_scale;
 mod scales;
 mod scale_id;
+mod coordinates;
 
 use std::fmt::Debug;
 use dyn_clone::DynClone;
@@ -18,6 +19,8 @@ pub use linear_scale::*;
 pub use time_scale::{TimeScale, TimeScaleZone, TimeUnit};
 pub use scales::*;
 pub use scale_id::ScaleId;
+pub use coordinates::Coordinates;
+pub(crate) use coordinates::Places;
 
 /// A scale maps data values to positions along an axis, and picks the ticks along it. It is pure
 /// maths: measuring and drawing the axis is done once for every scale type (see `scale/axis.rs`),
@@ -63,6 +66,23 @@ pub trait Scale: DynClone + Debug + 'static {
     /// it can format for the locale in `env`. `None`, the default, shows the number, formatted for
     /// the environment's locale.
     fn label(&self, _value: Scalar, _env: &mut Environment) -> Option<String> {
+        None
+    }
+
+    /// The scale's own categories, in index order, which come before any the data adds: a
+    /// category scale's labels. The chart registers them before collecting the bounds, so data
+    /// naming them is placed on them. The default has none.
+    fn categories(&self, _f: &mut dyn FnMut(&str)) {}
+
+    /// Gives the scale its categories on a fit, in index order: its own, then the ones the data
+    /// named, in the order they were first seen (see `ScaleBounds::register_category`). Scales
+    /// without categories ignore them.
+    fn set_categories(&mut self, _categories: &[String]) {}
+
+    /// The index of the category `text` on the scale, which is where a value naming it is placed
+    /// (see `Value::Text`), or `None` when the scale has no such category. Scales without
+    /// categories have none, so text isn't drawn on them.
+    fn category_index(&self, _text: &str) -> Option<Scalar> {
         None
     }
 

@@ -1,8 +1,9 @@
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use indexmap::IndexMap;
+use std::cell::RefCell;
+use indexmap::{IndexMap, IndexSet};
 
-use crate::ValueKind;
+use crate::Value;
 use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId, TimeScale};
 
 /// The data range reported for one scale while the chart collects bounds: the union of every
@@ -57,14 +58,17 @@ impl ScaleKind {
 /// - the range is the union of every range included;
 /// - the offset and the grid offset are on if anyone asks for them;
 /// - the kind is the first one asked for, in controller and dataset order;
-/// - the value kind is the first one reported, in controller and dataset order.
+/// - the data's kind is the one the first value reported calls for, in controller and dataset
+///   order.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ScaleRequest {
     bounds: DataBounds,
     offset: bool,
     grid_offset: bool,
     kind: Option<ScaleKind>,
-    value_kind: Option<ValueKind>,
+    /// The kind of scale the first value reported calls for: `Some(None)` when it was a number,
+    /// which leaves the kind to the controllers.
+    data_kind: Option<Option<ScaleKind>>,
 }
 
 impl ScaleRequest {
@@ -88,20 +92,19 @@ impl ScaleRequest {
         self.kind
     }
 
-    /// What the first dataset reported its values on the scale to be, if any did (see
-    /// `ScaleBounds::report_value_kind`).
-    pub fn value_kind(&self) -> Option<ValueKind> {
-        self.value_kind
+    /// The kind of scale the data on the scale calls for, from the first value reported (see
+    /// `ScaleBounds::report_value`): a time scale for times, a category scale for names, and
+    /// `None` for numbers, or when nothing was reported.
+    pub fn data_kind(&self) -> Option<ScaleKind> {
+        self.data_kind.flatten()
     }
 
     /// The kind of scale the chart builds for a default scale with this request: a time scale
-    /// when the data on it are dates, as ag-charts picks a time axis for dates, otherwise the kind
-    /// a controller asked for, or a linear scale when none did.
+    /// when the data on it are dates and a category scale when they are text, as ag-charts picks
+    /// a time or a category axis from the data, otherwise the kind a controller asked for, or a
+    /// linear scale when none did.
     pub fn default_kind(&self) -> ScaleKind {
-        match self.value_kind {
-            Some(ValueKind::Time) => ScaleKind::Time,
-            Some(ValueKind::Number) | None => self.kind.unwrap_or(ScaleKind::Linear),
-        }
+        self.data_kind().or(self.kind).unwrap_or(ScaleKind::Linear)
     }
 }
 
@@ -110,62 +113,101 @@ impl ScaleRequest {
 /// fits each scale to its `ScaleRequest`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScaleBounds {
-    requests: IndexMap<ScaleId, ScaleRequest>,
+    /// Behind a `RefCell`, as the categories are, so controllers can add to the bounds while they
+    /// read points through them (see `Coordinates`): every method takes `&self`.
+    requests: RefCell<IndexMap<ScaleId, ScaleRequest>>,
+    /// Each scale's categories, in the order they were first seen: the scale's own labels, then
+    /// the text values controllers registered (see `register_category`). Behind a `RefCell` so
+    /// values can be placed (`Coordinates`) while the bounds are only borrowed.
+    categories: RefCell<IndexMap<ScaleId, IndexSet<String>>>,
 }
 
 impl ScaleBounds {
-    /// The request for `id`, created empty the first time `id` is seen.
-    fn request_mut(&mut self, id: &ScaleId) -> &mut ScaleRequest {
+    /// Changes the request for `id` with `f`, created empty the first time `id` is seen.
+    fn change(&self, id: &ScaleId, f: impl FnOnce(&mut ScaleRequest)) {
+        let mut requests = self.requests.borrow_mut();
+
         // Looked up by reference first, so an owned id is only cloned the first time it is seen.
-        if !self.requests.contains_key(id) {
-            self.requests.insert(id.clone(), ScaleRequest::default());
+        if !requests.contains_key(id) {
+            requests.insert(id.clone(), ScaleRequest::default());
         }
 
-        self.requests.get_mut(id).expect("inserted above")
+        f(requests.get_mut(id).expect("inserted above"));
     }
 
     /// Grows the range of the scale `id` to include `min..=max`.
-    pub fn include(&mut self, id: &ScaleId, min: Scalar, max: Scalar) {
-        self.request_mut(id).bounds.include(min, max);
+    pub fn include(&self, id: &ScaleId, min: Scalar, max: Scalar) {
+        self.change(id, |request| request.bounds.include(min, max));
     }
 
     /// Asks for the scale `id` to be offset on this fit, by half a step at both ends (see
     /// `Scale::set_offset`). Bar controllers ask for it on the scale their bars are spread along.
-    pub fn request_offset(&mut self, id: &ScaleId) {
-        self.request_mut(id).offset = true;
+    pub fn request_offset(&self, id: &ScaleId) {
+        self.change(id, |request| request.offset = true);
     }
 
     /// Asks for the scale `id` to draw its grid lines between ticks instead of on them, on this
     /// fit (see `Scale::set_grid_offset_requested`). Bar controllers ask for it so grid lines
     /// separate the bar groups. A scale whose grid offset was set explicitly keeps it.
-    pub fn request_grid_offset(&mut self, id: &ScaleId) {
-        self.request_mut(id).grid_offset = true;
+    pub fn request_grid_offset(&self, id: &ScaleId) {
+        self.change(id, |request| request.grid_offset = true);
     }
 
     /// Asks for the scale `id` to be of `kind`, if it is a default scale: bar and line charts ask
     /// for a category scale along x. The first kind asked for wins.
-    pub fn request_kind(&mut self, id: &ScaleId, kind: ScaleKind) {
-        let request = self.request_mut(id);
-        request.kind.get_or_insert(kind);
+    pub fn request_kind(&self, id: &ScaleId, kind: ScaleKind) {
+        self.change(id, |request| {
+            request.kind.get_or_insert(kind);
+        });
     }
 
-    /// Reports what the values placed on the scale `id` are, such as dates, so the chart can pick
-    /// a default scale for them (see `ScaleRequest::default_kind`). Controllers report the kind of
-    /// each dataset's first point with an x and a y (`DataPoint::x_kind`, `y_kind`) for the scales
-    /// its x and y are placed on. The first kind reported wins.
-    pub fn report_value_kind(&mut self, id: &ScaleId, kind: ValueKind) {
-        let request = self.request_mut(id);
-        request.value_kind.get_or_insert(kind);
+    /// Reports a value placed on the scale `id`, so the chart can pick a default scale for what
+    /// the data are (see `ScaleRequest::default_kind`): a time calls for a time scale, a name for
+    /// a category scale, and a number leaves the kind to the controllers. Controllers report each
+    /// dataset's first point that isn't missing, its x for the scale its x is placed on and its y
+    /// for the scale its y is placed on. The first value reported wins.
+    pub fn report_value(&self, id: &ScaleId, value: Value) {
+        let kind = match value {
+            Value::Number(_) => None,
+            Value::Time(_) => Some(ScaleKind::Time),
+            Value::Text(_) => Some(ScaleKind::Category),
+        };
+
+        self.change(id, |request| {
+            request.data_kind.get_or_insert(kind);
+        });
+    }
+
+    /// Adds the category `text` to the scale `id`, after the categories it already has, unless it
+    /// has it, and returns its index. Indices are only ever added, so a category keeps its index
+    /// while the bounds are collected. Controllers register every text value of their datasets
+    /// before reading any (see `register_values` in `controller/drawing.rs`), so categories are
+    /// numbered in controller, dataset and point order, as Chart.js and matplotlib number them as
+    /// they first see them. The chart registers each scale's own labels first.
+    pub fn register_category(&self, id: &ScaleId, text: &str) -> usize {
+        let mut categories = self.categories.borrow_mut();
+        let categories = categories.entry(id.clone()).or_default();
+
+        match categories.get_index_of(text) {
+            Some(index) => index,
+            None => categories.insert_full(text.to_string()).0,
+        }
+    }
+
+    /// The categories of the scale `id`, in index order: its own labels, then the text values
+    /// registered (see `register_category`).
+    pub fn categories(&self, id: &ScaleId) -> Vec<String> {
+        self.categories.borrow().get(id).map(|categories| categories.iter().cloned().collect()).unwrap_or_default()
     }
 
     /// What was asked of the scale `id`; empty when nothing was.
     pub fn get(&self, id: &ScaleId) -> ScaleRequest {
-        self.requests.get(id).copied().unwrap_or_default()
+        self.requests.borrow().get(id).copied().unwrap_or_default()
     }
 
     /// Every scale id something was asked of, in the order they were first seen.
-    pub fn ids(&self) -> impl Iterator<Item=&ScaleId> + '_ {
-        self.requests.keys()
+    pub fn ids(&self) -> Vec<ScaleId> {
+        self.requests.borrow().keys().cloned().collect()
     }
 }
 
@@ -228,6 +270,7 @@ impl Scales {
             let request = bounds.get(id);
             let (min, max) = request.range().unwrap_or((0.0, 1.0));
 
+            scale.set_categories(&bounds.categories(id));
             scale.set_offset(request.offset());
             scale.set_grid_offset_requested(request.grid_offset());
             scale.set_range(min, max);
@@ -303,7 +346,7 @@ mod tests {
 
     #[test]
     fn bounds_are_collected_per_scale_id() {
-        let mut bounds = ScaleBounds::default();
+        let bounds = ScaleBounds::default();
         bounds.include(&ScaleId::Y, 0.0, 10.0);
         bounds.include(&ScaleId::new("right"), 100.0, 200.0);
         bounds.include(&ScaleId::Y, -5.0, 5.0);
@@ -311,14 +354,14 @@ mod tests {
         assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-5.0, 10.0)));
         assert_eq!(bounds.get(&ScaleId::new("right")).range(), Some((100.0, 200.0)));
         assert_eq!(bounds.get(&ScaleId::X).range(), None);
-        assert_eq!(bounds.ids().cloned().collect::<Vec<_>>(), vec![ScaleId::Y, ScaleId::new("right")]);
+        assert_eq!(bounds.ids(), vec![ScaleId::Y, ScaleId::new("right")]);
     }
 
     /// Each request combines by its own rule: offsets and grid offsets are on if anyone asks,
     /// the first kind asked for wins, and asking without data leaves the range empty.
     #[test]
     fn requests_combine_by_their_own_rules() {
-        let mut bounds = ScaleBounds::default();
+        let bounds = ScaleBounds::default();
         bounds.request_kind(&ScaleId::X, ScaleKind::Category);
         bounds.request_kind(&ScaleId::X, ScaleKind::Linear);
         bounds.request_grid_offset(&ScaleId::X);

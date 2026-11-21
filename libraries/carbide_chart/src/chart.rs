@@ -110,11 +110,18 @@ impl<C: ControllerSequence> Chart<C> {
     fn fit_scales(&mut self, env: &mut Environment) {
         let mut bounds = ScaleBounds::default();
 
+        // Each scale's own categories come first, so data naming them is placed on them.
+        for (id, scale) in self.scales.iter() {
+            scale.categories(&mut |text| {
+                bounds.register_category(id, text);
+            });
+        }
+
         self.controllers.foreach(&mut |_, controller| {
             controller.collect_bounds(&mut bounds, env);
         });
 
-        for id in bounds.ids() {
+        for id in &bounds.ids() {
             if !self.scales.contains(id) && !self.warned_scale_ids.contains(id) {
                 self.warned_scale_ids.insert(id.clone());
                 log::warn!("Chart has no scale with id {:?}; datasets bound to it are not drawn", id.name());
@@ -1046,6 +1053,47 @@ mod tests {
 
         let explicit = fitted(Chart::new(LineController::new(days)).scale(ScaleId::X, LinearScale::new(Axis::Horizontal)));
         assert!(explicit.scales.get(&ScaleId::X).unwrap().ticks()[0] > 1e9, "a scale set on the chart is kept, and places the dates as numbers");
+    }
+
+    /// Text names categories: a default scale with text on it is a category scale, whose
+    /// categories are the names in the order the data first names them, across datasets and
+    /// controllers, and whose labels are the names. A scale's own labels come first, and names
+    /// the data adds follow them.
+    #[test]
+    fn text_names_categories_in_first_seen_order() {
+        use crate::{CategoryScale, ScaleKind};
+
+        let monday = vec![("Mon", 3.0), ("Tue", 5.0), ("Wed", 2.0)];
+        let later = vec![("Tue", 1.0), ("Thu", 4.0)];
+
+        let bars = fitted(Chart::new((BarController::new((monday.clone(), later.clone())), LineController::new(vec![("Fri", 6.0)]))));
+        assert_eq!(bars.default_kinds.get(&ScaleId::X).copied(), Some(ScaleKind::Category));
+
+        let x = bars.scales.get(&ScaleId::X).unwrap();
+        let mut env = Environment::new();
+        let names: Vec<_> = x.ticks().iter().map(|tick| x.label(*tick, &mut env)).collect();
+        assert_eq!(names, ["Mon", "Tue", "Wed", "Thu", "Fri"].map(|name| Some(name.to_string())), "first seen, across datasets and controllers");
+        assert_eq!(x.category_index("Thu"), Some(3.0));
+
+        let after_labels = fitted(
+            Chart::new(BarController::new(later))
+                .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(["Mon", "Tue"]))
+        );
+        let x = after_labels.scales.get(&ScaleId::X).unwrap();
+        assert_eq!(x.category_index("Tue"), Some(1.0), "a name among the labels is placed on its label");
+        assert_eq!(x.category_index("Thu"), Some(2.0), "and new names follow the labels");
+        assert_eq!(x.ticks(), &[0.0, 1.0, 2.0]);
+
+        let lying = fitted(Chart::new(BarController::new(monday).horizontal()));
+        assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Category), "lying bars name their categories on the y scale");
+    }
+
+    /// Text placed on a scale without categories, such as a linear scale set on the chart, isn't
+    /// drawn, and a chart of numbers is placed as before.
+    #[test]
+    fn text_on_a_scale_without_categories_has_no_place() {
+        let chart = fitted(Chart::new(BarController::new(vec![("Mon", 3.0)])).scale(ScaleId::X, LinearScale::new(Axis::Horizontal)));
+        assert_eq!(chart.scales.get(&ScaleId::X).unwrap().category_index("Mon"), None);
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {

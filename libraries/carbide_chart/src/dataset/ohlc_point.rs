@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::{DataValue, ValueKind};
+use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
 /// A data point with an open, a high, a low and a close value, such as a trading period's prices.
@@ -39,38 +39,30 @@ pub struct Ohlc<X = Scalar, V = Scalar> {
 }
 
 impl<X: DataValue, V: DataValue> DataPoint for Ohlc<X, V> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.close.value()
-    }
-
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        V::KIND
     }
 }
 
 impl<X: DataValue, V: DataValue> OhlcPoint for Ohlc<X, V> {
     fn open(&self) -> Option<Scalar> {
-        self.open.value()
+        self.open.value().and_then(Value::number)
     }
 
     fn high(&self) -> Option<Scalar> {
-        self.high.value()
+        self.high.value().and_then(Value::number)
     }
 
     fn low(&self) -> Option<Scalar> {
-        self.low.value()
+        self.low.value().and_then(Value::number)
     }
 
     fn close(&self) -> Option<Scalar> {
-        self.close.value()
+        self.close.value().and_then(Value::number)
     }
 }
 

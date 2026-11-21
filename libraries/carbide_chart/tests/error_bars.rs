@@ -1,7 +1,7 @@
 //! Error bars: whiskers from each point's low to its high value, on bars, lines and scatter
 //! points, moving with stacks.
 
-use carbide_chart::{BarController, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Range, RangeDataSetExt, RangePoint, ScatterController, Spread, StackId};
+use carbide_chart::{Value, BarController, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Range, RangeDataSetExt, RangePoint, ScatterController, Spread, StackId};
 use carbide_core::color::ORANGE;
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
@@ -276,12 +276,12 @@ fn on_scatter_points_of_a_type_of_your_own() {
     }
 
     impl DataPoint for Reading {
-        fn x(&self) -> Option<Scalar> {
-            Some(self.time)
+        fn x(&self) -> Option<Value<'_>> {
+            Some(Value::Number(self.time))
         }
 
-        fn y(&self) -> Option<Scalar> {
-            Some(self.level)
+        fn y(&self) -> Option<Value<'_>> {
+            Some(Value::Number(self.level))
         }
     }
 

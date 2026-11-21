@@ -4,6 +4,7 @@ use crate::DataColor;
 use crate::legend::LegendMarker;
 use crate::dataset::SizedPoint;
 use crate::mark::{LegendContext, Mark, Primary, ScatterCanvas, ScatterMark, SizeScale};
+use crate::scale::Coordinates;
 use crate::sequence::Sequence;
 
 /// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
@@ -29,9 +30,9 @@ impl Mark for BubbleMark {
 
 impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
     /// The centres of the bubbles it draws.
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar)) {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let (Some(x), Some(y), Some(size)) = (point.x(), point.y(), point.size()) && SizeScale::has_circle(size) {
+            if let (Some(x), Some(y), Some(size)) = (coordinates.x(point), coordinates.y(point), point.size()) && SizeScale::has_circle(size) {
                 f(x, y);
             }
         });
@@ -39,7 +40,7 @@ impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
 
     fn sizes(&self, data: &D, f: &mut dyn FnMut(Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let (Some(_), Some(_), Some(size)) = (point.x(), point.y(), point.size()) {
+            if let (false, Some(size)) = (point.is_missing(), point.size()) {
                 f(size);
             }
         });
@@ -51,8 +52,9 @@ impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
     }
 
     fn draw(&self, data: &D, canvas: &mut ScatterCanvas) {
+        let coordinates = canvas.coordinates;
         data.foreach(&mut |point_index, point| {
-            let (Some(x), Some(y), Some(size)) = (point.x(), point.y(), point.size()) else {
+            let (Some(x), Some(y), Some(size)) = (coordinates.x(point), coordinates.y(point), point.size()) else {
                 return;
             };
 

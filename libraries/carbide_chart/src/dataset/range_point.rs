@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::{DataValue, ValueKind};
+use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
 /// A data point with a low and a high value next to its x and y: the two ends of a floating bar,
@@ -51,30 +51,22 @@ pub struct Range<X = Scalar, V = Scalar> {
 }
 
 impl<X: DataValue, V: DataValue> DataPoint for Range<X, V> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.high.value()
-    }
-
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        V::KIND
     }
 }
 
 impl<X: DataValue, V: DataValue> RangePoint for Range<X, V> {
     fn low(&self) -> Option<Scalar> {
-        self.low.value()
+        self.low.value().and_then(Value::number)
     }
 
     fn high(&self) -> Option<Scalar> {
-        self.high.value()
+        self.high.value().and_then(Value::number)
     }
 }
 
@@ -89,30 +81,22 @@ pub struct Estimate<X = Scalar, V = Scalar> {
 }
 
 impl<X: DataValue, V: DataValue> DataPoint for Estimate<X, V> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.y.value()
-    }
-
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        V::KIND
     }
 }
 
 impl<X: DataValue, V: DataValue> RangePoint for Estimate<X, V> {
     fn low(&self) -> Option<Scalar> {
-        self.low.value()
+        self.low.value().and_then(Value::number)
     }
 
     fn high(&self) -> Option<Scalar> {
-        self.high.value()
+        self.high.value().and_then(Value::number)
     }
 }
 
@@ -131,38 +115,30 @@ pub struct Spread<X = Scalar, V = Scalar> {
 }
 
 impl<X: DataValue, V: DataValue> DataPoint for Spread<X, V> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.y.value()
-    }
-
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        V::KIND
     }
 }
 
 impl<X: DataValue, V: DataValue> RangePoint for Spread<X, V> {
     fn low(&self) -> Option<Scalar> {
-        self.low.value()
+        self.low.value().and_then(Value::number)
     }
 
     fn high(&self) -> Option<Scalar> {
-        self.high.value()
+        self.high.value().and_then(Value::number)
     }
 
     fn x_low(&self) -> Option<Scalar> {
-        self.x_low.value()
+        self.x_low.value().and_then(Value::number)
     }
 
     fn x_high(&self) -> Option<Scalar> {
-        self.x_high.value()
+        self.x_high.value().and_then(Value::number)
     }
 }
 

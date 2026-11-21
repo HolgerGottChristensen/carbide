@@ -5,13 +5,13 @@ use carbide::draw::color::{rgba, Rgba};
 use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide::environment::Environment;
-use crate::{DataColor, DataSetOptions};
+use crate::{DataColor, DataPoint, DataSetOptions};
 use crate::legend::LegendMarker;
 use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::mark::{Mark, MarkRole, Role};
-use crate::scale::Scale;
+use crate::scale::{Coordinates, Scale};
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn in a bar controller's slots, for datasets of type `D`. Implementing
@@ -28,7 +28,7 @@ pub trait BarMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
     /// the scale bounds, before any stacking: the controller moves an overlay's values with its
     /// stacked bars. Points the mark doesn't draw are left out.
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     /// Draws the mark for each of the dataset's points, in the slot for its x (`BarSlots::slot`).
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas);
@@ -73,7 +73,7 @@ impl LegendContext<'_, '_> {
 pub trait DatasetBarMark {
     fn role(&self) -> MarkRole;
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     fn draw(&self, slots: &BarSlots, canvas: &mut BarCanvas);
 
@@ -90,8 +90,8 @@ impl<M: BarMark<D>, D> DatasetBarMark for BoundBarMark<'_, M, D> {
         <M::Role as Role>::ROLE
     }
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
-        self.mark.bounds(self.data, f);
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+        self.mark.bounds(self.data, coordinates, f);
     }
 
     fn draw(&self, slots: &BarSlots, canvas: &mut BarCanvas) {
@@ -154,6 +154,7 @@ impl BarSlots<'_> {
 /// the values, both in pixels, so a mark draws the same code for standing and lying bars.
 pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) ctx: &'x mut CanvasContext<'a, 'b, 'c>,
+    pub(crate) coordinates: Coordinates<'x>,
     pub(crate) orientation: Orientation,
     pub(crate) value_scale: &'x dyn Scale,
     pub(crate) area: Rect,
@@ -163,6 +164,18 @@ pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
 }
 
 impl BarCanvas<'_, '_, '_, '_> {
+    /// Where the point's x is placed: a number at itself, and text at its category's index (see
+    /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
+    /// numbers.
+    pub fn x<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.x(point)
+    }
+
+    /// Where the point's y is placed (see `x`).
+    pub fn y<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.y(point)
+    }
+
     /// Where `value` on the dataset's value scale falls along the value axis, in pixels.
     pub fn value_pixel(&self, value: Scalar) -> Scalar {
         pixel(self.orientation.value_axis(), self.value_scale, value, self.area)

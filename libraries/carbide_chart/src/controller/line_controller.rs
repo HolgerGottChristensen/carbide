@@ -3,13 +3,13 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{report_value_kinds, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{register_values, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{ScaleBounds, ScaleKind, Scales};
+use crate::scale::{Coordinates, Places, ScaleBounds, ScaleKind, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
 /// follows the dataset's `interpolation`: straight by default, or smooth, monotone or stepped.
@@ -86,7 +86,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     /// `StackOffsets`), with one running sum per stack, as the lines are stacked. Empty when no
     /// dataset has an overlay, and for datasets that don't stack, including those whose line a mark
     /// replaces (`replaced`).
-    fn stack_offsets(&self, replaced: &[usize]) -> StackOffsets {
+    fn stack_offsets(&self, places: &dyn Places, replaced: &[usize]) -> StackOffsets {
         let mut offsets = StackOffsets::default();
 
         let mut overlays = false;
@@ -102,14 +102,17 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 return;
             }
 
-            let key = StackKey::new(&dataset.options(), dataset_index);
+            let options = dataset.options();
+            let key = StackKey::new(&options, dataset_index);
             if !matches!(key, StackKey::Stacked { .. }) {
                 return;
             }
 
+            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_mark(dataset, MarkRole::Overlay);
             dataset.points(&mut |_index, point| {
-                if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                if let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) {
                     let (_, total) = sums.add(&key, x, y);
                     if recorded {
                         offsets.record(dataset_index, x, total - y);
@@ -137,6 +140,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
 
             let mut canvas = LineCanvas {
                 ctx: &mut *ctx,
+                coordinates: Coordinates::new(scales, index_id, value_id),
                 orientation: self.orientation,
                 index_scale,
                 value_scale,
@@ -172,10 +176,10 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        report_value_kinds(&self.dataset_sequence, bounds, self.orientation);
+        register_values(&self.dataset_sequence, bounds, self.orientation);
 
         let replaced = self.replaced_lines();
-        let offsets = self.stack_offsets(&replaced);
+        let offsets = self.stack_offsets(&*bounds, &replaced);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -183,8 +187,9 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             bounds.request_kind(index_scale, ScaleKind::Category);
 
             // A mark's values move with the dataset's line where it is stacked.
+            let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
             dataset.line_marks(&mut |mark| {
-                mark.bounds(&mut |x, low, high| {
+                mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
                     bounds.include(value_scale, low + offset, high + offset);
@@ -221,7 +226,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
 
         // Marks replacing lines are usually areas, so they go first, under every line; overlays
         // go on top of everything.
-        let offsets = self.stack_offsets(&replaced);
+        let offsets = self.stack_offsets(scales, &replaced);
         self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &palette);
         draw_fills(&lines, ctx, scales, chart_area, &palette);
         draw_lines(&lines, ctx, chart_area, &palette);
@@ -251,13 +256,13 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
 
         let plain = LineController::new((vec![10.0].stack(ALL), vec![5.0].stack(ALL)));
-        assert!(plain.stack_offsets(&plain.replaced_lines()).is_empty());
+        assert!(plain.stack_offsets(&ScaleBounds::default(), &plain.replaced_lines()).is_empty());
 
         let unstacked = LineController::new((vec![10.0], measured.clone().error_bars()));
-        assert!(unstacked.stack_offsets(&unstacked.replaced_lines()).is_empty());
+        assert!(unstacked.stack_offsets(&ScaleBounds::default(), &unstacked.replaced_lines()).is_empty());
 
         let stacked = LineController::new((vec![10.0].stack(ALL), measured.error_bars().stack(ALL)));
-        let offsets = stacked.stack_offsets(&stacked.replaced_lines());
+        let offsets = stacked.stack_offsets(&ScaleBounds::default(), &stacked.replaced_lines());
         assert!(offsets.dataset(0).is_none());
         assert_eq!(stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on the line at the total of 15");
     }

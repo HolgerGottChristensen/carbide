@@ -6,6 +6,7 @@ use crate::DataColor;
 use crate::dataset::OhlcPoint;
 use crate::legend::LegendMarker;
 use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Mark, Marked, Primary};
+use crate::scale::Coordinates;
 use crate::sequence::Sequence;
 
 /// How a `CandleMark` draws each period.
@@ -92,14 +93,14 @@ impl<D, R: ReadState<T=DataColor>, F: ReadState<T=DataColor>> Marked<D, CandleMa
 }
 
 /// A point's x, open, high, low and close, when none is missing.
-fn prices(point: &dyn OhlcPoint) -> Option<(Scalar, Scalar, Scalar, Scalar, Scalar)> {
-    Some((point.x()?, point.open()?, point.high()?, point.low()?, point.close()?))
+fn prices(coordinates: &Coordinates, point: &dyn OhlcPoint) -> Option<(Scalar, Scalar, Scalar, Scalar, Scalar)> {
+    Some((coordinates.x(point)?, point.open()?, point.high()?, point.low()?, point.close()?))
 }
 
 impl<D: Sequence<dyn OhlcPoint>, R: ReadState<T=DataColor>, F: ReadState<T=DataColor>> BarMark<D> for CandleMark<R, F> {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let Some((x, open, high, low, close)) = prices(point) {
+            if let Some((x, open, high, low, close)) = prices(&coordinates, point) {
                 f(x, low.min(high).min(open).min(close), high.max(low).max(open).max(close));
             }
         });
@@ -114,8 +115,9 @@ impl<D: Sequence<dyn OhlcPoint>, R: ReadState<T=DataColor>, F: ReadState<T=DataC
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
+        let coordinates = canvas.coordinates;
         data.foreach(&mut |point_index, point| {
-            let Some((x, open, high, low, close)) = prices(point) else {
+            let Some((x, open, high, low, close)) = prices(&coordinates, point) else {
                 return;
             };
 

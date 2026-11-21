@@ -4,6 +4,7 @@ use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::RangePoint;
 use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Marked, Overlay, ScatterCanvas, ScatterMark};
+use crate::scale::Coordinates;
 use crate::sequence::Sequence;
 
 /// Draws a whisker from each point's low to its high value, with a cap at each end, on top of the
@@ -78,23 +79,24 @@ impl<D, C: ReadState<T=DataColor>> Marked<D, ErrorBars<C>> {
 
 /// Calls `f` with each point's x, y, low and high, for the points that have a whisker: those with
 /// all four.
-fn whiskers<D: Sequence<dyn RangePoint>>(data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar, Scalar)) {
+fn whiskers<D: Sequence<dyn RangePoint>>(data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar, Scalar)) {
     data.foreach(&mut |_index, point| {
-        if let (Some(x), Some(y), Some(low), Some(high)) = (point.x(), point.y(), point.low(), point.high()) {
+        if let (Some(x), Some(y), Some(low), Some(high)) = (coordinates.x(point), coordinates.y(point), point.low(), point.high()) {
             f(x, y, low, high);
         }
     });
 }
 
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for ErrorBars<C> {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
-        whiskers(data, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+        whiskers(data, &coordinates, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
+        let coordinates = canvas.coordinates;
         canvas.begin_lines();
 
-        whiskers(data, &mut |x, _, low, high| {
+        whiskers(data, &coordinates, &mut |x, _, low, high| {
             let slot = slots.slot(x);
             let middle = slot.middle();
             let cap = slot.thickness * self.cap_percentage / 2.0;
@@ -116,15 +118,16 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Erro
 /// Whiskers through a line's points, each the same length across, on top of every dataset's lines
 /// and points.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for ErrorBars<C> {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
-        whiskers(data, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+        whiskers(data, &coordinates, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
     }
 
     fn draw(&self, data: &D, canvas: &mut LineCanvas) {
+        let coordinates = canvas.coordinates;
         let cap = self.line_cap_length / 2.0;
         canvas.begin_lines();
 
-        whiskers(data, &mut |x, _, low, high| {
+        whiskers(data, &coordinates, &mut |x, _, low, high| {
             let offset = canvas.stack_offset(x);
             let (low, high) = (canvas.position(x, low + offset), canvas.position(x, high + offset));
 
@@ -147,8 +150,8 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for Err
 /// point has either whisker, both or neither.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> ScatterMark<D> for ErrorBars<C> {
     /// Both ends of each whisker, so the scales cover them as well as the points.
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar)) {
-        scatter_whiskers(data, &mut |x, y, along_y, along_x| {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar)) {
+        scatter_whiskers(data, &coordinates, &mut |x, y, along_y, along_x| {
             if let Some((low, high)) = along_y {
                 f(x, low);
                 f(x, high);
@@ -161,10 +164,11 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> ScatterMark<D> for 
     }
 
     fn draw(&self, data: &D, canvas: &mut ScatterCanvas) {
+        let coordinates = canvas.coordinates;
         let cap = self.line_cap_length / 2.0;
         canvas.begin_lines();
 
-        scatter_whiskers(data, &mut |x, y, along_y, along_x| {
+        scatter_whiskers(data, &coordinates, &mut |x, y, along_y, along_x| {
             if let Some((low, high)) = along_y {
                 let (low, high) = (canvas.position(x, low), canvas.position(x, high));
 
@@ -192,9 +196,9 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> ScatterMark<D> for 
 
 /// Calls `f` with each point's x and y, and its interval along y and along x, each `None` when one
 /// of its ends is missing, for the points that have an x and a y.
-fn scatter_whiskers<D: Sequence<dyn RangePoint>>(data: &D, f: &mut dyn FnMut(Scalar, Scalar, Option<(Scalar, Scalar)>, Option<(Scalar, Scalar)>)) {
+fn scatter_whiskers<D: Sequence<dyn RangePoint>>(data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Option<(Scalar, Scalar)>, Option<(Scalar, Scalar)>)) {
     data.foreach(&mut |_index, point| {
-        if let (Some(x), Some(y)) = (point.x(), point.y()) {
+        if let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) {
             f(x, y, point.low().zip(point.high()), point.x_low().zip(point.x_high()));
         }
     });

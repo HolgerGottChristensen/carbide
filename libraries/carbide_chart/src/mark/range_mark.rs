@@ -4,6 +4,7 @@ use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::RangePoint;
 use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Marked, Primary};
+use crate::scale::Coordinates;
 use crate::sequence::Sequence;
 
 /// Draws a dataset's ranges, from each point's low to its high value (see `RangeDataSetExt::range`):
@@ -58,17 +59,18 @@ impl<D, C: ReadState<T=DataColor>> Marked<D, RangeMark<C>> {
 /// Floating bars, each in its point's colour, or in the inverted colour where its high is below its
 /// low and one is set.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for RangeMark<C> {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) {
+            if let (Some(x), Some(low), Some(high)) = (coordinates.x(point), point.low(), point.high()) {
                 f(x, low.min(high), low.max(high));
             }
         });
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
+        let coordinates = canvas.coordinates;
         data.foreach(&mut |point_index, point| {
-            let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) else {
+            let (Some(x), Some(low), Some(high)) = (coordinates.x(point), point.low(), point.high()) else {
                 return;
             };
 
@@ -88,21 +90,22 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Rang
 /// in the inverted colour, when one is set. The edges follow the dataset's `interpolation`, and the
 /// band breaks at missing points as the dataset's `span_gaps` says, as a line does.
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for RangeMark<C> {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) {
+            if let (Some(x), Some(low), Some(high)) = (coordinates.x(point), point.low(), point.high()) {
                 f(x, low.min(high), low.max(high));
             }
         });
     }
 
     fn draw(&self, data: &D, canvas: &mut LineCanvas) {
+        let coordinates = canvas.coordinates;
         let mut xs = vec![];
         let mut highs = vec![];
         let mut lows = vec![];
 
         data.foreach(&mut |_index, point| {
-            if let (Some(x), Some(low), Some(high)) = (point.x(), point.low(), point.high()) {
+            if let (Some(x), Some(low), Some(high)) = (coordinates.x(point), point.low(), point.high()) {
                 xs.push(Some(x));
                 highs.push(canvas.position(x, high));
                 lows.push(canvas.position(x, low));

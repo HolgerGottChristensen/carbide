@@ -3,12 +3,12 @@ use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions};
+use crate::{DataColor, DataPoint, DataSetOptions};
 use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::{Axis, Scale};
+use crate::scale::{Axis, Coordinates, Scale};
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
@@ -26,7 +26,7 @@ use crate::style::{axis_style, series_style};
 pub trait ScatterMark<D: ?Sized>: Mark {
     /// Calls `f` with each x and y the mark draws, for the scale bounds: for a primary mark, the
     /// points it draws in place of the dataset's; for an overlay, anything beyond them.
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar));
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar));
 
     /// Calls `f` with each size the mark draws, so the controller can map every dataset's sizes
     /// through one size scale (see `ScatterCanvas::radius`). By default it draws none.
@@ -48,7 +48,7 @@ pub trait ScatterMark<D: ?Sized>: Mark {
 pub trait DatasetScatterMark {
     fn role(&self) -> MarkRole;
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar));
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar));
 
     fn sizes(&self, f: &mut dyn FnMut(Scalar));
 
@@ -67,8 +67,8 @@ impl<M: ScatterMark<D>, D> DatasetScatterMark for BoundScatterMark<'_, M, D> {
         <M::Role as Role>::ROLE
     }
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar)) {
-        self.mark.bounds(self.data, f);
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar)) {
+        self.mark.bounds(self.data, coordinates, f);
     }
 
     fn sizes(&self, f: &mut dyn FnMut(Scalar)) {
@@ -122,6 +122,7 @@ impl SizeScale {
 /// size scale.
 pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) ctx: &'x mut CanvasContext<'a, 'b, 'c>,
+    pub(crate) coordinates: Coordinates<'x>,
     pub(crate) x_scale: &'x dyn Scale,
     pub(crate) y_scale: &'x dyn Scale,
     pub(crate) area: Rect,
@@ -132,6 +133,18 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
 }
 
 impl ScatterCanvas<'_, '_, '_, '_> {
+    /// Where the point's x is placed: a number at itself, and text at its category's index (see
+    /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
+    /// numbers.
+    pub fn x<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.x(point)
+    }
+
+    /// Where the point's y is placed (see `x`).
+    pub fn y<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.y(point)
+    }
+
     /// Where the point at `x` and `y` on the dataset's scales falls on the screen.
     pub fn position(&self, x: Scalar, y: Scalar) -> Position {
         Position::new(

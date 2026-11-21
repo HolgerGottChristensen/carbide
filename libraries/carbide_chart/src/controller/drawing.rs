@@ -9,13 +9,13 @@ use std::ops::Range;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, Fill, SpanGaps};
+use crate::{DataColor, DataSetOptions, Fill, SpanGaps, Value};
 use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::scale::{Axis, Scale, ScaleBounds, Scales};
+use crate::scale::{Axis, Coordinates, Scale, ScaleBounds, Scales};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
 use carbide::environment::Environment;
@@ -43,29 +43,30 @@ where
         }
 
         let dataset = dataset.as_dataset();
-        let (Some((x_min, y_min)), Some((x_max, y_max))) = (dataset.min(), dataset.max()) else {
-            return;
-        };
-
         let options = dataset.options();
         let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
+        let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
         let key = StackKey::new(&options, dataset_index);
-        let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
+        let mut has_points = false;
 
-        bounds.include(index_scale, x_min, x_max);
+        dataset.points(&mut |_index, point| {
+            let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
+                return;
+            };
 
-        if stacks {
-            dataset.points(&mut |_index, point| {
-                let (Some(x), Some(y)) = (point.x(), point.y()) else {
-                    return;
-                };
+            has_points = true;
+            bounds.include(index_scale, x, x);
 
-                let (_, total) = sums.add(&key, x, y);
-                bounds.include(value_scale, total, total);
-            });
-        } else {
-            bounds.include(value_scale, y_min, y_max);
+            let y = if stacks { sums.add(&key, x, y).1 } else { y };
+            bounds.include(value_scale, y, y);
+        });
+
+        // An empty dataset adds nothing, not even its fill's baseline, and isn't a line to fill to.
+        if !has_points {
+            return;
         }
+
+        let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
 
         let fills_to_line = options.fill == Fill::Stack && has_line_below;
 
@@ -162,6 +163,7 @@ where
         };
 
         let key = StackKey::new(&options, dataset_index);
+        let coordinates = Coordinates::new(scales, index_id, value_id);
         let mut points = vec![];
         let mut colors = vec![];
         let mut point_indices = vec![];
@@ -169,7 +171,7 @@ where
 
         dataset.points(&mut |point_index, point| {
             // A missing point isn't drawn, adds nothing to its stack, and may break the line.
-            let (Some(x), Some(y)) = (point.x(), point.y()) else {
+            let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                 xs.push(None);
                 return;
             };
@@ -396,30 +398,43 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
     }
 }
 
-/// Reports what each dataset's values are (see `ScaleBounds::report_value_kind`): the kind of its
-/// first point with an x and a y, the x for the scale its x is placed on and the y for the scale
-/// its y is placed on, as `orientation` places them. Every dataset reports, whether or not its
-/// points are drawn, as its marks are drawn on the same scales.
-pub(crate) fn report_value_kinds<T, D>(datasets: &D, bounds: &mut ScaleBounds, orientation: Orientation)
+/// Reports each dataset's values (see `ScaleBounds::report_value`): its first point that isn't
+/// missing, the x for the scale its x is placed on and the y for the scale its y is placed on, as
+/// `orientation` places them. A dataset whose values name categories registers every name, in
+/// point order, as a category of those scales (see `ScaleBounds::register_category`), before
+/// anything reads them, so the categories are numbered in the order the data names them. Every
+/// dataset reports, whether or not its points are drawn, as its marks are drawn on the same scales.
+pub(crate) fn register_values<T, D>(datasets: &D, bounds: &mut ScaleBounds, orientation: Orientation)
 where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
 {
     datasets.foreach(&mut |_dataset_index, dataset| {
         let dataset = dataset.as_dataset();
-        let mut kinds = None;
+        let options = dataset.options();
+        let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
+
+        let mut first = None;
         dataset.points(&mut |_index, point| {
-            if kinds.is_none() && point.x().is_some() && point.y().is_some() {
-                kinds = Some((point.x_kind(), point.y_kind()));
+            if first.is_none() && let (Some(x), Some(y)) = (point.x(), point.y()) {
+                bounds.report_value(index_scale, x);
+                bounds.report_value(value_scale, y);
+                first = Some(matches!(x, Value::Text(_)) || matches!(y, Value::Text(_)));
             }
         });
 
-        if let Some((x_kind, y_kind)) = kinds {
-            let options = dataset.options();
-            let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
-            bounds.report_value_kind(index_scale, x_kind);
-            bounds.report_value_kind(value_scale, y_kind);
+        if first != Some(true) {
+            return;
         }
+
+        dataset.points(&mut |_index, point| {
+            if let Some(Value::Text(text)) = point.x() {
+                bounds.register_category(index_scale, text);
+            }
+            if let Some(Value::Text(text)) = point.y() {
+                bounds.register_category(value_scale, text);
+            }
+        });
     });
 }
 

@@ -3,14 +3,14 @@ use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions};
+use crate::{DataColor, DataPoint, DataSetOptions};
 use crate::controller::band::{clip, flatten, strips};
 use crate::controller::drawing::{dataset_color, resolve_color, split_runs, Palette};
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::Scale;
+use crate::scale::{Coordinates, Scale};
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a line controller, for datasets of type `D`. Implementing it is
@@ -29,7 +29,7 @@ pub trait LineMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
     /// the scale bounds, before any stacking: the controller moves an overlay's values with its
     /// stacked line. Points the mark doesn't draw are left out.
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     /// Draws the mark for the dataset's points.
     fn draw(&self, data: &D, canvas: &mut LineCanvas);
@@ -47,7 +47,7 @@ pub trait LineMark<D: ?Sized>: Mark {
 pub trait DatasetLineMark {
     fn role(&self) -> MarkRole;
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     fn draw(&self, canvas: &mut LineCanvas);
 
@@ -64,8 +64,8 @@ impl<M: LineMark<D>, D> DatasetLineMark for BoundLineMark<'_, M, D> {
         <M::Role as Role>::ROLE
     }
 
-    fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
-        self.mark.bounds(self.data, f);
+    fn bounds(&self, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+        self.mark.bounds(self.data, coordinates, f);
     }
 
     fn draw(&self, canvas: &mut LineCanvas) {
@@ -82,6 +82,7 @@ impl<M: LineMark<D>, D> DatasetLineMark for BoundLineMark<'_, M, D> {
 /// and areas traced through it follow the dataset's `interpolation`.
 pub struct LineCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) ctx: &'x mut CanvasContext<'a, 'b, 'c>,
+    pub(crate) coordinates: Coordinates<'x>,
     pub(crate) orientation: Orientation,
     pub(crate) index_scale: &'x dyn Scale,
     pub(crate) value_scale: &'x dyn Scale,
@@ -93,6 +94,18 @@ pub struct LineCanvas<'x, 'a, 'b, 'c: 'b> {
 }
 
 impl LineCanvas<'_, '_, '_, '_> {
+    /// Where the point's x is placed: a number at itself, and text at its category's index (see
+    /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
+    /// numbers.
+    pub fn x<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.x(point)
+    }
+
+    /// Where the point's y is placed (see `x`).
+    pub fn y<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.coordinates.y(point)
+    }
+
     /// How far stacking moves the dataset's line at `x` along the value axis, in values: where
     /// the line is drawn, less the point's own value, or zero when it doesn't stack. A mark drawn
     /// on a stacked line adds it to the values it draws, so it moves with the line.

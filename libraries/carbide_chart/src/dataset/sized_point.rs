@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::{DataValue, ValueKind};
+use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
 /// A data point with a size next to its x and y, such as a bubble's value. Marks that draw sizes
@@ -22,7 +22,7 @@ pub trait SizedPoint: DataPoint {
 /// A tuple's third value is its size.
 impl<X: DataValue, Y: DataValue, Z: DataValue> SizedPoint for (X, Y, Z) {
     fn size(&self) -> Option<Scalar> {
-        self.2.value()
+        self.2.value().and_then(Value::number)
     }
 }
 
@@ -35,30 +35,22 @@ pub struct Bubble<X = Scalar, Y = Scalar, S = Scalar> {
 }
 
 impl<X: DataValue, Y: DataValue, S: DataValue> DataPoint for Bubble<X, Y, S> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.y.value()
     }
 
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        Y::KIND
-    }
-
-    fn z(&self) -> Option<Scalar> {
+    fn z(&self) -> Option<Value<'_>> {
         self.size.value()
     }
 }
 
 impl<X: DataValue, Y: DataValue, S: DataValue> SizedPoint for Bubble<X, Y, S> {
     fn size(&self) -> Option<Scalar> {
-        self.size.value()
+        self.size.value().and_then(Value::number)
     }
 }
 

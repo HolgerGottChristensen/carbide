@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{report_value_kinds, dataset_scales, first_mark_entry, legend_items, point_color, Palette};
+use crate::controller::drawing::{register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
@@ -11,7 +11,7 @@ use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
-use crate::scale::{Axis, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{Axis, Coordinates, Places, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
 /// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
@@ -99,10 +99,10 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        report_value_kinds(&self.dataset_sequence, bounds, self.orientation);
+        register_values(&self.dataset_sequence, bounds, self.orientation);
 
         let mut stacks = StackSums::split_by_sign();
-        let offsets = self.stack_offsets(self.has_overlays());
+        let offsets = self.stack_offsets(&*bounds, self.has_overlays());
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -118,8 +118,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 // bar includes zero, its base. A missing value has no bar and adds nothing to its
                 // stack.
                 let key = StackKey::new(&options, dataset_index);
+                let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
                 dataset.points(&mut |_index, point| {
-                    let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                    let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                         return;
                     };
 
@@ -131,8 +132,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
             }
 
             // A mark's values move with the dataset's bars where they are stacked.
+            let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
             dataset.bar_marks(&mut |mark| {
-                mark.bounds(&mut |x, low, high| {
+                mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
                     bounds.include(value_scale, low + offset, high + offset);
@@ -167,7 +169,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_id, _) = self.orientation.index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
 
             let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
@@ -178,8 +180,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
             places.push(Some((index_id.clone(), group_index)));
 
             let index_positions = positions.entry(index_id.clone()).or_default();
+            let coordinates = Coordinates::new(scales, index_id, value_id);
             dataset.points(&mut |_index, point| {
-                let (Some(x), Some(_)) = (point.x(), point.y()) else {
+                let (Some(x), Some(_)) = (coordinates.x(point), coordinates.y(point)) else {
                     return;
                 };
 
@@ -204,7 +207,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         // Overlays are drawn in a pass of their own, and only read the stack offsets, so a chart
         // without them needs neither.
         let has_overlays = self.has_overlays();
-        let offsets = self.stack_offsets(has_overlays);
+        let offsets = self.stack_offsets(scales, has_overlays);
         let roles: &[MarkRole] = if has_overlays { &[MarkRole::Primary, MarkRole::Overlay] } else { &[MarkRole::Primary] };
 
         for &role in roles {
@@ -235,8 +238,10 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     stack_offsets: offsets.dataset(dataset_index),
                 };
 
+                let coordinates = Coordinates::new(scales, index_id, value_id);
                 let mut canvas = BarCanvas {
                     ctx: &mut *ctx,
+                    coordinates,
                     orientation: self.orientation,
                     value_scale,
                     area: chart_area,
@@ -260,7 +265,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
                 dataset.points(&mut |point_index, point| {
                     // A missing value leaves its place in the slot empty.
-                    let (Some(x), Some(y)) = (point.x(), point.y()) else {
+                    let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                         return;
                     };
 
@@ -303,7 +308,7 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
     /// How far stacking moves the bars of the stacked datasets with overlay marks (see
     /// `StackOffsets`), with the sums in the same order as the bars are stacked. Empty without
     /// overlays (`has_overlays`), and for datasets that don't stack.
-    fn stack_offsets(&self, has_overlays: bool) -> StackOffsets {
+    fn stack_offsets(&self, places: &dyn Places, has_overlays: bool) -> StackOffsets {
         let mut offsets = StackOffsets::default();
 
         if !has_overlays {
@@ -318,14 +323,17 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
                 return;
             }
 
-            let key = StackKey::new(&dataset.options(), dataset_index);
+            let options = dataset.options();
+            let key = StackKey::new(&options, dataset_index);
             if !matches!(key, StackKey::Stacked { .. }) {
                 return;
             }
 
+            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_overlay_mark(dataset);
             dataset.points(&mut |_index, point| {
-                if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                if let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) {
                     let (_, end) = stacks.add(&key, x, y);
                     if recorded {
                         offsets.record(dataset_index, x, end - y);
@@ -426,13 +434,13 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
 
         let plain = BarController::new((vec![10.0].stack(COSTS), vec![5.0].stack(COSTS)));
-        assert!(!plain.has_overlays() && plain.stack_offsets(plain.has_overlays()).is_empty(), "stacked bars without overlays need no offsets");
+        assert!(!plain.has_overlays() && plain.stack_offsets(&ScaleBounds::default(), plain.has_overlays()).is_empty(), "stacked bars without overlays need no offsets");
 
         let unstacked = BarController::new((vec![10.0], measured.clone().error_bars()));
-        assert!(unstacked.stack_offsets(unstacked.has_overlays()).is_empty(), "error bars that don't stack are moved by zero");
+        assert!(unstacked.stack_offsets(&ScaleBounds::default(), unstacked.has_overlays()).is_empty(), "error bars that don't stack are moved by zero");
 
         let stacked = BarController::new((vec![10.0].stack(COSTS), measured.error_bars().stack(COSTS)));
-        let offsets = stacked.stack_offsets(stacked.has_overlays());
+        let offsets = stacked.stack_offsets(&ScaleBounds::default(), stacked.has_overlays());
         assert!(offsets.dataset(0).is_none(), "the bottom dataset has no overlay, so nothing reads its offsets");
         assert_eq!(super::stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on top of the 10 below them");
     }

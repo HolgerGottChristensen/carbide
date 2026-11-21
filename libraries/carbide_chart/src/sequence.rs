@@ -447,12 +447,12 @@ mod tests {
     use carbide::draw::{Position, Scalar};
     use carbide::environment::Environment;
     use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExtNew, State, StateExtNew, ValueState};
-    use crate::{DataSet, DataSetSequence};
+    use crate::{DataSet, DataSetSequence, Value};
 
     /// The points of a dataset, as `(x, y)`. None of the datasets here have missing points.
     fn points<D: DataSet>(dataset: &D) -> Vec<(Scalar, Scalar)> {
         let mut points = vec![];
-        dataset.points(&mut |_, point| points.push((point.x().expect("no missing x"), point.y().expect("no missing y"))));
+        dataset.points(&mut |_, point| points.push((point.x().and_then(Value::number).expect("no missing x"), point.y().and_then(Value::number).expect("no missing y"))));
         points
     }
 

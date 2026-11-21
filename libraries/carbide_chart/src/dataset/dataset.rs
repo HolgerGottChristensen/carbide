@@ -7,6 +7,7 @@ use crate::dataset::datapoint::DataPoint;
 use crate::dataset::dataset_options::DataSetOptions;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
+use crate::Value;
 use crate::sequence::{Sequence, SequenceItem};
 
 /// One series: a sequence of data points, with options for how it is drawn.
@@ -138,12 +139,13 @@ impl<D: DataSet + Clone> SequenceItem<dyn DataSet> for D {
 }
 
 /// The x and y of the dataset's points that aren't missing, each combined across the points with
-/// `pick` (`Scalar::min` or `Scalar::max`), or `None` when it has none.
+/// `pick` (`Scalar::min` or `Scalar::max`), or `None` when it has none. Only numbers and times
+/// count: a category's name has no number until a scale places it (see `Coordinates`).
 fn extreme<D: DataSet + ?Sized>(dataset: &D, pick: fn(Scalar, Scalar) -> Scalar) -> Option<(Scalar, Scalar)> {
     let mut result: Option<(Scalar, Scalar)> = None;
 
     dataset.points(&mut |_index, point| {
-        let (Some(x), Some(y)) = (point.x(), point.y()) else {
+        let (Some(x), Some(y)) = (point.x().and_then(Value::number), point.y().and_then(Value::number)) else {
             return;
         };
 
@@ -159,7 +161,7 @@ fn extreme<D: DataSet + ?Sized>(dataset: &D, pick: fn(Scalar, Scalar) -> Scalar)
 #[cfg(test)]
 mod tests {
     use carbide::draw::Scalar;
-    use crate::DataSet;
+    use crate::{DataSet, Value};
 
     /// Empty datasets have no bounds. `Vec<Scalar>::max` used to compute `len() - 1` for the
     /// last index even when empty, which underflowed and panicked.
@@ -190,7 +192,7 @@ mod tests {
         assert_eq!(options.max(), Some((2.0, 3.0)));
 
         let mut points = vec![];
-        options.points(&mut |index, point| points.push((index, point.x(), point.y())));
+        options.points(&mut |index, point| points.push((index, point.x().and_then(Value::number), point.y().and_then(Value::number))));
         assert_eq!(points, vec![(0, Some(0.0), Some(3.0)), (1, Some(1.0), None), (2, Some(2.0), Some(-1.0))], "a missing value keeps its index, but has no y");
 
         let nan: Vec<Scalar> = vec![5.0, Scalar::NAN, 7.0];

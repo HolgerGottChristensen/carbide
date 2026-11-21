@@ -1,0 +1,61 @@
+use carbide::draw::Scalar;
+
+use crate::{DataPoint, Value};
+use crate::scale::{ScaleBounds, ScaleId, Scales};
+
+/// Where a value is placed along a scale: a number or a time at itself, and a category's name at
+/// the category's index on the scale.
+pub(crate) trait Places {
+    fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar>;
+}
+
+/// While the bounds are collected, a name is placed at its category's index among the categories
+/// registered so far, and registered when it is new (see `ScaleBounds::register_category`).
+impl Places for ScaleBounds {
+    fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar> {
+        match value {
+            Value::Number(number) | Value::Time(number) => Some(number),
+            Value::Text(text) => Some(self.register_category(id, text) as Scalar),
+        }
+    }
+}
+
+/// While drawing, a name is placed at its category's index on the fitted scale; on a scale
+/// without that category, or without categories, it isn't placed.
+impl Places for Scales {
+    fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar> {
+        match value {
+            Value::Number(number) | Value::Time(number) => Some(number),
+            Value::Text(text) => self.get(id)?.category_index(text),
+        }
+    }
+}
+
+/// Reads a dataset's points as numbers along the scales they are placed on: a number or a time is
+/// itself, and a category's name is its category's index on the scale (see `Value`). Controllers
+/// and marks read every point's x and y through it, so names work wherever numbers do.
+///
+/// `x` is placed on the scale the point's x goes on, which is the y scale for lying bars and
+/// lines, and `y` on the scale its y goes on.
+#[derive(Copy, Clone)]
+pub struct Coordinates<'a> {
+    places: &'a dyn Places,
+    x_scale: &'a ScaleId,
+    y_scale: &'a ScaleId,
+}
+
+impl<'a> Coordinates<'a> {
+    pub(crate) fn new(places: &'a dyn Places, x_scale: &'a ScaleId, y_scale: &'a ScaleId) -> Coordinates<'a> {
+        Coordinates { places, x_scale, y_scale }
+    }
+
+    /// Where the point's x is placed, or `None` when it is missing or has no place on the scale.
+    pub fn x<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.places.place(self.x_scale, point.x()?)
+    }
+
+    /// Where the point's y is placed, or `None` when it is missing or has no place on the scale.
+    pub fn y<P: DataPoint + ?Sized>(&self, point: &P) -> Option<Scalar> {
+        self.places.place(self.y_scale, point.y()?)
+    }
+}

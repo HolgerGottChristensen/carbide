@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
 use crate::dataset::datapoint::DataPoint;
-use crate::dataset::datavalue::{DataValue, ValueKind};
+use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
 /// A data point with the five statistics a box plot draws: the minimum, the first quartile, the
@@ -44,42 +44,34 @@ pub struct BoxStats<X = Scalar, V = Scalar> {
 }
 
 impl<X: DataValue, V: DataValue> DataPoint for BoxStats<X, V> {
-    fn x(&self) -> Option<Scalar> {
+    fn x(&self) -> Option<Value<'_>> {
         self.x.value()
     }
 
-    fn y(&self) -> Option<Scalar> {
+    fn y(&self) -> Option<Value<'_>> {
         self.median.value()
-    }
-
-    fn x_kind(&self) -> ValueKind {
-        X::KIND
-    }
-
-    fn y_kind(&self) -> ValueKind {
-        V::KIND
     }
 }
 
 impl<X: DataValue, V: DataValue> BoxPoint for BoxStats<X, V> {
     fn min(&self) -> Option<Scalar> {
-        self.min.value()
+        self.min.value().and_then(Value::number)
     }
 
     fn q1(&self) -> Option<Scalar> {
-        self.q1.value()
+        self.q1.value().and_then(Value::number)
     }
 
     fn median(&self) -> Option<Scalar> {
-        self.median.value()
+        self.median.value().and_then(Value::number)
     }
 
     fn q3(&self) -> Option<Scalar> {
-        self.q3.value()
+        self.q3.value().and_then(Value::number)
     }
 
     fn max(&self) -> Option<Scalar> {
-        self.max.value()
+        self.max.value().and_then(Value::number)
     }
 }
 

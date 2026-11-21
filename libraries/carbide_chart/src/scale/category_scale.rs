@@ -73,6 +73,9 @@ pub struct CategoryScale {
     grid_offset: Option<Box<dyn AnyReadState<T=bool>>>,
     grid_offset_requested: bool,
     labels: Box<dyn Labels>,
+    /// The categories on the last fit: the labels, then the data's text values, in the order they
+    /// were first seen (see `Scale::set_categories`).
+    categories: Vec<String>,
     min: Scalar,
     max: Scalar,
     ticks: Vec<Scalar>,
@@ -87,6 +90,7 @@ impl CategoryScale {
             grid_offset: None,
             grid_offset_requested: false,
             labels: Box::new(Vec::<String>::new()),
+            categories: vec![],
             min: 0.0,
             max: 0.0,
             ticks: vec![],
@@ -202,10 +206,39 @@ impl Scale for CategoryScale {
         self.grid_offset_requested = requested;
     }
 
-    /// The category's name, for an index with a label; other indices show their number.
+    fn categories(&self, f: &mut dyn FnMut(&str)) {
+        self.labels.foreach(&mut |_index, text| f(text));
+    }
+
+    fn set_categories(&mut self, categories: &[String]) {
+        self.categories = categories.to_vec();
+    }
+
+    /// The category's index: among the categories of the last fit, or, before the first, among
+    /// the labels.
+    fn category_index(&self, text: &str) -> Option<Scalar> {
+        if let Some(index) = self.categories.iter().position(|category| category == text) {
+            return Some(index as Scalar);
+        }
+
+        let mut found = None;
+        self.labels.foreach(&mut |index, label| {
+            if found.is_none() && label == text {
+                found = Some(index as Scalar);
+            }
+        });
+        found
+    }
+
+    /// The category's name, for an index with a label or a category the data named; other
+    /// indices show their number.
     fn label(&self, value: Scalar, _env: &mut Environment) -> Option<String> {
         if value < 0.0 {
             return None;
+        }
+
+        if let Some(category) = self.categories.get(value as usize) {
+            return Some(category.clone());
         }
 
         let wanted = value as usize;
@@ -242,10 +275,10 @@ impl Scale for CategoryScale {
         self.max
     }
 
-    /// Fits the scale to the data's indices, rounded to whole categories; with labels, to every
-    /// label instead.
+    /// Fits the scale to the data's indices, rounded to whole categories; with labels or
+    /// categories named by the data, to every one of them instead.
     fn set_range(&mut self, min: Scalar, max: Scalar) {
-        let label_count = self.labels.count();
+        let label_count = self.labels.count().max(self.categories.len());
 
         if label_count == 0 {
             let min = if min.is_finite() { min.round().max(0.0) } else { 0.0 };

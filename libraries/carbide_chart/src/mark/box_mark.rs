@@ -1,6 +1,7 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::BoxPoint;
 use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, Primary};
+use crate::scale::Coordinates;
 use crate::sequence::Sequence;
 
 /// Draws each point as a box plot, in place of a bar (see `BoxDataSetExt::box_plot`): a box from
@@ -27,14 +28,14 @@ impl Mark for BoxMark {
 }
 
 /// The five values of a box point, in order from the smallest, when none is missing.
-fn statistics(point: &dyn BoxPoint) -> Option<(Scalar, [Scalar; 5])> {
-    Some((point.x()?, [point.min()?, point.q1()?, point.median()?, point.q3()?, point.max()?]))
+fn statistics(coordinates: &Coordinates, point: &dyn BoxPoint) -> Option<(Scalar, [Scalar; 5])> {
+    Some((coordinates.x(point)?, [point.min()?, point.q1()?, point.median()?, point.q3()?, point.max()?]))
 }
 
 impl<D: Sequence<dyn BoxPoint>> BarMark<D> for BoxMark {
-    fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
+    fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.foreach(&mut |_index, point| {
-            if let Some((x, values)) = statistics(point) {
+            if let Some((x, values)) = statistics(&coordinates, point) {
                 let low = values.iter().copied().fold(Scalar::INFINITY, Scalar::min);
                 let high = values.iter().copied().fold(Scalar::NEG_INFINITY, Scalar::max);
                 f(x, low, high);
@@ -43,8 +44,9 @@ impl<D: Sequence<dyn BoxPoint>> BarMark<D> for BoxMark {
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
+        let coordinates = canvas.coordinates;
         data.foreach(&mut |point_index, point| {
-            let Some((x, [min, q1, median, q3, max])) = statistics(point) else {
+            let Some((x, [min, q1, median, q3, max])) = statistics(&coordinates, point) else {
                 return;
             };
 

@@ -3,12 +3,12 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{report_value_kinds, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{ScaleBounds, Scales};
+use crate::scale::{Coordinates, ScaleBounds, Scales};
 
 /// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line
 /// through them in order, following the dataset's `interpolation`, as a line chart does.
@@ -97,7 +97,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// replaces reports only what the mark draws, as its other points aren't drawn, unless a line
     /// runs through all its points (`show_line`).
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        report_value_kinds(&self.dataset_sequence, bounds, Orientation::Vertical);
+        register_values(&self.dataset_sequence, bounds, Orientation::Vertical);
 
         let replaced = self.replaced_points();
         collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical, |dataset_index| {
@@ -110,8 +110,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             }
 
             let options = dataset.options();
+            let coordinates = Coordinates::new(&*bounds, &options.x_scale, &options.y_scale);
             dataset.scatter_marks(&mut |mark| {
-                mark.bounds(&mut |x, y| {
+                mark.bounds(&coordinates, &mut |x, y| {
                     bounds.include(&options.x_scale, x, x);
                     bounds.include(&options.y_scale, y, y);
                 });
@@ -182,6 +183,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
 
                 let mut canvas = ScatterCanvas {
                     ctx: &mut *ctx,
+                    coordinates: Coordinates::new(scales, &options.x_scale, &options.y_scale),
                     x_scale,
                     y_scale,
                     area: chart_area,
