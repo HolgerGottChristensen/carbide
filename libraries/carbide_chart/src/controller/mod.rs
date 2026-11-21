@@ -4,7 +4,7 @@ use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 pub use bar_controller::BarController;
-pub(crate) use bar_controller::bar_slot;
+pub(crate) use bar_controller::{bar_slot, stack_offset};
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use scatter_controller::ScatterController;

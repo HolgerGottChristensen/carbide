@@ -1,7 +1,7 @@
 //! Marks: floating bars in place of bars and error bars on top of them, in a bar controller's
 //! slots, and bubbles in place of a scatter controller's points.
 
-use carbide_chart::{BarController, Bubble, Chart, DataColor, DataPoint, Estimate, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint};
+use carbide_chart::{BarController, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -48,6 +48,56 @@ fn grouped_bars_with_error_bars() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("grouped_bars_with_error_bars");
+}
+
+/// Two stacked datasets with error bars, in months with positive and with negative values. Pins
+/// down that each whisker moves with its stacked bar: it keeps its distance from the dataset's
+/// value, around where its bar ends, upwards above zero and downwards below it, and that the y
+/// scale reaches the highest and lowest whisker.
+#[test]
+fn error_bars_on_stacked_bars() {
+    const COSTS: StackId = StackId::new("costs");
+
+    let materials = vec![
+        Estimate { x: 0.0, y: 10.0, low: 8.0, high: 12.0 },
+        Estimate { x: 1.0, y: 14.0, low: 12.0, high: 15.0 },
+        Estimate { x: 2.0, y: -8.0, low: -10.0, high: -7.0 },
+    ];
+    let labour = vec![
+        Estimate { x: 0.0, y: 6.0, low: 4.0, high: 9.0 },
+        Estimate { x: 1.0, y: 4.0, low: 3.0, high: 6.0 },
+        Estimate { x: 2.0, y: -5.0, low: -7.0, high: -4.0 },
+    ];
+
+    let chart = Chart::new(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS)))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("error_bars_on_stacked_bars");
+}
+
+/// Marks with missing values: bars with error bars where one value, one low and one high are
+/// missing, beside floating bars where one low and one high are missing. Pins down that a missing
+/// value has neither a bar nor a whisker, that a missing low or high takes away only the whisker,
+/// and that a floating bar missing either end isn't drawn, leaving its place in the slot empty.
+#[test]
+fn marks_with_missing_values() {
+    let measured: Vec<Estimate<f64, Option<f64>>> = vec![
+        Estimate { x: 0.0, y: Some(10.0), low: Some(8.0), high: Some(13.0) },
+        Estimate { x: 1.0, y: None, low: Some(9.0), high: Some(14.0) },
+        Estimate { x: 2.0, y: Some(12.0), low: None, high: Some(15.0) },
+        Estimate { x: 3.0, y: Some(7.0), low: Some(5.0), high: None },
+    ];
+    let ranges: Vec<Range<f64, Option<f64>>> = vec![
+        Range { x: 0.0, low: Some(3.0), high: Some(9.0) },
+        Range { x: 1.0, low: Some(4.0), high: Some(11.0) },
+        Range { x: 2.0, low: None, high: Some(10.0) },
+        Range { x: 3.0, low: Some(2.0), high: None },
+    ];
+
+    let chart = Chart::new(BarController::new((measured.error_bars(), ranges.range()))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("marks_with_missing_values");
 }
 
 /// Lying floating bars beside lying bars with error bars, in one controller. Pins down that both

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
@@ -100,6 +101,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         let mut stacks = StackSums::split_by_sign();
+        let offsets = self.stack_offsets();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
@@ -127,10 +129,12 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 });
             }
 
+            // A mark's values move with the dataset's bars where they are stacked.
             dataset.bar_marks(&mut |mark| {
                 mark.bounds(&mut |x, low, high| {
+                    let offset = stack_offset(&offsets[dataset_index], x);
                     bounds.include(index_scale, x, x);
-                    bounds.include(value_scale, low, high);
+                    bounds.include(value_scale, low + offset, high + offset);
                 });
             });
         });
@@ -188,6 +192,8 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         let palette = Palette::new(ctx, self.palette_offset);
         ctx.save();
 
+        let offsets = self.stack_offsets();
+
         for role in [MarkRole::Primary, MarkRole::Overlay] {
             self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
                 let Some(&Some((ref index_id, group_index))) = places.get(dataset_index) else {
@@ -213,6 +219,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     group_size,
                     category_percentage: self.category_percentage,
                     bar_percentage: self.bar_percentage,
+                    stack_offsets: &offsets[dataset_index],
                 };
 
                 let mut canvas = BarCanvas {
@@ -270,6 +277,39 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
         ctx.restore();
     }
+}
+
+impl<D: Sequence<dyn BarDataSet>> BarController<D> {
+    /// How far stacking moves each dataset's bars, by dataset index and then by x value: where the
+    /// bar ends, less the point's own value. Datasets and x values that don't stack aren't in it,
+    /// and are moved by zero. The sums run in the same order as the bars are stacked.
+    fn stack_offsets(&self) -> Vec<HashMap<u64, Scalar>> {
+        let mut stacks = StackSums::split_by_sign();
+        let mut offsets = vec![];
+
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            let mut dataset_offsets = HashMap::new();
+
+            if !has_primary_mark(dataset) {
+                let key = StackKey::new(&dataset.options(), dataset_index);
+                dataset.points(&mut |_index, point| {
+                    if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                        let (_, end) = stacks.add(&key, x, y);
+                        dataset_offsets.insert((x + 0.0).to_bits(), end - y);
+                    }
+                });
+            }
+
+            offsets.push(dataset_offsets);
+        });
+
+        offsets
+    }
+}
+
+/// How far stacking moves the bar at `x` (see `BarController::stack_offsets`).
+pub(crate) fn stack_offset(offsets: &HashMap<u64, Scalar>, x: Scalar) -> Scalar {
+    offsets.get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0)
 }
 
 /// Whether one of the dataset's marks replaces its bars.

@@ -135,6 +135,37 @@ mod tests {
         assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 13.0)));
     }
 
+    /// On stacked bars the whiskers move with the bars: they keep their distance from the point's
+    /// value, around where its bar ends. Below zero, the bars and whiskers stack downwards.
+    #[test]
+    fn error_bars_follow_the_stack() {
+        const COSTS: StackId = StackId::new("costs");
+        let materials = vec![Estimate { x: 0.0, y: 10.0, low: 9.0, high: 11.0 }];
+        let labour = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
+
+        let up = bounds(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS))));
+        assert_eq!(up.get(&ScaleId::Y).range(), Some((0.0, 17.0)), "labour's whisker runs from 14 to 17, around its bar's top at 15");
+
+        let refunds = vec![Estimate { x: 0.0, y: -10.0, low: -11.0, high: -9.0 }];
+        let returns = vec![Estimate { x: 0.0, y: -5.0, low: -8.0, high: -4.0 }];
+
+        let down = bounds(BarController::new((refunds.error_bars().stack(COSTS), returns.error_bars().stack(COSTS))));
+        assert_eq!(down.get(&ScaleId::Y).range(), Some((-18.0, 0.0)), "returns' whisker runs from -18 to -14, around its bar's end at -15");
+    }
+
+    /// A point whose value is missing has no bar, so it has no whisker either, and its low and
+    /// high don't reach the scale.
+    #[test]
+    fn a_missing_value_has_no_whisker() {
+        let measured: Vec<Estimate<f64, Option<f64>>> = vec![
+            Estimate { x: 0.0, y: Some(10.0), low: Some(8.0), high: Some(12.0) },
+            Estimate { x: 1.0, y: None, low: Some(30.0), high: Some(40.0) },
+        ];
+
+        let bounds = bounds(BarController::new(measured.error_bars()));
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 12.0)));
+    }
+
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.
     #[test]
     fn ranges_dont_stack() {

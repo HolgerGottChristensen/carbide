@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
@@ -25,7 +26,8 @@ pub trait BarMark<D: ?Sized>: Clone + Debug + 'static {
     fn role(&self) -> MarkRole;
 
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
-    /// the scale bounds. Points the mark doesn't draw are left out.
+    /// the scale bounds, before any stacking: the controller moves an overlay's values with its
+    /// stacked bars. Points the mark doesn't draw are left out.
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     /// Draws the mark for each of the dataset's points, in the slot for its x (`BarSlots::slot`).
@@ -64,11 +66,16 @@ impl<M: BarMark<D>, D> DatasetBarMark for BoundBarMark<'_, M, D> {
 /// Where a point's glyph goes along the index axis, in pixels: the centre of its category, and
 /// the dataset's share of the category's slot, from `side`, `thickness` long. Share 0 is at the
 /// smaller pixel: the left, or the top for lying bars.
+///
+/// `stack_offset` is how far stacking moves the dataset's bar at this x along the value axis, in
+/// values: where the bar ends, less the point's own value, or zero when it doesn't stack. A mark
+/// drawn on a stacked bar adds it to the values it draws, so it moves with the bar.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct BarSlot {
     pub center: Scalar,
     pub side: Scalar,
     pub thickness: Scalar,
+    pub stack_offset: Scalar,
 }
 
 impl BarSlot {
@@ -88,6 +95,7 @@ pub struct BarSlots<'a> {
     pub(crate) group_size: usize,
     pub(crate) category_percentage: Scalar,
     pub(crate) bar_percentage: Scalar,
+    pub(crate) stack_offsets: &'a HashMap<u64, Scalar>,
 }
 
 impl BarSlots<'_> {
@@ -96,7 +104,9 @@ impl BarSlots<'_> {
         let center = pixel(self.orientation.index_axis(), self.index_scale, x, self.area);
         let (side, thickness) = crate::controller::bar_slot(center, self.ruler, self.group_index, self.group_size, self.category_percentage, self.bar_percentage);
 
-        BarSlot { center, side, thickness }
+        let stack_offset = crate::controller::stack_offset(self.stack_offsets, x);
+
+        BarSlot { center, side, thickness, stack_offset }
     }
 }
 
