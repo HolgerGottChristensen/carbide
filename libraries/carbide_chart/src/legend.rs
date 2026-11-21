@@ -30,10 +30,13 @@ pub struct LegendItem {
 }
 
 /// The shape of a legend entry's marker, after what its controller draws.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum LegendMarker {
     /// A filled square, for bars and filled areas.
     Square,
+    /// A filled square split down the middle, the entry's colour on the left and this colour on
+    /// the right, for a dataset drawn in two colours, such as rising and falling candlesticks.
+    Split(Color),
     /// A short line with a point on it, for lines.
     Line,
     /// A point, for points without a line.
@@ -162,6 +165,19 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
                 ctx.close_path();
                 ctx.set_fill_style(item.color);
                 ctx.fill();
+            }
+            LegendMarker::Split(right) => {
+                let (top, bottom, half) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0, MARKER_SIZE / 2.0);
+                for (left, color) in [(x, item.color), (x + half, right)] {
+                    ctx.begin_path();
+                    ctx.move_to(left, top);
+                    ctx.line_to(left + half, top);
+                    ctx.line_to(left + half, bottom);
+                    ctx.line_to(left, bottom);
+                    ctx.close_path();
+                    ctx.set_fill_style(color);
+                    ctx.fill();
+                }
             }
             LegendMarker::Line => {
                 ctx.move_to(x, middle);

@@ -4,8 +4,10 @@ use carbide::color::Color;
 use carbide::draw::color::{rgba, Rgba};
 use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
+use carbide::environment::Environment;
 use crate::{DataColor, DataSetOptions};
-use crate::controller::drawing::{point_color, Palette};
+use crate::legend::LegendMarker;
+use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::mark::{Mark, MarkRole};
@@ -33,6 +35,39 @@ pub trait BarMark<D: ?Sized>: Mark {
 
     /// Draws the mark for each of the dataset's points, in the slot for its x (`BarSlots::slot`).
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas);
+
+    /// The colour and marker of the dataset's legend entry, when the mark draws it in colours of
+    /// its own, or `None`, the default, for a square in the dataset's colour.
+    fn legend(&self, _data: &D, _legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        None
+    }
+}
+
+/// What a bar mark can read to decide its legend entry's colours: the dataset's colours and the
+/// chart's `SeriesStyle`.
+pub struct LegendContext<'a, 'e> {
+    pub(crate) env: &'a Environment<'e>,
+    pub(crate) options: &'a DataSetOptions,
+    pub(crate) dataset_index: usize,
+    pub(crate) palette: &'a Palette,
+}
+
+impl LegendContext<'_, '_> {
+    /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
+    /// colour by dataset or by point, the dataset's colour.
+    pub fn resolve(&self, color: DataColor) -> Color {
+        resolve_color(color, self.options, self.dataset_index, self.palette)
+    }
+
+    /// The `SeriesStyle`'s colour for rising candlesticks and OHLC bars.
+    pub fn rising_color(&self) -> Color {
+        series_style(self.env).rising_color(self.env)
+    }
+
+    /// The `SeriesStyle`'s colour for falling candlesticks and OHLC bars.
+    pub fn falling_color(&self) -> Color {
+        series_style(self.env).falling_color(self.env)
+    }
 }
 
 /// A bar mark together with the dataset it draws, as a bar controller reads it from a dataset's
@@ -43,6 +78,8 @@ pub trait DatasetBarMark {
     fn bounds(&self, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     fn draw(&self, slots: &BarSlots, canvas: &mut BarCanvas);
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)>;
 }
 
 pub(crate) struct BoundBarMark<'a, M, D> {
@@ -61,6 +98,10 @@ impl<M: BarMark<D>, D> DatasetBarMark for BoundBarMark<'_, M, D> {
 
     fn draw(&self, slots: &BarSlots, canvas: &mut BarCanvas) {
         self.mark.draw(self.data, slots, canvas);
+    }
+
+    fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        self.mark.legend(self.data, legend)
     }
 }
 

@@ -2,7 +2,7 @@
 //! top of them, in a bar controller's slots; bands in place of a line controller's lines; and
 //! bubbles in place of a scatter controller's points.
 
-use carbide_chart::{BarController, BoxDataSetExt, BoxStats, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LineController, Ohlc, OhlcDataSetExt, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId, Stepped};
+use carbide_chart::{BarController, BoxDataSetExt, BoxStats, Bubble, Chart, DataColor, DataPoint, DatasetExt, Estimate, Interpolation, LegendPosition, LineController, Ohlc, OhlcDataSetExt, Range, RangeDataSetExt, ScatterController, SizedDataSetExt, SizedPoint, StackId, Stepped};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -473,4 +473,81 @@ fn ohlc_bars_in_colours_of_their_own() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("ohlc_bars_in_colours_of_their_own");
+}
+
+/// Candlesticks with a moving average as a line over them, both named, with the legend on top.
+/// Pins down that the candlesticks' legend entry is a square split into the rising colour on the
+/// left and the falling colour on the right, beside the line's entry in its own colour.
+#[test]
+fn candles_in_the_legend() {
+    let prices = vec![
+        Ohlc { x: 0.0, open: 100.0, high: 104.0, low: 98.0, close: 103.0 },
+        Ohlc { x: 1.0, open: 103.0, high: 106.0, low: 101.0, close: 102.0 },
+        Ohlc { x: 2.0, open: 102.0, high: 103.0, low: 96.0, close: 97.0 },
+        Ohlc { x: 3.0, open: 97.0, high: 99.0, low: 95.0, close: 98.5 },
+        Ohlc { x: 4.0, open: 98.5, high: 105.0, low: 98.0, close: 104.5 },
+        Ohlc { x: 5.0, open: 104.5, high: 108.0, low: 103.0, close: 107.0 },
+    ];
+    let average = vec![101.0, 102.0, 100.7, 99.2, 100.0, 103.3];
+
+    let chart = Chart::new((
+        BarController::new(prices.candles().label("Price")),
+        LineController::new(average.label("Average")).palette_offset(4),
+    ))
+        .legend(LegendPosition::Top)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("candles_in_the_legend");
+}
+
+/// Two lines with error bars, one of them monotone and missing a value. Pins down that each
+/// whisker runs through its point from the low to the high value, with caps about as wide as a
+/// point, drawn over the lines and points, and that the missing value has no whisker.
+#[test]
+fn error_bars_on_lines() {
+    let first: Vec<Estimate<f64, Option<f64>>> = vec![
+        Estimate { x: 0.0, y: Some(12.0), low: Some(10.0), high: Some(15.0) },
+        Estimate { x: 1.0, y: Some(18.0), low: Some(15.0), high: Some(20.0) },
+        Estimate { x: 2.0, y: None, low: Some(14.0), high: Some(19.0) },
+        Estimate { x: 3.0, y: Some(21.0), low: Some(18.0), high: Some(25.0) },
+        Estimate { x: 4.0, y: Some(17.0), low: Some(15.0), high: Some(19.0) },
+    ];
+    let second = vec![
+        Estimate { x: 0.0, y: 6.0, low: 4.0, high: 7.0 },
+        Estimate { x: 1.0, y: 9.0, low: 7.0, high: 12.0 },
+        Estimate { x: 2.0, y: 8.0, low: 6.0, high: 9.0 },
+        Estimate { x: 3.0, y: 11.0, low: 9.0, high: 14.0 },
+        Estimate { x: 4.0, y: 13.0, low: 11.0, high: 15.0 },
+    ];
+
+    let chart = Chart::new(LineController::new((first.error_bars(), second.error_bars().interpolation(Interpolation::Monotone)))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("error_bars_on_lines");
+}
+
+/// Two stacked lines with error bars. Pins down that the upper line's whiskers move with it,
+/// around where it is drawn at the running total, keeping their distance from its own value.
+#[test]
+fn error_bars_on_stacked_lines() {
+    const ALL: StackId = StackId::new("all");
+
+    let base = vec![
+        Estimate { x: 0.0, y: 10.0, low: 8.0, high: 11.0 },
+        Estimate { x: 1.0, y: 12.0, low: 10.0, high: 14.0 },
+        Estimate { x: 2.0, y: 11.0, low: 10.0, high: 13.0 },
+        Estimate { x: 3.0, y: 14.0, low: 12.0, high: 15.0 },
+    ];
+    let extra = vec![
+        Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 },
+        Estimate { x: 1.0, y: 6.0, low: 4.0, high: 8.0 },
+        Estimate { x: 2.0, y: 8.0, low: 6.0, high: 9.0 },
+        Estimate { x: 3.0, y: 7.0, low: 5.0, high: 10.0 },
+    ];
+
+    let chart = Chart::new(LineController::new((base.error_bars().stack(ALL), extra.error_bars().stack(ALL)))).framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("error_bars_on_stacked_lines");
 }

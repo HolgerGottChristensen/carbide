@@ -4,7 +4,8 @@ use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::OhlcPoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, MarkRole, Marked};
+use crate::legend::LegendMarker;
+use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Mark, MarkRole, Marked};
 use crate::sequence::Sequence;
 
 /// How a `CandleMark` draws each period.
@@ -104,6 +105,14 @@ impl<D: Sequence<dyn OhlcPoint>, R: ReadState<T=DataColor>, F: ReadState<T=DataC
                 f(x, low.min(high).min(open).min(close), high.max(low).max(open).max(close));
             }
         });
+    }
+
+    /// A square split into the rising colour on the left and the falling colour on the right, as
+    /// the dataset's own palette colour isn't drawn.
+    fn legend(&self, _data: &D, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
+        let rising = self.rising_color().map_or_else(|| legend.rising_color(), |color| legend.resolve(color));
+        let falling = self.falling_color().map_or_else(|| legend.falling_color(), |color| legend.resolve(color));
+        Some((rising, LegendMarker::Split(falling)))
     }
 
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {

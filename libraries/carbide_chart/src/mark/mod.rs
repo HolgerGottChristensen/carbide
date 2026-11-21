@@ -9,10 +9,11 @@
 //! overlays.
 //!
 //! Which controllers a dataset can be drawn by is checked when compiling. Each layout family has
-//! a dataset trait (`BarDataSet`, `LineDataSet`, `ScatterDataSet`), which its controllers require. A plain dataset
-//! implements all of them; a dataset with a mark implements a family's trait only when the mark
-//! can be drawn in that family (`BarMark`, `LineMark`, `ScatterMark`). So a mark given to a controller that can't draw it is
-//! a compile error, not a dataset that silently draws nothing.
+//! a dataset trait (`BarDataSet`, `LineDataSet`, `ScatterDataSet`), which its controllers require.
+//! A plain dataset implements all of them; a dataset with a mark implements a family's trait only
+//! when the mark can be drawn in that family (`BarMark`, `LineMark`, `ScatterMark`). So a mark
+//! given to a controller that can't draw it is a compile error, not a dataset that silently draws
+//! nothing.
 //!
 //! The marks that read more than an x and a y are extension methods on datasets of points that
 //! have those values: `RangeDataSetExt` on datasets of `RangePoint`s, and `SizedDataSetExt` on
@@ -30,7 +31,7 @@ mod box_mark;
 mod candle_mark;
 mod bubble_mark;
 
-pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark};
+pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark, LegendContext};
 pub use families::{BarDataSet, IntoBoxed, LineDataSet, ScatterDataSet};
 pub(crate) use families::AsDataSet;
 pub use marked::Marked;
@@ -82,8 +83,9 @@ pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {
         Marked::new(self, RangeMark::default())
     }
 
-    /// Draws a whisker from each point's low to its high value on top of its bar, with a cap at
-    /// each end. The value scale's bounds cover the whiskers.
+    /// Draws a whisker from each point's low to its high value, with a cap at each end, on top of
+    /// its bar in a bar controller and through its point in a line controller. The value scale's
+    /// bounds cover the whiskers, and on stacked bars or lines they move with the stack.
     fn error_bars(self) -> Marked<Self, ErrorBars> {
         Marked::new(self, ErrorBars::default())
     }
@@ -344,6 +346,56 @@ mod tests {
         *rising.value_mut() = DataColor::Palette(6);
         candles.sync(&mut env);
         assert!(matches!(candles.mark().rising_color(), Some(DataColor::Palette(6))));
+    }
+
+    /// A candlestick dataset's legend entry is a square split into the rising and the falling
+    /// colour, the style's or the dataset's own, as it doesn't draw its palette colour. Other bar
+    /// marks keep a square in the dataset's colour.
+    #[test]
+    fn candles_show_their_rising_and_falling_colours_in_the_legend() {
+        use crate::{BoxDataSetExt, BoxStats, LegendItem, LegendMarker, Ohlc, OhlcDataSetExt};
+        use crate::style::series_style;
+
+        let prices = vec![Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 }];
+        let waits = vec![BoxStats { x: 0.0, min: 2.0, q1: 4.0, median: 5.0, q3: 7.0, max: 11.0 }];
+        let env = Environment::new();
+        let style = series_style(&env);
+        let palette = style.palette(&env);
+
+        let controller = BarController::new((
+            prices.clone().candles().label("price"),
+            prices.ohlc().falling_color(DataColor::Palette(4)).label("own colour"),
+            waits.box_plot().label("waits"),
+        ));
+        let mut items: Vec<LegendItem> = vec![];
+        controller.legend_items(&env, &mut items);
+
+        assert_eq!(items[0].color, style.rising_color(&env));
+        assert_eq!(items[0].marker, LegendMarker::Split(style.falling_color(&env)));
+        assert_eq!(items[1].color, style.rising_color(&env), "only the falling colour is the dataset's own");
+        assert_eq!(items[1].marker, LegendMarker::Split(palette[4]));
+        assert_eq!((items[2].color, items[2].marker), (palette[2], LegendMarker::Square), "a box plot keeps its dataset's colour");
+    }
+
+    /// Error bars on a line go through its points, and on stacked lines they move with the stack:
+    /// around where the line is drawn, at the running total. A point without a value has no
+    /// whisker.
+    #[test]
+    fn error_bars_on_lines_follow_the_stack() {
+        use crate::LineController;
+
+        const ALL: StackId = StackId::new("all");
+        let first: Vec<Estimate<f64, Option<f64>>> = vec![
+            Estimate { x: 0.0, y: Some(10.0), low: Some(9.0), high: Some(12.0) },
+            Estimate { x: 1.0, y: None, low: Some(40.0), high: Some(50.0) },
+        ];
+        let second: Vec<Estimate<f64, Option<f64>>> = vec![Estimate { x: 0.0, y: Some(5.0), low: Some(3.0), high: Some(8.0) }];
+
+        let alone = bounds(LineController::new(first.clone().error_bars()));
+        assert_eq!(alone.get(&ScaleId::Y).range(), Some((9.0, 12.0)), "the point without a value has no whisker");
+
+        let stacked = bounds(LineController::new((first.error_bars().stack(ALL), second.error_bars().stack(ALL))));
+        assert_eq!(stacked.get(&ScaleId::Y).range(), Some((9.0, 18.0)), "the second whisker runs from 13 to 18, around the total of 15");
     }
 
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.

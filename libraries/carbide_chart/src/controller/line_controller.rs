@@ -1,4 +1,5 @@
-use carbide::draw::Rect;
+use std::collections::HashMap;
+use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
@@ -7,6 +8,7 @@ use crate::controller::drawing::{collect_point_bounds, draw_fills, draw_lines, d
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
+use crate::controller::stacking::{StackKey, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{ScaleBounds, ScaleKind, Scales};
 
@@ -81,8 +83,37 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
         replaced
     }
 
+    /// How far stacking moves each dataset's line, by dataset index and then by x value: where
+    /// the line is drawn, less the point's own value, with one running sum per stack, as the lines
+    /// are stacked. Datasets whose line a mark replaces don't stack, and aren't in it.
+    fn stack_offsets(&self) -> Vec<HashMap<u64, Scalar>> {
+        let replaced = self.replaced_lines();
+        let mut sums = StackSums::single();
+        let mut offsets = vec![];
+
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            let mut dataset_offsets = HashMap::new();
+
+            if !replaced.contains(&dataset_index) {
+                let key = StackKey::new(&dataset.options(), dataset_index);
+                dataset.points(&mut |_index, point| {
+                    if let (Some(x), Some(y)) = (point.x(), point.y()) {
+                        let (_, total) = sums.add(&key, x, y);
+                        dataset_offsets.insert((x + 0.0).to_bits(), total - y);
+                    }
+                });
+            }
+
+            offsets.push(dataset_offsets);
+        });
+
+        offsets
+    }
+
     /// Draws every dataset's marks with `role`, in dataset order, each on its dataset's scales.
     fn draw_marks(&self, role: MarkRole, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
+        let offsets = self.stack_offsets();
+
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
             let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
@@ -99,6 +130,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 options: &options,
                 dataset_index,
                 palette,
+                stack_offsets: &offsets[dataset_index],
             };
 
             dataset.line_marks(&mut |mark| {
@@ -119,15 +151,19 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
+        let offsets = self.stack_offsets();
+
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
             let (index_scale, value_scale) = self.orientation.index_and_value_scales(&options);
             bounds.request_kind(index_scale, ScaleKind::Category);
 
+            // A mark's values move with the dataset's line where it is stacked.
             dataset.line_marks(&mut |mark| {
                 mark.bounds(&mut |x, low, high| {
+                    let offset = offsets[dataset_index].get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0);
                     bounds.include(index_scale, x, x);
-                    bounds.include(value_scale, low, high);
+                    bounds.include(value_scale, low + offset, high + offset);
                 });
             });
         });

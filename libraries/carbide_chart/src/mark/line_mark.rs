@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
@@ -9,7 +10,7 @@ use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::mark::{Mark, MarkRole};
 use crate::scale::Scale;
-use crate::style::series_style;
+use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a line controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `LineController` (see `LineDataSet`).
@@ -28,7 +29,8 @@ pub trait LineMark<D: ?Sized>: Mark {
     fn role(&self) -> MarkRole;
 
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
-    /// the scale bounds. Points the mark doesn't draw are left out.
+    /// the scale bounds, before any stacking: the controller moves an overlay's values with its
+    /// stacked line. Points the mark doesn't draw are left out.
     fn bounds(&self, data: &D, f: &mut dyn FnMut(Scalar, Scalar, Scalar));
 
     /// Draws the mark for the dataset's points.
@@ -76,9 +78,40 @@ pub struct LineCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) options: &'x DataSetOptions,
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
+    pub(crate) stack_offsets: &'x HashMap<u64, Scalar>,
 }
 
 impl LineCanvas<'_, '_, '_, '_> {
+    /// How far stacking moves the dataset's line at `x` along the value axis, in values: where
+    /// the line is drawn, less the point's own value, or zero when it doesn't stack. A mark drawn
+    /// on a stacked line adds it to the values it draws, so it moves with the line.
+    pub fn stack_offset(&self, x: Scalar) -> Scalar {
+        self.stack_offsets.get(&(x + 0.0).to_bits()).copied().unwrap_or(0.0)
+    }
+
+    /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's
+    /// label colour, so they stand out on any line or area.
+    pub fn ink(&mut self) -> Color {
+        let env = self.ctx.env();
+        axis_style(env).label_color(env)
+    }
+
+    /// Strokes the straight lines between each pair of `segments`, in the index frame, `width`
+    /// wide.
+    pub fn stroke_lines(&mut self, segments: &[(Position, Position)], width: Scalar, color: Color) {
+        self.ctx.save();
+        self.ctx.begin_path();
+        let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
+        for (from, to) in segments {
+            path.move_to(*from);
+            path.line_to(*to);
+        }
+        self.ctx.set_line_width(width);
+        self.ctx.set_stroke_style(color);
+        self.ctx.stroke();
+        self.ctx.restore();
+    }
+
     /// Where the point at `x`, its category, and `value` falls, in the index frame.
     pub fn position(&self, x: Scalar, value: Scalar) -> Position {
         Position::new(

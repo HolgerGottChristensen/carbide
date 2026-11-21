@@ -4,11 +4,11 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{dataset_scales, legend_items, point_color, Palette};
+use crate::controller::drawing::{dataset_color, dataset_scales, point_color, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::DataSetOptions;
-use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
+use crate::mark::{BarCanvas, BarDataSet, BarSlots, LegendContext, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
@@ -140,9 +140,29 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         });
     }
 
-    /// Each named dataset as a square in its colour.
+    /// Each named dataset as a square in its colour, or as its mark asks, such as a square split
+    /// into the rising and falling colours for candlesticks.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        legend_items(&self.dataset_sequence, &Palette::from_env(env, self.palette_offset), items, |_, _| LegendMarker::Square);
+        let palette = Palette::from_env(env, self.palette_offset);
+
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            let options = dataset.options();
+            let Some(label) = options.label.clone() else {
+                return;
+            };
+
+            let context = LegendContext { env, options: &options, dataset_index, palette: &palette };
+            let mut entry = (dataset_color(&options, dataset_index, &palette), LegendMarker::Square);
+            let mut chosen = false;
+            dataset.bar_marks(&mut |mark| {
+                if !chosen && let Some(own) = mark.legend(&context) {
+                    entry = own;
+                    chosen = true;
+                }
+            });
+
+            items.push(LegendItem { label, color: entry.0, marker: entry.1 });
+        });
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {

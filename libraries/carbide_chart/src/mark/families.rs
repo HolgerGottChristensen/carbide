@@ -36,7 +36,7 @@ pub trait BarDataSet: DataSet {
 dyn_clone::clone_trait_object!(BarDataSet);
 
 /// A dataset a `LineController` can draw: a plain dataset, or one whose marks can all be drawn by
-/// line controllers (`LineMark`), such as a band (`.range()`). The line controller reads the marks
+/// line controllers (`LineMark`), such as a band (`.range()`) or error bars (`.error_bars()`). The line controller reads the marks
 /// through `line_marks`.
 ///
 /// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
@@ -53,15 +53,15 @@ dyn_clone::clone_trait_object!(BarDataSet);
 /// A dataset with a mark lines can't draw doesn't compile:
 ///
 /// ```compile_fail
-/// use carbide_chart::{Estimate, LineController, RangeDataSetExt};
+/// use carbide_chart::{LineController, Ohlc, OhlcDataSetExt};
 ///
-/// let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 }];
-/// LineController::new(measured.error_bars());
+/// let prices = vec![Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 }];
+/// LineController::new(prices.candles());
 /// ```
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a line controller",
     label = "not a line dataset",
-    note = "line controllers draw plain datasets, and datasets whose marks are line marks (`.range()`); `.error_bars()` is drawn by bar controllers",
+    note = "line controllers draw plain datasets, and datasets whose marks are line marks (`.range()`, `.error_bars()`); box plots and candlesticks are drawn by bar controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn LineDataSet>`",
 )]
 pub trait LineDataSet: DataSet {
@@ -96,7 +96,7 @@ dyn_clone::clone_trait_object!(LineDataSet);
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller",
     label = "not a scatter dataset",
-    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` is drawn by bar and line controllers, and `.error_bars()` by bar controllers",
+    note = "scatter controllers draw plain datasets, and datasets whose marks are scatter marks (`.bubbles()`); `.range()` and `.error_bars()` are drawn by bar and line controllers",
     note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn ScatterDataSet>`",
 )]
 pub trait ScatterDataSet: DataSet {
