@@ -2,7 +2,7 @@
 //! ranges with no width, gaps, a chart too small for its labels, a sweep with no width, a hole too
 //! large, values a log radius can't place, and datasets that can't be drawn around the circle.
 
-use carbide_chart::{Axis, CategoryScale, Chart, DatasetExt, Fill, LineController, LinearScale, LogScale, ScaleId, ScatterController, SpanGaps, StackId};
+use carbide_chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, Fill, LineController, LinearScale, LogScale, ScaleId, ScatterController, SpanGaps, StackId};
 use carbide_core::draw::{Angle, Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -167,4 +167,39 @@ fn datasets_that_cannot_be_drawn() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("datasets_that_cannot_be_drawn");
+}
+
+/// Bars on radial scales, which aren't drawn around a circle yet, next to a radar on the same
+/// scales. Pins down that the bars are left out, logged once, and ask nothing of the scales: the
+/// radar is drawn exactly as it is alone, its first category at the top and its spokes on the
+/// categories, not offset half a category and between them as bars ask, and its radius fitted to
+/// its own values, not reaching down to the bars' zero.
+#[test]
+fn bars_on_radial_scales() {
+    let bars = BarController::new(vec![3.0, 5.0, 4.0, 6.0, 2.0, 5.0]);
+    let radar = LineController::new(vec![8.0, 6.0, 7.0, 9.0, 5.0, 4.0]);
+
+    let chart = Chart::new((bars, radar))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_on_radial_scales");
+}
+
+/// A lying line, which asks for its x scale to be the radius, before scatter points on the same
+/// scales, which ask for it to be the angle. Pins down that the first to ask wins, so the lying
+/// line is drawn with its categories out along the radius, and that the scatter points, whose
+/// scales took the other roles, are left out, logged once, rather than drawn in the wrong place.
+#[test]
+fn scatter_points_whose_scales_took_the_other_roles() {
+    let lying = LineController::new(vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4]).horizontal();
+    let points = ScatterController::new(vec![(1.0, 5.0), (3.0, 7.0), (4.0, 6.0)]);
+
+    let chart = Chart::new((lying, points))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("scatter_points_whose_scales_took_the_other_roles");
 }

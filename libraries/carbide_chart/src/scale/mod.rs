@@ -107,6 +107,13 @@ pub trait Scale: DynClone + Debug + 'static {
     /// radius by it. Other scales ignore it.
     fn set_polar_role(&mut self, _role: Option<PolarRole>) {}
 
+    /// Whether the scale's ticks are categories, as a category scale's are. A radius scale's
+    /// rings are only drawn as polygons around an angle scale with categories (see
+    /// `GridShape::Polygon`). The default is `false`.
+    fn has_categories(&self) -> bool {
+        false
+    }
+
     /// The index of the category `text` on the scale, which is where a value naming it is placed
     /// (see `Value::Text`), or `None` when the scale has no such category. Scales without
     /// categories have none, so text isn't drawn on them.
@@ -188,8 +195,9 @@ pub enum GridShape {
     /// Circles around the centre.
     #[default]
     Circle,
-    /// Polygons with a corner on each of the angle scale's ticks, the radar convention: its
-    /// categories, on a category scale. With fewer than three ticks the rings are circles.
+    /// Polygons with a corner on each of the angle scale's categories, the radar convention. Only
+    /// around an angle scale with categories (see `Scale::has_categories`) and at least three of
+    /// them; otherwise the rings are circles.
     Polygon,
 }
 

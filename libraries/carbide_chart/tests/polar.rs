@@ -72,8 +72,9 @@ fn stacked_areas() {
 }
 
 /// A smooth radar and a stepped one. Pins down that a smooth loop is a closed curve with no corner
-/// where it closes, and that steps run along an arc at the radius they leave from, then out or in
-/// along the next spoke, the last step back round to the first point.
+/// where it closes, and that steps run around the polygon ring at the radius they leave from,
+/// straight to the next corner, then out or in along the next spoke, the last step back round to
+/// the first point.
 #[test]
 fn smooth_and_stepped() {
     let smooth = vec![8.0, 6.0, 7.0, 9.0, 5.0, 4.0].interpolation(Interpolation::Smooth { tension: 0.4 });

@@ -110,6 +110,21 @@ pub(crate) fn angle_range(angle_scale: &dyn Scale) -> (Scalar, Scalar) {
     (start, sign * (end - start))
 }
 
+/// The shape of a polar chart's rings at any distance: circles, or polygons with a corner on
+/// each of `corners`. Lines step around the circle along it, so steps follow the grid.
+#[derive(Copy, Clone, Debug)]
+pub(crate) struct RingShape<'a> {
+    pub(crate) polar: &'a Polar,
+    pub(crate) corners: Option<&'a [Scalar]>,
+}
+
+impl<'a> RingShape<'a> {
+    /// The ring `distance` from the centre.
+    pub(crate) fn at(&self, distance: Scalar) -> Ring<'a> {
+        Ring { polar: self.polar, distance, corners: self.corners }
+    }
+}
+
 /// A ring `distance` from the centre of a polar chart: a circle, or, with `corners` (screen
 /// angles in the order the angle scale runs), a polygon with a corner on each of those spokes.
 /// Grid rings, the rim, and the rings areas fill to are all traced through it, so they keep one

@@ -14,11 +14,11 @@ use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
-use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
+use crate::controller::orientation::{is_polar, normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
 use crate::scale::{Axis, Coordinates, Polar, PolarRole, Scale, ScaleBounds, ScaleId, Scales, System};
 use crate::scale::axis::angle_corners;
-use crate::scale::polar::Ring;
+use crate::scale::polar::{Ring, RingShape};
 use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
@@ -377,6 +377,7 @@ fn draw_polar_fill(line: &DrawnLine, polar_line: &PolarLine, lines: &[DrawnLine]
     let polar = &polar_line.polar;
     let center = polar.circle().center;
     let interpolation = line.options.interpolation;
+    let rings = RingShape { polar, corners: polar_line.corners.as_deref() };
 
     let below = match (line.options.fill, line.below) {
         (Fill::Stack, Some(below)) => lines[below].polar.as_ref().map(|below_polar| (&lines[below], below_polar)),
@@ -404,7 +405,7 @@ fn draw_polar_fill(line: &DrawnLine, polar_line: &PolarLine, lines: &[DrawnLine]
 
         ctx.begin_path();
         let closing = polar_line.closing(run);
-        trace_polar_line(&mut *ctx, points, closing, interpolation, center);
+        trace_polar_line(&mut *ctx, points, closing, interpolation, rings);
 
         match (closing, below) {
             (Some(_), Some((below, below_polar))) if below_polar.closed => {
@@ -415,10 +416,12 @@ fn draw_polar_fill(line: &DrawnLine, polar_line: &PolarLine, lines: &[DrawnLine]
                     PolarPoint { angle: last.angle - (first.angle - below_polar.points[0].angle), ..last }
                 });
                 let interpolation = reversed_steps(below.options.interpolation);
-                trace_polar_line(&mut *ctx, &reversed, closing, interpolation, center);
+                let below_rings = RingShape { polar: &below_polar.polar, corners: below_polar.corners.as_deref() };
+                trace_polar_line(&mut *ctx, &reversed, closing, interpolation, below_rings);
             }
             (None, Some((below, below_polar))) => {
-                trace_polar_line_reversed(&mut *ctx, &below_polar.points, below.options.interpolation, center);
+                let below_rings = RingShape { polar: &below_polar.polar, corners: below_polar.corners.as_deref() };
+                trace_polar_line_reversed(&mut *ctx, &below_polar.points, below.options.interpolation, below_rings);
             }
             (Some(_), _) => {
                 // A whole ring, the other way round.
@@ -505,7 +508,8 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
             ctx.begin_path();
             for run in &line.runs {
                 let closing = polar_line.closing(run);
-                trace_polar_line(&mut *ctx, &polar_line.points[run.clone()], closing, line.options.interpolation, polar_line.polar.circle().center);
+                let rings = RingShape { polar: &polar_line.polar, corners: polar_line.corners.as_deref() };
+                trace_polar_line(&mut *ctx, &polar_line.points[run.clone()], closing, line.options.interpolation, rings);
             }
             ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
             ctx.stroke();
@@ -612,8 +616,10 @@ pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_in
 /// `orientation` places them. A dataset whose values name categories registers every name, in
 /// point order, as a category of those scales (see `ScaleBounds::register_category`), before
 /// anything reads them, so the categories are numbered in the order the data names them. Every
-/// dataset reports, whether or not its points are drawn, as its marks are drawn on the same scales.
-pub(crate) fn register_values<T, D>(datasets: &D, bounds: &mut ScaleBounds, orientation: Orientation)
+/// dataset reports, whether or not its points are drawn, as its marks are drawn on the same scales,
+/// except a polar dataset when the controller doesn't draw around a circle (`polar` is false):
+/// it is left out entirely, as the controller leaves it out of its bounds.
+pub(crate) fn register_values<T, D>(datasets: &D, bounds: &mut ScaleBounds, orientation: Orientation, polar: bool)
 where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
@@ -621,6 +627,10 @@ where
     datasets.foreach(&mut |_dataset_index, dataset| {
         let dataset = dataset.as_dataset();
         let options = dataset.options();
+        if !polar && is_polar(&options, &*bounds) {
+            return;
+        }
+
         orientation.request_polar_roles(&options, bounds);
         let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
 

@@ -225,6 +225,10 @@ impl Scale for CategoryScale {
 
     /// The category's index: among the categories of the last fit, or, before the first, among
     /// the labels.
+    fn has_categories(&self) -> bool {
+        true
+    }
+
     fn category_index(&self, text: &str) -> Option<Scalar> {
         if let Some(index) = self.categories.iter().position(|category| category == text) {
             return Some(index as Scalar);

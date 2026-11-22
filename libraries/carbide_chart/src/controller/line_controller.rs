@@ -186,7 +186,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, self.orientation);
+        register_values(&self.dataset_sequence, bounds, self.orientation, true);
 
         let replaced = self.replaced_lines();
         let offsets = self.stack_offsets(&*bounds, &replaced);

@@ -55,7 +55,7 @@ impl Orientation {
     /// the orientation swaps the scales' roles instead (see `polar_roles`), so the same scales
     /// and labels draw a radar upright and categories out along the radius lying down.
     pub(crate) fn for_dataset(self, options: &DataSetOptions, places: &dyn Places) -> Orientation {
-        if places.is_radial(&options.x_scale) && places.is_radial(&options.y_scale) {
+        if is_polar(options, places) {
             Orientation::Vertical
         } else {
             self
@@ -98,6 +98,11 @@ impl Orientation {
             Orientation::Horizontal => Rect::new(self.swap(area.position), Dimension::new(area.height(), area.width())),
         }
     }
+}
+
+/// Whether the dataset with `options` is a polar dataset: on two radial scales.
+pub(crate) fn is_polar(options: &DataSetOptions, places: &dyn Places) -> bool {
+    places.is_radial(&options.x_scale) && places.is_radial(&options.y_scale)
 }
 
 /// Where `value` on `scale` falls on the screen, along `axis`: an x for a horizontal axis, and a y

@@ -10,7 +10,7 @@ use crate::DataSetOptions;
 use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::line_path::PathSink;
-use crate::controller::orientation::{length, pixel, Oriented, Orientation};
+use crate::controller::orientation::{is_polar, length, pixel, Oriented, Orientation};
 use crate::scale::{Axis, Coordinates, Places, Scale, ScaleBounds, ScaleId, ScaleKind, Scales, System};
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
@@ -99,13 +99,20 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, self.orientation);
+        register_values(&self.dataset_sequence, bounds, self.orientation, false);
 
         let mut stacks = StackSums::split_by_sign();
         let offsets = self.stack_offsets(&*bounds, self.has_overlays());
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
+
+            // Bars around a circle aren't drawn yet, so they ask nothing of the radial scales:
+            // no range, no offset, no grid lines between categories.
+            if is_polar(&options, &*bounds) {
+                return;
+            }
+
             let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
 
             bounds.request_kind(index_scale, ScaleKind::Category);

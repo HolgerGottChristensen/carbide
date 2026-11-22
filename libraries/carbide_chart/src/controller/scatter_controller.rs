@@ -97,7 +97,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// replaces reports only what the mark draws, as its other points aren't drawn, unless a line
     /// runs through all its points (`show_line`).
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, Orientation::Vertical);
+        register_values(&self.dataset_sequence, bounds, Orientation::Vertical, true);
 
         let replaced = self.replaced_points();
         collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical, |dataset_index| {

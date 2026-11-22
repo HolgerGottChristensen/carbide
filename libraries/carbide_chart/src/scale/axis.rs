@@ -469,9 +469,15 @@ pub(crate) fn draw_polar_border(scales: &Scales, ctx: &mut CanvasContext) {
 /// The gap between the start spoke and the radius scale's labels beside it.
 const RADIUS_LABEL_GAP: Scalar = 4.0;
 
-/// The screen angles of `angle_scale`'s ticks within its sweep, each direction once: the corners
-/// of polygon rings.
+/// The screen angles of `angle_scale`'s categories within its sweep, each direction once: the
+/// corners of polygon rings. None for an angle scale without categories.
 pub(crate) fn angle_corners(angle_scale: &dyn Scale) -> Vec<Scalar> {
+    // Polygons are the radar convention for categories; around any other angle scale, a polygon
+    // through its ticks would only be a coarse circle.
+    if !angle_scale.has_categories() {
+        return vec![];
+    }
+
     let (start, sweep) = polar::angle_range(angle_scale);
     let mut corners: Vec<Scalar> = vec![];
 
