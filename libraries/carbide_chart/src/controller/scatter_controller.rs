@@ -8,7 +8,7 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{Coordinates, ScaleBounds, Scales};
+use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales, System};
 
 /// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line
 /// through them in order, following the dataset's `interpolation`, as a line chart does.
@@ -104,6 +104,13 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             self.show_line || !replaced.contains(&dataset_index)
         });
 
+        // On polar scales, the rings around scattered points are circles.
+        self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
+            let options = dataset.options();
+            bounds.request_grid_shape(&options.x_scale, GridShape::Circle);
+            bounds.request_grid_shape(&options.y_scale, GridShape::Circle);
+        });
+
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             if !has_mark(dataset, None) {
                 return;
@@ -181,6 +188,19 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     return;
                 };
 
+                // Around a circle, marks that replace points (bubbles) are drawn where the points
+                // are; overlays aren't drawn yet.
+                let polar = match scales.system(&options.x_scale, &options.y_scale) {
+                    None => return,
+                    Some(System::Cartesian) => None,
+                    Some(System::Polar { .. }) if role == MarkRole::Overlay => {
+                        scales.warn_once("polar scatter overlays", &options.x_scale, &options.y_scale, || format!("Overlays, such as error bars, on points on the polar scales {:?} and {:?} are not drawn yet", options.x_scale.name(), options.y_scale.name()));
+                        return;
+                    }
+                    Some(System::Polar { x_is_angle: true }) => scales.polar(&options.x_scale, &options.y_scale).map(|polar| (polar, true)),
+                    Some(System::Polar { x_is_angle: false }) => scales.polar(&options.y_scale, &options.x_scale).map(|polar| (polar, false)),
+                };
+
                 let mut canvas = ScatterCanvas {
                     ctx: &mut *ctx,
                     coordinates: Coordinates::new(scales, &options.x_scale, &options.y_scale),
@@ -191,6 +211,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     dataset_index,
                     palette: &palette,
                     sizes,
+                    polar,
                 };
 
                 dataset.scatter_marks(&mut |mark| {

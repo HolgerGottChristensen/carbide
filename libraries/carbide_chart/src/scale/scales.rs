@@ -1,10 +1,12 @@
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use std::cell::RefCell;
+use std::collections::HashSet;
 use indexmap::{IndexMap, IndexSet};
 
 use crate::Value;
-use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId, TimeScale};
+use crate::scale::{Axis, CategoryScale, GridShape, LinearScale, PolarRole, Scale, ScaleId, TimeScale};
+use crate::scale::polar::{Circle, Polar};
 
 /// The data range reported for one scale while the chart collects bounds: the union of every
 /// range included so far, or `None` when no dataset has reported anything yet.
@@ -74,6 +76,8 @@ impl ScaleKind {
 /// - the range is the union of every range included;
 /// - the offset and the grid offset are on if anyone asks for them;
 /// - the kind is the first one asked for, in controller and dataset order;
+/// - the grid shape is a circle if anyone asks for one, and a polygon if all who ask want one;
+/// - a radial scale's role is the first one asked for, and asking for the other is a conflict;
 /// - the data's kind is the one the first value reported calls for, in controller and dataset
 ///   order.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -82,6 +86,10 @@ pub struct ScaleRequest {
     offset: bool,
     grid_offset: bool,
     kind: Option<ScaleKind>,
+    grid_shape: Option<GridShape>,
+    polar_role: Option<PolarRole>,
+    /// Whether a dataset asked for the other role than the first.
+    polar_role_conflict: bool,
     /// The kind of scale the first value reported calls for: `Some(None)` when it was a number,
     /// which leaves the kind to the controllers.
     data_kind: Option<Option<ScaleKind>>,
@@ -106,6 +114,24 @@ impl ScaleRequest {
     /// Whether anyone asked for grid lines between ticks (see `Scale::set_grid_offset_requested`).
     pub fn grid_offset(&self) -> bool {
         self.grid_offset
+    }
+
+    /// The shape asked for a radius scale's rings, if anyone asked (see
+    /// `ScaleBounds::request_grid_shape`).
+    pub fn grid_shape(&self) -> Option<GridShape> {
+        self.grid_shape
+    }
+
+    /// The role asked for a radial scale, the first if several were (see
+    /// `ScaleBounds::request_polar_role`).
+    pub fn polar_role(&self) -> Option<PolarRole> {
+        self.polar_role
+    }
+
+    /// Whether datasets asked for both roles of a radial scale: bound as the angle by one and as
+    /// the radius by another.
+    pub fn polar_role_conflict(&self) -> bool {
+        self.polar_role_conflict
     }
 
     /// The first kind of scale asked for, if any.
@@ -141,9 +167,37 @@ pub struct ScaleBounds {
     /// the text values controllers registered (see `register_category`). Behind a `RefCell` so
     /// values can be placed (`Coordinates`) while the bounds are only borrowed.
     categories: RefCell<IndexMap<ScaleId, IndexSet<String>>>,
+    /// The ids of the chart's radial scales, set before the controllers collect (see
+    /// `is_radial`).
+    radial: IndexSet<ScaleId>,
 }
 
 impl ScaleBounds {
+    /// The bounds for a chart whose radial scales have the ids `radial`, so controllers can read
+    /// polar datasets as polar while collecting (see `is_radial`).
+    pub(crate) fn with_radial(radial: IndexSet<ScaleId>) -> ScaleBounds {
+        ScaleBounds { radial, ..ScaleBounds::default() }
+    }
+
+    /// Whether the chart's scale `id` is radial. A dataset on two radial scales reads its points
+    /// as a polar dataset: its x on its x scale and its y on its y scale, even when its controller
+    /// is `horizontal`, which swaps their roles instead (see `request_polar_role`).
+    pub fn is_radial(&self, id: &ScaleId) -> bool {
+        self.radial.contains(id)
+    }
+
+    /// Asks for the radial scale `id` to be the angle or the radius of its polar chart on this
+    /// fit. Controllers ask for a polar dataset's x scale to be the angle and its y scale the
+    /// radius, or the other way round when `horizontal`. The first role asked for wins; asking for
+    /// the other is a conflict, which the chart logs.
+    pub fn request_polar_role(&self, id: &ScaleId, role: PolarRole) {
+        self.change(id, |request| match request.polar_role {
+            None => request.polar_role = Some(role),
+            Some(first) if first != role => request.polar_role_conflict = true,
+            Some(_) => {}
+        });
+    }
+
     /// Changes the request for `id` with `f`, created empty the first time `id` is seen.
     fn change(&self, id: &ScaleId, f: impl FnOnce(&mut ScaleRequest)) {
         let mut requests = self.requests.borrow_mut();
@@ -172,6 +226,18 @@ impl ScaleBounds {
     /// separate the bar groups. A scale whose grid offset was set explicitly keeps it.
     pub fn request_grid_offset(&self, id: &ScaleId) {
         self.change(id, |request| request.grid_offset = true);
+    }
+
+    /// Asks for the rings of the radius scale `id` to be drawn as `shape`, on this fit: line
+    /// controllers ask for polygons, the radar convention, and scatter controllers for circles.
+    /// Any circle wins. A scale whose grid shape was set explicitly keeps it.
+    pub fn request_grid_shape(&self, id: &ScaleId, shape: GridShape) {
+        self.change(id, |request| {
+            request.grid_shape = match (request.grid_shape, shape) {
+                (Some(GridShape::Circle), _) | (_, GridShape::Circle) => Some(GridShape::Circle),
+                _ => Some(GridShape::Polygon),
+            };
+        });
     }
 
     /// Asks for the scale `id` to be of `kind`, if it is a default scale: bar and line charts ask
@@ -238,6 +304,15 @@ impl ScaleBounds {
 #[derive(Clone, Debug)]
 pub struct Scales {
     scales: IndexMap<ScaleId, Box<dyn Scale>>,
+    /// The ring shapes the controllers asked for on the last fit, by radius scale.
+    grid_shapes: IndexMap<ScaleId, GridShape>,
+    /// The circle the polar scales share, fitted inside the chart area on every render; `None`
+    /// before the first.
+    circle: Option<Circle>,
+    /// Each radial scale's role on the last fit.
+    roles: IndexMap<ScaleId, PolarRole>,
+    /// What was already logged about a dataset's pair of scales, so each is logged once.
+    warned_pairs: RefCell<HashSet<(&'static str, ScaleId, ScaleId)>>,
 }
 
 impl Scales {
@@ -246,7 +321,7 @@ impl Scales {
         scales.insert(ScaleId::X, Box::new(LinearScale::new(Axis::Horizontal)));
         scales.insert(ScaleId::Y, Box::new(LinearScale::new(Axis::Vertical)));
 
-        Scales { scales }
+        Scales { scales, grid_shapes: IndexMap::new(), circle: None, roles: IndexMap::new(), warned_pairs: RefCell::new(HashSet::new()) }
     }
 
     /// Adds `scale` under `id`. A scale already under `id` is replaced in place, so replacing a
@@ -274,6 +349,86 @@ impl Scales {
         self.scales.iter().map(|(id, scale)| (id, scale.as_ref()))
     }
 
+    /// The circle the chart's polar scales share, as fitted for the last render.
+    pub fn circle(&self) -> Option<Circle> {
+        self.circle
+    }
+
+    pub(crate) fn set_circle(&mut self, circle: Option<Circle>) {
+        self.circle = circle;
+    }
+
+    /// The role of the radial scale `id` on the last fit, or `None` when it isn't radial or no
+    /// dataset binds it.
+    pub fn polar_role(&self, id: &ScaleId) -> Option<PolarRole> {
+        self.roles.get(id).copied()
+    }
+
+    /// The scales with `role`, in the chart's order.
+    pub(crate) fn with_role(&self, role: PolarRole) -> impl Iterator<Item=(&ScaleId, &dyn Scale)> + '_ {
+        self.iter().filter(move |(id, _)| self.polar_role(id) == Some(role))
+    }
+
+    /// The ids of the radial scales.
+    pub(crate) fn radial_ids(&self) -> IndexSet<ScaleId> {
+        self.iter().filter(|(_, scale)| scale.axis() == Axis::Radial).map(|(id, _)| id.clone()).collect()
+    }
+
+    /// The first angle scale and the first radius scale, in the chart's order, which the circle
+    /// is fitted to and whose grid is drawn around it.
+    pub(crate) fn first_polar_pair(&self) -> (Option<&dyn Scale>, Option<&dyn Scale>) {
+        let first = |role: PolarRole| self.with_role(role).next().map(|(_, scale)| scale);
+        (first(PolarRole::Angle), first(PolarRole::Radius))
+    }
+
+    /// The shape of the radius scale `id`'s rings: as set on the scale, or as the controllers
+    /// asked, or circles.
+    pub(crate) fn grid_shape(&self, id: &ScaleId) -> GridShape {
+        self.get(id)
+            .and_then(|scale| scale.axis_options().grid_shape())
+            .or_else(|| self.grid_shapes.get(id).copied())
+            .unwrap_or_default()
+    }
+
+    /// The mapping onto the chart's circle for a point placed on `angle_id` around it and
+    /// `radius_id` out from the centre, or `None` when they aren't the chart's scales in those
+    /// roles (see `polar_role`), or no circle was fitted yet.
+    pub fn polar(&self, angle_id: &ScaleId, radius_id: &ScaleId) -> Option<Polar> {
+        if self.polar_role(angle_id) != Some(PolarRole::Angle) || self.polar_role(radius_id) != Some(PolarRole::Radius) {
+            return None;
+        }
+
+        Some(Polar::new(self.get(angle_id)?, self.get(radius_id)?, self.circle?))
+    }
+
+    /// How a dataset bound to `x_id` and `y_id` is drawn: on a side each, around and out from the
+    /// circle, or not at all, which is logged once per pair: when only one of them is radial, or
+    /// both have the same role, as when a radial scale is the angle for one dataset and the radius
+    /// for another. A scale the chart doesn't have is left to the caller, as before.
+    pub(crate) fn system(&self, x_id: &ScaleId, y_id: &ScaleId) -> Option<System> {
+        let (x, y) = (self.get(x_id)?.axis(), self.get(y_id)?.axis());
+
+        match (x == Axis::Radial, y == Axis::Radial) {
+            (false, false) => return Some(System::Cartesian),
+            (true, true) => match (self.polar_role(x_id), self.polar_role(y_id)) {
+                (Some(PolarRole::Angle), Some(PolarRole::Radius)) => return Some(System::Polar { x_is_angle: true }),
+                (Some(PolarRole::Radius), Some(PolarRole::Angle)) => return Some(System::Polar { x_is_angle: false }),
+                _ => {}
+            },
+            _ => {}
+        }
+
+        self.warn_once("mixed", x_id, y_id, || format!("A dataset on scales {:?} ({:?}) and {:?} ({:?}) is not drawn: a polar dataset needs two radial scales, one the angle and one the radius, and a cartesian one a scale along each side", x_id.name(), x, y_id.name(), y));
+        None
+    }
+
+    /// Logs `message` the first time it is asked for `reason` and the pair `x_id` and `y_id`.
+    pub(crate) fn warn_once(&self, reason: &'static str, x_id: &ScaleId, y_id: &ScaleId, message: impl FnOnce() -> String) {
+        if self.warned_pairs.borrow_mut().insert((reason, x_id.clone(), y_id.clone())) {
+            log::warn!("{}", message());
+        }
+    }
+
     /// Syncs the states in every scale with the environment (see `Scale::sync`), and returns
     /// whether anything may have changed.
     pub fn sync(&mut self, env: &mut Environment) -> bool {
@@ -287,8 +442,22 @@ impl Scales {
     /// Fits each scale to what was asked of its id: its offset and grid offset, then its range.
     /// A scale without any reported data gets the range `0..1`.
     pub fn fit(&mut self, bounds: &ScaleBounds) {
+        self.grid_shapes.clear();
+        self.roles.clear();
+
         for (id, scale) in &mut self.scales {
             let request = bounds.get(id);
+
+            if let Some(shape) = request.grid_shape() {
+                self.grid_shapes.insert(id.clone(), shape);
+            }
+
+            let role = request.polar_role().filter(|_| scale.axis() == Axis::Radial);
+            if let Some(role) = role {
+                self.roles.insert(id.clone(), role);
+            }
+            scale.set_polar_role(role);
+
             let (min, max) = request.range().unwrap_or((0.0, 1.0));
 
             scale.set_categories(&bounds.categories(id));
@@ -298,6 +467,16 @@ impl Scales {
             scale.set_range(min, max);
         }
     }
+}
+
+/// The coordinate system a dataset is drawn in, from the axes of the scales it is bound to.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum System {
+    /// Along the sides of the chart area.
+    Cartesian,
+    /// Around the chart's circle and out from its centre, with the x scale the angle or the
+    /// radius.
+    Polar { x_is_angle: bool },
 }
 
 impl Default for Scales {

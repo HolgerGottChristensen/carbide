@@ -9,7 +9,7 @@ use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{Coordinates, Places, ScaleBounds, ScaleKind, Scales};
+use crate::scale::{Coordinates, GridShape, Places, ScaleBounds, ScaleKind, Scales, System};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
 /// follows the dataset's `interpolation`: straight by default, or smooth, monotone or stepped.
@@ -108,7 +108,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 return;
             }
 
-            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation.for_dataset(&options, places).index_and_value_scales(&options);
             let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_mark(dataset, MarkRole::Overlay);
             dataset.points(&mut |_index, point| {
@@ -133,10 +133,20 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             }
 
             let options = dataset.options();
-            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
             let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                 return;
             };
+
+            // Marks around a circle aren't drawn yet.
+            match scales.system(index_id, value_id) {
+                Some(System::Cartesian) => {}
+                Some(System::Polar { .. }) => {
+                    scales.warn_once("polar line marks", index_id, value_id, || format!("Marks on lines on the polar scales {:?} and {:?} are not drawn yet", index_id.name(), value_id.name()));
+                    return;
+                }
+                None => return,
+            }
 
             let mut canvas = LineCanvas {
                 ctx: &mut *ctx,
@@ -183,8 +193,12 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_scale, value_scale) = self.orientation.index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
             bounds.request_kind(index_scale, ScaleKind::Category);
+
+            // On polar scales, a radar's rings are polygons through the spokes.
+            bounds.request_grid_shape(index_scale, GridShape::Polygon);
+            bounds.request_grid_shape(value_scale, GridShape::Polygon);
 
             // A mark's values move with the dataset's line where it is stacked.
             let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);

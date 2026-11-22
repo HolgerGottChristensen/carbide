@@ -7,6 +7,10 @@ use crate::scale::{ScaleBounds, ScaleId, Scales};
 /// the category's index on the scale.
 pub(crate) trait Places {
     fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar>;
+
+    /// Whether the scale `id` is radial, so a dataset on two of them is read as a polar dataset
+    /// (see `Orientation::for_dataset`).
+    fn is_radial(&self, id: &ScaleId) -> bool;
 }
 
 /// While the bounds are collected, a name is placed at its category's index among the categories
@@ -18,6 +22,10 @@ impl Places for ScaleBounds {
             Value::Text(text) => Some(self.register_category(id, text) as Scalar),
         }
     }
+
+    fn is_radial(&self, id: &ScaleId) -> bool {
+        ScaleBounds::is_radial(self, id)
+    }
 }
 
 /// While drawing, a name is placed at its category's index on the fitted scale; on a scale
@@ -28,6 +36,10 @@ impl Places for Scales {
             Value::Number(number) | Value::Time(number) => self.get(id)?.place(number),
             Value::Text(text) => self.get(id)?.category_index(text),
         }
+    }
+
+    fn is_radial(&self, id: &ScaleId) -> bool {
+        self.get(id).is_some_and(|scale| scale.axis() == crate::scale::Axis::Radial)
     }
 }
 

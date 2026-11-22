@@ -6,7 +6,7 @@ use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 use dyn_clone::DynClone;
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
 use crate::sequence::{Sequence, SequenceItem};
 
 /// A category scale's labels, boxed: any sequence of strings (see `CategoryScale::labels`).
@@ -160,10 +160,15 @@ impl CategoryScale {
         self
     }
 
-    /// The value at the start of the mapped range and the range's length.
+    crate::scale::axis_options::polar_options!(CategoryScale);
+
+    /// The value at the start of the mapped range and the range's length. Around a full circle
+    /// the range is one category longer, so the last category sits one step before the first
+    /// instead of on it.
     fn start_and_length(&self) -> (Scalar, Scalar) {
         let count = self.max - self.min + 1.0;
-        let length = (count - if self.offset { 0.0 } else { 1.0 }).max(1.0);
+        let wraps = self.axis_options.polar_role() == Some(PolarRole::Angle) && self.axis_options.is_full_circle();
+        let length = (count - if self.offset || wraps { 0.0 } else { 1.0 }).max(1.0);
         let start = self.min - if self.offset { 0.5 } else { 0.0 };
 
         (start, length)
@@ -177,6 +182,10 @@ impl Scale for CategoryScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
+        self.axis_options.set_polar_role(role);
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {

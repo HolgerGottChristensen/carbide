@@ -97,6 +97,8 @@ impl LogScale {
         self
     }
 
+    crate::scale::axis_options::polar_options!(LogScale);
+
     /// The base as last synced, or 10 when it is 1 or less, or not a number.
     fn base_value(&self) -> Scalar {
         let base = *self.base.value();
@@ -153,6 +155,10 @@ impl Scale for LogScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
+        self.axis_options.set_polar_role(role);
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {

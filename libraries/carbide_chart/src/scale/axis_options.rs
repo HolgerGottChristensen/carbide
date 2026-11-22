@@ -1,12 +1,17 @@
+use carbide::draw::{Angle, Scalar};
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateContract};
-use crate::scale::{Axis, AxisPosition};
+use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, PolarRole};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order
 /// among the scales on that side, whether it draws grid lines and tick marks, and its title. Every
 /// scale type holds one and hands it out with `Scale::axis_options`; the axis code
 /// (`scale/axis.rs`) reads it, so it is laid out and drawn the same way for every scale. The
 /// scales' builder methods (`LinearScale::position` and so on) set it.
+///
+/// A polar scale's options say how the circle is drawn: an angle scale's start angle, end angle and
+/// direction, and a radius scale's inner radius and ring shape. Every scale keeps them, and only
+/// the axis they belong to reads them.
 ///
 /// Every option is a value or a state: the getters read the states as they were last synced
 /// (see `sync`), so an axis can change side, order, grid lines, tick marks or title after the
@@ -21,6 +26,13 @@ pub struct AxisOptions {
     grid_lines: Box<dyn AnyReadState<T=bool>>,
     tick_marks: Box<dyn AnyReadState<T=bool>>,
     title: Option<Box<dyn AnyReadState<T=String>>>,
+    start_angle: Box<dyn AnyReadState<T=Angle>>,
+    end_angle: Box<dyn AnyReadState<T=Angle>>,
+    direction: Box<dyn AnyReadState<T=AngleDirection>>,
+    inner_radius: Box<dyn AnyReadState<T=Scalar>>,
+    grid_shape: Option<Box<dyn AnyReadState<T=GridShape>>>,
+    /// A radial scale's role, as the chart gave it on the last fit.
+    polar_role: Option<PolarRole>,
 }
 
 impl AxisOptions {
@@ -35,6 +47,12 @@ impl AxisOptions {
             grid_lines: constant(true),
             tick_marks: constant(true),
             title: None,
+            start_angle: constant(Angle::Degrees(0.0)),
+            end_angle: constant(Angle::Degrees(360.0)),
+            direction: constant(AngleDirection::Clockwise),
+            inner_radius: constant(0.0),
+            grid_shape: None,
+            polar_role: None,
         }
     }
 
@@ -73,6 +91,53 @@ impl AxisOptions {
         self.title.as_ref().map(|title| title.value_dyn().clone())
     }
 
+    /// Where an angle scale starts, clockwise from the top of the circle whichever way it runs.
+    /// 0° by default.
+    pub fn start_angle(&self) -> Angle {
+        *self.start_angle.value_dyn()
+    }
+
+    /// Where an angle scale ends: how far it reaches from the start angle, in its direction. 360°
+    /// by default, a full circle.
+    pub fn end_angle(&self) -> Angle {
+        *self.end_angle.value_dyn()
+    }
+
+    /// Which way an angle scale runs around the circle. Clockwise by default.
+    pub fn direction(&self) -> AngleDirection {
+        *self.direction.value_dyn()
+    }
+
+    /// Whether an angle scale goes all the way around: its end angle a full turn or more from its
+    /// start angle. Categories around a full circle are spaced so the last doesn't land on the
+    /// first (see `CategoryScale`), and lines through them close into loops.
+    pub fn is_full_circle(&self) -> bool {
+        (self.end_angle().degrees() - self.start_angle().degrees()).abs() >= 360.0 - 1e-9
+    }
+
+    /// The hole in the middle of a radius scale, as a share of the radius: 0 for none, the
+    /// default, and at most 0.95, so there is always a ring to draw in.
+    pub fn inner_radius(&self) -> Scalar {
+        self.inner_radius.value_dyn().clamp(0.0, 0.95)
+    }
+
+    /// The shape of a radius scale's rings when it was set (see `with_grid_shape`); `None` leaves
+    /// it to what the controllers ask for.
+    pub fn grid_shape(&self) -> Option<GridShape> {
+        self.grid_shape.as_ref().map(|shape| *shape.value_dyn())
+    }
+
+    /// A radial scale's role on the last fit (see `Scale::set_polar_role`), or `None` before it,
+    /// for a scale no dataset binds, and for the other axes.
+    pub fn polar_role(&self) -> Option<PolarRole> {
+        self.polar_role
+    }
+
+    /// Keeps a radial scale's role for the fit (see `Scale::set_polar_role`).
+    pub fn set_polar_role(&mut self, role: Option<PolarRole>) {
+        self.polar_role = role;
+    }
+
     /// Syncs the states in the options with the environment, and returns whether anything may
     /// have changed. Scales call it from `Scale::sync`. A position the axis can't take is logged
     /// the first time it is seen, and the axis is drawn on its default side meanwhile.
@@ -82,6 +147,11 @@ impl AxisOptions {
         changed |= self.grid_lines.sync(env);
         changed |= self.tick_marks.sync(env);
         changed |= self.title.as_mut().is_some_and(|title| title.sync(env));
+        changed |= self.start_angle.sync(env);
+        changed |= self.end_angle.sync(env);
+        changed |= self.direction.sync(env);
+        changed |= self.inner_radius.sync(env);
+        changed |= self.grid_shape.as_mut().is_some_and(|shape| shape.sync(env));
 
         let position = *self.position.value_dyn();
         if self.checked_position != Some(position) {
@@ -127,7 +197,85 @@ impl AxisOptions {
         self.title = Some(title.into_read_state().as_dyn_read());
         self
     }
+
+    /// Sets where an angle scale starts, an `Angle` or a state of one.
+    pub fn with_start_angle(mut self, angle: impl IntoReadState<Angle>) -> AxisOptions {
+        self.start_angle = angle.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets where an angle scale ends, an `Angle` or a state of one.
+    pub fn with_end_angle(mut self, angle: impl IntoReadState<Angle>) -> AxisOptions {
+        self.end_angle = angle.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets which way an angle scale runs, a direction or a state of one.
+    pub fn with_direction(mut self, direction: impl IntoReadState<AngleDirection>) -> AxisOptions {
+        self.direction = direction.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets a radius scale's hole in the middle, as a share of the radius, a number or a state
+    /// of one (see `inner_radius`).
+    pub fn with_inner_radius(mut self, ratio: impl IntoReadState<Scalar>) -> AxisOptions {
+        self.inner_radius = ratio.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets the shape of a radius scale's rings, a shape or a state of one, whatever the
+    /// controllers ask for.
+    pub fn with_grid_shape(mut self, shape: impl IntoReadState<GridShape>) -> AxisOptions {
+        self.grid_shape = Some(shape.into_read_state().as_dyn_read());
+        self
+    }
 }
+
+/// The builder methods for a polar scale's options, in the impl block of a scale type with an
+/// `axis_options` field: `start_angle`, `end_angle` and `direction` for angle scales, and
+/// `inner_radius` and `grid_shape` for radius scales.
+macro_rules! polar_options {
+    ($scale:ty) => {
+        /// On an angle scale, where the circle starts, clockwise from the top whichever way the
+        /// scale runs, so the first category stays put when the direction changes: an `Angle`, or
+        /// a state of one. 0° by default.
+        pub fn start_angle(mut self, angle: impl carbide::state::IntoReadState<carbide::draw::Angle>) -> $scale {
+            self.axis_options = self.axis_options.with_start_angle(angle);
+            self
+        }
+
+        /// On an angle scale, where the circle ends, as far from the start angle as it says, in
+        /// the scale's direction: an `Angle`, or a state of one. 360° by default, a full circle;
+        /// less draws part of one.
+        pub fn end_angle(mut self, angle: impl carbide::state::IntoReadState<carbide::draw::Angle>) -> $scale {
+            self.axis_options = self.axis_options.with_end_angle(angle);
+            self
+        }
+
+        /// On an angle scale, which way it runs around the circle, a direction or a state of
+        /// one. Clockwise by default.
+        pub fn direction(mut self, direction: impl carbide::state::IntoReadState<crate::scale::AngleDirection>) -> $scale {
+            self.axis_options = self.axis_options.with_direction(direction);
+            self
+        }
+
+        /// On a radius scale, the hole in the middle, as a share of the radius, a number or a
+        /// state of one. 0 by default.
+        pub fn inner_radius(mut self, ratio: impl carbide::state::IntoReadState<carbide::draw::Scalar>) -> $scale {
+            self.axis_options = self.axis_options.with_inner_radius(ratio);
+            self
+        }
+
+        /// On a radius scale, the shape of its rings, a shape or a state of one. When not set,
+        /// line controllers ask for polygons and the others for circles, and any circle wins.
+        pub fn grid_shape(mut self, shape: impl carbide::state::IntoReadState<crate::scale::GridShape>) -> $scale {
+            self.axis_options = self.axis_options.with_grid_shape(shape);
+            self
+        }
+    };
+}
+
+pub(crate) use polar_options;
 
 /// A state that always holds `value`.
 fn constant<T: StateContract + IntoReadState<T>>(value: T) -> Box<dyn AnyReadState<T=T>> {

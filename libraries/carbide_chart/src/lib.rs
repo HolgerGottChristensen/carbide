@@ -16,6 +16,6 @@ pub use mark::{LegendContext, BarCanvas, BarDataSet, BarMark, BarSlot, BarSlots,
 pub use style::{AxisStyle, ChartStyleExt, SeriesStyle};
 pub use legend::{LegendItem, LegendMarker, LegendPosition};
 pub use sequence::{Collection, CollectionState, IntoSequence, Many, One, Sequence, SequenceItem};
-pub use scale::{Axis, AxisOptions, AxisPosition, CategoryScale, DataBounds, LinearScale, LogScale, Scale, ScaleBounds, ScaleId, ScaleKind, ScaleRequest, Scales, TimeScale, TimeScaleZone, TimeUnit, Coordinates};
+pub use scale::{AngleDirection, Axis, AxisOptions, Circle, GridShape, Polar, PolarRole, AxisPosition, CategoryScale, DataBounds, LinearScale, LogScale, Scale, ScaleBounds, ScaleId, ScaleKind, ScaleRequest, Scales, TimeScale, TimeScaleZone, TimeUnit, Coordinates};
 
 extern crate carbide_core as carbide;

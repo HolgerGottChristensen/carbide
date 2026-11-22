@@ -13,9 +13,13 @@ use crate::{DataColor, DataSetOptions, Fill, SpanGaps, Value};
 use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
+use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
 use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::scale::{Axis, Coordinates, Scale, ScaleBounds, Scales};
+use crate::scale::{Axis, Coordinates, Polar, Scale, ScaleBounds, Scales, System};
+use crate::scale::axis::angle_corners;
+use crate::scale::polar::Ring;
+use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
 use carbide::environment::Environment;
@@ -44,7 +48,7 @@ where
 
         let dataset = dataset.as_dataset();
         let options = dataset.options();
-        let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
+        let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
         let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
         let key = StackKey::new(&options, dataset_index);
         let mut has_points = false;
@@ -93,6 +97,48 @@ pub(crate) struct DrawnLine {
     runs: Vec<Range<usize>>,
     /// The index, in the controller's lines, of the line below this one in its stack.
     below: Option<usize>,
+    /// For a dataset on polar scales, how its points lie around the circle. Its `points` are
+    /// then on the screen, and its orientation upright, so they are drawn where they are.
+    polar: Option<PolarLine>,
+}
+
+/// How a polar line's points lie around the circle (see `controller/polar_path.rs`).
+pub(crate) struct PolarLine {
+    polar: Polar,
+    /// The line's points that aren't missing, as `DrawnLine::points`, with their screen angles
+    /// and distances from the centre.
+    points: Vec<PolarPoint>,
+    /// Whether the line closes into a loop: on a full circle, with its categories around it, and
+    /// not broken where it would close (see `closes`).
+    closed: bool,
+    /// Whether the values run out along the radius, as in a radar. When the categories run out
+    /// along it instead (`horizontal`), the line isn't filled.
+    values_on_radius: bool,
+    /// The spokes of the angle scale, when the radius scale's rings are polygons, so an area
+    /// filled to a ring fills to the polygon the grid draws.
+    corners: Option<Vec<Scalar>>,
+}
+
+impl PolarLine {
+    /// The first point again, a full turn on, for a loop to close on.
+    fn closing(&self, run: &Range<usize>) -> Option<PolarPoint> {
+        if !self.closed {
+            return None;
+        }
+
+        let first = self.points[run.start];
+        let (start, end) = self.polar.angle_range();
+        let turn = if end >= start { std::f64::consts::TAU } else { -std::f64::consts::TAU };
+        Some(PolarPoint { angle: first.angle + turn, ..first })
+    }
+}
+
+/// Whether a polar line with these `runs`, from points whose x values or gaps are `xs`, closes
+/// into a loop: when it is drawn in one run, unless a missing value at either end breaks it there,
+/// which only `SpanGaps::Never` does (see `split_runs`).
+fn closes(runs: &[Range<usize>], xs: &[Option<Scalar>], span_gaps: SpanGaps) -> bool {
+    let broken_at_ends = span_gaps == SpanGaps::Never && (xs.first() == Some(&None) || xs.last() == Some(&None));
+    runs.len() == 1 && runs[0].len() >= 2 && !broken_at_ends
 }
 
 /// Splits a line into the runs it is drawn in without a break. `points` holds, for each of the
@@ -157,13 +203,30 @@ where
         let dataset = dataset.as_dataset();
         let options = dataset.options();
 
+        // A polar dataset keeps its x on its x scale; its controller's orientation picks the roles.
+        let orientation = orientation.for_dataset(&options, scales);
         let (index_id, value_id) = orientation.index_and_value_scales(&options);
         let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
             return;
         };
 
+        // Around the circle, the angle is whichever of the two scales has that role.
+        let polar = match scales.system(index_id, value_id) {
+            None => return,
+            Some(System::Cartesian) => None,
+            Some(System::Polar { x_is_angle: true }) => scales.polar(index_id, value_id).map(|polar| (polar, true)),
+            Some(System::Polar { x_is_angle: false }) => scales.polar(value_id, index_id).map(|polar| (polar, false)),
+        };
+
+        let corners = polar.and_then(|(_, index_on_angle)| {
+            let (angle_scale, radius_id) = if index_on_angle { (index_scale, value_id) } else { (value_scale, index_id) };
+            let corners = angle_corners(angle_scale);
+            (scales.grid_shape(radius_id) == GridShape::Polygon && corners.len() >= 3).then_some(corners)
+        });
+
         let key = StackKey::new(&options, dataset_index);
         let coordinates = Coordinates::new(scales, index_id, value_id);
+        let mut polar_points = vec![];
         let mut points = vec![];
         let mut colors = vec![];
         let mut point_indices = vec![];
@@ -178,10 +241,23 @@ where
 
             let y = if stacks { sums.add(&key, x, y).1 } else { y };
 
-            points.push(Position::new(
-                pixel(orientation.index_axis(), index_scale, x, chart_area),
-                pixel(orientation.value_axis(), value_scale, y, chart_area),
-            ));
+            match polar {
+                Some((polar, index_on_angle)) => {
+                    let (index, value) = (index_scale.normalize(x), value_scale.normalize(y));
+                    let (angle, radius) = if index_on_angle { (index, value) } else { (value, index) };
+                    let point = PolarPoint {
+                        position: polar.position(angle, radius),
+                        angle: polar.angle(angle),
+                        distance: polar.distance(radius),
+                    };
+                    points.push(point.position);
+                    polar_points.push(point);
+                }
+                None => points.push(Position::new(
+                    pixel(orientation.index_axis(), index_scale, x, chart_area),
+                    pixel(orientation.value_axis(), value_scale, y, chart_area),
+                )),
+            }
             colors.push(point.color());
             point_indices.push(point_index);
             xs.push(Some(x));
@@ -196,7 +272,18 @@ where
             tops.insert(key, lines.len());
         }
 
-        lines.push(DrawnLine { dataset_index, options, orientation, points, colors, point_indices, runs, below });
+        let polar = polar.map(|(polar, index_on_angle)| PolarLine {
+            polar,
+            points: polar_points,
+            closed: index_on_angle && polar.is_full_circle() && closes(&runs, &xs, options.span_gaps),
+            values_on_radius: index_on_angle,
+            corners,
+        });
+
+        // Polar points are on the screen already.
+        let orientation = if polar.is_some() { Orientation::Vertical } else { orientation };
+
+        lines.push(DrawnLine { dataset_index, options, orientation, points, colors, point_indices, runs, below, polar });
     });
 
     lines
@@ -227,6 +314,11 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
         let Rgba(r, g, b, a) = Rgba::from(dataset_color(options, line.dataset_index, palette));
         let color = rgba(r, g, b, a * fill_opacity);
 
+        if let Some(polar_line) = &line.polar {
+            draw_polar_fill(line, polar_line, lines, value_scale, ctx, color);
+            continue;
+        }
+
         for run in &line.runs {
             let points = &line.points[run.clone()];
 
@@ -253,6 +345,98 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
             ctx.set_fill_style(color);
             ctx.fill();
         }
+    }
+}
+
+/// Fills a polar line's area: between the line and a ring around the centre, in the shape of the
+/// grid's rings (the inner radius for `Fill::Bottom`, the rim for `Fill::Top`, or the ring at the
+/// baseline value), or, for
+/// `Fill::Stack`, the line below it in its stack. A loop and a whole ring, or two loops, make a
+/// ring-shaped area, traced in opposite directions so it fills under either fill rule; an open
+/// line closes along the ring's arc, or back along the line below. Lines whose categories run out
+/// along the radius aren't filled.
+fn draw_polar_fill(line: &DrawnLine, polar_line: &PolarLine, lines: &[DrawnLine], value_scale: &dyn Scale, ctx: &mut CanvasContext, color: Color) {
+    if !polar_line.values_on_radius {
+        return;
+    }
+
+    let polar = &polar_line.polar;
+    let center = polar.circle().center;
+    let interpolation = line.options.interpolation;
+
+    let below = match (line.options.fill, line.below) {
+        (Fill::Stack, Some(below)) => lines[below].polar.as_ref().map(|below_polar| (&lines[below], below_polar)),
+        _ => None,
+    };
+
+    // The distance of the ring the area fills to, when not to the line below.
+    let baseline = match line.options.fill {
+        Fill::Bottom => polar.inner_radius(),
+        Fill::Top => polar.circle().radius,
+        fill => {
+            let value = fill.baseline_value().unwrap_or(0.0);
+            let (low, high) = (value_scale.min().min(value_scale.max()), value_scale.min().max(value_scale.max()));
+            polar.distance(value_scale.normalize(value.clamp(low, high)))
+        }
+    };
+
+    let ring = Ring { polar, distance: baseline, corners: polar_line.corners.as_deref() };
+
+    for run in &line.runs {
+        let points = &polar_line.points[run.clone()];
+        if points.len() < 2 {
+            continue;
+        }
+
+        ctx.begin_path();
+        let closing = polar_line.closing(run);
+        trace_polar_line(&mut *ctx, points, closing, interpolation, center);
+
+        match (closing, below) {
+            (Some(_), Some((below, below_polar))) if below_polar.closed => {
+                // The loop below, backwards, as a second loop.
+                let reversed: Vec<PolarPoint> = below_polar.points.iter().rev().copied().collect();
+                let closing = below_polar.closing(&(0..below_polar.points.len())).map(|first| {
+                    let last = reversed[0];
+                    PolarPoint { angle: last.angle - (first.angle - below_polar.points[0].angle), ..last }
+                });
+                let interpolation = reversed_steps(below.options.interpolation);
+                trace_polar_line(&mut *ctx, &reversed, closing, interpolation, center);
+            }
+            (None, Some((below, below_polar))) => {
+                trace_polar_line_reversed(&mut *ctx, &below_polar.points, below.options.interpolation, center);
+            }
+            (Some(_), _) => {
+                // A whole ring, the other way round.
+                if baseline > 0.5 {
+                    ring.trace_whole(&mut *ctx, true);
+                }
+            }
+            (None, None) => {
+                let (first, last) = (points[0], points[points.len() - 1]);
+                if baseline > 0.5 {
+                    PathSink::line_to(&mut *ctx, ring.point(last.angle));
+                    ring.trace(&mut *ctx, last.angle, first.angle);
+                } else {
+                    PathSink::line_to(&mut *ctx, center);
+                }
+            }
+        }
+
+        ctx.close_path();
+        ctx.set_fill_style(color);
+        ctx.fill();
+    }
+}
+
+/// The interpolation a line traced backwards uses to follow the same path: steps turn the other
+/// way round.
+fn reversed_steps(interpolation: crate::Interpolation) -> crate::Interpolation {
+    use crate::{Interpolation, Stepped};
+    match interpolation {
+        Interpolation::Stepped(Stepped::Before) => Interpolation::Stepped(Stepped::After),
+        Interpolation::Stepped(Stepped::After) => Interpolation::Stepped(Stepped::Before),
+        interpolation => interpolation,
     }
 }
 
@@ -303,6 +487,17 @@ fn baseline_pixel(fill: Fill, value_scale: &dyn Scale, value_axis: Axis, chart_a
 /// smooth, monotone or stepped), each unbroken run on its own (see `SpanGaps`).
 pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_area: Rect, palette: &Palette) {
     for line in lines {
+        if let Some(polar_line) = &line.polar {
+            ctx.begin_path();
+            for run in &line.runs {
+                let closing = polar_line.closing(run);
+                trace_polar_line(&mut *ctx, &polar_line.points[run.clone()], closing, line.options.interpolation, polar_line.polar.circle().center);
+            }
+            ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
+            ctx.stroke();
+            continue;
+        }
+
         let area = line.orientation.frame_area(chart_area);
 
         ctx.begin_path();
@@ -412,7 +607,8 @@ where
     datasets.foreach(&mut |_dataset_index, dataset| {
         let dataset = dataset.as_dataset();
         let options = dataset.options();
-        let (index_scale, value_scale) = orientation.index_and_value_scales(&options);
+        orientation.request_polar_roles(&options, bounds);
+        let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
 
         let mut first = None;
         dataset.points(&mut |_index, point| {

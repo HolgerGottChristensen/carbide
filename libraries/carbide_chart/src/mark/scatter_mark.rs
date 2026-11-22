@@ -8,7 +8,7 @@ use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::{Axis, Coordinates, Scale};
+use crate::scale::{Axis, Coordinates, Polar, Scale};
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
@@ -130,6 +130,8 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
     pub(crate) sizes: SizeScale,
+    /// On polar scales, the mapping onto the chart's circle, and whether x is the angle.
+    pub(crate) polar: Option<(Polar, bool)>,
 }
 
 impl ScatterCanvas<'_, '_, '_, '_> {
@@ -145,8 +147,14 @@ impl ScatterCanvas<'_, '_, '_, '_> {
         self.coordinates.y(point)
     }
 
-    /// Where the point at `x` and `y` on the dataset's scales falls on the screen.
+    /// Where the point at `x` and `y` on the dataset's scales falls on the screen: around the
+    /// chart's circle when they are polar scales.
     pub fn position(&self, x: Scalar, y: Scalar) -> Position {
+        if let Some((polar, x_on_angle)) = self.polar {
+            let (x, y) = (self.x_scale.normalize(x), self.y_scale.normalize(y));
+            return if x_on_angle { polar.position(x, y) } else { polar.position(y, x) };
+        }
+
         Position::new(
             pixel(Axis::Horizontal, self.x_scale, x, self.area),
             pixel(Axis::Vertical, self.y_scale, y, self.area),

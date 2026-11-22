@@ -4,7 +4,7 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::IntoReadState;
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
 
 const MIN_TICK_SPACING: f64 = 1e-14;
 
@@ -69,8 +69,15 @@ impl LinearScale {
         self
     }
 
+    crate::scale::axis_options::polar_options!(LinearScale);
+
+    /// At most how many ticks the scale has: fewer along a radius, which is half as long as the
+    /// chart area is wide, and whose labels sit beside one spoke.
     fn tick_limits(&self) -> u32 {
-        11
+        match self.axis_options.polar_role() {
+            Some(PolarRole::Radius) => 6,
+            _ => 11,
+        }
     }
 
     /// Widens a range with no width, as from a single point or equal values, by 5% of the value
@@ -96,6 +103,10 @@ impl Scale for LinearScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
+        self.axis_options.set_polar_role(role);
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {

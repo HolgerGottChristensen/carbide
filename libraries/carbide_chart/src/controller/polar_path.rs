@@ -1,0 +1,274 @@
+//! The path of a line through a polar dataset's points. Points are mapped to the screen first and
+//! then traced, so a straight segment is a chord between two spokes, the radar convention, and a
+//! smooth line is a spline through the screen positions. Steps follow the circle: along an arc
+//! at one point's distance from the centre, and along a spoke to the next.
+//!
+//! On a full circle a line can close into a loop: the last point joins the first, through the
+//! same interpolation, and a smooth loop has no ends, so every point's tangent comes from its
+//! neighbours on both sides.
+
+use carbide::draw::{Position, Scalar};
+use crate::controller::line_path::PathSink;
+use crate::element::{Interpolation, Stepped};
+use crate::scale::polar::trace_arc;
+
+/// The tension of the spline `Interpolation::Monotone` draws as around a circle, which has no
+/// direction to be monotone in.
+const LOOP_TENSION: Scalar = 0.4;
+
+/// A point of a polar line: where it is on the screen, and its screen angle (radians clockwise
+/// from the top) and distance from the centre, which steps follow.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) struct PolarPoint {
+    pub(crate) position: Position,
+    pub(crate) angle: Scalar,
+    pub(crate) distance: Scalar,
+}
+
+/// Adds the line through `points` around `center` to the current path, starting with a `move_to`
+/// at the first point. With `closing`, the line goes on from the last point to it: the first
+/// point again, a full turn on, so steps keep going the same way round. `Interpolation::Smooth`
+/// with `closing` is a closed spline.
+pub(crate) fn trace_polar_line(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], closing: Option<PolarPoint>, interpolation: Interpolation, center: Position) {
+    let Some(first) = points.first() else {
+        return;
+    };
+
+    path.move_to(first.position);
+    trace_from_first(path, points, closing, interpolation, center);
+}
+
+/// Adds the line through `points` to the current path backwards, from the last point to the
+/// first, continuing the path with a `line_to` the last point: the lower edge of a stacked area
+/// whose top was traced forwards. Steps turn the other way round, so the edge follows the same
+/// path the line itself is drawn along.
+pub(crate) fn trace_polar_line_reversed(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], interpolation: Interpolation, center: Position) {
+    let Some(last) = points.last() else {
+        return;
+    };
+
+    let reversed: Vec<PolarPoint> = points.iter().rev().copied().collect();
+    let interpolation = match interpolation {
+        Interpolation::Stepped(Stepped::Before) => Interpolation::Stepped(Stepped::After),
+        Interpolation::Stepped(Stepped::After) => Interpolation::Stepped(Stepped::Before),
+        interpolation => interpolation,
+    };
+
+    path.line_to(last.position);
+    trace_from_first(path, &reversed, None, interpolation, center);
+}
+
+/// Traces from the first of `points`, where the path is, to the last, then on to `closing`.
+fn trace_from_first(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], closing: Option<PolarPoint>, interpolation: Interpolation, center: Position) {
+    let mut all: Vec<PolarPoint> = points.to_vec();
+    all.extend(closing);
+
+    match interpolation {
+        Interpolation::Linear | Interpolation::Smooth { tension: 0.0 } => {
+            for point in &all[1..] {
+                path.line_to(point.position);
+            }
+        }
+        Interpolation::Smooth { tension } => trace_spline(path, &all, closing.is_some(), tension),
+        Interpolation::Monotone => trace_spline(path, &all, closing.is_some(), LOOP_TENSION),
+        Interpolation::Stepped(stepped) => {
+            for pair in all.windows(2) {
+                trace_step(path, pair[0], pair[1], stepped, center);
+            }
+        }
+    }
+}
+
+/// A tension spline through `points`, from the first, where the path is: each point's tangent is
+/// parallel to the line from its previous neighbour to its next, as for cartesian lines. When
+/// `closed`, the last point is the first again, and the neighbours wrap around, so the loop is
+/// smooth where it closes too.
+fn trace_spline(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], closed: bool, tension: Scalar) {
+    let count = points.len();
+    if count < 2 {
+        return;
+    }
+
+    // Around a loop the last point is the first; its neighbours are the second and the one
+    // before the last.
+    let neighbours = |index: usize| -> (Position, Position) {
+        let previous = if index > 0 {
+            points[index - 1].position
+        } else if closed {
+            points[count - 2].position
+        } else {
+            points[0].position
+        };
+
+        let next = if index + 1 < count {
+            points[index + 1].position
+        } else if closed {
+            points[1].position
+        } else {
+            points[count - 1].position
+        };
+
+        (previous, next)
+    };
+
+    let controls: Vec<(Position, Position)> = (0..count)
+        .map(|index| {
+            let current = points[index].position;
+            let (previous, next) = neighbours(index);
+            let d01 = distance(previous, current);
+            let d12 = distance(current, next);
+            let (s01, s12) = if d01 + d12 > 0.0 { (d01 / (d01 + d12), d12 / (d01 + d12)) } else { (0.0, 0.0) };
+            let (dx, dy) = (next.x - previous.x, next.y - previous.y);
+
+            (
+                Position::new(current.x - tension * s01 * dx, current.y - tension * s01 * dy),
+                Position::new(current.x + tension * s12 * dx, current.y + tension * s12 * dy),
+            )
+        })
+        .collect();
+
+    for index in 1..count {
+        path.bezier_curve_to(controls[index - 1].1, controls[index].0, points[index].position);
+    }
+}
+
+/// One step from `from`, where the path is, to `to`, along the circle: `After` goes along the arc
+/// at `from`'s distance, then along `to`'s spoke; `Before` along `from`'s spoke, then the arc at
+/// `to`'s distance; `Middle` turns halfway round, and `MiddleVertical` halfway out.
+fn trace_step(path: &mut (impl PathSink + ?Sized), from: PolarPoint, to: PolarPoint, stepped: Stepped, center: Position) {
+    let at = |angle: Scalar, distance: Scalar| {
+        let (sin, cos) = angle.sin_cos();
+        Position::new(center.x + distance * sin, center.y - distance * cos)
+    };
+
+    match stepped {
+        Stepped::After => {
+            trace_arc(path, center, from.distance, from.angle, to.angle);
+            path.line_to(to.position);
+        }
+        Stepped::Before => {
+            path.line_to(at(from.angle, to.distance));
+            trace_arc(path, center, to.distance, from.angle, to.angle);
+        }
+        Stepped::Middle => {
+            let middle = (from.angle + to.angle) / 2.0;
+            trace_arc(path, center, from.distance, from.angle, middle);
+            path.line_to(at(middle, to.distance));
+            trace_arc(path, center, to.distance, middle, to.angle);
+        }
+        Stepped::MiddleVertical => {
+            let middle = (from.distance + to.distance) / 2.0;
+            path.line_to(at(from.angle, middle));
+            trace_arc(path, center, middle, from.angle, to.angle);
+            path.line_to(to.position);
+        }
+    }
+}
+
+fn distance(a: Position, b: Position) -> Scalar {
+    ((b.x - a.x).powi(2) + (b.y - a.y).powi(2)).sqrt()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::f64::consts::{FRAC_PI_2, PI, TAU};
+    use carbide::draw::{Position, Scalar};
+    use crate::controller::line_path::PathSink;
+    use crate::element::{Interpolation, Stepped};
+    use super::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
+
+    const CENTER: Position = Position::new(0.0, 0.0);
+
+    fn point(angle: Scalar, distance: Scalar) -> PolarPoint {
+        let (sin, cos) = angle.sin_cos();
+        PolarPoint { position: Position::new(distance * sin, -distance * cos), angle, distance }
+    }
+
+    fn close(a: Position, b: Position) -> bool {
+        (a.x - b.x).abs() < 1e-6 && (a.y - b.y).abs() < 1e-6
+    }
+
+    /// A straight loop is chords from spoke to spoke, back to where it started.
+    #[test]
+    fn straight_loops_close_with_a_chord() {
+        let points = [point(0.0, 10.0), point(FRAC_PI_2, 20.0), point(PI, 10.0)];
+        let closing = PolarPoint { angle: TAU, ..points[0] };
+
+        let mut traced = Traced::default();
+        trace_polar_line(&mut traced, &points, Some(closing), Interpolation::Linear, CENTER);
+
+        assert_eq!(traced.commands.len(), 4, "move, two chords, and the chord back");
+        assert!(close(traced.commands[3].1, points[0].position));
+    }
+
+    /// A smooth loop has no ends: where it closes, the curve leaves the first point along the
+    /// same tangent it arrives on, so there is no corner.
+    #[test]
+    fn smooth_loops_have_no_corner_where_they_close() {
+        let points = [point(0.0, 10.0), point(TAU / 3.0, 14.0), point(2.0 * TAU / 3.0, 8.0)];
+        let closing = PolarPoint { angle: TAU, ..points[0] };
+
+        let mut traced = Traced::default();
+        trace_polar_line(&mut traced, &points, Some(closing), Interpolation::Smooth { tension: 0.4 }, CENTER);
+
+        let curves: Vec<&[Position]> = traced.curves.iter().map(|curve| curve.as_slice()).collect();
+        assert_eq!(curves.len(), 3);
+
+        // The arriving control point, the first point, and the leaving one are in a line.
+        let arriving = curves[2][1];
+        let leaving = curves[0][0];
+        let first = points[0].position;
+        let cross = (first.x - arriving.x) * (leaving.y - first.y) - (first.y - arriving.y) * (leaving.x - first.x);
+        assert!(cross.abs() < 1e-9, "the tangents line up: {}", cross);
+    }
+
+    /// `Stepped::After` runs along the arc at the distance it leaves from, then along the next
+    /// point's spoke.
+    #[test]
+    fn steps_follow_the_circle_then_the_spoke() {
+        let points = [point(0.0, 10.0), point(FRAC_PI_2, 20.0)];
+
+        let mut traced = Traced::default();
+        trace_polar_line(&mut traced, &points, None, Interpolation::Stepped(Stepped::After), CENTER);
+
+        let arc_end = traced.curves[0][2];
+        assert!(close(arc_end, Position::new(10.0, 0.0)), "a quarter turn at distance 10 ends on the right: {:?}", arc_end);
+        assert!(close(traced.commands.last().unwrap().1, points[1].position), "then out along the spoke");
+    }
+
+    /// Traced backwards, a step turns the other way round, so it follows the same path.
+    #[test]
+    fn reversed_steps_follow_the_same_path() {
+        let points = [point(0.0, 10.0), point(FRAC_PI_2, 20.0)];
+
+        let mut traced = Traced::default();
+        trace_polar_line_reversed(&mut traced, &points, Interpolation::Stepped(Stepped::After), CENTER);
+
+        // Back along the spoke to distance 10 first, then the arc back to the top.
+        assert!(close(traced.commands[1].1, Position::new(10.0, 0.0)), "{:?}", traced.commands);
+        assert!(close(traced.curves[0][2], points[0].position));
+    }
+
+    #[derive(Default)]
+    struct Traced {
+        /// Each command's kind and end point, in order.
+        commands: Vec<(&'static str, Position)>,
+        /// Each curve's two control points and end point.
+        curves: Vec<Vec<Position>>,
+    }
+
+    impl PathSink for Traced {
+        fn move_to(&mut self, to: Position) {
+            self.commands.push(("move", to));
+        }
+
+        fn line_to(&mut self, to: Position) {
+            self.commands.push(("line", to));
+        }
+
+        fn bezier_curve_to(&mut self, control1: Position, control2: Position, to: Position) {
+            self.commands.push(("curve", to));
+            self.curves.push(vec![control1, control2, to]);
+        }
+    }
+}

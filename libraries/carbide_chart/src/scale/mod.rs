@@ -7,6 +7,7 @@ mod log_scale;
 mod scales;
 mod scale_id;
 mod coordinates;
+pub(crate) mod polar;
 
 use std::fmt::Debug;
 use dyn_clone::DynClone;
@@ -22,6 +23,7 @@ pub use time_scale::{TimeScale, TimeScaleZone, TimeUnit};
 pub use scales::*;
 pub use scale_id::ScaleId;
 pub use coordinates::Coordinates;
+pub use polar::{Circle, Polar};
 pub(crate) use coordinates::Places;
 
 /// A scale maps data values to positions along an axis, and picks the ticks along it. It is pure
@@ -99,6 +101,12 @@ pub trait Scale: DynClone + Debug + 'static {
         &[]
     }
 
+    /// Gives a radial scale its role on a fit, the angle or the radius, from how datasets bind
+    /// it, or `None` when none does (see `PolarRole`). The built-in scales keep it in their
+    /// `AxisOptions`, which space categories around a full circle and pick fewer ticks along a
+    /// radius by it. Other scales ignore it.
+    fn set_polar_role(&mut self, _role: Option<PolarRole>) {}
+
     /// The index of the category `text` on the scale, which is where a value naming it is placed
     /// (see `Value::Text`), or `None` when the scale has no such category. Scales without
     /// categories have none, so text isn't drawn on them.
@@ -123,16 +131,21 @@ pub trait Scale: DynClone + Debug + 'static {
 
 dyn_clone::clone_trait_object!(Scale);
 
+/// The direction a scale runs in: along a side of the chart area, or around and out from the
+/// centre of a polar chart.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Axis {
     Horizontal,
     Vertical,
+    /// Around or out from the centre of a polar chart, as the datasets bound to it say (see
+    /// `PolarRole`): a dataset's x scale is the angle and its y scale the radius, or the other way
+    /// round when its controller is `horizontal`.
     Radial,
 }
 
 impl Axis {
     /// Where a scale on this axis sits unless told otherwise: below the chart area for
-    /// horizontal scales, left of it for the others.
+    /// horizontal scales, left of it for the others. Radial scales take no side.
     pub fn default_position(&self) -> AxisPosition {
         match self {
             Axis::Horizontal => AxisPosition::Bottom,
@@ -149,6 +162,35 @@ impl Axis {
             Axis::Radial => position == self.default_position(),
         }
     }
+}
+
+/// What a radial scale is in its polar chart, an angle scale or a radius scale: the angle, around the circle from its start angle
+/// to its end angle (see `AxisOptions::start_angle`), or the radius, out from the inner radius to
+/// the rim (see `AxisOptions::inner_radius`). The chart gives each radial scale its role on every
+/// fit, from how datasets bind it (see `ScaleBounds::request_polar_role`).
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum PolarRole {
+    Angle,
+    Radius,
+}
+
+/// Which way an angle scale runs around the circle.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, StateValue)]
+pub enum AngleDirection {
+    #[default]
+    Clockwise,
+    CounterClockwise,
+}
+
+/// The shape of a polar chart's rings, drawn at the radius scale's ticks.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, StateValue)]
+pub enum GridShape {
+    /// Circles around the centre.
+    #[default]
+    Circle,
+    /// Polygons with a corner on each of the angle scale's ticks, the radar convention: its
+    /// categories, on a category scale. With fewer than three ticks the rings are circles.
+    Polygon,
 }
 
 /// The side of the chart area a scale is drawn on.

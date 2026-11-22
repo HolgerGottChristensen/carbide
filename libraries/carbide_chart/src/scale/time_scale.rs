@@ -9,7 +9,7 @@ use carbide_derive::StateValue;
 use chrono::{DateTime, Datelike, FixedOffset, Local, Months, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Timelike};
 
 use crate::{DataValue, Value};
-use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
 
 /// The time zone a `TimeScale` places its ticks in and shows its labels in: whole days start at
 /// midnight in it, and months on its first of the month.
@@ -259,17 +259,19 @@ impl TimeScale {
         self
     }
 
+    crate::scale::axis_options::polar_options!(TimeScale);
+
     /// The unit the ticks are spaced in, as last fitted.
     pub fn unit(&self) -> TimeUnit {
         self.unit
     }
 
-    /// At most how many steps fit along the axis: fewer along a horizontal axis, whose date labels
-    /// are wide.
+    /// At most how many steps fit along the axis: fewer along a horizontal axis or around a
+    /// circle, whose date labels sit side by side.
     fn max_spaces(&self) -> u32 {
-        match self.axis {
-            Axis::Horizontal => 6,
-            Axis::Vertical | Axis::Radial => 10,
+        match (self.axis, self.axis_options.polar_role()) {
+            (Axis::Horizontal, _) | (Axis::Radial, Some(PolarRole::Angle)) => 6,
+            _ => 10,
         }
     }
 
@@ -303,6 +305,10 @@ impl Scale for TimeScale {
 
     fn axis_options(&self) -> &AxisOptions {
         &self.axis_options
+    }
+
+    fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
+        self.axis_options.set_polar_role(role);
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {

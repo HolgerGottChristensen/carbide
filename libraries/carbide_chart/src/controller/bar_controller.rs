@@ -11,7 +11,7 @@ use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
-use crate::scale::{Axis, Coordinates, Places, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{Axis, Coordinates, Places, Scale, ScaleBounds, ScaleId, ScaleKind, Scales, System};
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
 /// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
@@ -106,7 +106,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_scale, value_scale) = self.orientation.index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
 
             bounds.request_kind(index_scale, ScaleKind::Category);
             bounds.request_offset(index_scale);
@@ -169,12 +169,26 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
 
             let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
                 return;
             };
+
+            // Bars around a circle aren't designed yet.
+            match scales.system(index_id, value_id) {
+                Some(System::Cartesian) => {}
+                Some(System::Polar { .. }) => {
+                    scales.warn_once("polar bars", index_id, value_id, || format!("Bars on the polar scales {:?} and {:?} are not drawn yet", index_id.name(), value_id.name()));
+                    places.push(None);
+                    return;
+                }
+                None => {
+                    places.push(None);
+                    return;
+                }
+            }
 
             let (group_index, _) = groups.entry(index_id.clone()).or_default().insert_full(slot_key(dataset, &options, dataset_index));
             places.push(Some((index_id.clone(), group_index)));
@@ -217,7 +231,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 };
 
                 let options = dataset.options();
-                let (_, value_id) = self.orientation.index_and_value_scales(&options);
+                let (_, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
 
                 let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                     return;
@@ -329,7 +343,7 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
                 return;
             }
 
-            let (index_id, value_id) = self.orientation.index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation.for_dataset(&options, places).index_and_value_scales(&options);
             let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_overlay_mark(dataset);
             dataset.points(&mut |_index, point| {

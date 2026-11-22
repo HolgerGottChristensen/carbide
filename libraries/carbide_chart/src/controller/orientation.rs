@@ -12,7 +12,7 @@
 use carbide::draw::{Dimension, Position, Rect, Scalar};
 use crate::DataSetOptions;
 use crate::controller::line_path::PathSink;
-use crate::scale::{Axis, Scale, ScaleId};
+use crate::scale::{Axis, Places, PolarRole, Scale, ScaleBounds, ScaleId};
 
 /// The direction a controller's values grow in.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
@@ -47,6 +47,38 @@ impl Orientation {
         match self {
             Orientation::Vertical => (&options.x_scale, &options.y_scale),
             Orientation::Horizontal => (&options.y_scale, &options.x_scale),
+        }
+    }
+
+    /// How a dataset with `options` reads its points: as this orientation says, unless it is on
+    /// two radial scales. A polar dataset keeps its x on its x scale and its y on its y scale, and
+    /// the orientation swaps the scales' roles instead (see `polar_roles`), so the same scales
+    /// and labels draw a radar upright and categories out along the radius lying down.
+    pub(crate) fn for_dataset(self, options: &DataSetOptions, places: &dyn Places) -> Orientation {
+        if places.is_radial(&options.x_scale) && places.is_radial(&options.y_scale) {
+            Orientation::Vertical
+        } else {
+            self
+        }
+    }
+
+    /// The roles of a polar dataset's x and y scales: upright, the x scale is the angle and the
+    /// y scale the radius, so the categories run around the circle; lying down, the other way
+    /// round, so they run out along the radius.
+    pub(crate) fn polar_roles(self) -> (PolarRole, PolarRole) {
+        match self {
+            Orientation::Vertical => (PolarRole::Angle, PolarRole::Radius),
+            Orientation::Horizontal => (PolarRole::Radius, PolarRole::Angle),
+        }
+    }
+
+    /// Asks for the roles of a polar dataset's scales (see `polar_roles`), when the dataset with
+    /// `options` is on two radial scales.
+    pub(crate) fn request_polar_roles(self, options: &DataSetOptions, bounds: &ScaleBounds) {
+        if bounds.is_radial(&options.x_scale) && bounds.is_radial(&options.y_scale) {
+            let (x, y) = self.polar_roles();
+            bounds.request_polar_role(&options.x_scale, x);
+            bounds.request_polar_role(&options.y_scale, y);
         }
     }
 

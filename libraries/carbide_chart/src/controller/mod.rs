@@ -18,6 +18,7 @@ pub(crate) mod drawing;
 pub(crate) mod line_path;
 mod line_controller;
 pub(crate) mod orientation;
+pub(crate) mod polar_path;
 mod scatter_controller;
 pub(crate) mod stacking;
 

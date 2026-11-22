@@ -15,7 +15,7 @@ use crate::controller::{ControllerSequence, DatasetController};
 use crate::legend::{self, LegendPosition};
 use crate::sequence::IntoSequence;
 use crate::style::axis_style;
-use crate::scale::{axis, AxisPosition, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{axis, Axis, AxisPosition, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -108,7 +108,18 @@ impl<C: ControllerSequence> Chart<C> {
     /// requested kind changed, then fits each scale to its requests. Data bound to an id the chart
     /// has no scale for is not drawn; it is logged once per id.
     fn fit_scales(&mut self, env: &mut Environment) {
-        let mut bounds = ScaleBounds::default();
+        // A default scale across from a radial scale is radial too, before the controllers
+        // collect, so they read polar datasets as polar. Its kind is kept until the requests say.
+        let defaults: Vec<ScaleId> = self.default_kinds.keys().cloned().collect();
+        for id in &defaults {
+            let axis = self.default_axis(id);
+            if let Some(kind) = self.default_kinds.get(id).copied()
+                && self.scales.get(id).map(|scale| scale.axis()) != Some(axis) {
+                self.scales.insert_boxed(id.clone(), kind.build(axis));
+            }
+        }
+
+        let bounds = ScaleBounds::with_radial(self.scales.radial_ids());
 
         // Each scale's own categories come first, so data naming them is placed on them.
         for (id, scale) in self.scales.iter() {
@@ -117,6 +128,7 @@ impl<C: ControllerSequence> Chart<C> {
             });
         }
 
+        let mut bounds = bounds;
         self.controllers.foreach(&mut |_, controller| {
             controller.collect_bounds(&mut bounds, env);
         });
@@ -126,19 +138,41 @@ impl<C: ControllerSequence> Chart<C> {
                 self.warned_scale_ids.insert(id.clone());
                 log::warn!("Chart has no scale with id {:?}; datasets bound to it are not drawn", id.name());
             }
+
+            let request = bounds.get(id);
+            if request.polar_role_conflict() {
+                self.scales.warn_once("role conflict", id, id, || format!("The radial scale {:?} is the angle for some datasets and the radius for others; it is drawn as the {:?}, and datasets that need the other role are not drawn", id.name(), request.polar_role().unwrap_or(PolarRole::Angle)));
+            }
         }
 
-        for (id, kind) in &mut self.default_kinds {
-            let requested = bounds.get(id).default_kind();
+        for id in defaults {
+            let requested = bounds.get(&id).default_kind();
 
-            if requested != *kind
-                && let Some(axis) = self.scales.get(id).map(|scale| scale.axis()) {
-                    self.scales.insert_boxed(id.clone(), requested.build(axis));
-                    *kind = requested;
-                }
+            if Some(requested) != self.default_kinds.get(&id).copied()
+                && let Some(axis) = self.scales.get(&id).map(|scale| scale.axis()) {
+                self.scales.insert_boxed(id.clone(), requested.build(axis));
+                self.default_kinds.insert(id, requested);
+            }
         }
 
         self.scales.fit(&bounds);
+    }
+
+    /// The axis the default scale `id` is built on: across from the other default, as
+    /// `ScaleId::X` is horizontal and `ScaleId::Y` vertical, unless the other was set to a radial
+    /// scale with `Chart::scale`. Then it is radial too, so a radial x scale is all a polar chart
+    /// needs.
+    fn default_axis(&self, id: &ScaleId) -> Axis {
+        let (own, other) = if *id == ScaleId::Y {
+            (Axis::Vertical, ScaleId::X)
+        } else {
+            (Axis::Horizontal, ScaleId::Y)
+        };
+
+        let other_is_radial = !self.default_kinds.contains_key(&other)
+            && self.scales.get(&other).is_some_and(|scale| scale.axis() == Axis::Radial);
+
+        if other_is_radial { Axis::Radial } else { own }
     }
 
     /// Lays out everything around the chart area, from the outside in: the padding, the chart
@@ -336,14 +370,20 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let layout = self.layout(&sizes, &decorations);
         let chart_area = layout.chart_area;
 
+        // Polar scales share a circle inside the chart area, with room for the labels around it.
+        let circle = axis::polar_circle(&self.scales, &mut canvas, chart_area);
+        self.scales.set_circle(circle);
+
         for (id, scale) in self.scales.iter() {
             axis::draw_grid(scale, &mut canvas, chart_area, layout.offset(id));
         }
+        axis::draw_polar_grid(&self.scales, &mut canvas);
 
         for (id, scale) in self.scales.iter() {
             axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id));
             axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id]);
         }
+        axis::draw_polar_border(&self.scales, &mut canvas);
 
         if let (Some(title), Some(position)) = (&title, layout.title) {
             let color = axis_style(canvas.env()).label_color(canvas.env());
@@ -378,7 +418,7 @@ mod tests {
     use crate::dataset::DatasetExt;
     use crate::sequence::Sequence;
     use crate::{DataColor, ScatterDataSet, StackId};
-    use crate::scale::{Axis, AxisPosition, CategoryScale, LinearScale, ScaleId};
+    use crate::scale::{Axis, AxisPosition, CategoryScale, GridShape, LinearScale, PolarRole, ScaleId, ScaleKind, Scales, System};
     use super::{Chart, Decorations, SCALE_SPACING};
 
     /// Datasets spread over several controllers share the chart's scales: they fit exactly as
@@ -1094,6 +1134,91 @@ mod tests {
     fn text_on_a_scale_without_categories_has_no_place() {
         let chart = fitted(Chart::new(BarController::new(vec![("Mon", 3.0)])).scale(ScaleId::X, LinearScale::new(Axis::Horizontal)));
         assert_eq!(chart.scales.get(&ScaleId::X).unwrap().category_index("Mon"), None);
+    }
+
+    /// Setting the x or the y scale to a radial scale makes the other default scale radial too,
+    /// its kind still picked by the controllers: a line chart's category scale for x.
+    #[test]
+    fn the_default_scale_follows_a_radial_scale() {
+        let radar = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+        assert_eq!(radar.scales.get(&ScaleId::Y).unwrap().axis(), Axis::Radial);
+
+        let around = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]))
+            .scale(ScaleId::Y, LinearScale::new(Axis::Radial)));
+        assert_eq!(around.scales.get(&ScaleId::X).unwrap().axis(), Axis::Radial);
+        assert_eq!(around.default_kinds.get(&ScaleId::X).copied(), Some(ScaleKind::Category));
+
+        let flat = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0])));
+        assert_eq!((flat.scales.get(&ScaleId::X).unwrap().axis(), flat.scales.get(&ScaleId::Y).unwrap().axis()), (Axis::Horizontal, Axis::Vertical));
+    }
+
+    /// A dataset's x scale is the angle and its y scale the radius; `horizontal` swaps the roles,
+    /// not the data, so the categories stay on the x scale and run out along the radius.
+    #[test]
+    fn horizontal_swaps_the_polar_roles() {
+        let radar = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+        assert_eq!((radar.scales.polar_role(&ScaleId::X), radar.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Angle), Some(PolarRole::Radius)));
+
+        let lying = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]).horizontal())
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+        assert_eq!((lying.scales.polar_role(&ScaleId::X), lying.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Radius), Some(PolarRole::Angle)));
+        assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Linear), "the categories stayed on x");
+        assert_eq!(scale_range(&lying, ScaleId::X), (0.0, 2.0), "the x scale spans the three categories");
+    }
+
+    /// A dataset is drawn in polar coordinates on two radial scales of different roles, and on a
+    /// side each otherwise; one radial scale with a side scale, or two radial scales of the same
+    /// role, belong to no system, so the dataset isn't drawn.
+    #[test]
+    fn scale_pairs_pick_a_coordinate_system() {
+        let lying = ScaleId::new("lying");
+        let chart = fitted(Chart::new((
+            LineController::new(vec![1.0, 2.0]),
+            LineController::new(vec![1.0, 2.0].x_scale(lying.clone())).horizontal(),
+        ))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial))
+            .scale(lying.clone(), CategoryScale::new(Axis::Radial)));
+
+        let scales = &chart.scales;
+        assert_eq!(scales.system(&ScaleId::X, &ScaleId::Y), Some(System::Polar { x_is_angle: true }));
+        assert_eq!(scales.system(&lying, &ScaleId::Y), None, "the y scale is the radius, and so is the lying x scale");
+        assert_eq!(scales.polar_role(&lying), Some(PolarRole::Radius));
+
+        let cartesian = Scales::new();
+        assert_eq!(cartesian.system(&ScaleId::X, &ScaleId::Y), Some(System::Cartesian));
+    }
+
+    /// A radial scale bound as the angle by one dataset and as the radius by another keeps the
+    /// first role asked for.
+    #[test]
+    fn a_radial_scale_keeps_the_first_role_asked_for() {
+        let chart = fitted(Chart::new((
+            LineController::new(vec![1.0, 2.0]),
+            LineController::new(vec![1.0, 2.0]).horizontal(),
+        ))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+
+        assert_eq!(chart.scales.polar_role(&ScaleId::X), Some(PolarRole::Angle));
+    }
+
+    /// Line controllers ask for polygon rings and scatter controllers for circles; any circle
+    /// wins, and a shape set on the scale wins over both.
+    #[test]
+    fn grid_shapes_follow_the_controllers_unless_set() {
+        let radar = fitted(Chart::new(LineController::new(vec![1.0, 2.0]))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+        assert_eq!(radar.scales.grid_shape(&ScaleId::Y), GridShape::Polygon);
+
+        let both = fitted(Chart::new((LineController::new(vec![1.0, 2.0]), ScatterController::new(vec![(0.0, 1.0)])))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
+        assert_eq!(both.scales.grid_shape(&ScaleId::Y), GridShape::Circle);
+
+        let set = fitted(Chart::new(LineController::new(vec![1.0, 2.0]))
+            .scale(ScaleId::X, CategoryScale::new(Axis::Radial))
+            .scale(ScaleId::Y, LinearScale::new(Axis::Radial).grid_shape(GridShape::Circle)));
+        assert_eq!(set.scales.grid_shape(&ScaleId::Y), GridShape::Circle);
     }
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {
