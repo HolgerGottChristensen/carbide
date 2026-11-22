@@ -24,6 +24,8 @@ pub struct AxisOptions {
     checked_position: Option<AxisPosition>,
     weight: Box<dyn AnyReadState<T=i32>>,
     grid_lines: Box<dyn AnyReadState<T=bool>>,
+    /// Whether `with_grid_lines` set the grid lines, rather than the default.
+    grid_lines_set: bool,
     tick_marks: Box<dyn AnyReadState<T=bool>>,
     title: Option<Box<dyn AnyReadState<T=String>>>,
     start_angle: Box<dyn AnyReadState<T=Angle>>,
@@ -45,6 +47,7 @@ impl AxisOptions {
             checked_position: None,
             weight: constant(0),
             grid_lines: constant(true),
+            grid_lines_set: false,
             tick_marks: constant(true),
             title: None,
             start_angle: constant(Angle::Degrees(0.0)),
@@ -79,6 +82,13 @@ impl AxisOptions {
     /// Whether the axis draws grid lines across the chart area.
     pub fn grid_lines(&self) -> bool {
         *self.grid_lines.value_dyn()
+    }
+
+    /// Whether the grid lines were set (see `with_grid_lines`), rather than left to the default. A
+    /// controller asking for a scale's decoration to be hidden, as a pie does, leaves a scale whose
+    /// grid lines were set to draw it.
+    pub fn grid_lines_set(&self) -> bool {
+        self.grid_lines_set
     }
 
     /// Whether the axis draws tick marks in its band, between the chart area and its labels.
@@ -183,6 +193,7 @@ impl AxisOptions {
     /// Sets whether the axis draws grid lines, a value or a state of one.
     pub fn with_grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> AxisOptions {
         self.grid_lines = grid_lines.into_read_state().as_dyn_read();
+        self.grid_lines_set = true;
         self
     }
 

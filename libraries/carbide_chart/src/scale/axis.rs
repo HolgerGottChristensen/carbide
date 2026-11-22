@@ -270,15 +270,16 @@ pub(crate) fn rim_labels(angle_scale: &dyn Scale, ctx: &mut CanvasContext) -> Ve
 
         let text = tick_label(angle_scale, *tick, ctx.env());
         let size = ctx.measure_text(&text);
-        labels.push((text, RimLabel { angle, size }));
+        labels.push((text, RimLabel { angle, size, gap: polar::RIM_LABEL_GAP }));
     }
 
     labels
 }
 
 /// The circle for the chart's polar scales inside `area`, made room for the first angle scale's
-/// labels around the rim, or `None` when the chart has no polar scales.
-pub(crate) fn polar_circle(scales: &Scales, ctx: &mut CanvasContext, area: Rect) -> Option<Circle> {
+/// labels around the rim, unless they are hidden, and for `outside`, the labels controllers draw
+/// outside it (`DatasetController::polar_labels`), or `None` when the chart has no polar scales.
+pub(crate) fn polar_circle(scales: &Scales, ctx: &mut CanvasContext, area: Rect, outside: &[RimLabel]) -> Option<Circle> {
     let (angle_scale, radius_scale) = scales.first_polar_pair();
     if angle_scale.is_none() && radius_scale.is_none() {
         return None;
@@ -286,9 +287,11 @@ pub(crate) fn polar_circle(scales: &Scales, ctx: &mut CanvasContext, area: Rect)
 
     let (start, sweep) = angle_scale.map(polar::angle_range).unwrap_or((0.0, std::f64::consts::TAU));
     let inner = radius_scale.map(|scale| scale.axis_options().inner_radius()).unwrap_or(0.0);
-    let labels: Vec<RimLabel> = angle_scale
+    let mut labels: Vec<RimLabel> = angle_scale
+        .filter(|_| !scales.first_angle_hidden())
         .map(|scale| rim_labels(scale, ctx).into_iter().map(|(_, label)| label).collect())
         .unwrap_or_default();
+    labels.extend_from_slice(outside);
 
     Some(polar::fit_circle(area, start, sweep, inner, &labels))
 }
@@ -313,8 +316,10 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
 
     let corners = angle_corners(angle_scale);
 
+    let angle_hidden = scales.first_angle_hidden();
+
     for (id, radius_scale) in scales.with_role(PolarRole::Radius) {
-        if !radius_scale.axis_options().grid_lines() {
+        if !radius_scale.axis_options().grid_lines() || scales.is_decoration_hidden(id) {
             continue;
         }
 
@@ -342,7 +347,7 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
     let radius_scale = scales.first_polar_pair().1;
     let polar = radius_scale.map(|radius_scale| Polar::new(angle_scale, radius_scale, circle));
 
-    if let Some(polar) = polar && angle_scale.axis_options().grid_lines() {
+    if let Some(polar) = polar && angle_scale.axis_options().grid_lines() && !angle_hidden {
         ctx.begin_path();
         let mut drawn: Vec<Scalar> = vec![];
         for value in angle_scale.grid_line_values() {
@@ -371,7 +376,8 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
     // Where each label around the rim is drawn, kept so the radius labels can keep clear of them.
     let mut rim_boxes: Vec<Rect> = vec![];
 
-    for (text, label) in rim_labels(angle_scale, ctx) {
+    let rim_labels = if angle_hidden { vec![] } else { rim_labels(angle_scale, ctx) };
+    for (text, label) in rim_labels {
         let direction = polar::direction(label.angle);
         let anchor = Position::new(
             circle.center.x + (circle.radius + polar::RIM_LABEL_GAP) * direction.x,
@@ -389,6 +395,10 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
     // lying chart's categories go on the other side, as its bars start at the spoke and run the
     // way of the sweep, over labels on that side.
     for (radius_id, radius_scale) in scales.with_role(PolarRole::Radius) {
+        if scales.is_decoration_hidden(radius_id) {
+            continue;
+        }
+
         let polar = Polar::new(angle_scale, radius_scale, circle);
         let (start, end) = polar.angle_range();
         let towards_sweep = if end >= start { 1.0 } else { -1.0 };
@@ -436,6 +446,9 @@ pub(crate) fn draw_polar_border(scales: &Scales, ctx: &mut CanvasContext) {
     let Some(circle) = scales.circle() else {
         return;
     };
+    if scales.first_radius_hidden() {
+        return;
+    }
 
     let polar = Polar::new(angle_scale, radius_scale, circle);
     let corners = angle_corners(angle_scale);

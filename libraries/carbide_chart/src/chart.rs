@@ -16,6 +16,7 @@ use crate::legend::{self, LegendPosition};
 use crate::sequence::IntoSequence;
 use crate::style::axis_style;
 use crate::scale::{axis, Axis, AxisPosition, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::polar::RimLabel;
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -111,8 +112,14 @@ impl<C: ControllerSequence> Chart<C> {
         // A default scale across from a radial scale is radial too, before the controllers
         // collect, so they read polar datasets as polar. Its kind is kept until the requests say.
         let defaults: Vec<ScaleId> = self.default_kinds.keys().cloned().collect();
+        let mut first_prefers_polar = None;
+        self.controllers.foreach(&mut |_, controller| {
+            first_prefers_polar.get_or_insert(controller.prefers_polar());
+        });
+        let first_prefers_polar = first_prefers_polar.unwrap_or(false);
+
         for id in &defaults {
-            let axis = self.default_axis(id);
+            let axis = self.default_axis(id, first_prefers_polar);
             if let Some(kind) = self.default_kinds.get(id).copied()
                 && self.scales.get(id).map(|scale| scale.axis()) != Some(axis) {
                 self.scales.insert_boxed(id.clone(), kind.build(axis));
@@ -156,21 +163,32 @@ impl<C: ControllerSequence> Chart<C> {
         }
 
         self.scales.fit(&bounds);
+
+        // A scale gives up its decoration when a controller asks, unless its grid lines were set.
+        let hidden = bounds.ids().into_iter()
+            .filter(|id| bounds.get(id).hidden_decoration())
+            .filter(|id| self.scales.get(id).is_some_and(|scale| !scale.axis_options().grid_lines_set()))
+            .collect();
+        self.scales.set_decoration_hidden(hidden);
     }
 
     /// The axis the default scale `id` is built on: across from the other default, as
     /// `ScaleId::X` is horizontal and `ScaleId::Y` vertical, unless the other was set to a radial
     /// scale with `Chart::scale`. Then it is radial too, so a radial x scale is all a polar chart
-    /// needs.
-    fn default_axis(&self, id: &ScaleId) -> Axis {
+    /// needs. When both are defaults, they are radial if the first controller prefers it
+    /// (`DatasetController::prefers_polar`), as a pie does.
+    fn default_axis(&self, id: &ScaleId, first_prefers_polar: bool) -> Axis {
         let (own, other) = if *id == ScaleId::Y {
             (Axis::Vertical, ScaleId::X)
         } else {
             (Axis::Horizontal, ScaleId::Y)
         };
 
-        let other_is_radial = !self.default_kinds.contains_key(&other)
-            && self.scales.get(&other).is_some_and(|scale| scale.axis() == Axis::Radial);
+        let other_is_radial = if self.default_kinds.contains_key(&other) {
+            first_prefers_polar
+        } else {
+            self.scales.get(&other).is_some_and(|scale| scale.axis() == Axis::Radial)
+        };
 
         if other_is_radial { Axis::Radial } else { own }
     }
@@ -371,7 +389,16 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let chart_area = layout.chart_area;
 
         // Polar scales share a circle inside the chart area, with room for the labels around it.
-        let circle = axis::polar_circle(&self.scales, &mut canvas, chart_area);
+        // Labels the controllers draw outside the circle need room too.
+        let mut outside = vec![];
+        let scales = &self.scales;
+        self.controllers.foreach(&mut |_, controller| {
+            controller.polar_labels(scales, &mut |text| canvas.measure_text(text), &mut |angle, size, gap| {
+                outside.push(RimLabel { angle, size, gap });
+            });
+        });
+
+        let circle = axis::polar_circle(&self.scales, &mut canvas, chart_area, &outside);
         self.scales.set_circle(circle);
 
         for (id, scale) in self.scales.iter() {

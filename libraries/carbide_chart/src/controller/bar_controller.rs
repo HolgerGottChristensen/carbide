@@ -424,7 +424,7 @@ fn base_value(value_scale: &dyn Scale) -> Scalar {
 /// both along the index axis in the dataset's frame (pixels along a side, angles or distances
 /// around a circle), capped at the axis's `length`. It sets how thick a point's group of bars can
 /// be without overlapping the next point's.
-fn min_sample_size(mut index_positions: Vec<Scalar>, mut tick_positions: Vec<Scalar>, length: Scalar) -> Scalar {
+pub(crate) fn min_sample_size(mut index_positions: Vec<Scalar>, mut tick_positions: Vec<Scalar>, length: Scalar) -> Scalar {
     let mut min = length;
 
     for positions in [&mut index_positions, &mut tick_positions] {

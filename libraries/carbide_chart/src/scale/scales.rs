@@ -92,6 +92,9 @@ pub struct ScaleRequest {
     polar_role_conflict: bool,
     /// Whether a lying controller's categories run out along the scale (see `request_lying`).
     lying: bool,
+    /// Whether a controller asked for the scale's grid, ticks and labels not to be drawn (see
+    /// `request_hidden_decoration`).
+    hidden_decoration: bool,
     /// The kind of scale the first value reported calls for: `Some(None)` when it was a number,
     /// which leaves the kind to the controllers.
     data_kind: Option<Option<ScaleKind>>,
@@ -106,6 +109,12 @@ impl ScaleRequest {
     /// The smallest end above zero of the data ranges included (see `DataBounds::smallest_positive`).
     pub fn smallest_positive(&self) -> Option<Scalar> {
         self.bounds.smallest_positive()
+    }
+
+    /// Whether a controller asked for the scale's decoration to be hidden (see
+    /// `ScaleBounds::request_hidden_decoration`).
+    pub fn hidden_decoration(&self) -> bool {
+        self.hidden_decoration
     }
 
     /// Whether anyone asked for the scale to be offset (see `Scale::set_offset`).
@@ -186,6 +195,13 @@ impl ScaleBounds {
     /// is `horizontal`, which swaps their roles instead (see `request_polar_role`).
     pub fn is_radial(&self, id: &ScaleId) -> bool {
         self.radial.contains(id)
+    }
+
+    /// Asks for the scale `id` not to draw its grid, its ticks and its labels around a circle, as a
+    /// pie draws only its slices. A scale whose grid lines were set (`grid_lines`) keeps drawing
+    /// them, with its labels: `.grid_lines(true)` brings a pie's grid back.
+    pub fn request_hidden_decoration(&self, id: &ScaleId) {
+        self.change(id, |request| request.hidden_decoration = true);
     }
 
     /// Notes that a lying controller (`horizontal`) has its categories on the radial scale `id`,
@@ -322,6 +338,8 @@ pub struct Scales {
     roles: IndexMap<ScaleId, PolarRole>,
     /// The radial scales a lying controller's categories ran out along on the last fit.
     lying: HashSet<ScaleId>,
+    /// The scales whose grid, ticks and labels aren't drawn (see `set_decoration_hidden`).
+    hidden_decoration: HashSet<ScaleId>,
     /// What was already logged about a dataset's pair of scales, so each is logged once.
     warned_pairs: RefCell<HashSet<(&'static str, ScaleId, ScaleId)>>,
 }
@@ -332,7 +350,7 @@ impl Scales {
         scales.insert(ScaleId::X, Box::new(LinearScale::new(Axis::Horizontal)));
         scales.insert(ScaleId::Y, Box::new(LinearScale::new(Axis::Vertical)));
 
-        Scales { scales, grid_shapes: IndexMap::new(), circle: None, roles: IndexMap::new(), lying: HashSet::new(), warned_pairs: RefCell::new(HashSet::new()) }
+        Scales { scales, grid_shapes: IndexMap::new(), circle: None, roles: IndexMap::new(), lying: HashSet::new(), hidden_decoration: HashSet::new(), warned_pairs: RefCell::new(HashSet::new()) }
     }
 
     /// Adds `scale` under `id`. A scale already under `id` is replaced in place, so replacing a
@@ -375,6 +393,17 @@ impl Scales {
         self.roles.get(id).copied()
     }
 
+    /// Whether the scale `id`'s grid, ticks and labels are left out (see
+    /// `ScaleBounds::request_hidden_decoration`).
+    pub(crate) fn is_decoration_hidden(&self, id: &ScaleId) -> bool {
+        self.hidden_decoration.contains(id)
+    }
+
+    /// Sets which scales leave out their grid, ticks and labels, on every fit.
+    pub(crate) fn set_decoration_hidden(&mut self, ids: HashSet<ScaleId>) {
+        self.hidden_decoration = ids;
+    }
+
     /// Whether a lying controller's categories ran out along the radial scale `id` on the last fit.
     pub(crate) fn is_lying(&self, id: &ScaleId) -> bool {
         self.lying.contains(id)
@@ -388,6 +417,16 @@ impl Scales {
     /// The ids of the radial scales.
     pub(crate) fn radial_ids(&self) -> IndexSet<ScaleId> {
         self.iter().filter(|(_, scale)| scale.axis() == Axis::Radial).map(|(id, _)| id.clone()).collect()
+    }
+
+    /// Whether the first angle scale leaves out its spokes and labels (see `is_decoration_hidden`).
+    pub(crate) fn first_angle_hidden(&self) -> bool {
+        self.with_role(PolarRole::Angle).next().is_some_and(|(id, _)| self.is_decoration_hidden(id))
+    }
+
+    /// Whether the first radius scale leaves out its rings, labels and rim.
+    pub(crate) fn first_radius_hidden(&self) -> bool {
+        self.with_role(PolarRole::Radius).next().is_some_and(|(id, _)| self.is_decoration_hidden(id))
     }
 
     /// The first angle scale and the first radius scale, in the chart's order, which the circle

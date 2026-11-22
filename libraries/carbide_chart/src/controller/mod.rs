@@ -1,12 +1,13 @@
 use std::fmt::Debug;
 use dyn_clone::DynClone;
-use carbide::draw::Rect;
+use carbide::draw::{Dimension, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 pub use bar_controller::BarController;
 pub(crate) use bar_controller::bar_slot;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
+pub use pie_controller::{PieController, PiePart, DEFAULT_RING_SPACING};
 pub use scatter_controller::ScatterController;
 use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};
@@ -17,6 +18,7 @@ pub(crate) mod band;
 pub(crate) mod drawing;
 pub(crate) mod line_path;
 mod line_controller;
+mod pie_controller;
 pub(crate) mod orientation;
 pub(crate) mod polar_path;
 mod scatter_controller;
@@ -57,6 +59,19 @@ pub trait DatasetController: DynClone + Debug + 'static {
     /// `Chart::legend`). `env` holds the chart's `SeriesStyle`. The default adds nothing.
     fn legend_items(&self, _env: &Environment, _items: &mut Vec<LegendItem>) {}
 
+    /// Whether the controller draws around a circle unless told otherwise, so a chart whose first
+    /// controller it is makes its default x and y scales radial, as a pie controller does. The
+    /// default is `false`: default scales run along the sides.
+    fn prefers_polar(&self) -> bool {
+        false
+    }
+
+    /// Calls `f` with each label the controller draws outside a polar chart's circle, its screen
+    /// angle (see `Polar`), its size, and how far out from the rim it starts, so the chart can make
+    /// room for it when it fits the circle, as it does for the angle scale's labels. `measure` gives
+    /// a text's size. The scales are fitted; the circle isn't yet. The default has none.
+    fn polar_labels(&self, _scales: &Scales, _measure: &mut dyn FnMut(&str) -> Dimension, _f: &mut dyn FnMut(Scalar, Dimension, Scalar)) {}
+
     /// Boxes the controller, so controllers of different types can share a `Vec` or a state of
     /// a `Vec`, as the controllers of a chart.
     fn boxed(self) -> Box<dyn DatasetController> where Self: Sized {
@@ -83,6 +98,14 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         (**self).legend_items(env, items);
+    }
+
+    fn prefers_polar(&self) -> bool {
+        (**self).prefers_polar()
+    }
+
+    fn polar_labels(&self, scales: &Scales, measure: &mut dyn FnMut(&str) -> Dimension, f: &mut dyn FnMut(Scalar, Dimension, Scalar)) {
+        (**self).polar_labels(scales, measure, f);
     }
 
     /// Already boxed: returned as it is, not boxed again.

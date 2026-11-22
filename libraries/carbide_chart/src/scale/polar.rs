@@ -261,11 +261,13 @@ pub(crate) fn trace_arc(path: &mut (impl PathSink + ?Sized), center: Position, r
     }
 }
 
-/// A label around the rim: its screen angle and its measured size.
+/// A label around the rim: its screen angle, its measured size, and how far out from the rim it
+/// starts.
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct RimLabel {
     pub(crate) angle: Scalar,
     pub(crate) size: Dimension,
+    pub(crate) gap: Scalar,
 }
 
 /// The circle for the chart's polar scales inside `area`. The arc from `start` sweeping `sweep`
@@ -289,7 +291,7 @@ pub(crate) fn fit_circle(area: Rect, start: Scalar, sweep: Scalar, inner: Scalar
 
     for label in labels {
         let direction = direction(label.angle);
-        let anchor = Position::new(area_center.x + RIM_LABEL_GAP * direction.x, area_center.y + RIM_LABEL_GAP * direction.y);
+        let anchor = Position::new(area_center.x + label.gap * direction.x, area_center.y + label.gap * direction.y);
         let per_radius = Position::new(direction.x - middle.x, direction.y - middle.y);
         let (left, right) = label_extent(direction.x, label.size.width);
         let (top, bottom) = label_extent(direction.y, label.size.height);
@@ -485,7 +487,7 @@ mod tests {
     #[test]
     fn rim_labels_shrink_the_circle_to_fit_down_to_half() {
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(200.0, 200.0));
-        let label = |angle: Scalar, width: Scalar| RimLabel { angle, size: Dimension::new(width, 10.0) };
+        let label = |angle: Scalar, width: Scalar| RimLabel { angle, size: Dimension::new(width, 10.0), gap: super::RIM_LABEL_GAP };
 
         let fitted = fit_circle(area, 0.0, 2.0 * PI, 0.0, &[label(0.0, 20.0), label(FRAC_PI_2, 30.0)]);
         // The right label needs 6 + 30 beside the rim, the top one 6 + 10 above it.
