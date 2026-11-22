@@ -1,23 +1,24 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-/// Structural pixel comparison, via the `image_compare` crate's `rgba_hybrid_compare` (SSIM on
-/// luma, RMS on chroma/alpha). Every mature prior-art system researched for this fixture
-/// (Servo/WebRender's `wrench`, egui_kittest, wgpu's own CTS harness) avoids exact byte matches —
-/// AA/font-hinting/driver differences make that flaky even on one machine. A raw per-channel delta
-/// tolerance still flags every one of those pixels as "different," just below a cutoff; SSIM
-/// instead judges a small neighborhood at once, so a region that's merely shifted by AA/hinting
-/// noise scores as structurally the same while a genuinely wrong pixel block still scores low.
+/// How closely a rendered image must match its golden image. Pixels are compared one by one by
+/// colour distance (see `color_delta`): a pixel fails when its distance is above `threshold`, and
+/// the snapshot fails when more than `max_failed_pixels` pixels fail. A small change anywhere
+/// fails; slight rendering noise, such as anti-aliasing, stays below the threshold.
 pub struct SnapshotOptions {
-    /// Minimum acceptable `image_compare::Similarity::score` — 1.0 is pixel-for-pixel identical,
-    /// 0.0 is completely dissimilar.
-    pub min_similarity: f64,
+    /// The colour distance a pixel may differ by, from 0 (identical) to 1 (the most distant
+    /// colours): a pixel fails when its distance is above `MAX_DELTA * threshold²`.
+    pub threshold: f32,
+    /// How many pixels may fail before the snapshot does. Keep it small, as a few dozen pixels
+    /// can be a real change.
+    pub max_failed_pixels: usize,
 }
 
 impl Default for SnapshotOptions {
     fn default() -> Self {
         SnapshotOptions {
-            min_similarity: 0.98,
+            threshold: 0.1,
+            max_failed_pixels: 0,
         }
     }
 }
@@ -45,28 +46,74 @@ fn update_requested() -> bool {
     env::var("BLESS").is_ok()
 }
 
-/// Below this, on any of the deviation map's R/G/B channels (structure/chroma-U/chroma-V,
-/// 0 = identical, 255 = maximally different — see `image_compare`'s `to_color_map`), a pixel is
-/// still considered visually matching for highlighting purposes; this is purely about what the
-/// `.diff.png` visualization highlights, independent of `SnapshotOptions::min_similarity`, which
-/// gates pass/fail on the aggregate score instead.
-const DIFF_HIGHLIGHT_THRESHOLD: u8 = 8;
+/// The largest distance `color_delta` gives between any two colours.
+const MAX_DELTA: f32 = 35215.0;
 
-/// For each pixel, if the structural deviation map (from `comparison.image.to_color_map()`) shows
-/// any channel above `DIFF_HIGHLIGHT_THRESHOLD`, output a solid alert color (magenta) at full
-/// opacity; otherwise output a dimmed/desaturated version of the golden pixel (~40% brightness
-/// grayscale). This makes mismatched regions pop against a muted, still-recognizable background
-/// rather than requiring a reviewer to flip between two full-color images and spot the difference
-/// by eye — the same technique most reftest tooling (e.g. `wrench`) uses, simplified to a
-/// threshold-based highlight instead of a continuous heatmap.
-fn diff_image(golden: &image::RgbaImage, comparison: &image_compare::Similarity) -> image::RgbaImage {
-    let deviation = comparison.image.to_color_map().into_rgba8();
+/// The thresholds a failure message counts failing pixels at, to help choose a threshold.
+const THRESHOLD_SWEEP: [f32; 6] = [0.0, 0.02, 0.05, 0.1, 0.2, 0.4];
+
+/// The perceived distance between two pixels: both are blended over white by their alpha, and
+/// their difference is weighted in YIQ colour space, as in Y. Kotsarenko and F. Ramos, "Measuring
+/// perceived color difference using YIQ NTSC transmission color space in mobile applications",
+/// Programación Matemática y Software 2(2), 2010,
+/// <https://doaj.org/article/b2e3b5088ba943eebd9af2927fef08ad>. 0 for equal colours, at most
+/// `MAX_DELTA`.
+fn color_delta(a: &image::Rgba<u8>, b: &image::Rgba<u8>) -> f32 {
+    if a == b {
+        return 0.0;
+    }
+
+    let blend = |pixel: &image::Rgba<u8>| {
+        let alpha = pixel[3] as f32 / 255.0;
+        let channel = |c: u8| 255.0 + (c as f32 - 255.0) * alpha;
+        (channel(pixel[0]), channel(pixel[1]), channel(pixel[2]))
+    };
+
+    let ((r1, g1, b1), (r2, g2, b2)) = (blend(a), blend(b));
+    let y = |r: f32, g: f32, b: f32| r * 0.29889531 + g * 0.58662247 + b * 0.11448223;
+    let i = |r: f32, g: f32, b: f32| r * 0.59597799 - g * 0.27417610 - b * 0.32180189;
+    let q = |r: f32, g: f32, b: f32| r * 0.21147017 - g * 0.52261711 + b * 0.31114694;
+
+    let dy = y(r1, g1, b1) - y(r2, g2, b2);
+    let di = i(r1, g1, b1) - i(r2, g2, b2);
+    let dq = q(r1, g1, b1) - q(r2, g2, b2);
+
+    0.5053 * dy * dy + 0.299 * di * di + 0.1957 * dq * dq
+}
+
+/// Each pixel's colour distance between two images of the same size.
+struct Comparison {
+    deltas: Vec<f32>,
+}
+
+impl Comparison {
+    fn new(golden: &image::RgbaImage, actual: &image::RgbaImage) -> Comparison {
+        Comparison { deltas: golden.pixels().zip(actual.pixels()).map(|(g, a)| color_delta(g, a)).collect() }
+    }
+
+    /// How many pixels differ by more than `threshold` allows.
+    fn failing(&self, threshold: f32) -> usize {
+        let limit = MAX_DELTA * threshold * threshold;
+        self.deltas.iter().filter(|delta| **delta > limit).count()
+    }
+
+    /// The failing pixels at each of `THRESHOLD_SWEEP`, for the failure message.
+    fn sweep(&self) -> String {
+        THRESHOLD_SWEEP.iter()
+            .map(|threshold| format!("{threshold}: {}", self.failing(*threshold)))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
+/// The failing pixels in magenta, over a dimmed greyscale copy of the golden image.
+fn diff_image(golden: &image::RgbaImage, comparison: &Comparison, threshold: f32) -> image::RgbaImage {
+    let limit = MAX_DELTA * threshold * threshold;
 
     image::RgbaImage::from_fn(golden.width(), golden.height(), |x, y| {
-        let d = deviation.get_pixel(x, y);
-        let differs = d[0] > DIFF_HIGHLIGHT_THRESHOLD || d[1] > DIFF_HIGHLIGHT_THRESHOLD || d[2] > DIFF_HIGHLIGHT_THRESHOLD;
+        let index = (y * golden.width() + x) as usize;
 
-        if differs {
+        if comparison.deltas[index] > limit {
             image::Rgba([255, 0, 255, 255])
         } else {
             let g = golden.get_pixel(x, y);
@@ -77,44 +124,40 @@ fn diff_image(golden: &image::RgbaImage, comparison: &image_compare::Similarity)
     })
 }
 
-/// Pixel-snapshot comparison. On mismatch, writes `{name}.new.png` (the actual output) and
-/// `{name}.diff.png` (a visualization, see `diff_image`) next to the golden file. `scope` nests
-/// the golden under a per-test subdirectory — see `snapshot_dir`.
+/// Compares `actual` with its golden image (see `compare_and_report_in`). `scope` nests the
+/// golden under a per-test subdirectory (see `snapshot_dir`).
 pub(crate) fn compare_and_report(name: &str, actual: &image::RgbaImage, options: &SnapshotOptions, scope: Option<&str>) -> Result<(), String> {
     compare_and_report_in(&snapshot_dir(scope), name, actual, options, update_requested())
 }
 
-/// The actual comparison logic, taking `dir` and `update` explicitly rather than deriving them
-/// from `CARGO_MANIFEST_DIR` and the `BLESS` env var internally (`compare_and_report`
-/// does that). Split out so unit tests (see `tests` below) can exercise both the "update" and
-/// "compare" branches deterministically against a scratch directory — reading/writing a
-/// process-wide env var from a test would race against every other test in the same binary
-/// running concurrently on another thread, since `BLESS` isn't thread-local.
-///
-/// BLESS's overwrite (`update == true`) intentionally never reads the old golden's
-/// dimensions before overwriting — a widget under test is allowed to legitimately change size
-/// (a layout tweak, a new frame size in the test itself) between one snapshot run and the next,
-/// and running with `BLESS=true` after such a change should just accept the new size,
-/// the same as it accepts any other pixel difference, rather than requiring the old golden to be
-/// deleted by hand first.
-/// A prior failing run may have left `.new.png`/`.diff.png` behind. Called both when `update`
-/// just brought the golden in line with `actual`, and when a plain (non-update) comparison
-/// simply passes on its own (e.g. the underlying rendering bug that caused the earlier failure
-/// got fixed by an unrelated code change) — in both cases the leftover files are now stale and,
-/// left in place, would look like an unresolved mismatch even though there isn't one anymore.
+/// Removes the `.new.png` and `.diff.png` an earlier failing run may have left, once the golden
+/// matches again, so they don't look like an unresolved mismatch.
 fn remove_stale_png_artifacts(dir: &Path, name: &str) {
     let _ = std::fs::remove_file(dir.join(format!("{name}.new.png")));
     let _ = std::fs::remove_file(dir.join(format!("{name}.diff.png")));
 }
 
+fn write_golden(dir: &Path, name: &str, actual: &image::RgbaImage) -> Result<(), String> {
+    let golden_path = dir.join(format!("{name}.png"));
+    std::fs::create_dir_all(dir).map_err(|e| format!("snapshot {name:?}: could not create {}: {e}", dir.display()))?;
+    actual.save(&golden_path).map_err(|e| format!("snapshot {name:?}: could not write {}: {e}", golden_path.display()))?;
+    remove_stale_png_artifacts(dir, name);
+    Ok(())
+}
+
+/// The comparison, with `dir` and `update` passed in rather than read from `CARGO_MANIFEST_DIR`
+/// and `BLESS`, so unit tests can use a scratch directory without racing over an env var.
+///
+/// - **`update` (`BLESS`):** the golden is replaced by `actual`, even when its size changed.
+/// - **Within the tolerance:** passes, and nothing is written; goldens only change with `BLESS`.
+/// - **Beyond the tolerance, or a different size:** fails, and writes `{name}.new.png` and, for
+///   the same size, `{name}.diff.png` next to the golden. The message counts the failing pixels
+///   at several thresholds.
 fn compare_and_report_in(dir: &Path, name: &str, actual: &image::RgbaImage, options: &SnapshotOptions, update: bool) -> Result<(), String> {
     let golden_path = dir.join(format!("{name}.png"));
 
     if update {
-        std::fs::create_dir_all(dir).map_err(|e| format!("snapshot {name:?}: could not create {}: {e}", dir.display()))?;
-        actual.save(&golden_path).map_err(|e| format!("snapshot {name:?}: could not write {}: {e}", golden_path.display()))?;
-        remove_stale_png_artifacts(dir, name);
-        return Ok(());
+        return write_golden(dir, name, actual);
     }
 
     let golden = image::open(&golden_path)
@@ -125,10 +168,7 @@ fn compare_and_report_in(dir: &Path, name: &str, actual: &image::RgbaImage, opti
         .into_rgba8();
 
     if golden.dimensions() != actual.dimensions() {
-        // No `diff_image` here — `image_compare::rgba_hybrid_compare` (and any other per-pixel
-        // comparison) requires matching dimensions, so there's no meaningful magenta/dimmed
-        // overlay to produce. Still write `.new.png` so a reviewer can look at the resized output
-        // directly and decide whether to accept it with `BLESS=true`.
+        // No diff image, as pixels can only be compared between images of one size.
         let new_path = dir.join(format!("{name}.new.png"));
         let _ = actual.save(&new_path);
         return Err(format!(
@@ -137,17 +177,17 @@ fn compare_and_report_in(dir: &Path, name: &str, actual: &image::RgbaImage, opti
         ));
     }
 
-    let comparison = image_compare::rgba_hybrid_compare(&golden, actual)
-        .expect("dimensions were already checked to match above");
+    let comparison = Comparison::new(&golden, actual);
+    let failing = comparison.failing(options.threshold);
 
-    if comparison.score < options.min_similarity {
+    if failing > options.max_failed_pixels {
         let new_path = dir.join(format!("{name}.new.png"));
         let diff_path = dir.join(format!("{name}.diff.png"));
         let _ = actual.save(&new_path);
-        let _ = diff_image(&golden, &comparison).save(&diff_path);
+        let _ = diff_image(&golden, &comparison, options.threshold).save(&diff_path);
         return Err(format!(
-            "snapshot {name:?}: structural similarity {:.4} is below the minimum {:.4}; actual output written to {}, diff visualization written to {}",
-            comparison.score, options.min_similarity, new_path.display(), diff_path.display()
+            "snapshot {name:?}: {failing} pixels differ by more than the threshold {} (at most {} may); actual output written to {}, diff written to {}. Failing pixels by threshold: {}",
+            options.threshold, options.max_failed_pixels, new_path.display(), diff_path.display(), comparison.sweep()
         ));
     }
 
@@ -416,5 +456,89 @@ mod tests {
         assert!(!new_path.exists(), "a passing comparison should clean up the now-stale .new.json");
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A solid 600 by 500 image, the size of a typical snapshot.
+    fn chart_sized(pixel: [u8; 4]) -> image::RgbaImage {
+        solid(600, 500, pixel)
+    }
+
+    /// A small, strong change, such as a short text changing in a 40 by 15 pixel block, fails,
+    /// writes the new image and the diff, and leaves the golden as it was.
+    #[test]
+    fn a_small_strong_change_fails() {
+        let dir = scratch_dir("a_small_strong_change_fails");
+        let options = SnapshotOptions::default();
+        let golden = chart_sized([30, 30, 30, 255]);
+
+        compare_and_report_in(&dir, "chart", &golden, &options, true).expect("seeding the golden");
+
+        let mut changed = golden.clone();
+        for x in 20..60 {
+            for y in 480..495 {
+                if (x + y) % 3 == 0 {
+                    changed.put_pixel(x, y, image::Rgba([200, 200, 200, 255]));
+                }
+            }
+        }
+
+        let err = compare_and_report_in(&dir, "chart", &changed, &options, false).expect_err("a small, strong change should fail");
+        assert!(err.contains("pixels differ"), "{err}");
+        assert!(dir.join("chart.new.png").exists() && dir.join("chart.diff.png").exists());
+        assert_eq!(image::open(dir.join("chart.png")).unwrap().into_rgba8(), golden, "a failing comparison leaves the golden as it was");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Slight differences in many pixels, below the threshold, pass and leave the golden as it was.
+    #[test]
+    fn a_change_within_the_tolerance_passes_without_updating_the_golden() {
+        let dir = scratch_dir("a_change_within_the_tolerance_passes_without_updating_the_golden");
+        let options = SnapshotOptions::default();
+
+        compare_and_report_in(&dir, "chart", &chart_sized([30, 30, 30, 255]), &options, true).expect("seeding the golden");
+
+        let mut noisy = chart_sized([30, 30, 30, 255]);
+        for (index, pixel) in noisy.pixels_mut().enumerate() {
+            if index % 7 == 0 {
+                *pixel = image::Rgba([32, 31, 30, 255]);
+            }
+        }
+
+        compare_and_report_in(&dir, "chart", &noisy, &options, false).expect("noise below the threshold should pass");
+        assert_eq!(image::open(dir.join("chart.png")).unwrap().into_rgba8(), chart_sized([30, 30, 30, 255]), "the golden is left as it was");
+        assert!(!dir.join("chart.new.png").exists() && !dir.join("chart.diff.png").exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// An identical image writes nothing.
+    #[test]
+    fn an_identical_image_writes_nothing() {
+        let dir = scratch_dir("an_identical_image_writes_nothing");
+        let options = SnapshotOptions::default();
+        let golden = chart_sized([30, 30, 30, 255]);
+
+        compare_and_report_in(&dir, "chart", &golden, &options, true).expect("seeding the golden");
+        let written = std::fs::metadata(dir.join("chart.png")).unwrap().modified().unwrap();
+
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        compare_and_report_in(&dir, "chart", &golden, &options, false).expect("an identical image should pass");
+        assert_eq!(std::fs::metadata(dir.join("chart.png")).unwrap().modified().unwrap(), written);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Equal colours are 0 apart, black and white nearly `MAX_DELTA`, and near colours little.
+    #[test]
+    fn color_delta_is_zero_for_equal_colours_and_bounded() {
+        let black = image::Rgba([0, 0, 0, 255]);
+        let white = image::Rgba([255, 255, 255, 255]);
+
+        assert_eq!(color_delta(&black, &black), 0.0);
+        assert!((color_delta(&black, &white) - 32_857.0).abs() < 1.0, "{}", color_delta(&black, &white));
+        assert!(color_delta(&black, &white) <= MAX_DELTA);
+        assert!(color_delta(&image::Rgba([30, 30, 30, 255]), &image::Rgba([32, 31, 30, 255])) < MAX_DELTA * 0.02 * 0.02);
+        assert_eq!(color_delta(&image::Rgba([0, 0, 0, 0]), &image::Rgba([255, 255, 255, 0])), 0.0, "fully transparent pixels are both white");
     }
 }

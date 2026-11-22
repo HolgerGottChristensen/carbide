@@ -28,7 +28,6 @@ carbide_controls = { workspace = true, optional = true }
 accesskit = { workspace = true, features = ["serde"] }
 futures.workspace = true
 image.workspace = true
-image-compare.workspace = true
 serde_json.workspace = true
 smallvec.workspace = true
 
