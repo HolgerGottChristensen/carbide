@@ -1,0 +1,24 @@
+[package]
+name = "chart_extensions"
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
+publish = false
+
+# Extends carbide's charts from outside, through the `carbide` crate alone, as an application
+# would: a coordinate type, a scale and a controller of its own. The snapshot tests in `tests/`
+# check that each one works; `main` shows them in a window. See
+# `libraries/carbide_chart/docs/api-review.md`, step 1, for what can't be extended yet.
+
+[dependencies]
+carbide = { workspace = true, features = ["chart", "i18n"] }
+
+[dev-dependencies]
+carbide = { workspace = true, features = ["chart", "i18n", "testing"] }
+
+[package.metadata.bundle]
+name = "Chart Extensions Example - Carbide"
+identifier = "rs.carbide.chartextensionsapplication"
+
+[lints]
+workspace = true
