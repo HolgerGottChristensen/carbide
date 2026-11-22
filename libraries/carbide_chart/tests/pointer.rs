@@ -272,6 +272,49 @@ fn smart_zoom_toggles_between_zoomed_in_and_the_whole_range() {
     assert_eq!(*x.value(), ZoomWindow::WHOLE);
 }
 
+/// A zoomable bar chart with a hover state and a click action, its interactivity a state turned
+/// off while hovered, then on again. Pins down that turning it off lets go of the hovered data and
+/// its outline, and that while off the wheel, a drag and a click do nothing; and that turned on
+/// again, the chart responds as before.
+#[test]
+fn interactivity_can_be_turned_off() {
+    let mut interactive = LocalState::new(true);
+    let hovered = LocalState::new(None::<Pick>);
+    let zoom = LocalState::new(ZoomWindow::new(0.25, 0.75));
+    let clicks = Rc::new(RefCell::new(0));
+    let count = clicks.clone();
+
+    let chart = Chart::new(BarController::new((vec![10.0, 20.0, 30.0, 25.0], vec![15.0, 25.0, 5.0, 20.0])))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(QUARTERS).zoom(zoom.clone()))
+        .hover(hovered.clone())
+        .on_click(move |_| *count.borrow_mut() += 1)
+        .interactive(interactive.clone())
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.render();
+
+    harness.mouse_move(Position::new(300.0, 120.0));
+    assert!(hovered.value().is_some(), "hovered while interactive");
+
+    *carbide_core::state::State::value_mut(&mut interactive) = false;
+    harness.snapshot("turned_off_while_hovered");
+    assert_eq!(*hovered.value(), None, "turning it off lets go of the hovered data");
+
+    harness.mouse_move(Position::new(320.0, 130.0));
+    harness.scroll(-100.0, 0.0);
+    harness.drag(Position::new(300.0, 250.0), Position::new(450.0, 250.0), 3);
+    harness.click(Position::new(300.0, 250.0));
+    assert_eq!(*hovered.value(), None, "not hovered");
+    assert_eq!(*zoom.value(), ZoomWindow::new(0.25, 0.75), "not panned");
+    assert_eq!(*clicks.borrow(), 0, "not clicked");
+
+    *carbide_core::state::State::value_mut(&mut interactive) = true;
+    harness.mouse_move(Position::new(300.0, 120.0));
+    harness.click(Position::new(300.0, 120.0));
+    assert!(hovered.value().is_some(), "hovered again");
+    assert_eq!(*clicks.borrow(), 1, "clicked again");
+}
+
 /// Two charts zoomed along x, one above the other, dragged from the lower chart up over the upper
 /// one. Pins down that only a press inside a chart drags it: the lower chart pans, following the
 /// pointer wherever it goes, while the upper chart, which the drag passes over but didn't start

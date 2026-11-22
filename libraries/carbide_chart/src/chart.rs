@@ -50,6 +50,8 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The shapes the controllers drew on the last render, with the chart area, which the data
     /// under a position is found by.
     shapes: Shapes,
+    /// Whether the chart responds to the pointer at all (see `interactive`).
+    interactive: Box<dyn AnyReadState<T=bool>>,
     /// The state the data under the pointer is written to, when the chart reports hovering.
     hover: Option<Box<dyn AnyState<T=Option<Pick>>>>,
     /// How hovering and clicks find the data under the pointer.
@@ -87,6 +89,7 @@ impl<C: ControllerSequence> Chart<C> {
             warned_scale_ids: HashSet::new(),
             default_kinds: [(ScaleId::X, ScaleKind::Linear), (ScaleId::Y, ScaleKind::Linear)].into_iter().collect(),
             shapes: Shapes::default(),
+            interactive: IntoReadState::<bool>::into_read_state(true).as_dyn_read(),
             hover: None,
             hover_mode: PickMode::Index,
             on_click: None,
@@ -131,6 +134,31 @@ impl<C: ControllerSequence> Chart<C> {
     pub fn legend(mut self, position: impl IntoReadState<LegendPosition>) -> Chart<C> {
         self.legend = position.into_read_state().as_dyn_read();
         self
+    }
+
+    /// Whether the chart responds to the pointer, a value or a state of one: `true` by default.
+    /// While it is `false`, the chart ignores the pointer, so nothing is hovered, outlined or
+    /// clicked and no gesture zooms or pans it; a hover state is set to `None`, and a drag or box
+    /// in progress is dropped. Zoom windows keep what they show, and can still be set from code.
+    pub fn interactive(mut self, interactive: impl IntoReadState<bool>) -> Chart<C> {
+        self.interactive = interactive.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Whether the chart responds to the pointer, as last synced.
+    fn is_interactive(&self) -> bool {
+        *self.interactive.value_dyn()
+    }
+
+    /// Lets go of everything the pointer started, when the chart stops responding to it: the
+    /// hovered data, and any drag or box in progress.
+    fn release_pointer(&mut self) {
+        self.gesture = None;
+        self.press = None;
+        if let Some(hover) = &mut self.hover
+            && hover.value_dyn().is_some() {
+                hover.set_value_dyn(None);
+            }
     }
 
     /// Reports what is under the pointer to `state`, an `Option<Pick>` or a state of one: the
@@ -516,6 +544,7 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
             title.sync(env);
         }
 
+        self.interactive.sync(env);
         if let Some(hover) = &mut self.hover {
             hover.sync(env);
         }
@@ -534,6 +563,11 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
 /// pointer.
 impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        if !self.is_interactive() {
+            self.release_pointer();
+            return;
+        }
+
         let local = |position: Position| Position::new(position.x - self.position.x, position.y - self.position.y);
 
         match event {
@@ -711,6 +745,11 @@ fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar) 
 
 impl<C: ControllerSequence> Update for Chart<C> {
     fn update(&mut self, ctx: &mut UpdateContext) {
+        // Turned off while hovered or dragged, the chart lets go before the next render.
+        if !self.is_interactive() {
+            self.release_pointer();
+        }
+
         self.fit_scales(ctx.env);
     }
 }
@@ -817,7 +856,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
         // The hovered data outlined, and the box a Shift-drag zooms to, in the label colour, which
         // stands out on the background.
         let ink = axis_style(canvas.env()).label_color(canvas.env());
-        if let Some(hover) = &self.hover && let Some(pick) = &*hover.value_dyn() {
+        if let Some(hover) = &self.hover && self.is_interactive() && let Some(pick) = &*hover.value_dyn() {
             canvas.save();
             canvas.set_line_width(2.0);
             canvas.set_stroke_style(ink);

@@ -11,10 +11,10 @@ publish = false
 # `libraries/carbide_chart/docs/api-review.md`, step 1, for what can't be extended yet.
 
 [dependencies]
-carbide = { workspace = true, features = ["chart", "i18n"] }
+carbide = { workspace = true, features = ["chart", "controls", "i18n"] }
 
 [dev-dependencies]
-carbide = { workspace = true, features = ["chart", "i18n", "testing"] }
+carbide = { workspace = true, features = ["chart", "controls", "i18n", "testing"] }
 
 [package.metadata.bundle]
 name = "Chart Extensions Example - Carbide"

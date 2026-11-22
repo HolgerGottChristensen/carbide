@@ -7,24 +7,33 @@
 //!   A trackpad's smart zoom (a two-finger double tap) zooms in, or out again when zoomed.
 //!   Over an axis, the gestures move only that axis.
 //!
+//! - Switch "Interactive" off to make every chart ignore the pointer.
+//!
 //! Run it with `cargo run -p chart_extensions --bin interaction`.
 
 use carbide::chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, LegendPosition, LinearScale, LineController, Measure, Pick, PickMode, PieController, ScaleId, ScatterController, SizedDataSetExt, ZoomWindow};
 use carbide::draw::Dimension;
 use carbide::state::{LocalState, ReadStateExtNew, State};
 use carbide::widget::{HStack, Text, VStack, WidgetExt};
+use carbide::controls::toggle::Toggle;
 use carbide::{Application, Window};
 
 fn main() {
     let mut application = Application::new()
         .with_asset_fonts();
 
+    // One switch for every chart's interactivity.
+    let interactive = LocalState::new(true);
+
     application.set_scene(Window::new(
         "Chart interaction - Carbide",
-        Dimension::new(1200.0, 900.0),
-        HStack::new((
-            VStack::new((bars(), signal())),
-            VStack::new((bubbles(), pie())),
+        Dimension::new(1200.0, 940.0),
+        VStack::new((
+            Toggle::new("Interactive", interactive.clone()),
+            HStack::new((
+                VStack::new((bars(interactive.clone()), signal(interactive.clone()))),
+                VStack::new((bubbles(interactive.clone()), pie(interactive))),
+            )),
         )).padding(10.0),
     ));
 
@@ -33,7 +42,7 @@ fn main() {
 
 /// Grouped bars: hovering finds both quarters' bars at the category under the pointer, and a click
 /// reports what was clicked.
-fn bars() -> impl carbide::widget::Widget {
+fn bars(interactive: LocalState<bool>) -> impl carbide::widget::Widget {
     let hovered = LocalState::new(None::<Pick>);
     let clicked = LocalState::new("Click a bar".to_string());
     let on_click = clicked.clone();
@@ -45,6 +54,7 @@ fn bars() -> impl carbide::widget::Widget {
         .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(["Jan", "Feb", "Mar", "Apr", "May", "Jun"]))
         .title("Hover the months, click the bars")
         .legend(LegendPosition::Bottom)
+        .interactive(interactive.clone())
         .hover(hovered.clone())
         .on_click(move |click| {
             let mut clicked = on_click.clone();
@@ -60,7 +70,7 @@ fn bars() -> impl carbide::widget::Widget {
 }
 
 /// A long line, zoomable along x, its y scale fitting to the part shown.
-fn signal() -> impl carbide::widget::Widget {
+fn signal(interactive: LocalState<bool>) -> impl carbide::widget::Widget {
     let hovered = LocalState::new(None::<Pick>);
     let zoom = LocalState::new(ZoomWindow::WHOLE);
 
@@ -73,6 +83,7 @@ fn signal() -> impl carbide::widget::Widget {
         .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(zoom.clone()))
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).fit_visible(true))
         .title("Pinch to zoom, drag or scroll to pan")
+        .interactive(interactive.clone())
         .hover(hovered.clone())
         .hover_mode(PickMode::Nearest(Measure::X))
         .frame(580.0, 380.0);
@@ -85,7 +96,7 @@ fn signal() -> impl carbide::widget::Widget {
 }
 
 /// Bubbles, zoomable along both scales, hovered by the nearest bubble.
-fn bubbles() -> impl carbide::widget::Widget {
+fn bubbles(interactive: LocalState<bool>) -> impl carbide::widget::Widget {
     let hovered = LocalState::new(None::<Pick>);
     let (x, y) = (LocalState::new(ZoomWindow::WHOLE), LocalState::new(ZoomWindow::WHOLE));
 
@@ -103,6 +114,7 @@ fn bubbles() -> impl carbide::widget::Widget {
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(y.clone()))
         .title("Zoom and pan both axes, or one over its axis")
         .legend(LegendPosition::Bottom)
+        .interactive(interactive.clone())
         .hover(hovered.clone())
         .hover_mode(PickMode::Nearest(Measure::Both))
         .frame(580.0, 380.0);
@@ -115,7 +127,7 @@ fn bubbles() -> impl carbide::widget::Widget {
 }
 
 /// Two rings of a doughnut, hovered by the slice under the pointer.
-fn pie() -> impl carbide::widget::Widget {
+fn pie(interactive: LocalState<bool>) -> impl carbide::widget::Widget {
     let hovered = LocalState::new(None::<Pick>);
 
     let rings = vec![
@@ -126,6 +138,7 @@ fn pie() -> impl carbide::widget::Widget {
     let chart = Chart::new(PieController::new(rings))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).inner_radius(0.4))
         .title("Hover the slices")
+        .interactive(interactive.clone())
         .hover(hovered.clone())
         .hover_mode(PickMode::Point)
         .frame(580.0, 380.0);
