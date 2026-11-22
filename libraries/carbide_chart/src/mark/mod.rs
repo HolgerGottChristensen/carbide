@@ -30,10 +30,12 @@ mod line_mark;
 mod box_mark;
 mod candle_mark;
 mod bubble_mark;
+mod pie_mark;
 
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark, LegendContext};
 pub(crate) use bar_mark::BarFrame;
-pub use families::{BarDataSet, IntoBoxed, LineDataSet, ScatterDataSet};
+pub use families::{BarDataSet, IntoBoxed, LineDataSet, PieDataSet, ScatterDataSet};
+pub use pie_mark::{DatasetPieMark, PieMark, RadiiMark};
 pub(crate) use families::AsDataSet;
 pub use marked::{Marked, WithoutPrimaryMark};
 pub use range_mark::RangeMark;
@@ -153,6 +155,29 @@ pub trait SizedDataSetExt: DataSet + Sequence<dyn SizedPoint> + Sized {
     /// ```
     fn bubbles(self) -> Marked<Self, BubbleMark> where Self: WithoutPrimaryMark {
         Marked::new(self, BubbleMark::default())
+    }
+
+    /// Sets how far out each part's slice of a pie reaches from its size: a variable-radius pie,
+    /// each point a part whose y is its share and whose size its radius. The pie controller
+    /// measures every dataset's sizes against the largest, so the largest reaches its ring's rim
+    /// and the others reach out in proportion (see `RadiiMark`); along the sides, on bars of 100%,
+    /// the sizes set the segments' widths.
+    ///
+    /// ```
+    /// use carbide_chart::{PieController, SizedDataSetExt};
+    ///
+    /// PieController::new(vec![("Red", 12.0, 3.0), ("Blue", 19.0, 1.5)].radii());
+    /// ```
+    ///
+    /// Only pie controllers draw radii:
+    ///
+    /// ```compile_fail
+    /// use carbide_chart::{ScatterController, SizedDataSetExt};
+    ///
+    /// ScatterController::new(vec![(0.0, 4.0, 2.0)].radii());
+    /// ```
+    fn radii(self) -> Marked<Self, RadiiMark> where Self: WithoutPrimaryMark {
+        Marked::new(self, RadiiMark)
     }
 }
 

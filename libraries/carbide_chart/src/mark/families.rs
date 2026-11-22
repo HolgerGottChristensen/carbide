@@ -4,7 +4,7 @@ use carbide::state::ReadState;
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
 use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
-use crate::mark::{DatasetBarMark, DatasetLineMark, DatasetScatterMark};
+use crate::mark::{DatasetBarMark, DatasetLineMark, DatasetPieMark, DatasetScatterMark};
 use crate::scale::ScaleId;
 use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 
@@ -113,6 +113,60 @@ pub trait ScatterDataSet: DataSet {
 }
 
 dyn_clone::clone_trait_object!(ScatterDataSet);
+
+/// A dataset a `PieController` can draw: a plain dataset, each point a part, or one whose marks
+/// can all be drawn by pie controllers (`PieMark`), such as slice radii (`.radii()`). The pie
+/// controller reads the marks through `pie_marks`.
+///
+/// Implemented for every sequence of points, for datasets with options (`DatasetExt`) when the
+/// dataset inside is one, for marked datasets (`Marked`) when the mark is a `PieMark`, and for
+/// `Box<dyn PieDataSet>`, which mixes dataset types in a `Vec`.
+///
+/// ```
+/// use carbide_chart::{PieController, SizedDataSetExt};
+///
+/// PieController::new(vec![("Red", 12.0, 3.0), ("Blue", 19.0, 1.5)].radii());
+/// ```
+///
+/// A dataset with a mark pies can't draw doesn't compile:
+///
+/// ```compile_fail
+/// use carbide_chart::{PieController, Range, RangeDataSetExt};
+///
+/// PieController::new(vec![Range { x: 0.0, low: 4.0, high: 12.0 }].range());
+/// ```
+#[diagnostic::on_unimplemented(
+    message = "`{Self}` can't be drawn by a pie controller",
+    label = "not a pie dataset",
+    note = "pie controllers draw plain datasets, and datasets whose marks are pie marks (`.radii()`)",
+    note = "datasets of mixed types are boxed for one kind of controller: `Box<dyn PieDataSet>`",
+)]
+pub trait PieDataSet: DataSet {
+    /// Calls `f` with each of the dataset's marks, in the order they were added. A plain dataset
+    /// has none, and its slices reach the rim.
+    fn pie_marks(&self, _f: &mut dyn FnMut(&dyn DatasetPieMark)) {}
+}
+
+dyn_clone::clone_trait_object!(PieDataSet);
+
+impl<S: Sequence<dyn DataPoint>> PieDataSet for S {}
+
+impl<T, C, S, F, G, XS, YS, ST, L> PieDataSet for OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
+where
+    T: PieDataSet + Clone,
+    C: ReadState<T=DataColor>,
+    S: ReadState<T=Interpolation>,
+    F: ReadState<T=Fill>,
+    G: ReadState<T=SpanGaps>,
+    XS: ReadState<T=ScaleId>,
+    YS: ReadState<T=ScaleId>,
+    ST: ReadState<T=StackId>,
+    L: ReadState<T=String>,
+{
+    fn pie_marks(&self, f: &mut dyn FnMut(&dyn DatasetPieMark)) {
+        self.inner().pie_marks(f);
+    }
+}
 
 impl<S: Sequence<dyn DataPoint>> BarDataSet for S {}
 
@@ -236,6 +290,12 @@ boxed_dataset!(BarDataSet {
 boxed_dataset!(LineDataSet {
     fn line_marks(&self, f: &mut dyn FnMut(&dyn DatasetLineMark)) {
         (**self).line_marks(f);
+    }
+});
+
+boxed_dataset!(PieDataSet {
+    fn pie_marks(&self, f: &mut dyn FnMut(&dyn DatasetPieMark)) {
+        (**self).pie_marks(f);
     }
 });
 

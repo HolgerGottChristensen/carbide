@@ -2,7 +2,7 @@
 //! part, parts swallowed by spacing, rings swallowed by ring spacing, a chart too small for its
 //! labels, repeated names, and only negative values.
 
-use carbide_chart::{Axis, CategoryScale, Chart, LegendPosition, PieController, ScaleId};
+use carbide_chart::{Axis, CategoryScale, Chart, LegendPosition, PieController, ScaleId, SizedDataSetExt};
 use carbide_core::draw::{Dimension, Scalar};
 use carbide_testing::Harness;
 
@@ -122,4 +122,19 @@ fn repeated_names_and_negative_values() {
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("negative_values");
+}
+
+/// Radii that aren't plain positive sizes: a zero, a negative, and a missing one, beside the one
+/// positive size, the largest. Pins down that a part whose radius is zero or less has no slice and
+/// no label, its share left empty, and that a part without a radius reaches the rim, as though its
+/// size were the largest.
+#[test]
+fn radii_zero_negative_and_missing() {
+    let parts: Vec<(&str, Scalar, Option<Scalar>)> = vec![("Largest", 25.0, Some(2.0)), ("Zero", 25.0, Some(0.0)), ("Negative", 25.0, Some(-3.0)), ("Missing", 25.0, None)];
+
+    let chart = Chart::new(PieController::new(parts.radii()))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("radii_zero_negative_and_missing");
 }

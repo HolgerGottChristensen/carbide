@@ -1,7 +1,7 @@
 //! Pies, doughnuts and parts of a whole: a `PieController`, each dataset a whole and its points
 //! its parts. Around a circle, rings of slices, labelled outside; along the sides, bars of 100%.
 
-use carbide_chart::{Axis, CategoryScale, Chart, DataColor, DatasetExt, LegendPosition, LinearScale, PieController, ScaleId};
+use carbide_chart::{Axis, CategoryScale, Chart, DataColor, DatasetExt, LegendPosition, LinearScale, PieController, ScaleId, SizedDataSetExt};
 use carbide_core::color::GREY;
 use carbide_core::draw::{Angle, Dimension};
 use carbide_testing::Harness;
@@ -176,4 +176,54 @@ fn pie_without_labels() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("pie_without_labels");
+}
+
+/// A variable-radius pie: each part's y its share, and its size, through `.radii()`, how far out
+/// its slice reaches. Pins down that the largest size reaches the rim and the others reach out in
+/// proportion to theirs, linearly, so a size half the largest reaches halfway; that the angles are
+/// still the shares of the values; and that each leader line starts at its own slice's edge.
+#[test]
+fn variable_radius_pie() {
+    let regions = vec![("North", 30.0, 9.0), ("East", 20.0, 4.5), ("South", 35.0, 6.0), ("West", 15.0, 7.5)].radii();
+
+    let chart = Chart::new(PieController::new(regions))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("variable_radius_pie");
+}
+
+/// Variable-radius rings: two datasets whose sizes are measured against the largest in the
+/// controller. Pins down that slices compare across rings: the outer ring's largest size reaches
+/// its rim, while the inner ring, whose sizes are all smaller, reaches out less within its own
+/// slot, each slice from its ring's inner edge.
+#[test]
+fn variable_radius_rings() {
+    let this_year = vec![("Food", 30.0, 2.0), ("Rent", 45.0, 3.0), ("Travel", 10.0, 1.0), ("Other", 15.0, 1.5)].radii().label("2026");
+    let last_year = vec![("Food", 25.0, 4.0), ("Rent", 40.0, 6.0), ("Travel", 20.0, 3.0), ("Other", 15.0, 2.0)].radii().label("2025");
+
+    let chart = Chart::new(PieController::new((this_year, last_year)))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).inner_radius(0.2))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("variable_radius_rings");
+}
+
+/// Radii along the sides: the same marks on cartesian scales. Pins down that each segment of a
+/// bar of 100% is as wide as its size says, centred in the bar, the largest size in the controller
+/// the full width, as the radius sets how far a slice reaches around a circle.
+#[test]
+fn radii_as_segment_widths_along_the_sides() {
+    let this_year = vec![("Food", 30.0, 2.0), ("Rent", 45.0, 3.0), ("Travel", 10.0, 1.0), ("Other", 15.0, 1.5)].radii().label("2026");
+    let last_year = vec![("Food", 25.0, 4.0), ("Rent", 40.0, 6.0), ("Travel", 20.0, 3.0), ("Other", 15.0, 2.0)].radii().label("2025");
+
+    let chart = Chart::new(PieController::new((this_year, last_year)).category_percentage(0.6))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("radii_as_segment_widths_along_the_sides");
 }

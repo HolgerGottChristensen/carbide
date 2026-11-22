@@ -9,7 +9,8 @@ use crate::dataset::{BoxPoint, OhlcPoint, OptionsDataset, RangePoint, SizedPoint
 use crate::mark::bar_mark::BoundBarMark;
 use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
-use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetScatterMark, LineDataSet, LineMark, Mark, Overlay, ScatterDataSet, ScatterMark};
+use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetPieMark, DatasetScatterMark, LineDataSet, LineMark, Mark, Overlay, PieDataSet, PieMark, ScatterDataSet, ScatterMark};
+use crate::mark::pie_mark::BoundPieMark;
 use crate::sequence::Sequence;
 
 /// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`. It
@@ -92,6 +93,14 @@ impl<D: BarDataSet + Clone, M: BarMark<D>> BarDataSet for Marked<D, M> {
     fn bar_marks(&self, f: &mut dyn FnMut(&dyn DatasetBarMark)) {
         self.inner.bar_marks(f);
         f(&BoundBarMark { mark: &self.mark, data: &self.inner });
+    }
+}
+
+/// Drawn by pie controllers when the dataset inside is, and the mark can be drawn by them.
+impl<D: PieDataSet + Clone, M: PieMark<D>> PieDataSet for Marked<D, M> {
+    fn pie_marks(&self, f: &mut dyn FnMut(&dyn DatasetPieMark)) {
+        self.inner.pie_marks(f);
+        f(&BoundPieMark { mark: &self.mark, data: &self.inner });
     }
 }
 

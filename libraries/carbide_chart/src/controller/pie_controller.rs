@@ -4,7 +4,8 @@ use carbide::color::Color;
 use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSet, DataSetOptions, Value};
+use crate::{DataColor, DataSetOptions, PieDataSet, Value};
+use crate::mark::MarkRole;
 use crate::controller::{bar_slot, DatasetController};
 use crate::controller::bar_controller::min_sample_size;
 use crate::controller::drawing::{point_color, polar_frame, Palette, PolarFrame};
@@ -83,9 +84,9 @@ impl<D: Debug> Debug for PieController<D> {
     }
 }
 
-impl<D: Sequence<dyn DataSet>> PieController<D> {
+impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// `datasets` is a sequence of datasets, or a single dataset: one pie, or one ring each.
-    pub fn new<I: IntoSequence<dyn DataSet, M, Sequence=D>, M>(datasets: I) -> PieController<D> {
+    pub fn new<I: IntoSequence<dyn PieDataSet, M, Sequence=D>, M>(datasets: I) -> PieController<D> {
         PieController {
             dataset_sequence: datasets.into_sequence(),
             palette_offset: 0,
@@ -170,12 +171,24 @@ pub(crate) struct Part {
     pub(crate) name: String,
     pub(crate) color: DataColor,
     pub(crate) value: Scalar,
+    /// The part's share of the whole comes from this: its value's absolute value.
     pub(crate) size: Scalar,
+    /// How far out its slice reaches, from a mark that replaces the slices (`RadiiMark`), or
+    /// `None` for a slice reaching the rim.
+    pub(crate) radius: Option<Scalar>,
 }
 
 impl Parts {
-    /// The parts of `dataset`: its points with a y, their sizes the absolute values.
-    pub(crate) fn of(dataset: &dyn DataSet) -> Parts {
+    /// The parts of `dataset`: its points with a y, their sizes the absolute values, and their
+    /// radii from the dataset's mark that sets them, if it has one.
+    pub(crate) fn of(dataset: &dyn PieDataSet) -> Parts {
+        let mut radii: Vec<(usize, Scalar)> = vec![];
+        dataset.pie_marks(&mut |mark| {
+            if mark.role() == MarkRole::Primary {
+                mark.sizes(&mut |index, size| radii.push((index, size)));
+            }
+        });
+
         let mut parts = vec![];
         dataset.points(&mut |index, point| {
             let Some(value) = point.y().and_then(Value::number) else {
@@ -187,11 +200,23 @@ impl Parts {
                 _ => index.to_string(),
             };
 
-            parts.push(Part { index, name, color: point.color(), value, size: value.abs() });
+            let radius = radii.iter().find(|(at, _)| *at == index).map(|(_, size)| *size);
+            parts.push(Part { index, name, color: point.color(), value, size: value.abs(), radius });
         });
 
         let total = parts.iter().map(|part| part.size).sum();
         Parts { parts, total }
+    }
+
+    /// How far out `part`'s slice reaches, as a share of its ring, against `largest`, the largest
+    /// radius in the controller: 1 without a radius, in proportion to it otherwise, and 0, no
+    /// slice, for a radius of zero or less.
+    pub(crate) fn reach(part: &Part, largest: Scalar) -> Scalar {
+        match part.radius {
+            None => 1.0,
+            Some(radius) if radius > 0.0 && largest > 0.0 => (radius / largest).min(1.0),
+            Some(_) => 0.0,
+        }
     }
 
     /// Each part with the shares it runs between, from 0 to 100; none when the total is zero.
@@ -241,7 +266,7 @@ impl Placed {
     }
 }
 
-impl<D: Sequence<dyn DataSet>> PieController<D> {
+impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// Where each dataset is drawn, `None` for those that aren't, and the ruler their slots are
     /// split by: the smallest gap between the datasets' places, or the whole axis for one.
     fn layout(&self, scales: &Scales, chart_area: Rect) -> (Vec<Option<Placed>>, Scalar) {
@@ -278,6 +303,20 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
 
         let ruler = min_sample_size(positions, ticks, length.unwrap_or(0.0));
         (placed, ruler)
+    }
+
+    /// The largest radius of any part in the controller, which every slice's reach is measured
+    /// against (see `RadiiMark`), so slices compare across rings; 0 when no part has one.
+    fn largest_radius(&self) -> Scalar {
+        let mut largest: Scalar = 0.0;
+        self.dataset_sequence.foreach(&mut |_index, dataset| {
+            for part in Parts::of(dataset).parts {
+                if let Some(radius) = part.radius {
+                    largest = largest.max(radius);
+                }
+            }
+        });
+        largest
     }
 
     /// The outermost ring around a circle, whose parts are labelled outside it: its dataset's
@@ -333,7 +372,7 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
     }
 }
 
-impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
+impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.dataset_sequence.sync(env)
     }
@@ -414,8 +453,10 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
         let outermost = rings().fold(Scalar::NEG_INFINITY, Scalar::max);
         let innermost = rings().fold(Scalar::INFINITY, Scalar::min);
         let half_gap = self.ring_spacing / 2.0;
-        // The parts drawn, by dataset and point index, so only those are labelled.
-        let mut drawn: Vec<(usize, usize)> = vec![];
+        // The parts drawn, by dataset and point index, with how far out each reaches in the
+        // dataset's frame, so only those are labelled, and their lines start where they end.
+        let mut drawn: Vec<(usize, usize, Scalar)> = vec![];
+        let largest = self.largest_radius();
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let Some(Some(place)) = placed.get(dataset_index) else {
@@ -446,6 +487,17 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
             let gap = if shares.len() > 1 { self.spacing_in_frame(&frame, side + thickness / 2.0) / 2.0 } else { 0.0 };
 
             for (part, from, to) in shares {
+                // A radius narrows the part's share of the slot: out from the ring's inner edge
+                // around a circle, and about the middle of the bar along a side.
+                let reach = Parts::reach(part, largest);
+                if reach <= 0.0 {
+                    continue;
+                }
+                let (part_side, part_thickness) = match frame {
+                    BarFrame::Around(_) => (side, thickness * reach),
+                    BarFrame::Sides { .. } => (side + thickness * (1.0 - reach) / 2.0, thickness * reach),
+                };
+
                 let (base, head) = (frame.value(y_scale, from), frame.value(y_scale, to));
                 let sign = if head >= base { 1.0 } else { -1.0 };
                 let (base, head) = (base + sign * gap, head - sign * gap);
@@ -454,10 +506,10 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
                 }
 
                 ctx.begin_path();
-                frame.trace_rect(ctx, side, thickness, base, head);
+                frame.trace_rect(ctx, part_side, part_thickness, base, head);
                 ctx.set_fill_style(part_color(part, &place.options, dataset_index, &palette));
                 ctx.fill();
-                drawn.push((dataset_index, part.index));
+                drawn.push((dataset_index, part.index, part_side + part_thickness));
             }
         });
 
@@ -466,7 +518,7 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
     }
 }
 
-impl<D: Sequence<dyn DataSet>> PieController<D> {
+impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// The spacing between parts in `frame`'s units along the value axis: pixels along a side, and
     /// around a circle the angle the spacing spans `distance` from the centre.
     fn spacing_in_frame(&self, frame: &BarFrame, distance: Scalar) -> Scalar {
@@ -480,7 +532,7 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
     /// slice's outer edge by a leader line: out along the slice's middle, then level to its
     /// side's column (see `layout_labels`). Only parts whose slices were drawn (`drawn`, by
     /// dataset and point index) are labelled.
-    fn draw_labels(&self, ctx: &mut CanvasContext, scales: &Scales, placed: &[Option<Placed>], chart_area: Rect, drawn: &[(usize, usize)]) {
+    fn draw_labels(&self, ctx: &mut CanvasContext, scales: &Scales, placed: &[Option<Placed>], chart_area: Rect, drawn: &[(usize, usize, Scalar)]) {
         let Some((outer_index, labels)) = self.outer_ring_labels(scales) else {
             return;
         };
@@ -489,12 +541,13 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
         };
 
         let rim = polar.polar.circle().radius;
-        // A part whose slice wasn't drawn, swallowed by the spacing around it, has no label.
-        let measured: Vec<(Scalar, Scalar, String, Dimension)> = labels.into_iter()
-            .filter(|(index, _, _, _)| drawn.contains(&(outer_index, *index)))
-            .map(|(_, angle, share, text)| {
+        // A part whose slice wasn't drawn, swallowed by the spacing around it, has no label; the
+        // others' lines start where their slices end.
+        let measured: Vec<(Scalar, Scalar, String, Dimension, Scalar)> = labels.into_iter()
+            .filter_map(|(index, angle, share, text)| {
+                let (_, _, reach) = drawn.iter().find(|(dataset, part, _)| *dataset == outer_index && *part == index)?;
                 let size = ctx.measure_text(&text);
-                (angle, share, text, size)
+                Some((angle, share, text, size, *reach))
             })
             .collect();
 
@@ -539,13 +592,13 @@ pub(crate) struct LaidOutLabel {
 }
 
 /// Lays out labels outside a circle of `radius` around `center`, from each one's screen angle,
-/// share (0 to 1), text and size, within `area`. Each starts where its slice's middle meets the
-/// rim, runs out `RADIAL_RUN` along it, then level to its side's column, `LEVEL_RUN` further out
+/// share (0 to 1), text, size, and how far out its slice reaches, within `area`. Each starts
+/// where its slice's middle meets the slice's outer edge, runs out to `RADIAL_RUN` beyond the rim, then level to its side's column, `LEVEL_RUN` further out
 /// than the circle's widest point, so each side's labels line up. The labels on a side are spread
 /// apart, top to bottom, `LABEL_SPACING` apart at least, and pulled back up from the area's lower
 /// edge; while they still don't fit in the area, the smallest slice's label on that side is left
 /// out and the side laid out again.
-pub(crate) fn layout_labels(center: Position, radius: Scalar, labels: &[(Scalar, Scalar, String, Dimension)], area: Rect) -> Vec<LaidOutLabel> {
+pub(crate) fn layout_labels(center: Position, radius: Scalar, labels: &[(Scalar, Scalar, String, Dimension, Scalar)], area: Rect) -> Vec<LaidOutLabel> {
     let (screen_top, screen_bottom) = (area.top().min(area.bottom()), area.top().max(area.bottom()));
     let mut laid_out = vec![];
 
@@ -555,8 +608,8 @@ pub(crate) fn layout_labels(center: Position, radius: Scalar, labels: &[(Scalar,
 
         // (index into `labels`, the y its line turns at)
         let mut side: Vec<(usize, Scalar)> = labels.iter().enumerate()
-            .filter(|(_, (angle, _, _, _))| (direction(*angle).x >= 0.0) == right)
-            .map(|(index, (angle, _, _, _))| {
+            .filter(|(_, (angle, _, _, _, _))| (direction(*angle).x >= 0.0) == right)
+            .map(|(index, (angle, _, _, _, _))| {
                 let out = direction(*angle);
                 (index, center.y + out.y * (radius + RADIAL_RUN))
             })
@@ -589,11 +642,11 @@ pub(crate) fn layout_labels(center: Position, radius: Scalar, labels: &[(Scalar,
         };
 
         for ((index, _), y) in side.iter().zip(placed) {
-            let (angle, _, text, _) = &labels[*index];
+            let (angle, _, text, _, reach) = &labels[*index];
             let out = direction(*angle);
             laid_out.push(LaidOutLabel {
                 text: text.clone(),
-                rim: Position::new(center.x + out.x * radius, center.y + out.y * radius),
+                rim: Position::new(center.x + out.x * reach, center.y + out.y * reach),
                 elbow: Position::new(center.x + out.x * (radius + RADIAL_RUN), center.y + out.y * (radius + RADIAL_RUN)),
                 end: Position::new(column, y),
                 right,
@@ -643,19 +696,19 @@ mod tests {
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(200.0, 200.0));
         let size = Dimension::new(20.0, 10.0);
 
-        let two = layout_labels(center, 50.0, &[(FRAC_PI_2, 0.5, "right".into(), size), (-FRAC_PI_2, 0.5, "left".into(), size)], area);
+        let two = layout_labels(center, 50.0, &[(FRAC_PI_2, 0.5, "right".into(), size, 50.0), (-FRAC_PI_2, 0.5, "left".into(), size, 50.0)], area);
         let right = two.iter().find(|label| label.right).unwrap();
         assert_eq!(right.end, Position::new(100.0 + 50.0 + RADIAL_RUN + LEVEL_RUN, 100.0), "level with its slice, in the right column");
         assert_eq!(right.elbow, Position::new(100.0 + 50.0 + RADIAL_RUN, 100.0));
         assert!(two.iter().any(|label| !label.right && label.end.x < 100.0));
 
         // Two slices whose middles are close: their labels are spread a gap apart.
-        let close = layout_labels(center, 50.0, &[(PI / 2.0, 0.3, "a".into(), size), (PI / 2.0 + 0.05, 0.3, "b".into(), size)], area);
+        let close = layout_labels(center, 50.0, &[(PI / 2.0, 0.3, "a".into(), size, 50.0), (PI / 2.0 + 0.05, 0.3, "b".into(), size, 50.0)], area);
         let gap = (close[0].end.y - close[1].end.y).abs();
         assert!(gap >= 10.0 + LABEL_SPACING - 1e-9, "{}", gap);
 
         // Twenty labels on one side don't fit in 200 pixels: the smallest give way.
-        let many: Vec<(f64, f64, String, Dimension)> = (0..20).map(|i| (0.1 + i as f64 * 0.14, i as f64, format!("{i}"), size)).collect();
+        let many: Vec<(f64, f64, String, Dimension, f64)> = (0..20).map(|i| (0.1 + i as f64 * 0.14, i as f64, format!("{i}"), size, 50.0)).collect();
         let fitted = layout_labels(center, 50.0, &many, area);
         assert!(fitted.len() < 20 && fitted.len() >= 10, "{}", fitted.len());
         assert!(!fitted.iter().any(|label| label.text == "0"), "the smallest slice gave way first");
