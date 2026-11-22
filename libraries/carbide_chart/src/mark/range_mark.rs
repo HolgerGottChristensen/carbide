@@ -67,6 +67,11 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Rang
         });
     }
 
+    /// Floating bars are wedges around a circle, from the low's ring to the high's.
+    fn draws_around_a_circle(&self) -> bool {
+        true
+    }
+
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
         let coordinates = canvas.coordinates;
         data.foreach(&mut |point_index, point| {

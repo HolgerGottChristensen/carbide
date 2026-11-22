@@ -7,9 +7,10 @@ use carbide_core::widget::canvas::CanvasContext;
 use carbide::environment::Environment;
 use crate::{DataColor, DataPoint, DataSetOptions};
 use crate::legend::LegendMarker;
-use crate::controller::drawing::{point_color, resolve_color, Palette};
+use crate::controller::drawing::{point_color, resolve_color, Palette, PolarFrame};
 use crate::controller::line_path::PathSink;
-use crate::controller::orientation::{pixel, Oriented, Orientation};
+use crate::controller::orientation::{length, pixel, Oriented, Orientation};
+use crate::mark::line_mark::polar_whisker;
 use crate::mark::{Mark, MarkRole, Role};
 use crate::scale::{Coordinates, Scale};
 use crate::style::{axis_style, series_style};
@@ -32,6 +33,13 @@ pub trait BarMark<D: ?Sized>: Mark {
 
     /// Draws the mark for each of the dataset's points, in the slot for its x (`BarSlots::slot`).
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas);
+
+    /// Whether the mark draws around a polar chart's circle, through the canvas's frame (see
+    /// `BarCanvas`). Marks that don't, the default, are skipped there, logged once: box plots
+    /// and candlesticks, and marks of your own until they say they do.
+    fn draws_around_a_circle(&self) -> bool {
+        false
+    }
 
     /// The colour and marker of the dataset's legend entry, when the mark draws it in colours of
     /// its own, or `None`, the default, for a square in the dataset's colour.
@@ -78,6 +86,8 @@ pub trait DatasetBarMark {
     fn draw(&self, slots: &BarSlots, canvas: &mut BarCanvas);
 
     fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)>;
+
+    fn draws_around_a_circle(&self) -> bool;
 }
 
 pub(crate) struct BoundBarMark<'a, M, D> {
@@ -101,11 +111,92 @@ impl<M: BarMark<D>, D> DatasetBarMark for BoundBarMark<'_, M, D> {
     fn legend(&self, legend: &LegendContext) -> Option<(Color, LegendMarker)> {
         self.mark.legend(self.data, legend)
     }
+
+    fn draws_around_a_circle(&self) -> bool {
+        self.mark.draws_around_a_circle()
+    }
+}
+
+/// How a bar controller's datasets map onto the screen: along the sides of the chart area, in the
+/// index frame of the controller's orientation, in pixels; or around a polar chart's circle, where
+/// the index frame is the circle's own, the category's screen angle or distance from the centre,
+/// whichever its scale is, and the value's the other (see `PolarFrame`).
+#[derive(Copy, Clone)]
+pub(crate) enum BarFrame<'a> {
+    Sides { orientation: Orientation, area: Rect },
+    Around(&'a PolarFrame),
+}
+
+impl BarFrame<'_> {
+    /// Where `x` on the index scale falls along the index axis.
+    pub(crate) fn index(&self, index_scale: &dyn Scale, x: Scalar) -> Scalar {
+        match self {
+            BarFrame::Sides { orientation, area } => pixel(orientation.index_axis(), index_scale, x, *area),
+            BarFrame::Around(frame) if frame.x_is_angle => frame.polar.angle(index_scale.normalize(x)),
+            BarFrame::Around(frame) => frame.polar.distance(index_scale.normalize(x)),
+        }
+    }
+
+    /// Where `value` on the value scale falls along the value axis. Around the circle, a value
+    /// past either end of the angle scale is kept at that end, so no bar goes round more than once.
+    pub(crate) fn value(&self, value_scale: &dyn Scale, value: Scalar) -> Scalar {
+        match self {
+            BarFrame::Sides { orientation, area } => pixel(orientation.value_axis(), value_scale, value, *area),
+            BarFrame::Around(frame) if frame.x_is_angle => frame.polar.distance(value_scale.normalize(value)),
+            BarFrame::Around(frame) => frame.polar.angle(value_scale.normalize(value).clamp(0.0, 1.0)),
+        }
+    }
+
+    /// The length of the index axis: the chart area's along a side, the sweep's angle around
+    /// the circle, or the distance from the inner radius to the rim out along it.
+    pub(crate) fn index_length(&self) -> Scalar {
+        match self {
+            BarFrame::Sides { orientation, area } => length(orientation.index_axis(), *area),
+            BarFrame::Around(frame) if frame.x_is_angle => {
+                let (start, end) = frame.polar.angle_range();
+                (end - start).abs()
+            }
+            BarFrame::Around(frame) => frame.polar.circle().radius - frame.polar.inner_radius(),
+        }
+    }
+
+    /// Adds the shape from `side` to `side + thickness` along the index axis and from `from` to
+    /// `to` along the value axis to the path, closed: a rectangle along the sides, and around the
+    /// circle the part of a ring between two angles, its inner and outer edges in the grid's ring
+    /// shape.
+    pub(crate) fn trace_rect(&self, ctx: &mut CanvasContext, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) {
+        match self {
+            BarFrame::Sides { orientation, .. } => {
+                let mut path = Oriented { path: &mut *ctx, orientation: *orientation };
+                path.move_to(Position::new(side, from));
+                path.line_to(Position::new(side + thickness, from));
+                path.line_to(Position::new(side + thickness, to));
+                path.line_to(Position::new(side, to));
+            }
+            BarFrame::Around(frame) => {
+                let ((a1, a2), (d1, d2)) = if frame.x_is_angle {
+                    ((side, side + thickness), (from, to))
+                } else {
+                    ((from, to), (side, side + thickness))
+                };
+
+                let rings = frame.rings();
+                let (outer, inner) = (rings.at(d1.max(d2)), rings.at(d1.min(d2)));
+                PathSink::move_to(ctx, outer.point(a1));
+                outer.trace(ctx, a1, a2);
+                PathSink::line_to(ctx, inner.point(a2));
+                inner.trace(ctx, a2, a1);
+            }
+        }
+        ctx.close_path();
+    }
 }
 
 /// Where a point's glyph goes along the index axis, in pixels: the centre of its category, and
 /// the dataset's share of the category's slot, from `side`, `thickness` long. Share 0 is at the
-/// smaller pixel: the left, or the top for lying bars.
+/// smaller pixel: the left, or the top for lying bars. Around a polar chart's circle, in the
+/// circle's frame (see `BarCanvas`): screen angles in radians for categories around the circle,
+/// distances from the centre for categories out along the radius.
 ///
 /// `stack_offset` is how far stacking moves the dataset's bar at this x along the value axis, in
 /// values: where the bar ends, less the point's own value, or zero when it doesn't stack. A mark
@@ -127,9 +218,8 @@ impl BarSlot {
 
 /// The slots of one dataset in a bar controller, by x value.
 pub struct BarSlots<'a> {
-    pub(crate) orientation: Orientation,
+    pub(crate) frame: BarFrame<'a>,
     pub(crate) index_scale: &'a dyn Scale,
-    pub(crate) area: Rect,
     pub(crate) ruler: Scalar,
     pub(crate) group_index: usize,
     pub(crate) group_size: usize,
@@ -141,7 +231,7 @@ pub struct BarSlots<'a> {
 impl BarSlots<'_> {
     /// The slot for a point at `x`, laid out as the controller lays out its bars.
     pub fn slot(&self, x: Scalar) -> BarSlot {
-        let center = pixel(self.orientation.index_axis(), self.index_scale, x, self.area);
+        let center = self.frame.index(self.index_scale, x);
         let (side, thickness) = crate::controller::bar_slot(center, self.ruler, self.group_index, self.group_size, self.category_percentage, self.bar_percentage);
 
         let stack_offset = crate::controller::stacking::stack_offset(self.stack_offsets, x);
@@ -152,12 +242,17 @@ impl BarSlots<'_> {
 
 /// What a bar mark draws on. Positions are in the index frame: x along the categories and y along
 /// the values, both in pixels, so a mark draws the same code for standing and lying bars.
+///
+/// Around a polar chart's circle, the frame is the circle's own: for upright bars, x is the
+/// screen angle, in radians clockwise from the top, and y the distance from the centre, in pixels;
+/// for lying bars, whose categories run out along the radius, the other way round. A mark that
+/// draws through `value_pixel`, `fill_rect` and `add_whisker` draws wedges and whiskers around the
+/// circle unchanged, and says so with `BarMark::draws_around_a_circle`.
 pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) ctx: &'x mut CanvasContext<'a, 'b, 'c>,
     pub(crate) coordinates: Coordinates<'x>,
-    pub(crate) orientation: Orientation,
+    pub(crate) frame: BarFrame<'x>,
     pub(crate) value_scale: &'x dyn Scale,
-    pub(crate) area: Rect,
     pub(crate) options: &'x DataSetOptions,
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
@@ -176,9 +271,10 @@ impl BarCanvas<'_, '_, '_, '_> {
         self.coordinates.y(point)
     }
 
-    /// Where `value` on the dataset's value scale falls along the value axis, in pixels.
+    /// Where `value` on the dataset's value scale falls along the value axis, in pixels, or,
+    /// around a circle, in its frame.
     pub fn value_pixel(&self, value: Scalar) -> Scalar {
-        pixel(self.orientation.value_axis(), self.value_scale, value, self.area)
+        self.frame.value(self.value_scale, value)
     }
 
     /// The colour of the point at `point_index`, whose own colour is `color` (see
@@ -221,17 +317,40 @@ impl BarCanvas<'_, '_, '_, '_> {
     }
 
     /// Fills a rectangle from `side` to `side + thickness` along the index axis, and from `from`
-    /// to `to` along the value axis.
+    /// to `to` along the value axis: around a circle, the wedge between those angles and rings.
     pub fn fill_rect(&mut self, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar, color: Color) {
         self.ctx.begin_path();
-        let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
-        path.move_to(Position::new(side, from));
-        path.line_to(Position::new(side + thickness, from));
-        path.line_to(Position::new(side + thickness, to));
-        path.line_to(Position::new(side, to));
-        self.ctx.close_path();
+        self.frame.trace_rect(self.ctx, side, thickness, from, to);
         self.ctx.set_fill_style(color);
         self.ctx.fill();
+    }
+
+    /// Adds a whisker through the middle of `slot`, from the value `low` to the value `high`, with
+    /// a cap at each end `cap_share` of the slot's thickness across, to the path `begin_lines`
+    /// started. Along a side, it is straight along the value axis. Around a circle it follows the
+    /// values: out along the wedge's middle spoke for upright bars, its caps across the spoke and as
+    /// wide as that share of the wedge where they are; or around the ring through the bar's middle
+    /// for lying bars, its caps across the ring.
+    pub fn add_whisker(&mut self, slot: &BarSlot, low: Scalar, high: Scalar, cap_share: Scalar) {
+        let middle = slot.middle();
+        let (from, to) = (self.value_pixel(low), self.value_pixel(high));
+
+        let BarFrame::Around(frame) = self.frame else {
+            let cap = slot.thickness * cap_share / 2.0;
+            self.add_line(Position::new(middle, from), Position::new(middle, to));
+            self.add_line(Position::new(middle - cap, from), Position::new(middle + cap, from));
+            self.add_line(Position::new(middle - cap, to), Position::new(middle + cap, to));
+            return;
+        };
+
+        if frame.x_is_angle {
+            // Out along the spoke: the caps are the share of the wedge's width at their distance.
+            let cap = slot.thickness * cap_share * from.abs().max(to.abs());
+            polar_whisker(self.ctx, frame, (middle, from), (middle, from), (middle, to), cap);
+        } else {
+            let cap = slot.thickness * cap_share;
+            polar_whisker(self.ctx, frame, (from, middle), (from, middle), (to, middle), cap);
+        }
     }
 
     /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
@@ -241,11 +360,20 @@ impl BarCanvas<'_, '_, '_, '_> {
     }
 
     /// Adds the straight line from `from` to `to`, in the index frame, to the path `begin_lines`
-    /// started.
+    /// started: around a circle, straight between the two points on the screen.
     pub fn add_line(&mut self, from: Position, to: Position) {
-        let mut path = Oriented { path: &mut *self.ctx, orientation: self.orientation };
-        path.move_to(from);
-        path.line_to(to);
+        match self.frame {
+            BarFrame::Sides { orientation, .. } => {
+                let mut path = Oriented { path: &mut *self.ctx, orientation };
+                path.move_to(from);
+                path.line_to(to);
+            }
+            BarFrame::Around(frame) => {
+                let (from, to) = (frame_screen(frame, from), frame_screen(frame, to));
+                PathSink::move_to(self.ctx, from);
+                PathSink::line_to(self.ctx, to);
+            }
+        }
     }
 
     /// Strokes the lines added since `begin_lines`, `width` wide.
@@ -264,5 +392,14 @@ impl BarCanvas<'_, '_, '_, '_> {
             self.add_line(*from, *to);
         }
         self.stroke_lines_added(width, color);
+    }
+}
+
+/// Where a position in a bar canvas's polar frame (see `BarCanvas`) is on the screen.
+fn frame_screen(frame: &PolarFrame, position: Position) -> Position {
+    if frame.x_is_angle {
+        frame.polar.at(position.x, position.y)
+    } else {
+        frame.polar.at(position.y, position.x)
     }
 }

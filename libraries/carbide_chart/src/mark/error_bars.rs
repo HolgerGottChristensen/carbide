@@ -1,4 +1,4 @@
-use carbide::draw::{Position, Scalar};
+use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
@@ -92,19 +92,17 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Erro
         whiskers(data, &coordinates, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
     }
 
+    fn draws_around_a_circle(&self) -> bool {
+        true
+    }
+
     fn draw(&self, data: &D, slots: &BarSlots, canvas: &mut BarCanvas) {
         let coordinates = canvas.coordinates;
         canvas.begin_lines();
 
         whiskers(data, &coordinates, &mut |x, _, low, high| {
             let slot = slots.slot(x);
-            let middle = slot.middle();
-            let cap = slot.thickness * self.cap_percentage / 2.0;
-            let (low, high) = (canvas.value_pixel(low + slot.stack_offset), canvas.value_pixel(high + slot.stack_offset));
-
-            canvas.add_line(Position::new(middle, low), Position::new(middle, high));
-            canvas.add_line(Position::new(middle - cap, low), Position::new(middle + cap, low));
-            canvas.add_line(Position::new(middle - cap, high), Position::new(middle + cap, high));
+            canvas.add_whisker(&slot, low + slot.stack_offset, high + slot.stack_offset, self.cap_percentage);
         });
 
         let color = match self.whisker_color() {

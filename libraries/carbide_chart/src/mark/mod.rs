@@ -32,6 +32,7 @@ mod candle_mark;
 mod bubble_mark;
 
 pub use bar_mark::{BarCanvas, BarMark, BarSlot, BarSlots, DatasetBarMark, LegendContext};
+pub(crate) use bar_mark::BarFrame;
 pub use families::{BarDataSet, IntoBoxed, LineDataSet, ScatterDataSet};
 pub(crate) use families::AsDataSet;
 pub use marked::{Marked, WithoutPrimaryMark};

@@ -79,6 +79,9 @@ impl Orientation {
             let (x, y) = self.polar_roles();
             bounds.request_polar_role(&options.x_scale, x);
             bounds.request_polar_role(&options.y_scale, y);
+            if self == Orientation::Horizontal {
+                bounds.request_lying(&options.x_scale);
+            }
         }
     }
 

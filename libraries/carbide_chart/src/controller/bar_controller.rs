@@ -1,17 +1,16 @@
-use carbide::draw::{Position, Rect, Scalar};
+use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette};
+use crate::controller::drawing::{polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
-use crate::mark::{BarCanvas, BarDataSet, BarSlots, MarkRole};
+use crate::mark::{BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::controller::line_path::PathSink;
-use crate::controller::orientation::{is_polar, length, pixel, Oriented, Orientation};
-use crate::scale::{Axis, Coordinates, Places, Scale, ScaleBounds, ScaleId, ScaleKind, Scales, System};
+use crate::controller::orientation::{is_polar, Orientation};
+use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
 /// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
@@ -99,7 +98,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, self.orientation, false);
+        register_values(&self.dataset_sequence, bounds, self.orientation, true);
 
         let mut stacks = StackSums::split_by_sign();
         let offsets = self.stack_offsets(&*bounds, self.has_overlays());
@@ -107,10 +106,10 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
 
-            // Bars around a circle aren't drawn yet, so they ask nothing of the radial scales:
-            // no range, no offset, no grid lines between categories.
+            // Around a circle, wedges and radial bars ask for circle rings.
             if is_polar(&options, &*bounds) {
-                return;
+                bounds.request_grid_shape(&options.x_scale, GridShape::Circle);
+                bounds.request_grid_shape(&options.y_scale, GridShape::Circle);
             }
 
             let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
@@ -164,58 +163,60 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
-        let index_axis = self.orientation.index_axis();
-        let value_axis = self.orientation.value_axis();
+        let wants_x_angle = self.orientation.polar_roles().0 == PolarRole::Angle;
 
-        // First pass: which bars sit side by side (per index scale, a share for each stack and
-        // each dataset without one, in sequence order), and every bar's position along the index
-        // axis, for the smallest gap between neighbours.
+        // First pass: how each dataset maps onto the screen (along the sides, or around the
+        // circle), which bars sit side by side (per index scale, a share for each stack and each
+        // dataset without one, in sequence order), and every bar's position along the index axis,
+        // for the smallest gap between neighbours.
         let mut groups: IndexMap<ScaleId, IndexSet<StackKey>> = IndexMap::new();
-        let mut positions: IndexMap<ScaleId, Vec<Scalar>> = IndexMap::new();
+        let mut positions: IndexMap<ScaleId, (Vec<Scalar>, Vec<Scalar>, Scalar)> = IndexMap::new();
         let mut places: Vec<Option<(ScaleId, usize)>> = vec![];
+        let mut polar_frames: Vec<Option<PolarFrame>> = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_id, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
+            let orientation = self.orientation.for_dataset(&options, scales);
+            let (index_id, value_id) = orientation.index_and_value_scales(&options);
 
             let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
+                polar_frames.push(None);
                 return;
             };
 
-            // Bars around a circle aren't designed yet.
-            match scales.system(index_id, value_id) {
-                Some(System::Cartesian) => {}
-                Some(System::Polar { .. }) => {
-                    scales.warn_once("polar bars", index_id, value_id, || format!("Bars on the polar scales {:?} and {:?} are not drawn yet", index_id.name(), value_id.name()));
-                    places.push(None);
-                    return;
-                }
-                None => {
-                    places.push(None);
-                    return;
-                }
-            }
+            let Some(polar) = polar_frame(scales, index_id, value_id, wants_x_angle) else {
+                places.push(None);
+                polar_frames.push(None);
+                return;
+            };
+
+            let frame = match &polar {
+                Some(polar) => BarFrame::Around(polar),
+                None => BarFrame::Sides { orientation, area: chart_area },
+            };
 
             let (group_index, _) = groups.entry(index_id.clone()).or_default().insert_full(slot_key(dataset, &options, dataset_index));
             places.push(Some((index_id.clone(), group_index)));
 
-            let index_positions = positions.entry(index_id.clone()).or_default();
+            let (index_positions, _, _) = positions.entry(index_id.clone()).or_insert_with(|| {
+                let ticks = index_scale.ticks().iter().map(|tick| frame.index(index_scale, *tick)).collect();
+                (vec![], ticks, frame.index_length())
+            });
             let coordinates = Coordinates::new(scales, index_id, value_id);
             dataset.points(&mut |_index, point| {
                 let (Some(x), Some(_)) = (coordinates.x(point), coordinates.y(point)) else {
                     return;
                 };
 
-                index_positions.push(pixel(index_axis, index_scale, x, chart_area));
+                index_positions.push(frame.index(index_scale, x));
             });
+
+            polar_frames.push(polar);
         });
 
         let rulers: IndexMap<ScaleId, Scalar> = positions.into_iter()
-            .filter_map(|(id, index_positions)| {
-                let scale = scales.get(&id)?;
-                Some((id, min_sample_size(index_positions, scale, index_axis, chart_area)))
-            })
+            .map(|(id, (index_positions, tick_positions, length))| (id, min_sample_size(index_positions, tick_positions, length)))
             .collect();
 
         // Second pass: the bars, stacked in the same order as their bounds were collected, in the
@@ -238,19 +239,24 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 };
 
                 let options = dataset.options();
-                let (_, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
+                let orientation = self.orientation.for_dataset(&options, scales);
+                let (_, value_id) = orientation.index_and_value_scales(&options);
 
                 let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                     return;
                 };
 
+                let frame = match &polar_frames[dataset_index] {
+                    Some(polar) => BarFrame::Around(polar),
+                    None => BarFrame::Sides { orientation, area: chart_area },
+                };
+
                 let group_size = groups[index_id].len();
-                let ruler = rulers.get(index_id).copied().unwrap_or(length(index_axis, chart_area));
+                let ruler = rulers.get(index_id).copied().unwrap_or_else(|| frame.index_length());
 
                 let slots = BarSlots {
-                    orientation: self.orientation,
+                    frame,
                     index_scale,
-                    area: chart_area,
                     ruler,
                     group_index,
                     group_size,
@@ -263,18 +269,26 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 let mut canvas = BarCanvas {
                     ctx: &mut *ctx,
                     coordinates,
-                    orientation: self.orientation,
+                    frame,
                     value_scale,
-                    area: chart_area,
                     options: &options,
                     dataset_index,
                     palette: &palette,
                 };
 
+                let around = matches!(frame, BarFrame::Around(_));
                 dataset.bar_marks(&mut |mark| {
-                    if mark.role() == role {
-                        mark.draw(&slots, &mut canvas);
+                    if mark.role() != role {
+                        return;
                     }
+
+                    // Marks that don't draw through the circle's frame are left out around it.
+                    if around && !mark.draws_around_a_circle() {
+                        scales.warn_once("polar bar marks", index_id, value_id, || format!("A bar mark that doesn't draw around a circle, such as a box plot or candlesticks, on the polar scales {:?} and {:?} is not drawn", index_id.name(), value_id.name()));
+                        return;
+                    }
+
+                    mark.draw(&slots, &mut canvas);
                 });
 
                 if role == MarkRole::Overlay || has_primary_mark(dataset) {
@@ -282,7 +296,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 }
 
                 let key = StackKey::new(&options, dataset_index);
-                let zero = pixel(value_axis, value_scale, base_value(value_scale), chart_area);
+                let zero = frame.value(value_scale, base_value(value_scale));
 
                 dataset.points(&mut |point_index, point| {
                     // A missing value leaves its place in the slot empty.
@@ -290,22 +304,18 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                         return;
                     };
 
-                    let center = pixel(index_axis, index_scale, x, chart_area);
+                    let center = frame.index(index_scale, x);
                     let (side, thickness) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
 
                     // The first bar of a stack grows from zero, or the end of the range nearest it.
                     let (start, end) = stacks.add(&key, x, y);
-                    let base = if start == 0.0 { zero } else { pixel(value_axis, value_scale, start, chart_area) };
-                    let head = pixel(value_axis, value_scale, end, chart_area);
+                    let base = if start == 0.0 { zero } else { frame.value(value_scale, start) };
+                    let head = frame.value(value_scale, end);
 
-                    // The corners in the index frame, along the index axis and along the value axis.
+                    // In the index frame, along the index axis and along the value axis: a
+                    // rectangle along the sides, a wedge around the circle.
                     ctx.begin_path();
-                    let mut path = Oriented { path: &mut *ctx, orientation: self.orientation };
-                    path.move_to(Position::new(side, base));
-                    path.line_to(Position::new(side + thickness, base));
-                    path.line_to(Position::new(side + thickness, head));
-                    path.line_to(Position::new(side, head));
-                    ctx.close_path();
+                    frame.trace_rect(ctx, side, thickness, base, head);
 
                     ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
 
@@ -397,15 +407,12 @@ fn base_value(value_scale: &dyn Scale) -> Scalar {
     0.0_f64.clamp(value_scale.min(), value_scale.max())
 }
 
-/// The smallest gap, in pixels, between neighbouring bar positions or neighbouring ticks of the
-/// index scale, along `index_axis`, capped at the chart area's length along it. It sets how thick a
-/// point's group of bars can be without overlapping the next point's.
-fn min_sample_size(mut index_positions: Vec<Scalar>, index_scale: &dyn Scale, index_axis: Axis, chart_area: Rect) -> Scalar {
-    let mut min = length(index_axis, chart_area);
-
-    let mut tick_positions: Vec<Scalar> = index_scale.ticks().iter()
-        .map(|tick| pixel(index_axis, index_scale, *tick, chart_area))
-        .collect();
+/// The smallest gap between neighbouring bar positions or neighbouring ticks of the index scale,
+/// both along the index axis in the dataset's frame (pixels along a side, angles or distances
+/// around a circle), capped at the axis's `length`. It sets how thick a point's group of bars can
+/// be without overlapping the next point's.
+fn min_sample_size(mut index_positions: Vec<Scalar>, mut tick_positions: Vec<Scalar>, length: Scalar) -> Scalar {
+    let mut min = length;
 
     for positions in [&mut index_positions, &mut tick_positions] {
         positions.sort_by(Scalar::total_cmp);
