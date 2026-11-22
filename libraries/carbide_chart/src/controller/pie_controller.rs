@@ -281,10 +281,11 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
     }
 
     /// The outermost ring around a circle, whose parts are labelled outside it: its dataset's
-    /// index, and each part's middle as a screen angle, its share of the whole (0 to 1), and its
-    /// text; `None` when labels are off or no dataset is drawn around a circle. It reads only the
+    /// index, and each part's point index, its middle as a screen angle, its share of the whole
+    /// (0 to 1), and its text, leaving out parts of no size; `None` when labels are off or no
+    /// dataset is drawn around a circle. It reads only the
     /// fitted scales, not the circle, so the chart can ask for it before fitting the circle.
-    fn outer_ring_labels(&self, scales: &Scales) -> Option<(usize, Vec<(Scalar, Scalar, String)>)> {
+    fn outer_ring_labels(&self, scales: &Scales) -> Option<(usize, Vec<(usize, Scalar, Scalar, String)>)> {
         if !self.labels {
             return None;
         }
@@ -320,8 +321,11 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
 
             let parts = Parts::of(dataset);
             for (part, from, to) in parts.shares() {
+                if part.size <= 0.0 {
+                    continue;
+                }
                 let middle = angle_scale.normalize((from + to) / 2.0).clamp(0.0, 1.0);
-                labels.push((start + middle * sweep, part.size / parts.total, self.text(part, parts.total)));
+                labels.push((part.index, start + middle * sweep, part.size / parts.total, self.text(part, parts.total)));
             }
         });
 
@@ -390,7 +394,7 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
             return;
         };
 
-        for (angle, _, text) in labels {
+        for (_, angle, _, text) in labels {
             let size = measure(&text);
             let side = if direction(angle).x >= 0.0 { std::f64::consts::FRAC_PI_2 } else { -std::f64::consts::FRAC_PI_2 };
             f(side, size, RADIAL_RUN + LEVEL_RUN + LABEL_GAP);
@@ -410,6 +414,8 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
         let outermost = rings().fold(Scalar::NEG_INFINITY, Scalar::max);
         let innermost = rings().fold(Scalar::INFINITY, Scalar::min);
         let half_gap = self.ring_spacing / 2.0;
+        // The parts drawn, by dataset and point index, so only those are labelled.
+        let mut drawn: Vec<(usize, usize)> = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let Some(Some(place)) = placed.get(dataset_index) else {
@@ -451,10 +457,11 @@ impl<D: Sequence<dyn DataSet>> DatasetController for PieController<D> {
                 frame.trace_rect(ctx, side, thickness, base, head);
                 ctx.set_fill_style(part_color(part, &place.options, dataset_index, &palette));
                 ctx.fill();
+                drawn.push((dataset_index, part.index));
             }
         });
 
-        self.draw_labels(ctx, scales, &placed, chart_area);
+        self.draw_labels(ctx, scales, &placed, chart_area, &drawn);
         ctx.restore();
     }
 }
@@ -471,8 +478,9 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
 
     /// Draws the outermost ring's labels outside the circle, each joined to the middle of its
     /// slice's outer edge by a leader line: out along the slice's middle, then level to its
-    /// side's column (see `layout_labels`).
-    fn draw_labels(&self, ctx: &mut CanvasContext, scales: &Scales, placed: &[Option<Placed>], chart_area: Rect) {
+    /// side's column (see `layout_labels`). Only parts whose slices were drawn (`drawn`, by
+    /// dataset and point index) are labelled.
+    fn draw_labels(&self, ctx: &mut CanvasContext, scales: &Scales, placed: &[Option<Placed>], chart_area: Rect, drawn: &[(usize, usize)]) {
         let Some((outer_index, labels)) = self.outer_ring_labels(scales) else {
             return;
         };
@@ -481,8 +489,10 @@ impl<D: Sequence<dyn DataSet>> PieController<D> {
         };
 
         let rim = polar.polar.circle().radius;
+        // A part whose slice wasn't drawn, swallowed by the spacing around it, has no label.
         let measured: Vec<(Scalar, Scalar, String, Dimension)> = labels.into_iter()
-            .map(|(angle, share, text)| {
+            .filter(|(index, _, _, _)| drawn.contains(&(outer_index, *index)))
+            .map(|(_, angle, share, text)| {
                 let size = ctx.measure_text(&text);
                 (angle, share, text, size)
             })
