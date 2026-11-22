@@ -27,6 +27,7 @@ icons = ["carbide_icons", "carbide_wgpu/icons", "carbide_icons/lucide"]
 icons_remix = ["icons", "carbide_icons/remix"]
 icons_tabler = ["icons", "carbide_icons/tabler"]
 table = ["carbide_table"]
+testing = ["carbide_testing"]
 
 [dependencies]
 carbide_core.workspace = true
@@ -42,6 +43,7 @@ carbide_chart = { workspace = true, optional = true }
 carbide_dialogs = { workspace = true, optional = true }
 carbide_icons = { workspace = true, optional = true }
 carbide_table = { workspace = true, optional = true }
+carbide_testing = { workspace = true, optional = true }
 
 [dev-dependencies]
 # The examples use these features, so enable them without passing --features.

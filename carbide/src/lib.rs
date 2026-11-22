@@ -51,6 +51,11 @@ pub mod icons {
     pub use carbide_icons::*;
 }
 
+#[cfg(feature = "carbide_testing")]
+pub mod testing {
+    pub use carbide_testing::*;
+}
+
 pub fn init() {
     static INITIALIZED: AtomicBool = AtomicBool::new(false);
     if !INITIALIZED.swap(true, Ordering::Relaxed) {
