@@ -9,7 +9,7 @@
 //! `Rect`'s y grows downwards on screen, so `area.bottom()` is the screen's top edge of the area
 //! and `area.top()` its bottom edge.
 
-use carbide::draw::{Alignment, Angle, Position, Rect, Scalar};
+use carbide::draw::{Alignment, Angle, Dimension, Position, Rect, Scalar};
 use carbide::math::Vector3;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
@@ -368,20 +368,19 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
 
     ctx.set_fill_style(label_color);
 
-    let rim_labels = rim_labels(angle_scale, ctx);
-    // A label around the rim at the start spoke takes the place of a number at the rim; a radius
-    // scale's categories are all kept.
-    let (start, _) = polar::angle_range(angle_scale);
-    let rim_label_on_start = rim_labels.iter().any(|(_, label)| polar::same_direction(label.angle, start));
+    // Where each label around the rim is drawn, kept so the radius labels can keep clear of them.
+    let mut rim_boxes: Vec<Rect> = vec![];
 
-    for (text, label) in rim_labels {
+    for (text, label) in rim_labels(angle_scale, ctx) {
         let direction = polar::direction(label.angle);
         let anchor = Position::new(
             circle.center.x + (circle.radius + polar::RIM_LABEL_GAP) * direction.x,
             circle.center.y + (circle.radius + polar::RIM_LABEL_GAP) * direction.y,
         );
 
-        ctx.set_text_align(rim_alignment(direction));
+        let alignment = rim_alignment(direction);
+        rim_boxes.push(text_box(anchor, alignment, label.size));
+        ctx.set_text_align(alignment);
         ctx.fill_text(&text, anchor.x, anchor.y);
     }
 
@@ -392,18 +391,31 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
         let (start, _) = polar.angle_range();
         let side = Position::new(start.cos(), start.sin());
         let beside = Position::new(side.x * RADIUS_LABEL_GAP, side.y * RADIUS_LABEL_GAP);
-        ctx.set_text_align(rim_alignment(side));
+        let alignment = rim_alignment(side);
+        let inward = polar::direction(start);
+        let inward = Position::new(-inward.x, -inward.y);
+        ctx.set_text_align(alignment);
 
         for tick in radius_scale.ticks() {
             let normalized = radius_scale.normalize(*tick);
-            let text = tick_label(radius_scale, *tick, ctx.env());
-            let is_category = radius_scale.category_index(&text) == Some(*tick);
-            if !(-1e-9..=1.0 + 1e-9).contains(&normalized) || (rim_label_on_start && !is_category && normalized > 1.0 - 1e-9) {
+            if !(-1e-9..=1.0 + 1e-9).contains(&normalized) {
                 continue;
             }
 
+            let text = tick_label(radius_scale, *tick, ctx.env());
             let at = polar.at(start, polar.distance(normalized));
-            ctx.fill_text(&text, at.x + beside.x, at.y + beside.y);
+            let size = ctx.measure_text(&text);
+
+            // A label that would overlap a label around the rim moves in along the spoke until
+            // it clears it, by at most half its own length along the spoke. A number that still
+            // overlaps gives way to the rim label; a radius scale's categories are all kept.
+            let anchor = clear_of(Position::new(at.x + beside.x, at.y + beside.y), inward, alignment, size, &rim_boxes);
+            let is_category = radius_scale.category_index(&text) == Some(*tick);
+            let Some(anchor) = anchor.or_else(|| is_category.then_some(Position::new(at.x + beside.x, at.y + beside.y))) else {
+                continue;
+            };
+
+            ctx.fill_text(&text, anchor.x, anchor.y);
         }
     }
 
@@ -489,6 +501,49 @@ fn trace_ring(path: &mut CanvasContext, polar: &Polar, distance: Scalar, corners
     }
 }
 
+/// The box a text of `size` covers when drawn at `anchor` with `alignment`, as the canvas places
+/// it (`CanvasContext::fill_text`): `Rect`'s position is its top-left corner on the screen.
+fn text_box(anchor: Position, alignment: Alignment, size: Dimension) -> Rect {
+    let (along_x, along_y) = match alignment {
+        Alignment::TopLeading => (0.0, 0.0),
+        Alignment::Top => (0.5, 0.0),
+        Alignment::TopTrailing => (1.0, 0.0),
+        Alignment::Leading => (0.0, 0.5),
+        Alignment::Center => (0.5, 0.5),
+        Alignment::Trailing => (1.0, 0.5),
+        Alignment::BottomLeading => (0.0, 1.0),
+        Alignment::Bottom => (0.5, 1.0),
+        Alignment::BottomTrailing => (1.0, 1.0),
+        Alignment::Custom(x, y) => (x, y),
+    };
+
+    Rect::new(Position::new(anchor.x - size.width * along_x, anchor.y - size.height * along_y), size)
+}
+
+/// Where a label of `size` drawn with `alignment` at `anchor` clears every box in `boxes`: at the
+/// anchor itself, or moved along `inward`, a unit direction, by as little as clears them, in
+/// half-pixel steps, but at most half the label's length along that direction. `None` when no
+/// such place clears them.
+fn clear_of(anchor: Position, inward: Position, alignment: Alignment, size: Dimension, boxes: &[Rect]) -> Option<Position> {
+    let length = size.width * inward.x.abs() + size.height * inward.y.abs();
+    let steps = (length / 2.0 / 0.5).floor() as usize;
+
+    (0..=steps)
+        .map(|step| {
+            let shift = step as Scalar * 0.5;
+            Position::new(anchor.x + inward.x * shift, anchor.y + inward.y * shift)
+        })
+        .find(|moved| !boxes.iter().any(|other| overlaps(*other, text_box(*moved, alignment, size))))
+}
+
+/// Whether two boxes share any area; boxes that only touch don't.
+fn overlaps(a: Rect, b: Rect) -> bool {
+    a.position.x < b.position.x + b.dimension.width
+        && b.position.x < a.position.x + a.dimension.width
+        && a.position.y < b.position.y + b.dimension.height
+        && b.position.y < a.position.y + a.dimension.height
+}
+
 /// How a label around the rim hangs off its anchor, `direction` being the unit direction from
 /// the centre: away from the circle, so its nearest edge or corner faces the rim.
 fn rim_alignment(direction: Position) -> Alignment {
@@ -524,4 +579,48 @@ fn format_number(x: Scalar, env: &mut Environment) -> String {
 #[cfg(not(feature = "carbide_fluent"))]
 fn format_number(x: Scalar, _env: &mut Environment) -> String {
     format!("{}", x)
+}
+
+#[cfg(test)]
+mod tests {
+    use carbide::draw::{Alignment, Dimension, Position};
+    use super::{clear_of, overlaps, text_box};
+
+    /// A text's box follows its alignment as the canvas places it, and two boxes overlap only when
+    /// they share area.
+    #[test]
+    fn text_boxes_follow_their_alignment() {
+        let size = Dimension::new(20.0, 10.0);
+        let anchor = Position::new(100.0, 50.0);
+
+        let below = text_box(anchor, Alignment::Top, size);
+        assert_eq!((below.position.x, below.position.y), (90.0, 50.0), "hangs below, centred");
+
+        let above = text_box(anchor, Alignment::Bottom, size);
+        assert_eq!((above.position.x, above.position.y), (90.0, 40.0), "sits above, centred");
+
+        let right = text_box(anchor, Alignment::Leading, size);
+        assert_eq!((right.position.x, right.position.y), (100.0, 45.0), "starts at the anchor");
+
+        assert!(overlaps(below, right), "they share the area right of and below the anchor");
+        assert!(!overlaps(above, below), "touching at the anchor's line isn't overlapping");
+    }
+
+    /// A label that overlaps another moves inward as little as clears it, and gives up past half
+    /// its own length along the way it moves.
+    #[test]
+    fn labels_move_inward_to_clear_others() {
+        let size = Dimension::new(20.0, 10.0);
+        let down = Position::new(0.0, 1.0);
+        // A rim label whose lower edge is 3 pixels above the anchor's line, as on a top spoke:
+        // the label, centred on its anchor, reaches 5 above it, so they overlap by 2.
+        let rim = text_box(Position::new(100.0, 47.0), Alignment::Bottom, size);
+
+        let cleared = clear_of(Position::new(100.0, 50.0), down, Alignment::Leading, size, &[rim]).unwrap();
+        assert_eq!(cleared, Position::new(100.0, 52.0), "2 pixels down, its top on the rim label's edge");
+
+        // One reaching 3 pixels below the line would need 8, more than half its height.
+        let deep = text_box(Position::new(100.0, 53.0), Alignment::Bottom, size);
+        assert_eq!(clear_of(Position::new(100.0, 50.0), down, Alignment::Leading, size, &[deep]), None);
+    }
 }
