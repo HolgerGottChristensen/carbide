@@ -42,6 +42,8 @@ pub struct AxisOptions {
     /// The window the scale shows since its last fit: the zoom asked for, as the scale can show
     /// it (see `ZoomWindow::limited`).
     window: ZoomWindow,
+    /// The smallest share of the fitted range the scale shows (see `min_span`).
+    min_span: Scalar,
 }
 
 impl AxisOptions {
@@ -66,6 +68,7 @@ impl AxisOptions {
             zoom: None,
             fit_visible: constant(false),
             window: ZoomWindow::WHOLE,
+            min_span: crate::scale::MIN_ZOOM_SPAN,
         }
     }
 
@@ -160,6 +163,31 @@ impl AxisOptions {
             Some(zoom) if self.axis != Axis::Radial => *zoom.value_dyn(),
             _ => ZoomWindow::WHOLE,
         }
+    }
+
+    /// Whether the scale was given a zoom (see `with_zoom`), so the chart's gestures pan and zoom
+    /// it. Radial scales never are.
+    pub fn is_zoomable(&self) -> bool {
+        self.zoom.is_some() && self.axis != Axis::Radial
+    }
+
+    /// Sets the zoom window asked for, writing it to the zoom state, as the chart's gestures do.
+    /// Does nothing on a scale without a zoom.
+    pub fn set_zoom(&mut self, window: ZoomWindow) {
+        if let Some(zoom) = &mut self.zoom {
+            zoom.set_value_dyn(window);
+        }
+    }
+
+    /// The smallest share of the fitted range the scale shows, as it decided on its last fit:
+    /// two categories on a category scale, a hundredth of the range on the others.
+    pub fn min_span(&self) -> Scalar {
+        self.min_span
+    }
+
+    /// Keeps the smallest share of the fitted range the scale shows (see `min_span`).
+    pub fn set_min_span(&mut self, min_span: Scalar) {
+        self.min_span = min_span;
     }
 
     /// The part of the fitted range the scale shows since its last fit: the zoom asked for, kept

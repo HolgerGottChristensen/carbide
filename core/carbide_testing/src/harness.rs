@@ -414,6 +414,48 @@ impl Harness {
         self.refocus();
     }
 
+    /// Holds the modifier keys `modifiers` down for the mouse events that follow, until set
+    /// again; `ModifierKey::empty()` lets go of them.
+    pub fn set_modifiers(&mut self, modifiers: carbide_core::event::ModifierKey) {
+        self.event_handler.set_modifiers(modifiers);
+    }
+
+    /// A trackpad pinch at the mouse position, zooming in for a positive `delta`.
+    pub fn pinch(&mut self, delta: f64) {
+        let window_id = self.window_id;
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
+            event_handler.pinch(delta, carbide_core::event::TouchPhase::Move, window_id, scenes, &mut WGPUImageContext, env);
+        });
+        self.refocus();
+    }
+
+    /// A drag with the primary button from `from` to `to`, moving in `steps` even steps, then let
+    /// go. For a drag held partway, use `mouse_move`, `mouse_press` and `mouse_release`.
+    pub fn drag(&mut self, from: Position, to: Position, steps: u32) {
+        self.mouse_move(from);
+        self.mouse_press(MouseButton::Left);
+        for step in 1..=steps.max(1) {
+            let share = step as f64 / steps.max(1) as f64;
+            self.mouse_move(Position::new(from.x + (to.x - from.x) * share, from.y + (to.y - from.y) * share));
+        }
+        self.mouse_release(MouseButton::Left);
+    }
+
+    /// A trackpad's smart zoom, a double tap with two fingers, at the mouse position.
+    pub fn smart_scale(&mut self) {
+        let window_id = self.window_id;
+        self.with_env_scope(|env, scenes, event_handler, _renderer| {
+            event_handler.smart_scale(window_id, scenes, &mut WGPUImageContext, env);
+        });
+        self.refocus();
+    }
+
+    /// Two clicks at `position` in quick succession, a double-click.
+    pub fn double_click(&mut self, position: Position) {
+        self.click(position);
+        self.click(position);
+    }
+
     pub fn key_press(&mut self, key: Key) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {

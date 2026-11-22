@@ -7,6 +7,7 @@ use crate::draw::{Alignment, Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler, WindowEventHandler};
 use crate::CommonWidgetImpl;
+use crate::widget::WidgetSync;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
 use crate::state::{LocalState, ReadState, State, StateExtNew};
@@ -101,6 +102,27 @@ impl<W: Widget<Kind=WidgetKindSimple>> Scroll<W> {
 }
 
 impl<W: Widget<Kind=WidgetKindSimple>> MouseEventHandler for Scroll<W> {
+    /// Wheel events go to the content first, so a child that takes the wheel, such as a zoomable
+    /// chart, consumes it and the view doesn't scroll as well. Other events reach the view first,
+    /// as for any widget.
+    fn process_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        let wheel = matches!(event, MouseEvent::Scroll { .. });
+
+        if !wheel && !*ctx.consumed && *ctx.is_current {
+            WidgetSync::sync(self, ctx.env);
+            self.handle_mouse_event(event, ctx);
+        }
+
+        self.foreach_child(&mut |child| {
+            child.process_mouse_event(event, ctx);
+        });
+
+        if wheel && !*ctx.consumed && *ctx.is_current {
+            WidgetSync::sync(self, ctx.env);
+            self.handle_mouse_event(event, ctx);
+        }
+    }
+
     fn handle_mouse_event(&mut self, event: &MouseEvent, _ctx: &mut MouseEventContext) {
         match event {
             MouseEvent::Scroll {

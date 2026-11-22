@@ -98,6 +98,32 @@ impl Shape {
         }
     }
 
+    /// The box around the shape on the screen, as `(left, top, right, bottom)`, the top the smaller
+    /// y: a marker's square, a rectangle's corners, and a wedge's outer ring sampled round its
+    /// angles. `None` for a polyline, whose points are measured one by one.
+    pub(crate) fn bounds(&self) -> Option<(Scalar, Scalar, Scalar, Scalar)> {
+        let around = |points: &mut dyn Iterator<Item=Position>| {
+            points.fold(None, |bounds: Option<(Scalar, Scalar, Scalar, Scalar)>, point| {
+                Some(match bounds {
+                    None => (point.x, point.y, point.x, point.y),
+                    Some((left, top, right, bottom)) => (left.min(point.x), top.min(point.y), right.max(point.x), bottom.max(point.y)),
+                })
+            })
+        };
+
+        match self {
+            Shape::Marker { center, radius } => Some((center.x - radius, center.y - radius, center.x + radius, center.y + radius)),
+            Shape::Rect { orientation, side, thickness, from, to } => around(&mut [(*side, *from), (side + thickness, *to)].into_iter().map(|(x, y)| orientation.swap(Position::new(x, y)))),
+            Shape::Wedge { polar, angles: (a1, a2), distances: (d1, d2), .. } => {
+                const STEPS: usize = 8;
+                let outer = d1.max(*d2);
+                let mut points = (0..=STEPS).map(|step| polar.at(a1 + (a2 - a1) * step as Scalar / STEPS as Scalar, outer)).chain(std::iter::once(polar.at(*a1, d1.min(*d2))));
+                around(&mut points)
+            }
+            Shape::Polyline(_) => None,
+        }
+    }
+
     /// Where `position` hits the shape, or `None` when it misses: inside a rectangle, a wedge or
     /// a filled area, or within `LINE_TOLERANCE` of a marker or a line. A line hit between two
     /// points hits the nearer of the two; an area hit hits the point of its line nearest along

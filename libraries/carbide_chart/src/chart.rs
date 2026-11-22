@@ -4,7 +4,9 @@ use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
+use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateExtNew};
+use carbide::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
+use carbide::draw::color::{rgba, Rgba};
 use indexmap::{IndexMap, IndexSet};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
@@ -18,7 +20,7 @@ use crate::style::axis_style;
 use crate::scale::{axis, Axis, AxisPosition, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 use crate::scale::polar::RimLabel;
 use crate::geometry::{DatumKey, PickMode, Shapes};
-use crate::scale::ScaleValue;
+use crate::interaction::{pan, share_at, zoom_about, ChartClick, ClickAction, Gesture, Pick, WHEEL_ZOOM_PER_LINE};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -30,7 +32,7 @@ const DECORATION_SPACING: Scalar = 12.0;
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
 /// in different controllers share a scale when they are bound to the same id.
 #[derive(Debug, Clone, Widget)]
-#[carbide_exclude(Render, Update, Sync)]
+#[carbide_exclude(Render, Update, Sync, MouseEvent)]
 pub struct Chart<C> where C: ControllerSequence {
     #[id] id: WidgetId,
     position: Position,
@@ -48,6 +50,20 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The shapes the controllers drew on the last render, with the chart area, which the data
     /// under a position is found by.
     shapes: Shapes,
+    /// The state the data under the pointer is written to, when the chart reports hovering.
+    hover: Option<Box<dyn AnyState<T=Option<Pick>>>>,
+    /// How hovering and clicks find the data under the pointer.
+    hover_mode: PickMode,
+    /// What a click in the chart area does.
+    on_click: Option<ClickAction>,
+    /// The drag in progress: a pan, or a box to zoom to.
+    gesture: Option<Gesture>,
+    /// The last press of the primary button, kept until the next, so a drag only starts from a
+    /// press inside the chart, and a press that moved isn't a click.
+    press: Option<Press>,
+    /// The band of each scale along a side on the last render, in the chart's own coordinates,
+    /// where gestures move only that scale.
+    bands: Vec<(ScaleId, Rect)>,
 }
 
 impl<C: ControllerSequence> Chart<C> {
@@ -71,6 +87,12 @@ impl<C: ControllerSequence> Chart<C> {
             warned_scale_ids: HashSet::new(),
             default_kinds: [(ScaleId::X, ScaleKind::Linear), (ScaleId::Y, ScaleKind::Linear)].into_iter().collect(),
             shapes: Shapes::default(),
+            hover: None,
+            hover_mode: PickMode::Index,
+            on_click: None,
+            gesture: None,
+            press: None,
+            bands: vec![],
         }
     }
 
@@ -111,23 +133,129 @@ impl<C: ControllerSequence> Chart<C> {
         self
     }
 
-    /// What lies under `position` on the scale `id` (see `Scales::value_at`), in the chart area of
-    /// the last render. Positions are in the chart's own coordinates, from its top-left corner, as
-    /// it draws in.
-    #[allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet")]
-    pub(crate) fn value_at(&self, id: &ScaleId, position: Position, env: &mut Environment) -> Option<ScaleValue> {
-        self.scales.value_at(id, position, self.shapes.area(), env)
+    /// Reports what is under the pointer to `state`, an `Option<Pick>` or a state of one: the
+    /// data found there, as `hover_mode` finds them, and the value under the pointer on every
+    /// scale, while the pointer is over the chart area, and `None` when it isn't. The chart
+    /// outlines the data found.
+    pub fn hover(mut self, state: impl IntoState<Option<Pick>>) -> Chart<C> {
+        self.hover = Some(state.into_state().as_dyn());
+        self
     }
 
+    /// How hovering and clicks find the data under the pointer. `PickMode::Index` by default:
+    /// every dataset's datum at the category nearest the pointer, as a shared tooltip shows.
+    pub fn hover_mode(mut self, mode: PickMode) -> Chart<C> {
+        self.hover_mode = mode;
+        self
+    }
+
+    /// Calls `action` when the chart area is clicked with the primary button, with what was found
+    /// there, as for `hover`.
+    pub fn on_click(mut self, action: impl Fn(ChartClick) + 'static) -> Chart<C> {
+        self.on_click = Some(ClickAction(std::rc::Rc::new(action)));
+        self
+    }
+
+    /// What is under `position`, in the chart's own coordinates: `None` outside the chart area.
+    fn pick_at(&self, position: Position, env: &mut Environment) -> Option<Pick> {
+        if !inside(self.shapes.area(), position) {
+            return None;
+        }
+
+        let data = self.shapes.pick(position, self.hover_mode);
+        let ids: Vec<ScaleId> = self.scales.iter().map(|(id, _)| id.clone()).collect();
+        let values = ids.into_iter()
+            .filter_map(|id| self.scales.value_at(&id, position, self.shapes.area(), env).map(|value| (id, value)))
+            .collect();
+
+        Some(Pick { position, data, values })
+    }
+
+    /// Writes what is under `position` to the hover state, when the chart has one and it changed.
+    fn hover_at(&mut self, position: Option<Position>, env: &mut Environment) {
+        if self.hover.is_none() {
+            return;
+        }
+
+        let pick = position.and_then(|position| self.pick_at(position, env));
+        if let Some(hover) = &mut self.hover
+            && *hover.value_dyn() != pick {
+                hover.set_value_dyn(pick);
+            }
+    }
+
+    /// The zoomable scales a gesture at `position` moves: every one over the chart area, or the one
+    /// whose band it is over.
+    fn gesture_scales(&self, position: Position) -> Vec<ScaleId> {
+        let zoomable = |id: &ScaleId| self.scales.get(id).is_some_and(|scale| scale.axis_options().is_zoomable());
+
+        if inside(self.shapes.area(), position) {
+            return self.scales.iter().map(|(id, _)| id.clone()).filter(|id| zoomable(id)).collect();
+        }
+
+        self.bands.iter()
+            .find(|(id, band)| zoomable(id) && inside(*band, position))
+            .map(|(id, _)| vec![id.clone()])
+            .unwrap_or_default()
+    }
+
+    /// Calls the click action with what is at `position`, when the chart has one and `position`
+    /// is in the chart area.
+    fn click(&self, position: Position, modifier_key: ModifierKey, env: &mut Environment) {
+        let Some(action) = self.on_click.clone() else {
+            return;
+        };
+        if let Some(pick) = self.pick_at(position, env) {
+            (action.0)(ChartClick { pick: &pick, env, modifier_key });
+        }
+    }
+
+    /// Changes the zoom of each of `scales` with `change`, from the window it asks for and its
+    /// smallest span. Returns whether any of them changed.
+    fn change_zoom(&mut self, scales: &[ScaleId], mut change: impl FnMut(&dyn Scale, crate::scale::ZoomWindow, f64) -> crate::scale::ZoomWindow) -> bool {
+        let mut changed_any = false;
+        for id in scales {
+            let Some(scale) = self.scales.get_mut(id) else {
+                continue;
+            };
+
+            let min_span = scale.axis_options().min_span();
+            let window = scale.axis_options().zoom().limited(min_span);
+            let changed = change(&*scale, window, min_span);
+            if changed != window && let Some(options) = scale.axis_options_mut() {
+                options.set_zoom(changed);
+                changed_any = true;
+            }
+        }
+        changed_any
+    }
+
+    /// Zooms `scales` by `factor` about `position`: a factor below 1 zooms in. Returns whether
+    /// any of them changed.
+    fn zoom_scales(&mut self, scales: &[ScaleId], position: Position, factor: f64) -> bool {
+        let area = self.shapes.area();
+        self.change_zoom(scales, |scale, window, min_span| zoom_about(window, share_at(scale, window, position, area), factor, min_span))
+    }
+
+    /// Pans `scales` so the data at `from` moves to `to`, as a drag from one to the other does,
+    /// stopping at the data's ends. Returns whether any of them moved.
+    fn pan_scales(&mut self, scales: &[ScaleId], from: Position, to: Position) -> bool {
+        let area = self.shapes.area();
+        self.change_zoom(scales, |scale, window, min_span| {
+            pan(window, share_at(scale, window, from, area) - share_at(scale, window, to, area), min_span)
+        })
+    }
+
+
     /// The shapes the controllers drew on the last render.
-    #[cfg_attr(not(test), allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+    #[cfg_attr(not(test), allow(dead_code, reason = "read by the tests"))]
     pub(crate) fn shapes(&self) -> &Shapes {
         &self.shapes
     }
 
     /// The data at `position`, as `mode` finds them, among the shapes of the last render (see
     /// `Shapes::pick`). Positions are in the chart's own coordinates, from its top-left corner.
-    #[cfg_attr(not(test), allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+    #[cfg_attr(not(test), allow(dead_code, reason = "read by the tests"))]
     pub(crate) fn pick(&self, position: Position, mode: PickMode) -> Vec<DatumKey> {
         self.shapes.pick(position, mode)
     }
@@ -388,8 +516,196 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
             title.sync(env);
         }
 
+        if let Some(hover) = &mut self.hover {
+            hover.sync(env);
+        }
+
         self.scales.sync(env);
         self.controllers.sync(env);
+    }
+}
+
+/// The pointer's gestures: hovering reports what is under it (see `Chart::hover`), a click calls
+/// the click action (see `Chart::on_click`), and on zoomable scales (see `LinearScale::zoom`) a
+/// drag and the wheel pan, a pinch, or the wheel with Ctrl or Cmd held, zooms about the pointer, a
+/// drag with Shift held zooms to the box it draws, a double-click shows the whole range again, and
+/// a trackpad's smart zoom toggles between zooming in and the whole range. Over the chart area these move every
+/// zoomable scale; over a scale's band, only that one. A chart without these options ignores the
+/// pointer.
+impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
+    fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        let local = |position: Position| Position::new(position.x - self.position.x, position.y - self.position.y);
+
+        match event {
+            MouseEvent::Press { button: MouseButton::Left, position, .. } => {
+                self.gesture = None;
+                let after_drag = self.press.is_some_and(|press| press.moved);
+                self.press = Some(Press { inside: self.is_inside(*position), moved: false, after_drag });
+            }
+            MouseEvent::Move { to, .. } => {
+                let at = local(*to);
+                self.hover_at(Some(at), ctx.env);
+            }
+            MouseEvent::Left => self.hover_at(None, ctx.env),
+            MouseEvent::Scroll { x, y, mouse_position, modifiers } => {
+                let at = local(*mouse_position);
+                let scales = self.gesture_scales(at);
+                if scales.is_empty() {
+                    return;
+                }
+
+                let changed = if modifiers.intersects(ModifierKey::CONTROL | ModifierKey::SUPER) {
+                    // With Ctrl or Cmd held the wheel zooms, as a pinch does, so a mouse can zoom
+                    // too. Ten scroll units are a line of the wheel; scrolling up zooms in.
+                    self.zoom_scales(&scales, at, WHEEL_ZOOM_PER_LINE.powf(*y / 10.0))
+                } else {
+                    // Otherwise it pans, as a drag does, the data moving the way a scroll view's
+                    // content would: with Shift, a vertical wheel scrolls sideways.
+                    let moved = if modifiers.contains(ModifierKey::SHIFT) { Position::new(-*y, -*x) } else { Position::new(*x, -*y) };
+                    self.pan_scales(&scales, at, Position::new(at.x + moved.x, at.y + moved.y))
+                };
+
+                // Only a wheel that moved something is taken, so over a chart that can't move
+                // that way any further, a scroll view around it scrolls instead.
+                if changed {
+                    *ctx.consumed = true;
+                }
+            }
+            MouseEvent::SmartScale(position) => {
+                // A trackpad's smart zoom toggles: zoomed in, it shows the whole range again, as a
+                // double-click does; showing everything, it zooms in by half about the pointer.
+                let at = local(*position);
+                let scales = self.gesture_scales(at);
+                if scales.is_empty() {
+                    return;
+                }
+
+                let zoomed = scales.iter().any(|id| self.scales.get(id).is_some_and(|scale| !scale.axis_options().zoom().limited(scale.axis_options().min_span()).is_whole()));
+                if zoomed {
+                    self.change_zoom(&scales, |_, _, _| crate::scale::ZoomWindow::WHOLE);
+                } else {
+                    self.zoom_scales(&scales, at, SMART_ZOOM);
+                }
+                *ctx.consumed = true;
+            }
+            MouseEvent::Scale(delta, position, _) => {
+                let at = local(*position);
+                let scales = self.gesture_scales(at);
+                if scales.is_empty() {
+                    return;
+                }
+
+                self.zoom_scales(&scales, at, 1.0 / (1.0 + delta).max(0.1));
+                *ctx.consumed = true;
+            }
+            // A press that moved isn't a click, even let go where it started.
+            MouseEvent::NClick(MouseButton::Left, _, _, _) | MouseEvent::Click(MouseButton::Left, _, _) if self.press.is_some_and(|press| press.moved) => {}
+            MouseEvent::Click(MouseButton::Left, position, modifier_key) => self.click(local(*position), *modifier_key, ctx.env),
+            MouseEvent::NClick(MouseButton::Left, position, modifier_key, count) => {
+                // Each click of a double-click is a click. A double-click shows the whole range,
+                // unless its first press was a drag, which carbide counts as a click when it ends
+                // where it started.
+                let at = local(*position);
+                self.click(at, *modifier_key, ctx.env);
+                if *count == 2 && !self.press.is_some_and(|press| press.after_drag) {
+                    let scales = self.gesture_scales(at);
+                    self.change_zoom(&scales, |_, _, _| crate::scale::ZoomWindow::WHOLE);
+                }
+            }
+            MouseEvent::Drag { button: MouseButton::Left, origin, to, total_delta_xy, modifiers, .. } => {
+                // Only a press inside the chart drags it, wherever the pointer goes after.
+                let Some(press) = &mut self.press else {
+                    return;
+                };
+                if !press.inside {
+                    return;
+                }
+                if total_delta_xy.x.hypot(total_delta_xy.y) > CLICK_SLOP {
+                    press.moved = true;
+                }
+
+                let (origin, to) = (local(*origin), local(*to));
+
+                if self.gesture.is_none() {
+                    let scales = self.gesture_scales(origin);
+                    if scales.is_empty() {
+                        return;
+                    }
+
+                    self.gesture = Some(if modifiers.contains(ModifierKey::SHIFT) {
+                        Gesture::Box { origin, to: origin, scales }
+                    } else {
+                        Gesture::Pan { last: origin, scales }
+                    });
+                }
+
+                match self.gesture.clone() {
+                    Some(Gesture::Pan { last, scales }) => {
+                        self.pan_scales(&scales, last, to);
+                        self.gesture = Some(Gesture::Pan { last: to, scales });
+                    }
+                    Some(Gesture::Box { origin, scales, .. }) => {
+                        self.gesture = Some(Gesture::Box { origin, to, scales });
+                    }
+                    None => {}
+                }
+                *ctx.consumed = true;
+            }
+            MouseEvent::Release { button: MouseButton::Left, .. } => {
+                if let Some(Gesture::Box { origin, to, scales }) = self.gesture.take() {
+                    let area = self.shapes.area();
+                    self.change_zoom(&scales, |scale, window, min_span| {
+                        // A box too thin along a scale leaves that scale as it is.
+                        let extent = match scale.axis() {
+                            Axis::Vertical => (to.y - origin.y).abs(),
+                            _ => (to.x - origin.x).abs(),
+                        };
+                        if extent < MIN_BOX {
+                            return window;
+                        }
+
+                        let (a, b) = (share_at(scale, window, origin, area), share_at(scale, window, to, area));
+                        crate::scale::ZoomWindow::new(a.min(b), a.max(b)).limited(min_span)
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// The last press of the primary button: whether it was inside the chart, whether the pointer
+/// has moved further than `CLICK_SLOP` from it since, and whether the press before it had.
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct Press {
+    inside: bool,
+    moved: bool,
+    after_drag: bool,
+}
+
+/// How far the pointer can move from a press, in pixels, for it to still be a click: as far as
+/// carbide allows between a press and its release.
+const CLICK_SLOP: Scalar = 3.0;
+
+/// How far a trackpad's smart zoom zooms in: to half the range shown.
+const SMART_ZOOM: Scalar = 0.5;
+
+/// How far a box must reach along a scale, in pixels, to zoom it.
+const MIN_BOX: Scalar = 5.0;
+
+/// Whether `position` is inside `area`, edges included.
+fn inside(area: Rect, position: Position) -> bool {
+    area.left() <= position.x && position.x <= area.right() && area.bottom() <= position.y && position.y <= area.top()
+}
+
+/// The band of a scale on `position`'s side of `chart_area`, `offset` from it and `size` deep, in
+/// the chart's own coordinates. `Rect::bottom` is the screen's top edge.
+fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar) -> Rect {
+    match position {
+        AxisPosition::Left => Rect::new(Position::new(chart_area.left() - offset - size, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+        AxisPosition::Right => Rect::new(Position::new(chart_area.right() + offset, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+        AxisPosition::Top => Rect::new(Position::new(chart_area.left(), chart_area.bottom() - offset - size), Dimension::new(chart_area.width(), size)),
+        AxisPosition::Bottom => Rect::new(Position::new(chart_area.left(), chart_area.top() + offset), Dimension::new(chart_area.width(), size)),
     }
 }
 
@@ -436,6 +752,11 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
         let layout = self.layout(&sizes, &decorations);
         let chart_area = layout.chart_area;
+
+        self.bands = self.scales.iter()
+            .filter(|(_, scale)| scale.axis() != Axis::Radial)
+            .map(|(id, scale)| (id.clone(), band(scale.axis_options().position(), chart_area, layout.offset(id), sizes[id])))
+            .collect();
 
         // Polar scales share a circle inside the chart area, with room for the labels around it.
         // Labels the controllers draw outside the circle need room too.
@@ -491,10 +812,40 @@ impl<C: ControllerSequence> Render for Chart<C> {
             controller.draw(&mut canvas, scales, chart_area, &mut shapes);
         });
 
+        shapes.finish();
+
+        // The hovered data outlined, and the box a Shift-drag zooms to, in the label colour, which
+        // stands out on the background.
+        let ink = axis_style(canvas.env()).label_color(canvas.env());
+        if let Some(hover) = &self.hover && let Some(pick) = &*hover.value_dyn() {
+            canvas.save();
+            canvas.set_line_width(2.0);
+            canvas.set_stroke_style(ink);
+            for key in &pick.data {
+                shapes.outline(&mut canvas, *key);
+            }
+            canvas.restore();
+        }
+        if let Some(Gesture::Box { origin, to, .. }) = &self.gesture {
+            let Rgba(r, g, b, a) = Rgba::from(ink);
+            canvas.save();
+            canvas.begin_path();
+            canvas.move_to(origin.x, origin.y);
+            canvas.line_to(to.x, origin.y);
+            canvas.line_to(to.x, to.y);
+            canvas.line_to(origin.x, to.y);
+            canvas.close_path();
+            canvas.set_fill_style(rgba(r, g, b, a * 0.15));
+            canvas.fill();
+            canvas.set_line_width(1.0);
+            canvas.set_stroke_style(ink);
+            canvas.stroke();
+            canvas.restore();
+        }
+
         if zoomed {
             canvas.render_context().render.pop_clip();
         }
-        shapes.finish();
         self.shapes = shapes;
     }
 }

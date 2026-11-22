@@ -390,6 +390,11 @@ impl Scales {
         self.scales.get(id).map(|scale| scale.as_ref())
     }
 
+    /// The scale with the given id, to change, if the chart has one.
+    pub(crate) fn get_mut(&mut self, id: &ScaleId) -> Option<&mut dyn Scale> {
+        self.scales.get_mut(id).map(|scale| scale.as_mut())
+    }
+
     pub fn contains(&self, id: &ScaleId) -> bool {
         self.scales.contains_key(id)
     }
@@ -584,25 +589,25 @@ impl Scales {
     }
 }
 
-/// What lies under a position in the chart on one scale (see `Scales::value_at`).
+/// What lies under a position in the chart on one scale (see `Pick`).
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct ScaleValue {
+pub struct ScaleValue {
     /// The value on the scale: a number, a time in seconds, or a position in categories.
-    pub(crate) value: Scalar,
+    pub value: Scalar,
     /// The category there, on a scale with categories.
-    pub(crate) category: Option<CategoryValue>,
+    pub category: Option<CategoryValue>,
 }
 
 /// The category under a position, and how far across its band the position is.
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct CategoryValue {
+pub struct CategoryValue {
     /// The category's index, as a value on its scale.
-    pub(crate) index: Scalar,
+    pub index: Scalar,
     /// The category's name, when the scale has one for it.
-    pub(crate) name: Option<String>,
+    pub name: Option<String>,
     /// How far across the category's band the position is, from 0 at its start to 1 at its end,
     /// in the order the values run, which is the order bars share the band in.
-    pub(crate) fraction: Scalar,
+    pub fraction: Scalar,
 }
 
 /// The coordinate system a dataset is drawn in, from the axes of the scales it is bound to.

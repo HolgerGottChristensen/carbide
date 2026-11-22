@@ -10,5 +10,6 @@ mod snapshot;
 mod test_scene;
 
 pub use harness::Harness;
+pub use carbide_winit::event::MouseButton;
 pub use snapshot::SnapshotOptions;
 pub use carbide_wgpu::testing::WgpuMsaa;

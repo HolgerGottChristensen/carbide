@@ -41,6 +41,20 @@ pub trait Scale: DynClone + Debug + 'static {
     /// draws grid lines and tick marks, and its title.
     fn axis_options(&self) -> &AxisOptions;
 
+    /// The options, to change: the chart's gestures set a zoomable scale's zoom through them (see
+    /// `AxisOptions::set_zoom`). `None`, the default, for a scale whose options can't change, which
+    /// gestures leave alone.
+    fn axis_options_mut(&mut self) -> Option<&mut AxisOptions> {
+        None
+    }
+
+    /// Whether normalized positions run against the values, so the first value is at the end of
+    /// the chart area, as on a vertical category scale, whose first category is at the top. The
+    /// chart's gestures read the pointer's place along the scale by it. `false` by default.
+    fn is_reversed(&self) -> bool {
+        false
+    }
+
     /// Syncs the states in the scale with the environment, such as its axis title (see
     /// `AxisOptions::sync`), and returns whether anything may have changed. The chart calls it
     /// before every update, render and event. The default syncs nothing: a scale of your own

@@ -188,6 +188,10 @@ impl Scale for CategoryScale {
         &self.axis_options
     }
 
+    fn axis_options_mut(&mut self) -> Option<&mut AxisOptions> {
+        Some(&mut self.axis_options)
+    }
+
     fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
         self.axis_options.set_polar_role(role);
     }
@@ -209,6 +213,10 @@ impl Scale for CategoryScale {
             Axis::Vertical => 1.0 - decimal,
             Axis::Horizontal | Axis::Radial => decimal,
         }
+    }
+
+    fn is_reversed(&self) -> bool {
+        self.axis == Axis::Vertical
     }
 
     fn denormalize(&self, normalized: Scalar) -> Scalar {
@@ -356,6 +364,7 @@ impl Scale for CategoryScale {
         let min_steps = if self.offset { 2.0 } else { 1.0 };
         let window = self.axis_options.zoom().snapped(length, min_steps);
         self.axis_options.set_window(window);
+        self.axis_options.set_min_span((min_steps / length).min(1.0));
 
         self.visible_ticks = (!window.is_whole()).then(|| {
             let (low, high) = (start + window.start * length, start + window.end * length);

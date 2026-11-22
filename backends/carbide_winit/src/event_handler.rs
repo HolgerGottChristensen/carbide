@@ -340,30 +340,10 @@ impl NewEventHandler {
             }
 
             WindowEvent::DoubleTapGesture { .. } => {
-                let mut consumed = false;
-                for scene in scenes.iter_mut() {
-                    scene.process_mouse_event(&MouseEvent::SmartScale(self.mouse_position), &mut MouseEventContext {
-                        image: image_context,
-                        is_current: &false,
-                        window_id: &window_id.into(),
-                        consumed: &mut consumed,
-                        env,
-                    });
-                }
-                RequestRedraw::True
+                self.smart_scale(window_id, scenes, image_context, env)
             },
             WindowEvent::PinchGesture { phase, delta, .. } => {
-                let mut consumed = false;
-                for scene in scenes.iter_mut() {
-                    scene.process_mouse_event(&MouseEvent::Scale(*delta, self.mouse_position, convert_touch_phase(*phase)), &mut MouseEventContext {
-                        image: image_context,
-                        is_current: &false,
-                        window_id: &window_id.into(),
-                        consumed: &mut consumed,
-                        env,
-                    });
-                }
-                RequestRedraw::True
+                self.pinch(*delta, convert_touch_phase(*phase), window_id, scenes, image_context, env)
             },
             WindowEvent::RotationGesture { phase, delta, .. } => {
                 let mut consumed = false;
@@ -552,6 +532,42 @@ impl NewEventHandler {
             }
         }
 
+        RequestRedraw::True
+    }
+
+    /// Sets the modifier keys held, as a `ModifiersChanged` window event does, for the mouse events
+    /// that follow.
+    pub fn set_modifiers(&mut self, modifiers: ModifierKey) {
+        self.modifiers = modifiers;
+    }
+
+    /// A trackpad's smart zoom, a double tap with two fingers, at the mouse position.
+    pub fn smart_scale(&mut self, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
+        let mut consumed = false;
+        for scene in scenes.iter_mut() {
+            scene.process_mouse_event(&MouseEvent::SmartScale(self.mouse_position), &mut MouseEventContext {
+                image: image_context,
+                is_current: &false,
+                window_id: &window_id.into(),
+                consumed: &mut consumed,
+                env,
+            });
+        }
+        RequestRedraw::True
+    }
+
+    /// A pinch on a trackpad at the mouse position, zooming in for a positive `delta`.
+    pub fn pinch(&mut self, delta: Scalar, phase: carbide_core::event::TouchPhase, window_id: WindowId, scenes: &mut [Box<dyn AnyScene>], image_context: &mut dyn ImageContext, env: &mut Environment) -> RequestRedraw {
+        let mut consumed = false;
+        for scene in scenes.iter_mut() {
+            scene.process_mouse_event(&MouseEvent::Scale(delta, self.mouse_position, phase), &mut MouseEventContext {
+                image: image_context,
+                is_current: &false,
+                window_id: &window_id.into(),
+                consumed: &mut consumed,
+                env,
+            });
+        }
         RequestRedraw::True
     }
 
@@ -782,7 +798,7 @@ impl NewEventHandler {
 
         // Check for drag events.
 
-        let distance = (delta_xy.x + delta_xy.y).abs().sqrt();
+        let distance = delta_xy.x.hypot(delta_xy.y);
         let drag_threshold = 0.0;
 
         if distance > drag_threshold {

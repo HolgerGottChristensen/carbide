@@ -19,10 +19,10 @@ use crate::scale::{Circle, ScaleId};
 /// Which datum something is: its controller's index in the chart, its dataset's index in the
 /// controller, and its index in the dataset, as the controllers count them.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub(crate) struct DatumKey {
-    pub(crate) controller: usize,
-    pub(crate) dataset: usize,
-    pub(crate) index: usize,
+pub struct DatumKey {
+    pub controller: usize,
+    pub dataset: usize,
+    pub index: usize,
 }
 
 /// Which dataset something belongs to: its controller's index in the chart and its index in the
@@ -83,6 +83,20 @@ struct Anchor {
     key: DatumKey,
     center: Position,
     place: Option<IndexPlace>,
+    /// The box around the shape on the screen, as `(left, top, right, bottom)` with the top the
+    /// smaller y, so a datum counts as shown when any of its shape is in the chart area.
+    bounds: (Scalar, Scalar, Scalar, Scalar),
+    /// A marker's radius, which the nearest datum is measured from the edge of; 0 for the others.
+    radius: Scalar,
+}
+
+impl Anchor {
+    /// Whether any of the datum's shape is inside `area`.
+    fn shown_in(&self, area: Rect) -> bool {
+        let (left, top, right, bottom) = self.bounds;
+        let (area_top, area_bottom) = (area.bottom().min(area.top()), area.bottom().max(area.top()));
+        left <= area.right() && right >= area.left() && top <= area_bottom && bottom >= area_top
+    }
 }
 
 /// One dataset's anchors, a range of `Shapes::anchors`, and whether they lie in order along a side
@@ -95,27 +109,28 @@ struct Group {
     sorted: Option<(bool, Scalar)>,
 }
 
-/// How a pick finds data at a position (see `Shapes::pick`).
-#[cfg_attr(not(test), allow(dead_code, reason = "constructed by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+/// How the chart finds the data at the pointer (see `Chart::hover_mode`).
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum PickMode {
+pub enum PickMode {
     /// The data whose shapes are under the position, the one drawn on top first: inside a bar, a
     /// wedge or a filled area, or within `LINE_TOLERANCE` of a marker or a line.
     Point,
-    /// The datum nearest the position, measured as `Measure` says, from the centres of shapes and
-    /// the points of lines; all of them when several are equally near.
+    /// The datum nearest the position, measured as `Measure` says, from the centres of shapes, the
+    /// edges of markers, so a position on a bubble is at it, and the points of lines; all of them
+    /// when several are equally near. Data shown only partly in the chart area count, such as a
+    /// bubble whose centre is just past its edge.
     Nearest(Measure),
     /// The data at the index (the category, along the index axis) nearest the position, in every
-    /// dataset that has one there, as for a shared tooltip.
+    /// dataset that has one there, as for a shared tooltip, among the data shown at least partly
+    /// in the chart area.
     Index,
     /// Every datum of the dataset under the position, or else of the nearest datum's dataset.
     Dataset,
 }
 
 /// What `PickMode::Nearest` measures the distance along.
-#[allow(dead_code, reason = "constructed by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet")]
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub(crate) enum Measure {
+pub enum Measure {
     /// Straight across the screen.
     Both,
     /// Along x only.
@@ -188,16 +203,11 @@ impl Shapes {
 
     /// Where the datum `key` is drawn: the centre of its shape, or its point on its line, or
     /// `None` when it wasn't drawn.
-    #[cfg_attr(not(test), allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+    #[cfg_attr(not(test), allow(dead_code, reason = "read by the tests, and by tooltips later"))]
     pub(crate) fn anchor(&self, key: DatumKey) -> Option<Position> {
         self.anchors.iter().find(|anchor| anchor.key == key).map(|anchor| anchor.center)
     }
 
-    /// Every shape, in the order they were drawn.
-    #[cfg_attr(not(test), allow(dead_code, reason = "read by the tests, and by animation later"))]
-    pub(crate) fn items(&self) -> &[Item] {
-        &self.items
-    }
 
     /// Collects each datum's anchors, by dataset, once every shape is added, for `pick`.
     pub(crate) fn finish(&mut self) {
@@ -207,12 +217,18 @@ impl Shapes {
             match &item.shape {
                 Shape::Polyline(line) => {
                     for (position, datum) in &line.vertices {
-                        anchors.push((item.dataset, Anchor { key: item.dataset.datum(datum.index), center: *position, place: datum.place.clone() }));
+                        let bounds = (position.x, position.y, position.x, position.y);
+                        anchors.push((item.dataset, Anchor { key: item.dataset.datum(datum.index), center: *position, place: datum.place.clone(), bounds, radius: 0.0 }));
                     }
                 }
                 shape => {
                     if let (Some(datum), Some(center)) = (&item.datum, shape.center()) {
-                        anchors.push((item.dataset, Anchor { key: item.dataset.datum(datum.index), center, place: datum.place.clone() }));
+                        let radius = match shape {
+                            Shape::Marker { radius, .. } => *radius,
+                            _ => 0.0,
+                        };
+                        let bounds = shape.bounds().unwrap_or((center.x, center.y, center.x, center.y));
+                        anchors.push((item.dataset, Anchor { key: item.dataset.datum(datum.index), center, place: datum.place.clone(), bounds, radius }));
                     }
                 }
             }
@@ -235,7 +251,7 @@ impl Shapes {
     }
 
     /// The data at `position`, as `mode` finds them, each once. Nothing is found from outside the
-    /// chart area, nor, but for `Point`, data whose anchors lie outside it.
+    /// chart area, nor, but for `Point`, data whose shapes lie wholly outside it.
     pub(crate) fn pick(&self, position: Position, mode: PickMode) -> Vec<DatumKey> {
         if !inside(self.area, position) {
             return vec![];
@@ -274,9 +290,12 @@ impl Shapes {
         unique(found)
     }
 
-    /// The data whose anchors are nearest `position`, as `measure` measures, inside the chart area.
+    /// The data whose anchors are nearest `position`, as `measure` measures, among those shown at
+    /// least partly in the chart area.
     fn nearest(&self, position: Position, measure: Measure) -> Vec<DatumKey> {
         let center = self.circle.map(|circle| circle.center);
+
+        // How far the anchor's centre is from the position, as `measure` measures.
         let measured = |anchor: &Anchor| -> Scalar {
             match (measure, center) {
                 (Measure::X, _) => (position.x - anchor.center.x).abs(),
@@ -290,20 +309,29 @@ impl Shapes {
             }
         };
 
-        let mut best = Scalar::INFINITY;
+        // Nearest first from a marker's edge, so the pointer anywhere on a bubble is at it, then,
+        // among those as near, from the centre, so small points close together don't all tie.
+        let mut best = (Scalar::INFINITY, Scalar::INFINITY);
         let mut found = vec![];
-        for anchor in self.anchors.iter().filter(|anchor| inside(self.area, anchor.center)) {
-            let distance = measured(anchor);
-            if distance < best - 1e-9 {
-                best = distance;
+        for anchor in self.anchors.iter().filter(|anchor| anchor.shown_in(self.area)) {
+            let from_center = measured(anchor);
+            let from_edge = match measure {
+                Measure::Angle | Measure::Distance if center.is_some() => from_center,
+                _ => (from_center - anchor.radius).max(0.0),
+            };
+
+            let nearer = from_edge < best.0 - 1e-9 || (from_edge <= best.0 + 1e-9 && from_center < best.1 - 1e-9);
+            if nearer {
+                best = (from_edge, from_center);
                 found.clear();
             }
-            if distance <= best + 1e-9 {
+            if (from_edge - best.0).abs() <= 1e-9 && (from_center - best.1).abs() <= 1e-9 {
                 found.push(anchor.key);
             }
         }
         unique(found)
     }
+
 
     /// The data at the index nearest `position` along the index axis, in every dataset, ordered
     /// by controller, dataset and index.
@@ -316,7 +344,7 @@ impl Shapes {
                 let Some(place) = &anchor.place else {
                     continue;
                 };
-                if !inside(self.area, anchor.center) {
+                if !anchor.shown_in(self.area) {
                     continue;
                 }
                 let gap = place.along.gap(position);
@@ -396,6 +424,40 @@ fn sorted_along(anchors: &[(DatasetKey, Anchor)]) -> Option<(bool, Scalar)> {
         Some((along_x, -1.0))
     } else {
         None
+    }
+}
+
+impl Shapes {
+    /// Outlines the shape of the datum `key` on `ctx`, in the stroke style set on it: a bar's,
+    /// a wedge's or a slice's edge, or a ring round its marker or its point on its line.
+    pub(crate) fn outline(&self, ctx: &mut carbide_core::widget::canvas::CanvasContext, key: DatumKey) {
+        for item in &self.items {
+            if item.dataset.controller != key.controller || item.dataset.dataset != key.dataset {
+                continue;
+            }
+
+            match &item.shape {
+                Shape::Polyline(line) => {
+                    for (position, datum) in &line.vertices {
+                        if datum.index == key.index {
+                            ctx.begin_path();
+                            ctx.circle(position.x, position.y, 14.0);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                shape if item.datum.as_ref().is_some_and(|datum| datum.index == key.index) => {
+                    ctx.begin_path();
+                    match shape {
+                        // A ring a little outside the marker, so small points show it.
+                        Shape::Marker { center, radius } => ctx.circle(center.x, center.y, (radius + 4.0) * 2.0),
+                        shape => shape.trace(ctx),
+                    }
+                    ctx.stroke();
+                }
+                _ => {}
+            }
+        }
     }
 }
 

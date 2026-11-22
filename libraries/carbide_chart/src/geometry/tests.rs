@@ -2,7 +2,7 @@
 //! and snapshots the chart with what each pick found outlined in white and the position marked
 //! with a red cross (see `support::Probe`).
 
-use crate::{Axis, BarController, CategoryScale, Chart, DatasetExt, Fill, LineController, PieController, ScaleId, ScatterController, SizedDataSetExt, StackId};
+use crate::{Axis, BarController, CategoryScale, Chart, DatasetExt, Fill, LinearScale, LineController, PieController, ScaleId, ScatterController, SizedDataSetExt, StackId, ZoomWindow};
 use super::{Measure, PickMode};
 use support::{key, probe, At};
 
@@ -146,6 +146,39 @@ fn bubbles_under_each_other_are_found_top_first() {
     assert_eq!(found[0], vec![key(0, 1, 0), key(0, 0, 0)]);
 }
 
+/// Bubbles zoomed along x so the largest one's centre is just past the chart area's right edge,
+/// part of it still showing, the pointer on that part. Pins down that a datum shown only partly
+/// counts for `Nearest`, and that a bubble is measured from its edge, so the pointer on it finds it
+/// rather than a bubble whose centre is inside the area but further away.
+#[test]
+fn nearest_finds_a_bubble_partly_past_the_edge() {
+    let bubbles = vec![(2.0, 3.0, 10.0), (4.0, 5.0, 10.0), (5.0, 5.0, 40.0), (8.0, 7.0, 20.0)];
+    let chart = Chart::new(ScatterController::new(bubbles.bubbles()))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(ZoomWindow::new(0.0, 0.48)));
+
+    // 25 pixels left of the big bubble's centre, which lies about 20 pixels past the edge.
+    let found = probe(chart, "nearest_finds_a_bubble_partly_past_the_edge", vec![
+        (At::Offset(Box::new(At::Datum(key(0, 0, 2))), -25.0, 0.0), PickMode::Nearest(Measure::Both)),
+    ]);
+
+    assert_eq!(found[0], vec![key(0, 0, 2)]);
+}
+
+/// A line of 400 points, about a pixel and a third apart, picked by the nearest along x. Pins down
+/// that points close together don't tie because the pointer is within their radius of several of
+/// them: among those, the one whose centre is nearest is found, alone.
+#[test]
+fn nearest_finds_one_of_many_points_close_together() {
+    let points: Vec<(f64, f64)> = (0..400).map(|i| (i as f64, 50.0 + 30.0 * (i as f64 / 9.0).sin())).collect();
+    let chart = Chart::new(LineController::new(points)).scale(ScaleId::X, LinearScale::new(Axis::Horizontal));
+
+    let found = probe(chart, "nearest_finds_one_of_many_points_close_together", vec![
+        (At::Offset(Box::new(At::Datum(key(0, 0, 200))), 0.3, -40.0), PickMode::Nearest(Measure::X)),
+    ]);
+
+    assert_eq!(found[0], vec![key(0, 0, 200)]);
+}
+
 /// Radial bars: wedges around a circle. Pins down that a position in a wedge finds it, and that
 /// `Index` finds both datasets' wedges at the category nearest around the circle.
 #[test]
@@ -180,7 +213,7 @@ mod support {
     use carbide_testing::Harness;
     use crate::Chart;
     use crate::controller::ControllerSequence;
-    use crate::geometry::{DatumKey, PickMode, Shape, Shapes};
+    use crate::geometry::{DatumKey, PickMode, Shapes};
 
     pub(super) fn key(controller: usize, dataset: usize, index: usize) -> DatumKey {
         DatumKey { controller, dataset, index }
@@ -269,7 +302,7 @@ mod support {
             canvas.set_line_width(2.0);
             canvas.set_stroke_style(WHITE);
             for key in found.iter().flatten() {
-                outline(&mut canvas, shapes, *key);
+                shapes.outline(&mut canvas, *key);
             }
 
             canvas.set_stroke_style(RED);
@@ -283,37 +316,6 @@ mod support {
             canvas.stroke();
 
             *self.found.borrow_mut() = found;
-        }
-    }
-
-    /// Outlines the shape of the datum `key`, or rings its marker, or its point on its line.
-    fn outline(canvas: &mut CanvasContext, shapes: &Shapes, key: DatumKey) {
-        for item in shapes.items() {
-            if item.dataset.controller != key.controller || item.dataset.dataset != key.dataset {
-                continue;
-            }
-
-            match &item.shape {
-                Shape::Polyline(line) => {
-                    for (position, datum) in &line.vertices {
-                        if datum.index == key.index {
-                            canvas.begin_path();
-                            canvas.circle(position.x, position.y, 14.0);
-                            canvas.stroke();
-                        }
-                    }
-                }
-                shape if item.datum.as_ref().is_some_and(|datum| datum.index == key.index) => {
-                    canvas.begin_path();
-                    match shape {
-                        // A ring a little outside the marker, so small points show it.
-                        Shape::Marker { center, radius } => canvas.circle(center.x, center.y, (radius + 4.0) * 2.0),
-                        shape => shape.trace(canvas),
-                    }
-                    canvas.stroke();
-                }
-                _ => {}
-            }
         }
     }
 }

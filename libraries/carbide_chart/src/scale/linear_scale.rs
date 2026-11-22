@@ -160,6 +160,10 @@ impl Scale for LinearScale {
         &self.axis_options
     }
 
+    fn axis_options_mut(&mut self) -> Option<&mut AxisOptions> {
+        Some(&mut self.axis_options)
+    }
+
     fn set_polar_role(&mut self, role: Option<crate::scale::PolarRole>) {
         self.axis_options.set_polar_role(role);
     }
