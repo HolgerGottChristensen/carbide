@@ -11,6 +11,7 @@ pub use pie_controller::{PieController, PiePart, DEFAULT_OUTLINE_WIDTH, DEFAULT_
 pub use scatter_controller::ScatterController;
 use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};
+use crate::geometry::Shapes;
 
 mod bar_controller;
 mod controller_sequence;
@@ -52,7 +53,11 @@ pub trait DatasetController: DynClone + Debug + 'static {
 
     /// Draws the datasets inside `area`, each on the chart's fitted scales it is bound to.
     /// A dataset bound to a scale the chart doesn't have is skipped.
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect);
+    ///
+    /// The built-in controllers lay out the shape of each datum into `shapes` and draw from it, so
+    /// the chart can find the data under a position. Controllers of your own can't add to it yet,
+    /// and leave it as it is: their data isn't found.
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, shapes: &mut Shapes);
 
     /// Adds an entry to `items` for each of the controller's datasets that has a name (see
     /// `DatasetExt::label`), in the colour it is drawn in, for the chart's legend (see
@@ -92,8 +97,8 @@ impl DatasetController for Box<dyn DatasetController> {
         (**self).collect_bounds(bounds, env);
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect) {
-        (**self).draw(ctx, scales, area);
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, shapes: &mut Shapes) {
+        (**self).draw(ctx, scales, area, shapes);
     }
 
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {

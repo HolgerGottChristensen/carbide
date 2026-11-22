@@ -4,7 +4,7 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew};
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, Scale, MIN_ZOOM_SPAN};
 
 /// At most how many labelled ticks a log scale shows: more powers than this show every second,
 /// fifth or tenth one.
@@ -40,6 +40,9 @@ pub struct LogScale {
     nice_range: Range<Scalar>,
     ticks: Vec<Scalar>,
     minor_ticks: Vec<Scalar>,
+    /// The ticks and minor ticks in the zoom window, when the scale shows only part of its range
+    /// (see `zoom`).
+    visible_ticks: Option<(Vec<Scalar>, Vec<Scalar>)>,
 }
 
 impl LogScale {
@@ -54,6 +57,7 @@ impl LogScale {
             nice_range: 1.0..10.0,
             ticks: vec![],
             minor_ticks: vec![],
+            visible_ticks: None,
         };
 
         scale.recalculate_ticks();
@@ -98,6 +102,7 @@ impl LogScale {
     }
 
     crate::scale::axis_options::polar_options!(LogScale);
+    crate::scale::axis_options::zoom_options!(LogScale);
 
     /// The base as last synced, or 10 when it is 1 or less, or not a number.
     fn base_value(&self) -> Scalar {
@@ -173,7 +178,12 @@ impl Scale for LogScale {
         let (start, end) = self.log_range();
         let log = if value > 0.0 { value.ln() } else { self.nice_range.start.ln() };
 
-        (log - start) / (end - start)
+        self.axis_options.window().zoom((log - start) / (end - start))
+    }
+
+    fn denormalize(&self, normalized: Scalar) -> Scalar {
+        let (start, end) = self.log_range();
+        (start + self.axis_options.window().unzoom(normalized) * (end - start)).exp()
     }
 
     fn set_offset(&mut self, offset: bool) {
@@ -196,7 +206,7 @@ impl Scale for LogScale {
     }
 
     fn minor_ticks(&self) -> &[Scalar] {
-        &self.minor_ticks
+        self.visible_ticks.as_ref().map_or(&self.minor_ticks, |(_, minor)| minor)
     }
 
     fn min(&self) -> Scalar {
@@ -266,10 +276,54 @@ impl Scale for LogScale {
         } else {
             vec![]
         };
+
+        self.zoom_ticks();
     }
 
     fn ticks(&self) -> &[Scalar] {
-        &self.ticks
+        self.visible_ticks.as_ref().map_or(&self.ticks, |(ticks, _)| ticks)
+    }
+}
+
+impl LogScale {
+    /// Decides the window the scale shows from the zoom asked for, and, when it shows only part
+    /// of the range, the ticks inside it: the powers and their multiples there, with the
+    /// multiples labelled when fewer than two powers are left to label.
+    fn zoom_ticks(&mut self) {
+        let window = self.axis_options.zoom().limited(MIN_ZOOM_SPAN);
+        self.axis_options.set_window(window);
+        self.visible_ticks = None;
+
+        if window.is_whole() {
+            return;
+        }
+
+        let base = self.base_value();
+        let (low, high) = (self.denormalize(0.0), self.denormalize(1.0));
+        let inside = |value: &Scalar| *value >= low * (1.0 - 1e-9) && *value <= high * (1.0 + 1e-9);
+
+        let first = (low.ln() / base.ln()).floor() as i32;
+        let last = (high.ln() / base.ln()).ceil() as i32;
+        let ticks: Vec<Scalar> = (first..=last).map(|power| base.powi(power)).filter(inside).collect();
+        let minor: Vec<Scalar> = if base >= 3.0 && last - first < 10 {
+            (first..last)
+                .flat_map(|power| {
+                    let at = base.powi(power);
+                    (2..).map(move |multiple| multiple as Scalar).take_while(move |multiple| *multiple < base).map(move |multiple| multiple * at)
+                })
+                .filter(inside)
+                .collect()
+        } else {
+            vec![]
+        };
+
+        self.visible_ticks = Some(if ticks.len() >= 2 {
+            (ticks, minor)
+        } else {
+            let mut all: Vec<Scalar> = ticks.into_iter().chain(minor).collect();
+            all.sort_by(|a, b| a.total_cmp(b));
+            (all, vec![])
+        });
     }
 }
 
@@ -369,5 +423,34 @@ mod tests {
         scale.set_smallest_positive(Some(50.0));
         scale.set_range(50.0, 50.0);
         assert_eq!((scale.min(), scale.max()), (1.0, 1000.0), "a single value is widened a power either side");
+    }
+
+    /// `denormalize` undoes `normalize` along the logarithm, with and without an offset.
+    #[test]
+    fn denormalize_is_the_inverse_of_normalize() {
+        let mut scale = fitted(LogScale::new(Axis::Vertical), 3.0, 4000.0);
+
+        for value in [1.0, 3.0, 42.0, 10_000.0] {
+            assert!((scale.denormalize(scale.normalize(value)) / value - 1.0).abs() < 1e-9, "{value}");
+        }
+        assert!((scale.denormalize(0.5) - 100.0).abs() < 1e-9, "halfway between 1 and 10 000 is 100");
+
+        scale.set_offset(true);
+        for value in [1.0, 42.0, 10_000.0] {
+            assert!((scale.denormalize(scale.normalize(value)) / value - 1.0).abs() < 1e-9, "{value} with an offset");
+        }
+    }
+
+    /// A zoomed log scale shows the powers inside its window, or, with fewer than two of them, the
+    /// multiples of the powers there, labelled.
+    #[test]
+    fn zoom_ticks_the_powers_or_multiples_shown() {
+        let mut scale = fitted(LogScale::new(Axis::Vertical).zoom(crate::ZoomWindow::new(0.0, 0.5)), 1.0, 10_000.0);
+        assert_eq!(scale.ticks(), &[1.0, 10.0, 100.0]);
+
+        // From 100 to 631: one power, so its multiples are labelled.
+        scale = fitted(LogScale::new(Axis::Vertical).zoom(crate::ZoomWindow::new(0.5, 0.7)), 1.0, 10_000.0);
+        assert_eq!(scale.ticks(), &[100.0, 200.0, 300.0, 400.0, 500.0, 600.0]);
+        assert!(scale.minor_ticks().is_empty());
     }
 }

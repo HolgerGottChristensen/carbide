@@ -124,6 +124,21 @@ pub(crate) fn normalized_pixel(axis: Axis, normalized: Scalar, area: Rect) -> Sc
     }
 }
 
+/// The normalized position along `axis` of the screen coordinate `pixel`, its x for a horizontal
+/// axis and its y for a vertical one: the inverse of `normalized_pixel`, 0 at the left or bottom of
+/// the chart area and 1 at its right or top.
+pub(crate) fn pixel_normalized(axis: Axis, pixel: Scalar, area: Rect) -> Scalar {
+    let length = length(axis, area);
+    if length <= 0.0 {
+        return 0.0;
+    }
+
+    match axis {
+        Axis::Vertical => 1.0 - (pixel - area.bottom()) / length,
+        _ => (pixel - area.left()) / length,
+    }
+}
+
 /// The chart area's length along `axis`.
 pub(crate) fn length(axis: Axis, area: Rect) -> Scalar {
     match axis {

@@ -8,7 +8,8 @@ use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::{Axis, Coordinates, Scale};
+use crate::scale::{Axis, Coordinates, Scale, ScaleId};
+use crate::geometry::{Along, Datum, Shape, Shapes};
 use crate::controller::drawing::PolarFrame;
 use crate::mark::line_mark::polar_whisker;
 use crate::style::{axis_style, series_style};
@@ -134,6 +135,10 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) sizes: SizeScale,
     /// How the dataset lies around the circle, when it is on polar scales.
     pub(crate) polar: Option<&'x PolarFrame>,
+    /// The chart's shapes, which the marks add theirs to, for picking.
+    pub(crate) shapes: &'x mut Shapes,
+    /// The id of the dataset's x scale, its index scale.
+    pub(crate) x_id: &'x ScaleId,
 }
 
 impl ScatterCanvas<'_, '_, '_, '_> {
@@ -169,6 +174,26 @@ impl ScatterCanvas<'_, '_, '_, '_> {
         let (x, y) = (self.x_scale.normalize(x), self.y_scale.normalize(y));
         let (angle, radius) = if frame.x_is_angle { (x, y) } else { (y, x) };
         (frame.polar.angle(angle), frame.polar.distance(radius))
+    }
+
+    /// Adds a circle around `center` as the shape of the point at `point_index`, whose x is `x`,
+    /// so picking finds the point by it.
+    pub(crate) fn add_marker(&mut self, point_index: usize, x: Scalar, center: Position, radius: Scalar, color: Color) {
+        let along = match self.polar {
+            Some(frame) => {
+                let circle = frame.polar.circle().center;
+                let normalized = self.x_scale.normalize(x);
+                if frame.x_is_angle {
+                    Along::Angle { center: circle, angle: frame.polar.angle(normalized) }
+                } else {
+                    Along::Distance { center: circle, distance: frame.polar.distance(normalized) }
+                }
+            }
+            None => Along::X(pixel(Axis::Horizontal, self.x_scale, x, self.area)),
+        };
+
+        let place = self.shapes.place(self.x_id, x, along);
+        self.shapes.add(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, Shape::Marker { center, radius });
     }
 
     /// Adds a whisker through the point `point`, from `from` to `to`, each an x and a y on the

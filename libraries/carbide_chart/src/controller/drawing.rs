@@ -5,7 +5,8 @@
 
 use carbide::color::Color;
 use std::collections::{HashMap, HashSet};
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
+use std::rc::Rc;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
@@ -22,6 +23,7 @@ use crate::scale::polar::{Ring, RingShape};
 use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
+use crate::geometry::{Along, Datum, Polyline, Shape, Shapes};
 use carbide::environment::Environment;
 
 /// Reports every dataset's x and y range to the scales it is bound to: the x range to its index
@@ -63,7 +65,9 @@ where
             bounds.include(index_scale, x, x);
 
             let y = if stacks { sums.add(&key, x, y).1 } else { y };
-            bounds.include(value_scale, y, y);
+            if !bounds.is_hidden(index_scale, value_scale, x) {
+                bounds.include(value_scale, y, y);
+            }
         });
 
         // An empty dataset adds nothing, not even its fill's baseline, and isn't a line to fill to.
@@ -107,6 +111,39 @@ pub(crate) struct DrawnLine {
     /// For a dataset on polar scales, how its points lie around the circle. Its `points` are
     /// then on the screen, and its orientation upright, so they are drawn where they are.
     polar: Option<PolarLine>,
+    /// The index scale the points' x values are on.
+    index_id: ScaleId,
+    /// Each drawn point's x value on the index scale.
+    xs: Vec<Scalar>,
+}
+
+impl DrawnLine {
+    /// The datum the drawn point at `point` shows, and where it sits along the index axis.
+    fn datum(&self, point: usize, shapes: &mut Shapes) -> Datum {
+        let along = match &self.polar {
+            Some(polar) => {
+                let center = polar.polar.circle().center;
+                let point = polar.points[point];
+                if polar.values_on_radius {
+                    Along::Angle { center, angle: point.angle }
+                } else {
+                    Along::Distance { center, distance: point.distance }
+                }
+            }
+            // In the index frame, x is along the index axis.
+            None => match self.orientation {
+                Orientation::Vertical => Along::X(self.points[point].x),
+                Orientation::Horizontal => Along::Y(self.points[point].x),
+            },
+        };
+
+        Datum { index: self.point_indices[point], place: Some(shapes.place(&self.index_id, self.xs[point], along)) }
+    }
+
+    /// The drawn point at `point` on the screen.
+    fn screen(&self, point: usize) -> Position {
+        self.orientation.swap(self.points[point])
+    }
 }
 
 /// How a polar line's points lie around the circle (see `controller/polar_path.rs`).
@@ -123,7 +160,7 @@ pub(crate) struct PolarLine {
     values_on_radius: bool,
     /// The spokes of the angle scale, when the radius scale's rings are polygons, so an area
     /// filled to a ring fills to the polygon the grid draws.
-    corners: Option<Vec<Scalar>>,
+    corners: Option<Rc<[Scalar]>>,
 }
 
 impl PolarLine {
@@ -187,6 +224,51 @@ pub(crate) fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<
     runs
 }
 
+/// Which of a dataset's points to lay out on a zoomed index scale, from `points`, each point
+/// that isn't missing with its normalized position along the scale, in order: the points inside
+/// the window, and one either side, so lines run off the chart area's edges, as a range of point
+/// indices; when none is inside, the two either side of the window, if a line between them crosses
+/// it, else none. `None`, for all of them, when the points aren't in order along the scale.
+pub(crate) fn visible_points(points: &[(usize, Scalar)]) -> Option<RangeInclusive<usize>> {
+    let positions = || points.iter().map(|(_, position)| *position);
+    let rising = positions().zip(positions().skip(1)).all(|(a, b)| a <= b);
+    let falling = positions().zip(positions().skip(1)).all(|(a, b)| a >= b);
+    if !rising && !falling {
+        return None;
+    }
+
+    let inside = |position: Scalar| (-1e-9..=1.0 + 1e-9).contains(&position);
+    let first = points.iter().position(|(_, position)| inside(*position));
+    let last = points.iter().rposition(|(_, position)| inside(*position));
+
+    let none = 1..=0;
+    match (first, last) {
+        (Some(first), Some(last)) => Some(points[first.saturating_sub(1)].0..=points[(last + 1).min(points.len() - 1)].0),
+        _ => Some(
+            points.windows(2)
+                .find(|pair| (pair[0].1 < 0.0 && pair[1].1 > 1.0) || (pair[0].1 > 1.0 && pair[1].1 < 0.0))
+                .map_or(none, |pair| pair[0].0..=pair[1].0)
+        ),
+    }
+}
+
+/// The points of `dataset` to lay out with `index_scale`, where it places them through
+/// `coordinates`: those `visible_points` keeps when the scale is zoomed, or `None`, for all.
+pub(crate) fn zoomed_points(dataset: &dyn crate::DataSet, coordinates: &Coordinates, index_scale: &dyn Scale) -> Option<RangeInclusive<usize>> {
+    if index_scale.axis_options().window().is_whole() {
+        return None;
+    }
+
+    let mut points = vec![];
+    dataset.points(&mut |point_index, point| {
+        if let (Some(x), Some(_)) = (coordinates.x(point), coordinates.y(point)) {
+            points.push((point_index, index_scale.normalize(x)));
+        }
+    });
+
+    visible_points(&points)
+}
+
 /// The lines of a controller's datasets, in dataset order, mapped through their scales into
 /// `chart_area`, each point's x along its index scale and its y along its value scale, as
 /// `orientation` picks them. With `stacks`, datasets in the same stack are drawn at their running
@@ -234,8 +316,16 @@ where
         let mut colors = vec![];
         let mut point_indices = vec![];
         let mut xs = vec![];
+        let mut index_values = vec![];
+
+        // On a zoomed scale along a side, only the points in its window and either side of it.
+        let kept = if polar.is_none() { zoomed_points(dataset, &coordinates, index_scale) } else { None };
 
         dataset.points(&mut |point_index, point| {
+            if kept.as_ref().is_some_and(|kept| !kept.contains(&point_index)) {
+                return;
+            }
+
             // A missing point isn't drawn, adds nothing to its stack, and may break the line.
             let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                 xs.push(None);
@@ -263,6 +353,7 @@ where
             }
             colors.push(point.color());
             point_indices.push(point_index);
+            index_values.push(x);
             xs.push(Some(x));
         });
 
@@ -286,7 +377,8 @@ where
         // Polar points are on the screen already.
         let orientation = if polar.is_some() { Orientation::Vertical } else { orientation };
 
-        lines.push(DrawnLine { dataset_index, options, orientation, points, colors, point_indices, runs, below, polar });
+        let index_id = index_id.clone();
+        lines.push(DrawnLine { dataset_index, options, orientation, points, colors, point_indices, runs, below, polar, index_id, xs: index_values });
     });
 
     lines
@@ -298,7 +390,7 @@ where
 pub(crate) struct PolarFrame {
     pub(crate) polar: Polar,
     pub(crate) x_is_angle: bool,
-    pub(crate) corners: Option<Vec<Scalar>>,
+    pub(crate) corners: Option<Rc<[Scalar]>>,
 }
 
 impl PolarFrame {
@@ -325,7 +417,7 @@ pub(crate) fn polar_frame(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId, wants
     let (angle_id, radius_id) = if x_is_angle { (x_id, y_id) } else { (y_id, x_id) };
     let polar = scales.polar(angle_id, radius_id)?;
     let corners = angle_corners(scales.get(angle_id)?);
-    let corners = (scales.grid_shape(radius_id) == GridShape::Polygon && corners.len() >= 3).then_some(corners);
+    let corners = (scales.grid_shape(radius_id) == GridShape::Polygon && corners.len() >= 3).then(|| Rc::from(corners));
 
     Some(Some(PolarFrame { polar, x_is_angle, corners }))
 }
@@ -563,17 +655,150 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
 }
 
 /// Draws a filled circle at each of each line's points that isn't missing, in its colour (see
-/// `point_color`), for the lines whose dataset index `drawn` accepts.
-pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette, drawn: impl Fn(usize) -> bool) {
+/// `point_color`), for the lines whose dataset index `drawn` accepts, each a marker in `shapes`.
+pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette, shapes: &mut Shapes, drawn: impl Fn(usize) -> bool) {
     for line in lines.iter().filter(|line| drawn(line.dataset_index)) {
-        for ((point, color), point_index) in line.points.iter().zip(&line.colors).zip(line.point_indices.iter().copied()) {
-            let point = line.orientation.swap(*point);
+        for point in 0..line.points.len() {
+            let color = point_color(line.colors[point], &line.options, line.dataset_index, line.point_indices[point], palette);
+            let datum = line.datum(point, shapes);
+            let marker = Shape::Marker { center: line.screen(point), radius: POINT_RADIUS };
+            let item = shapes.add(line.dataset_index, Some(datum), color, marker);
+
             ctx.begin_path();
-            ctx.circle(point.x, point.y, 7.0);
-            ctx.set_fill_style(point_color(*color, &line.options, line.dataset_index, point_index, palette));
+            item.shape.trace(ctx);
+            ctx.set_fill_style(item.color);
             ctx.fill();
         }
     }
+}
+
+/// The radius of a line's points.
+const POINT_RADIUS: Scalar = 3.5;
+
+/// Adds each line to `shapes` as a polyline through its points, with the areas it fills, for
+/// picking: the lines a controller draws, in the order it draws them.
+pub(crate) fn add_lines(lines: &[DrawnLine], shapes: &mut Shapes, scales: &Scales, chart_area: Rect, palette: &Palette) {
+    for line in lines {
+        let vertices = (0..line.points.len()).map(|point| (line.screen(point), line.datum(point, shapes))).collect();
+        let areas = if line.options.fill == Fill::None { vec![] } else { fill_areas(line, lines, scales, chart_area) };
+        let polyline = Polyline {
+            vertices,
+            runs: line.runs.clone(),
+            closed: line.polar.as_ref().is_some_and(|polar| polar.closed),
+            areas,
+        };
+
+        shapes.add(line.dataset_index, None, dataset_color(&line.options, line.dataset_index, palette), Shape::Polyline(polyline));
+    }
+}
+
+/// The areas a filled line fills, as polygons on the screen through its points, straight between
+/// them, for picking (see `Polyline::areas`): down to its baseline, or the line below it in its
+/// stack, as `draw_fills` fills them.
+fn fill_areas(line: &DrawnLine, lines: &[DrawnLine], scales: &Scales, chart_area: Rect) -> Vec<Vec<Position>> {
+    let (_, value_id) = line.orientation.index_and_value_scales(&line.options);
+    let Some(value_scale) = scales.get(value_id) else {
+        return vec![];
+    };
+
+    let below = match (line.options.fill, line.below) {
+        (Fill::Stack, Some(below)) => Some(&lines[below]),
+        _ => None,
+    };
+
+    let mut areas = vec![];
+
+    if let Some(polar_line) = &line.polar {
+        if !polar_line.values_on_radius {
+            return vec![];
+        }
+
+        let polar = &polar_line.polar;
+        let baseline = match line.options.fill {
+            Fill::Bottom => polar.inner_radius(),
+            Fill::Top => polar.circle().radius,
+            fill => {
+                let value = fill.baseline_value().unwrap_or(0.0);
+                let (low, high) = (value_scale.min().min(value_scale.max()), value_scale.min().max(value_scale.max()));
+                polar.distance(value_scale.normalize(value.clamp(low, high)))
+            }
+        };
+        let ring = Ring { polar, distance: baseline, corners: polar_line.corners.as_deref() };
+
+        for run in &line.runs {
+            if run.len() < 2 {
+                continue;
+            }
+
+            let top: Vec<Position> = polar_line.points[run.clone()].iter().map(|point| point.position).collect();
+            let (first, last) = (polar_line.points[run.start], polar_line.points[run.end - 1]);
+
+            match (polar_line.closed, below.and_then(|below| below.polar.as_ref())) {
+                (true, Some(below)) if below.closed => {
+                    areas.push(top);
+                    areas.push(below.points.iter().map(|point| point.position).collect());
+                }
+                (false, Some(below)) => {
+                    let mut polygon = top;
+                    polygon.extend(below.points.iter().rev().map(|point| point.position));
+                    areas.push(polygon);
+                }
+                (true, _) => {
+                    areas.push(top);
+                    if baseline > 0.5 {
+                        areas.push(ring_points(&ring, 0.0, std::f64::consts::TAU));
+                    }
+                }
+                (false, _) => {
+                    let mut polygon = top;
+                    if baseline > 0.5 {
+                        polygon.extend(ring_points(&ring, last.angle, first.angle));
+                    } else {
+                        polygon.push(polar.circle().center);
+                    }
+                    areas.push(polygon);
+                }
+            }
+        }
+
+        return areas;
+    }
+
+    for run in &line.runs {
+        if run.len() < 2 {
+            continue;
+        }
+
+        let points = &line.points[run.clone()];
+        let mut polygon: Vec<Position> = points.to_vec();
+        let (left, right) = (points[0].x.min(points[points.len() - 1].x), points[0].x.max(points[points.len() - 1].x));
+
+        let lower: Vec<Position> = below.map(|below| {
+            below.runs.iter().rev()
+                .flat_map(|run| below.points[run.clone()].iter().rev())
+                .filter(|point| point.x >= left - 0.5 && point.x <= right + 0.5)
+                .copied()
+                .collect()
+        }).unwrap_or_default();
+
+        if lower.is_empty() {
+            let baseline = baseline_pixel(line.options.fill, value_scale, line.orientation.value_axis(), chart_area);
+            polygon.push(Position::new(points[points.len() - 1].x, baseline));
+            polygon.push(Position::new(points[0].x, baseline));
+        } else {
+            polygon.extend(lower);
+        }
+
+        areas.push(polygon.into_iter().map(|point| line.orientation.swap(point)).collect());
+    }
+
+    areas
+}
+
+/// Points along `ring` from screen angle `from` to `to`, close enough together for picking.
+fn ring_points(ring: &Ring, from: Scalar, to: Scalar) -> Vec<Position> {
+    const STEPS: usize = 48;
+    (0..=STEPS).map(|step| ring.point(from + (to - from) * step as Scalar / STEPS as Scalar)).collect()
 }
 
 /// The colours of the chart's `SeriesStyle`, and how far into them a controller starts.
@@ -949,5 +1174,27 @@ mod tests {
         let points = vec![(0.0, 5.0), (2.0, 6.0)];
 
         assert_eq!(y_range(&LineController::new((plain, optional, points))), Some((-4.0, 10.0)));
+    }
+
+    /// On a zoomed scale, only the points in the window are laid out, with one either side; when
+    /// none is inside, the two whose line crosses it; and all of them when they aren't in order.
+    #[test]
+    fn zoomed_lines_keep_the_points_in_the_window_and_one_either_side() {
+        use super::visible_points;
+
+        let rising = [(0, -0.5), (1, -0.2), (2, 0.1), (3, 0.6), (4, 1.2), (5, 1.8)];
+        assert_eq!(visible_points(&rising), Some(1..=4));
+
+        let falling = [(0, 1.5), (1, 0.9), (2, 0.4), (3, -0.3)];
+        assert_eq!(visible_points(&falling), Some(0..=3));
+
+        let across = [(0, -0.5), (1, -0.1), (3, 1.4)];
+        assert_eq!(visible_points(&across), Some(1..=3), "no point inside, but the line from 1 to 3 crosses the window");
+
+        let aside = [(0, 1.2), (1, 1.5)];
+        assert!(visible_points(&aside).is_some_and(|kept| kept.is_empty()), "nothing near the window");
+
+        let scattered = [(0, 0.5), (1, -2.0), (2, 0.7)];
+        assert_eq!(visible_points(&scattered), None, "out of order, so all of them");
     }
 }

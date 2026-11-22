@@ -2,8 +2,9 @@ use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
+use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
@@ -121,7 +122,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             dataset.scatter_marks(&mut |mark| {
                 mark.bounds(&coordinates, &mut |x, y| {
                     bounds.include(&options.x_scale, x, x);
-                    bounds.include(&options.y_scale, y, y);
+                    if !bounds.is_hidden(&options.x_scale, &options.y_scale, x) {
+                        bounds.include(&options.y_scale, y, y);
+                    }
                 });
             });
         });
@@ -145,7 +148,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         );
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         ctx.save();
 
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
@@ -156,11 +159,12 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         if self.show_line {
             draw_fills(&lines, ctx, scales, chart_area, &palette);
             draw_lines(&lines, ctx, chart_area, &palette);
+            add_lines(&lines, shapes, scales, chart_area, &palette);
         }
 
         // The points of datasets whose points a mark replaces are drawn by the mark instead.
         let replaced = self.replaced_points();
-        draw_points(&lines, ctx, &palette, |dataset_index| !replaced.contains(&dataset_index));
+        draw_points(&lines, ctx, &palette, shapes, |dataset_index| !replaced.contains(&dataset_index));
 
         // One size scale for every dataset's marks, so their sizes compare.
         let mut max_size: Option<Scalar> = None;
@@ -205,6 +209,8 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     palette: &palette,
                     sizes,
                     polar: frame.as_ref(),
+                    shapes: &mut *shapes,
+                    x_id: &options.x_scale,
                 };
 
                 dataset.scatter_marks(&mut |mark| {

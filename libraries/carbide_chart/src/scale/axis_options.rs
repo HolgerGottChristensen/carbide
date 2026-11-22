@@ -1,7 +1,7 @@
 use carbide::draw::{Angle, Scalar};
 use carbide::environment::Environment;
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateContract};
-use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, PolarRole};
+use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateContract, StateExtNew};
+use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, PolarRole, ZoomWindow};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order
 /// among the scales on that side, whether it draws grid lines and tick marks, and its title. Every
@@ -35,6 +35,13 @@ pub struct AxisOptions {
     grid_shape: Option<Box<dyn AnyReadState<T=GridShape>>>,
     /// A radial scale's role, as the chart gave it on the last fit.
     polar_role: Option<PolarRole>,
+    /// The part of the fitted range the scale shows, when zooming was asked for.
+    zoom: Option<Box<dyn AnyState<T=ZoomWindow>>>,
+    /// Whether the scale fits to the data visible in the windows of the scales across from it.
+    fit_visible: Box<dyn AnyReadState<T=bool>>,
+    /// The window the scale shows since its last fit: the zoom asked for, as the scale can show
+    /// it (see `ZoomWindow::limited`).
+    window: ZoomWindow,
 }
 
 impl AxisOptions {
@@ -56,6 +63,9 @@ impl AxisOptions {
             inner_radius: constant(0.0),
             grid_shape: None,
             polar_role: None,
+            zoom: None,
+            fit_visible: constant(false),
+            window: ZoomWindow::WHOLE,
         }
     }
 
@@ -143,6 +153,32 @@ impl AxisOptions {
         self.polar_role
     }
 
+    /// The part of the fitted range asked for (see `with_zoom`), as last synced: the whole range
+    /// when none was, and always on a radial scale, which isn't zoomed.
+    pub fn zoom(&self) -> ZoomWindow {
+        match &self.zoom {
+            Some(zoom) if self.axis != Axis::Radial => *zoom.value_dyn(),
+            _ => ZoomWindow::WHOLE,
+        }
+    }
+
+    /// The part of the fitted range the scale shows since its last fit: the zoom asked for, kept
+    /// within the range and wide enough, and on a category scale snapped to whole categories.
+    pub fn window(&self) -> ZoomWindow {
+        self.window
+    }
+
+    /// Keeps the window the scale shows, which the scale decides on every fit.
+    pub fn set_window(&mut self, window: ZoomWindow) {
+        self.window = window;
+    }
+
+    /// Whether the scale fits to the data inside the windows of the scales its data is placed
+    /// along, rather than to all of it (see `with_fit_visible`).
+    pub fn fit_visible(&self) -> bool {
+        *self.fit_visible.value_dyn()
+    }
+
     /// Keeps a radial scale's role for the fit (see `Scale::set_polar_role`).
     pub fn set_polar_role(&mut self, role: Option<PolarRole>) {
         self.polar_role = role;
@@ -162,6 +198,8 @@ impl AxisOptions {
         changed |= self.direction.sync(env);
         changed |= self.inner_radius.sync(env);
         changed |= self.grid_shape.as_mut().is_some_and(|shape| shape.sync(env));
+        changed |= self.zoom.as_mut().is_some_and(|zoom| zoom.sync(env));
+        changed |= self.fit_visible.sync(env);
 
         let position = *self.position.value_dyn();
         if self.checked_position != Some(position) {
@@ -240,7 +278,46 @@ impl AxisOptions {
         self.grid_shape = Some(shape.into_read_state().as_dyn_read());
         self
     }
+
+    /// Shows only part of the fitted range, a `ZoomWindow` or a state of one (see `zoom`).
+    pub fn with_zoom(mut self, window: impl IntoState<ZoomWindow>) -> AxisOptions {
+        self.zoom = Some(window.into_state().as_dyn());
+        self
+    }
+
+    /// Sets whether the scale fits to the visible data only, a value or a state of one.
+    pub fn with_fit_visible(mut self, fit_visible: impl IntoReadState<bool>) -> AxisOptions {
+        self.fit_visible = fit_visible.into_read_state().as_dyn_read();
+        self
+    }
 }
+
+/// The builder methods for zooming, in the impl block of a scale type with an `axis_options`
+/// field: `zoom` and `fit_visible`.
+macro_rules! zoom_options {
+    ($scale:ty) => {
+        /// Shows only part of the scale's fitted range: a `ZoomWindow`, or a state of one, which
+        /// the app can read, set, animate, or share with another chart's scale. The scale keeps
+        /// fitting to its data, and everything drawn on it is mapped through the window, clipped
+        /// to the chart area, with ticks for the part shown. A window is kept within the fitted
+        /// range and wide enough (see `ZoomWindow`); setting it back to `ZoomWindow::WHOLE`
+        /// resets it. Radial scales aren't zoomed.
+        pub fn zoom(mut self, window: impl carbide::state::IntoState<crate::scale::ZoomWindow>) -> $scale {
+            self.axis_options = self.axis_options.with_zoom(window);
+            self
+        }
+
+        /// Fits the scale to the data inside the zoom windows of the scales its data is placed
+        /// along, rather than to all of it: a value scale whose index scale is zoomed fits the
+        /// values shown. A value or a state of one; `false` by default.
+        pub fn fit_visible(mut self, fit_visible: impl carbide::state::IntoReadState<bool>) -> $scale {
+            self.axis_options = self.axis_options.with_fit_visible(fit_visible);
+            self
+        }
+    };
+}
+
+pub(crate) use zoom_options;
 
 /// The builder methods for a polar scale's options, in the impl block of a scale type with an
 /// `axis_options` field: `start_angle`, `end_angle` and `direction` for angle scales, and

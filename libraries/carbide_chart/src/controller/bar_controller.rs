@@ -3,11 +3,12 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
-use crate::controller::drawing::{polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
+use crate::geometry::{Datum, Shapes};
+use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
-use crate::mark::{BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole};
+use crate::mark::{AsDataSet, BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::orientation::{is_polar, Orientation};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
@@ -133,7 +134,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     let (start, end) = stacks.add(&key, x, y);
 
                     bounds.include(index_scale, x, x);
-                    bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                    if !bounds.is_hidden(index_scale, value_scale, x) {
+                        bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                    }
                 });
             }
 
@@ -143,7 +146,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
-                    bounds.include(value_scale, low + offset, high + offset);
+                    if !bounds.is_hidden(index_scale, value_scale, x) {
+                        bounds.include(value_scale, low + offset, high + offset);
+                    }
                 });
             });
         });
@@ -162,7 +167,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         );
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         let wants_x_angle = self.orientation.polar_roles().0 == PolarRole::Angle;
 
         // First pass: how each dataset maps onto the screen (along the sides, or around the
@@ -274,6 +279,8 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     options: &options,
                     dataset_index,
                     palette: &palette,
+                    shapes: &mut *shapes,
+                    index_id,
                 };
 
                 let around = matches!(frame, BarFrame::Around(_));
@@ -298,7 +305,14 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 let key = StackKey::new(&options, dataset_index);
                 let zero = frame.value(value_scale, base_value(value_scale));
 
+                // On a zoomed scale along a side, only the bars in its window and either side of it.
+                let kept = if around { None } else { zoomed_points(dataset.as_dataset(), &coordinates, index_scale) };
+
                 dataset.points(&mut |point_index, point| {
+                    if kept.as_ref().is_some_and(|kept| !kept.contains(&point_index)) {
+                        return;
+                    }
+
                     // A missing value leaves its place in the slot empty.
                     let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                         return;
@@ -314,11 +328,13 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
                     // In the index frame, along the index axis and along the value axis: a
                     // rectangle along the sides, a wedge around the circle.
+                    let color = point_color(point.color(), &options, dataset_index, point_index, &palette);
+                    let place = shapes.place(index_id, x, frame.along(center));
+                    let item = shapes.add(dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, frame.shape(side, thickness, base, head));
+
                     ctx.begin_path();
-                    frame.trace_rect(ctx, side, thickness, base, head);
-
-                    ctx.set_fill_style(point_color(point.color(), &options, dataset_index, point_index, &palette));
-
+                    item.shape.trace(ctx);
+                    ctx.set_fill_style(item.color);
                     ctx.fill();
                 });
             });

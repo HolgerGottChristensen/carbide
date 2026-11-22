@@ -64,7 +64,9 @@ impl<D: Sequence<dyn SizedPoint>> ScatterMark<D> for BubbleMark {
 
             let color = canvas.point_color(point_index, point.color());
             let fill = canvas.translucent(color);
-            canvas.circle(canvas.position(x, y), radius, fill, color, self.outline_width);
+            let center = canvas.position(x, y);
+            canvas.add_marker(point_index, x, center, radius, color);
+            canvas.circle(center, radius, fill, color, self.outline_width);
         });
     }
 }

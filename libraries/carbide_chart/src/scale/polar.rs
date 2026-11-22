@@ -91,6 +91,52 @@ impl Polar {
     pub fn position(&self, angle: Scalar, radius: Scalar) -> Position {
         self.at(self.angle(angle), self.distance(radius))
     }
+
+    /// The screen angle and the distance from the centre of `position`: the inverse of `at`. The
+    /// angle is in radians clockwise from the top, from -π to π; the centre itself is at angle 0.
+    pub fn locate(&self, position: Position) -> (Scalar, Scalar) {
+        let (dx, dy) = (position.x - self.circle.center.x, position.y - self.circle.center.y);
+        (dx.atan2(-dy), dx.hypot(dy))
+    }
+
+    /// The normalized position along the angle scale of the screen angle `angle`: the inverse of
+    /// `angle`, taken the whole number of turns round that lands it in the sweep. An angle outside
+    /// a sweep of less than a full turn is taken to the nearer end, so it is just below 0 or just
+    /// above 1.
+    pub fn normalized_angle(&self, angle: Scalar) -> Scalar {
+        if self.sweep == 0.0 {
+            return 0.0;
+        }
+
+        // A whole turn, in normalized units.
+        let turn = TAU / self.sweep.abs();
+        let normalized = ((angle - self.start) / self.sweep).rem_euclid(turn);
+
+        if normalized > 1.0 && normalized - 1.0 > turn - normalized {
+            normalized - turn
+        } else {
+            normalized
+        }
+    }
+
+    /// The normalized position along the radius scale of `distance` pixels from the centre: the
+    /// inverse of `distance`, 0 at the inner radius and 1 at the rim, below 0 in the hole and
+    /// above 1 outside the circle.
+    pub fn normalized_distance(&self, distance: Scalar) -> Scalar {
+        let width = self.circle.radius - self.inner;
+        if width <= 0.0 {
+            return 0.0;
+        }
+
+        (distance - self.inner) / width
+    }
+
+    /// The normalized positions along the angle and radius scales of `position`: the inverse of
+    /// `position`.
+    pub fn normalized_at(&self, position: Position) -> (Scalar, Scalar) {
+        let (angle, distance) = self.locate(position);
+        (self.normalized_angle(angle), self.normalized_distance(distance))
+    }
 }
 
 /// The screen angle `angle_scale` starts at, and how far it sweeps from there: negative when it
@@ -569,5 +615,45 @@ mod tests {
         fn bezier_curve_to(&mut self, control1: Position, control2: Position, to: Position) {
             self.0.extend([control1, control2, to]);
         }
+    }
+
+    /// `locate` and the normalized positions undo `position`, clockwise and counter-clockwise,
+    /// from a turned start, with a hole in the middle.
+    #[test]
+    fn positions_map_back_to_angles_and_radii() {
+        let scales = [
+            angle(LinearScale::new(Axis::Radial)),
+            angle(LinearScale::new(Axis::Radial).direction(AngleDirection::CounterClockwise)),
+            angle(LinearScale::new(Axis::Radial).start_angle(Angle::Degrees(200.0))),
+        ];
+
+        for angle_scale in &scales {
+            let polar = Polar::new(angle_scale, &radius_scale(0.3), unit_circle());
+            for (a, r) in [(0.0, 0.0), (0.1, 1.0), (0.5, 0.25), (0.9, 0.75)] {
+                let (back_a, back_r) = polar.normalized_at(polar.position(a, r));
+                assert!((back_a - a).abs() < 1e-9 && (back_r - r).abs() < 1e-9, "{a}, {r} came back as {back_a}, {back_r}");
+            }
+        }
+
+        let polar = Polar::new(&scales[0], &radius_scale(0.3), unit_circle());
+        assert!(polar.normalized_distance(5.0) < 0.0, "in the hole");
+        assert!(polar.normalized_distance(80.0) > 1.0, "outside the circle");
+    }
+
+    /// Outside a sweep of less than a full turn, an angle is taken to the nearer end: just below
+    /// 0 before the start, just above 1 after the end.
+    #[test]
+    fn angles_outside_a_partial_sweep_go_to_the_nearer_end() {
+        // The top half, from the left round to the right, clockwise.
+        let half = angle(LinearScale::new(Axis::Radial).start_angle(Angle::Degrees(270.0)).end_angle(Angle::Degrees(450.0)));
+        let polar = Polar::new(&half, &radius_scale(0.0), unit_circle());
+
+        assert!((polar.normalized_angle(0.0) - 0.5).abs() < 1e-9, "the top is halfway");
+        let after = polar.normalized_angle(FRAC_PI_2 + 0.2);
+        assert!(after > 1.0 && after < 1.2, "just past the right: {after}");
+        let before = polar.normalized_angle(-FRAC_PI_2 - 0.2);
+        assert!(before < 0.0 && before > -0.2, "just before the left: {before}");
+        let bottom = polar.normalized_angle(PI - 0.1);
+        assert!(bottom > 1.0, "nearer the right than the left: {bottom}");
     }
 }

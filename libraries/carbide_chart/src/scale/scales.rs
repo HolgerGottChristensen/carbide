@@ -1,4 +1,4 @@
-use carbide::draw::Scalar;
+use carbide::draw::{Position, Rect, Scalar};
 use carbide::environment::Environment;
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -7,6 +7,7 @@ use indexmap::{IndexMap, IndexSet};
 use crate::Value;
 use crate::scale::{Axis, CategoryScale, GridShape, LinearScale, PolarRole, Scale, ScaleId, TimeScale};
 use crate::scale::polar::{Circle, Polar};
+use crate::controller::orientation::pixel_normalized;
 
 /// The data range reported for one scale while the chart collects bounds: the union of every
 /// range included so far, or `None` when no dataset has reported anything yet.
@@ -181,6 +182,11 @@ pub struct ScaleBounds {
     /// The ids of the chart's radial scales, set before the controllers collect (see
     /// `is_radial`).
     radial: IndexSet<ScaleId>,
+    /// The values shown by each zoomed scale, lowest first, when some scale fits to the visible
+    /// data only (see `is_hidden`).
+    windows: IndexMap<ScaleId, (Scalar, Scalar)>,
+    /// The scales that fit to the visible data only (see `AxisOptions::fit_visible`).
+    fitting_visible: IndexSet<ScaleId>,
 }
 
 impl ScaleBounds {
@@ -188,6 +194,21 @@ impl ScaleBounds {
     /// polar datasets as polar while collecting (see `is_radial`).
     pub(crate) fn with_radial(radial: IndexSet<ScaleId>) -> ScaleBounds {
         ScaleBounds { radial, ..ScaleBounds::default() }
+    }
+
+    /// The bounds for a second fit, to the data visible in `windows`, the values each zoomed scale
+    /// shows, for the scales in `fitting_visible` (see `is_hidden`).
+    pub(crate) fn with_windows(radial: IndexSet<ScaleId>, windows: IndexMap<ScaleId, (Scalar, Scalar)>, fitting_visible: IndexSet<ScaleId>) -> ScaleBounds {
+        ScaleBounds { radial, windows, fitting_visible, ..ScaleBounds::default() }
+    }
+
+    /// Whether a value of a point at `x` on the scale `index_id` is left out of the bounds of
+    /// the scale `value_id`: when `value_id` fits to the visible data only (see
+    /// `LinearScale::fit_visible`) and `x` is outside the zoom window of `index_id`. Controllers
+    /// still include `x` itself, so the zoomed scale keeps its whole range.
+    pub fn is_hidden(&self, index_id: &ScaleId, value_id: &ScaleId, x: Scalar) -> bool {
+        self.fitting_visible.contains(value_id)
+            && self.windows.get(index_id).is_some_and(|(low, high)| x < *low || x > *high)
     }
 
     /// Whether the chart's scale `id` is radial. A dataset on two radial scales reads its points
@@ -456,6 +477,40 @@ impl Scales {
         Some(Polar::new(self.get(angle_id)?, self.get(radius_id)?, self.circle?))
     }
 
+    /// What lies under `position` on the scale `id`, for a chart area `area`: the value drawn
+    /// there, and on a scale with categories the category (see `Scale::category_at`). A scale
+    /// along a side reads the position's x or y; a radial scale reads its angle around the circle
+    /// or its distance from the centre, as its role says. `None` when the chart has no such scale,
+    /// or it is radial without a role or a circle yet. Positions outside the chart area give
+    /// values past the scale's ends.
+    pub(crate) fn value_at(&self, id: &ScaleId, position: Position, area: Rect, env: &mut Environment) -> Option<ScaleValue> {
+        let scale = self.get(id)?;
+
+        let normalized = match scale.axis() {
+            Axis::Horizontal => pixel_normalized(Axis::Horizontal, position.x, area),
+            Axis::Vertical => pixel_normalized(Axis::Vertical, position.y, area),
+            Axis::Radial => {
+                // The scale alone decides its own role's mapping: an angle scale's start, end and
+                // direction, or a radius scale's inner radius.
+                let polar = Polar::new(scale, scale, self.circle?);
+                let (angle, distance) = polar.locate(position);
+                match self.polar_role(id)? {
+                    PolarRole::Angle => polar.normalized_angle(angle),
+                    PolarRole::Radius => polar.normalized_distance(distance),
+                }
+            }
+        };
+
+        let value = scale.denormalize(normalized);
+        let category = scale.category_at(value).map(|(index, fraction)| CategoryValue {
+            index,
+            name: scale.label(index, env),
+            fraction,
+        });
+
+        Some(ScaleValue { value, category })
+    }
+
     /// How a dataset bound to `x_id` and `y_id` is drawn: on a side each, around and out from the
     /// circle, or not at all, which is logged once per pair: when only one of them is radial, or
     /// both have the same role, as when a radial scale is the angle for one dataset and the radius
@@ -527,6 +582,27 @@ impl Scales {
             scale.set_range(min, max);
         }
     }
+}
+
+/// What lies under a position in the chart on one scale (see `Scales::value_at`).
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct ScaleValue {
+    /// The value on the scale: a number, a time in seconds, or a position in categories.
+    pub(crate) value: Scalar,
+    /// The category there, on a scale with categories.
+    pub(crate) category: Option<CategoryValue>,
+}
+
+/// The category under a position, and how far across its band the position is.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CategoryValue {
+    /// The category's index, as a value on its scale.
+    pub(crate) index: Scalar,
+    /// The category's name, when the scale has one for it.
+    pub(crate) name: Option<String>,
+    /// How far across the category's band the position is, from 0 at its start to 1 at its end,
+    /// in the order the values run, which is the order bars share the band in.
+    pub(crate) fraction: Scalar,
 }
 
 /// The coordinate system a dataset is drawn in, from the axes of the scales it is bound to.
@@ -652,5 +728,54 @@ mod tests {
 
         let y = bounds.get(&ScaleId::Y);
         assert_eq!((y.kind(), y.offset(), y.grid_offset()), (None, false, false));
+    }
+
+    /// Positions map back to values along each side, and around the circle by each radial
+    /// scale's role; categories come with their names and the fraction across their band.
+    #[test]
+    fn positions_map_back_to_values() {
+        use carbide::draw::{Dimension, Position, Rect};
+        use crate::scale::Circle;
+
+        let area = Rect::new(Position::new(100.0, 50.0), Dimension::new(400.0, 200.0));
+        let mut env = Environment::new();
+
+        let mut scales = Scales::new();
+        let mut x = CategoryScale::new(Axis::Horizontal).labels(["A", "B", "C", "D"]);
+        x.set_offset(true);
+        x.set_range(0.0, 3.0);
+        scales.insert(ScaleId::X, x);
+        let mut y = LinearScale::new(Axis::Vertical);
+        y.set_range(0.0, 100.0);
+        scales.insert(ScaleId::Y, y);
+
+        // The second category's band is from 200 to 300 along x; y runs up from 250 to 50.
+        let value = scales.value_at(&ScaleId::X, Position::new(225.0, 0.0), area, &mut env).unwrap();
+        let category = value.category.unwrap();
+        assert_eq!((category.index, category.name.as_deref(), category.fraction), (1.0, Some("B"), 0.25));
+
+        let y = scales.value_at(&ScaleId::Y, Position::new(0.0, 100.0), area, &mut env).unwrap();
+        assert!((y.value - 75.0).abs() < 1e-9 && y.category.is_none(), "{y:?}");
+
+        // Around a circle: the angle scale reads the angle, the radius scale the distance.
+        let (angle_id, radius_id) = (ScaleId::new("angle"), ScaleId::new("radius"));
+        // A fixed range, as a fitted one would round 360 out to 400.
+        let mut angle = LinearScale::new(Axis::Radial).min(0.0).max(360.0);
+        angle.set_polar_role(Some(PolarRole::Angle));
+        angle.set_range(0.0, 360.0);
+        let mut radius = LinearScale::new(Axis::Radial);
+        radius.set_polar_role(Some(PolarRole::Radius));
+        radius.set_range(0.0, 10.0);
+        scales.insert(angle_id.clone(), angle);
+        scales.insert(radius_id.clone(), radius);
+        scales.roles.insert(angle_id.clone(), PolarRole::Angle);
+        scales.roles.insert(radius_id.clone(), PolarRole::Radius);
+        scales.set_circle(Some(Circle { center: Position::new(300.0, 150.0), radius: 100.0 }));
+
+        // 50 to the right of the centre: a quarter turn, halfway out.
+        let at = Position::new(350.0, 150.0);
+        let turned = scales.value_at(&angle_id, at, area, &mut env).unwrap().value;
+        let out = scales.value_at(&radius_id, at, area, &mut env).unwrap().value;
+        assert!((turned - 90.0).abs() < 1e-9 && (out - 5.0).abs() < 1e-9, "{turned}, {out}");
     }
 }

@@ -4,7 +4,7 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, MIN_ZOOM_SPAN};
 
 const MIN_TICK_SPACING: f64 = 1e-14;
 
@@ -16,6 +16,8 @@ pub struct LinearScale {
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
     ticks: Vec<Scalar>,
+    /// The ticks in the zoom window, when the scale shows only part of its range (see `zoom`).
+    visible_ticks: Option<Vec<Scalar>>,
     /// Where the scale starts, set with `min`, in place of its fitted start.
     fixed_min: Option<Box<dyn AnyReadState<T=Scalar>>>,
     /// Where the scale ends, set with `max`, in place of its fitted end.
@@ -33,6 +35,7 @@ impl LinearScale {
             range: 0.0..1.0,
             nice_range: 0.0..1.0,
             ticks: vec![],
+            visible_ticks: None,
             fixed_min: None,
             fixed_max: None,
             fixed_step: None,
@@ -112,6 +115,7 @@ impl LinearScale {
     }
 
     crate::scale::axis_options::polar_options!(LinearScale);
+    crate::scale::axis_options::zoom_options!(LinearScale);
 
     /// At most how many ticks the scale has: fewer along a radius, which is half as long as the
     /// chart area is wide, and whose labels sit beside one spoke.
@@ -168,18 +172,16 @@ impl Scale for LinearScale {
         changed
     }
 
-    /// With an offset, the mapped range is widened by half a tick step at both ends.
+    /// With an offset, the mapped range is widened by half a tick step at both ends; zoomed, the
+    /// window of it is mapped onto the chart area.
     fn normalize(&self, value: Scalar) -> Scalar {
-        let mut start = self.nice_range.start;
-        let mut end = self.nice_range.end;
+        let (start, end) = self.mapped_range();
+        self.axis_options.window().zoom((value - start) / (end - start))
+    }
 
-        if self.offset && !self.ticks.is_empty() {
-            let half_step = (end - start) / (self.ticks.len() - 1).max(1) as Scalar / 2.0;
-            start -= half_step;
-            end += half_step;
-        }
-
-        (value - start) / (end - start)
+    fn denormalize(&self, normalized: Scalar) -> Scalar {
+        let (start, end) = self.mapped_range();
+        start + self.axis_options.window().unzoom(normalized) * (end - start)
     }
 
     fn set_offset(&mut self, offset: bool) {
@@ -229,70 +231,116 @@ impl Scale for LinearScale {
 
     /// Picks a "nice" spacing (1, 2 or 5 times a power of ten) giving at most `tick_limits`
     /// ticks, and rounds the range out to whole steps. With a fixed start, end or step (see
-    /// `min`, `max` and `step`), those are kept instead (see `fixed_ticks`).
+    /// `min`, `max` and `step`), those are kept instead (see `fixed_ticks`). Zoomed, the ticks
+    /// shown are picked the same way for the part of the range in the window (see `zoom`).
     fn recalculate_ticks(&mut self) {
-        let range_min = self.range.start;
-        let range_max = self.range.end;
-
         let (fixed_min, fixed_max, fixed_step) = self.fixed();
         if fixed_min.is_some() || fixed_max.is_some() || fixed_step.is_some() {
             self.fixed_ticks(fixed_min.is_some(), fixed_max.is_some(), fixed_step);
-            return;
-        }
-
-        // We have one less space between ticks than ticks
-        let max_spaces = self.tick_limits().max(2) - 1;
-
-        let mut spacing = nice_num((range_max - range_min) / max_spaces as Scalar);
-
-        // Beyond MIN_TICK_SPACING floating point numbers being to lose precision
-        // such that we can't do the math necessary to generate ticks
-        if spacing <= MIN_TICK_SPACING {
-            self.nice_range = range_min..range_max;
-            self.ticks = vec![range_min, range_max];
-            return;
-        }
-
-        let num_spaces = (steps_at_or_above(range_max, spacing) - steps_at_or_below(range_min, spacing)) as u32;
-
-        if num_spaces > max_spaces {
-            // If the calculated num of spaces exceeds maxNumSpaces, recalculate it
-            spacing = nice_num(num_spaces as Scalar * spacing / max_spaces as Scalar);
-        }
-
-        let mut nice_min = steps_at_or_below(range_min, spacing) * spacing;
-        let mut nice_max = steps_at_or_above(range_max, spacing) * spacing;
-
-        let num_spaces_float = (nice_max - nice_min) / spacing;
-
-        // If very close to our rounded value, use it.
-        let num_spaces = if almost_equals(num_spaces_float, num_spaces_float.round(), spacing / 1000.0) {
-            num_spaces_float.round() as u32
         } else {
-            num_spaces_float.ceil() as u32
-        };
+            let (nice_range, ticks) = nice_ticks(self.range.start, self.range.end, self.tick_limits().max(2) - 1);
+            self.nice_range = nice_range;
+            self.ticks = ticks;
+        }
 
-        let decimal_places = u32::max(decimal_places(spacing), decimal_places(nice_min)).min(10);
-        let factor = rounding_factor(decimal_places);
-
-        nice_min = (nice_min * factor).round() / factor;
-        nice_max = (nice_max * factor).round() / factor;
-
-        let mut ticks: Vec<Scalar> = (0..num_spaces)
-            .map(|k| ((nice_min + k as Scalar * spacing) * factor) / factor)
-            .collect();
-        ticks.push(nice_max);
-
-        self.nice_range = nice_min..nice_max;
-        self.ticks = ticks;
+        self.zoom_ticks();
     }
 
     fn ticks(&self) -> &[Scalar] {
-        &self.ticks
+        self.visible_ticks.as_deref().unwrap_or(&self.ticks)
     }
 }
 
 impl LinearScale {
+    /// Decides the window the scale shows from the zoom asked for, and, when it shows only part
+    /// of the range, the ticks for that part: nice ones for it, as for a fit, but only those
+    /// inside it, or the fixed step's within it.
+    fn zoom_ticks(&mut self) {
+        let window = self.axis_options.zoom().limited(MIN_ZOOM_SPAN);
+        self.axis_options.set_window(window);
+        self.visible_ticks = None;
+
+        if window.is_whole() {
+            return;
+        }
+
+        let (start, end) = self.mapped_range();
+        let (low, high) = (start + window.start * (end - start), start + window.end * (end - start));
+        let max_spaces = self.tick_limits().max(2) - 1;
+
+        let ticks = match self.fixed().2 {
+            Some(step) if step > MIN_TICK_SPACING => {
+                let first = steps_at_or_above(low, step);
+                let last = steps_at_or_below(high, step);
+                (first as i64..=last as i64).map(|k| k as Scalar * step).collect()
+            }
+            _ => nice_ticks(low, high, max_spaces).1,
+        };
+
+        let tolerance = (high - low) * 1e-9;
+        self.visible_ticks = Some(ticks.into_iter().filter(|tick| *tick >= low - tolerance && *tick <= high + tolerance).collect());
+    }
+}
+
+/// Nice ticks for the range from `range_min` to `range_max`: a spacing of 1, 2 or 5 times a power
+/// of ten giving at most `max_spaces` spaces, and the range rounded out to whole steps.
+fn nice_ticks(range_min: Scalar, range_max: Scalar, max_spaces: u32) -> (Range<Scalar>, Vec<Scalar>) {
+    let mut spacing = nice_num((range_max - range_min) / max_spaces as Scalar);
+
+    // Beyond MIN_TICK_SPACING floating point numbers being to lose precision
+    // such that we can't do the math necessary to generate ticks
+    if spacing <= MIN_TICK_SPACING {
+        return (range_min..range_max, vec![range_min, range_max]);
+    }
+
+    let num_spaces = (steps_at_or_above(range_max, spacing) - steps_at_or_below(range_min, spacing)) as u32;
+
+    if num_spaces > max_spaces {
+        // If the calculated num of spaces exceeds maxNumSpaces, recalculate it
+        spacing = nice_num(num_spaces as Scalar * spacing / max_spaces as Scalar);
+    }
+
+    let mut nice_min = steps_at_or_below(range_min, spacing) * spacing;
+    let mut nice_max = steps_at_or_above(range_max, spacing) * spacing;
+
+    let num_spaces_float = (nice_max - nice_min) / spacing;
+
+    // If very close to our rounded value, use it.
+    let num_spaces = if almost_equals(num_spaces_float, num_spaces_float.round(), spacing / 1000.0) {
+        num_spaces_float.round() as u32
+    } else {
+        num_spaces_float.ceil() as u32
+    };
+
+    let decimal_places = u32::max(decimal_places(spacing), decimal_places(nice_min)).min(10);
+    let factor = rounding_factor(decimal_places);
+
+    nice_min = (nice_min * factor).round() / factor;
+    nice_max = (nice_max * factor).round() / factor;
+
+    let mut ticks: Vec<Scalar> = (0..num_spaces)
+        .map(|k| ((nice_min + k as Scalar * spacing) * factor) / factor)
+        .collect();
+    ticks.push(nice_max);
+
+    (nice_min..nice_max, ticks)
+}
+
+impl LinearScale {
+    /// The values at the start and end of the chart area: the nice range, padded by half a step at
+    /// each end with an offset (see `Scale::set_offset`).
+    fn mapped_range(&self) -> (Scalar, Scalar) {
+        let (mut start, mut end) = (self.nice_range.start, self.nice_range.end);
+
+        if self.offset && !self.ticks.is_empty() {
+            let half_step = (end - start) / (self.ticks.len() - 1).max(1) as Scalar / 2.0;
+            start -= half_step;
+            end += half_step;
+        }
+
+        (start, end)
+    }
+
     /// The ticks for a range with a fixed start, end or step. The step is the fixed one, or a nice
     /// one for the range, as without; an end that isn't fixed is rounded out to a whole step, and
     /// a fixed end is kept exactly, with a tick of its own. In between, ticks fall on whole
@@ -522,5 +570,52 @@ mod tests {
         let mut scale = LinearScale::new(Axis::Vertical);
         scale.set_range(1e-9, 3e-9);
         assert!(scale.ticks().iter().all(|tick: &Scalar| tick.is_finite()));
+    }
+
+    /// `denormalize` undoes `normalize`, with and without an offset, and carries on past the
+    /// scale's ends.
+    #[test]
+    fn denormalize_is_the_inverse_of_normalize() {
+        let mut scale = LinearScale::new(Axis::Horizontal);
+        scale.set_range(3.0, 97.0);
+
+        for value in [-20.0, 0.0, 37.5, 100.0, 140.0] {
+            assert!((scale.denormalize(scale.normalize(value)) - value).abs() < 1e-9, "{value}");
+        }
+        assert_eq!(scale.denormalize(0.0), 0.0, "the start of the nice range");
+
+        scale.set_offset(true);
+        for value in [-20.0, 0.0, 37.5, 100.0] {
+            assert!((scale.denormalize(scale.normalize(value)) - value).abs() < 1e-9, "{value} with an offset");
+        }
+        assert!(scale.denormalize(0.0) < 0.0, "with an offset, the area starts half a step before the range");
+    }
+
+    /// A zoomed scale maps its window of the fitted range onto the chart area, and its ticks are
+    /// nice ones for the part shown, all inside it; its fitted range stays the same.
+    #[test]
+    fn zoom_maps_the_window_and_ticks_the_part_shown() {
+        let mut scale = LinearScale::new(Axis::Horizontal).zoom(crate::ZoomWindow::new(0.25, 0.5));
+        scale.set_range(0.0, 100.0);
+
+        assert_eq!(Scale::range(&scale), 0.0..100.0, "it still fits all the data");
+        assert_eq!(scale.normalize(25.0), 0.0);
+        assert_eq!(scale.normalize(50.0), 1.0);
+        assert_eq!(scale.denormalize(0.5), 37.5);
+        assert_eq!(scale.ticks(), &[25.0, 30.0, 35.0, 40.0, 45.0, 50.0]);
+
+        let mut whole = LinearScale::new(Axis::Horizontal).zoom(crate::ZoomWindow::WHOLE);
+        whole.set_range(0.0, 100.0);
+        assert_eq!(whole.ticks().len(), 11, "the whole range is ticked as without a zoom");
+    }
+
+    /// A radial scale isn't zoomed, whatever window it is given.
+    #[test]
+    fn radial_scales_arent_zoomed() {
+        let mut scale = LinearScale::new(Axis::Radial).zoom(crate::ZoomWindow::new(0.25, 0.5));
+        scale.set_range(0.0, 100.0);
+
+        assert!(scale.axis_options().window().is_whole());
+        assert_eq!(scale.normalize(100.0), 1.0);
     }
 }

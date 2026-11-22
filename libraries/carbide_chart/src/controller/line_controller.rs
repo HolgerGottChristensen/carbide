@@ -2,8 +2,9 @@ use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
+use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
@@ -205,7 +206,9 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
                 mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
                     bounds.include(index_scale, x, x);
-                    bounds.include(value_scale, low + offset, high + offset);
+                    if !bounds.is_hidden(index_scale, value_scale, x) {
+                        bounds.include(value_scale, low + offset, high + offset);
+                    }
                 });
             });
         });
@@ -230,7 +233,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         );
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         ctx.save();
 
         let replaced = self.replaced_lines();
@@ -243,7 +246,8 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &palette);
         draw_fills(&lines, ctx, scales, chart_area, &palette);
         draw_lines(&lines, ctx, chart_area, &palette);
-        draw_points(&lines, ctx, &palette, |_| true);
+        add_lines(&lines, shapes, scales, chart_area, &palette);
+        draw_points(&lines, ctx, &palette, shapes, |_| true);
         self.draw_marks(MarkRole::Overlay, &offsets, ctx, scales, chart_area, &palette);
 
         ctx.restore();

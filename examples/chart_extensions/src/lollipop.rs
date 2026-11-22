@@ -1,5 +1,5 @@
 use carbide::chart::{
-    DataColor, DataSet, DatasetController, IntoSequence, LegendItem, LegendMarker, ScaleBounds, Scales,
+    DataColor, DataSet, DatasetController, IntoSequence, LegendItem, LegendMarker, ScaleBounds, Scales, Shapes,
     Sequence, Value,
 };
 use carbide::color::{Color, ORANGE};
@@ -53,7 +53,7 @@ impl<D: Sequence<dyn DataSet>> DatasetController for LollipopController<D> {
         });
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, _shapes: &mut Shapes) {
         ctx.save();
         ctx.set_line_width(STEM_WIDTH);
 

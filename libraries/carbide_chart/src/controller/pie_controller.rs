@@ -7,6 +7,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, PieDataSet, Value};
 use crate::mark::MarkRole;
 use crate::controller::{bar_slot, DatasetController};
+use crate::geometry::{Datum, Shapes};
 use crate::controller::bar_controller::min_sample_size;
 use crate::controller::drawing::{point_color, polar_frame, Palette, PolarFrame};
 use crate::controller::line_path::PathSink;
@@ -455,7 +456,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
         }
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         let (placed, ruler) = self.layout(scales, chart_area);
         let palette = Palette::new(ctx, self.palette_offset);
         let outline = series_style(ctx.env()).outline_color(ctx.env());
@@ -483,7 +484,8 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
             };
 
             let frame = place.frame(chart_area);
-            let (mut side, mut thickness) = bar_slot(frame.index(x_scale, place.x), ruler, 0, 1, self.category_percentage, self.bar_percentage);
+            let center = frame.index(x_scale, place.x);
+            let (mut side, mut thickness) = bar_slot(center, ruler, 0, 1, self.category_percentage, self.bar_percentage);
             if place.polar.is_some() && half_gap > 0.0 {
                 if place.x < outermost {
                     thickness -= half_gap;
@@ -521,9 +523,14 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                     continue;
                 }
 
+                // Each part is a datum of its ring, at the ring's place on the x scale.
+                let datum = Datum { index: part.index, place: Some(shapes.place(&place.options.x_scale, place.x, frame.along(center))) };
+                let color = part_color(part, &place.options, dataset_index, &palette);
+                let item = shapes.add(dataset_index, Some(datum), color, frame.shape(part_side, part_thickness, base, head));
+
                 ctx.begin_path();
-                frame.trace_rect(ctx, part_side, part_thickness, base, head);
-                ctx.set_fill_style(part_color(part, &place.options, dataset_index, &palette));
+                item.shape.trace(ctx);
+                ctx.set_fill_style(item.color);
                 ctx.fill();
                 // The outline is at most a quarter of the part's thickness and length, so a thin part
                 // keeps its colour instead of vanishing under it.

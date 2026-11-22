@@ -5,7 +5,7 @@ use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use carbide_core::render::{Render, RenderContext};
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
 use carbide_core::text::{FontSize, FontWeight};
@@ -17,6 +17,8 @@ use crate::sequence::IntoSequence;
 use crate::style::axis_style;
 use crate::scale::{axis, Axis, AxisPosition, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 use crate::scale::polar::RimLabel;
+use crate::geometry::{DatumKey, PickMode, Shapes};
+use crate::scale::ScaleValue;
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -43,6 +45,9 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The default scales not replaced with `Chart::scale`, and the kind each is now. Each fit
     /// rebuilds one when the controllers ask for another kind.
     default_kinds: IndexMap<ScaleId, ScaleKind>,
+    /// The shapes the controllers drew on the last render, with the chart area, which the data
+    /// under a position is found by.
+    shapes: Shapes,
 }
 
 impl<C: ControllerSequence> Chart<C> {
@@ -65,6 +70,7 @@ impl<C: ControllerSequence> Chart<C> {
             legend: IntoReadState::<LegendPosition>::into_read_state(LegendPosition::Hidden).as_dyn_read(),
             warned_scale_ids: HashSet::new(),
             default_kinds: [(ScaleId::X, ScaleKind::Linear), (ScaleId::Y, ScaleKind::Linear)].into_iter().collect(),
+            shapes: Shapes::default(),
         }
     }
 
@@ -105,6 +111,43 @@ impl<C: ControllerSequence> Chart<C> {
         self
     }
 
+    /// What lies under `position` on the scale `id` (see `Scales::value_at`), in the chart area of
+    /// the last render. Positions are in the chart's own coordinates, from its top-left corner, as
+    /// it draws in.
+    #[allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet")]
+    pub(crate) fn value_at(&self, id: &ScaleId, position: Position, env: &mut Environment) -> Option<ScaleValue> {
+        self.scales.value_at(id, position, self.shapes.area(), env)
+    }
+
+    /// The shapes the controllers drew on the last render.
+    #[cfg_attr(not(test), allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+    pub(crate) fn shapes(&self) -> &Shapes {
+        &self.shapes
+    }
+
+    /// The data at `position`, as `mode` finds them, among the shapes of the last render (see
+    /// `Shapes::pick`). Positions are in the chart's own coordinates, from its top-left corner.
+    #[cfg_attr(not(test), allow(dead_code, reason = "called by pointer input, Interaction 3 in docs/multiple-controllers-and-scales.md, which isn't built yet"))]
+    pub(crate) fn pick(&self, position: Position, mode: PickMode) -> Vec<DatumKey> {
+        self.shapes.pick(position, mode)
+    }
+
+    /// Has every controller fill in `bounds`, after each scale's own categories, which come first
+    /// so data naming them is placed on them.
+    fn collect_bounds(&mut self, bounds: ScaleBounds, env: &mut Environment) -> ScaleBounds {
+        for (id, scale) in self.scales.iter() {
+            scale.categories(&mut |text| {
+                bounds.register_category(id, text);
+            });
+        }
+
+        let mut bounds = bounds;
+        self.controllers.foreach(&mut |_, controller| {
+            controller.collect_bounds(&mut bounds, env);
+        });
+        bounds
+    }
+
     /// Collects what every controller asks of each scale id, rebuilds a default scale whose
     /// requested kind changed, then fits each scale to its requests. Data bound to an id the chart
     /// has no scale for is not drawn; it is logged once per id.
@@ -126,19 +169,7 @@ impl<C: ControllerSequence> Chart<C> {
             }
         }
 
-        let bounds = ScaleBounds::with_radial(self.scales.radial_ids());
-
-        // Each scale's own categories come first, so data naming them is placed on them.
-        for (id, scale) in self.scales.iter() {
-            scale.categories(&mut |text| {
-                bounds.register_category(id, text);
-            });
-        }
-
-        let mut bounds = bounds;
-        self.controllers.foreach(&mut |_, controller| {
-            controller.collect_bounds(&mut bounds, env);
-        });
+        let bounds = self.collect_bounds(ScaleBounds::with_radial(self.scales.radial_ids()), env);
 
         for id in &bounds.ids() {
             if !self.scales.contains(id) && !self.warned_scale_ids.contains(id) {
@@ -163,6 +194,24 @@ impl<C: ControllerSequence> Chart<C> {
         }
 
         self.scales.fit(&bounds);
+
+        // Scales that fit to the visible data fit again, to the data inside the zoomed scales'
+        // windows. The zoomed scales include every x either way, so they keep their range.
+        let fitting_visible: IndexSet<ScaleId> = self.scales.iter()
+            .filter(|(_, scale)| scale.axis() != Axis::Radial && scale.axis_options().fit_visible())
+            .map(|(id, _)| id.clone())
+            .collect();
+        let windows: IndexMap<ScaleId, (Scalar, Scalar)> = self.scales.iter()
+            .filter(|(_, scale)| !scale.axis_options().window().is_whole())
+            .map(|(id, scale)| {
+                let (start, end) = (scale.denormalize(0.0), scale.denormalize(1.0));
+                (id.clone(), (start.min(end), start.max(end)))
+            })
+            .collect();
+        if !fitting_visible.is_empty() && !windows.is_empty() {
+            let visible = self.collect_bounds(ScaleBounds::with_windows(self.scales.radial_ids(), windows, fitting_visible), env);
+            self.scales.fit(&visible);
+        }
 
         // A scale gives up its decoration when a controller asks, unless its grid lines were set.
         let hidden = bounds.ids().into_iter()
@@ -426,10 +475,27 @@ impl<C: ControllerSequence> Render for Chart<C> {
             legend::draw(&legend_items, &legend_layout, position, &mut canvas, area);
         }
 
+        // Every datum's shape, laid out and drawn by its controller, then kept for picking.
+        // A zoomed scale shows only part of its data: the rest is clipped to the chart area. Without
+        // a zoom nothing is clipped, so points on the area's edges are drawn whole.
+        let zoomed = self.scales.iter().any(|(_, scale)| !scale.axis_options().window().is_whole());
+        if zoomed {
+            let on_screen = Rect::new(Position::new(self.position.x + chart_area.left(), self.position.y + chart_area.bottom()), chart_area.dimension);
+            canvas.render_context().render.clip(on_screen);
+        }
+
+        let mut shapes = Shapes::new(chart_area, circle);
         let scales = &self.scales;
-        self.controllers.foreach(&mut |_, controller| {
-            controller.draw(&mut canvas, scales, chart_area);
+        self.controllers.foreach(&mut |index, controller| {
+            shapes.set_controller(index);
+            controller.draw(&mut canvas, scales, chart_area, &mut shapes);
         });
+
+        if zoomed {
+            canvas.render_context().render.pop_clip();
+        }
+        shapes.finish();
+        self.shapes = shapes;
     }
 }
 
@@ -1250,6 +1316,27 @@ mod tests {
 
     fn sizes(entries: &[(ScaleId, Scalar)]) -> IndexMap<ScaleId, Scalar> {
         entries.iter().cloned().collect()
+    }
+
+    /// A value scale that fits to the visible data fits to the values in its index scale's zoom
+    /// window, while the zoomed scale keeps fitting to all the data; without the option, the
+    /// value scale fits all of it.
+    #[test]
+    fn value_scales_can_fit_to_the_visible_data() {
+        use crate::ZoomWindow;
+        let values = vec![1.0, 2.0, 3.0, 50.0, 60.0, 4.0, 5.0, 2.0, 3.0, 1.0];
+
+        // The first three categories, from 0 to 2.
+        let zoomed = CategoryScale::new(Axis::Horizontal).zoom(ZoomWindow::new(0.0, 0.2));
+        let all = fitted(Chart::new(LineController::new(values.clone())).scale(ScaleId::X, zoomed.clone()));
+        assert!(scale_range(&all, ScaleId::Y).1 >= 60.0);
+
+        let visible = fitted(Chart::new(LineController::new(values))
+            .scale(ScaleId::X, zoomed)
+            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).fit_visible(true)));
+        let (_, y_max) = scale_range(&visible, ScaleId::Y);
+        assert!(y_max < 10.0, "the first three values reach 3, so y shouldn't reach the 50 beyond, but ends at {y_max}");
+        assert_eq!(scale_range(&visible, ScaleId::X), (0.0, 9.0), "x still fits every point");
     }
 
     fn fitted<C: ControllerSequence>(mut chart: Chart<C>) -> Chart<C> {

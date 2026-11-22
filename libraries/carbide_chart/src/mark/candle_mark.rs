@@ -125,6 +125,8 @@ impl<D: Sequence<dyn OhlcPoint>, R: ReadState<T=DataColor>, F: ReadState<T=DataC
             let slot = slots.slot(x);
             let middle = slot.middle();
             let [open, high, low, close] = [open, high, low, close].map(|value| canvas.value_pixel(value));
+            // Picked anywhere from its low to its high, wicks included.
+            canvas.add_rect(point_index, x, &slot, low, high, color);
 
             match self.glyph {
                 CandleGlyph::Candlestick => {

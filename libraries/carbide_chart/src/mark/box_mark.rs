@@ -57,6 +57,8 @@ impl<D: Sequence<dyn BoxPoint>> BarMark<D> for BoxMark {
 
             let color = canvas.point_color(point_index, point.color());
             let fill = canvas.translucent(color);
+            // Picked anywhere from its minimum to its maximum, whiskers included.
+            canvas.add_rect(point_index, x, &slot, min, max, color);
             canvas.fill_rect(side, slot.thickness, q1, q3, fill);
 
             let segments = [

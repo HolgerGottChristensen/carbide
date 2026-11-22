@@ -79,6 +79,8 @@ pub struct CategoryScale {
     min: Scalar,
     max: Scalar,
     ticks: Vec<Scalar>,
+    /// The categories in the zoom window, when the scale shows only some of them (see `zoom`).
+    visible_ticks: Option<Vec<Scalar>>,
 }
 
 impl CategoryScale {
@@ -94,6 +96,7 @@ impl CategoryScale {
             min: 0.0,
             max: 0.0,
             ticks: vec![],
+            visible_ticks: None,
         };
 
         scale.recalculate_ticks();
@@ -161,6 +164,7 @@ impl CategoryScale {
     }
 
     crate::scale::axis_options::polar_options!(CategoryScale);
+    crate::scale::axis_options::zoom_options!(CategoryScale);
 
     /// The value at the start of the mapped range and the range's length. Around a full circle
     /// the range is one category longer, so the last category sits one step before the first
@@ -197,7 +201,7 @@ impl Scale for CategoryScale {
 
     fn normalize(&self, value: Scalar) -> Scalar {
         let (start, length) = self.start_and_length();
-        let decimal = (value - start) / length;
+        let decimal = self.axis_options.window().zoom((value - start) / length);
 
         // Vertical category scales are reversed, so the first category is at the top. A
         // normalized 1 is the top of the chart area.
@@ -205,6 +209,39 @@ impl Scale for CategoryScale {
             Axis::Vertical => 1.0 - decimal,
             Axis::Horizontal | Axis::Radial => decimal,
         }
+    }
+
+    fn denormalize(&self, normalized: Scalar) -> Scalar {
+        let (start, length) = self.start_and_length();
+        let decimal = match self.axis {
+            Axis::Vertical => 1.0 - normalized,
+            Axis::Horizontal | Axis::Radial => normalized,
+        };
+
+        start + self.axis_options.window().unzoom(decimal) * length
+    }
+
+    /// The nearest category, kept within the first and the last. Around a full circle, where the
+    /// last category's band wraps round to the first's, a value past the last half band belongs
+    /// to the first category.
+    fn category_at(&self, value: Scalar) -> Option<(Scalar, Scalar)> {
+        if !value.is_finite() {
+            return None;
+        }
+
+        let count = self.max - self.min + 1.0;
+        let wraps = !self.offset && self.axis_options.polar_role() == Some(PolarRole::Angle) && self.axis_options.is_full_circle();
+
+        let nearest = value.round();
+        let index = if wraps {
+            self.min + (nearest - self.min).rem_euclid(count)
+        } else {
+            nearest.clamp(self.min, self.max)
+        };
+        let fraction = (value - (nearest - 0.5)).clamp(0.0, 1.0);
+        let fraction = if wraps || index == nearest { fraction } else if value < index { 0.0 } else { 1.0 };
+
+        Some((index, fraction))
     }
 
     fn set_offset(&mut self, offset: bool) {
@@ -266,14 +303,15 @@ impl Scale for CategoryScale {
     }
 
     fn grid_line_values(&self) -> Vec<Scalar> {
+        let ticks = self.ticks();
         if !self.has_grid_offset() {
-            return self.ticks.clone();
+            return ticks.to_vec();
         }
 
         // Between each pair of neighbouring categories, plus one before the first and one after
         // the last; the axis skips those that fall outside the chart area.
-        let mut values: Vec<Scalar> = self.ticks.iter().map(|tick| tick - 0.5).collect();
-        if let Some(last) = self.ticks.last() {
+        let mut values: Vec<Scalar> = ticks.iter().map(|tick| tick - 0.5).collect();
+        if let Some(last) = ticks.last() {
             values.push(last + 0.5);
         }
 
@@ -307,13 +345,26 @@ impl Scale for CategoryScale {
         self.recalculate_ticks();
     }
 
+    /// Every category is a tick. Zoomed, the window snaps to whole categories: to the edges of
+    /// their bands with an offset, so bars are never cut, or to the categories themselves without
+    /// one, and shows at least two; the ticks shown are the categories inside it.
     fn recalculate_ticks(&mut self) {
         let count = (self.max - self.min) as usize + 1;
         self.ticks = (0..count).map(|index| self.min + index as Scalar).collect();
+
+        let (start, length) = self.start_and_length();
+        let min_steps = if self.offset { 2.0 } else { 1.0 };
+        let window = self.axis_options.zoom().snapped(length, min_steps);
+        self.axis_options.set_window(window);
+
+        self.visible_ticks = (!window.is_whole()).then(|| {
+            let (low, high) = (start + window.start * length, start + window.end * length);
+            self.ticks.iter().copied().filter(|tick| *tick >= low - 1e-9 && *tick <= high + 1e-9).collect()
+        });
     }
 
     fn ticks(&self) -> &[Scalar] {
-        &self.ticks
+        self.visible_ticks.as_deref().unwrap_or(&self.ticks)
     }
 
     fn range(&self) -> Range<Scalar> {
@@ -422,5 +473,83 @@ mod tests {
 
         assert_eq!(scale.normalize(0.0), 1.0);
         assert_eq!(scale.normalize(3.0), 0.0);
+    }
+
+    /// `denormalize` undoes `normalize`, also on a vertical scale, which runs from the top, and
+    /// with the offset bars ask for.
+    #[test]
+    fn denormalize_is_the_inverse_of_normalize() {
+        for axis in [Axis::Horizontal, Axis::Vertical] {
+            for offset in [false, true] {
+                let mut scale = CategoryScale::new(axis).labels(["A", "B", "C", "D"]);
+                scale.set_offset(offset);
+                scale.set_range(0.0, 3.0);
+
+                for value in [-0.5, 0.0, 1.25, 3.0, 3.5] {
+                    assert!((scale.denormalize(scale.normalize(value)) - value).abs() < 1e-9, "{value} on {axis:?}, offset {offset}");
+                }
+            }
+        }
+    }
+
+    /// A value is in the nearest category, a fraction of the way across its band in the order the
+    /// values run; past the first or last category it stays in that one, at the band's end.
+    #[test]
+    fn values_fall_in_the_nearest_category() {
+        let mut scale = CategoryScale::new(Axis::Horizontal).labels(["A", "B", "C"]);
+        scale.set_offset(true);
+        scale.set_range(0.0, 2.0);
+
+        assert_eq!(scale.category_at(1.0), Some((1.0, 0.5)), "on a category, halfway across its band");
+        assert_eq!(scale.category_at(0.75), Some((1.0, 0.25)));
+        let (index, fraction) = scale.category_at(1.4).unwrap();
+        assert!(index == 1.0 && (fraction - 0.9).abs() < 1e-9, "near the band's end: {index}, {fraction}");
+        assert_eq!(scale.category_at(-0.5), Some((0.0, 0.0)), "the start of the first band");
+        assert_eq!(scale.category_at(-3.0), Some((0.0, 0.0)), "before the first category, its band's start");
+        assert_eq!(scale.category_at(9.0), Some((2.0, 1.0)), "after the last, its band's end");
+        assert_eq!(scale.label(scale.category_at(1.9).unwrap().0, &mut Environment::new()).as_deref(), Some("C"));
+    }
+
+    /// Around a full circle without an offset, the last category's band wraps round to the first
+    /// category: a value just before the end belongs to the first.
+    #[test]
+    fn around_a_circle_the_last_band_wraps_to_the_first() {
+        let mut scale = CategoryScale::new(Axis::Radial).labels(["N", "E", "S", "W"]);
+        scale.set_polar_role(Some(crate::scale::PolarRole::Angle));
+        scale.set_range(0.0, 3.0);
+
+        assert_eq!(scale.category_at(scale.denormalize(0.0)), Some((0.0, 0.5)), "the top is the first category's middle");
+        assert_eq!(scale.category_at(scale.denormalize(0.25)), Some((1.0, 0.5)), "a quarter round, the second");
+
+        let (index, fraction) = scale.category_at(scale.denormalize(0.95)).unwrap();
+        assert_eq!(index, 0.0, "just before a full turn is the first category");
+        assert!((fraction - 0.3).abs() < 1e-9, "its band started an eighth of a turn before the top: {fraction}");
+    }
+
+    /// A zoomed category scale snaps its window to whole categories: with an offset, to the
+    /// edges of their bands, so bars aren't cut, showing at least two; its ticks are the
+    /// categories shown. On a vertical scale the window runs from the first category, at the top.
+    #[test]
+    fn zoom_snaps_to_whole_categories() {
+        let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+
+        let mut scale = CategoryScale::new(Axis::Horizontal).labels(months).zoom(crate::ZoomWindow::new(0.23, 0.48));
+        scale.set_offset(true);
+        scale.set_range(0.0, 9.0);
+        assert_eq!(scale.axis_options().window(), crate::ZoomWindow::new(0.2, 0.5), "from Mar's band to Jun's band");
+        assert_eq!(scale.ticks(), &[2.0, 3.0, 4.0]);
+        assert_eq!(scale.normalize(1.5), 0.0, "the window starts at Mar's band");
+
+        let mut narrow = CategoryScale::new(Axis::Horizontal).labels(months).zoom(crate::ZoomWindow::new(0.51, 0.52));
+        narrow.set_offset(true);
+        narrow.set_range(0.0, 9.0);
+        assert_eq!(narrow.ticks(), &[4.0, 5.0], "at least two categories");
+
+        let mut vertical = CategoryScale::new(Axis::Vertical).labels(months).zoom(crate::ZoomWindow::new(0.0, 0.3));
+        vertical.set_offset(true);
+        vertical.set_range(0.0, 9.0);
+        assert_eq!(vertical.ticks(), &[0.0, 1.0, 2.0]);
+        assert_eq!(vertical.normalize(-0.5), 1.0, "Jan's band starts at the top");
+        assert_eq!(vertical.normalize(2.5), 0.0);
     }
 }

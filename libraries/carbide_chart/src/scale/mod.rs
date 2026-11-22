@@ -8,6 +8,7 @@ mod scales;
 mod scale_id;
 mod coordinates;
 pub(crate) mod polar;
+mod zoom;
 
 use std::fmt::Debug;
 use dyn_clone::DynClone;
@@ -24,6 +25,8 @@ pub use scales::*;
 pub use scale_id::ScaleId;
 pub use coordinates::Coordinates;
 pub use polar::{Circle, Polar};
+pub use zoom::ZoomWindow;
+pub(crate) use zoom::MIN_ZOOM_SPAN;
 pub(crate) use coordinates::Places;
 
 /// A scale maps data values to positions along an axis, and picks the ticks along it. It is pure
@@ -52,6 +55,23 @@ pub trait Scale: DynClone + Debug + 'static {
     fn normalize(&self, value: Scalar) -> Scalar {
         let range = self.range();
         (value - range.start) / (range.end - range.start)
+    }
+
+    /// The value at `normalized` along the scale: the inverse of `normalize`, so a position in the
+    /// chart area maps back to the value drawn there. Positions outside 0 to 1 give values past
+    /// the scale's ends. A scale that overrides `normalize` overrides this too.
+    fn denormalize(&self, normalized: Scalar) -> Scalar {
+        let range = self.range();
+        range.start + normalized * (range.end - range.start)
+    }
+
+    /// The category at `value`, a position on the scale such as `denormalize` gives: its index,
+    /// as a value on the scale (see `label` for its name), and how far across the category's band
+    /// `value` is, from 0 at the band's start to 1 at its end, in the order the values run. Each
+    /// category's band is one wide, centred on its index. `None`, the default, for scales without
+    /// categories.
+    fn category_at(&self, _value: Scalar) -> Option<(Scalar, Scalar)> {
+        None
     }
 
     /// Pads the mapping by half a tick step at both ends, so values on the first and last tick sit

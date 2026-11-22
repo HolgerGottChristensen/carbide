@@ -12,7 +12,8 @@ use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::mark::line_mark::polar_whisker;
 use crate::mark::{Mark, MarkRole, Role};
-use crate::scale::{Coordinates, Scale};
+use crate::scale::{Coordinates, Scale, ScaleId};
+use crate::geometry::{Along, Datum, Shape, Shapes};
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn in a bar controller's slots, for datasets of type `D`. Implementing
@@ -160,35 +161,39 @@ impl BarFrame<'_> {
         }
     }
 
-    /// Adds the shape from `side` to `side + thickness` along the index axis and from `from` to
-    /// `to` along the value axis to the path, closed: a rectangle along the sides, and around the
-    /// circle the part of a ring between two angles, its inner and outer edges in the grid's ring
-    /// shape.
-    pub(crate) fn trace_rect(&self, ctx: &mut CanvasContext, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) {
+    /// The shape from `side` to `side + thickness` along the index axis and from `from` to `to`
+    /// along the value axis: a rectangle along the sides, and around the circle the part of a
+    /// ring between two angles, its inner and outer edges in the grid's ring shape.
+    pub(crate) fn shape(&self, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) -> Shape {
         match self {
-            BarFrame::Sides { orientation, .. } => {
-                let mut path = Oriented { path: &mut *ctx, orientation: *orientation };
-                path.move_to(Position::new(side, from));
-                path.line_to(Position::new(side + thickness, from));
-                path.line_to(Position::new(side + thickness, to));
-                path.line_to(Position::new(side, to));
-            }
+            BarFrame::Sides { orientation, .. } => Shape::Rect { orientation: *orientation, side, thickness, from, to },
             BarFrame::Around(frame) => {
-                let ((a1, a2), (d1, d2)) = if frame.x_is_angle {
+                let (angles, distances) = if frame.x_is_angle {
                     ((side, side + thickness), (from, to))
                 } else {
                     ((from, to), (side, side + thickness))
                 };
 
-                let rings = frame.rings();
-                let (outer, inner) = (rings.at(d1.max(d2)), rings.at(d1.min(d2)));
-                PathSink::move_to(ctx, outer.point(a1));
-                outer.trace(ctx, a1, a2);
-                PathSink::line_to(ctx, inner.point(a2));
-                inner.trace(ctx, a2, a1);
+                Shape::Wedge { polar: frame.polar, corners: frame.corners.clone(), angles, distances }
             }
         }
-        ctx.close_path();
+    }
+
+    /// Where a category at `index`, a position along the index axis (see `index`), is on the
+    /// screen, for picking the data at one category.
+    pub(crate) fn along(&self, index: Scalar) -> Along {
+        match self {
+            BarFrame::Sides { orientation: Orientation::Vertical, .. } => Along::X(index),
+            BarFrame::Sides { orientation: Orientation::Horizontal, .. } => Along::Y(index),
+            BarFrame::Around(frame) if frame.x_is_angle => Along::Angle { center: frame.polar.circle().center, angle: index },
+            BarFrame::Around(frame) => Along::Distance { center: frame.polar.circle().center, distance: index },
+        }
+    }
+
+    /// Adds the shape from `side` to `side + thickness` along the index axis and from `from` to
+    /// `to` along the value axis to the path, closed (see `shape`).
+    pub(crate) fn trace_rect(&self, ctx: &mut CanvasContext, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) {
+        self.shape(side, thickness, from, to).trace(ctx);
     }
 }
 
@@ -256,9 +261,22 @@ pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) options: &'x DataSetOptions,
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
+    /// The chart's shapes, which the marks add theirs to, for picking.
+    pub(crate) shapes: &'x mut Shapes,
+    /// The id of the dataset's index scale.
+    pub(crate) index_id: &'x ScaleId,
 }
 
 impl BarCanvas<'_, '_, '_, '_> {
+    /// Adds the rectangle across `slot` from `from` to `to` along the value axis (around a circle,
+    /// the wedge) as the shape of the point at `point_index`, whose x is `x`, so picking finds the
+    /// point by it.
+    pub(crate) fn add_rect(&mut self, point_index: usize, x: Scalar, slot: &BarSlot, from: Scalar, to: Scalar, color: Color) {
+        let place = self.shapes.place(self.index_id, x, self.frame.along(slot.center));
+        let shape = self.frame.shape(slot.side, slot.thickness, from, to);
+        self.shapes.add(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, shape);
+    }
+
     /// Where the point's x is placed: a number at itself, and text at its category's index (see
     /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
     /// numbers.

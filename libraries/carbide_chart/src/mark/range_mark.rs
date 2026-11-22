@@ -85,6 +85,7 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Rang
                 _ => canvas.point_color(point_index, point.color()),
             };
             let (from, to) = (canvas.value_pixel(low), canvas.value_pixel(high));
+            canvas.add_rect(point_index, x, &slot, from, to, color);
             canvas.fill_rect(slot.side, slot.thickness, from, to, color);
         });
     }

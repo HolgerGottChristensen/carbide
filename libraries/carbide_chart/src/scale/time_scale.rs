@@ -9,7 +9,7 @@ use carbide_derive::StateValue;
 use chrono::{DateTime, Datelike, FixedOffset, Local, Months, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Timelike};
 
 use crate::{DataValue, Value};
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, MIN_ZOOM_SPAN};
 
 /// The time zone a `TimeScale` places its ticks in and shows its labels in: whole days start at
 /// midnight in it, and months on its first of the month.
@@ -181,6 +181,8 @@ pub struct TimeScale {
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
     ticks: Vec<Scalar>,
+    /// The ticks in the zoom window, when the scale shows only part of its range (see `zoom`).
+    visible_ticks: Option<Vec<Scalar>>,
     unit: TimeUnit,
 }
 
@@ -200,6 +202,54 @@ impl Debug for TimeScale {
 }
 
 impl TimeScale {
+    /// The smallest unit and step whose ticks, rounded out to whole steps, span `start` to `end`
+    /// in at most `max_spaces` steps, with those ticks.
+    fn fitting_ticks(&self, start: Scalar, end: Scalar) -> Option<(TimeUnit, Vec<Scalar>)> {
+        let max_spaces = self.max_spaces() as usize;
+
+        candidate_steps()
+            .filter(|(unit, step)| (end - start) / (unit.seconds() * *step as Scalar) <= max_spaces as Scalar)
+            .find_map(|(unit, step)| {
+                let ticks = self.ticks_for(unit, step, start, end)?;
+                (ticks.len() >= 2 && ticks.len() - 1 <= max_spaces).then_some((unit, ticks))
+            })
+    }
+
+    /// Decides the window the scale shows from the zoom asked for, and, when it shows only part
+    /// of the range, the ticks for that part and the unit they are labelled in.
+    fn zoom_ticks(&mut self) {
+        let window = self.axis_options.zoom().limited(MIN_ZOOM_SPAN);
+        self.axis_options.set_window(window);
+        self.visible_ticks = None;
+
+        if window.is_whole() {
+            return;
+        }
+
+        let (start, end) = self.mapped_range();
+        let (low, high) = (start + window.start * (end - start), start + window.end * (end - start));
+
+        if let Some((unit, ticks)) = self.fitting_ticks(low, high) {
+            self.unit = unit;
+            let tolerance = (high - low) * 1e-9;
+            self.visible_ticks = Some(ticks.into_iter().filter(|tick| *tick >= low - tolerance && *tick <= high + tolerance).collect());
+        }
+    }
+
+    /// The times at the start and end of the chart area: the nice range, padded by half a step at
+    /// each end with an offset (see `Scale::set_offset`).
+    fn mapped_range(&self) -> (Scalar, Scalar) {
+        let (mut start, mut end) = (self.nice_range.start, self.nice_range.end);
+
+        if self.offset && !self.ticks.is_empty() {
+            let half_step = (end - start) / (self.ticks.len() - 1).max(1) as Scalar / 2.0;
+            start -= half_step;
+            end += half_step;
+        }
+
+        (start, end)
+    }
+
     pub fn new(axis: Axis) -> TimeScale {
         TimeScale {
             axis,
@@ -210,6 +260,7 @@ impl TimeScale {
             range: 0.0..86_400.0,
             nice_range: 0.0..86_400.0,
             ticks: vec![],
+            visible_ticks: None,
             unit: TimeUnit::Hour,
         }
     }
@@ -260,6 +311,7 @@ impl TimeScale {
     }
 
     crate::scale::axis_options::polar_options!(TimeScale);
+    crate::scale::axis_options::zoom_options!(TimeScale);
 
     /// The unit the ticks are spaced in, as last fitted.
     pub fn unit(&self) -> TimeUnit {
@@ -319,16 +371,13 @@ impl Scale for TimeScale {
     /// With an offset, the mapped range is widened by half a step at both ends, the average step
     /// where steps differ, as months do.
     fn normalize(&self, value: Scalar) -> Scalar {
-        let mut start = self.nice_range.start;
-        let mut end = self.nice_range.end;
+        let (start, end) = self.mapped_range();
+        self.axis_options.window().zoom((value - start) / (end - start))
+    }
 
-        if self.offset && !self.ticks.is_empty() {
-            let half_step = (end - start) / (self.ticks.len() - 1).max(1) as Scalar / 2.0;
-            start -= half_step;
-            end += half_step;
-        }
-
-        (value - start) / (end - start)
+    fn denormalize(&self, normalized: Scalar) -> Scalar {
+        let (start, end) = self.mapped_range();
+        start + self.axis_options.window().unzoom(normalized) * (end - start)
     }
 
     fn set_offset(&mut self, offset: bool) {
@@ -372,19 +421,13 @@ impl Scale for TimeScale {
     }
 
     /// Picks the unit and step (see `TimeScale`): the smallest whose ticks, rounded out to whole
-    /// steps, span the range in at most `max_spaces` steps.
+    /// steps, span the range in at most `max_spaces` steps. Zoomed, the ticks shown, and the
+    /// unit they are labelled in, are picked the same way for the part of the range in the
+    /// window (see `zoom`).
     fn recalculate_ticks(&mut self) {
         let (start, end) = (self.range.start, self.range.end);
-        let max_spaces = self.max_spaces() as usize;
 
-        let fitting = candidate_steps()
-            .filter(|(unit, step)| (end - start) / (unit.seconds() * *step as Scalar) <= max_spaces as Scalar)
-            .find_map(|(unit, step)| {
-                let ticks = self.ticks_for(unit, step, start, end)?;
-                (ticks.len() >= 2 && ticks.len() - 1 <= max_spaces).then_some((unit, ticks))
-            });
-
-        match fitting {
+        match self.fitting_ticks(start, end) {
             Some((unit, ticks)) => {
                 self.unit = unit;
                 self.nice_range = ticks[0]..ticks[ticks.len() - 1];
@@ -395,10 +438,12 @@ impl Scale for TimeScale {
                 self.ticks = vec![start, end];
             }
         }
+
+        self.zoom_ticks();
     }
 
     fn ticks(&self) -> &[Scalar] {
-        &self.ticks
+        self.visible_ticks.as_deref().unwrap_or(&self.ticks)
     }
 }
 
@@ -546,5 +591,39 @@ mod tests {
         scale.set_range(at(zone, 2026, 1, 15, 0, 0), at(zone, 2026, 6, 10, 0, 0));
 
         assert_eq!(scale.label(scale.ticks()[1], &mut Environment::new()).as_deref(), Some("Feb 2026 Month"));
+    }
+
+    /// `denormalize` undoes `normalize`, in seconds, with and without an offset.
+    #[test]
+    fn denormalize_is_the_inverse_of_normalize() {
+        let mut scale = TimeScale::new(Axis::Horizontal);
+        scale.set_range(1_700_000_000.0, 1_700_086_400.0);
+
+        for value in [1_699_990_000.0, 1_700_000_000.0, 1_700_043_210.0, 1_700_100_000.0] {
+            assert!((scale.denormalize(scale.normalize(value)) - value).abs() < 1e-3, "{value}");
+        }
+
+        scale.set_offset(true);
+        for value in [1_700_000_000.0, 1_700_043_210.0] {
+            assert!((scale.denormalize(scale.normalize(value)) - value).abs() < 1e-3, "{value} with an offset");
+        }
+    }
+
+    /// A zoomed time scale picks its ticks, and the unit they are labelled in, for the part shown:
+    /// days inside a year ticked in months.
+    #[test]
+    fn zoom_picks_a_unit_for_the_part_shown() {
+        let utc = utc();
+        let mut scale = TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc));
+        scale.set_range(at(utc, 2026, 1, 1, 0, 0), at(utc, 2027, 1, 1, 0, 0));
+        assert_eq!(scale.unit(), TimeUnit::Month);
+
+        let mut zoomed = TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc)).zoom(crate::ZoomWindow::new(0.5, 0.53));
+        zoomed.set_range(at(utc, 2026, 1, 1, 0, 0), at(utc, 2027, 1, 1, 0, 0));
+        assert_eq!(zoomed.unit(), TimeUnit::Day);
+
+        let (low, high) = (zoomed.denormalize(0.0), zoomed.denormalize(1.0));
+        assert!(zoomed.ticks().len() >= 2);
+        assert!(zoomed.ticks().iter().all(|tick| *tick >= low && *tick <= high), "every tick is inside the window");
     }
 }
