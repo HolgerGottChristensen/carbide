@@ -3,7 +3,7 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{warn_other_roles, register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
@@ -197,8 +197,13 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                         scales.warn_once("polar scatter overlays", &options.x_scale, &options.y_scale, || format!("Overlays, such as error bars, on points on the polar scales {:?} and {:?} are not drawn yet", options.x_scale.name(), options.y_scale.name()));
                         return;
                     }
+                    // Scatter datasets ask for x to be the angle; drawn with the other roles, a
+                    // mark would leave its points.
                     Some(System::Polar { x_is_angle: true }) => scales.polar(&options.x_scale, &options.y_scale).map(|polar| (polar, true)),
-                    Some(System::Polar { x_is_angle: false }) => scales.polar(&options.y_scale, &options.x_scale).map(|polar| (polar, false)),
+                    Some(System::Polar { x_is_angle: false }) => {
+                        warn_other_roles(scales, &options.x_scale, &options.y_scale);
+                        return;
+                    }
                 };
 
                 let mut canvas = ScatterCanvas {

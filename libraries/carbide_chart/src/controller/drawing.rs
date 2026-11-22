@@ -16,7 +16,7 @@ use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
 use crate::controller::orientation::{normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{StackKey, StackSums};
-use crate::scale::{Axis, Coordinates, Polar, Scale, ScaleBounds, Scales, System};
+use crate::scale::{Axis, Coordinates, Polar, PolarRole, Scale, ScaleBounds, ScaleId, Scales, System};
 use crate::scale::axis::angle_corners;
 use crate::scale::polar::Ring;
 use crate::scale::GridShape;
@@ -204,6 +204,7 @@ where
         let options = dataset.options();
 
         // A polar dataset keeps its x on its x scale; its controller's orientation picks the roles.
+        let wants_x_angle = orientation.polar_roles().0 == PolarRole::Angle;
         let orientation = orientation.for_dataset(&options, scales);
         let (index_id, value_id) = orientation.index_and_value_scales(&options);
         let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
@@ -214,6 +215,10 @@ where
         let polar = match scales.system(index_id, value_id) {
             None => return,
             Some(System::Cartesian) => None,
+            Some(System::Polar { x_is_angle }) if x_is_angle != wants_x_angle => {
+                warn_other_roles(scales, index_id, value_id);
+                return;
+            }
             Some(System::Polar { x_is_angle: true }) => scales.polar(index_id, value_id).map(|polar| (polar, true)),
             Some(System::Polar { x_is_angle: false }) => scales.polar(value_id, index_id).map(|polar| (polar, false)),
         };
@@ -287,6 +292,13 @@ where
     });
 
     lines
+}
+
+/// Logs, once per pair, that a polar dataset on `x_id` and `y_id` isn't drawn because its scales
+/// took the other roles than its controller asked for: another dataset asked first (see
+/// `ScaleBounds::request_polar_role`).
+pub(crate) fn warn_other_roles(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId) {
+    scales.warn_once("other roles", x_id, y_id, || format!("A dataset on the radial scales {:?} and {:?} is not drawn: they took the other roles, angle and radius, than its controller asked for, as another dataset asked first", x_id.name(), y_id.name()));
 }
 
 /// Fills the area between each run of each filled line and its `Fill` baseline, in the dataset's
