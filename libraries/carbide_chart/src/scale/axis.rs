@@ -118,6 +118,7 @@ pub(crate) fn draw_grid(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, 
 
     let style = axis_style(ctx.env());
     let grid_color = style.grid_color(ctx.env());
+    let minor_grid_color = style.minor_grid_color(ctx.env());
     let tick_color = style.tick_color(ctx.env());
     let label_color = style.label_color(ctx.env());
 
@@ -144,6 +145,39 @@ pub(crate) fn draw_grid(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, 
         .filter(|value| (-1e-9..=1.0 + 1e-9).contains(&scale.normalize(*value)))
         .map(along)
         .collect();
+
+    // Minor ticks get a fainter grid line and a tick mark half as long, without a label, under the
+    // major ones.
+    let minor: Vec<Scalar> = scale.minor_ticks()
+        .iter()
+        .filter(|value| (-1e-9..=1.0 + 1e-9).contains(&scale.normalize(**value)))
+        .map(|value| along(*value))
+        .collect();
+
+    if grid_lines && !minor.is_empty() {
+        ctx.begin_path();
+        for along in &minor {
+            let (x, y) = point(*along, area_edge);
+            ctx.move_to(x, y);
+            let (x, y) = point(*along, far_edge);
+            ctx.line_to(x, y);
+        }
+        ctx.set_stroke_style(minor_grid_color);
+        ctx.stroke();
+    }
+
+    if tick_marks && !minor.is_empty() {
+        let minor_end = band_edge + outward * tick_length / 2.0;
+        ctx.begin_path();
+        for along in &minor {
+            let (x, y) = point(*along, band_edge);
+            ctx.move_to(x, y);
+            let (x, y) = point(*along, minor_end);
+            ctx.line_to(x, y);
+        }
+        ctx.set_stroke_style(tick_color);
+        ctx.stroke();
+    }
 
     if grid_lines {
         ctx.begin_path();

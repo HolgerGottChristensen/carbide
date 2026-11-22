@@ -9,6 +9,7 @@
 use std::fmt::Debug;
 use carbide::color::{Color, GREEN, RED, WHITE, YELLOW};
 use carbide::draw::{AutomaticStyle, DebugStyle, Scalar};
+use carbide::draw::color::{rgba, Rgba};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentKey, Shared};
 use carbide::widget::{EnvUpdatingNew, Widget, WidgetStyle};
 use dyn_clone::clone_trait_object;
@@ -19,6 +20,13 @@ use crate::scale::Axis;
 pub trait AxisStyle: WidgetStyle {
     /// The colour of grid lines across the chart area.
     fn grid_color(&self, env: &Environment) -> Color;
+
+    /// The colour of grid lines at minor ticks (see `Scale::minor_ticks`), fainter than the
+    /// others. The grid colour at half its opacity by default.
+    fn minor_grid_color(&self, env: &Environment) -> Color {
+        let Rgba(r, g, b, a) = Rgba::from(self.grid_color(env));
+        rgba(r, g, b, a / 2.0)
+    }
 
     /// The colour of tick marks, between the chart area and the labels.
     fn tick_color(&self, env: &Environment) -> Color;

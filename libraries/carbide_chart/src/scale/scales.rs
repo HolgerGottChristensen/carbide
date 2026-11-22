@@ -11,19 +11,35 @@ use crate::scale::{Axis, CategoryScale, LinearScale, Scale, ScaleId, TimeScale};
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct DataBounds {
     range: Option<(Scalar, Scalar)>,
+    smallest_positive: Option<Scalar>,
 }
 
 impl DataBounds {
-    /// Grows the bounds to include `min..=max`.
+    /// Grows the bounds to include `min..=max`, and keeps the smallest end above zero (see
+    /// `smallest_positive`).
     pub fn include(&mut self, min: Scalar, max: Scalar) {
         self.range = Some(match self.range {
             Some((current_min, current_max)) => (current_min.min(min), current_max.max(max)),
             None => (min, max),
         });
+
+        for end in [min, max] {
+            if end > 0.0 && self.smallest_positive.is_none_or(|smallest| end < smallest) {
+                self.smallest_positive = Some(end);
+            }
+        }
     }
 
     pub fn range(&self) -> Option<(Scalar, Scalar)> {
         self.range
+    }
+
+    /// The smallest end above zero of any range included, or `None` when none was above zero,
+    /// for scales without a place for zero and below (see `Scale::set_smallest_positive`). Ends,
+    /// not the insides of ranges: a bar includes `0..12`, its base and its value, and its
+    /// smallest positive end is its value, 12.
+    pub fn smallest_positive(&self) -> Option<Scalar> {
+        self.smallest_positive
     }
 }
 
@@ -75,6 +91,11 @@ impl ScaleRequest {
     /// The union of the data ranges included, or `None` when nothing was included.
     pub fn range(&self) -> Option<(Scalar, Scalar)> {
         self.bounds.range()
+    }
+
+    /// The smallest end above zero of the data ranges included (see `DataBounds::smallest_positive`).
+    pub fn smallest_positive(&self) -> Option<Scalar> {
+        self.bounds.smallest_positive()
     }
 
     /// Whether anyone asked for the scale to be offset (see `Scale::set_offset`).
@@ -271,6 +292,7 @@ impl Scales {
             let (min, max) = request.range().unwrap_or((0.0, 1.0));
 
             scale.set_categories(&bounds.categories(id));
+            scale.set_smallest_positive(request.smallest_positive());
             scale.set_offset(request.offset());
             scale.set_grid_offset_requested(request.grid_offset());
             scale.set_range(min, max);
@@ -293,6 +315,22 @@ mod tests {
     fn bounds_without_data_have_no_range() {
         assert_eq!(DataBounds::default().range(), None);
         assert_eq!(ScaleBounds::default().get(&ScaleId::X).range(), None);
+    }
+
+    /// The smallest positive end of any range included is kept, for log scales: a bar's base at
+    /// zero doesn't count, its value does, and so does the lower end of a range above zero.
+    #[test]
+    fn bounds_keep_the_smallest_positive_end() {
+        let mut bounds = DataBounds::default();
+        assert_eq!(bounds.smallest_positive(), None);
+
+        bounds.include(0.0, 12.0);
+        bounds.include(-4.0, 0.0);
+        assert_eq!(bounds.smallest_positive(), Some(12.0), "a bar from zero to 12, and a negative one");
+
+        bounds.include(3.0, 40.0);
+        assert_eq!(bounds.smallest_positive(), Some(3.0));
+        assert_eq!(bounds.range(), Some((-4.0, 40.0)), "the range itself is unchanged");
     }
 
     #[test]

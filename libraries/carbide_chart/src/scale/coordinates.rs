@@ -25,7 +25,7 @@ impl Places for ScaleBounds {
 impl Places for Scales {
     fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar> {
         match value {
-            Value::Number(number) | Value::Time(number) => Some(number),
+            Value::Number(number) | Value::Time(number) => self.get(id)?.place(number),
             Value::Text(text) => self.get(id)?.category_index(text),
         }
     }

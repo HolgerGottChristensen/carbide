@@ -3,6 +3,7 @@ mod axis_options;
 mod category_scale;
 mod linear_scale;
 mod time_scale;
+mod log_scale;
 mod scales;
 mod scale_id;
 mod coordinates;
@@ -16,6 +17,7 @@ use carbide_derive::StateValue;
 pub use axis_options::AxisOptions;
 pub use category_scale::CategoryScale;
 pub use linear_scale::*;
+pub use log_scale::LogScale;
 pub use time_scale::{TimeScale, TimeScaleZone, TimeUnit};
 pub use scales::*;
 pub use scale_id::ScaleId;
@@ -78,6 +80,24 @@ pub trait Scale: DynClone + Debug + 'static {
     /// named, in the order they were first seen (see `ScaleBounds::register_category`). Scales
     /// without categories ignore them.
     fn set_categories(&mut self, _categories: &[String]) {}
+
+    /// Where the scale places the number `value`, or `None` when it has no place for it, as a log
+    /// scale has none at or below zero. Points whose x or y has no place aren't drawn (see
+    /// `Coordinates`). The default places every value at itself.
+    fn place(&self, value: Scalar) -> Option<Scalar> {
+        Some(value)
+    }
+
+    /// Gives the scale the smallest positive end of its data on a fit, before `set_range` (see
+    /// `DataBounds::smallest_positive`), for scales without a place for zero and below, whose
+    /// range starts there. Other scales ignore it.
+    fn set_smallest_positive(&mut self, _smallest: Option<Scalar>) {}
+
+    /// The scale's minor ticks: values between its ticks that get a grid line and a short tick
+    /// mark, but no label, such as 2 to 9 times each power on a log scale. Empty by default.
+    fn minor_ticks(&self) -> &[Scalar] {
+        &[]
+    }
 
     /// The index of the category `text` on the scale, which is where a value naming it is placed
     /// (see `Value::Text`), or `None` when the scale has no such category. Scales without
