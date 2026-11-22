@@ -28,6 +28,28 @@ fn data_changed_between_renders() {
     harness.snapshot("after_change");
 }
 
+/// Grouped bars whose controller options are states, laid down and narrowed between the two
+/// snapshots. Pins down that a controller's options follow their states after the chart is built:
+/// the categories move to the y scale and the values to the x scale, and each bar takes less of
+/// its share of the slot.
+#[test]
+fn controller_options_changed_between_renders() {
+    let mut horizontal = LocalState::new(false);
+    let mut bar_percentage = LocalState::new(0.9);
+
+    let chart = Chart::new(BarController::new((vec![12.0, 19.0, 3.0, 5.0], vec![8.0, 11.0, 6.0, 4.0]))
+        .horizontal(horizontal.clone())
+        .bar_percentage(bar_percentage.clone()))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("standing");
+
+    *horizontal.value_mut() = true;
+    *bar_percentage.value_mut() = 0.5;
+    harness.snapshot("lying_and_narrower");
+}
+
 /// Grouped bars whose datasets are a state of a `Vec`, with a third dataset added between the two
 /// snapshots. Pins down that the chart follows a dataset sequence changed after it is built: each
 /// month's slot splits three ways instead of two, the new dataset takes the next palette colour

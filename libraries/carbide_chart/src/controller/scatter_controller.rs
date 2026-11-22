@@ -1,7 +1,9 @@
+use carbide::state::IntoReadState;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
+use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
 use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
@@ -23,10 +25,10 @@ use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales};
 #[derive(Clone, Debug)]
 pub struct ScatterController<D> {
     dataset_sequence: D,
-    show_line: bool,
-    palette_offset: usize,
-    min_radius: Scalar,
-    max_radius: Scalar,
+    show_line: Opt<bool>,
+    palette_offset: Opt<usize>,
+    min_radius: Opt<Scalar>,
+    max_radius: Opt<Scalar>,
 }
 
 impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
@@ -34,10 +36,10 @@ impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
     pub fn new<I: IntoSequence<dyn ScatterDataSet, M, Sequence=D>, M>(datasets: I) -> ScatterController<D> {
         ScatterController {
             dataset_sequence: datasets.into_sequence(),
-            show_line: false,
-            palette_offset: 0,
-            min_radius: 4.0,
-            max_radius: 30.0,
+            show_line: constant(false),
+            palette_offset: constant(0),
+            min_radius: constant(4.0),
+            max_radius: constant(30.0),
         }
     }
 
@@ -47,22 +49,24 @@ impl<D: Sequence<dyn ScatterDataSet>> ScatterController<D> {
     /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
     /// colour themselves (`DataColor::Palette`) aren't shifted.
     pub fn palette_offset(mut self, offset: usize) -> ScatterController<D> {
-        self.palette_offset = offset;
+        self.palette_offset = constant(offset);
         self
     }
 
     /// The radii sizes are drawn at, in pixels, such as bubbles' (see `SizedDataSetExt::bubbles`):
     /// the largest size among the controller's datasets gets `max`, the others an area in
-    /// proportion to it, and none is smaller than `min`. Defaults to 4 and 30.
-    pub fn radius_range(mut self, min: Scalar, max: Scalar) -> ScatterController<D> {
-        self.min_radius = min;
-        self.max_radius = max;
+    /// proportion to it, and none is smaller than `min`. Defaults to 4 and 30. Each a value or a
+    /// state of one.
+    pub fn radius_range(mut self, min: impl IntoReadState<Scalar>, max: impl IntoReadState<Scalar>) -> ScatterController<D> {
+        self.min_radius = option(min);
+        self.max_radius = option(max);
         self
     }
 
-    /// Also draws a line through each dataset's points, under the points. Defaults to `false`.
-    pub fn show_line(mut self, show_line: bool) -> ScatterController<D> {
-        self.show_line = show_line;
+    /// Also draws a line through each dataset's points, under the points, a value or a state of
+    /// one. Defaults to `false`.
+    pub fn show_line(mut self, show_line: impl IntoReadState<bool>) -> ScatterController<D> {
+        self.show_line = option(show_line);
         self
     }
 }
@@ -91,7 +95,12 @@ fn has_mark(dataset: &dyn ScatterDataSet, role: Option<MarkRole>) -> bool {
 
 impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.dataset_sequence.sync(env)
+        let mut changed = self.dataset_sequence.sync(env);
+        changed |= self.palette_offset.sync(env);
+        changed |= self.min_radius.sync(env);
+        changed |= self.max_radius.sync(env);
+        changed |= self.show_line.sync(env);
+        changed
     }
 
     /// Reports each dataset's points, and what its marks draw. A dataset whose points a mark
@@ -101,8 +110,8 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         register_values(&self.dataset_sequence, bounds, Orientation::Vertical, true);
 
         let replaced = self.replaced_points();
-        collect_point_bounds(&self.dataset_sequence, bounds, self.show_line, false, Orientation::Vertical, |dataset_index| {
-            self.show_line || !replaced.contains(&dataset_index)
+        collect_point_bounds(&self.dataset_sequence, bounds, get(&self.show_line), false, Orientation::Vertical, |dataset_index| {
+            get(&self.show_line) || !replaced.contains(&dataset_index)
         });
 
         // On polar scales, the rings around scattered points are circles.
@@ -137,9 +146,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         legend_items(
             &self.dataset_sequence,
             env,
-            &Palette::from_env(env, self.palette_offset),
+            &Palette::from_env(env, get(&self.palette_offset)),
             items,
-            |_, options| match (self.show_line, options.fill) {
+            |_, options| match (get(&self.show_line), options.fill) {
                 (false, _) => LegendMarker::Point,
                 (true, Fill::None) => LegendMarker::Line,
                 (true, _) => LegendMarker::Square,
@@ -154,9 +163,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
         let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, false, Orientation::Vertical, |_| true);
 
-        let palette = Palette::new(ctx, self.palette_offset);
+        let palette = Palette::new(ctx, get(&self.palette_offset));
 
-        if self.show_line {
+        if get(&self.show_line) {
             draw_fills(&lines, ctx, scales, chart_area, &palette);
             draw_lines(&lines, ctx, chart_area, &palette);
             add_lines(&lines, shapes, scales, chart_area, &palette);
@@ -177,7 +186,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                 });
             });
         });
-        let sizes = SizeScale { min_radius: self.min_radius, max_radius: self.max_radius, max_size };
+        let sizes = SizeScale { min_radius: get(&self.min_radius), max_radius: get(&self.max_radius), max_size };
 
         // The marks replacing points, then the overlays on top of everything.
         for role in [MarkRole::Primary, MarkRole::Overlay] {

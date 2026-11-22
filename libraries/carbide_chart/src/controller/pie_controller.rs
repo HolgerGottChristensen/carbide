@@ -1,3 +1,4 @@
+use carbide::state::IntoReadState;
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use carbide::color::Color;
@@ -7,6 +8,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, PieDataSet, Value};
 use crate::mark::MarkRole;
 use crate::controller::{bar_slot, DatasetController};
+use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{Datum, Shapes};
 use crate::controller::bar_controller::min_sample_size;
 use crate::controller::drawing::{point_color, polar_frame, Palette, PolarFrame};
@@ -64,27 +66,27 @@ pub struct PiePart<'a> {
 #[derive(Clone)]
 pub struct PieController<D> {
     pub(crate) dataset_sequence: D,
-    palette_offset: usize,
-    category_percentage: Scalar,
-    bar_percentage: Scalar,
-    spacing: Scalar,
-    ring_spacing: Scalar,
-    outline_width: Scalar,
+    palette_offset: Opt<usize>,
+    category_percentage: Opt<Scalar>,
+    bar_percentage: Opt<Scalar>,
+    spacing: Opt<Scalar>,
+    ring_spacing: Opt<Scalar>,
+    outline_width: Opt<Scalar>,
     label_text: Option<Arc<dyn Fn(&PiePart) -> String>>,
-    labels: bool,
+    labels: Opt<bool>,
 }
 
 impl<D: Debug> Debug for PieController<D> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PieController")
             .field("dataset_sequence", &self.dataset_sequence)
-            .field("palette_offset", &self.palette_offset)
-            .field("category_percentage", &self.category_percentage)
-            .field("bar_percentage", &self.bar_percentage)
-            .field("spacing", &self.spacing)
-            .field("ring_spacing", &self.ring_spacing)
-            .field("outline_width", &self.outline_width)
-            .field("labels", &self.labels)
+            .field("palette_offset", &get(&self.palette_offset))
+            .field("category_percentage", &get(&self.category_percentage))
+            .field("bar_percentage", &get(&self.bar_percentage))
+            .field("spacing", &get(&self.spacing).max(0.0))
+            .field("ring_spacing", &get(&self.ring_spacing).max(0.0))
+            .field("outline_width", &get(&self.outline_width).max(0.0))
+            .field("labels", &get(&self.labels))
             .finish_non_exhaustive()
     }
 }
@@ -94,69 +96,70 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     pub fn new<I: IntoSequence<dyn PieDataSet, M, Sequence=D>, M>(datasets: I) -> PieController<D> {
         PieController {
             dataset_sequence: datasets.into_sequence(),
-            palette_offset: 0,
-            category_percentage: 1.0,
-            bar_percentage: 1.0,
-            spacing: 0.0,
-            ring_spacing: DEFAULT_RING_SPACING,
-            outline_width: DEFAULT_OUTLINE_WIDTH,
+            palette_offset: constant(0),
+            category_percentage: constant(1.0),
+            bar_percentage: constant(1.0),
+            spacing: constant(0.0),
+            ring_spacing: constant(DEFAULT_RING_SPACING),
+            outline_width: constant(DEFAULT_OUTLINE_WIDTH),
             label_text: None,
-            labels: true,
+            labels: constant(true),
         }
     }
 
     /// Starts the parts' colours `offset` colours into the palette (see
     /// `BarController::palette_offset`). Defaults to 0.
     pub fn palette_offset(mut self, offset: usize) -> PieController<D> {
-        self.palette_offset = offset;
+        self.palette_offset = constant(offset);
         self
     }
 
     /// How much of its slot each dataset's ring (or bar) takes, as `BarController` splits its
     /// slots: 1 by default, so a pie reaches its centre and rings touch; less leaves gaps between
-    /// rings.
-    pub fn category_percentage(mut self, category_percentage: Scalar) -> PieController<D> {
-        self.category_percentage = category_percentage;
+    /// rings. A value or a state of one.
+    pub fn category_percentage(mut self, category_percentage: impl IntoReadState<Scalar>) -> PieController<D> {
+        self.category_percentage = option(category_percentage);
         self
     }
 
     /// How much of its share of the slot each ring takes, after `category_percentage`: 1 by
-    /// default.
-    pub fn bar_percentage(mut self, bar_percentage: Scalar) -> PieController<D> {
-        self.bar_percentage = bar_percentage;
+    /// default. A value or a state of one.
+    pub fn bar_percentage(mut self, bar_percentage: impl IntoReadState<Scalar>) -> PieController<D> {
+        self.bar_percentage = option(bar_percentage);
         self
     }
 
     /// A gap of `spacing` pixels between neighbouring parts, kept out of the parts' sizes:
     /// measured across the middle of the ring around a circle, and along the bar along a side.
-    /// 0 by default.
-    pub fn spacing(mut self, spacing: Scalar) -> PieController<D> {
-        self.spacing = spacing.max(0.0);
+    /// 0 by default; a value or a state of one, below 0 taken as 0.
+    pub fn spacing(mut self, spacing: impl IntoReadState<Scalar>) -> PieController<D> {
+        self.spacing = option(spacing);
         self
     }
 
     /// A gap of `spacing` pixels between neighbouring rings around a circle, so nested rings can be
     /// told apart: `DEFAULT_RING_SPACING` (4) by default. Only between rings: a pie still reaches
-    /// its centre, and the outer ring the rim. 0 lets rings touch.
-    pub fn ring_spacing(mut self, spacing: Scalar) -> PieController<D> {
-        self.ring_spacing = spacing.max(0.0);
+    /// its centre, and the outer ring the rim. 0 lets rings touch. A value or a state of one, below
+    /// 0 taken as 0.
+    pub fn ring_spacing(mut self, spacing: impl IntoReadState<Scalar>) -> PieController<D> {
+        self.ring_spacing = option(spacing);
         self
     }
 
     /// How wide the outline around each part is, in pixels, centred on its edges, in the
     /// `SeriesStyle`'s outline colour (the background by default), so neighbouring slices stay
-    /// apart even when they share a colour: `DEFAULT_OUTLINE_WIDTH` (2) by default, as Chart.js
-    /// outlines its arcs. A part's outline is at most a quarter of its thickness and its length,
-    /// so thin parts keep their colour. 0 draws none.
-    pub fn outline_width(mut self, width: Scalar) -> PieController<D> {
-        self.outline_width = width.max(0.0);
+    /// apart even when they share a colour: `DEFAULT_OUTLINE_WIDTH` (2) by default. A part's
+    /// outline is at most a quarter of its thickness and its length, so thin parts keep their
+    /// colour. 0 draws none. A value or a state of one, below 0 taken as 0.
+    pub fn outline_width(mut self, width: impl IntoReadState<Scalar>) -> PieController<D> {
+        self.outline_width = option(width);
         self
     }
 
     /// Whether the outermost ring's parts are labelled outside the circle, joined to their
-    /// slices by leader lines. `true` by default.
-    pub fn labels(mut self, labels: bool) -> PieController<D> {
-        self.labels = labels;
+    /// slices by leader lines. `true` by default; a value or a state of one.
+    pub fn labels(mut self, labels: impl IntoReadState<bool>) -> PieController<D> {
+        self.labels = option(labels);
         self
     }
 
@@ -341,7 +344,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// dataset is drawn around a circle. It reads only the
     /// fitted scales, not the circle, so the chart can ask for it before fitting the circle.
     fn outer_ring_labels(&self, scales: &Scales) -> Option<(usize, Vec<(usize, Scalar, Scalar, String)>)> {
-        if !self.labels {
+        if !get(&self.labels) {
             return None;
         }
 
@@ -390,7 +393,15 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
 
 impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.dataset_sequence.sync(env)
+        let mut changed = self.dataset_sequence.sync(env);
+        changed |= self.palette_offset.sync(env);
+        changed |= self.category_percentage.sync(env);
+        changed |= self.bar_percentage.sync(env);
+        changed |= self.spacing.sync(env);
+        changed |= self.ring_spacing.sync(env);
+        changed |= self.outline_width.sync(env);
+        changed |= self.labels.sync(env);
+        changed
     }
 
     /// Places each dataset at its name on its x scale, asking for a category scale with each
@@ -420,7 +431,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
     /// An entry for each part, by name, in its colour, each name once.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        let palette = Palette::from_env(env, self.palette_offset);
+        let palette = Palette::from_env(env, get(&self.palette_offset));
         let mut named: Vec<String> = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -458,18 +469,18 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         let (placed, ruler) = self.layout(scales, chart_area);
-        let palette = Palette::new(ctx, self.palette_offset);
+        let palette = Palette::new(ctx, get(&self.palette_offset));
         let outline = series_style(ctx.env()).outline_color(ctx.env());
         ctx.save();
 
         // Rings that touch the next one out reach a little into it, so the seam between two rings,
         // whose curved edges are each flattened into their own straight pieces, leaves no gaps.
         // With ring spacing, each ring gives up half the gap on each side it has a neighbour.
-        let touching = self.category_percentage * self.bar_percentage >= 1.0;
+        let touching = get(&self.category_percentage) * get(&self.bar_percentage) >= 1.0;
         let rings = || placed.iter().flatten().filter(|place| place.polar.is_some()).map(|place| place.x);
         let outermost = rings().fold(Scalar::NEG_INFINITY, Scalar::max);
         let innermost = rings().fold(Scalar::INFINITY, Scalar::min);
-        let half_gap = self.ring_spacing / 2.0;
+        let half_gap = get(&self.ring_spacing).max(0.0) / 2.0;
         // The parts drawn, by dataset and point index, with how far out each reaches in the
         // dataset's frame, so only those are labelled, and their lines start where they end.
         let mut drawn: Vec<(usize, usize, Scalar)> = vec![];
@@ -485,7 +496,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
             let frame = place.frame(chart_area);
             let center = frame.index(x_scale, place.x);
-            let (mut side, mut thickness) = bar_slot(center, ruler, 0, 1, self.category_percentage, self.bar_percentage);
+            let (mut side, mut thickness) = bar_slot(center, ruler, 0, 1, get(&self.category_percentage), get(&self.bar_percentage));
             if place.polar.is_some() && half_gap > 0.0 {
                 if place.x < outermost {
                     thickness -= half_gap;
@@ -538,7 +549,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                     BarFrame::Around(_) => (head - base).abs() * (part_side + part_thickness / 2.0),
                     BarFrame::Sides { .. } => (head - base).abs(),
                 };
-                let width = self.outline_width.min(part_thickness.min(length) / 4.0);
+                let width = get(&self.outline_width).max(0.0).min(part_thickness.min(length) / 4.0);
                 if width > 0.0 {
                     ctx.set_line_width(width);
                     ctx.set_stroke_style(outline);
@@ -558,8 +569,8 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// around a circle the angle the spacing spans `distance` from the centre.
     fn spacing_in_frame(&self, frame: &BarFrame, distance: Scalar) -> Scalar {
         match frame {
-            BarFrame::Sides { .. } => self.spacing,
-            BarFrame::Around(_) => self.spacing / distance.max(1.0),
+            BarFrame::Sides { .. } => get(&self.spacing).max(0.0),
+            BarFrame::Around(_) => get(&self.spacing).max(0.0) / distance.max(1.0),
         }
     }
 

@@ -1,8 +1,10 @@
+use carbide::state::IntoReadState;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
+use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{Datum, Shapes};
 use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
 use crate::legend::{LegendItem, LegendMarker};
@@ -39,10 +41,10 @@ use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds
 #[derive(Clone, Debug)]
 pub struct BarController<D> {
     dataset_sequence: D,
-    category_percentage: Scalar,
-    bar_percentage: Scalar,
-    palette_offset: usize,
-    orientation: Orientation,
+    category_percentage: Opt<Scalar>,
+    bar_percentage: Opt<Scalar>,
+    palette_offset: Opt<usize>,
+    horizontal: Opt<bool>,
 }
 
 impl<D: Sequence<dyn BarDataSet>> BarController<D> {
@@ -50,25 +52,31 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
     pub fn new<I: IntoSequence<dyn BarDataSet, M, Sequence=D>, M>(datasets: I) -> BarController<D> {
         BarController {
             dataset_sequence: datasets.into_sequence(),
-            category_percentage: 0.8,
-            bar_percentage: 0.9,
-            palette_offset: 0,
-            orientation: Orientation::Vertical,
+            category_percentage: constant(0.8),
+            bar_percentage: constant(0.9),
+            palette_offset: constant(0),
+            horizontal: constant(false),
         }
     }
 
-    /// Lays the bars down: each point's category runs down the dataset's y scale, the first at
-    /// the top on a category scale, and its bar grows along the x scale, from zero to the value.
-    /// The data is read as for standing bars, so the same datasets draw either way.
-    pub fn horizontal(mut self) -> BarController<D> {
-        self.orientation = Orientation::Horizontal;
+    /// Lays the bars down with `true`, a value or a state of one: each point's category runs down
+    /// the dataset's y scale, the first at the top on a category scale, and its bar grows along
+    /// the x scale, from zero to the value. The data is read as for standing bars, so the same
+    /// datasets draw either way. `false`, standing, by default.
+    pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> BarController<D> {
+        self.horizontal = option(horizontal);
         self
     }
 
+    /// Which way the values grow, as `horizontal` was last synced.
+    fn orientation(&self) -> Orientation {
+        if get(&self.horizontal) { Orientation::Horizontal } else { Orientation::Vertical }
+    }
+
     /// How much of the smallest gap between neighbouring categories a point's group of bars takes
-    /// up. Defaults to 0.8.
-    pub fn category_percentage(mut self, category_percentage: Scalar) -> BarController<D> {
-        self.category_percentage = category_percentage;
+    /// up, a value or a state of one. Defaults to 0.8.
+    pub fn category_percentage(mut self, category_percentage: impl IntoReadState<Scalar>) -> BarController<D> {
+        self.category_percentage = option(category_percentage);
         self
     }
 
@@ -78,20 +86,26 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
     /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
     /// colour themselves (`DataColor::Palette`) aren't shifted.
     pub fn palette_offset(mut self, offset: usize) -> BarController<D> {
-        self.palette_offset = offset;
+        self.palette_offset = constant(offset);
         self
     }
 
-    /// How much of its share of the group's slot each bar takes up. Defaults to 0.9.
-    pub fn bar_percentage(mut self, bar_percentage: Scalar) -> BarController<D> {
-        self.bar_percentage = bar_percentage;
+    /// How much of its share of the group's slot each bar takes up, a value or a state of one.
+    /// Defaults to 0.9.
+    pub fn bar_percentage(mut self, bar_percentage: impl IntoReadState<Scalar>) -> BarController<D> {
+        self.bar_percentage = option(bar_percentage);
         self
     }
 }
 
 impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.dataset_sequence.sync(env)
+        let mut changed = self.dataset_sequence.sync(env);
+        changed |= self.category_percentage.sync(env);
+        changed |= self.bar_percentage.sync(env);
+        changed |= self.palette_offset.sync(env);
+        changed |= self.horizontal.sync(env);
+        changed
     }
 
     /// Bars sit on a category index scale, offset so the first and last bars aren't cut in half,
@@ -99,7 +113,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// scale, also one set with `Chart::scale`; the kind only decides a default scale. They are
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, self.orientation, true);
+        register_values(&self.dataset_sequence, bounds, self.orientation(), true);
 
         let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(&*bounds));
         let offsets = self.stack_offsets(&*bounds, self.has_overlays());
@@ -113,7 +127,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 bounds.request_grid_shape(&options.y_scale, GridShape::Circle);
             }
 
-            let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation().for_dataset(&options, &*bounds).index_and_value_scales(&options);
 
             bounds.request_kind(index_scale, ScaleKind::Category);
             bounds.request_offset(index_scale);
@@ -160,7 +174,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         legend_items(
             &self.dataset_sequence,
             env,
-            &Palette::from_env(env, self.palette_offset),
+            &Palette::from_env(env, get(&self.palette_offset)),
             items,
             |_, _| LegendMarker::Square,
             |dataset, context| first_mark_entry(|f| dataset.bar_marks(&mut |mark| f(mark.legend(context)))),
@@ -168,7 +182,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     }
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
-        let wants_x_angle = self.orientation.polar_roles().0 == PolarRole::Angle;
+        let wants_x_angle = self.orientation().polar_roles().0 == PolarRole::Angle;
 
         // First pass: how each dataset maps onto the screen (along the sides, or around the
         // circle), which bars sit side by side (per index scale, a share for each stack and each
@@ -181,7 +195,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let orientation = self.orientation.for_dataset(&options, scales);
+            let orientation = self.orientation().for_dataset(&options, scales);
             let (index_id, value_id) = orientation.index_and_value_scales(&options);
 
             let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
@@ -228,7 +242,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         // colours of the chart's `SeriesStyle`, or the marks that replace them. Third pass: the
         // overlays, on top of every dataset's bars.
         let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(scales));
-        let palette = Palette::new(ctx, self.palette_offset);
+        let palette = Palette::new(ctx, get(&self.palette_offset));
         ctx.save();
 
         // Overlays are drawn in a pass of their own, and only read the stack offsets, so a chart
@@ -244,7 +258,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 };
 
                 let options = dataset.options();
-                let orientation = self.orientation.for_dataset(&options, scales);
+                let orientation = self.orientation().for_dataset(&options, scales);
                 let (_, value_id) = orientation.index_and_value_scales(&options);
 
                 let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
@@ -265,8 +279,8 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     ruler,
                     group_index,
                     group_size,
-                    category_percentage: self.category_percentage,
-                    bar_percentage: self.bar_percentage,
+                    category_percentage: get(&self.category_percentage),
+                    bar_percentage: get(&self.bar_percentage),
                     stack_offsets: offsets.dataset(dataset_index),
                 };
 
@@ -319,7 +333,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     };
 
                     let center = frame.index(index_scale, x);
-                    let (side, thickness) = bar_slot(center, ruler, group_index, group_size, self.category_percentage, self.bar_percentage);
+                    let (side, thickness) = bar_slot(center, ruler, group_index, group_size, get(&self.category_percentage), get(&self.bar_percentage));
 
                     // The first bar of a stack grows from zero, or the end of the range nearest it.
                     let (start, end) = stacks.add(&key, x, y);
@@ -355,7 +369,7 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
             }
         });
 
-        normalized_totals(&self.dataset_sequence, places, self.orientation, &|dataset_index| !replaced.contains(&dataset_index))
+        normalized_totals(&self.dataset_sequence, places, self.orientation(), &|dataset_index| !replaced.contains(&dataset_index))
     }
 
     /// Whether any dataset has an overlay mark, drawn on top of the bars.
@@ -389,7 +403,7 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
                 return;
             }
 
-            let (index_id, value_id) = self.orientation.for_dataset(&options, places).index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation().for_dataset(&options, places).index_and_value_scales(&options);
             let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_overlay_mark(dataset);
             dataset.points(&mut |_index, point| {
@@ -568,7 +582,7 @@ mod tests {
     #[test]
     fn horizontal_bars_put_the_categories_on_the_y_scale() {
         const COSTS: StackId = StackId::new("costs");
-        let bars = BarController::new((vec![10.0, -20.0].stack(COSTS), vec![5.0, -4.0].stack(COSTS))).horizontal();
+        let bars = BarController::new((vec![10.0, -20.0].stack(COSTS), vec![5.0, -4.0].stack(COSTS))).horizontal(true);
 
         let mut bounds = ScaleBounds::default();
         bars.collect_bounds(&mut bounds, &mut Environment::new());

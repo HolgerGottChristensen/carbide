@@ -61,7 +61,7 @@ fn stacked_and_lying() {
     let materials = vec![("Kitchen", 12.0), ("Bath", 8.0), ("Garden", 5.0)];
     let labour = vec![("Garden", 6.0), ("Kitchen", 9.0), ("Garage", 4.0)];
 
-    let chart = Chart::new(BarController::new((materials.stack(COSTS), labour.stack(COSTS))).horizontal()).framed();
+    let chart = Chart::new(BarController::new((materials.stack(COSTS), labour.stack(COSTS))).horizontal(true)).framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("stacked_and_lying");

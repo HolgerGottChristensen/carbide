@@ -191,7 +191,7 @@ fn radar_over_bars() {
 fn categories_along_the_radius() {
     let ratings = vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4];
 
-    let chart = Chart::new(LineController::new(ratings).horizontal())
+    let chart = Chart::new(LineController::new(ratings).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));

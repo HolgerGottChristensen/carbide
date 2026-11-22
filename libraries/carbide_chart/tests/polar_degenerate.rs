@@ -158,7 +158,7 @@ fn datasets_that_cannot_be_drawn() {
 
     let radar = LineController::new(vec![8.0, 6.0, 7.0, 9.0, 5.0, 4.0]);
     let mixed = LineController::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].y_scale(side.clone()));
-    let conflicting = LineController::new(vec![5.0, 5.0, 5.0, 5.0, 5.0, 5.0]).horizontal();
+    let conflicting = LineController::new(vec![5.0, 5.0, 5.0, 5.0, 5.0, 5.0]).horizontal(true);
 
     let chart = Chart::new((radar, mixed, conflicting))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
@@ -175,7 +175,7 @@ fn datasets_that_cannot_be_drawn() {
 /// scales took the other roles, are left out, logged once, rather than drawn in the wrong place.
 #[test]
 fn scatter_points_whose_scales_took_the_other_roles() {
-    let lying = LineController::new(vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4]).horizontal();
+    let lying = LineController::new(vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4]).horizontal(true);
     let points = ScatterController::new(vec![(1.0, 5.0), (3.0, 7.0), (4.0, 6.0)]);
 
     let chart = Chart::new((lying, points))

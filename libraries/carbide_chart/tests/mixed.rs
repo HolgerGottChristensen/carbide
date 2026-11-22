@@ -109,8 +109,8 @@ fn horizontal_bars_and_line() {
     let target = vec![10.0, 15.0, 12.0, 14.0, 16.0];
 
     let chart = Chart::new((
-        BarController::new(revenue).horizontal(),
-        LineController::new(target).horizontal().palette_offset(1),
+        BarController::new(revenue).horizontal(true),
+        LineController::new(target).horizontal(true).palette_offset(1),
     ))
         .framed();
 

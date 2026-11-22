@@ -1,7 +1,9 @@
+use carbide::state::IntoReadState;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
+use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
 use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
@@ -36,8 +38,8 @@ use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, Scale
 #[derive(Clone, Debug)]
 pub struct LineController<D> {
     pub(crate) dataset_sequence: D,
-    palette_offset: usize,
-    orientation: Orientation,
+    palette_offset: Opt<usize>,
+    horizontal: Opt<bool>,
 }
 
 impl<D: Sequence<dyn LineDataSet>> LineController<D> {
@@ -45,17 +47,23 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     pub fn new<I: IntoSequence<dyn LineDataSet, M, Sequence=D>, M>(datasets: I) -> LineController<D> {
         LineController {
             dataset_sequence: datasets.into_sequence(),
-            palette_offset: 0,
-            orientation: Orientation::Vertical,
+            palette_offset: constant(0),
+            horizontal: constant(false),
         }
     }
 
-    /// Lays the line down: each point's category runs down the dataset's y scale, the first at
-    /// the top on a category scale, and its value along the x scale. The data is read as for an
-    /// upright line, so the same datasets draw either way, and line up with horizontal bars.
-    pub fn horizontal(mut self) -> LineController<D> {
-        self.orientation = Orientation::Horizontal;
+    /// Lays the line down with `true`, a value or a state of one: each point's category runs down
+    /// the dataset's y scale, the first at the top on a category scale, and its value along the x
+    /// scale. The data is read as for an upright line, so the same datasets draw either way, and
+    /// line up with horizontal bars. `false`, upright, by default.
+    pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> LineController<D> {
+        self.horizontal = option(horizontal);
         self
+    }
+
+    /// Which way the values grow, as `horizontal` was last synced.
+    fn orientation(&self) -> Orientation {
+        if get(&self.horizontal) { Orientation::Horizontal } else { Orientation::Vertical }
     }
 
     /// Starts the colours of this controller's datasets `offset` colours into the palette:
@@ -64,7 +72,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     /// share colours, as each controller counts its datasets from 0. Datasets that pick a palette
     /// colour themselves (`DataColor::Palette`) aren't shifted.
     pub fn palette_offset(mut self, offset: usize) -> LineController<D> {
-        self.palette_offset = offset;
+        self.palette_offset = constant(offset);
         self
     }
 }
@@ -96,7 +104,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             return offsets;
         }
 
-        let totals = normalized_totals(&self.dataset_sequence, places, self.orientation, &|dataset_index| !replaced.contains(&dataset_index));
+        let totals = normalized_totals(&self.dataset_sequence, places, self.orientation(), &|dataset_index| !replaced.contains(&dataset_index));
         let mut sums = StackSums::single().normalized(totals);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -110,7 +118,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 return;
             }
 
-            let (index_id, value_id) = self.orientation.for_dataset(&options, places).index_and_value_scales(&options);
+            let (index_id, value_id) = self.orientation().for_dataset(&options, places).index_and_value_scales(&options);
             let coordinates = Coordinates::new(places, index_id, value_id);
             let recorded = has_mark(dataset, MarkRole::Overlay);
             dataset.points(&mut |_index, point| {
@@ -135,8 +143,8 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             }
 
             let options = dataset.options();
-            let wants_x_angle = self.orientation.polar_roles().0 == PolarRole::Angle;
-            let orientation = self.orientation.for_dataset(&options, scales);
+            let wants_x_angle = self.orientation().polar_roles().0 == PolarRole::Angle;
+            let orientation = self.orientation().for_dataset(&options, scales);
             let (index_id, value_id) = orientation.index_and_value_scales(&options);
             let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                 return;
@@ -179,21 +187,24 @@ fn has_mark(dataset: &dyn LineDataSet, role: MarkRole) -> bool {
 
 impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.dataset_sequence.sync(env)
+        let mut changed = self.dataset_sequence.sync(env);
+        changed |= self.palette_offset.sync(env);
+        changed |= self.horizontal.sync(env);
+        changed
     }
 
     /// Asks for a category index scale (x, or y when `horizontal`), without the bar chart's offset
     /// or grid offset, then reports each dataset's range: its points, or, when a mark replaces its
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
-        register_values(&self.dataset_sequence, bounds, self.orientation, true);
+        register_values(&self.dataset_sequence, bounds, self.orientation(), true);
 
         let replaced = self.replaced_lines();
         let offsets = self.stack_offsets(&*bounds, &replaced);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_scale, value_scale) = self.orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation().for_dataset(&options, &*bounds).index_and_value_scales(&options);
             bounds.request_kind(index_scale, ScaleKind::Category);
 
             // On polar scales, a radar's rings are polygons through the spokes.
@@ -213,7 +224,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             });
         });
 
-        collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation, |dataset_index| !replaced.contains(&dataset_index));
+        collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation(), |dataset_index| !replaced.contains(&dataset_index));
     }
 
     /// Each named dataset as a line in its colour, or a square when it is filled or a mark, such
@@ -224,7 +235,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         legend_items(
             &self.dataset_sequence,
             env,
-            &Palette::from_env(env, self.palette_offset),
+            &Palette::from_env(env, get(&self.palette_offset)),
             items,
             |dataset_index, options| {
                 if options.fill == Fill::None && !replaced.contains(&dataset_index) { LegendMarker::Line } else { LegendMarker::Square }
@@ -237,8 +248,8 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         ctx.save();
 
         let replaced = self.replaced_lines();
-        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true, true, self.orientation, |dataset_index| !replaced.contains(&dataset_index));
-        let palette = Palette::new(ctx, self.palette_offset);
+        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true, true, self.orientation(), |dataset_index| !replaced.contains(&dataset_index));
+        let palette = Palette::new(ctx, get(&self.palette_offset));
 
         // Marks replacing lines are usually areas, so they go first, under every line; overlays
         // go on top of everything.
@@ -289,7 +300,7 @@ mod tests {
     /// bars' offset, and the values, with the fill's baseline, on its x scale.
     #[test]
     fn horizontal_lines_put_the_categories_on_the_y_scale() {
-        let line = LineController::new(vec![12.0, 19.0, 8.0].fill(Fill::Value(-5.0))).horizontal();
+        let line = LineController::new(vec![12.0, 19.0, 8.0].fill(Fill::Value(-5.0))).horizontal(true);
 
         let mut bounds = ScaleBounds::default();
         line.collect_bounds(&mut bounds, &mut Environment::new());

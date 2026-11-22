@@ -42,7 +42,7 @@ fn horizontal() {
         BoxStats { x: 2.0, min: 100.0, q1: 160.0, median: 210.0, q3: 250.0, max: 340.0 },
     ];
 
-    let chart = Chart::new(BarController::new(response_times.box_plot()).horizontal()).framed();
+    let chart = Chart::new(BarController::new(response_times.box_plot()).horizontal(true)).framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("horizontal");

@@ -23,6 +23,7 @@ mod pie_controller;
 pub(crate) mod orientation;
 pub(crate) mod polar_path;
 mod scatter_controller;
+pub(crate) mod options;
 pub(crate) mod stacking;
 
 /// Draws a group of datasets on the scales the chart owns.

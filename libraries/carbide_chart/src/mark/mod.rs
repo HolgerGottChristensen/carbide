@@ -332,7 +332,7 @@ mod tests {
         lines.legend_items(&Environment::new(), &mut legend);
         assert!(matches!(legend.as_slice(), [item] if item.marker == LegendMarker::Square), "{legend:?}");
 
-        let lying = bounds(LineController::new(temperatures.range()).horizontal());
+        let lying = bounds(LineController::new(temperatures.range()).horizontal(true));
         assert_eq!(lying.get(&ScaleId::X).range(), Some((4.0, 18.0)));
         assert_eq!(lying.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
     }

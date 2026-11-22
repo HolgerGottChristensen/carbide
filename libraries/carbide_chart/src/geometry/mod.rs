@@ -12,6 +12,7 @@ use std::collections::HashSet;
 use carbide::color::Color;
 use carbide::draw::{Dimension, Position, Rect, Scalar};
 use indexmap::IndexSet;
+use carbide_derive::StateValue;
 pub(crate) use shape::{Along, Hit, Polyline, Shape};
 use shape::distance;
 use crate::scale::{Circle, ScaleId};
@@ -110,7 +111,7 @@ struct Group {
 }
 
 /// How the chart finds the data at the pointer (see `Chart::hover_mode`).
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, StateValue)]
 pub enum PickMode {
     /// The data whose shapes are under the position, the one drawn on top first: inside a bar, a
     /// wedge or a filled area, or within `LINE_TOLERANCE` of a marker or a line.
@@ -129,7 +130,7 @@ pub enum PickMode {
 }
 
 /// What `PickMode::Nearest` measures the distance along.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, StateValue)]
 pub enum Measure {
     /// Straight across the screen.
     Both,

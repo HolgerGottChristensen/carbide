@@ -150,7 +150,7 @@ fn horizontal_stacked() {
     let email = vec![12.0, 8.0, 15.0, 10.0, 14.0]
         .interpolation(Interpolation::Monotone).fill(Fill::Stack).stack(VISITS);
 
-    let chart = Chart::new(LineController::new((search, social, email)).horizontal())
+    let chart = Chart::new(LineController::new((search, social, email)).horizontal(true))
         .framed();
 
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
@@ -242,7 +242,7 @@ fn horizontal_range_band() {
     ];
     let median = vec![5.0, 8.0, 6.5, 11.0];
 
-    let chart = Chart::new(LineController::new((durations.range(), median)).horizontal()).framed();
+    let chart = Chart::new(LineController::new((durations.range(), median)).horizontal(true)).framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("horizontal_range_band");

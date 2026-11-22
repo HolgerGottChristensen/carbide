@@ -42,7 +42,7 @@ fn lying_bars_with_a_negative_part() {
     let gains = vec![30.0, 60.0, 0.0, 25.0].stack(SHARE).label("Gains");
     let losses = vec![-10.0, 40.0, 0.0, -75.0].stack(SHARE).label("Losses");
 
-    let chart = Chart::new(BarController::new((gains, losses)).horizontal())
+    let chart = Chart::new(BarController::new((gains, losses)).horizontal(true))
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(QUARTERS))
         .legend(LegendPosition::Bottom)
         .framed();
@@ -85,7 +85,7 @@ fn rings_of_100_percent() {
     let south = vec![50.0, 20.0, 40.0].stack(SHARE).label("South");
     let west = vec![20.0, 30.0, 60.0].stack(SHARE).label("West");
 
-    let chart = Chart::new(BarController::new((north, south, west)).horizontal().category_percentage(1.0))
+    let chart = Chart::new(BarController::new((north, south, west)).horizontal(true).category_percentage(1.0))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(["2024", "2025", "2026"]))
         .legend(LegendPosition::Bottom)
         .framed();

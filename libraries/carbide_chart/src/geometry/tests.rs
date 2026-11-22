@@ -41,7 +41,7 @@ fn index_finds_every_dataset_at_the_nearest_category() {
     assert_eq!(found[0], vec![key(0, 0, 2), key(0, 1, 2)]);
 
     const COSTS: StackId = StackId::new("costs");
-    let chart = Chart::new(BarController::new((vec![10.0, 20.0, 30.0, 25.0].stack(COSTS), vec![15.0, 25.0, 5.0, 20.0].stack(COSTS))).horizontal())
+    let chart = Chart::new(BarController::new((vec![10.0, 20.0, 30.0, 25.0].stack(COSTS), vec![15.0, 25.0, 5.0, 20.0].stack(COSTS))).horizontal(true))
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(QUARTERS));
 
     // In the empty space right of Q3's stack, a little below its middle.

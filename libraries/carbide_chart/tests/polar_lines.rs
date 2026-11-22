@@ -225,7 +225,7 @@ fn stepped_band_with_a_gap_and_error_bars_around_the_ring() {
         Estimate { x: 5.0, y: 7.0, low: 6.0, high: 8.0 },
     ].error_bars();
 
-    let chart = Chart::new(LineController::new(estimates).horizontal())
+    let chart = Chart::new(LineController::new(estimates).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
@@ -239,7 +239,7 @@ fn stepped_band_with_a_gap_and_error_bars_around_the_ring() {
 fn lying_line_with_a_fill() {
     let ratings = vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4].fill(Fill::Bottom);
 
-    let chart = Chart::new(LineController::new(ratings).horizontal())
+    let chart = Chart::new(LineController::new(ratings).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));

@@ -204,7 +204,7 @@ fn horizontal() {
     let revenue = vec![12.0, 19.0, -3.0, 5.0, 2.0];
     let costs = vec![8.0, -11.0, 6.0, 4.0, 3.0];
 
-    let chart = Chart::new(BarController::new((revenue, costs)).horizontal())
+    let chart = Chart::new(BarController::new((revenue, costs)).horizontal(true))
         .framed();
 
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
@@ -224,7 +224,7 @@ fn horizontal_stacked() {
     let labour = vec![5.0, -12.0, 6.0, 9.0].stack(COSTS);
     let revenue = vec![18.0, 14.0, -6.0, 20.0];
 
-    let chart = Chart::new(BarController::new((materials, labour, revenue)).horizontal())
+    let chart = Chart::new(BarController::new((materials, labour, revenue)).horizontal(true))
         .framed();
 
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
@@ -239,7 +239,7 @@ fn horizontal_stacked() {
 fn horizontal_with_labels() {
     let visitors = vec![1200.0, 950.0, 640.0, 410.0, 180.0];
 
-    let chart = Chart::new(BarController::new(visitors).horizontal())
+    let chart = Chart::new(BarController::new(visitors).horizontal(true))
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(["Search", "Direct", "Social", "Email", "Referral"]))
         .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Visitors"))
         .framed();

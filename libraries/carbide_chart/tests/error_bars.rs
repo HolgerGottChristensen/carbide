@@ -124,7 +124,7 @@ fn horizontal() {
         Estimate { x: 2.0, y: 5.0, low: 4.0, high: 7.0 },
     ];
 
-    let chart = Chart::new(BarController::new((ranges.range(), measured.error_bars())).horizontal()).framed();
+    let chart = Chart::new(BarController::new((ranges.range(), measured.error_bars())).horizontal(true)).framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("horizontal");

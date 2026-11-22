@@ -55,7 +55,7 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The state the data under the pointer is written to, when the chart reports hovering.
     hover: Option<Box<dyn AnyState<T=Option<Pick>>>>,
     /// How hovering and clicks find the data under the pointer.
-    hover_mode: PickMode,
+    hover_mode: Box<dyn AnyReadState<T=PickMode>>,
     /// What a click in the chart area does.
     on_click: Option<ClickAction>,
     /// The drag in progress: a pan, or a box to zoom to.
@@ -91,7 +91,7 @@ impl<C: ControllerSequence> Chart<C> {
             shapes: Shapes::default(),
             interactive: IntoReadState::<bool>::into_read_state(true).as_dyn_read(),
             hover: None,
-            hover_mode: PickMode::Index,
+            hover_mode: IntoReadState::<PickMode>::into_read_state(PickMode::Index).as_dyn_read(),
             on_click: None,
             gesture: None,
             press: None,
@@ -170,10 +170,11 @@ impl<C: ControllerSequence> Chart<C> {
         self
     }
 
-    /// How hovering and clicks find the data under the pointer. `PickMode::Index` by default:
-    /// every dataset's datum at the category nearest the pointer, as a shared tooltip shows.
-    pub fn hover_mode(mut self, mode: PickMode) -> Chart<C> {
-        self.hover_mode = mode;
+    /// How hovering and clicks find the data under the pointer, a `PickMode` or a state of one.
+    /// `PickMode::Index` by default: every dataset's datum at the category nearest the pointer, as
+    /// a shared tooltip shows.
+    pub fn hover_mode(mut self, mode: impl IntoReadState<PickMode>) -> Chart<C> {
+        self.hover_mode = mode.into_read_state().as_dyn_read();
         self
     }
 
@@ -190,7 +191,7 @@ impl<C: ControllerSequence> Chart<C> {
             return None;
         }
 
-        let data = self.shapes.pick(position, self.hover_mode);
+        let data = self.shapes.pick(position, *self.hover_mode.value_dyn());
         let ids: Vec<ScaleId> = self.scales.iter().map(|(id, _)| id.clone()).collect();
         let values = ids.into_iter()
             .filter_map(|id| self.scales.value_at(&id, position, self.shapes.area(), env).map(|value| (id, value)))
@@ -545,6 +546,7 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
         }
 
         self.interactive.sync(env);
+        self.hover_mode.sync(env);
         if let Some(hover) = &mut self.hover {
             hover.sync(env);
         }
@@ -1568,7 +1570,7 @@ mod tests {
         let bars = fitted(Chart::new(BarController::new(days.clone())));
         assert_eq!(kinds(&bars), (Some(ScaleKind::Time), Some(ScaleKind::Linear)), "dates win over the category scale bars ask for");
 
-        let lying = fitted(Chart::new(BarController::new(days.clone()).horizontal()));
+        let lying = fitted(Chart::new(BarController::new(days.clone()).horizontal(true)));
         assert_eq!(kinds(&lying), (Some(ScaleKind::Linear), Some(ScaleKind::Time)), "lying bars place their dates on the y scale");
 
         let numbers = fitted(Chart::new(BarController::new(vec![1.0, 2.0])));
@@ -1607,7 +1609,7 @@ mod tests {
         assert_eq!(x.category_index("Thu"), Some(2.0), "and new names follow the labels");
         assert_eq!(x.ticks(), &[0.0, 1.0, 2.0]);
 
-        let lying = fitted(Chart::new(BarController::new(monday).horizontal()));
+        let lying = fitted(Chart::new(BarController::new(monday).horizontal(true)));
         assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Category), "lying bars name their categories on the y scale");
     }
 
@@ -1644,7 +1646,7 @@ mod tests {
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
         assert_eq!((radar.scales.polar_role(&ScaleId::X), radar.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Angle), Some(PolarRole::Radius)));
 
-        let lying = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]).horizontal())
+        let lying = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]).horizontal(true))
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
         assert_eq!((lying.scales.polar_role(&ScaleId::X), lying.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Radius), Some(PolarRole::Angle)));
         assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Linear), "the categories stayed on x");
@@ -1659,7 +1661,7 @@ mod tests {
         let lying = ScaleId::new("lying");
         let chart = fitted(Chart::new((
             LineController::new(vec![1.0, 2.0]),
-            LineController::new(vec![1.0, 2.0].x_scale(lying.clone())).horizontal(),
+            LineController::new(vec![1.0, 2.0].x_scale(lying.clone())).horizontal(true),
         ))
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial))
             .scale(lying.clone(), CategoryScale::new(Axis::Radial)));
@@ -1679,7 +1681,7 @@ mod tests {
     fn a_radial_scale_keeps_the_first_role_asked_for() {
         let chart = fitted(Chart::new((
             LineController::new(vec![1.0, 2.0]),
-            LineController::new(vec![1.0, 2.0]).horizontal(),
+            LineController::new(vec![1.0, 2.0]).horizontal(true),
         ))
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
 

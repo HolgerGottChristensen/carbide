@@ -70,7 +70,7 @@ fn bars_snap_to_whole_categories() {
 fn zoomed_along_either_scale() {
     let revenue = vec![12.0, 19.0, 3.0, 5.0, 2.0, 8.0, 14.0, 9.0, 11.0, 6.0, 15.0, 18.0];
 
-    let chart = Chart::new(BarController::new(revenue.clone()).horizontal())
+    let chart = Chart::new(BarController::new(revenue.clone()).horizontal(true))
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(MONTHS).zoom(ZoomWindow::new(0.0, 0.25)))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));

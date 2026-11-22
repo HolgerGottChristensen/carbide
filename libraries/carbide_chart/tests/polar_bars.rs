@@ -77,7 +77,7 @@ fn grouped_and_stacked_wedges() {
 fn radial_bars() {
     let progress = vec![35.0, 60.0, 82.0, 100.0, 130.0].color(DataColor::ByPoint);
 
-    let chart = Chart::new(BarController::new(progress).horizontal())
+    let chart = Chart::new(BarController::new(progress).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(["Design", "Build", "Test", "Docs", "Release"]))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(100.0).step(25.0))
         .framed();
@@ -165,7 +165,7 @@ fn floating_bars_and_error_bars() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("upright");
 
-    let chart = Chart::new(BarController::new((ranges, estimates)).horizontal())
+    let chart = Chart::new(BarController::new((ranges, estimates)).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(labels))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(10.0))
         .framed();
@@ -206,7 +206,7 @@ fn grouped_and_stacked_radial_bars() {
     let wages = vec![6.0, 7.0, 7.0, 8.0].stack(COSTS).label("Wages");
     let rent = vec![3.0, 3.0, 4.0, 4.0].stack(COSTS).label("Rent");
 
-    let chart = Chart::new(BarController::new((revenue, wages, rent)).horizontal())
+    let chart = Chart::new(BarController::new((revenue, wages, rent)).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(["Q1", "Q2", "Q3", "Q4"]))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(25.0).step(5.0))
         .legend(LegendPosition::Bottom)
@@ -247,7 +247,7 @@ fn stacked_radial_bars_either_side_of_zero() {
     let gains = vec![6.0, -4.0, 9.0, -3.0].stack(NET).label("Gains");
     let losses = vec![4.0, -5.0, -3.0, 5.0].stack(NET).label("Losses");
 
-    let chart = Chart::new(BarController::new((gains, losses)).horizontal())
+    let chart = Chart::new(BarController::new((gains, losses)).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(["North", "East", "South", "West"]))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(-10.0).max(20.0).step(5.0))
         .legend(LegendPosition::Bottom)
@@ -285,7 +285,7 @@ fn error_bars_on_stacked_bars() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
     harness.snapshot("upright");
 
-    let chart = Chart::new(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS))).horizontal())
+    let chart = Chart::new(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS))).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(labels))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(25.0).step(5.0))
         .framed();

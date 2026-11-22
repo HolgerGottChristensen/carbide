@@ -112,7 +112,7 @@ fn horizontal() {
     let budget = vec![5.0, 5.0, 9.0, 9.0, 12.0, 12.0]
         .interpolation(Interpolation::Stepped(Stepped::Middle));
 
-    let chart = Chart::new(LineController::new((margin, budget)).horizontal())
+    let chart = Chart::new(LineController::new((margin, budget)).horizontal(true))
         .framed();
 
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
