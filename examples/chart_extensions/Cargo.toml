@@ -14,6 +14,7 @@ publish = false
 
 [dependencies]
 carbide = { workspace = true, features = ["chart", "controls", "i18n"] }
+chrono.workspace = true
 
 [dev-dependencies]
 carbide = { workspace = true, features = ["chart", "controls", "i18n", "testing"] }

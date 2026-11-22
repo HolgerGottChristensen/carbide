@@ -43,7 +43,7 @@ impl LinearScale {
     }
 
     /// Starts the scale at `min`, a number or a state of one, whatever the data: exactly there,
-    /// not rounded to a tick, as Chart.js's `min`. Values below it fall outside the chart area.
+    /// not rounded to a tick. Values below it fall outside the chart area.
     /// Without it, the scale starts at the smallest value, rounded down to a whole tick step.
     ///
     /// This is a builder method: on a `LinearScale` value, it takes the place of `Scale::min`,

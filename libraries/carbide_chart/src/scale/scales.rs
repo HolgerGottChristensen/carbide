@@ -159,9 +159,8 @@ impl ScaleRequest {
     }
 
     /// The kind of scale the chart builds for a default scale with this request: a time scale
-    /// when the data on it are dates and a category scale when they are text, as ag-charts picks
-    /// a time or a category axis from the data, otherwise the kind a controller asked for, or a
-    /// linear scale when none did.
+    /// when the data on it are dates and a category scale when they are text, otherwise the kind
+    /// a controller asked for, or a linear scale when none did.
     pub fn default_kind(&self) -> ScaleKind {
         self.data_kind().or(self.kind).unwrap_or(ScaleKind::Linear)
     }
@@ -315,8 +314,8 @@ impl ScaleBounds {
     /// has it, and returns its index. Indices are only ever added, so a category keeps its index
     /// while the bounds are collected. Controllers register every text value of their datasets
     /// before reading any (see `register_values` in `controller/drawing.rs`), so categories are
-    /// numbered in controller, dataset and point order, as Chart.js and matplotlib number them as
-    /// they first see them. The chart registers each scale's own labels first.
+    /// numbered in controller, dataset and point order, as they are first seen. The chart
+    /// registers each scale's own labels first.
     pub fn register_category(&self, id: &ScaleId, text: &str) -> usize {
         let mut categories = self.categories.borrow_mut();
         let categories = categories.entry(id.clone()).or_default();
@@ -507,13 +506,14 @@ impl Scales {
         };
 
         let value = scale.denormalize(normalized);
+        let label = if scale.has_categories() { None } else { scale.label(value, env) };
         let category = scale.category_at(value).map(|(index, fraction)| CategoryValue {
             index,
             name: scale.label(index, env),
             fraction,
         });
 
-        Some(ScaleValue { value, category })
+        Some(ScaleValue { value, label, category })
     }
 
     /// How a dataset bound to `x_id` and `y_id` is drawn: on a side each, around and out from the
@@ -594,6 +594,9 @@ impl Scales {
 pub struct ScaleValue {
     /// The value on the scale: a number, a time in seconds, or a position in categories.
     pub value: Scalar,
+    /// The scale's own text for the value, as it labels its ticks (see `Scale::label`): a date on
+    /// a time scale, or `None` on scales that show plain numbers.
+    pub label: Option<String>,
     /// The category there, on a scale with categories.
     pub category: Option<CategoryValue>,
 }

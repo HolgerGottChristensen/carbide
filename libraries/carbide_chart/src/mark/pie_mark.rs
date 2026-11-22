@@ -44,7 +44,7 @@ impl<M: PieMark<D>, D> DatasetPieMark for BoundPieMark<'_, M, D> {
 /// Sets how far out each part's slice reaches from its size (see `SizedDataSetExt::radii`): a
 /// variable-radius pie. The controller measures every dataset's sizes against the largest of
 /// them, so slices compare across rings: the largest reaches its ring's rim, and the others reach
-/// out in proportion, linearly, from the ring's inner edge, as ag-charts' `radiusKey` does. A part
+/// out in proportion, linearly, from the ring's inner edge. A part
 /// without a size reaches the rim; one with a size of zero or less has no slice. Along the sides,
 /// on bars of 100%, the size sets each segment's width instead.
 #[derive(Copy, Clone, Debug, Default)]

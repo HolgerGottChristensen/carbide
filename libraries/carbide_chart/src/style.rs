@@ -70,8 +70,7 @@ pub trait SeriesStyle: WidgetStyle {
 
     /// The colour of the outlines between neighbouring shapes that would otherwise run into each
     /// other, such as a pie's slices (see `PieController::outline_width`): the environment's
-    /// background by default, so a pie whose slices share a colour still shows them apart, as
-    /// Chart.js outlines its arcs in white.
+    /// background by default, so a pie whose slices share a colour still shows them apart.
     fn outline_color(&self, env: &Environment) -> Color {
         theme_color(env, EnvironmentColor::SystemBackground)
     }
