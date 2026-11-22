@@ -149,7 +149,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         ctx.save();
 
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
-        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, Orientation::Vertical, |_| true);
+        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, false, Orientation::Vertical, |_| true);
 
         let palette = Palette::new(ctx, self.palette_offset);
 

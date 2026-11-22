@@ -235,7 +235,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         ctx.save();
 
         let replaced = self.replaced_lines();
-        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true, self.orientation, |dataset_index| !replaced.contains(&dataset_index));
+        let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true, true, self.orientation, |dataset_index| !replaced.contains(&dataset_index));
         let palette = Palette::new(ctx, self.palette_offset);
 
         // Marks replacing lines are usually areas, so they go first, under every line; overlays

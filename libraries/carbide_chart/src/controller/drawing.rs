@@ -185,8 +185,10 @@ pub(crate) fn split_runs(points: &[Option<Scalar>], span_gaps: SpanGaps) -> Vec<
 /// `orientation` picks them. With `stacks`, datasets in the same stack are drawn at their running
 /// totals, one sum per stack (see `StackSums::single`), and each knows the line below it.
 /// Datasets bound to a scale the chart doesn't have are left out, and so are the datasets
-/// `counted` turns down, whose lines a mark replaces; they don't stack either.
-pub(crate) fn drawn_lines<T, D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, orientation: Orientation, counted: impl Fn(usize) -> bool) -> Vec<DrawnLine>
+/// `counted` turns down, whose lines a mark replaces; they don't stack either. With `loops`, a
+/// line around a full circle closes into a loop (see `closes`), as a radar's does; scatter lines
+/// stay open, as scattered data isn't a loop.
+pub(crate) fn drawn_lines<T, D>(datasets: &D, scales: &Scales, chart_area: Rect, stacks: bool, loops: bool, orientation: Orientation, counted: impl Fn(usize) -> bool) -> Vec<DrawnLine>
 where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
@@ -280,7 +282,7 @@ where
         let polar = polar.map(|(polar, index_on_angle)| PolarLine {
             polar,
             points: polar_points,
-            closed: index_on_angle && polar.is_full_circle() && closes(&runs, &xs, options.span_gaps),
+            closed: loops && index_on_angle && polar.is_full_circle() && closes(&runs, &xs, options.span_gaps),
             values_on_radius: index_on_angle,
             corners,
         });
@@ -768,7 +770,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical, |_| true);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, true, Orientation::Vertical, |_| true);
 
         let below: Vec<Option<usize>> = lines.iter().map(|line| line.below).collect();
         assert_eq!(below, vec![None, None, Some(0), None, Some(0)]);
@@ -793,7 +795,7 @@ mod tests {
         scales.fit(&bounds);
 
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
-        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, Orientation::Vertical, |_| true);
+        let lines = drawn_lines::<dyn LineDataSet, _>(&controller.dataset_sequence, &scales, area, true, true, Orientation::Vertical, |_| true);
 
         let y = scales.get(&ScaleId::Y).unwrap();
         let pixel = |value: Scalar| area.height() * (1.0 - y.normalize(value)) + area.bottom();
