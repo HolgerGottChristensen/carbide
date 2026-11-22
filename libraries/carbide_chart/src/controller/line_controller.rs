@@ -7,7 +7,7 @@ use crate::controller::drawing::{polar_frame, register_values, collect_point_bou
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
-use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
+use crate::controller::stacking::{normalized_totals, stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleKind, Scales};
 
@@ -95,7 +95,8 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             return offsets;
         }
 
-        let mut sums = StackSums::single();
+        let totals = normalized_totals(&self.dataset_sequence, places, self.orientation, &|dataset_index| !replaced.contains(&dataset_index));
+        let mut sums = StackSums::single().normalized(totals);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             if replaced.contains(&dataset_index) {

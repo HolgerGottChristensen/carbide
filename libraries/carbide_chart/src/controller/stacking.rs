@@ -4,7 +4,10 @@
 use std::collections::HashMap;
 use carbide::draw::Scalar;
 use crate::{DataSetOptions, StackId};
-use crate::scale::ScaleId;
+use crate::controller::orientation::Orientation;
+use crate::mark::AsDataSet;
+use crate::scale::{Coordinates, Places, ScaleId};
+use crate::sequence::Sequence;
 
 /// Which datasets stack together: those in one controller with the same stack on the same x and
 /// y scales. A dataset without a stack stands alone.
@@ -32,25 +35,40 @@ impl StackKey {
 pub(crate) struct StackSums {
     sums: HashMap<(StackKey, u64, bool), Scalar>,
     split_by_sign: bool,
+    /// For normalised stacks, the sum of the absolute values at each x (see `normalized_totals`),
+    /// which each value is scaled by.
+    totals: NormalizedTotals,
 }
+
+/// The sum of the absolute values of each normalised stack at each x value (see
+/// `StackId::normalized`).
+pub(crate) type NormalizedTotals = HashMap<(StackKey, u64), Scalar>;
 
 impl StackSums {
     /// Sums positive and negative values apart, so each grows away from zero on its own side,
     /// as bars stack.
     pub(crate) fn split_by_sign() -> StackSums {
-        StackSums { sums: HashMap::new(), split_by_sign: true }
+        StackSums { sums: HashMap::new(), split_by_sign: true, totals: HashMap::new() }
     }
 
     /// One running sum per stack, as lines stack: each line is drawn at the total of the
     /// datasets up to it, so the bands between neighbouring lines never have gaps.
     pub(crate) fn single() -> StackSums {
-        StackSums { sums: HashMap::new(), split_by_sign: false }
+        StackSums { sums: HashMap::new(), split_by_sign: false, totals: HashMap::new() }
+    }
+
+    /// Scales the values of normalised stacks by `totals` (see `normalized_totals`), so each such
+    /// stack sums to 100 at every x.
+    pub(crate) fn normalized(mut self, totals: NormalizedTotals) -> StackSums {
+        self.totals = totals;
+        self
     }
 
     /// Adds `y` to the stack `key` at `x`, and returns where it starts and ends: from the stack's
     /// sum so far (on `y`'s side, when split by sign) to that sum plus `y`. A dataset on its own
     /// starts at zero.
     pub(crate) fn add(&mut self, key: &StackKey, x: Scalar, y: Scalar) -> (Scalar, Scalar) {
+        let y = self.share(key, x, y);
         let side = !self.split_by_sign || y >= 0.0;
         // Adding 0.0 turns -0.0 into 0.0, so both find the same stack.
         let sum = self.sums.entry((key.clone(), (x + 0.0).to_bits(), side)).or_insert(0.0);
@@ -58,6 +76,60 @@ impl StackSums {
         *sum += y;
         (start, *sum)
     }
+}
+
+impl StackSums {
+    /// `y` as drawn in its stack: its share of 100 in a normalised stack, itself otherwise. A
+    /// stack whose values at `x` are all zero has nothing to share, and is drawn at zero.
+    fn share(&self, key: &StackKey, x: Scalar, y: Scalar) -> Scalar {
+        let StackKey::Stacked { stack, .. } = key else {
+            return y;
+        };
+        if !stack.is_normalized() {
+            return y;
+        }
+
+        match self.totals.get(&(key.clone(), (x + 0.0).to_bits())) {
+            Some(total) if *total > 0.0 => y / total * 100.0,
+            _ => 0.0,
+        }
+    }
+}
+
+/// The sum of the absolute values of each normalised stack at each x, over the datasets `counted`
+/// accepts, each read as `orientation` reads it (see `Orientation::for_dataset`), for
+/// `StackSums::normalized`. Empty, without reading any points, when no dataset is in a normalised
+/// stack.
+pub(crate) fn normalized_totals<T, D>(datasets: &D, places: &dyn Places, orientation: Orientation, counted: &dyn Fn(usize) -> bool) -> NormalizedTotals
+where
+    T: AsDataSet + ?Sized,
+    D: Sequence<T>,
+{
+    let mut totals = HashMap::new();
+
+    datasets.foreach(&mut |dataset_index, dataset| {
+        if !counted(dataset_index) {
+            return;
+        }
+
+        let dataset = dataset.as_dataset();
+        let options = dataset.options();
+        if !options.stack.as_ref().is_some_and(StackId::is_normalized) {
+            return;
+        }
+
+        let key = StackKey::new(&options, dataset_index);
+        let (index_id, value_id) = orientation.for_dataset(&options, places).index_and_value_scales(&options);
+        let coordinates = Coordinates::new(places, index_id, value_id);
+
+        dataset.points(&mut |_index, point| {
+            if let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) {
+                *totals.entry((key.clone(), (x + 0.0).to_bits())).or_insert(0.0) += y.abs();
+            }
+        });
+    });
+
+    totals
 }
 
 /// How far stacking moves the bars or line of the datasets whose overlay marks need it, such as
@@ -96,7 +168,27 @@ pub(crate) fn stack_offset(offsets: Option<&HashMap<u64, Scalar>>, x: Scalar) ->
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+    use crate::StackId;
+    use crate::scale::ScaleId;
     use super::{StackKey, StackSums};
+
+    /// In a normalised stack each value is its share of the absolute values' total at its x, so a
+    /// stack sums to 100, its negative values below zero; a stack of zeros is drawn at zero.
+    #[test]
+    fn normalised_stacks_share_100() {
+        let key = StackKey::Stacked { x_scale: ScaleId::X, y_scale: ScaleId::Y, stack: StackId::new("parts").normalized() };
+        let totals = HashMap::from([((key.clone(), 0.0f64.to_bits()), 40.0), ((key.clone(), 1.0f64.to_bits()), 0.0)]);
+
+        let mut sums = StackSums::split_by_sign().normalized(totals);
+        assert_eq!(sums.add(&key, 0.0, 10.0), (0.0, 25.0));
+        assert_eq!(sums.add(&key, 0.0, 20.0), (25.0, 75.0));
+        assert_eq!(sums.add(&key, 0.0, -10.0), (0.0, -25.0), "a negative value takes its share below zero");
+        assert_eq!(sums.add(&key, 1.0, 0.0), (0.0, 0.0));
+
+        let plain = StackKey::Stacked { x_scale: ScaleId::X, y_scale: ScaleId::Y, stack: StackId::new("parts") };
+        assert_eq!(sums.add(&plain, 0.0, 10.0), (0.0, 10.0), "the same name without normalising is another stack");
+    }
 
     /// Split by sign, a negative value starts from the negative sums, not from the top of the
     /// positive ones; with a single sum, it subtracts from the total.

@@ -9,13 +9,13 @@ use std::ops::Range;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, Fill, SpanGaps, Value};
+use crate::{DataColor, DataSetOptions, Fill, SpanGaps, StackId, Value};
 use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
 use crate::controller::orientation::{is_polar, normalized_pixel, pixel, Oriented, Orientation};
-use crate::controller::stacking::{StackKey, StackSums};
+use crate::controller::stacking::{normalized_totals, StackKey, StackSums};
 use crate::scale::{Axis, Coordinates, Polar, PolarRole, Scale, ScaleBounds, ScaleId, Scales, System};
 use crate::scale::axis::angle_corners;
 use crate::scale::polar::{Ring, RingShape};
@@ -37,7 +37,8 @@ where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
 {
-    let mut sums = StackSums::single();
+    let totals = normalized_totals(datasets, &*bounds, orientation, &counted);
+    let mut sums = StackSums::single().normalized(totals);
     // The stacks that already have a non-empty line, which a later `Fill::Stack` fills down to.
     let mut filled_stacks: HashSet<StackKey> = HashSet::new();
 
@@ -68,6 +69,12 @@ where
         // An empty dataset adds nothing, not even its fill's baseline, and isn't a line to fill to.
         if !has_points {
             return;
+        }
+
+        // A normalised stack's shares run from zero, as bars from zero, so the value scale shows the
+        // whole 0 to 100.
+        if stacks && options.stack.as_ref().is_some_and(StackId::is_normalized) {
+            bounds.include(value_scale, 0.0, 0.0);
         }
 
         let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
@@ -194,7 +201,7 @@ where
     D: Sequence<T>,
 {
     let mut lines: Vec<DrawnLine> = vec![];
-    let mut sums = StackSums::single();
+    let mut sums = StackSums::single().normalized(normalized_totals(datasets, scales, orientation, &counted));
     let mut tops: HashMap<StackKey, usize> = HashMap::new();
 
     datasets.foreach(&mut |dataset_index, dataset| {

@@ -5,7 +5,7 @@ use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::drawing::{polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
 use crate::legend::{LegendItem, LegendMarker};
-use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
+use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
 use crate::mark::{BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole};
 use crate::sequence::{IntoSequence, Sequence};
@@ -100,7 +100,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         register_values(&self.dataset_sequence, bounds, self.orientation, true);
 
-        let mut stacks = StackSums::split_by_sign();
+        let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(&*bounds));
         let offsets = self.stack_offsets(&*bounds, self.has_overlays());
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -222,7 +222,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         // Second pass: the bars, stacked in the same order as their bounds were collected, in the
         // colours of the chart's `SeriesStyle`, or the marks that replace them. Third pass: the
         // overlays, on top of every dataset's bars.
-        let mut stacks = StackSums::split_by_sign();
+        let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(scales));
         let palette = Palette::new(ctx, self.palette_offset);
         ctx.save();
 
@@ -329,6 +329,19 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 }
 
 impl<D: Sequence<dyn BarDataSet>> BarController<D> {
+    /// The totals of the normalised stacks at each x (see `StackId::normalized`), over the
+    /// datasets drawn as bars: those whose bars a mark replaces don't stack.
+    fn normalized_totals(&self, places: &dyn Places) -> NormalizedTotals {
+        let mut replaced = vec![];
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            if has_primary_mark(dataset) {
+                replaced.push(dataset_index);
+            }
+        });
+
+        normalized_totals(&self.dataset_sequence, places, self.orientation, &|dataset_index| !replaced.contains(&dataset_index))
+    }
+
     /// Whether any dataset has an overlay mark, drawn on top of the bars.
     fn has_overlays(&self) -> bool {
         let mut overlays = false;
@@ -346,7 +359,7 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
             return offsets;
         }
 
-        let mut stacks = StackSums::split_by_sign();
+        let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(places));
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             // Bars a mark replaces don't stack, and a dataset alone adds to no one else's sums.
