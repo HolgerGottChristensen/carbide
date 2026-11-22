@@ -7,7 +7,7 @@ pub use bar_controller::BarController;
 pub(crate) use bar_controller::bar_slot;
 pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
-pub use pie_controller::{PieController, PiePart, DEFAULT_RING_SPACING};
+pub use pie_controller::{PieController, PiePart, DEFAULT_OUTLINE_WIDTH, DEFAULT_RING_SPACING};
 pub use scatter_controller::ScatterController;
 use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};

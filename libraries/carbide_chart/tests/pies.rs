@@ -337,3 +337,17 @@ fn changing_data() {
     rings.value_mut().push(vec![("Food", 20.0), ("Rent", 50.0), ("Other", 30.0)]);
     harness.snapshot("rings_after");
 }
+
+/// A pie with its outlines turned off, its slices sharing one colour. Pins down that
+/// `outline_width(0.0)` draws no outlines, the slices filled edge to edge as before outlines were
+/// added, so slices of one colour run into each other, which is what the default outlines are for.
+#[test]
+fn without_outlines() {
+    let votes = vec![("Red", 12.0), ("Blue", 19.0), ("Yellow", 3.0), ("Green", 5.0)].color(DataColor::Palette(3));
+
+    let chart = Chart::new(PieController::new(votes).outline_width(0.0))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("without_outlines");
+}

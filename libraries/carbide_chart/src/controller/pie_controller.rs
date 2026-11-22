@@ -16,7 +16,7 @@ use crate::mark::BarFrame;
 use crate::scale::{GridShape, ScaleBounds, ScaleKind, Scales, System};
 use crate::scale::polar::{angle_range, direction};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::style::axis_style;
+use crate::style::{axis_style, series_style};
 
 /// How far a leader line runs out from its slice before it turns level.
 const RADIAL_RUN: Scalar = 12.0;
@@ -30,6 +30,8 @@ const LABEL_SPACING: Scalar = 4.0;
 const SEAM_OVERLAP: Scalar = 0.75;
 /// The gap between neighbouring rings, in pixels, unless set (see `PieController::ring_spacing`).
 pub const DEFAULT_RING_SPACING: Scalar = 4.0;
+/// The width of each part's outline, in pixels, unless set (see `PieController::outline_width`).
+pub const DEFAULT_OUTLINE_WIDTH: Scalar = 2.0;
 
 /// One part of a whole, a slice of a pie: its name, its value, and its share of its dataset's
 /// total, from 0 to 100, as a pie controller's label text reads it (see `PieController::label_text`).
@@ -66,6 +68,7 @@ pub struct PieController<D> {
     bar_percentage: Scalar,
     spacing: Scalar,
     ring_spacing: Scalar,
+    outline_width: Scalar,
     label_text: Option<Arc<dyn Fn(&PiePart) -> String>>,
     labels: bool,
 }
@@ -79,6 +82,7 @@ impl<D: Debug> Debug for PieController<D> {
             .field("bar_percentage", &self.bar_percentage)
             .field("spacing", &self.spacing)
             .field("ring_spacing", &self.ring_spacing)
+            .field("outline_width", &self.outline_width)
             .field("labels", &self.labels)
             .finish_non_exhaustive()
     }
@@ -94,6 +98,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
             bar_percentage: 1.0,
             spacing: 0.0,
             ring_spacing: DEFAULT_RING_SPACING,
+            outline_width: DEFAULT_OUTLINE_WIDTH,
             label_text: None,
             labels: true,
         }
@@ -134,6 +139,16 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// its centre, and the outer ring the rim. 0 lets rings touch.
     pub fn ring_spacing(mut self, spacing: Scalar) -> PieController<D> {
         self.ring_spacing = spacing.max(0.0);
+        self
+    }
+
+    /// How wide the outline around each part is, in pixels, centred on its edges, in the
+    /// `SeriesStyle`'s outline colour (the background by default), so neighbouring slices stay
+    /// apart even when they share a colour: `DEFAULT_OUTLINE_WIDTH` (2) by default, as Chart.js
+    /// outlines its arcs. A part's outline is at most a quarter of its thickness and its length,
+    /// so thin parts keep their colour. 0 draws none.
+    pub fn outline_width(mut self, width: Scalar) -> PieController<D> {
+        self.outline_width = width.max(0.0);
         self
     }
 
@@ -443,6 +458,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect) {
         let (placed, ruler) = self.layout(scales, chart_area);
         let palette = Palette::new(ctx, self.palette_offset);
+        let outline = series_style(ctx.env()).outline_color(ctx.env());
         ctx.save();
 
         // Rings that touch the next one out reach a little into it, so the seam between two rings,
@@ -509,6 +525,18 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                 frame.trace_rect(ctx, part_side, part_thickness, base, head);
                 ctx.set_fill_style(part_color(part, &place.options, dataset_index, &palette));
                 ctx.fill();
+                // The outline is at most a quarter of the part's thickness and length, so a thin part
+                // keeps its colour instead of vanishing under it.
+                let length = match frame {
+                    BarFrame::Around(_) => (head - base).abs() * (part_side + part_thickness / 2.0),
+                    BarFrame::Sides { .. } => (head - base).abs(),
+                };
+                let width = self.outline_width.min(part_thickness.min(length) / 4.0);
+                if width > 0.0 {
+                    ctx.set_line_width(width);
+                    ctx.set_stroke_style(outline);
+                    ctx.stroke();
+                }
                 drawn.push((dataset_index, part.index, part_side + part_thickness));
             }
         });
