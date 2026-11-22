@@ -3,12 +3,12 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{warn_other_roles, register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales, System};
+use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales};
 
 /// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line
 /// through them in order, following the dataset's `interpolation`, as a line chart does.
@@ -188,22 +188,10 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     return;
                 };
 
-                // Around a circle, marks that replace points (bubbles) are drawn where the points
-                // are; overlays aren't drawn yet.
-                let polar = match scales.system(&options.x_scale, &options.y_scale) {
-                    None => return,
-                    Some(System::Cartesian) => None,
-                    Some(System::Polar { .. }) if role == MarkRole::Overlay => {
-                        scales.warn_once("polar scatter overlays", &options.x_scale, &options.y_scale, || format!("Overlays, such as error bars, on points on the polar scales {:?} and {:?} are not drawn yet", options.x_scale.name(), options.y_scale.name()));
-                        return;
-                    }
-                    // Scatter datasets ask for x to be the angle; drawn with the other roles, a
-                    // mark would leave its points.
-                    Some(System::Polar { x_is_angle: true }) => scales.polar(&options.x_scale, &options.y_scale).map(|polar| (polar, true)),
-                    Some(System::Polar { x_is_angle: false }) => {
-                        warn_other_roles(scales, &options.x_scale, &options.y_scale);
-                        return;
-                    }
+                // Around a circle, marks are drawn where the points are. Scatter datasets ask for
+                // x to be the angle; drawn with the other roles, a mark would leave its points.
+                let Some(frame) = polar_frame(scales, &options.x_scale, &options.y_scale, true) else {
+                    return;
                 };
 
                 let mut canvas = ScatterCanvas {
@@ -216,7 +204,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     dataset_index,
                     palette: &palette,
                     sizes,
-                    polar,
+                    polar: frame.as_ref(),
                 };
 
                 dataset.scatter_marks(&mut |mark| {

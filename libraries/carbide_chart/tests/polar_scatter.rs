@@ -3,7 +3,7 @@
 //! them, fills, bubbles, colours, the legend) and the scales it can draw on (linear, log, category
 //! and time angles, partial sweeps, holes).
 
-use carbide_chart::{AngleDirection, Axis, CategoryScale, Chart, DataColor, DatasetExt, Estimate, Fill, Interpolation, LegendPosition, LineController, LinearScale, LogScale, RangeDataSetExt, ScaleId, ScatterController, SizedDataSetExt, SpanGaps, Stepped, TimeScale, TimeScaleZone};
+use carbide_chart::{AngleDirection, Axis, CategoryScale, Chart, DataColor, DatasetExt, Estimate, GridShape, Spread, Fill, Interpolation, LegendPosition, LineController, LinearScale, LogScale, RangeDataSetExt, ScaleId, ScatterController, SizedDataSetExt, SpanGaps, Stepped, TimeScale, TimeScaleZone};
 use carbide_core::draw::{Angle, Dimension};
 use carbide_testing::Harness;
 use chrono::{DateTime, FixedOffset};
@@ -30,6 +30,24 @@ fn several_datasets_without_lines() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("several_datasets_without_lines");
+}
+
+/// Wind directions in degrees on an angle scale fixed from 0 to 360 in steps of 45, whatever the
+/// data. Pins down that `min` and `max` replace the fitted range exactly, so 90 is at the right
+/// and 180 at the bottom, 360 landing on 0 and labelled once; that `step` puts ticks and spokes
+/// every 45 degrees; and that a fixed radius from 0 reaches the centre for the calm readings.
+#[test]
+fn degrees_around_a_full_circle() {
+    let wind = vec![(10.0, 4.0), (95.0, 7.0), (170.0, 5.5), (185.0, 6.0), (265.0, 8.0), (320.0, 3.0)];
+    let calm = vec![(45.0, 0.5), (225.0, 1.0)];
+
+    let chart = Chart::new(ScatterController::new((wind, calm)))
+        .scale(ScaleId::X, LinearScale::new(Axis::Radial).min(0.0).max(360.0).step(45.0))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("degrees_around_a_full_circle");
 }
 
 /// Open lines through scattered points, filled. Pins down that a scatter line around the circle
@@ -184,11 +202,56 @@ fn categories_and_times_around_the_circle() {
     harness.snapshot("hours_of_a_day");
 }
 
+/// Scattered points with error bars along both axes, on a fixed angle in degrees. Pins down that
+/// an error in the radius runs along the point's spoke, its caps across the spoke; that an error
+/// in the angle runs around the circle at the point's distance, an arc, its caps along the spokes
+/// at both ends; and that each whisker is drawn only where both its ends are there.
+#[test]
+fn error_bars_along_both_axes() {
+    let readings = vec![
+        Spread { x: Some(30.0), y: Some(6.0), x_low: Some(15.0), x_high: Some(50.0), low: Some(5.0), high: Some(7.5) },
+        Spread { x: Some(120.0), y: Some(8.0), x_low: Some(100.0), x_high: Some(135.0), low: None, high: None },
+        Spread { x: Some(210.0), y: Some(4.0), x_low: None, x_high: None, low: Some(2.5), high: Some(5.0) },
+        Spread { x: Some(300.0), y: Some(7.0), x_low: Some(280.0), x_high: Some(330.0), low: Some(6.0), high: Some(8.5) },
+    ].error_bars();
+
+    let chart = Chart::new(ScatterController::new(readings))
+        .scale(ScaleId::X, LinearScale::new(Axis::Radial).min(0.0).max(360.0).step(45.0))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("error_bars_along_both_axes");
+}
+
+/// Scattered points with error bars along both axes on a category angle, with polygon rings set
+/// on the radius scale, where scatter controllers otherwise get circles. Pins down that an error in
+/// the angle runs straight along the polygon's edges, turning at a corner it passes, as steps do;
+/// that its caps lie across the edge at each end, on the edge the whisker runs along, not along
+/// the spoke; and that errors in the radius run along the spokes, with caps across them, as around
+/// circles.
+#[test]
+fn error_bars_along_both_axes_around_polygons() {
+    let readings = vec![
+        Spread { x: Some(0.5), y: Some(6.0), x_low: Some(0.2), x_high: Some(0.8), low: Some(5.0), high: Some(7.0) },
+        Spread { x: Some(2.0), y: Some(8.0), x_low: Some(1.6), x_high: Some(2.4), low: None, high: None },
+        Spread { x: Some(3.5), y: Some(4.0), x_low: Some(3.1), x_high: Some(3.9), low: Some(3.0), high: Some(5.0) },
+        Spread { x: Some(5.0), y: Some(7.0), x_low: None, x_high: None, low: Some(6.0), high: Some(8.5) },
+    ].error_bars();
+
+    let chart = Chart::new(ScatterController::new(readings))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(["Speed", "Strength", "Stamina", "Passing", "Shooting", "Defence"]))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).grid_shape(GridShape::Polygon))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("error_bars_along_both_axes_around_polygons");
+}
+
 /// A radar with scattered points on the same scales, the points named by category, and a
 /// dataset with error bars. Pins down that both controllers draw around one circle, the points
 /// at their categories' angles; that the scatter controller's circles win over the radar's
-/// polygons for the rings; and that the dataset with error bars has its points drawn but no
-/// whiskers, as overlays aren't drawn around a circle yet.
+/// polygons for the rings; and that the error bars run along the spokes of their points.
 #[test]
 fn with_a_radar_and_error_bars() {
     let skills = ["Speed", "Strength", "Stamina", "Passing", "Shooting", "Defence"];

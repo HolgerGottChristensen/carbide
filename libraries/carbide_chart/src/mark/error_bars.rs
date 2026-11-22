@@ -116,7 +116,8 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Erro
 }
 
 /// Whiskers through a line's points, each the same length across, on top of every dataset's lines
-/// and points.
+/// and points. Around a circle they run along each point's spoke, or around its ring on a lying
+/// radar, whose values run around the circle (see `LineCanvas::add_whisker`).
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for ErrorBars<C> {
     fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         whiskers(data, &coordinates, &mut |x, _, low, high| f(x, low.min(high), low.max(high)));
@@ -124,16 +125,11 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for Err
 
     fn draw(&self, data: &D, canvas: &mut LineCanvas) {
         let coordinates = canvas.coordinates;
-        let cap = self.line_cap_length / 2.0;
         canvas.begin_lines();
 
-        whiskers(data, &coordinates, &mut |x, _, low, high| {
+        whiskers(data, &coordinates, &mut |x, y, low, high| {
             let offset = canvas.stack_offset(x);
-            let (low, high) = (canvas.position(x, low + offset), canvas.position(x, high + offset));
-
-            canvas.add_line(low, high);
-            canvas.add_line(Position::new(low.x - cap, low.y), Position::new(low.x + cap, low.y));
-            canvas.add_line(Position::new(high.x - cap, high.y), Position::new(high.x + cap, high.y));
+            canvas.add_whisker(x, y + offset, low + offset, high + offset, self.line_cap_length);
         });
 
         let color = match self.whisker_color() {
@@ -147,7 +143,8 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for Err
 /// Whiskers through scatter points along both axes, each the same length across, on top of every
 /// dataset's points: upright from the point's low to its high y, and level from its x low to its x
 /// high (`RangePoint::x_low`, `x_high`). Each is drawn only where both its ends are there, so a
-/// point has either whisker, both or neither.
+/// point has either whisker, both or neither. Around a circle, the y whisker runs along the point's
+/// spoke and the x whisker around its ring (see `ScatterCanvas::add_whisker`).
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> ScatterMark<D> for ErrorBars<C> {
     /// Both ends of each whisker, so the scales cover them as well as the points.
     fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar)) {
@@ -165,24 +162,15 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> ScatterMark<D> for 
 
     fn draw(&self, data: &D, canvas: &mut ScatterCanvas) {
         let coordinates = canvas.coordinates;
-        let cap = self.line_cap_length / 2.0;
         canvas.begin_lines();
 
         scatter_whiskers(data, &coordinates, &mut |x, y, along_y, along_x| {
             if let Some((low, high)) = along_y {
-                let (low, high) = (canvas.position(x, low), canvas.position(x, high));
-
-                canvas.add_line(low, high);
-                canvas.add_line(Position::new(low.x - cap, low.y), Position::new(low.x + cap, low.y));
-                canvas.add_line(Position::new(high.x - cap, high.y), Position::new(high.x + cap, high.y));
+                canvas.add_whisker((x, y), (x, low), (x, high), self.line_cap_length);
             }
 
             if let Some((low, high)) = along_x {
-                let (low, high) = (canvas.position(low, y), canvas.position(high, y));
-
-                canvas.add_line(low, high);
-                canvas.add_line(Position::new(low.x, low.y - cap), Position::new(low.x, low.y + cap));
-                canvas.add_line(Position::new(high.x, high.y - cap), Position::new(high.x, high.y + cap));
+                canvas.add_whisker((x, y), (low, y), (high, y), self.line_cap_length);
             }
         });
 

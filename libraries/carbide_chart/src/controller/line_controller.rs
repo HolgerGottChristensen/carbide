@@ -3,13 +3,13 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{register_values, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
 use crate::controller::stacking::{stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::scale::{Coordinates, GridShape, Places, ScaleBounds, ScaleKind, Scales, System};
+use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleKind, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
 /// follows the dataset's `interpolation`: straight by default, or smooth, monotone or stepped.
@@ -133,25 +133,22 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             }
 
             let options = dataset.options();
-            let (index_id, value_id) = self.orientation.for_dataset(&options, scales).index_and_value_scales(&options);
+            let wants_x_angle = self.orientation.polar_roles().0 == PolarRole::Angle;
+            let orientation = self.orientation.for_dataset(&options, scales);
+            let (index_id, value_id) = orientation.index_and_value_scales(&options);
             let (Some(index_scale), Some(value_scale)) = (scales.get(index_id), scales.get(value_id)) else {
                 return;
             };
 
-            // Marks around a circle aren't drawn yet.
-            match scales.system(index_id, value_id) {
-                Some(System::Cartesian) => {}
-                Some(System::Polar { .. }) => {
-                    scales.warn_once("polar line marks", index_id, value_id, || format!("Marks on lines on the polar scales {:?} and {:?} are not drawn yet", index_id.name(), value_id.name()));
-                    return;
-                }
-                None => return,
-            }
+            // Around a circle, the canvas draws in the circle's frame (see `LineCanvas`).
+            let Some(frame) = polar_frame(scales, index_id, value_id, wants_x_angle) else {
+                return;
+            };
 
             let mut canvas = LineCanvas {
                 ctx: &mut *ctx,
                 coordinates: Coordinates::new(scales, index_id, value_id),
-                orientation: self.orientation,
+                orientation,
                 index_scale,
                 value_scale,
                 area: chart_area,
@@ -159,6 +156,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 dataset_index,
                 palette,
                 stack_offsets: offsets.dataset(dataset_index),
+                polar: frame.as_ref(),
             };
 
             dataset.line_marks(&mut |mark| {

@@ -136,7 +136,7 @@ impl PolarLine {
 /// Whether a polar line with these `runs`, from points whose x values or gaps are `xs`, closes
 /// into a loop: when it is drawn in one run, unless a missing value at either end breaks it there,
 /// which only `SpanGaps::Never` does (see `split_runs`).
-fn closes(runs: &[Range<usize>], xs: &[Option<Scalar>], span_gaps: SpanGaps) -> bool {
+pub(crate) fn closes(runs: &[Range<usize>], xs: &[Option<Scalar>], span_gaps: SpanGaps) -> bool {
     let broken_at_ends = span_gaps == SpanGaps::Never && (xs.first() == Some(&None) || xs.last() == Some(&None));
     runs.len() == 1 && runs[0].len() >= 2 && !broken_at_ends
 }
@@ -214,22 +214,11 @@ where
         };
 
         // Around the circle, the angle is whichever of the two scales has that role.
-        let polar = match scales.system(index_id, value_id) {
+        let (polar, corners) = match polar_frame(scales, index_id, value_id, wants_x_angle) {
             None => return,
-            Some(System::Cartesian) => None,
-            Some(System::Polar { x_is_angle }) if x_is_angle != wants_x_angle => {
-                warn_other_roles(scales, index_id, value_id);
-                return;
-            }
-            Some(System::Polar { x_is_angle: true }) => scales.polar(index_id, value_id).map(|polar| (polar, true)),
-            Some(System::Polar { x_is_angle: false }) => scales.polar(value_id, index_id).map(|polar| (polar, false)),
+            Some(None) => (None, None),
+            Some(Some(frame)) => (Some((frame.polar, frame.x_is_angle)), frame.corners),
         };
-
-        let corners = polar.and_then(|(_, index_on_angle)| {
-            let (angle_scale, radius_id) = if index_on_angle { (index_scale, value_id) } else { (value_scale, index_id) };
-            let corners = angle_corners(angle_scale);
-            (scales.grid_shape(radius_id) == GridShape::Polygon && corners.len() >= 3).then_some(corners)
-        });
 
         let key = StackKey::new(&options, dataset_index);
         let coordinates = Coordinates::new(scales, index_id, value_id);
@@ -294,6 +283,44 @@ where
     });
 
     lines
+}
+
+/// How a polar dataset lies around the chart's circle: the mapping onto it, whether its x scale
+/// is the angle, and the corners of the radius scale's rings when they are polygons, which steps
+/// and fills follow (see `RingShape`).
+pub(crate) struct PolarFrame {
+    pub(crate) polar: Polar,
+    pub(crate) x_is_angle: bool,
+    pub(crate) corners: Option<Vec<Scalar>>,
+}
+
+impl PolarFrame {
+    /// The shape of the rings around the circle.
+    pub(crate) fn rings(&self) -> RingShape<'_> {
+        RingShape { polar: &self.polar, corners: self.corners.as_deref() }
+    }
+}
+
+/// How a dataset on `x_id` and `y_id` is drawn: `Some(None)` along the sides of the chart area,
+/// `Some(Some(frame))` around its circle, or `None` when it isn't drawn: its scales belong to no
+/// one system, or took the other roles than its controller asked for (`wants_x_angle`), which is
+/// logged once, or no circle was fitted yet.
+pub(crate) fn polar_frame(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId, wants_x_angle: bool) -> Option<Option<PolarFrame>> {
+    let x_is_angle = match scales.system(x_id, y_id)? {
+        System::Cartesian => return Some(None),
+        System::Polar { x_is_angle } if x_is_angle != wants_x_angle => {
+            warn_other_roles(scales, x_id, y_id);
+            return None;
+        }
+        System::Polar { x_is_angle } => x_is_angle,
+    };
+
+    let (angle_id, radius_id) = if x_is_angle { (x_id, y_id) } else { (y_id, x_id) };
+    let polar = scales.polar(angle_id, radius_id)?;
+    let corners = angle_corners(scales.get(angle_id)?);
+    let corners = (scales.grid_shape(radius_id) == GridShape::Polygon && corners.len() >= 3).then_some(corners);
+
+    Some(Some(PolarFrame { polar, x_is_angle, corners }))
 }
 
 /// Logs, once per pair, that a polar dataset on `x_id` and `y_id` isn't drawn because its scales

@@ -161,12 +161,13 @@ fn around_a_clock() {
     harness.snapshot("around_a_clock");
 }
 
-/// A radar with a band and one with error bars, next to a plain one. Pins down that marks on a
-/// radar aren't drawn yet: the band, which replaces its dataset's line, leaves nothing, and the
-/// error bars, an overlay, leave their dataset's loop without whiskers; the plain radar is drawn
-/// as usual, and the marks' values still fit the radius.
+/// A radar with a band and one with error bars, next to a plain one. Pins down that a band on a
+/// radar is the ring between the loop through its lows and the loop through its highs, both
+/// closed and stroked in the dataset's colour, in place of the dataset's line; that error bars
+/// run along each point's spoke, from its low to its high, with caps across the spoke, over every
+/// dataset's lines; and that the plain radar is drawn as usual.
 #[test]
-fn marks_not_drawn_yet() {
+fn band_and_error_bars() {
     let band = vec![
         Range { x: 0.0, low: 6.0, high: 9.0 },
         Range { x: 1.0, low: 5.0, high: 7.0 },
@@ -190,7 +191,45 @@ fn marks_not_drawn_yet() {
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
-    harness.snapshot("marks_not_drawn_yet");
+    harness.snapshot("band_and_error_bars");
+}
+
+/// A stepped band with a missing value, and error bars on a lying radar. Pins down that a band
+/// broken by a gap is open, each run filled between its lows and highs back along the lows, its
+/// steps turning around the polygon rings; and that on a lying radar, whose values run around the
+/// circle, the whiskers run around the ring at each category's distance, from the low's angle to
+/// the high's, with caps along the spoke.
+#[test]
+fn stepped_band_with_a_gap_and_error_bars_around_the_ring() {
+    let band = vec![
+        Range { x: 0.0, low: Some(6.0), high: Some(9.0) },
+        Range { x: 1.0, low: Some(5.0), high: Some(7.0) },
+        Range { x: 2.0, low: None, high: None },
+        Range { x: 3.0, low: Some(7.0), high: Some(10.0) },
+        Range { x: 4.0, low: Some(4.0), high: Some(6.0) },
+        Range { x: 5.0, low: Some(3.0), high: Some(5.0) },
+    ].range().interpolation(Interpolation::Stepped(Stepped::After));
+
+    let chart = Chart::new(LineController::new(band))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("stepped_band_with_a_gap");
+
+    let estimates = vec![
+        Estimate { x: 0.0, y: 6.0, low: 5.0, high: 7.0 },
+        Estimate { x: 1.0, y: 7.5, low: 6.5, high: 8.0 },
+        Estimate { x: 2.0, y: 5.5, low: 4.5, high: 6.5 },
+        Estimate { x: 3.0, y: 8.0, low: 7.0, high: 9.0 },
+        Estimate { x: 4.0, y: 6.5, low: 5.5, high: 7.5 },
+        Estimate { x: 5.0, y: 7.0, low: 6.0, high: 8.0 },
+    ].error_bars();
+
+    let chart = Chart::new(LineController::new(estimates).horizontal())
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("error_bars_around_the_ring");
 }
 
 /// A lying radar, its categories out along the radius, filled. Pins down that a line whose

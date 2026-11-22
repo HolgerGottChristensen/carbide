@@ -168,6 +168,37 @@ impl Ring<'_> {
         self.polar.at(angle, distance)
     }
 
+    /// How far the ring is from the centre on the spoke at screen angle `angle`, as a share of
+    /// its distance: 1 on a circle and at a polygon's corners, less between them, where its edges
+    /// cut inside the circle.
+    pub(crate) fn reach(&self, angle: Scalar) -> Scalar {
+        let at = self.point(angle);
+        let center = self.polar.circle().center;
+        let reach = ((at.x - center.x).powi(2) + (at.y - center.y).powi(2)).sqrt() / self.distance;
+        if reach.is_finite() && reach > 0.0 { reach } else { 1.0 }
+    }
+
+    /// The unit direction the ring runs in at screen angle `angle`, heading the way `heading`'s
+    /// sign says: towards greater angles when positive. On a polygon it is the edge on that side,
+    /// so at a corner it is the edge the ring goes on to.
+    pub(crate) fn tangent(&self, angle: Scalar, heading: Scalar) -> Position {
+        let sign = if heading < 0.0 { -1.0 } else { 1.0 };
+        let probe = angle + sign * 1e-6;
+        let corners = self.all_corners();
+
+        if let Some(pair) = corners.windows(2).find(|pair| pair[0] <= probe && probe <= pair[1]) {
+            let (from, to) = (self.polar.at(pair[0], self.distance), self.polar.at(pair[1], self.distance));
+            let (dx, dy) = ((to.x - from.x) * sign, (to.y - from.y) * sign);
+            let length = (dx * dx + dy * dy).sqrt();
+            if length > 0.0 {
+                return Position::new(dx / length, dy / length);
+            }
+        }
+
+        // Clockwise on the screen, the circle at screen angle `a` runs along `(cos a, sin a)`.
+        Position::new(angle.cos() * sign, angle.sin() * sign)
+    }
+
     /// Traces along the ring from screen angle `from`, where the path is, to `to`, either way
     /// round: an arc, or straight from corner to corner.
     pub(crate) fn trace(&self, path: &mut (impl PathSink + ?Sized), from: Scalar, to: Scalar) {
@@ -482,6 +513,23 @@ mod tests {
         assert_eq!(traced.0.len(), 3, "the corners at the right and the bottom, then the end");
         assert!(close(traced.0[0], Position::new(150.0, 100.0)));
         assert!(close(traced.0[1], Position::new(100.0, 150.0)));
+    }
+
+    /// A ring's tangent runs around a circle, and along the edge on the side it heads to around a
+    /// polygon, the edge it goes on to at a corner.
+    #[test]
+    fn rings_run_along_their_edges() {
+        let polar = Polar::new(&angle(LinearScale::new(Axis::Radial)), &radius_scale(0.0), unit_circle());
+        let circle = Ring { polar: &polar, distance: 50.0, corners: None };
+        assert!(close(circle.tangent(0.0, 1.0), Position::new(1.0, 0.0)), "rightwards at the top, clockwise");
+        assert!(close(circle.tangent(0.0, -1.0), Position::new(-1.0, 0.0)), "leftwards, the other way round");
+
+        let corners = [0.0, FRAC_PI_2, PI, 3.0 * FRAC_PI_2];
+        let square = Ring { polar: &polar, distance: 50.0, corners: Some(&corners) };
+        let down_right = Position::new(0.5f64.sqrt(), 0.5f64.sqrt());
+        assert!(close(square.tangent(FRAC_PI_2 / 2.0, 1.0), down_right), "along the edge from the top to the right");
+        assert!(close(square.tangent(0.0, 1.0), down_right), "at the top corner, the edge clockwise from it");
+        assert!(close(square.tangent(0.0, -1.0), Position::new(-(0.5f64.sqrt()), 0.5f64.sqrt())), "and the edge counter-clockwise from it");
     }
 
     /// An arc is traced as curves of at most a quarter turn, ending on the circle where it

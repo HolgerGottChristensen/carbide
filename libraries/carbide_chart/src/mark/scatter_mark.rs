@@ -8,7 +8,9 @@ use crate::controller::drawing::{point_color, resolve_color, Palette};
 use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::{Axis, Coordinates, Polar, Scale};
+use crate::scale::{Axis, Coordinates, Scale};
+use crate::controller::drawing::PolarFrame;
+use crate::mark::line_mark::polar_whisker;
 use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
@@ -130,8 +132,8 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) dataset_index: usize,
     pub(crate) palette: &'x Palette,
     pub(crate) sizes: SizeScale,
-    /// On polar scales, the mapping onto the chart's circle, and whether x is the angle.
-    pub(crate) polar: Option<(Polar, bool)>,
+    /// How the dataset lies around the circle, when it is on polar scales.
+    pub(crate) polar: Option<&'x PolarFrame>,
 }
 
 impl ScatterCanvas<'_, '_, '_, '_> {
@@ -150,15 +152,50 @@ impl ScatterCanvas<'_, '_, '_, '_> {
     /// Where the point at `x` and `y` on the dataset's scales falls on the screen: around the
     /// chart's circle when they are polar scales.
     pub fn position(&self, x: Scalar, y: Scalar) -> Position {
-        if let Some((polar, x_on_angle)) = self.polar {
-            let (x, y) = (self.x_scale.normalize(x), self.y_scale.normalize(y));
-            return if x_on_angle { polar.position(x, y) } else { polar.position(y, x) };
+        if let Some(frame) = self.polar {
+            let (angle, distance) = self.polar_frame_position(frame, x, y);
+            return frame.polar.at(angle, distance);
         }
 
         Position::new(
             pixel(Axis::Horizontal, self.x_scale, x, self.area),
             pixel(Axis::Vertical, self.y_scale, y, self.area),
         )
+    }
+
+    /// Where the point at `x` and `y` is around the circle: its screen angle and its distance from
+    /// the centre.
+    fn polar_frame_position(&self, frame: &PolarFrame, x: Scalar, y: Scalar) -> (Scalar, Scalar) {
+        let (x, y) = (self.x_scale.normalize(x), self.y_scale.normalize(y));
+        let (angle, radius) = if frame.x_is_angle { (x, y) } else { (y, x) };
+        (frame.polar.angle(angle), frame.polar.distance(radius))
+    }
+
+    /// Adds a whisker through the point `point`, from `from` to `to`, each an x and a y on the
+    /// dataset's scales, with a cap `cap` pixels across at each end, to the path `begin_lines`
+    /// started. Along the sides, it is straight, its caps across it. Around a circle, it follows
+    /// the coordinate that changes: out along the spoke for the radius, its caps across the spoke,
+    /// or around the ring through the point for the angle, its caps across the ring.
+    pub fn add_whisker(&mut self, point: (Scalar, Scalar), from: (Scalar, Scalar), to: (Scalar, Scalar), cap: Scalar) {
+        if let Some(frame) = self.polar {
+            let through = self.polar_frame_position(frame, point.0, point.1);
+            let (from, to) = (self.polar_frame_position(frame, from.0, from.1), self.polar_frame_position(frame, to.0, to.1));
+            polar_whisker(self.ctx, frame, through, from, to, cap);
+            return;
+        }
+
+        let half = cap / 2.0;
+        let (low, high) = (self.position(from.0, from.1), self.position(to.0, to.1));
+        self.add_line(low, high);
+
+        // Caps across the whisker: level across an upright one, upright across a level one.
+        if from.0 == to.0 {
+            self.add_line(Position::new(low.x - half, low.y), Position::new(low.x + half, low.y));
+            self.add_line(Position::new(high.x - half, high.y), Position::new(high.x + half, high.y));
+        } else {
+            self.add_line(Position::new(low.x, low.y - half), Position::new(low.x, low.y + half));
+            self.add_line(Position::new(high.x, high.y - half), Position::new(high.x, high.y + half));
+        }
     }
 
     /// The radius for `size` on the controller's size scale (see `SizeScale::radius`).

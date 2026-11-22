@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use carbide::state::IntoReadState;
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
 
@@ -16,6 +16,12 @@ pub struct LinearScale {
     range: Range<Scalar>,
     nice_range: Range<Scalar>,
     ticks: Vec<Scalar>,
+    /// Where the scale starts, set with `min`, in place of its fitted start.
+    fixed_min: Option<Box<dyn AnyReadState<T=Scalar>>>,
+    /// Where the scale ends, set with `max`, in place of its fitted end.
+    fixed_max: Option<Box<dyn AnyReadState<T=Scalar>>>,
+    /// The distance between ticks, set with `step`, in place of a nice one picked for the range.
+    fixed_step: Option<Box<dyn AnyReadState<T=Scalar>>>,
 }
 
 impl LinearScale {
@@ -27,7 +33,43 @@ impl LinearScale {
             range: 0.0..1.0,
             nice_range: 0.0..1.0,
             ticks: vec![],
+            fixed_min: None,
+            fixed_max: None,
+            fixed_step: None,
         }
+    }
+
+    /// Starts the scale at `min`, a number or a state of one, whatever the data: exactly there,
+    /// not rounded to a tick, as Chart.js's `min`. Values below it fall outside the chart area.
+    /// Without it, the scale starts at the smallest value, rounded down to a whole tick step.
+    ///
+    /// This is a builder method: on a `LinearScale` value, it takes the place of `Scale::min`,
+    /// which reads where the scale starts after a fit; call that as `Scale::min(&scale)`.
+    pub fn min(mut self, min: impl IntoReadState<Scalar>) -> LinearScale {
+        self.fixed_min = Some(min.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// Ends the scale at `max`, a number or a state of one, whatever the data, as `min` starts
+    /// it. An angle in degrees spans a whole circle with `.min(0.0).max(360.0)`.
+    pub fn max(mut self, max: impl IntoReadState<Scalar>) -> LinearScale {
+        self.fixed_max = Some(max.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// Puts the ticks `step` apart, a number or a state of one, on whole multiples of it,
+    /// instead of a nice step picked for the range: `.step(45.0)` on an angle in degrees. A
+    /// step too small for the range, giving more than 1000 ticks, or not above zero, is ignored.
+    pub fn step(mut self, step: impl IntoReadState<Scalar>) -> LinearScale {
+        self.fixed_step = Some(step.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// The fixed start, end and step, as their states were last synced, leaving out values that
+    /// aren't finite.
+    fn fixed(&self) -> (Option<Scalar>, Option<Scalar>, Option<Scalar>) {
+        let read = |state: &Option<Box<dyn AnyReadState<T=Scalar>>>| state.as_ref().map(|state| *state.value_dyn()).filter(|value| value.is_finite());
+        (read(&self.fixed_min), read(&self.fixed_max), read(&self.fixed_step).filter(|step| *step > 0.0))
     }
 
     /// Draws the scale on the given side of the chart area, a side or a state of one. Horizontal
@@ -81,7 +123,8 @@ impl LinearScale {
     }
 
     /// Widens a range with no width, as from a single point or equal values, by 5% of the value
-    /// at both ends, or by 1 at zero, so the value sits inside the scale with ticks around it.
+    /// at both ends, or by 1 at zero, so the value sits inside the scale with ticks around it. With
+    /// one end fixed (see `min` and `max`), only the other end moves, by twice as much.
     fn widen_empty_range(&mut self) {
         if self.range.start == self.range.end {
             let offset = if self.range.end == 0.0 {
@@ -90,8 +133,16 @@ impl LinearScale {
                 self.range.end.abs() * 0.05
             };
 
-            self.range.end += offset;
-            self.range.start -= offset;
+            // A fixed end stays where it was set; the free end moves instead, by twice as much.
+            let (fixed_min, fixed_max, _) = self.fixed();
+            match (fixed_min.is_some(), fixed_max.is_some()) {
+                (true, false) => self.range.end += 2.0 * offset,
+                (false, true) => self.range.start -= 2.0 * offset,
+                _ => {
+                    self.range.end += offset;
+                    self.range.start -= offset;
+                }
+            }
         }
     }
 }
@@ -110,7 +161,11 @@ impl Scale for LinearScale {
     }
 
     fn sync(&mut self, env: &mut Environment) -> bool {
-        self.axis_options.sync(env)
+        let mut changed = self.axis_options.sync(env);
+        for state in [&mut self.fixed_min, &mut self.fixed_max, &mut self.fixed_step].into_iter().flatten() {
+            changed |= state.sync(env);
+        }
+        changed
     }
 
     /// With an offset, the mapped range is widened by half a tick step at both ends.
@@ -152,6 +207,18 @@ impl Scale for LinearScale {
             self.range.end = 1.0;
         }
 
+        // A fixed end replaces the data's; one fixed end past the other data end moves that too,
+        // so the range never turns over.
+        let (fixed_min, fixed_max, _) = self.fixed();
+        if let Some(min) = fixed_min {
+            self.range.start = min;
+            self.range.end = self.range.end.max(min);
+        }
+        if let Some(max) = fixed_max {
+            self.range.end = max;
+            self.range.start = self.range.start.min(max);
+        }
+
         self.widen_empty_range();
         self.recalculate_ticks();
     }
@@ -161,10 +228,17 @@ impl Scale for LinearScale {
     }
 
     /// Picks a "nice" spacing (1, 2 or 5 times a power of ten) giving at most `tick_limits`
-    /// ticks, and rounds the range out to whole steps.
+    /// ticks, and rounds the range out to whole steps. With a fixed start, end or step (see
+    /// `min`, `max` and `step`), those are kept instead (see `fixed_ticks`).
     fn recalculate_ticks(&mut self) {
         let range_min = self.range.start;
         let range_max = self.range.end;
+
+        let (fixed_min, fixed_max, fixed_step) = self.fixed();
+        if fixed_min.is_some() || fixed_max.is_some() || fixed_step.is_some() {
+            self.fixed_ticks(fixed_min.is_some(), fixed_max.is_some(), fixed_step);
+            return;
+        }
 
         // We have one less space between ticks than ticks
         let max_spaces = self.tick_limits().max(2) - 1;
@@ -215,6 +289,47 @@ impl Scale for LinearScale {
 
     fn ticks(&self) -> &[Scalar] {
         &self.ticks
+    }
+}
+
+impl LinearScale {
+    /// The ticks for a range with a fixed start, end or step. The step is the fixed one, or a nice
+    /// one for the range, as without; an end that isn't fixed is rounded out to a whole step, and
+    /// a fixed end is kept exactly, with a tick of its own. In between, ticks fall on whole
+    /// multiples of the step, so `.min(3.0)` with a step of 10 has ticks at 3, 10, 20, ...
+    fn fixed_ticks(&mut self, min_fixed: bool, max_fixed: bool, step: Option<Scalar>) {
+        let (start, end) = (self.range.start, self.range.end);
+
+        let max_spaces = self.tick_limits().max(2) - 1;
+        let step = step
+            .filter(|step| (end - start) / step <= 1000.0)
+            .unwrap_or_else(|| nice_num((end - start) / max_spaces as Scalar).max(MIN_TICK_SPACING));
+
+        let nice_min = if min_fixed { start } else { steps_at_or_below(start, step) * step };
+        let nice_max = if max_fixed { end } else { steps_at_or_above(end, step) * step };
+
+        let decimal_places = u32::max(decimal_places(step), decimal_places(nice_min)).min(10);
+        let factor = rounding_factor(decimal_places);
+        let tolerance = step / 1000.0;
+
+        let mut ticks = vec![nice_min];
+        let mut k = steps_at_or_below(nice_min, step) + 1.0;
+        loop {
+            let tick = (k * step * factor).round() / factor;
+            if tick >= nice_max - tolerance {
+                break;
+            }
+            if tick > nice_min + tolerance {
+                ticks.push(tick);
+            }
+            k += 1.0;
+        }
+        if nice_max > nice_min + tolerance {
+            ticks.push(nice_max);
+        }
+
+        self.nice_range = nice_min..nice_max;
+        self.ticks = ticks;
     }
 }
 
@@ -297,7 +412,72 @@ fn decimal_places(x: Scalar) -> u32 {
 #[cfg(test)]
 mod tests {
     use carbide::draw::Scalar;
+    use carbide::environment::Environment;
+    use carbide::state::{LocalState, State};
     use crate::scale::{Axis, LinearScale, Scale};
+
+    /// A fixed start, end and step replace the fitted ones exactly, whatever the data: an angle
+    /// from 0 to 360 in steps of 45, for data from 10 to 320.
+    #[test]
+    fn min_max_and_step_replace_the_fitted_range() {
+        let mut scale = LinearScale::new(Axis::Radial).min(0.0).max(360.0).step(45.0);
+        scale.set_range(10.0, 320.0);
+
+        assert_eq!(scale.range(), 0.0..360.0);
+        assert_eq!(scale.ticks(), &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0, 360.0]);
+        assert_eq!(scale.normalize(180.0), 0.5);
+    }
+
+    /// With only one end fixed, the other is fitted and rounded out to a nice step as before; a
+    /// fixed end off the steps keeps a tick of its own, the others on whole multiples of the step.
+    #[test]
+    fn one_fixed_end_keeps_the_other_fitted() {
+        let mut from_zero = LinearScale::new(Axis::Vertical).min(0.0);
+        from_zero.set_range(5.0, 87.0);
+        assert_eq!(from_zero.range(), 0.0..90.0);
+        assert_eq!(from_zero.ticks().len(), 10);
+
+        let mut from_three = LinearScale::new(Axis::Vertical).min(3.0);
+        from_three.set_range(5.0, 50.0);
+        assert_eq!(from_three.range(), 3.0..50.0);
+        assert_eq!(&from_three.ticks()[..3], &[3.0, 5.0, 10.0], "the fixed start, then whole steps of 5");
+
+        let mut up_to = LinearScale::new(Axis::Vertical).max(100.0);
+        up_to.set_range(500.0, 900.0);
+        assert_eq!(up_to.range().end, 100.0, "a fixed end below the data moves the start with it");
+        assert!(up_to.range().start <= 100.0);
+    }
+
+    /// A step too small for the range, or not above zero, is ignored, and a nice one picked.
+    #[test]
+    fn unusable_steps_are_ignored() {
+        let mut tiny = LinearScale::new(Axis::Vertical).min(0.0).max(1000.0).step(0.01);
+        tiny.set_range(0.0, 1000.0);
+        assert_eq!(tiny.ticks().len(), 11, "100 000 ticks would be too many: {:?}", tiny.ticks().len());
+
+        let mut negative = LinearScale::new(Axis::Vertical).step(-5.0);
+        negative.set_range(0.0, 10.0);
+        assert_eq!(negative.ticks(), &[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]);
+    }
+
+    /// The fixed ends are states, read as they were last synced, so a scale can be zoomed by
+    /// changing them.
+    #[test]
+    fn fixed_ends_are_states() {
+        let min = LocalState::new(0.0);
+        let mut scale = LinearScale::new(Axis::Vertical).min(min.clone()).max(10.0);
+        let mut env = Environment::new();
+
+        scale.sync(&mut env);
+        scale.set_range(2.0, 8.0);
+        assert_eq!(scale.range(), 0.0..10.0);
+
+        let mut min = min;
+        *min.value_mut() = 4.0;
+        assert!(scale.sync(&mut env), "a changed end is a change");
+        scale.set_range(2.0, 8.0);
+        assert_eq!(scale.range(), 4.0..10.0);
+    }
 
     /// A range where min equals max, as from a dataset of one point or of equal values, is
     /// widened by 5% of the value (or by 1 at zero), and gets ticks around the value. It used to panic: rounding the ticks computed
@@ -310,7 +490,7 @@ mod tests {
 
             let ticks = scale.ticks();
             assert!(ticks.len() >= 2, "{value}: expected ticks around the value, got {ticks:?}");
-            assert!(scale.min() < value && value < scale.max(), "{value}: the value should be inside {}..{}", scale.min(), scale.max());
+            assert!(Scale::min(&scale) < value && value < Scale::max(&scale), "{value}: the value should be inside {}..{}", Scale::min(&scale), Scale::max(&scale));
 
             let normalized = scale.normalize(value);
             assert!(normalized.is_finite() && normalized > 0.0 && normalized < 1.0, "{value}: normalized to {normalized}");
@@ -325,8 +505,8 @@ mod tests {
         let mut scale = LinearScale::new(Axis::Horizontal);
         scale.set_range(2.0, 2.0);
 
-        assert!((scale.min() - 1.9).abs() < 1e-12, "the scale should start at 1.9, not {}", scale.min());
-        assert!((scale.max() - 2.1).abs() < 1e-12, "the scale should end at 2.1, not {}", scale.max());
+        assert!((Scale::min(&scale) - 1.9).abs() < 1e-12, "the scale should start at 1.9, not {}", Scale::min(&scale));
+        assert!((Scale::max(&scale) - 2.1).abs() < 1e-12, "the scale should end at 2.1, not {}", Scale::max(&scale));
         assert!((scale.normalize(2.0) - 0.5).abs() < 1e-9, "the point should be centred");
         assert!((scale.ticks()[0] - 1.9).abs() < 1e-12, "the first tick should be 1.9, not {}", scale.ticks()[0]);
     }

@@ -121,14 +121,16 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for Ran
             canvas.translucent(inverted)
         });
         let runs = canvas.runs(&xs);
+        // Around a full circle, a band in one run is a ring between two loops.
+        let closed = canvas.closes(&runs, &xs);
 
         for run in &runs {
-            canvas.fill_band(&highs[run.clone()], &lows[run.clone()], fill, inverted);
+            canvas.fill_band(&highs[run.clone()], &lows[run.clone()], fill, inverted, closed);
         }
 
         for run in &runs {
-            canvas.stroke_line(&highs[run.clone()], color);
-            canvas.stroke_line(&lows[run.clone()], color);
+            canvas.stroke_line(&highs[run.clone()], color, closed);
+            canvas.stroke_line(&lows[run.clone()], color, closed);
         }
     }
 }
