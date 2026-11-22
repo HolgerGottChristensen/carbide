@@ -1,9 +1,10 @@
 //! Pies, doughnuts and parts of a whole: a `PieController`, each dataset a whole and its points
 //! its parts. Around a circle, rings of slices, labelled outside; along the sides, bars of 100%.
 
-use carbide_chart::{Axis, CategoryScale, Chart, DataColor, DatasetExt, LegendPosition, LinearScale, PieController, ScaleId, SizedDataSetExt};
+use carbide_chart::{AngleDirection, Axis, CategoryScale, Chart, DataColor, DataPoint, DatasetExt, LegendPosition, LinearScale, PieController, ScaleId, SizedDataSetExt, Value};
 use carbide_core::color::GREY;
-use carbide_core::draw::{Angle, Dimension};
+use carbide_core::draw::{Angle, Dimension, Scalar};
+use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
 
 mod common;
@@ -226,4 +227,113 @@ fn radii_as_segment_widths_along_the_sides() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("radii_as_segment_widths_along_the_sides");
+}
+
+/// Pies in colours other than the palette's from the start: a controller starting two colours
+/// in, parts with colours of their own, and a dataset picking one palette colour. Pins down that
+/// `palette_offset` shifts each part's palette colour, as for bars, so its first slice takes the
+/// third colour; that a point's own colour, fixed or picked from the palette, wins over its index
+/// while the parts without one keep their palette colours, in the legend too; and that a dataset
+/// picking a palette colour draws every slice in it.
+#[test]
+fn colours() {
+    #[derive(Clone, Debug)]
+    struct Slice {
+        name: &'static str,
+        value: Scalar,
+        color: DataColor,
+    }
+
+    impl DataPoint for Slice {
+        fn x(&self) -> Option<Value<'_>> {
+            Some(Value::Text(self.name))
+        }
+
+        fn y(&self) -> Option<Value<'_>> {
+            Some(Value::Number(self.value))
+        }
+
+        fn color(&self) -> DataColor {
+            self.color
+        }
+    }
+
+    let votes = vec![("Red", 12.0), ("Blue", 19.0), ("Yellow", 3.0), ("Green", 5.0)];
+
+    let chart = Chart::new(PieController::new(votes.clone()).palette_offset(2))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("palette_offset");
+
+    let slices = vec![
+        Slice { name: "Mine", value: 30.0, color: DataColor::Color(GREY) },
+        Slice { name: "Yours", value: 25.0, color: DataColor::ByDataSet },
+        Slice { name: "Theirs", value: 25.0, color: DataColor::Palette(4) },
+        Slice { name: "Others", value: 20.0, color: DataColor::ByDataSet },
+    ];
+
+    let chart = Chart::new(PieController::new(slices))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("colours_of_their_own");
+
+    let chart = Chart::new(PieController::new(votes.color(DataColor::Palette(3))))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("a_picked_palette_colour");
+}
+
+/// Pies running other ways round: counter-clockwise from the top, and clockwise from the right.
+/// Pins down that a pie follows its angle scale's direction and start angle: the first slice
+/// starts at the start angle and the slices follow each other the way the scale runs, each
+/// label still on the side its slice faces.
+#[test]
+fn direction() {
+    let votes = vec![("Red", 12.0), ("Blue", 19.0), ("Yellow", 3.0), ("Green", 5.0), ("Purple", 2.0)];
+
+    let chart = Chart::new(PieController::new(votes.clone()))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Radial).direction(AngleDirection::CounterClockwise))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("counter_clockwise");
+
+    let chart = Chart::new(PieController::new(votes))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Radial).start_angle(Angle::Degrees(90.0)).end_angle(Angle::Degrees(450.0)))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("from_the_right");
+}
+
+/// A pie whose parts are held in a state, changed between renders, and nested rings whose
+/// datasets are a state, with a ring added. Pins down that a pie follows its data: when a value
+/// grows and a part is appended, every slice's share and every label move to fit, the new part
+/// taking the next palette colour and a label of its own; and when a dataset is added, the rings
+/// share the radius three ways instead of two, the new one outermost and labelled.
+#[test]
+fn changing_data() {
+    let mut votes = LocalState::new(vec![("Red", 12.0), ("Blue", 19.0), ("Yellow", 3.0)]);
+
+    let chart = Chart::new(PieController::new(votes.clone()))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("parts_before");
+
+    *votes.value_mut() = vec![("Red", 30.0), ("Blue", 19.0), ("Yellow", 3.0), ("Green", 8.0)];
+    harness.snapshot("parts_after");
+
+    let first = vec![("Food", 30.0), ("Rent", 45.0), ("Other", 25.0)];
+    let second = vec![("Food", 25.0), ("Rent", 40.0), ("Other", 35.0)];
+    let mut rings = LocalState::new(vec![first.clone(), second.clone()]);
+
+    let chart = Chart::new(PieController::new(rings.clone()))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).inner_radius(0.2))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("rings_before");
+
+    rings.value_mut().push(vec![("Food", 20.0), ("Rent", 50.0), ("Other", 30.0)]);
+    harness.snapshot("rings_after");
 }
