@@ -30,6 +30,9 @@ use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, Scale
 /// as a band between each point's low and high value (`RangeDataSetExt::range`). Those datasets
 /// don't stack, and are drawn before the other datasets' lines, as bands are areas.
 ///
+/// `show_line(false)` leaves the lines out, and the areas with them, drawing only the points, at
+/// the same places as with lines, stacked where they stack.
+///
 /// `horizontal` lays the line down, with the same data, as `BarController::horizontal` does for
 /// bars: the categories run down the dataset's y scale, the first at the top on a category scale,
 /// and the values along its x scale. Everything that follows the categories follows them down:
@@ -40,6 +43,7 @@ pub struct LineController<D> {
     pub(crate) dataset_sequence: D,
     palette_offset: Opt<usize>,
     horizontal: Opt<bool>,
+    show_line: Opt<bool>,
 }
 
 impl<D: Sequence<dyn LineDataSet>> LineController<D> {
@@ -49,6 +53,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             dataset_sequence: datasets.into_sequence(),
             palette_offset: constant(0),
             horizontal: constant(false),
+            show_line: constant(true),
         }
     }
 
@@ -58,6 +63,15 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
     /// line up with horizontal bars. `false`, upright, by default.
     pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> LineController<D> {
         self.horizontal = option(horizontal);
+        self
+    }
+
+    /// Draws the line through each dataset's points with `true`, a value or a state of one, and
+    /// with `false` only the points. A dataset's area (`DatasetExt::fill`) is drawn with its line,
+    /// so it is left out too, and its baseline no longer counts towards the value scale's bounds.
+    /// `true` by default.
+    pub fn show_line(mut self, show_line: impl IntoReadState<bool>) -> LineController<D> {
+        self.show_line = option(show_line);
         self
     }
 
@@ -190,6 +204,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         let mut changed = self.dataset_sequence.sync(env);
         changed |= self.palette_offset.sync(env);
         changed |= self.horizontal.sync(env);
+        changed |= self.show_line.sync(env);
         changed
     }
 
@@ -224,11 +239,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             });
         });
 
-        collect_point_bounds(&self.dataset_sequence, bounds, true, true, self.orientation(), |dataset_index| !replaced.contains(&dataset_index));
+        collect_point_bounds(&self.dataset_sequence, bounds, get(&self.show_line), true, self.orientation(), |dataset_index| !replaced.contains(&dataset_index));
     }
 
-    /// Each named dataset as a line in its colour, or a square when it is filled or a mark, such
-    /// as a band, replaces its line, unless one of its marks gives an entry of its own
+    /// Each named dataset as a line in its colour, a point when lines aren't shown, or a square
+    /// when it is filled or a mark, such as a band, replaces its line, unless one of its marks gives an entry of its own
     /// (`LineMark::legend`).
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         let replaced = self.replaced_lines();
@@ -237,8 +252,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             env,
             &Palette::from_env(env, get(&self.palette_offset)),
             items,
-            |dataset_index, options| {
-                if options.fill == Fill::None && !replaced.contains(&dataset_index) { LegendMarker::Line } else { LegendMarker::Square }
+            |dataset_index, options| match (replaced.contains(&dataset_index), get(&self.show_line), options.fill) {
+                (true, _, _) => LegendMarker::Square,
+                (false, false, _) => LegendMarker::Point,
+                (false, true, Fill::None) => LegendMarker::Line,
+                (false, true, _) => LegendMarker::Square,
             },
             |dataset, context| first_mark_entry(|f| dataset.line_marks(&mut |mark| f(mark.legend(context)))),
         );
@@ -255,9 +273,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         // go on top of everything.
         let offsets = self.stack_offsets(scales, &replaced);
         self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &palette);
-        draw_fills(&lines, ctx, scales, chart_area, &palette);
-        draw_lines(&lines, ctx, chart_area, &palette);
-        add_lines(&lines, shapes, scales, chart_area, &palette);
+        if get(&self.show_line) {
+            draw_fills(&lines, ctx, scales, chart_area, &palette);
+            draw_lines(&lines, ctx, chart_area, &palette);
+            add_lines(&lines, shapes, scales, chart_area, &palette);
+        }
         draw_points(&lines, ctx, &palette, shapes, |_| true);
         self.draw_marks(MarkRole::Overlay, &offsets, ctx, scales, chart_area, &palette);
 
@@ -313,5 +333,23 @@ mod tests {
         let x = bounds.get(&ScaleId::X);
         assert_eq!(x.range(), Some((-5.0, 19.0)), "the values, and the baseline they fill to");
         assert_eq!(x.kind(), None);
+    }
+
+    /// Without lines, a filled dataset has no area, so its baseline is left out of the value
+    /// scale's bounds, and the legend shows a point for it.
+    #[test]
+    fn hidden_lines_leave_out_their_areas_and_show_points_in_the_legend() {
+        use crate::legend::LegendMarker;
+
+        let line = LineController::new(vec![12.0, 19.0, 8.0].fill(Fill::Value(-5.0)).label("Sales")).show_line(false);
+
+        let mut bounds = ScaleBounds::default();
+        line.collect_bounds(&mut bounds, &mut Environment::new());
+        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((8.0, 19.0)), "only the points, not the baseline");
+
+        let mut items = vec![];
+        line.legend_items(&Environment::new(), &mut items);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].marker, LegendMarker::Point);
     }
 }

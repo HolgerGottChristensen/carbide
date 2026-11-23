@@ -3,6 +3,7 @@
 
 use carbide::chart::{Axis, Chart, DatasetExt, Fill, Interpolation, LinearScale, LineController, LineDataSet, ScaleId, SpanGaps, StackId, Stepped, ZoomWindow};
 use carbide::controls::picker::Picker;
+use carbide::controls::slider::SliderStepping;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
 use carbide::draw::Scalar;
@@ -21,9 +22,11 @@ pub(crate) enum Data {
     Dense,
 }
 
-/// The kind of curve through the points; smooth curves take the tension slider's tension.
+/// The kind of curve through the points; smooth curves take the tension slider's tension, and
+/// with none only the points are drawn.
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum Curve {
+    None,
     Straight,
     Smooth,
     Monotone,
@@ -40,6 +43,17 @@ enum Gaps {
     Bridge,
     /// Bridge gaps up to the gap slider's width along x.
     BridgeWithin,
+}
+
+/// What the lines are filled to; a value takes the fill slider's value.
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum FillTo {
+    None,
+    Origin,
+    Value,
+    Bottom,
+    Top,
+    Stack,
 }
 
 impl Data {
@@ -89,7 +103,8 @@ pub(crate) struct Options {
     tension: LocalState<Scalar>,
     gaps: LocalState<Gaps>,
     gap_width: LocalState<Scalar>,
-    fill: LocalState<Fill>,
+    fill: LocalState<FillTo>,
+    fill_value: LocalState<Scalar>,
     stacked: LocalState<bool>,
     x_zoom: LocalState<ZoomWindow>,
     y_zoom: LocalState<ZoomWindow>,
@@ -106,7 +121,8 @@ impl Options {
             tension: LocalState::new(0.4),
             gaps: LocalState::new(Gaps::Break),
             gap_width: LocalState::new(3.0),
-            fill: LocalState::new(Fill::None),
+            fill: LocalState::new(FillTo::None),
+            fill_value: LocalState::new(30.0),
             stacked: LocalState::new(false),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
@@ -138,6 +154,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("2000 noisy readings").tag(Data::Dense),
         )),
         Picker::new("Curve", options.curve.clone(), (
+            Text::new("None, only points").tag(Curve::None),
             Text::new("Straight").tag(Curve::Straight),
             Text::new("Smooth").tag(Curve::Smooth),
             Text::new("Monotone").tag(Curve::Monotone),
@@ -146,13 +163,14 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Steps in the middle, upright").tag(Curve::StepsMiddleVertical),
             Text::new("Steps after").tag(Curve::StepsAfter),
         )),
-        // Only smooth curves have a tension, and only the sensors' data has gaps to bridge.
+        // Only smooth curves have a tension, only the sensors' data has gaps to bridge, and
+        // without a line there is nothing to bridge them with, nor an area to fill.
         shown_when(
             Map1::read_map(options.curve.clone(), |curve: &Curve| *curve == Curve::Smooth),
             slider("Tension", &options.tension, 0.0, 1.0, 0.05, |tension| format!("{tension:.2}"))
         ),
         shown_when(
-            Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Gaps),
+            Map2::read_map(options.data.clone(), options.curve.clone(), |data: &Data, curve: &Curve| *data == Data::Gaps && *curve != Curve::None),
             VStack::new((
                 Picker::new("Gaps", options.gaps.clone(), (
                     Text::new("Break the line").tag(Gaps::Break),
@@ -166,14 +184,23 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
                 ),
             )).cross_axis_alignment(CrossAxisAlignment::Start)
         ),
-        Picker::new("Fill", options.fill.clone(), (
-            Text::new("None").tag(Fill::None),
-            Text::new("To zero").tag(Fill::Origin),
-            Text::new("To 30").tag(Fill::Value(30.0)),
-            Text::new("To the bottom").tag(Fill::Bottom),
-            Text::new("To the top").tag(Fill::Top),
-            Text::new("To the line below").tag(Fill::Stack),
-        )),
+        shown_when(
+            Map1::read_map(options.curve.clone(), |curve: &Curve| *curve != Curve::None),
+            VStack::new((
+                Picker::new("Fill", options.fill.clone(), (
+                    Text::new("None").tag(FillTo::None),
+                    Text::new("To zero").tag(FillTo::Origin),
+                    Text::new("To a value").tag(FillTo::Value),
+                    Text::new("To the bottom").tag(FillTo::Bottom),
+                    Text::new("To the top").tag(FillTo::Top),
+                    Text::new("To the line below").tag(FillTo::Stack),
+                )),
+                shown_when(
+                    Map1::read_map(options.fill.clone(), |fill: &FillTo| *fill == FillTo::Value),
+                    slider("Fill to", &options.fill_value, -100.0, 100.0, SliderStepping::Smooth, |value| format!("{value:.0}"))
+                ),
+            )).cross_axis_alignment(CrossAxisAlignment::Start)
+        ),
         Toggle::new("Stacked", options.stacked.clone()),
         Toggle::new("Lying", options.horizontal.clone()),
         VStack::new((
@@ -190,7 +217,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
 /// The lines of `data`.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
     let interpolation = Map2::read_map(options.curve.clone(), options.tension.clone(), |curve: &Curve, tension: &Scalar| match curve {
-        Curve::Straight => Interpolation::Linear,
+        Curve::None | Curve::Straight => Interpolation::Linear,
         Curve::Smooth => Interpolation::Smooth { tension: *tension },
         Curve::Monotone => Interpolation::Monotone,
         Curve::StepsBefore => Interpolation::Stepped(Stepped::Before),
@@ -205,6 +232,15 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         Gaps::BridgeWithin => SpanGaps::Within(*width),
     });
 
+    let fill = Map2::read_map(options.fill.clone(), options.fill_value.clone(), |fill: &FillTo, value: &Scalar| match fill {
+        FillTo::None => Fill::None,
+        FillTo::Origin => Fill::Origin,
+        FillTo::Value => Fill::Value(*value),
+        FillTo::Bottom => Fill::Bottom,
+        FillTo::Top => Fill::Top,
+        FillTo::Stack => Fill::Stack,
+    });
+
     let lines: Vec<Box<dyn LineDataSet>> = data.data().into_iter().map(|(name, values)| {
         let stack = Map1::read_map(options.stacked.clone(), move |stacked: &bool| {
             if *stacked {
@@ -217,12 +253,14 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         values.label(name)
             .interpolation(interpolation.clone())
             .span_gaps(span_gaps.clone())
-            .fill(options.fill.clone())
+            .fill(fill.clone())
             .stack(stack)
             .boxed::<dyn LineDataSet>()
     }).collect();
 
-    shared.apply(Chart::new(LineController::new(lines).horizontal(options.horizontal.clone()))
+    shared.apply(Chart::new(LineController::new(lines)
+        .horizontal(options.horizontal.clone())
+        .show_line(Map1::read_map(options.curve.clone(), |curve: &Curve| *curve != Curve::None)))
         .title(options.title.clone())
         .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()))
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).fit_visible(options.fit_visible.clone())))

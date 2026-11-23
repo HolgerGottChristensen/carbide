@@ -17,13 +17,13 @@ use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, M
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
-use carbide::controls::slider::Slider;
+use carbide::controls::slider::{Slider, SliderStepping};
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::{ControlsExt, TextInput};
 use carbide::draw::color::rgba_bytes;
 use carbide::draw::Scalar;
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{LocalState, Map1, ReadState, State};
+use carbide::state::{IntoReadState, LocalState, Map1, ReadState, State};
 use carbide::widget::*;
 use carbide::ui;
 
@@ -280,8 +280,9 @@ pub(crate) fn zoom_controls(label: &str, zoom: &LocalState<ZoomWindow>) -> impl 
     )).cross_axis_alignment(CrossAxisAlignment::Start)
 }
 
-/// A slider for a number, with its value beside it.
-pub(crate) fn slider(label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, step: Scalar, format: fn(&Scalar) -> String) -> impl Widget + use<> {
+/// A slider for a number, with its value beside it. `step` is a step size to snap to, or
+/// `SliderStepping::Smooth` for any value in between.
+pub(crate) fn slider<S: IntoReadState<SliderStepping<Scalar>>>(label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, step: S, format: fn(&Scalar) -> String) -> impl Widget + use<S> {
     HStack::new((
         Text::new(label.to_string()),
         Slider::new(value.clone(), min, max).step(step),

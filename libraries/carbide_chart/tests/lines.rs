@@ -120,6 +120,24 @@ fn horizontal() {
     harness.snapshot("horizontal");
 }
 
+/// Two lines, one filled to zero, with the lines left out. Pins down that only the points are
+/// drawn, at the same places as with lines, and that the fill goes with its line, so zero is no
+/// longer in the y scale's range.
+#[test]
+fn points_only() {
+    let visits = vec![30.0, 35.0, 32.0, 40.0, 45.0, 42.0, 50.0]
+        .fill(Fill::Origin)
+        .label("Visits");
+    let signups = vec![22.0, 25.0, 28.0, 26.0, 33.0, 38.0, 36.0]
+        .label("Signups");
+
+    let chart = Chart::new(LineController::new((visits, signups)).show_line(false))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.snapshot("points_only");
+}
+
 // ===============================
 //  Utility
 // ===============================
