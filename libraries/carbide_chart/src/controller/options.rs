@@ -1,7 +1,7 @@
 //! Controller options, each a value or a state of one, as every option of a chart is: a builder
 //! takes either, and the controller reads it as last synced.
 
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateContract, ValueState};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExt, StateContract, ValueState};
 
 /// A controller's option: a value or a state of one.
 pub(crate) type Opt<T> = Box<dyn AnyReadState<T=T>>;

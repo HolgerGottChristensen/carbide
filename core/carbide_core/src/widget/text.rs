@@ -5,7 +5,7 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::scene::SceneManager;
-use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
+use crate::state::{IntoReadState, ReadState, ReadStateExt};
 use crate::text::text_justify::TextJustify;
 use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
 use crate::text::{FontStyle, FontWeight, TextContextKey, TextDecoration, TextId, TextStyle};

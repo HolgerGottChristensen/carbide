@@ -1,11 +1,11 @@
-use crate::state::{AnyReadState, Map1, ReadState, ReadStateExtNew, RMap1, StateContract};
+use crate::state::{AnyReadState, Map1, ReadState, ReadStateExt, RMap1, StateContract};
 
 // ---------------------------------------------------
 //  Definitions
 // ---------------------------------------------------
 
 pub trait IntoReadState<T>: Clone where T: StateContract {
-    type Output: ReadState<T=T> + ReadStateExtNew<T>;
+    type Output: ReadState<T=T> + ReadStateExt<T>;
 
     fn into_read_state(self) -> Self::Output;
 }

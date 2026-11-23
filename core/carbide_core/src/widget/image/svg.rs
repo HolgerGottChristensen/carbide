@@ -9,7 +9,7 @@ use crate::draw::stroke::{LineCap, LineJoin, StrokeOptions};
 use crate::draw::{Dimension, DrawOptions, DrawShape, ImageId, Position, Scalar};
 use crate::layout::LayoutContext;
 use crate::render::{RenderInstruction, RenderInstructionValue, Style};
-use crate::state::{ReadState, ReadStateExtNew};
+use crate::state::{ReadState, ReadStateExt};
 use carbide_usvg::tiny_skia_path::PathSegment;
 use carbide_usvg::{Document, Fill, Group, Options, Paint, PaintOrder, Stroke, Tree};
 use cgmath::{Matrix4, Vector4};

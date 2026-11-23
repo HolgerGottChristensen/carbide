@@ -2,7 +2,7 @@ use dyn_clone::clone_box;
 use carbide::draw::{AutomaticStyle, Color};
 use carbide::environment::Environment;
 use carbide::identifiable::Identifiable;
-use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateExtNew, StateSync};
+use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateExtNew, StateSync};
 use carbide::widget::WidgetId;
 use crate::color_dialog::style::ColorDialogStyleKey;
 use crate::save_dialog::SaveDialog;

@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::DerefMut;
 use dyn_clone::{clone_trait_object, DynClone};
 use crate::state::AnyReadState;
-use crate::state::{Map1, ReadStateExtNew};
+use crate::state::{Map1, ReadStateExt};
 use crate::widget::{AnyWidget, Widget};
 
 // Created to fix rust E210 in foreign crates, because when we flip the sequence, we can implement it for dyn LocalTrait

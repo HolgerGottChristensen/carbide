@@ -5,7 +5,7 @@ use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::state::LocalState;
 use carbide::widget::*;
 use carbide::{Application, Window};
-use carbide::state::ReadStateExtNew;
+use carbide::state::ReadStateExt;
 
 fn main() {
     let state1 = LocalState::new(60.0);

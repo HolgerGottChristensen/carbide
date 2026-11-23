@@ -7,7 +7,7 @@ use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::slider::Slider;
 use carbide::draw::{Dimension, Position, Scalar};
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExtNew, State};
+use carbide::state::{IndexState, LocalState, Map1, ReadState, ReadStateExt, State};
 use carbide::widget::*;
 use carbide::widget::canvas::Canvas;
 

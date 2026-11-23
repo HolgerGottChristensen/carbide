@@ -4,7 +4,7 @@ use carbide::accessibility::AccessibilityExt;
 use carbide::closure;
 use carbide::draw::{AutomaticStyle, Dimension};
 use carbide::event::ModifierKey;
-use carbide::state::{LocalState, ReadStateExtNew};
+use carbide::state::{LocalState, ReadStateExt};
 use carbide::widget::*;
 use carbide::{Application, Window};
 

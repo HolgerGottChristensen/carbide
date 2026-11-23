@@ -13,7 +13,7 @@
 
 use carbide::chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, LegendPosition, LinearScale, LineController, Measure, Pick, PickMode, PieController, ScaleId, ScatterController, SizedDataSetExt, ZoomWindow};
 use carbide::draw::Dimension;
-use carbide::state::{LocalState, ReadStateExtNew, State};
+use carbide::state::{LocalState, ReadStateExt, State};
 use carbide::widget::{HStack, Text, VStack, WidgetExt};
 use carbide::controls::toggle::Toggle;
 use carbide::{Application, Window};

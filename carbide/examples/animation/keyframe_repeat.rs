@@ -7,7 +7,7 @@ use carbide::animation::AnimationManager;
 use carbide::animation::keyframes::{Keyframes, Repeat, TimelineController, TimelineHandle};
 use carbide::color::PURPLE;
 use carbide::draw::{Angle, Dimension};
-use carbide::state::{LocalState, ReadStateExtNew, RepeatMode};
+use carbide::state::{LocalState, ReadStateExt, RepeatMode};
 use carbide::time::*;
 use carbide::widget::*;
 use carbide::{Application, Window};

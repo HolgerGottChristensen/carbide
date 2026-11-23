@@ -3,7 +3,7 @@ use carbide::color::WHITE;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::EnvironmentColor;
 use carbide::render::Style;
-use carbide::state::ReadStateExtNew;
+use carbide::state::ReadStateExt;
 use carbide::state::{LocalState, Map1, State};
 use carbide::task;
 use carbide::time::*;

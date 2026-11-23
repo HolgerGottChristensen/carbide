@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew};
+use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExt};
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, Scale, MIN_ZOOM_SPAN};
 

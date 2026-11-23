@@ -15,7 +15,7 @@ use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::{Focus, Focusable};
 use carbide_core::layout::{Layout, LayoutContext};
 use carbide_core::render::{Render, RenderContext};
-use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExtNew, State};
+use carbide_core::state::{AnyReadState, IntoReadState, IntoState, LocalState, Map2, ReadState, ReadStateExt, State};
 use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::{AnyWidget, CommonWidget, Rectangle, Text, TextWidget, Widget, WidgetExt, WidgetId};
 

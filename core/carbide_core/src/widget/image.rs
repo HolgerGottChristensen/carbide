@@ -14,7 +14,7 @@ use crate::identifiable::Identifiable;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::scene::SceneManager;
-use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
+use crate::state::{IntoReadState, ReadState, ReadStateExt};
 use crate::widget::types::ScaleMode;
 use crate::widget::{CommonWidget, Widget, WidgetId, WidgetSync};
 use crate::CommonWidgetImpl;

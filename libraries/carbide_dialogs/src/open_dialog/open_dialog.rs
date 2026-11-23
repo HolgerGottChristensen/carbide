@@ -3,7 +3,7 @@ use crate::open_dialog::style::OpenDialogStyleKey;
 use carbide::asynchronous::AsyncContext;
 use carbide::draw::AutomaticStyle;
 use carbide::environment::Environment;
-use carbide::state::{IntoReadState, ReadState, ReadStateExtNew, StateSync};
+use carbide::state::{IntoReadState, ReadState, ReadStateExt, StateSync};
 use carbide_core::state::{AnyReadState, StateValue};
 use carbide_core::widget::WidgetId;
 use dyn_clone::clone_box;

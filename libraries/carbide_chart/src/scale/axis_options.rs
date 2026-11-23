@@ -1,6 +1,6 @@
 use carbide::draw::{Angle, Scalar};
 use carbide::environment::Environment;
-use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateContract, StateExtNew};
+use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateContract, StateExtNew};
 use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, PolarRole, ZoomWindow};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order

@@ -2,7 +2,7 @@ use carbide::controls::{PASSWORD_CHAR, ControlsExt, TextInput};
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::closure;
 use carbide::draw::Dimension;
-use carbide::state::{LocalState, ReadStateExtNew};
+use carbide::state::{LocalState, ReadStateExt};
 use carbide::widget::*;
 use carbide::{Application, Window};
 

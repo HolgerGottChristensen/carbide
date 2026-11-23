@@ -12,7 +12,7 @@ use carbide_core::flags::WidgetFlag;
 use carbide_core::focus::Focus;
 use carbide_core::lens;
 use carbide_core::render::Style;
-use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExtNew};
+use carbide_core::state::{AnyReadState, AnyState, LocalState, Map1, Map2, Map3, ReadState, ReadStateExt};
 use carbide_core::state::{StateExtNew, ValueState};
 use carbide_core::widget::canvas::{Canvas, CanvasContext};
 use carbide_core::widget::WidgetId;

@@ -1,7 +1,7 @@
 use carbide::controls::color_picker::{ColorPicker, PlainStyle};
 use carbide::controls::ControlsExt;
 use carbide::draw::{Color, Dimension};
-use carbide::state::{LocalState, ReadStateExtNew};
+use carbide::state::{LocalState, ReadStateExt};
 use carbide::widget::*;
 use carbide::{Application, Window};
 

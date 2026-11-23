@@ -4,7 +4,7 @@ use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
 use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
-use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExtNew, StateExtNew};
+use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateExtNew};
 use carbide::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::draw::color::{rgba, Rgba};
 use indexmap::{IndexMap, IndexSet};
@@ -898,7 +898,7 @@ mod tests {
     use carbide::color::RED;
     use carbide::draw::{Dimension, Position, Rect, Scalar};
     use carbide::environment::Environment;
-    use carbide::state::{LocalState, Map1, ReadStateExtNew, State};
+    use carbide::state::{LocalState, Map1, ReadStateExt, State};
     use carbide::widget::WidgetSync;
     use indexmap::IndexMap;
     use crate::controller::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};

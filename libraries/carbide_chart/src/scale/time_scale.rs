@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExtNew};
+use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExt};
 use carbide_derive::StateValue;
 use chrono::{DateTime, Datelike, FixedOffset, Local, Months, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Timelike};
 

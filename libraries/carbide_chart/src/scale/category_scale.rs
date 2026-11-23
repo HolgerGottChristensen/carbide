@@ -3,7 +3,7 @@ use std::ops::Range;
 
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExt};
 use dyn_clone::DynClone;
 
 use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};

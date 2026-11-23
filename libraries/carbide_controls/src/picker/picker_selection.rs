@@ -1,5 +1,5 @@
 use crate::identifiable::AnyIdentifiableWidget;
-use carbide_core::state::{AnyState, Map2, ReadStateExtNew, StateContract, StateExtNew, StateSync};
+use carbide_core::state::{AnyState, Map2, ReadStateExt, StateContract, StateExtNew, StateSync};
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;

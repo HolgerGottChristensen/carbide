@@ -13,7 +13,7 @@ pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateCon
 impl<T: StateContract, S> StateExtNew<T> for S where S: State<T=T> + Sized + Clone + 'static {}
 
 
-pub trait ReadStateExtNew<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract {
+pub trait ReadStateExt<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract {
     fn as_dyn_read(&self) -> Box<dyn AnyReadState<T=T>> {
         Box::new(self.clone())
     }
@@ -33,4 +33,4 @@ pub trait ReadStateExtNew<T>: ReadState<T=T> + Sized + Clone + 'static where T: 
     }
 }
 
-impl<T: StateContract, S> ReadStateExtNew<T> for S where S: ReadState<T=T> + Sized + Clone + 'static {}
+impl<T: StateContract, S> ReadStateExt<T> for S where S: ReadState<T=T> + Sized + Clone + 'static {}

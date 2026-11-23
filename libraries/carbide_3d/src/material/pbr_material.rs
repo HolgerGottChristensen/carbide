@@ -9,7 +9,7 @@ use crate::material::Material;
 use carbide::color::WHITE;
 use carbide::environment::Environment;
 use carbide::math::{Matrix3, SquareMatrix, Vector3};
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExtNew, StateSync};
+use carbide::state::{AnyReadState, IntoReadState, ReadStateExt, StateSync};
 
 // Consider:
 //

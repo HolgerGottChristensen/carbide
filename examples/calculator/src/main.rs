@@ -4,7 +4,7 @@ use carbide::controls::button::{Button, PlainStyle};
 use carbide::controls::ControlsExt;
 use carbide::draw::{Color, Dimension};
 use carbide::environment::{EnvironmentColor, IntoColorReadState};
-use carbide::state::{LocalState, Map3, ReadStateExtNew, State};
+use carbide::state::{LocalState, Map3, ReadStateExt, State};
 use carbide::widget::*;
 use carbide::{closure, Application, Window};
 
