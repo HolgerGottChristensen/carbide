@@ -1,7 +1,8 @@
 //! Bars: grouped, stacked or stacked to 100%, vertical or horizontal, with categories from a scale's
-//! labels or named by the data, coloured by dataset or by bar.
+//! labels or named by the data, coloured by dataset or by bar, and zoomed along the categories,
+//! snapping to whole categories or scrolling freely.
 
-use carbide::chart::{Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId, ZoomWindow};
+use carbide::chart::{Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, ScaleId, SnapMode, StackId, ZoomWindow};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -9,7 +10,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, percent, section, slider, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
+use super::{first_section, percent, section, slider, snap_picker, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
 
 /// The data the bar chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -76,6 +77,7 @@ pub(crate) struct Options {
     stacking: LocalState<Stacking>,
     color_by: LocalState<ColorBy>,
     zoom: LocalState<ZoomWindow>,
+    snap_mode: LocalState<SnapMode>,
     fit_visible: LocalState<bool>,
     grid_lines: LocalState<bool>,
     horizontal: LocalState<bool>,
@@ -91,6 +93,7 @@ impl Options {
             stacking: LocalState::new(Stacking::Grouped),
             color_by: LocalState::new(ColorBy::Dataset),
             zoom: LocalState::new(ZoomWindow::WHOLE),
+            snap_mode: LocalState::new(SnapMode::Categories),
             fit_visible: LocalState::new(false),
             grid_lines: LocalState::new(true),
             horizontal: LocalState::new(false),
@@ -140,9 +143,12 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         slider("Group", &options.category_percentage, 0.1, 1.0, 0.05, percent),
         slider("Bar", &options.bar_percentage, 0.1, 1.0, 0.05, percent),
         Toggle::new("Grid lines", options.grid_lines.clone()),
-        section("Zoom"),
-        zoom_controls("Categories", &options.zoom),
-        Toggle::new("Values fit the categories shown", options.fit_visible.clone()),
+        VStack::new((
+            section("Zoom"),
+            zoom_controls("Categories", &options.zoom),
+            snap_picker(&options.snap_mode),
+            Toggle::new("Values fit the categories shown", options.fit_visible.clone()),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     with_side_bar(chart, side, &shared)
@@ -183,7 +189,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, horizontal: bo
 
     shared.apply(Chart::new(bars)
         .title(options.title.clone())
-        .scale(category_id, CategoryScale::new(category_axis).labels(categories).zoom(options.zoom.clone()))
+        .scale(category_id, CategoryScale::new(category_axis).labels(categories).zoom(options.zoom.clone()).snap_mode(options.snap_mode.clone()))
         .scale(value_id, LinearScale::new(value_axis).fit_visible(options.fit_visible.clone()).grid_lines(options.grid_lines.clone())))
         .boxed()
 }

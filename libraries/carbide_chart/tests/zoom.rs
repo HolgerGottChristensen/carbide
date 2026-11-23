@@ -1,7 +1,7 @@
 //! Zoomed scales (`zoom` on a scale): the scale keeps fitting to all its data and shows a window of
 //! it, with ticks for the part shown, and everything drawn on it clipped to the chart area.
 
-use carbide_chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, Fill, LinearScale, LineController, ScaleId, ScatterController, SizedDataSetExt, TimeScale, TimeScaleZone, ZoomWindow};
+use carbide_chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, Fill, LinearScale, LineController, ScaleId, ScatterController, SizedDataSetExt, SnapMode, TimeScale, TimeScaleZone, ZoomWindow};
 use carbide_core::draw::Dimension;
 use carbide_core::state::{LocalState, State};
 use carbide_testing::Harness;
@@ -60,6 +60,23 @@ fn bars_snap_to_whole_categories() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("bars_snap_to_whole_categories");
+}
+
+/// The bars of `bars_snap_to_whole_categories`, zoomed to the same window in the free snap mode.
+/// Pins down that the window is shown as asked for, from partway through March to partway
+/// through June; that the bars at its ends are cut by the chart area's edges, clipped there; and
+/// that only the months whose middles are inside the window are labelled.
+#[test]
+fn bars_scroll_freely() {
+    let revenue = vec![12.0, 19.0, 3.0, 5.0, 2.0, 8.0, 14.0, 9.0, 11.0, 6.0, 15.0, 18.0];
+    let costs = vec![8.0, 11.0, 6.0, 4.0, 3.0, 7.0, 9.0, 5.0, 10.0, 8.0, 12.0, 9.0];
+
+    let chart = Chart::new(BarController::new((revenue, costs)))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).snap_mode(SnapMode::Free).zoom(ZoomWindow::new(0.18, 0.49)))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("bars_scroll_freely");
 }
 
 /// Horizontal bars zoomed along their category y scale, and vertical bars zoomed along their value

@@ -1,8 +1,8 @@
 //! Scales: time, linear, logarithmic and category scales, a second y axis for one dataset, axes on
 //! either side with titles and tick marks, a fixed start and step, grid lines between categories,
-//! and zooming along each scale.
+//! and zooming along each scale, the categories snapping to whole ones or scrolling freely.
 
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, ControllerSequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, TimeScale, TimeScaleZone, ZoomWindow};
+use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, ControllerSequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, SnapMode, TimeScale, TimeScaleZone, ZoomWindow};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3, Map4, State};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{first_section, section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, section, shown_when, slider, snap_picker, text_input, with_side_bar, zoom_controls, Shared};
 
 /// The second y axis, for the second dataset.
 const SECOND: ScaleId = ScaleId::new("second");
@@ -42,6 +42,7 @@ pub(crate) struct Options {
     step: LocalState<Scalar>,
     grid_offset: LocalState<bool>,
     x_zoom: LocalState<ZoomWindow>,
+    snap_mode: LocalState<SnapMode>,
     y_zoom: LocalState<ZoomWindow>,
     second_zoom: LocalState<ZoomWindow>,
 }
@@ -62,6 +63,7 @@ impl Options {
             step: LocalState::new(0.0),
             grid_offset: LocalState::new(true),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
+            snap_mode: LocalState::new(SnapMode::Categories),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
             second_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
@@ -125,6 +127,8 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         VStack::new((
             section("Zoom"),
             zoom_controls("x", &options.x_zoom),
+            // Only the words are on a category scale, whose zoom can snap to them.
+            shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Words), snap_picker(&options.snap_mode)),
             zoom_controls("y", &options.y_zoom),
             shown_when(options.second_axis.clone(), zoom_controls("Second y", &options.second_zoom)),
         )).cross_axis_alignment(CrossAxisAlignment::Start),
@@ -192,7 +196,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 uses.label("Uses per 100 000 words"),
                 letters.label("Letters").y_scale(second_id),
             )))
-                .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).grid_offset(options.grid_offset.clone())
+                .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).grid_offset(options.grid_offset.clone()).snap_mode(options.snap_mode.clone())
                     .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
             finish(chart, options, shared, log, second)
         }

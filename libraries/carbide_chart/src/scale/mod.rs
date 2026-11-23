@@ -25,7 +25,7 @@ pub use scales::*;
 pub use scale_id::ScaleId;
 pub use coordinates::Coordinates;
 pub use polar::{Circle, Polar};
-pub use zoom::ZoomWindow;
+pub use zoom::{SnapMode, ZoomWindow};
 pub(crate) use zoom::MIN_ZOOM_SPAN;
 pub(crate) use coordinates::Places;
 

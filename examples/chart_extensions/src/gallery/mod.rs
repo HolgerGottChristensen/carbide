@@ -13,7 +13,7 @@ mod scales;
 mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
-use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, ZoomWindow};
+use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, ZoomWindow};
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
@@ -281,6 +281,15 @@ pub(crate) fn zoom_controls(label: &str, zoom: &LocalState<ZoomWindow>) -> impl 
             *reset.value_mut() = ZoomWindow::WHOLE;
         }).frame(140.0, 26.0),
     )).cross_axis_alignment(CrossAxisAlignment::Start)
+}
+
+/// How a category scale's zoom lines up with its categories: snapped to whole ones, or
+/// scrolling freely.
+pub(crate) fn snap_picker(snap_mode: &LocalState<SnapMode>) -> impl Widget + use<> {
+    Picker::new("Snap", snap_mode.clone(), (
+        Text::new("To whole categories").tag(SnapMode::Categories),
+        Text::new("Scroll freely").tag(SnapMode::Free),
+    ))
 }
 
 /// A slider for a number, with its value beside it. `step` is a step size to snap to, or

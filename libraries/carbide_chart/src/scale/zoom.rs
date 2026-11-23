@@ -90,6 +90,19 @@ impl ZoomWindow {
     }
 }
 
+/// How a category scale's zoom window lines up with its categories (see
+/// `CategoryScale::snap_mode`).
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default, StateValue)]
+pub enum SnapMode {
+    /// The window snaps to whole categories, so the categories at its ends are shown whole and
+    /// panning moves a category at a time. The default.
+    #[default]
+    Categories,
+    /// The window is shown as asked for, so panning scrolls smoothly and the categories at its
+    /// ends can be cut by the edges of the chart area.
+    Free,
+}
+
 impl Default for ZoomWindow {
     fn default() -> ZoomWindow {
         ZoomWindow::WHOLE

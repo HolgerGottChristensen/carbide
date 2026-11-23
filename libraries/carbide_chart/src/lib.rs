@@ -20,6 +20,6 @@ pub use mark::{DatasetPieMark, PieDataSet, PieMark, RadiiMark, LegendContext, Ba
 pub use style::{AxisStyle, ChartStyleExt, SeriesStyle};
 pub use legend::{LegendItem, LegendMarker, LegendPosition};
 pub use sequence::{Collection, CollectionState, IntoSequence, Many, One, Sequence, SequenceItem};
-pub use scale::{AngleDirection, Axis, AxisOptions, Circle, GridShape, Polar, PolarRole, AxisPosition, CategoryScale, DataBounds, LinearScale, LogScale, Scale, ScaleBounds, ScaleId, ScaleKind, ScaleRequest, Scales, TimeScale, TimeScaleZone, TimeUnit, Coordinates, ZoomWindow, ScaleValue, CategoryValue};
+pub use scale::{AngleDirection, Axis, AxisOptions, Circle, GridShape, Polar, PolarRole, AxisPosition, CategoryScale, DataBounds, LinearScale, LogScale, Scale, ScaleBounds, ScaleId, ScaleKind, ScaleRequest, Scales, TimeScale, TimeScaleZone, TimeUnit, Coordinates, SnapMode, ZoomWindow, ScaleValue, CategoryValue};
 
 extern crate carbide_core as carbide;

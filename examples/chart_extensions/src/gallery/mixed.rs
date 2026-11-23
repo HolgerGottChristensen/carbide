@@ -1,10 +1,11 @@
 //! Controllers of different kinds in one chart, a dataset on a second axis, and data that changes
-//! while the chart is shown: a timer appending readings, and datasets added and removed.
+//! while the chart is shown: a timer appending readings, and datasets added and removed. Zoomable
+//! along each scale, the months snapping to whole ones or scrolling freely.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use carbide::asynchronous::Timer;
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId, ZoomWindow};
+use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId, SnapMode, ZoomWindow};
 use carbide::controls::button::Button;
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
@@ -14,7 +15,7 @@ use carbide::state::{LocalState, Map1, Map2, Map4, ReadState, State};
 use carbide::time::Duration;
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, note, section, shown_when, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
+use super::{first_section, note, section, shown_when, snap_picker, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
 
 /// The growth line's own y axis.
 const GROWTH: ScaleId = ScaleId::new("growth");
@@ -38,6 +39,7 @@ pub(crate) struct Options {
     /// How many live datasets are shown.
     datasets: LocalState<usize>,
     x_zoom: LocalState<ZoomWindow>,
+    snap_mode: LocalState<SnapMode>,
     y_zoom: LocalState<ZoomWindow>,
     growth_zoom: LocalState<ZoomWindow>,
 }
@@ -51,6 +53,7 @@ impl Options {
             ticks: Arc::new(AtomicUsize::new(60)),
             datasets: LocalState::new(1),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
+            snap_mode: LocalState::new(SnapMode::Categories),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
             growth_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
@@ -110,6 +113,8 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         VStack::new((
             section("Zoom"),
             zoom_controls("x", &options.x_zoom),
+            // Only the months are on a category scale, whose zoom can snap to them.
+            shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::RevenueAndGrowth), snap_picker(&options.snap_mode)),
             zoom_controls("y", &options.y_zoom),
             // Growth has a scale of its own only beside the revenue, on its own axis.
             shown_when(Map2::read_map(options.data.clone(), options.own_axis.clone(), |data: &Data, own: &bool| *data == Data::RevenueAndGrowth && *own),
@@ -151,7 +156,7 @@ pub(super) fn revenue(options: Options, shared: Shared, own_axis: bool) -> Box<d
         LineController::new(growth.label("Growth (%)").y_scale(growth_scale)).palette_offset(1),
     ))
         .title(options.title.clone())
-        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).zoom(options.x_zoom.clone()))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).zoom(options.x_zoom.clone()).snap_mode(options.snap_mode.clone()))
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()));
 
     let chart = if own_axis {

@@ -6,7 +6,7 @@ use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExt};
 use dyn_clone::DynClone;
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, SnapMode};
 use crate::sequence::{Sequence, SequenceItem};
 
 /// A category scale's labels, boxed: any sequence of strings (see `CategoryScale::labels`).
@@ -60,8 +60,9 @@ impl SequenceItem<str> for &'static str {
 ///   while labels stay centred on their category. It is on when set with `grid_offset(true)`, or,
 ///   when not set, when a controller asks for it (see `Scale::set_grid_offset_requested`).
 /// - Vertical category scales run from top to bottom, so they read like a list.
+/// - Zoomed, the window snaps to whole categories, unless set otherwise with `snap_mode`.
 ///
-/// The labels and the grid offset, like the axis options, can be states, read as they were last
+/// The labels, the grid offset and the snap mode, like the axis options, can be states, read as they were last
 /// synced: the chart refits its scales on every update, so changed labels change the categories
 /// the scale spans.
 #[derive(Clone, Debug)]
@@ -72,6 +73,8 @@ pub struct CategoryScale {
     /// Set with `grid_offset`; when `None`, the scale follows what controllers request.
     grid_offset: Option<Box<dyn AnyReadState<T=bool>>>,
     grid_offset_requested: bool,
+    /// Set with `snap_mode`; when `None`, the window snaps to whole categories.
+    snap_mode: Option<Box<dyn AnyReadState<T=SnapMode>>>,
     labels: Box<dyn Labels>,
     /// The categories on the last fit: the labels, then the data's text values, in the order they
     /// were first seen (see `Scale::set_categories`).
@@ -91,6 +94,7 @@ impl CategoryScale {
             offset: false,
             grid_offset: None,
             grid_offset_requested: false,
+            snap_mode: None,
             labels: Box::new(Vec::<String>::new()),
             categories: vec![],
             min: 0.0,
@@ -122,6 +126,21 @@ impl CategoryScale {
     pub fn grid_offset(mut self, grid_offset: impl IntoReadState<bool>) -> CategoryScale {
         self.grid_offset = Some(grid_offset.into_read_state().as_dyn_read());
         self
+    }
+
+    /// How the zoom window lines up with the categories, a value or a state of one:
+    /// `SnapMode::Categories`, the default, snaps it to whole categories, and `SnapMode::Free`
+    /// shows it as asked for, so dragging scrolls smoothly. Either way it shows at least two
+    /// categories' bands with an offset, as bars ask for, and one step between categories without.
+    pub fn snap_mode(mut self, snap_mode: impl IntoReadState<SnapMode>) -> CategoryScale {
+        self.snap_mode = Some(snap_mode.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// How the zoom window lines up with the categories: as set with `snap_mode`, or else
+    /// snapped to them.
+    fn snap(&self) -> SnapMode {
+        self.snap_mode.as_ref().map_or(SnapMode::Categories, |snap_mode| *snap_mode.value_dyn())
     }
 
     /// Whether grid lines and tick marks sit between the categories: as set with `grid_offset`,
@@ -200,6 +219,7 @@ impl Scale for CategoryScale {
         let mut changed = self.axis_options.sync(env);
         changed |= self.labels.sync(env);
         changed |= self.grid_offset.as_mut().is_some_and(|grid_offset| grid_offset.sync(env));
+        changed |= self.snap_mode.as_mut().is_some_and(|snap_mode| snap_mode.sync(env));
         changed
     }
 
@@ -353,16 +373,20 @@ impl Scale for CategoryScale {
         self.recalculate_ticks();
     }
 
-    /// Every category is a tick. Zoomed, the window snaps to whole categories: to the edges of
-    /// their bands with an offset, so bars are never cut, or to the categories themselves without
-    /// one, and shows at least two; the ticks shown are the categories inside it.
+    /// Every category is a tick. Zoomed, the window snaps to whole categories, unless the snap
+    /// mode is free: to the edges of their bands with an offset, so bars are never cut, or to the
+    /// categories themselves without one. It shows at least two bands with an offset, and one step
+    /// between categories without; the ticks shown are the categories inside it.
     fn recalculate_ticks(&mut self) {
         let count = (self.max - self.min) as usize + 1;
         self.ticks = (0..count).map(|index| self.min + index as Scalar).collect();
 
         let (start, length) = self.start_and_length();
         let min_steps = if self.offset { 2.0 } else { 1.0 };
-        let window = self.axis_options.zoom().snapped(length, min_steps);
+        let window = match self.snap() {
+            SnapMode::Categories => self.axis_options.zoom().snapped(length, min_steps),
+            SnapMode::Free => self.axis_options.zoom().limited(min_steps / length),
+        };
         self.axis_options.set_window(window);
         self.axis_options.set_min_span((min_steps / length).min(1.0));
 
@@ -385,7 +409,8 @@ impl Scale for CategoryScale {
 mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
-    use crate::scale::{Axis, Scale};
+    use carbide::draw::Scalar;
+    use crate::scale::{Axis, Scale, SnapMode};
     use super::CategoryScale;
 
     /// The labels can be a state: after a sync, the scale names its ticks with the new labels,
@@ -560,5 +585,36 @@ mod tests {
         assert_eq!(vertical.ticks(), &[0.0, 1.0, 2.0]);
         assert_eq!(vertical.normalize(-0.5), 1.0, "Jan's band starts at the top");
         assert_eq!(vertical.normalize(2.5), 0.0);
+    }
+
+    /// In the free snap mode, a zoomed category scale shows its window as asked for, cutting the
+    /// categories at its ends, and still at least two categories' bands wide; its ticks are the
+    /// categories whose middles are inside it. The snap mode can be a state: snapping again after
+    /// a sync and a refit.
+    #[test]
+    fn free_zoom_does_not_snap() {
+        let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+        let close = |a: Scalar, b: Scalar| (a - b).abs() < 1e-9;
+
+        let mut snap_mode = LocalState::new(SnapMode::Free);
+        let mut scale = CategoryScale::new(Axis::Horizontal).labels(months).snap_mode(snap_mode.clone()).zoom(crate::ZoomWindow::new(0.23, 0.48));
+        scale.sync(&mut Environment::new());
+        scale.set_offset(true);
+        scale.set_range(0.0, 9.0);
+        assert_eq!(scale.axis_options().window(), crate::ZoomWindow::new(0.23, 0.48), "as asked for");
+        assert_eq!(scale.ticks(), &[2.0, 3.0, 4.0], "Mar to May, whose middles are inside");
+        assert!(close(scale.normalize(1.8), 0.0), "the window starts inside Mar's band: {}", scale.normalize(1.8));
+
+        let mut narrow = CategoryScale::new(Axis::Horizontal).labels(months).snap_mode(SnapMode::Free).zoom(crate::ZoomWindow::new(0.51, 0.52));
+        narrow.sync(&mut Environment::new());
+        narrow.set_offset(true);
+        narrow.set_range(0.0, 9.0);
+        assert!(close(narrow.axis_options().window().span(), 0.2), "widened to two bands: {:?}", narrow.axis_options().window());
+        assert_eq!(narrow.ticks(), &[4.0, 5.0]);
+
+        *snap_mode.value_mut() = SnapMode::Categories;
+        scale.sync(&mut Environment::new());
+        scale.set_range(0.0, 9.0);
+        assert_eq!(scale.axis_options().window(), crate::ZoomWindow::new(0.2, 0.5), "snapped again");
     }
 }
