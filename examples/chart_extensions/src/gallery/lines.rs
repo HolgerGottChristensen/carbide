@@ -144,14 +144,18 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Steps after").tag(Curve::StepsAfter),
         )),
         // Only smooth curves have a tension, and only the sensors' data has gaps to bridge.
-        shown_when(Map1::read_map(options.curve.clone(), |curve: &Curve| *curve == Curve::Smooth),
-            slider("Tension", &options.tension, 0.0, 1.0, 0.05, |tension| format!("{tension:.2}"))),
-        shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Gaps),
+        shown_when(
+            Map1::read_map(options.curve.clone(), |curve: &Curve| *curve == Curve::Smooth),
+            slider("Tension", &options.tension, 0.0, 1.0, 0.05, |tension| format!("{tension:.2}"))
+        ),
+        shown_when(
+            Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Gaps),
             Picker::new("Gaps", options.gaps.clone(), (
                 Text::new("Break the line").tag(Gaps::Break),
                 Text::new("Bridge them").tag(Gaps::Bridge),
                 Text::new("Bridge up to 3").tag(Gaps::BridgeShort),
-            ))),
+            ))
+        ),
         Picker::new("Fill", options.fill.clone(), (
             Text::new("None").tag(Fill::None),
             Text::new("To zero").tag(Fill::Origin),
@@ -184,6 +188,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         Curve::StepsMiddleVertical => Interpolation::Stepped(Stepped::MiddleVertical),
         Curve::StepsAfter => Interpolation::Stepped(Stepped::After),
     });
+
     let span_gaps = Map1::read_map(options.gaps.clone(), |gaps: &Gaps| match gaps {
         Gaps::Break => SpanGaps::Never,
         Gaps::Bridge => SpanGaps::Always,
@@ -191,7 +196,14 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
     });
 
     let lines: Vec<Box<dyn LineDataSet>> = data.data().into_iter().map(|(name, values)| {
-        let stack = Map1::read_map(options.stacked.clone(), move |stacked: &bool| if *stacked { StackId::new("all") } else { StackId::new(name) });
+        let stack = Map1::read_map(options.stacked.clone(), move |stacked: &bool| {
+            if *stacked {
+                StackId::new("all")
+            } else {
+                StackId::new(name)
+            }
+        });
+
         values.label(name)
             .interpolation(interpolation.clone())
             .span_gaps(span_gaps.clone())

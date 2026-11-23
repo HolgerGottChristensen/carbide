@@ -799,7 +799,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
             .map(|(id, scale)| (id.clone(), band(scale.axis_options().position(), chart_area, layout.offset(id), sizes[id])))
             .collect();
 
-        // Polar scales share a circle inside the chart area, with room for the labels around it.
+        // Polar scales share a circle inside the chart area, with room for the surrounding labels.
         // Labels the controllers draw outside the circle need room too.
         let mut outside = vec![];
         let scales = &self.scales;
@@ -823,6 +823,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
         }
         axis::draw_polar_border(&self.scales, &mut canvas);
 
+        // Draw the title of the chart
         if let (Some(title), Some(position)) = (&title, layout.title) {
             let color = axis_style(canvas.env()).label_color(canvas.env());
             canvas.save();
@@ -833,6 +834,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
             canvas.restore();
         }
 
+        // Draw the legends of the chart
         if let Some((position, area)) = layout.legend {
             legend::draw(&legend_items, &legend_layout, position, &mut canvas, area);
         }

@@ -82,7 +82,9 @@ impl Options {
 
 pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     let data = options.data.clone();
-    let (o, s) = (options.clone(), shared.clone());
+    let o = options.clone();
+    let s = shared.clone();
+
     let chart = ui!(
         match data {
             Data::Spending => chart(o.clone(), s.clone(), Data::Spending),
@@ -110,10 +112,13 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )),
         slider("Gaps", &options.spacing, 0.0, 20.0, 1.0, super::pixels),
         // Only the spending has more than one ring.
-        shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Spending), VStack::new((
-            slider("Ring gaps", &options.ring_spacing, 0.0, 30.0, 1.0, super::pixels),
-            slider("Ring size", &options.ring_size, 0.2, 1.0, 0.05, percent),
-        )).cross_axis_alignment(CrossAxisAlignment::Start)),
+        shown_when(
+            Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Spending),
+            VStack::new((
+                slider("Ring gaps", &options.ring_spacing, 0.0, 30.0, 1.0, super::pixels),
+                slider("Ring size", &options.ring_size, 0.2, 1.0, 0.05, percent),
+            )).cross_axis_alignment(CrossAxisAlignment::Start)
+        ),
         slider("Outline", &options.outline_width, 0.0, 8.0, 0.5, |pixels| format!("{pixels:.1} px")),
         Toggle::new("Labels", options.labels.clone()),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
@@ -124,13 +129,21 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
 /// The pie of `data`.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
     let sized = data == Data::Radii;
-    let rings: Vec<Box<dyn PieDataSet>> = data.data().into_iter()
+
+    let rings: Vec<Box<dyn PieDataSet>> = data.data()
+        .into_iter()
         .map(|(name, parts)| {
             if sized {
-                parts.radii().label(name).boxed::<dyn PieDataSet>()
+                parts.radii()
+                    .label(name)
+                    .boxed::<dyn PieDataSet>()
             } else {
-                let parts: Vec<(&'static str, Scalar)> = parts.into_iter().map(|(part, value, _)| (part, value)).collect();
-                parts.label(name).boxed::<dyn PieDataSet>()
+                let parts: Vec<(&'static str, Scalar)> = parts.into_iter()
+                    .map(|(part, value, _)| (part, value))
+                    .collect();
+
+                parts.label(name)
+                    .boxed::<dyn PieDataSet>()
             }
         })
         .collect();
