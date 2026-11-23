@@ -3,3 +3,8 @@ linker = "rust-lld"
 
 [target.x86_64-pc-windows-gnu]
 linker = "rust-lld"
+
+# GNU ld takes over 10 s to link the debug builds of the examples; lld takes about 2 s.
+# Needs lld installed (`apt install lld`).
+[target.aarch64-unknown-linux-gnu]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]

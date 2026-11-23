@@ -5,13 +5,14 @@ use crate::environment::{EnvironmentColor, EnvironmentFontSize};
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext, Style};
 use crate::scene::SceneManager;
-use crate::state::{IntoReadState, ReadState};
+use crate::state::{IntoReadState, ReadState, ReadStateExtNew};
 use crate::text::text_justify::TextJustify;
 use crate::text::text_wrap::{wrap_state, Wrap, WrapState};
 use crate::text::{FontStyle, FontWeight, TextContextKey, TextDecoration, TextId, TextStyle};
 use crate::widget::{AnyWidget, CommonWidget, Widget, WidgetId, WidgetSync};
 use accesskit::{Node, Point, Rect, Role, Size};
 use std::fmt::Debug;
+use carbide::state::AnyReadState;
 use crate::CommonWidgetImpl;
 use crate::identifiable::Identifiable;
 
@@ -23,53 +24,46 @@ use crate::identifiable::Identifiable;
 /// in accordance with the produced **Alignment**.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Layout, Accessibility)]
-pub struct Text<T, S, C, FS, FW, W>
-where
-    T: ReadState<T=String>,
-    S: ReadState<T=u32>,
-    C: ReadState<T=Style>,
-    FS: ReadState<T=FontStyle>,
-    FW: ReadState<T=FontWeight>,
-    W: ReadState<T=Wrap>
+pub struct Text<T> where T: ReadState<T=String>
 {
     #[id] id: WidgetId,
     text_id: TextId,
     position: Position,
     dimension: Dimension,
     #[state] pub text: T,
-    #[state] font_size: S,
-    #[state] color: C,
-    #[state] wrap_mode: W,
+    #[state] font_size: Box<dyn AnyReadState<T=u32>>,
+    #[state] color: Box<dyn AnyReadState<T=Style>>,
+    #[state] wrap_mode: Box<dyn AnyReadState<T=Wrap>>,
     family: String,
-    font_style: FS,
-    font_weight: FW,
+    font_style: Box<dyn AnyReadState<T=FontStyle>>,
+    font_weight: Box<dyn AnyReadState<T=FontWeight>>,
     text_decoration: TextDecoration,
 }
 
-impl Text<String, u32, Style, FontStyle, FontWeight, Wrap> {
+impl Text<String> {
 
-    pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output, impl ReadState<T=u32>, impl ReadState<T=Style>, FontStyle, FontWeight, WrapState> {
+    pub fn new<T: IntoReadState<String>>(text: T) -> Text<T::Output> {
         let text = text.into_read_state();
 
         Text {
             id: WidgetId::new(),
             text_id: TextId::new(),
             text,
-            font_size: EnvironmentFontSize::Body.u32(),
+            font_size: EnvironmentFontSize::Body.u32().as_dyn_read(),
             position: Position::new(0.0, 0.0),
             dimension: Dimension::new(100.0, 100.0),
-            wrap_mode: wrap_state(),
-            color: EnvironmentColor::Label.style(),
+            wrap_mode: wrap_state().as_dyn_read(),
+            color: EnvironmentColor::Label.style().as_dyn_read(),
             family: "Noto Sans".to_string(),
-            font_style: FontStyle::Normal,
-            font_weight: FontWeight::Normal,
+            font_style: FontStyle::Normal.as_dyn_read(),
+            font_weight: FontWeight::Normal.as_dyn_read(),
             text_decoration: TextDecoration::None,
         }
     }
 }
 
-impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2: ReadState<T=FontStyle>, FW2: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Text<T2, S2, C2, FS2, FW2, W> {
-    pub fn color<C: IntoReadState<Style>>(self, color: C) -> Text<T2, S2, C::Output, FS2, FW2, W> {
+impl<T: ReadState<T=String>> Text<T> {
+    pub fn color<C: IntoReadState<Style>>(self, color: C) -> Text<T> {
         Text {
             id: self.id,
             position: self.position,
@@ -77,18 +71,16 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
             wrap_mode: self.wrap_mode,
             text: self.text,
             font_size: self.font_size,
-            color: color.into_read_state(),
+            color: color.into_read_state().as_dyn_read(),
             family: self.family,
             font_style: self.font_style,
             font_weight: self.font_weight,
             text_decoration: self.text_decoration,
-            //internal_text: self.internal_text,
-            //text_span_generator: self.text_span_generator,
             text_id: self.text_id
         }
     }
 
-    pub fn font_size<S: IntoReadState<u32>>(self, size: S) -> Text<T2, S::Output, C2, FS2, FW2, W> {
+    pub fn font_size<S: IntoReadState<u32>>(self, size: S) -> Text<T> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -96,7 +88,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
             dimension: self.dimension,
             wrap_mode: self.wrap_mode,
             text: self.text,
-            font_size: size.into_read_state(),
+            font_size: size.into_read_state().as_dyn_read(),
             color: self.color,
             family: self.family,
             font_style: self.font_style,
@@ -110,7 +102,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
         self
     }
 
-    pub fn font_weight<FW: IntoReadState<FontWeight>>(self, weight: FW) -> Text<T2, S2, C2, FS2, FW::Output, W> {
+    pub fn font_weight<FW: IntoReadState<FontWeight>>(self, weight: FW) -> Text<T> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -122,12 +114,12 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
             color: self.color,
             family: self.family,
             font_style: self.font_style,
-            font_weight: weight.into_read_state(),
+            font_weight: weight.into_read_state().as_dyn_read(),
             text_decoration: self.text_decoration,
         }
     }
 
-    pub fn font_style<FS: IntoReadState<FontStyle>>(self, style: FS) -> Text<T2, S2, C2, FS::Output, FW2, W> {
+    pub fn font_style<FS: IntoReadState<FontStyle>>(self, style: FS) -> Text<T> {
         Text {
             id: self.id,
             text_id: self.text_id,
@@ -138,28 +130,28 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
             font_size: self.font_size,
             color: self.color,
             family: self.family,
-            font_style: style.into_read_state(),
+            font_style: style.into_read_state().as_dyn_read(),
             font_weight: self.font_weight,
             text_decoration: self.text_decoration,
         }
     }
 
     /// Take a given text element and make it render with the font weight: Bold
-    pub fn bold(self) -> Text<T2, S2, C2, FS2, FontWeight, W> {
+    pub fn bold(self) -> Text<T> {
         self.font_weight(FontWeight::Bold)
     }
 
-    pub fn italic(self) -> Text<T2, S2, C2, FontStyle, FW2, W> {
+    pub fn italic(self) -> Text<T> {
         self.font_style(FontStyle::Italic)
     }
 
-    pub fn wrap<W2: IntoReadState<Wrap>>(self, wrap: W2) -> Text<T2, S2, C2, FS2, FW2, W2::Output> {
+    pub fn wrap<W2: IntoReadState<Wrap>>(self, wrap: W2) -> Text<T> {
         Text {
             id: self.id,
             text_id: self.text_id,
             position: self.position,
             dimension: self.dimension,
-            wrap_mode: wrap.into_read_state(),
+            wrap_mode: wrap.into_read_state().as_dyn_read(),
             text: self.text,
             font_size: self.font_size,
             color: self.color,
@@ -214,7 +206,7 @@ impl<T2: ReadState<T=String>, S2: ReadState<T=u32>, C2: ReadState<T=Style>, FS2:
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Layout for Text<T, S, C, FS, FW, W> {
+impl<T: ReadState<T=String>> Layout for Text<T> {
     fn calculate_size(&mut self, requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
@@ -238,7 +230,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Render for Text<T, S, C, FS, FW, W> {
+impl<T: ReadState<T=String>> Render for Text<T> {
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
@@ -250,7 +242,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> Accessibility for Text<T, S, C, FS, FW, W> {
+impl<T: ReadState<T=String>> Accessibility for Text<T> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
 
@@ -291,7 +283,7 @@ impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: Rea
     }
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> CommonWidget for Text<T, S, C, FS, FW, W> {
+impl<T: ReadState<T=String>> CommonWidget for Text<T> {
     CommonWidgetImpl!(self, position: self.position, dimension: self.dimension, child: (), flexibility: 2);
 }
 
@@ -299,7 +291,7 @@ pub trait TextWidget: AnyWidget {
     fn text_id(&self) -> TextId;
 }
 
-impl<T: ReadState<T=String>, S: ReadState<T=u32>, C: ReadState<T=Style>, FS: ReadState<T=FontStyle>, FW: ReadState<T=FontWeight>, W: ReadState<T=Wrap>> TextWidget for Text<T, S, C, FS, FW, W> {
+impl<T: ReadState<T=String>> TextWidget for Text<T> {
     fn text_id(&self) -> TextId {
         self.text_id
     }
