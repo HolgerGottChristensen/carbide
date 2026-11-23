@@ -3,6 +3,7 @@ use carbide::environment::{Environment, EnvironmentFontSize};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
 use carbide_core::CommonWidgetImpl;
+use carbide_core::common::cursor::MouseCursor;
 use carbide_core::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateExtNew};
 use carbide::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
@@ -66,6 +67,9 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The band of each scale along a side on the last render, in the chart's own coordinates,
     /// where gestures move only that scale.
     bands: Vec<(ScaleId, Rect)>,
+    /// The zoomable scale whose band the pointer is over, or whose band a drag in progress started
+    /// on: drawn in the `AxisStyle`'s hovered colour, under a cursor showing which way it moves.
+    hovered_scale: Option<ScaleId>,
 }
 
 impl<C: ControllerSequence> Chart<C> {
@@ -96,6 +100,7 @@ impl<C: ControllerSequence> Chart<C> {
             gesture: None,
             press: None,
             bands: vec![],
+            hovered_scale: None,
         }
     }
 
@@ -155,6 +160,7 @@ impl<C: ControllerSequence> Chart<C> {
     fn release_pointer(&mut self) {
         self.gesture = None;
         self.press = None;
+        self.hovered_scale = None;
         if let Some(hover) = &mut self.hover
             && hover.value_dyn().is_some() {
                 hover.set_value_dyn(None);
@@ -216,16 +222,52 @@ impl<C: ControllerSequence> Chart<C> {
     /// The zoomable scales a gesture at `position` moves: every one over the chart area, or the one
     /// whose band it is over.
     fn gesture_scales(&self, position: Position) -> Vec<ScaleId> {
-        let zoomable = |id: &ScaleId| self.scales.get(id).is_some_and(|scale| scale.axis_options().is_zoomable());
-
         if inside(self.shapes.area(), position) {
-            return self.scales.iter().map(|(id, _)| id.clone()).filter(|id| zoomable(id)).collect();
+            return self.scales.iter().map(|(id, _)| id.clone()).filter(|id| self.is_zoomable(id)).collect();
+        }
+
+        self.scale_band_at(position).into_iter().collect()
+    }
+
+    /// Whether the chart has the scale `id`, and gestures can move it.
+    fn is_zoomable(&self, id: &ScaleId) -> bool {
+        self.scales.get(id).is_some_and(|scale| scale.axis_options().is_zoomable())
+    }
+
+    /// The zoomable scale whose band `position` is over, outside the chart area.
+    fn scale_band_at(&self, position: Position) -> Option<ScaleId> {
+        if inside(self.shapes.area(), position) {
+            return None;
         }
 
         self.bands.iter()
-            .find(|(id, band)| zoomable(id) && inside(*band, position))
-            .map(|(id, _)| vec![id.clone()])
-            .unwrap_or_default()
+            .find(|(id, band)| self.is_zoomable(id) && inside(*band, position))
+            .map(|(id, _)| id.clone())
+    }
+
+    /// Notes the scale whose band the pointer is over, at `position`, or none when it left the
+    /// chart. A drag in progress keeps the scale it started on, wherever the pointer goes.
+    fn hover_scale_at(&mut self, position: Option<Position>) {
+        if self.gesture.is_none() {
+            self.hovered_scale = position.and_then(|position| self.scale_band_at(position));
+        }
+    }
+
+    /// The band of the hovered scale (see `hovered_scale`), in the chart's own coordinates.
+    fn hovered_band(&self) -> Option<Rect> {
+        let id = self.hovered_scale.as_ref()?;
+        self.bands.iter().find(|(band_id, _)| band_id == id).map(|(_, band)| *band)
+    }
+
+    /// The cursor over the hovered scale (see `hovered_scale`), showing the way gestures move it:
+    /// left and right along a horizontal scale, up and down along a vertical one.
+    pub(crate) fn scale_cursor(&self) -> Option<MouseCursor> {
+        let scale = self.scales.get(self.hovered_scale.as_ref()?)?;
+        match scale.axis() {
+            Axis::Horizontal => Some(MouseCursor::EwResize),
+            Axis::Vertical => Some(MouseCursor::NsResize),
+            Axis::Radial => None,
+        }
     }
 
     /// Calls the click action with what is at `position`, when the chart has one and `position`
@@ -561,8 +603,9 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
 /// drag and the wheel pan, a pinch, or the wheel with Ctrl or Cmd held, zooms about the pointer, a
 /// drag with Shift held zooms to the box it draws, a double-click shows the whole range again, and
 /// a trackpad's smart zoom toggles between zooming in and the whole range. Over the chart area these move every
-/// zoomable scale; over a scale's band, only that one. A chart without these options ignores the
-/// pointer.
+/// zoomable scale; over a scale's band, only that one, whose band is tinted under a cursor showing
+/// which way it moves, and where a Shift-drag's box is a span along the scale. A chart without
+/// these options ignores the pointer.
 impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !self.is_interactive() {
@@ -580,9 +623,13 @@ impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
             }
             MouseEvent::Move { to, .. } => {
                 let at = local(*to);
+                self.hover_scale_at(Some(at));
                 self.hover_at(Some(at), ctx.env);
             }
-            MouseEvent::Left => self.hover_at(None, ctx.env),
+            MouseEvent::Left => {
+                self.hover_scale_at(None);
+                self.hover_at(None, ctx.env);
+            }
             MouseEvent::Scroll { x, y, mouse_position, modifiers } => {
                 let at = local(*mouse_position);
                 let scales = self.gesture_scales(at);
@@ -668,8 +715,10 @@ impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
                         return;
                     }
 
+                    // Shift selects what to zoom to: a box over the chart area, or a span along the
+                    // scale whose band the drag started on.
                     self.gesture = Some(if modifiers.contains(ModifierKey::SHIFT) {
-                        Gesture::Box { origin, to: origin, scales }
+                        Gesture::Box { origin, to: origin, scales, band: self.scale_band_at(origin) }
                     } else {
                         Gesture::Pan { last: origin, scales }
                     });
@@ -680,15 +729,19 @@ impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
                         self.pan_scales(&scales, last, to);
                         self.gesture = Some(Gesture::Pan { last: to, scales });
                     }
-                    Some(Gesture::Box { origin, scales, .. }) => {
-                        self.gesture = Some(Gesture::Box { origin, to, scales });
+                    Some(Gesture::Box { origin, scales, band, .. }) => {
+                        self.gesture = Some(Gesture::Box { origin, to, scales, band });
                     }
                     None => {}
                 }
                 *ctx.consumed = true;
             }
-            MouseEvent::Release { button: MouseButton::Left, .. } => {
-                if let Some(Gesture::Box { origin, to, scales }) = self.gesture.take() {
+            MouseEvent::Release { button: MouseButton::Left, position, .. } => {
+                let gesture = self.gesture.take();
+                // The drag is over, so the scale under the pointer is hovered again, if any.
+                self.hover_scale_at(Some(local(*position)));
+
+                if let Some(Gesture::Box { origin, to, scales, .. }) = gesture {
                     let area = self.shapes.area();
                     self.change_zoom(&scales, |scale, window, min_span| {
                         // A box too thin along a scale leaves that scale as it is.
@@ -732,6 +785,25 @@ const MIN_BOX: Scalar = 5.0;
 /// Whether `position` is inside `area`, edges included.
 fn inside(area: Rect, position: Position) -> bool {
     area.left() <= position.x && position.x <= area.right() && area.bottom() <= position.y && position.y <= area.top()
+}
+
+/// Draws a selection to zoom to, `rect`, as the box of a Shift-drag: filled faintly in `ink` and
+/// outlined in it.
+fn draw_selection(canvas: &mut CanvasContext, rect: Rect, ink: carbide::color::Color) {
+    let Rgba(r, g, b, a) = Rgba::from(ink);
+    canvas.save();
+    canvas.begin_path();
+    canvas.move_to(rect.left(), rect.bottom());
+    canvas.line_to(rect.right(), rect.bottom());
+    canvas.line_to(rect.right(), rect.top());
+    canvas.line_to(rect.left(), rect.top());
+    canvas.close_path();
+    canvas.set_fill_style(rgba(r, g, b, a * 0.15));
+    canvas.fill();
+    canvas.set_line_width(1.0);
+    canvas.set_stroke_style(ink);
+    canvas.stroke();
+    canvas.restore();
 }
 
 /// The band of a scale on `position`'s side of `chart_area`, `offset` from it and `size` deep, in
@@ -812,6 +884,27 @@ impl<C: ControllerSequence> Render for Chart<C> {
         let circle = axis::polar_circle(&self.scales, &mut canvas, chart_area, &outside);
         self.scales.set_circle(circle);
 
+        // The band of the scale under the pointer is tinted, under that scale's cursor, while the
+        // chart responds to the pointer.
+        if self.is_interactive() && let Some(band) = self.hovered_band() {
+            let color = axis_style(canvas.env()).hovered_band_color(canvas.env());
+            canvas.save();
+            canvas.begin_path();
+            canvas.move_to(band.left(), band.bottom());
+            canvas.line_to(band.right(), band.bottom());
+            canvas.line_to(band.right(), band.top());
+            canvas.line_to(band.left(), band.top());
+            canvas.close_path();
+            canvas.set_fill_style(color);
+            canvas.fill();
+            canvas.restore();
+
+            if let Some(cursor) = self.scale_cursor()
+                && let Some(env_cursor) = canvas.env().get_mut::<MouseCursor>() {
+                    *env_cursor = cursor;
+                }
+        }
+
         for (id, scale) in self.scales.iter() {
             axis::draw_grid(scale, &mut canvas, chart_area, layout.offset(id));
         }
@@ -869,26 +962,31 @@ impl<C: ControllerSequence> Render for Chart<C> {
             }
             canvas.restore();
         }
-        if let Some(Gesture::Box { origin, to, .. }) = &self.gesture {
-            let Rgba(r, g, b, a) = Rgba::from(ink);
-            canvas.save();
-            canvas.begin_path();
-            canvas.move_to(origin.x, origin.y);
-            canvas.line_to(to.x, origin.y);
-            canvas.line_to(to.x, to.y);
-            canvas.line_to(origin.x, to.y);
-            canvas.close_path();
-            canvas.set_fill_style(rgba(r, g, b, a * 0.15));
-            canvas.fill();
-            canvas.set_line_width(1.0);
-            canvas.set_stroke_style(ink);
-            canvas.stroke();
-            canvas.restore();
+        if let Some(Gesture::Box { origin, to, band: None, .. }) = &self.gesture {
+            draw_selection(&mut canvas, Rect::from_corners(*origin, *to), ink);
         }
 
         if zoomed {
             canvas.render_context().render.pop_clip();
         }
+
+        // A box started on a scale's band is a span along that scale, across its band, kept to the
+        // chart area's extent along it.
+        if let Some(Gesture::Box { origin, to, band: Some(id), .. }) = &self.gesture
+            && let (Some(scale), Some((_, band))) = (self.scales.get(id), self.bands.iter().find(|(band_id, _)| band_id == id)) {
+                let span = match scale.axis() {
+                    Axis::Vertical => {
+                        let (low, high) = (origin.y.min(to.y).max(chart_area.bottom()), origin.y.max(to.y).min(chart_area.top()));
+                        Rect::new(Position::new(band.left(), low), Dimension::new(band.width(), (high - low).max(0.0)))
+                    }
+                    _ => {
+                        let (low, high) = (origin.x.min(to.x).max(chart_area.left()), origin.x.max(to.x).min(chart_area.right()));
+                        Rect::new(Position::new(low, band.bottom()), Dimension::new((high - low).max(0.0), band.height()))
+                    }
+                };
+                draw_selection(&mut canvas, span, ink);
+            }
+
         self.shapes = shapes;
     }
 }
@@ -1731,6 +1829,49 @@ mod tests {
         let (_, y_max) = scale_range(&visible, ScaleId::Y);
         assert!(y_max < 10.0, "the first three values reach 3, so y shouldn't reach the 50 beyond, but ends at {y_max}");
         assert_eq!(scale_range(&visible, ScaleId::X), (0.0, 9.0), "x still fits every point");
+    }
+
+    /// The scale whose band the pointer is over is hovered, when gestures can move it, and its
+    /// cursor shows the way they move it: left and right for x, up and down for y. Over the chart
+    /// area, or a scale that can't move, nothing is hovered; a drag keeps the scale it started on.
+    #[test]
+    fn hovering_a_zoomable_scale_band() {
+        use carbide::common::cursor::MouseCursor;
+        use crate::scale::ZoomWindow;
+        use crate::geometry::Shapes;
+        use super::Gesture;
+
+        let mut chart = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]))
+            .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(LocalState::new(ZoomWindow::WHOLE)))
+            .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(LocalState::new(ZoomWindow::WHOLE)))
+            .scale(ScaleId::new("fixed"), LinearScale::new(Axis::Vertical).position(AxisPosition::Right)));
+        // The chart area from (50, 10) to (450, 300), x's band below it, y's on its left and the
+        // fixed scale's on its right.
+        chart.shapes = Shapes::new(Rect::new(Position::new(50.0, 10.0), Dimension::new(400.0, 290.0)), None);
+        chart.bands = vec![
+            (ScaleId::X, Rect::new(Position::new(50.0, 300.0), Dimension::new(400.0, 30.0))),
+            (ScaleId::Y, Rect::new(Position::new(0.0, 10.0), Dimension::new(50.0, 290.0))),
+            (ScaleId::new("fixed"), Rect::new(Position::new(450.0, 10.0), Dimension::new(50.0, 290.0))),
+        ];
+
+        chart.hover_scale_at(Some(Position::new(200.0, 310.0)));
+        assert_eq!(chart.hovered_scale, Some(ScaleId::X));
+        assert_eq!(chart.scale_cursor(), Some(MouseCursor::EwResize));
+
+        chart.hover_scale_at(Some(Position::new(20.0, 100.0)));
+        assert_eq!(chart.scale_cursor(), Some(MouseCursor::NsResize), "y moves up and down");
+
+        chart.hover_scale_at(Some(Position::new(200.0, 100.0)));
+        assert_eq!((chart.hovered_scale.clone(), chart.scale_cursor()), (None, None), "the chart area isn't a scale's band");
+
+        chart.hover_scale_at(Some(Position::new(470.0, 100.0)));
+        assert_eq!(chart.hovered_scale, None, "a scale gestures can't move isn't hovered");
+
+        chart.hover_scale_at(Some(Position::new(200.0, 310.0)));
+        chart.gesture = Some(Gesture::Pan { last: Position::new(200.0, 310.0), scales: vec![ScaleId::X] });
+        chart.hover_scale_at(Some(Position::new(200.0, 100.0)));
+        chart.hover_scale_at(None);
+        assert_eq!(chart.hovered_scale, Some(ScaleId::X), "dragging keeps the scale it started on, even off the chart");
     }
 
     fn fitted<C: ControllerSequence>(mut chart: Chart<C>) -> Chart<C> {

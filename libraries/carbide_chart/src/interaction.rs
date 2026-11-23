@@ -46,11 +46,12 @@ impl Debug for ClickAction {
 }
 
 /// A drag in progress: panning from where the pointer last was, or drawing a box to zoom to from
-/// where it started, each moving `scales`.
+/// where it started, each moving `scales`. A box started on a scale's band (`band`) zooms only that
+/// scale, and is drawn as a span along it in its band.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Gesture {
     Pan { last: Position, scales: Vec<ScaleId> },
-    Box { origin: Position, to: Position, scales: Vec<ScaleId> },
+    Box { origin: Position, to: Position, scales: Vec<ScaleId>, band: Option<ScaleId> },
 }
 
 /// How much one line of the wheel, 10 of carbide's scroll units, zooms: a tenth.

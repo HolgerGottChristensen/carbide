@@ -41,6 +41,13 @@ pub trait AxisStyle: WidgetStyle {
     fn border_width(&self) -> Scalar {
         1.0
     }
+
+    /// The colour a zoomable scale's band is filled with while the pointer is over it, showing that
+    /// gestures there move only that scale. The environment's tertiary fill by default, a faint
+    /// tint over the background.
+    fn hovered_band_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::TertiarySystemFill)
+    }
 }
 
 /// The colours of a chart's datasets. Set it with `ChartStyleExt::series_style`.

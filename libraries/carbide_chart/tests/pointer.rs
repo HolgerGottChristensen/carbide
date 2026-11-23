@@ -1,7 +1,8 @@
 //! The pointer in a chart, driven through the harness as a user would: hovering reports and
 //! outlines the data under the pointer, clicks call the click action, and on zoomable scales a
 //! drag and the wheel pan, a pinch and Ctrl with the wheel zoom, a Shift-drag zooms to a box, a
-//! double-click resets, and smart zoom toggles.
+//! double-click resets, and smart zoom toggles; a zoomable scale's band under the pointer is
+//! tinted, and a Shift-drag along it selects a span of that scale.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -147,9 +148,61 @@ fn ctrl_and_the_wheel_zoom_about_the_pointer() {
     harness.set_modifiers(ModifierKey::CONTROL);
     harness.mouse_move(Position::new(300.0, 465.0));
     harness.scroll(0.0, 30.0);
+    // Onto the chart area before the snapshot, so x's band isn't tinted as hovered.
+    harness.mouse_move(Position::new(300.0, 250.0));
     harness.snapshot("over_the_x_band");
 
     assert!(x.value().span() < 1.0, "x zoomed");
+    assert_eq!(*y.value(), ZoomWindow::WHOLE, "y left as it is");
+}
+
+/// A line zoomable along both scales, with the pointer over x's band below the chart area, then
+/// over the chart area. Pins down that the hovered scale's band is tinted, its tick marks, labels
+/// and border drawn as always; and that moving onto the chart area takes the tint away.
+#[test]
+fn hovering_a_scale_tints_its_band() {
+    let (x, y) = zoom_states();
+    let chart = Chart::new(LineController::new(wave_line()))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(x))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(y))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.render();
+
+    harness.mouse_move(Position::new(300.0, 465.0));
+    harness.snapshot("over_the_x_band");
+
+    harness.mouse_move(Position::new(300.0, 250.0));
+    harness.snapshot("over_the_chart_area");
+}
+
+/// A line zoomable along both scales, Shift-dragged along x's band from the left to the middle.
+/// Pins down that the selection is drawn as a span along x, across its band only, rather than a
+/// box over the chart area, and that its band stays tinted while dragging; and that letting go, still
+/// over the band, zooms only x to it, y keeping its whole range, the band tinted again.
+#[test]
+fn shift_dragging_along_a_scale_zooms_it_to_a_span() {
+    let (x, y) = zoom_states();
+    let chart = Chart::new(LineController::new(wave_line()))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(x.clone()))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(y.clone()))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+    harness.render();
+
+    harness.set_modifiers(ModifierKey::SHIFT);
+    harness.mouse_move(Position::new(150.0, 465.0));
+    harness.mouse_press(carbide_testing::MouseButton::Left);
+    harness.mouse_move(Position::new(220.0, 465.0));
+    harness.mouse_move(Position::new(320.0, 460.0));
+    harness.snapshot("drawing_the_span");
+
+    harness.mouse_release(carbide_testing::MouseButton::Left);
+    harness.set_modifiers(ModifierKey::empty());
+    harness.snapshot("zoomed_to_the_span");
+
+    let window = *x.value();
+    assert!(window.start > 0.1 && window.end < 0.6, "x zoomed to the span: {window:?}");
     assert_eq!(*y.value(), ZoomWindow::WHOLE, "y left as it is");
 }
 
