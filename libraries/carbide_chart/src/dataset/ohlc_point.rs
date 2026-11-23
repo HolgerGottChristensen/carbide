@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::DataPoint;
+use crate::dataset::datapoint::{DataPoint, PointValue};
 use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
@@ -45,6 +45,14 @@ impl<X: DataValue, V: DataValue> DataPoint for Ohlc<X, V> {
 
     fn y(&self) -> Option<Value<'_>> {
         self.close.value()
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        for (name, value) in [("open", &self.open), ("high", &self.high), ("low", &self.low), ("close", &self.close)] {
+            if let Some(value) = value.value() {
+                f(PointValue::Value { name: Some(name), value });
+            }
+        }
     }
 }
 

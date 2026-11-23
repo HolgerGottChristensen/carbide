@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::rc::Rc;
 use carbide::environment::{Environment, EnvironmentFontSize};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::widget::EdgeInsets;
@@ -16,12 +17,13 @@ use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
 use crate::controller::{ControllerSequence, DatasetController};
 use crate::legend::{self, LegendPosition};
+use crate::tooltip::{self, TooltipAnchor, TooltipText, TooltipTitle};
 use crate::sequence::IntoSequence;
 use crate::style::axis_style;
 use crate::scale::{axis, Axis, AxisPosition, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 use crate::scale::polar::RimLabel;
 use crate::geometry::{DatumKey, PickMode, Shapes};
-use crate::interaction::{pan, share_at, zoom_about, ChartClick, ClickAction, Gesture, Pick, WHEEL_ZOOM_PER_LINE};
+use crate::interaction::{pan, share_at, zoom_about, ChartClick, ClickAction, DatumInfo, Gesture, Pick, WHEEL_ZOOM_PER_LINE};
 
 /// The gap between the bands of two scales stacked on the same side of the chart area.
 const SCALE_SPACING: Scalar = 8.0;
@@ -59,6 +61,21 @@ pub struct Chart<C> where C: ControllerSequence {
     hover_mode: Box<dyn AnyReadState<T=PickMode>>,
     /// What a click in the chart area does.
     on_click: Option<ClickAction>,
+    /// Whether hovering data shows a tooltip (see `tooltip`).
+    tooltip: Box<dyn AnyReadState<T=bool>>,
+    /// The tooltip's title text, when set (see `tooltip_title`).
+    tooltip_title: Option<TooltipTitle>,
+    /// A tooltip row's text, when set (see `tooltip_text`).
+    tooltip_text: Option<TooltipText>,
+    /// The most rows a tooltip shows in `PickMode::Dataset` (see `tooltip_max_rows`).
+    tooltip_max_rows: Box<dyn AnyReadState<T=usize>>,
+    /// What the tooltip points at (see `tooltip_anchor`).
+    tooltip_anchor: Box<dyn AnyReadState<T=TooltipAnchor>>,
+    /// The side of its anchor the tooltip prefers (see `tooltip_alignment`).
+    tooltip_alignment: Box<dyn AnyReadState<T=Alignment>>,
+    /// What the pointer found on its last move, kept while the chart has a hover state or shows
+    /// tooltips, for the outlines and the tooltip.
+    hovered: Option<Pick>,
     /// The drag in progress: a pan, or a box to zoom to.
     gesture: Option<Gesture>,
     /// The last press of the primary button, kept until the next, so a drag only starts from a
@@ -118,6 +135,13 @@ impl<C: ControllerSequence> Chart<C> {
             bands: vec![],
             hovered_scale: None,
             legend_toggles: IntoReadState::<bool>::into_read_state(true).as_dyn_read(),
+            tooltip: IntoReadState::<bool>::into_read_state(true).as_dyn_read(),
+            tooltip_title: None,
+            tooltip_text: None,
+            tooltip_max_rows: IntoReadState::<usize>::into_read_state(10usize).as_dyn_read(),
+            tooltip_anchor: IntoReadState::<TooltipAnchor>::into_read_state(TooltipAnchor::Data).as_dyn_read(),
+            tooltip_alignment: IntoReadState::<Alignment>::into_read_state(Alignment::Top).as_dyn_read(),
+            hovered: None,
             legend_entries: vec![],
             hovered_legend: false,
         }
@@ -160,6 +184,66 @@ impl<C: ControllerSequence> Chart<C> {
         self
     }
 
+    /// Whether hovering data shows a tooltip next to it, a value or a state of one: `true` by
+    /// default, while the chart is `interactive`. The tooltip names what the pointer found, as
+    /// `hover_mode` finds it: with `PickMode::Index`, the category as its title and a row for each
+    /// dataset's datum at it; with `Point` or `Nearest`, the one datum; with `Dataset`, the dataset's
+    /// name and its data, at most `tooltip_max_rows` of them. Each row is the datum's marker, as in
+    /// the legend, in its colour, its dataset's name and its values (see `Pick::items`). It sits
+    /// next to the data, above it where it fits, and hides during a drag. Its colours come from the
+    /// `TooltipStyle` (see `ChartStyleExt::tooltip_style`).
+    pub fn tooltip(mut self, tooltip: impl IntoReadState<bool>) -> Chart<C> {
+        self.tooltip = tooltip.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// The tooltip's title, from what the pointer found, instead of the first datum's category or
+    /// index value (or its dataset's name with `PickMode::Dataset`). An empty title shows none.
+    pub fn tooltip_title(mut self, title: impl Fn(&Pick) -> String + 'static) -> Chart<C> {
+        self.tooltip_title = Some(TooltipTitle(Rc::new(title)));
+        self
+    }
+
+    /// The text of each of the tooltip's rows, from the datum it shows, instead of its dataset's
+    /// name and its values (see `DatumInfo::row_text`).
+    pub fn tooltip_text(mut self, text: impl Fn(&DatumInfo) -> String + 'static) -> Chart<C> {
+        self.tooltip_text = Some(TooltipText(Rc::new(text)));
+        self
+    }
+
+    /// The most rows the tooltip shows with `PickMode::Dataset`, a value or a state of one: 10 by
+    /// default. A row after them says how many more there are.
+    pub fn tooltip_max_rows(mut self, rows: impl IntoReadState<usize>) -> Chart<C> {
+        self.tooltip_max_rows = rows.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// What the tooltip points at, a `TooltipAnchor` or a state of one: `TooltipAnchor::Data` by
+    /// default, the middle of the hovered data, or `TooltipAnchor::Pointer`, following the pointer
+    /// as it moves over the chart area. Either way it shows the hovered data.
+    pub fn tooltip_anchor(mut self, anchor: impl IntoReadState<TooltipAnchor>) -> Chart<C> {
+        self.tooltip_anchor = anchor.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// The side of its anchor the tooltip prefers, an `Alignment` or a state of one, read in the
+    /// chart's own coordinates, `Leading` being the left: `Alignment::Top` by default.
+    ///
+    /// - On a side, `Top`, `Bottom`, `Leading` or `Trailing`, the tooltip is centred along it, with
+    ///   a caret pointing at the anchor, sliding along it to stay inside the chart.
+    /// - On a corner, such as `TopLeading`, it is diagonally from the anchor, above and before it
+    ///   for `TopLeading`, without a caret.
+    /// - With `Center`, it is centred on the anchor, and with `Custom(x, y)` its point at `x` and `y`
+    ///   of its size is on the anchor, moved a little away from it; neither has a caret.
+    ///
+    /// When it doesn't fit there, it tries the mirrored side or corner (top and bottom swapped,
+    /// leading and trailing), then above, below, after and before the anchor, and when nothing
+    /// fits, it is moved inside the chart without a caret.
+    pub fn tooltip_alignment(mut self, alignment: impl IntoReadState<Alignment>) -> Chart<C> {
+        self.tooltip_alignment = alignment.into_read_state().as_dyn_read();
+        self
+    }
+
     /// Whether a click on a legend entry shows or hides what it stands for, a value or a state of
     /// one: `true` by default. A click hides the entry's dataset (see `DatasetExt::visible`), or a
     /// pie's part (see `PieController::hidden_parts`), dimming its entry, and a click on a dimmed
@@ -193,6 +277,7 @@ impl<C: ControllerSequence> Chart<C> {
         self.press = None;
         self.hovered_scale = None;
         self.hovered_legend = false;
+        self.hovered = None;
         if let Some(hover) = &mut self.hover
             && hover.value_dyn().is_some() {
                 hover.set_value_dyn(None);
@@ -235,20 +320,37 @@ impl<C: ControllerSequence> Chart<C> {
             .filter_map(|id| self.scales.value_at(&id, position, self.shapes.area(), env).map(|value| (id, value)))
             .collect();
 
-        Some(Pick { position, data, values })
+        let items = data.iter().filter_map(|key| self.describe(*key, env)).collect();
+
+        Some(Pick { position, data, values, items })
     }
 
-    /// Writes what is under `position` to the hover state, when the chart has one and it changed.
+    /// The datum `key`, as its controller describes it.
+    fn describe(&self, key: DatumKey, env: &mut Environment) -> Option<DatumInfo> {
+        let mut info = None;
+        self.controllers.foreach(&mut |index, controller| {
+            if index == key.controller {
+                info = controller.describe(key, &self.scales, env);
+            }
+        });
+        info
+    }
+
+    /// Notes what is under `position`, for the outlines and the tooltip, and writes it to the hover
+    /// state, when the chart has one and it changed. Without a hover state or tooltips, nothing is
+    /// looked for.
     fn hover_at(&mut self, position: Option<Position>, env: &mut Environment) {
-        if self.hover.is_none() {
+        if self.hover.is_none() && !*self.tooltip.value_dyn() {
+            self.hovered = None;
             return;
         }
 
         let pick = position.and_then(|position| self.pick_at(position, env));
         if let Some(hover) = &mut self.hover
             && *hover.value_dyn() != pick {
-                hover.set_value_dyn(pick);
+                hover.set_value_dyn(pick.clone());
             }
+        self.hovered = pick;
     }
 
     /// The zoomable scales a gesture at `position` moves: every one over the chart area, or the one
@@ -369,6 +471,11 @@ impl<C: ControllerSequence> Chart<C> {
                 options.set_zoom(changed);
                 changed_any = true;
             }
+        }
+
+        // The data moved out from under the pointer, so what it found is forgotten until it moves.
+        if changed_any {
+            self.hovered = None;
         }
         changed_any
     }
@@ -661,6 +768,10 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
 
         self.interactive.sync(env);
         self.legend_toggles.sync(env);
+        self.tooltip.sync(env);
+        self.tooltip_max_rows.sync(env);
+        self.tooltip_anchor.sync(env);
+        self.tooltip_alignment.sync(env);
         self.hover_mode.sync(env);
         if let Some(hover) = &mut self.hover {
             hover.sync(env);
@@ -1057,10 +1168,10 @@ impl<C: ControllerSequence> Render for Chart<C> {
 
         shapes.finish();
 
-        // The hovered data outlined, and the box a Shift-drag zooms to, in the label colour, which
-        // stands out on the background.
+        // The hovered data outlined, but not during a drag, and the box a Shift-drag zooms to, in the
+        // label colour, which stands out on the background.
         let ink = axis_style(canvas.env()).label_color(canvas.env());
-        if let Some(hover) = &self.hover && self.is_interactive() && let Some(pick) = &*hover.value_dyn() {
+        if self.is_interactive() && self.gesture.is_none() && let Some(pick) = &self.hovered {
             canvas.save();
             canvas.set_line_width(2.0);
             canvas.set_stroke_style(ink);
@@ -1093,6 +1204,26 @@ impl<C: ControllerSequence> Render for Chart<C> {
                 };
                 draw_selection(&mut canvas, span, ink);
             }
+
+        // The tooltip, above everything else, next to the hovered data, hidden during a drag.
+        if self.is_interactive() && *self.tooltip.value_dyn() && self.gesture.is_none() && let Some(pick) = &self.hovered {
+            let max_rows = *self.tooltip_max_rows.value_dyn();
+            let content = tooltip::content(pick, *self.hover_mode.value_dyn(), max_rows, self.tooltip_title.as_ref(), self.tooltip_text.as_ref());
+            // Only data shown in the chart area: a zoom can move hovered data out of it.
+            let centres: Vec<Position> = pick.data.iter().filter_map(|key| shapes.center(*key)).filter(|centre| inside(chart_area, *centre)).collect();
+            let anchor = match *self.tooltip_anchor.value_dyn() {
+                TooltipAnchor::Data if !centres.is_empty() => {
+                    let count = centres.len() as Scalar;
+                    Some(Position::new(centres.iter().map(|centre| centre.x).sum::<Scalar>() / count, centres.iter().map(|centre| centre.y).sum::<Scalar>() / count))
+                }
+                TooltipAnchor::Data => None,
+                TooltipAnchor::Pointer => Some(pick.position),
+            };
+            if let (Some(content), Some(anchor)) = (content, anchor) {
+                let alignment = *self.tooltip_alignment.value_dyn();
+                tooltip::draw(&mut canvas, &content, anchor, Rect::new(Position::new(0.0, 0.0), self.dimension), alignment);
+            }
+        }
 
         self.shapes = shapes;
     }

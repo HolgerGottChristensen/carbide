@@ -4,12 +4,13 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
-use crate::geometry::Shapes;
+use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility, describe_datum};
+use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
+use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale, LegendContext};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales};
 
@@ -146,6 +147,19 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// Each named dataset as a point in its colour, or, when lines are shown, a line, or a square
     /// when it is filled, unless one of its marks gives an entry of its own (`ScatterMark::legend`),
     /// such as a bubble.
+    /// The datum's values, as a point, or as its mark draws it, such as a bubble.
+    fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        let palette = Palette::from_env(env, get(&self.palette_offset));
+        describe_datum(&self.dataset_sequence, key, scales, Orientation::Vertical, &palette, env, |dataset, options, dataset_index, env| {
+            let context = LegendContext { env, options, dataset_index, palette: &palette };
+            match first_mark_entry(|f| dataset.scatter_marks(&mut |mark| f(mark.legend(&context)))) {
+                // A mark's marker, but each point keeps its own colour.
+                Some((_, marker)) => (None, marker),
+                None => (None, LegendMarker::Point),
+            }
+        })
+    }
+
     /// Shows or hides the named dataset behind the entry.
     fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
         set_legend_visibility(&self.dataset_sequence, entry, visible)

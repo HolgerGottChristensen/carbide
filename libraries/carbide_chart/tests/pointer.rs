@@ -22,8 +22,9 @@ const QUARTERS: [&str; 4] = ["Q1", "Q2", "Q3", "Q4"];
 
 /// Grouped bars with a hover state, the pointer over the empty space above Q3's bars, then moved
 /// off the chart area. Pins down that hovering finds both datasets' bars at Q3, the nearest
-/// category (the default `Index` mode), outlines them, and reports the values under the pointer,
-/// Q3 on x; and that leaving the chart area reports nothing.
+/// category (the default `Index` mode), outlines them, shows a tooltip titled Q3 with a row for
+/// each, and reports the values under the pointer, Q3 on x; and that leaving the chart area
+/// reports nothing.
 #[test]
 fn hovering_finds_and_outlines_the_data_at_the_nearest_category() {
     let hovered = LocalState::new(None::<Pick>);
@@ -47,7 +48,8 @@ fn hovering_finds_and_outlines_the_data_at_the_nearest_category() {
 }
 
 /// Scattered points with hovering by the nearest point. Pins down that `hover_mode` changes how
-/// hovering finds data: the one point nearest the pointer is outlined.
+/// hovering finds data: the one point nearest the pointer is outlined, its tooltip showing only
+/// it.
 #[test]
 fn hover_mode_picks_how_data_is_found() {
     let hovered = LocalState::new(None::<Pick>);
@@ -148,8 +150,9 @@ fn ctrl_and_the_wheel_zoom_about_the_pointer() {
     harness.set_modifiers(ModifierKey::CONTROL);
     harness.mouse_move(Position::new(300.0, 465.0));
     harness.scroll(0.0, 30.0);
-    // Onto the chart area before the snapshot, so x's band isn't tinted as hovered.
-    harness.mouse_move(Position::new(300.0, 250.0));
+    // Off the chart's area and bands before the snapshot, so nothing is hovered: no tinted band,
+    // outline or tooltip.
+    harness.mouse_move(Position::new(5.0, 5.0));
     harness.snapshot("over_the_x_band");
 
     assert!(x.value().span() < 1.0, "x zoomed");
@@ -158,7 +161,8 @@ fn ctrl_and_the_wheel_zoom_about_the_pointer() {
 
 /// A line zoomable along both scales, with the pointer over x's band below the chart area, then
 /// over the chart area. Pins down that the hovered scale's band is tinted, its tick marks, labels
-/// and border drawn as always; and that moving onto the chart area takes the tint away.
+/// and border drawn as always; and that moving onto the chart area takes the tint away, the data
+/// there hovered instead, with its tooltip.
 #[test]
 fn hovering_a_scale_tints_its_band() {
     let (x, y) = zoom_states();
@@ -386,6 +390,8 @@ fn only_a_press_inside_a_chart_drags_it() {
     harness.render();
 
     harness.drag(Position::new(300.0, 375.0), Position::new(400.0, 125.0), 6);
+    // Off both charts before the snapshot, so nothing is hovered: no outline or tooltip.
+    harness.mouse_move(Position::new(5.0, 5.0));
     harness.snapshot("only_a_press_inside_a_chart_drags_it");
 
     assert_eq!(*upper_zoom.value(), ZoomWindow::new(0.25, 0.5), "the drag didn't start in the upper chart");

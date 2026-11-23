@@ -10,7 +10,7 @@ use std::rc::Rc;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, Fill, SpanGaps, StackId, Value};
+use crate::{DataColor, DataSetOptions, Fill, PointValue, SpanGaps, StackId, Value};
 use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
@@ -18,12 +18,13 @@ use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed,
 use crate::controller::orientation::{is_polar, normalized_pixel, pixel, Oriented, Orientation};
 use crate::controller::stacking::{normalized_totals, StackKey, StackSums};
 use crate::scale::{Axis, Coordinates, Polar, PolarRole, Scale, ScaleBounds, ScaleId, Scales, System};
-use crate::scale::axis::angle_corners;
+use crate::scale::axis::{angle_corners, format_number, tick_label};
 use crate::scale::polar::{Ring, RingShape};
 use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::style::series_style;
-use crate::geometry::{Along, Datum, Polyline, Shape, Shapes};
+use crate::geometry::{Along, Datum, DatumKey, Polyline, Shape, Shapes};
+use crate::interaction::{DatumInfo, ValueText};
 use carbide::environment::Environment;
 
 /// Reports every dataset's x and y range to the scales it is bound to: the x range to its index
@@ -950,6 +951,116 @@ pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
 
         items.push(LegendItem { label, color, marker, hidden: !options.visible });
     });
+}
+
+/// Describes the datum `key` of `datasets` (see `DatasetController::describe`): its dataset's
+/// name, its index value as its index scale labels it, and its values (`DataPoint::describe`) as
+/// its value scale labels them, the scales read as `orientation` reads them. Its colour and marker
+/// are those `look` gives for the dataset, a mark's own colour or `None` for the point's colour.
+/// `None` for a hidden dataset, or a datum it doesn't have.
+pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
+    datasets: &D,
+    key: DatumKey,
+    scales: &Scales,
+    orientation: Orientation,
+    palette: &Palette,
+    env: &mut Environment,
+    look: impl Fn(&T, &DataSetOptions, usize, &Environment) -> (Option<Color>, LegendMarker),
+) -> Option<DatumInfo> {
+    let mut found = None;
+    datasets.foreach(&mut |dataset_index, item| {
+        if dataset_index != key.dataset {
+            return;
+        }
+
+        let dataset = item.as_dataset();
+        let options = dataset.options();
+        if !options.visible {
+            return;
+        }
+
+        let (own_color, marker) = look(item, &options, dataset_index, env);
+        let (index_id, value_id) = orientation.for_dataset(&options, scales).index_and_value_scales(&options);
+        let coordinates = Coordinates::new(scales, index_id, value_id);
+
+        dataset.points(&mut |point_index, point| {
+            if point_index != key.index {
+                return;
+            }
+
+            let mut values = vec![];
+            point.describe(&mut |value| values.push(OwnedPointValue::from(value)));
+            let color = own_color.unwrap_or_else(|| point_color(point.color(), &options, dataset_index, point_index, palette));
+            found = Some((options.label.clone(), color, marker, coordinates.x(point), values, index_id.clone(), value_id.clone()));
+        });
+    });
+
+    let (dataset, color, marker, x, values, index_id, value_id) = found?;
+    let index = match (x, scales.get(&index_id)) {
+        (Some(x), Some(scale)) => Some(tick_label(scale, x, env)),
+        _ => None,
+    };
+    let value_scale = scales.get(&value_id);
+    let values = values.into_iter().map(|value| value.text(value_scale, env)).collect();
+
+    Some(DatumInfo { key, dataset, color, marker, index, values })
+}
+
+/// A point's value (`PointValue`), kept past the point it was read from.
+enum OwnedPointValue {
+    Value(Option<&'static str>, OwnedValue),
+    Span(Option<&'static str>, OwnedValue, OwnedValue),
+    Other(&'static str, OwnedValue),
+}
+
+/// A `Value`, kept past the point it was read from.
+enum OwnedValue {
+    Number(Scalar),
+    Text(String),
+}
+
+impl From<Value<'_>> for OwnedValue {
+    fn from(value: Value) -> OwnedValue {
+        match value {
+            Value::Number(number) | Value::Time(number) => OwnedValue::Number(number),
+            Value::Text(text) => OwnedValue::Text(text.to_string()),
+        }
+    }
+}
+
+impl From<PointValue<'_>> for OwnedPointValue {
+    fn from(value: PointValue) -> OwnedPointValue {
+        match value {
+            PointValue::Value { name, value } => OwnedPointValue::Value(name, value.into()),
+            PointValue::Span { name, low, high } => OwnedPointValue::Span(name, low.into(), high.into()),
+            PointValue::Other { name, value } => OwnedPointValue::Other(name, value.into()),
+        }
+    }
+}
+
+impl OwnedValue {
+    /// The value as `scale` labels its ticks, or as a plain number without a scale.
+    fn text(self, scale: Option<&dyn Scale>, env: &mut Environment) -> String {
+        match (self, scale) {
+            (OwnedValue::Text(text), _) => text,
+            (OwnedValue::Number(number), Some(scale)) => tick_label(scale, number, env),
+            (OwnedValue::Number(number), None) => format_number(number, env),
+        }
+    }
+}
+
+impl OwnedPointValue {
+    /// The value as text, along `value_scale` unless it isn't a value-scale value.
+    fn text(self, value_scale: Option<&dyn Scale>, env: &mut Environment) -> ValueText {
+        match self {
+            OwnedPointValue::Value(name, value) => ValueText { name: name.map(str::to_string), text: value.text(value_scale, env) },
+            OwnedPointValue::Span(name, low, high) => {
+                let text = format!("{} – {}", low.text(value_scale, env), high.text(value_scale, env));
+                ValueText { name: name.map(str::to_string), text }
+            }
+            OwnedPointValue::Other(name, value) => ValueText { name: Some(name.to_string()), text: value.text(None, env) },
+        }
+    }
 }
 
 /// Shows or hides the dataset behind legend entry `entry`, counting entries as `legend_items`

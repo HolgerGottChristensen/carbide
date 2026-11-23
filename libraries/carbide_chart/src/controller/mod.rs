@@ -11,7 +11,8 @@ pub use pie_controller::{PieController, PiePart, DEFAULT_OUTLINE_WIDTH, DEFAULT_
 pub use scatter_controller::ScatterController;
 use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};
-use crate::geometry::Shapes;
+use crate::geometry::{DatumKey, Shapes};
+use crate::interaction::DatumInfo;
 
 mod bar_controller;
 mod controller_sequence;
@@ -74,6 +75,14 @@ pub trait DatasetController: DynClone + Debug + 'static {
         false
     }
 
+    /// Describes the datum `key` (its dataset and index; its controller is this one) for a
+    /// tooltip and for `Pick::items`: its dataset's name, colour and legend marker, its index value
+    /// and its values as text, labelled by the fitted `scales`. The built-in controllers describe
+    /// their data; the default can't, and returns `None`, so the datum is left out.
+    fn describe(&self, _key: DatumKey, _scales: &Scales, _env: &mut Environment) -> Option<DatumInfo> {
+        None
+    }
+
     /// Whether the controller draws around a circle unless told otherwise, so a chart whose first
     /// controller it is makes its default x and y scales radial, as a pie controller does. The
     /// default is `false`: default scales run along the sides.
@@ -117,6 +126,10 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
         (**self).legend_visibility(entry, visible)
+    }
+
+    fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        (**self).describe(key, scales, env)
     }
 
     fn prefers_polar(&self) -> bool {

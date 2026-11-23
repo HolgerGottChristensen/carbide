@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::DataPoint;
+use crate::dataset::datapoint::{DataPoint, PointValue};
 use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
@@ -50,6 +50,14 @@ impl<X: DataValue, V: DataValue> DataPoint for BoxStats<X, V> {
 
     fn y(&self) -> Option<Value<'_>> {
         self.median.value()
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        for (name, value) in [("min", &self.min), ("q1", &self.q1), ("median", &self.median), ("q3", &self.q3), ("max", &self.max)] {
+            if let Some(value) = value.value() {
+                f(PointValue::Value { name: Some(name), value });
+            }
+        }
     }
 }
 

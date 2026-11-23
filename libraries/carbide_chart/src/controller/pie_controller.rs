@@ -9,7 +9,9 @@ use crate::{DataColor, DataSetOptions, PieDataSet, Value};
 use crate::mark::MarkRole;
 use crate::controller::{bar_slot, DatasetController};
 use crate::controller::options::{constant, get, option, Opt};
-use crate::geometry::{Datum, Shapes};
+use crate::geometry::{Datum, DatumKey, Shapes};
+use crate::interaction::{DatumInfo, ValueText};
+use crate::scale::axis::format_number;
 use crate::controller::bar_controller::min_sample_size;
 use crate::controller::drawing::{point_color, polar_frame, Palette, PolarFrame};
 use crate::controller::line_path::PathSink;
@@ -473,6 +475,30 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
             bounds.include(x_id, x, x);
             bounds.include(y_id, 0.0, 100.0);
         });
+    }
+
+    /// The part: its name as its index, its value and its share of the parts shown, in its colour.
+    fn describe(&self, key: DatumKey, _scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        let palette = Palette::from_env(env, get(&self.palette_offset));
+        let mut found = None;
+        self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
+            if dataset_index != key.dataset {
+                return;
+            }
+            let options = dataset.options();
+            let parts = self.shown_parts(dataset);
+            if let Some(part) = parts.parts.iter().find(|part| part.index == key.index) {
+                let share = if parts.total > 0.0 { part.size / parts.total * 100.0 } else { 0.0 };
+                found = Some((options.label.clone(), part.name.clone(), part_color(part, &options, dataset_index, &palette), part.value, share));
+            }
+        });
+
+        let (dataset, name, color, value, share) = found?;
+        let values = vec![
+            ValueText { name: None, text: format_number(value, env) },
+            ValueText { name: Some("share".to_string()), text: format!("{} %", format_number((share * 10.0).round() / 10.0, env)) },
+        ];
+        Some(DatumInfo { key, dataset, color, marker: LegendMarker::Square, index: Some(name), values })
     }
 
     /// Hides the entry's part, by adding its name to the hidden parts, or shows it again.

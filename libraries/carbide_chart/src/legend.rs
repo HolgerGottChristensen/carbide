@@ -50,13 +50,13 @@ pub enum LegendMarker {
 }
 
 /// The width and height of a marker.
-const MARKER_SIZE: Scalar = 12.0;
+pub(crate) const MARKER_SIZE: Scalar = 12.0;
 /// The diameter of a point marker, the same as a chart's points.
 const POINT_DIAMETER: Scalar = 7.0;
 /// How wide a bubble marker's outline is, as wide as a bubble's.
 const BUBBLE_OUTLINE_WIDTH: Scalar = 2.0;
 /// The gap between a marker and its name.
-const MARKER_GAP: Scalar = 6.0;
+pub(crate) const MARKER_GAP: Scalar = 6.0;
 /// The gap between two items side by side.
 const ITEM_GAP: Scalar = 16.0;
 /// The gap between two rows, or two items one above the other.
@@ -190,65 +190,76 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
         let middle = top + corner.y + height / 2.0;
         let color = dimmed(item.color, item.hidden);
 
-        ctx.begin_path();
-        match item.marker {
-            LegendMarker::Square => {
-                let (top, bottom) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0);
-                ctx.move_to(x, top);
-                ctx.line_to(x + MARKER_SIZE, top);
-                ctx.line_to(x + MARKER_SIZE, bottom);
-                ctx.line_to(x, bottom);
-                ctx.close_path();
-                ctx.set_fill_style(color);
-                ctx.fill();
-            }
-            LegendMarker::Split(right) => {
-                let (top, bottom, half) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0, MARKER_SIZE / 2.0);
-                for (left, color) in [(x, color), (x + half, dimmed(right, item.hidden))] {
-                    ctx.begin_path();
-                    ctx.move_to(left, top);
-                    ctx.line_to(left + half, top);
-                    ctx.line_to(left + half, bottom);
-                    ctx.line_to(left, bottom);
-                    ctx.close_path();
-                    ctx.set_fill_style(color);
-                    ctx.fill();
-                }
-            }
-            LegendMarker::Line => {
-                ctx.move_to(x, middle);
-                ctx.line_to(x + MARKER_SIZE, middle);
-                ctx.set_line_width(2.0);
-                ctx.set_stroke_style(color);
-                ctx.stroke();
-                ctx.begin_path();
-                ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
-                ctx.set_fill_style(color);
-                ctx.fill();
-            }
-            LegendMarker::Point => {
-                ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
-                ctx.set_fill_style(color);
-                ctx.fill();
-            }
-            LegendMarker::Bubble => {
-                let fill_opacity = series_style(ctx.env()).fill_opacity();
-                let Rgba(r, g, b, a) = Rgba::from(color);
-                // Inset by half the outline, so the outline stays within the marker's square.
-                ctx.circle(x + MARKER_SIZE / 2.0, middle, MARKER_SIZE - BUBBLE_OUTLINE_WIDTH);
-                ctx.set_fill_style(rgba(r, g, b, a * fill_opacity));
-                ctx.fill();
-                ctx.set_line_width(BUBBLE_OUTLINE_WIDTH);
-                ctx.set_stroke_style(color);
-                ctx.stroke();
-            }
-        }
+        let right = match item.marker {
+            LegendMarker::Split(right) => Some(dimmed(right, item.hidden)),
+            _ => None,
+        };
+        draw_marker(ctx, item.marker, color, right, x, middle);
 
         ctx.set_fill_style(dimmed(label_color, item.hidden));
         ctx.fill_text(&item.label, x + MARKER_SIZE + MARKER_GAP, middle);
     }
 
     ctx.restore();
+}
+
+/// Draws a legend marker of `marker`'s shape in `color`, its left edge at `x` and centred on
+/// `middle`, as the legend and tooltips show a dataset; a split marker's right half is in
+/// `right_color` when given, or its own colour.
+pub(crate) fn draw_marker(ctx: &mut CanvasContext, marker: LegendMarker, color: Color, right_color: Option<Color>, x: Scalar, middle: Scalar) {
+    ctx.begin_path();
+    match marker {
+        LegendMarker::Square => {
+            let (top, bottom) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0);
+            ctx.move_to(x, top);
+            ctx.line_to(x + MARKER_SIZE, top);
+            ctx.line_to(x + MARKER_SIZE, bottom);
+            ctx.line_to(x, bottom);
+            ctx.close_path();
+            ctx.set_fill_style(color);
+            ctx.fill();
+        }
+        LegendMarker::Split(right) => {
+            let (top, bottom, half) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0, MARKER_SIZE / 2.0);
+            for (left, color) in [(x, color), (x + half, right_color.unwrap_or(right))] {
+                ctx.begin_path();
+                ctx.move_to(left, top);
+                ctx.line_to(left + half, top);
+                ctx.line_to(left + half, bottom);
+                ctx.line_to(left, bottom);
+                ctx.close_path();
+                ctx.set_fill_style(color);
+                ctx.fill();
+            }
+        }
+        LegendMarker::Line => {
+            ctx.move_to(x, middle);
+            ctx.line_to(x + MARKER_SIZE, middle);
+            ctx.set_line_width(2.0);
+            ctx.set_stroke_style(color);
+            ctx.stroke();
+            ctx.begin_path();
+            ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
+            ctx.set_fill_style(color);
+            ctx.fill();
+        }
+        LegendMarker::Point => {
+            ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
+            ctx.set_fill_style(color);
+            ctx.fill();
+        }
+        LegendMarker::Bubble => {
+            let fill_opacity = series_style(ctx.env()).fill_opacity();
+            let Rgba(r, g, b, a) = Rgba::from(color);
+            // Inset by half the outline, so the outline stays within the marker's square.
+            ctx.circle(x + MARKER_SIZE / 2.0, middle, MARKER_SIZE - BUBBLE_OUTLINE_WIDTH);
+            ctx.set_fill_style(rgba(r, g, b, a * fill_opacity));
+            ctx.fill();
+            ctx.set_line_width(BUBBLE_OUTLINE_WIDTH);
+            ctx.set_stroke_style(color);
+            ctx.stroke();
+        }
+    }
 }
 
 #[cfg(test)]

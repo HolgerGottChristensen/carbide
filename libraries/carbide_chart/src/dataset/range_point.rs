@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::DataPoint;
+use crate::dataset::datapoint::{DataPoint, PointValue};
 use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
@@ -58,6 +58,12 @@ impl<X: DataValue, V: DataValue> DataPoint for Range<X, V> {
     fn y(&self) -> Option<Value<'_>> {
         self.high.value()
     }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let (Some(low), Some(high)) = (self.low.value(), self.high.value()) {
+            f(PointValue::Span { name: None, low, high });
+        }
+    }
 }
 
 impl<X: DataValue, V: DataValue> RangePoint for Range<X, V> {
@@ -87,6 +93,15 @@ impl<X: DataValue, V: DataValue> DataPoint for Estimate<X, V> {
 
     fn y(&self) -> Option<Value<'_>> {
         self.y.value()
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(y) = self.y.value() {
+            f(PointValue::Value { name: None, value: y });
+        }
+        if let (Some(low), Some(high)) = (self.low.value(), self.high.value()) {
+            f(PointValue::Span { name: Some("range"), low, high });
+        }
     }
 }
 
@@ -121,6 +136,15 @@ impl<X: DataValue, V: DataValue> DataPoint for Spread<X, V> {
 
     fn y(&self) -> Option<Value<'_>> {
         self.y.value()
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(y) = self.y.value() {
+            f(PointValue::Value { name: None, value: y });
+        }
+        if let (Some(low), Some(high)) = (self.low.value(), self.high.value()) {
+            f(PointValue::Span { name: Some("range"), low, high });
+        }
     }
 }
 

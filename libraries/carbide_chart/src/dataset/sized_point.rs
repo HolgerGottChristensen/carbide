@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::DataPoint;
+use crate::dataset::datapoint::{DataPoint, PointValue};
 use crate::dataset::datavalue::{DataValue, Value};
 use crate::sequence::SequenceItem;
 
@@ -45,6 +45,15 @@ impl<X: DataValue, Y: DataValue, S: DataValue> DataPoint for Bubble<X, Y, S> {
 
     fn z(&self) -> Option<Value<'_>> {
         self.size.value()
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(y) = self.y.value() {
+            f(PointValue::Value { name: None, value: y });
+        }
+        if let Some(size) = self.size.value() {
+            f(PointValue::Other { name: "size", value: size });
+        }
     }
 }
 

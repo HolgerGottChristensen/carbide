@@ -589,7 +589,7 @@ fn rim_alignment(direction: Position) -> Alignment {
 }
 
 #[cfg(feature = "carbide_fluent")]
-fn format_number(x: Scalar, env: &mut Environment) -> String {
+pub(crate) fn format_number(x: Scalar, env: &mut Environment) -> String {
     use carbide::state::{ReadState, StateSync};
     use carbide_fluent::LocalizedNumber;
 
@@ -600,7 +600,7 @@ fn format_number(x: Scalar, env: &mut Environment) -> String {
 }
 
 #[cfg(not(feature = "carbide_fluent"))]
-fn format_number(x: Scalar, _env: &mut Environment) -> String {
+pub(crate) fn format_number(x: Scalar, _env: &mut Environment) -> String {
     format!("{}", x)
 }
 

@@ -5,12 +5,13 @@ use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
-use crate::geometry::{Datum, Shapes};
-use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame, set_legend_visibility};
+use crate::geometry::{DatumKey, Datum, Shapes};
+use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame, set_legend_visibility, describe_datum};
+use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
-use crate::mark::{AsDataSet, BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole};
+use crate::mark::{AsDataSet, BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole, LegendContext};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::controller::orientation::{is_polar, Orientation};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
@@ -175,6 +176,18 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
     /// Each named dataset as a square in its colour, or as its mark asks, such as a square split
     /// into the rising and falling colours for candlesticks.
+    /// The datum's bar value, or a mark's values, in its colour or the mark's own.
+    fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        let palette = Palette::from_env(env, get(&self.palette_offset));
+        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &palette, env, |dataset, options, dataset_index, env| {
+            let context = LegendContext { env, options, dataset_index, palette: &palette };
+            match first_mark_entry(|f| dataset.bar_marks(&mut |mark| f(mark.legend(&context)))) {
+                Some((color, marker)) => (Some(color), marker),
+                None => (None, LegendMarker::Square),
+            }
+        })
+    }
+
     /// Shows or hides the named dataset behind the entry.
     fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
         set_legend_visibility(&self.dataset_sequence, entry, visible)

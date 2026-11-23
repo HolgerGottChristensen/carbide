@@ -431,6 +431,28 @@ fn sorted_along(anchors: &[(DatasetKey, Anchor)]) -> Option<(bool, Scalar)> {
 impl Shapes {
     /// Outlines the shape of the datum `key` on `ctx`, in the stroke style set on it: a bar's,
     /// a wedge's or a slice's edge, or a ring round its marker or its point on its line.
+    /// The middle of the shape the datum `key` is drawn as, or of its vertex on a line, where a
+    /// tooltip points at it; `None` when it isn't drawn.
+    pub(crate) fn center(&self, key: DatumKey) -> Option<Position> {
+        let mut vertex = None;
+        for item in &self.items {
+            if item.dataset.controller != key.controller || item.dataset.dataset != key.dataset {
+                continue;
+            }
+
+            match &item.shape {
+                Shape::Polyline(line) => {
+                    if vertex.is_none() {
+                        vertex = line.vertices.iter().find(|(_, datum)| datum.index == key.index).map(|(position, _)| *position);
+                    }
+                }
+                shape if item.datum.as_ref().is_some_and(|datum| datum.index == key.index) => return shape.center(),
+                _ => {}
+            }
+        }
+        vertex
+    }
+
     pub(crate) fn outline(&self, ctx: &mut carbide_core::widget::canvas::CanvasContext, key: DatumKey) {
         for item in &self.items {
             if item.dataset.controller != key.controller || item.dataset.dataset != key.dataset {

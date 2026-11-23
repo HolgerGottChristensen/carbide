@@ -13,7 +13,7 @@ mod scales;
 mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
-use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, ZoomWindow};
+use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, TooltipAnchor, ZoomWindow};
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
@@ -21,7 +21,7 @@ use carbide::controls::slider::{Slider, SliderStepping};
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::{ControlsExt, TextInput};
 use carbide::draw::color::rgba_bytes;
-use carbide::draw::Scalar;
+use carbide::draw::{Alignment, Scalar};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::state::{IntoReadState, LocalState, Map1, ReadState, State};
 use carbide::widget::*;
@@ -163,6 +163,9 @@ pub(crate) struct Shared {
     hover_mode: LocalState<PickMode>,
     legend: LocalState<LegendPosition>,
     legend_toggles: LocalState<bool>,
+    tooltip: LocalState<bool>,
+    tooltip_anchor: LocalState<TooltipAnchor>,
+    tooltip_alignment: LocalState<Alignment>,
     colors: LocalState<Colors>,
 }
 
@@ -175,6 +178,9 @@ impl Shared {
             hover_mode: LocalState::new(PickMode::Index),
             legend: LocalState::new(LegendPosition::Bottom),
             legend_toggles: LocalState::new(true),
+            tooltip: LocalState::new(true),
+            tooltip_anchor: LocalState::new(TooltipAnchor::Data),
+            tooltip_alignment: LocalState::new(Alignment::Top),
             colors: LocalState::new(Colors::Theme),
         }
     }
@@ -186,6 +192,9 @@ impl Shared {
         chart
             .legend(self.legend.clone())
             .legend_toggles(self.legend_toggles.clone())
+            .tooltip(self.tooltip.clone())
+            .tooltip_anchor(self.tooltip_anchor.clone())
+            .tooltip_alignment(self.tooltip_alignment.clone())
             .interactive(self.interactive.clone())
             .hover(self.hovered.clone())
             .hover_mode(self.hover_mode.clone())
@@ -200,6 +209,22 @@ impl Shared {
         VStack::new((
             section("Pointer"),
             Toggle::new("Interactive", self.interactive.clone()),
+            Toggle::new("Tooltips", self.tooltip.clone()),
+            Picker::new("Tooltip at", self.tooltip_anchor.clone(), (
+                Text::new("The data").tag(TooltipAnchor::Data),
+                Text::new("The pointer").tag(TooltipAnchor::Pointer),
+            )),
+            Picker::new("Tooltip side", self.tooltip_alignment.clone(), (
+                Text::new("Above").tag(Alignment::Top),
+                Text::new("Below").tag(Alignment::Bottom),
+                Text::new("Before").tag(Alignment::Leading),
+                Text::new("After").tag(Alignment::Trailing),
+                Text::new("Above, before").tag(Alignment::TopLeading),
+                Text::new("Above, after").tag(Alignment::TopTrailing),
+                Text::new("Below, before").tag(Alignment::BottomLeading),
+                Text::new("Below, after").tag(Alignment::BottomTrailing),
+                Text::new("Centred").tag(Alignment::Center),
+            )),
             Picker::new("Hover finds", self.hover_mode.clone(), (
                 Text::new("The category").tag(PickMode::Index),
                 Text::new("What is under it").tag(PickMode::Point),
@@ -331,8 +356,11 @@ pub(crate) fn pixels(pixels: &Scalar) -> String {
 /// What a pick found, for the bottom bar: each datum by its dataset and index, and the value under
 /// the pointer on each scale, or its category.
 fn describe(pick: &Pick) -> String {
+    // The data found, as their controllers describe them, or by their keys when they can't.
     let data = if pick.data.is_empty() {
         "nothing".to_string()
+    } else if !pick.items.is_empty() {
+        pick.items.iter().map(|item| item.row_text()).collect::<Vec<_>>().join(", ")
     } else {
         pick.data.iter().map(|datum| format!("dataset {} #{}", datum.dataset, datum.index)).collect::<Vec<_>>().join(", ")
     };

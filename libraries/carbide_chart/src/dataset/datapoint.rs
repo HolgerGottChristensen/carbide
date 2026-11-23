@@ -35,6 +35,15 @@ pub trait DataPoint {
         DataColor::ByDataSet
     }
 
+    /// Calls `f` with each of the point's values, as a tooltip shows them (see `PointValue`): by
+    /// default its y. Points with more values say so: a floating bar its span, a candlestick its
+    /// open, high, low and close, a bubble its size.
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(y) = self.y() {
+            f(PointValue::Value { name: None, value: y });
+        }
+    }
+
     /// Whether the point is missing: its x or y is. A missing point is not drawn, adds nothing to
     /// its dataset's bounds or stack, and leaves a gap in a line (see `SpanGaps`).
     fn is_missing(&self) -> bool {
@@ -58,6 +67,22 @@ impl<T: DataPoint + ?Sized> DataPoint for &T {
     fn color(&self) -> DataColor {
         T::color(self)
     }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        T::describe(self, f);
+    }
+}
+
+/// One of a point's values, as a tooltip shows it (see `DataPoint::describe`). Values along the
+/// value scale are written as the scale labels its ticks; other values as plain numbers.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum PointValue<'a> {
+    /// A value along the value scale, named when the point has several, such as `"open"`.
+    Value { name: Option<&'static str>, value: Value<'a> },
+    /// A span along the value scale from `low` to `high`, such as a floating bar's.
+    Span { name: Option<&'static str>, low: Value<'a>, high: Value<'a> },
+    /// A value that isn't along the value scale, such as a bubble's size.
+    Other { name: &'static str, value: Value<'a> },
 }
 
 impl DataPoint for Position {
@@ -92,6 +117,16 @@ impl<X: DataValue, Y: DataValue, Z: DataValue> DataPoint for (X, Y, Z) {
     fn z(&self) -> Option<Value<'_>> {
         self.2.value()
     }
+
+    /// Its y, then its z, as a bubble's size.
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(y) = self.y() {
+            f(PointValue::Value { name: None, value: y });
+        }
+        if let Some(z) = self.z() {
+            f(PointValue::Other { name: "size", value: z });
+        }
+    }
 }
 
 /// `None` is a missing point, with no coordinates; `Some` is the point inside it.
@@ -110,6 +145,12 @@ impl<P: DataPoint> DataPoint for Option<P> {
 
     fn color(&self) -> DataColor {
         self.as_ref().map_or(DataColor::ByDataSet, DataPoint::color)
+    }
+
+    fn describe(&self, f: &mut dyn FnMut(PointValue<'_>)) {
+        if let Some(point) = self {
+            point.describe(f);
+        }
     }
 }
 

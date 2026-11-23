@@ -4,12 +4,13 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
-use crate::geometry::Shapes;
+use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility, describe_datum};
+use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::mark::{LineCanvas, LineDataSet, MarkRole};
+use crate::mark::{LineCanvas, LineDataSet, MarkRole, LegendContext};
 use crate::controller::stacking::{normalized_totals, stack_offset, StackKey, StackOffsets, StackSums};
 use crate::sequence::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleKind, Scales};
@@ -258,6 +259,26 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// Each named dataset as a line in its colour, a point when lines aren't shown, or a square
     /// when it is filled or a mark, such as a band, replaces its line, unless one of its marks gives an entry of its own
     /// (`LineMark::legend`).
+    /// The datum's value, or a mark's values, with the marker its dataset has in the legend.
+    fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        let palette = Palette::from_env(env, get(&self.palette_offset));
+        let replaced = self.replaced_lines();
+        let show_line = get(&self.show_line);
+        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &palette, env, |dataset, options, dataset_index, env| {
+            let context = LegendContext { env, options, dataset_index, palette: &palette };
+            if let Some((color, marker)) = first_mark_entry(|f| dataset.line_marks(&mut |mark| f(mark.legend(&context)))) {
+                return (Some(color), marker);
+            }
+            let marker = match (replaced.contains(&dataset_index), show_line, options.fill) {
+                (true, _, _) => LegendMarker::Square,
+                (false, false, _) => LegendMarker::Point,
+                (false, true, Fill::None) => LegendMarker::Line,
+                (false, true, _) => LegendMarker::Square,
+            };
+            (None, marker)
+        })
+    }
+
     /// Shows or hides the named dataset behind the entry.
     fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
         set_legend_visibility(&self.dataset_sequence, entry, visible)

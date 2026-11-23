@@ -1,5 +1,5 @@
-//! How a chart looks. Its axes take their colours from an `AxisStyle`, and its datasets from a
-//! `SeriesStyle`. Each is a style behind an environment key, like carbide's other widget styles,
+//! How a chart looks. Its axes take their colours from an `AxisStyle`, its datasets from a
+//! `SeriesStyle`, and its tooltip from a `TooltipStyle`. Each is a style behind an environment key, like carbide's other widget styles,
 //! so it is set on any ancestor of the charts it applies to (`ChartStyleExt`) and defaults to
 //! `AutomaticStyle`, which follows the environment's theme.
 //!
@@ -7,7 +7,7 @@
 //! borders and a white, green and red palette, which make every part easy to tell apart.
 
 use std::fmt::Debug;
-use carbide::color::{Color, GREEN, RED, WHITE, YELLOW};
+use carbide::color::{Color, BLACK, GREEN, RED, WHITE, YELLOW};
 use carbide::draw::{AutomaticStyle, DebugStyle, Scalar};
 use carbide::draw::color::{rgba, Rgba};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentKey, Shared};
@@ -83,8 +83,30 @@ pub trait SeriesStyle: WidgetStyle {
     }
 }
 
+/// The colours of a chart's tooltip (see `Chart::tooltip`): its background and border, its title
+/// and its rows. Set it with `ChartStyleExt::tooltip_style`.
+pub trait TooltipStyle: WidgetStyle {
+    /// The colour the tooltip is filled with.
+    fn background_color(&self, env: &Environment) -> Color;
+
+    /// The colour of the tooltip's outline.
+    fn border_color(&self, env: &Environment) -> Color;
+
+    /// The colour of the tooltip's title.
+    fn title_color(&self, env: &Environment) -> Color;
+
+    /// The colour of the tooltip's rows.
+    fn text_color(&self, env: &Environment) -> Color;
+
+    /// The radius of the tooltip's corners, in pixels.
+    fn corner_radius(&self) -> Scalar {
+        6.0
+    }
+}
+
 clone_trait_object!(AxisStyle);
 clone_trait_object!(SeriesStyle);
+clone_trait_object!(TooltipStyle);
 
 /// Follows the environment's theme: grid lines and tick marks in its separator colours, labels in
 /// its secondary label colour, and the series in its system colours.
@@ -122,6 +144,45 @@ impl SeriesStyle for AutomaticStyle {
             .into_iter()
             .map(|color| theme_color(env, color))
             .collect()
+    }
+}
+
+/// A background a step from the system background's, outlined in the separator colour, with the
+/// title in the label colour and the rows in the secondary label colour.
+impl TooltipStyle for AutomaticStyle {
+    fn background_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::SecondarySystemBackground)
+    }
+
+    fn border_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::OpaqueSeparator)
+    }
+
+    fn title_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::Label)
+    }
+
+    fn text_color(&self, env: &Environment) -> Color {
+        theme_color(env, EnvironmentColor::SecondaryLabel)
+    }
+}
+
+/// A black tooltip with a yellow outline and white text.
+impl TooltipStyle for DebugStyle {
+    fn background_color(&self, _env: &Environment) -> Color {
+        BLACK
+    }
+
+    fn border_color(&self, _env: &Environment) -> Color {
+        YELLOW
+    }
+
+    fn title_color(&self, _env: &Environment) -> Color {
+        WHITE
+    }
+
+    fn text_color(&self, _env: &Environment) -> Color {
+        WHITE
     }
 }
 
@@ -178,6 +239,11 @@ pub trait ChartStyleExt: Widget + Sized {
     fn series_style(self, style: impl SeriesStyle) -> impl Widget {
         EnvUpdatingNew::<Self, SeriesStyleKey>::new(Box::new(style) as Box<dyn SeriesStyle>, self)
     }
+
+    /// Draws the tooltips of every chart inside with `style`.
+    fn tooltip_style(self, style: impl TooltipStyle) -> impl Widget {
+        EnvUpdatingNew::<Self, TooltipStyleKey>::new(Box::new(style) as Box<dyn TooltipStyle>, self)
+    }
 }
 
 impl<W: Widget> ChartStyleExt for W {}
@@ -196,6 +262,19 @@ pub(crate) struct SeriesStyleKey;
 impl EnvironmentKey for SeriesStyleKey {
     type Value = Box<dyn SeriesStyle>;
     type Access = Shared;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct TooltipStyleKey;
+
+impl EnvironmentKey for TooltipStyleKey {
+    type Value = Box<dyn TooltipStyle>;
+    type Access = Shared;
+}
+
+/// The tooltip style set on the chart or one of its ancestors, or `AutomaticStyle`.
+pub(crate) fn tooltip_style(env: &Environment) -> Box<dyn TooltipStyle> {
+    env.get::<TooltipStyleKey>().cloned().unwrap_or_else(|| Box::new(AutomaticStyle))
 }
 
 /// The axis style set on the chart or one of its ancestors, or `AutomaticStyle`.

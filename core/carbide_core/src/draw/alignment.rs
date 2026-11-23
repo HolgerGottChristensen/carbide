@@ -1,6 +1,7 @@
+use carbide_derive::StateValue;
 use crate::draw::{Dimension, Position};
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, StateValue)]
 pub enum Alignment {
     TopLeading,
     Top,

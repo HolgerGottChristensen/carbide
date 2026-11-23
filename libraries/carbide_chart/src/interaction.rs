@@ -3,11 +3,13 @@
 
 use std::fmt::{Debug, Formatter};
 use std::rc::Rc;
+use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide::event::ModifierKey;
 use crate::controller::orientation::pixel_normalized;
 use crate::geometry::DatumKey;
+use crate::legend::LegendMarker;
 use crate::scale::{Axis, Scale, ScaleId, ScaleValue, ZoomWindow};
 
 /// What the pointer found in a chart: where it is, in the chart's own coordinates, from its
@@ -18,6 +20,54 @@ pub struct Pick {
     pub position: Position,
     pub data: Vec<DatumKey>,
     pub values: Vec<(ScaleId, ScaleValue)>,
+    /// What each datum found is, in the order of `data`, as its controller describes it (see
+    /// `DatumInfo`): its dataset's name, its colour, and its index and values as text. Data a
+    /// controller can't describe are left out.
+    pub items: Vec<DatumInfo>,
+}
+
+/// A datum, as its controller describes it for a tooltip (see `DatasetController::describe`):
+/// its dataset's name, its colour and the marker its dataset has in the legend, its index value as
+/// its index scale labels it (a category's name, a date, a number), and its values, as its value
+/// scale labels its ticks.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DatumInfo {
+    pub key: DatumKey,
+    pub dataset: Option<String>,
+    pub color: Color,
+    pub marker: LegendMarker,
+    pub index: Option<String>,
+    pub values: Vec<ValueText>,
+}
+
+/// One of a datum's values as text, named when the datum has several (see `PointValue`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ValueText {
+    pub name: Option<String>,
+    pub text: String,
+}
+
+impl DatumInfo {
+    /// The datum's values on one line: `12`, `4 – 12`, `7, range 5 – 9` or
+    /// `open 10, high 12, low 9, close 11`.
+    pub fn values_text(&self) -> String {
+        self.values.iter()
+            .map(|value| match &value.name {
+                Some(name) => format!("{name} {}", value.text),
+                None => value.text.clone(),
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    /// The datum as a tooltip's row shows it by default: its dataset's name and its values,
+    /// `Revenue: 12`, or its values alone when its dataset has no name.
+    pub fn row_text(&self) -> String {
+        match &self.dataset {
+            Some(name) => format!("{name}: {}", self.values_text()),
+            None => self.values_text(),
+        }
+    }
 }
 
 impl Pick {
