@@ -13,7 +13,8 @@ use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetP
 use crate::mark::pie_mark::BoundPieMark;
 use crate::sequence::Sequence;
 
-/// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`. It
+/// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`, or
+/// by `DatasetExt::draw_as` and `DatasetExt::overlay` for marks of your own. It
 /// draws like the dataset inside it, plus the mark, and can be drawn by the controllers whose
 /// family the mark belongs to: by a bar controller when the mark is a `BarMark`, by a line
 /// controller when it is a `LineMark`, and by a scatter controller when it is a `ScatterMark`. A
@@ -38,8 +39,35 @@ impl<D, M> Marked<D, M> {
     }
 
     /// The same dataset with its mark replaced by what `f` makes of it, to change a mark's
-    /// options, and with them its type.
-    pub(crate) fn map_mark<M2>(self, f: impl FnOnce(M) -> M2) -> Marked<D, M2> {
+    /// options, and with them its type. A mark of your own can offer option builders after it is
+    /// attached through it, in an extension trait on `Marked<D, YourMark>`, as the built-in marks'
+    /// options read (`data.error_bars().whisker_color(..)`):
+    ///
+    /// ```
+    /// use carbide_chart::{DatasetExt, ErrorBars, Mark, Marked, Overlay};
+    ///
+    /// /// A mark with one option.
+    /// #[derive(Clone, Debug, Default)]
+    /// struct Halo { width: f64 }
+    ///
+    /// impl Mark for Halo {
+    ///     type Role = Overlay;
+    /// }
+    ///
+    /// trait HaloExt {
+    ///     fn width(self, width: f64) -> Self;
+    /// }
+    ///
+    /// impl<D> HaloExt for Marked<D, Halo> {
+    ///     fn width(self, width: f64) -> Self {
+    ///         self.map_mark(|halo| Halo { width, ..halo })
+    ///     }
+    /// }
+    ///
+    /// let data = vec![1.0, 2.0].overlay(Halo::default()).width(3.0);
+    /// assert_eq!(data.mark().width, 3.0);
+    /// ```
+    pub fn map_mark<M2>(self, f: impl FnOnce(M) -> M2) -> Marked<D, M2> {
         Marked { inner: self.inner, mark: f(self.mark) }
     }
 }
@@ -149,7 +177,7 @@ impl<D: LineDataSet + Clone, M: LineMark<D>> LineDataSet for Marked<D, M> {
 #[diagnostic::on_unimplemented(
     message = "`{Self}` already has a mark that replaces its glyph",
     label = "already has a replacing mark",
-    note = "a dataset has at most one replacing mark (`.range()`, `.box_plot()`, `.candles()`, `.ohlc()`, `.bubbles()`), and any number of overlays (`.error_bars()`)",
+    note = "a dataset has at most one replacing mark (`.range()`, `.box_plot()`, `.candles()`, `.ohlc()`, `.bubbles()`, `.radii()`, or `.draw_as(..)` with a mark of your own), and any number of overlays (`.error_bars()`, `.overlay(..)`)",
 )]
 pub trait WithoutPrimaryMark {}
 

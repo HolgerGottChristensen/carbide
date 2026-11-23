@@ -23,7 +23,7 @@ use crate::scale::{Coordinates, Scale};
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a line controller for `{D}`",
     label = "not a line mark for this dataset",
-    note = "line marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`",
+    note = "line marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `LineMark`, attached with `.draw_as(..)` or `.overlay(..)` (see `Mark`)",
 )]
 pub trait LineMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for

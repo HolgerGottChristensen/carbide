@@ -10,7 +10,7 @@ use crate::sequence::Sequence;
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a pie controller for `{D}`",
     label = "not a pie mark for this dataset",
-    note = "pie marks are `RadiiMark` (`.radii()`) on datasets of `SizedPoint`s, and types of your own implementing `PieMark`",
+    note = "pie marks are `RadiiMark` (`.radii()`) on datasets of `SizedPoint`s, and types of your own implementing `PieMark`, attached with `.draw_as(..)` or `.overlay(..)` (see `Mark`)",
 )]
 pub trait PieMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's index and its size, which sets how far out its part's slice

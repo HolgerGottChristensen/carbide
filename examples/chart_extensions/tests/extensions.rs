@@ -3,14 +3,14 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use carbide::chart::{Axis, Chart, ChartStyleExt, DataColor, DatasetExt, LegendPosition, LineController, ScaleId, ScatterController, SeriesStyle, ZoomWindow};
+use carbide::chart::{Axis, BarController, Chart, ChartStyleExt, DataColor, DatasetExt, DatumKey, LegendPosition, LineController, Pick, PickMode, ScaleId, ScatterController, SeriesStyle, ZoomWindow};
 use carbide::color::{Color, GREEN, ORANGE, PURPLE, RED};
 use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
 use carbide::widget::VStack;
 use carbide::state::{LocalState, ReadState};
 use carbide::testing::Harness;
-use chart_extensions::{Kelvin, LogScale, LollipopController};
+use chart_extensions::{Blocks, BlocksExt, Kelvin, LogScale, LollipopController, ValueTicks};
 
 use support::Framed;
 
@@ -130,6 +130,59 @@ fn dragging_pans_a_log_scale() {
 
     let window = *zoom.value();
     assert!(window.start > 0.25 && (window.span() - 0.5).abs() < 1e-9, "moved towards larger values, keeping its width: {window:?}");
+}
+
+/// Three datasets in a bar controller: one drawn as `Blocks`, a bar mark of this crate's own,
+/// attached with `draw_as` and its unit set to 2 after attaching, with `ValueTicks`, an overlay of
+/// its own, on top; plain bars beside it; and blocks of 1 on a dataset with a picked colour, set
+/// before attaching. Pins down that a mark from outside the crate is drawn in its dataset's slot,
+/// replacing the bar, in the dataset's colour, down from zero for a negative value, with the last
+/// block cut short at the value; that the overlay marks each value on top; and that the legend shows
+/// each named dataset.
+#[test]
+fn bars_drawn_by_marks_of_its_own() {
+    let sales = vec![7.0, 4.5, -3.0, 9.0];
+    let plain = vec![6.0, 5.0, 2.0, 8.0];
+    let small = vec![3.0, 2.0, 1.5, 4.0];
+
+    let sales = sales.draw_as(Blocks::new()).unit(2.0);
+    assert_eq!(sales.mark().block_unit(), 2.0, "the unit is set after attaching");
+    let sales = sales.overlay(ValueTicks).label("Blocks of 2");
+
+    let chart = Chart::new(BarController::new((
+        sales,
+        plain.label("Plain bars"),
+        small.color(DataColor::Palette(3)).label("Blocks of 1").draw_as(Blocks::new().unit(1.0)),
+    )))
+        .legend(LegendPosition::Bottom)
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+
+    harness.snapshot("bars_drawn_by_marks_of_its_own");
+}
+
+/// Bars drawn as `Blocks`, hovered by point, over a gap between two blocks of the second bar, then
+/// over the empty space above it. Pins down that a mark from outside the crate makes the bars it
+/// draws found under the pointer (`BarCanvas::add_rect`), across the whole bar, gaps included, and
+/// that nothing is found beside it.
+#[test]
+fn hovering_finds_bars_drawn_by_a_mark_of_its_own() {
+    let hovered = LocalState::new(None::<Pick>);
+    let chart = Chart::new(BarController::new(vec![8.0, 10.0, 9.0, 7.0].draw_as(Blocks::new().unit(1.0))))
+        .hover(hovered.clone())
+        .hover_mode(PickMode::Point)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+    harness.render();
+
+    harness.mouse_move(Position::new(232.0, 300.0));
+    let pick = hovered.value().clone().expect("the pointer is over the chart area");
+    assert_eq!(pick.data, vec![DatumKey { controller: 0, dataset: 0, index: 1 }], "the second bar is found");
+
+    harness.mouse_move(Position::new(232.0, 15.0));
+    let pick = hovered.value().clone();
+    assert!(pick.as_ref().is_none_or(|pick| pick.data.is_empty()), "nothing above the bar: {pick:?}");
 }
 
 /// Two datasets drawn by the `LollipopController`, a controller of this crate's own, with options

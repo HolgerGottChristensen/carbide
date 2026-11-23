@@ -3,7 +3,7 @@ use crate::{DataColor, DataSet, StackId};
 use crate::dataset::options_dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
-use crate::mark::IntoBoxed;
+use crate::mark::{IntoBoxed, Mark, Marked, Overlay, Primary, WithoutPrimaryMark};
 
 
 pub trait DatasetExt: DataSet + Clone + Sized {
@@ -62,6 +62,42 @@ pub trait DatasetExt: DataSet + Clone + Sized {
     /// start with.
     fn visible<V: IntoState<bool>>(self, visible: V) -> OptionsDataset<Self, DataColor, Interpolation, Fill, SpanGaps, ScaleId, ScaleId, StackId, String> {
         OptionsDataset::new(self).visible(visible)
+    }
+
+    /// Draws the dataset as `mark` instead of its controller's default glyph: a mark whose role is
+    /// `Primary` (see `Mark`), such as a mark of your own, or a built-in one. A dataset has at most
+    /// one such mark, and any number of overlays (`overlay`); a second doesn't compile.
+    ///
+    /// ```
+    /// use carbide_chart::{BarController, DatasetExt, Range, RangeMark};
+    ///
+    /// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+    /// // The same as `temperatures.range()`.
+    /// BarController::new(temperatures.draw_as(RangeMark::default()));
+    /// ```
+    ///
+    /// ```compile_fail,E0277
+    /// use carbide_chart::{BarController, DatasetExt, Range, RangeDataSetExt, RangeMark};
+    ///
+    /// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+    /// BarController::new(temperatures.range().draw_as(RangeMark::default()));
+    /// ```
+    fn draw_as<M: Mark<Role = Primary>>(self, mark: M) -> Marked<Self, M> where Self: WithoutPrimaryMark {
+        Marked::new(self, mark)
+    }
+
+    /// Draws `mark` on top of the dataset's glyph: a mark whose role is `Overlay` (see `Mark`),
+    /// such as a mark of your own, or a built-in one. A dataset can have any number.
+    ///
+    /// ```
+    /// use carbide_chart::{BarController, DatasetExt, ErrorBars, Range};
+    ///
+    /// let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }];
+    /// // The same as `temperatures.error_bars()`.
+    /// BarController::new(temperatures.overlay(ErrorBars::default()));
+    /// ```
+    fn overlay<M: Mark<Role = Overlay>>(self, mark: M) -> Marked<Self, M> {
+        Marked::new(self, mark)
     }
 
     /// Boxes the dataset, so datasets of different types can share a `Vec` or a state of a

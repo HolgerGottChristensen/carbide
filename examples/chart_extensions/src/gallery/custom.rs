@@ -1,7 +1,7 @@
 //! A chart built from this crate's own chart elements, through the public API alone: the
 //! `LollipopController`, the `LogScale` and `Kelvin` values, zooming along both scales.
 
-use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LinearScale, LineController, ScaleId, ZoomWindow};
+use carbide::chart::{Axis, BarController, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, LineController, ScaleId, ZoomWindow};
 use carbide::color::{BLUE, GREEN, PURPLE};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
@@ -9,7 +9,10 @@ use carbide::controls::ControlsExt;
 use carbide::state::{LocalState, Map1, Map2, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
-use chart_extensions::{Kelvin, LogScale, LollipopController};
+use chart_extensions::{Blocks, BlocksExt, Kelvin, LogScale, LollipopController, ValueTicks};
+
+/// The weekdays the visits are counted on.
+const WEEKDAYS: [&str; 5] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 use super::{first_section, section, shown_when, text_input, with_side_bar, zoom_controls, Shared};
 
 
@@ -20,6 +23,8 @@ pub(crate) enum CustomData {
     Temperature,
     /// Populations spanning five orders of magnitude, as lollipops.
     Settlements,
+    /// Visits per weekday, drawn as `Blocks` with `ValueTicks` on top, beside plain bars.
+    Visits,
 }
 
 /// The lollipops' colour.
@@ -81,27 +86,34 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             (CustomData::Temperature, _) => chart(o.clone(), s.clone(), CustomData::Temperature, false),
             (CustomData::Settlements, false) => chart(o.clone(), s.clone(), CustomData::Settlements, false),
             (CustomData::Settlements, true) => chart(o.clone(), s.clone(), CustomData::Settlements, true),
+            (CustomData::Visits, _) => chart(o.clone(), s.clone(), CustomData::Visits, false),
         }
     );
 
+    // Only the temperature and settlement charts draw lollipops.
+    let lollipops = Map1::read_map(options.data.clone(), |data: &CustomData| *data != CustomData::Visits);
+
     let side = VStack::new((
         first_section("Custom"),
-        Text::new("Drawn with this crate's own\nLollipopController, LogScale and\nKelvin values, through the public API."),
+        Text::new("Drawn with this crate's own\nLollipopController, LogScale, Kelvin\nvalues, and Blocks and ValueTicks\nmarks, through the public API."),
         text_input("Title", &options.title),
         Picker::new("Data", data_resetting_zoom(&options), (
             Text::new("Temperature").tag(CustomData::Temperature),
             Text::new("Settlements").tag(CustomData::Settlements),
+            Text::new("Visits, in blocks").tag(CustomData::Visits),
         )),
-        Picker::new("Lollipops", options.color.clone(), (
+        shown_when(lollipops.clone(), Picker::new("Lollipops", options.color.clone(), (
             Text::new("Palette").tag(LollipopColor::Palette),
             Text::new("One per lollipop").tag(LollipopColor::ByPoint),
             Text::new("Blue").tag(LollipopColor::Blue),
             Text::new("Green").tag(LollipopColor::Green),
             Text::new("Purple").tag(LollipopColor::Purple),
-        )),
+        ))),
         shown_when(Map1::read_map(options.data.clone(), |data: &CustomData| *data == CustomData::Settlements),
             Toggle::new("On the LogScale", options.log_scale.clone())),
-        Text::new("Hover finds no lollipops: a\ncontroller outside the crate can't\nadd its shapes yet."),
+        shown_when(lollipops, Text::new("Hover finds no lollipops: a\ncontroller outside the crate can't\nadd its shapes yet.")),
+        shown_when(Map1::read_map(options.data.clone(), |data: &CustomData| *data == CustomData::Visits),
+            Text::new("Hover finds the blocks: a mark\nof your own adds their shapes.")),
         section("Zoom"),
         zoom_controls("x", &options.x_zoom),
         zoom_controls("y", &options.y_zoom),
@@ -158,6 +170,21 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
             } else {
                 shared.apply(chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Inhabitants").zoom(options.y_zoom.clone()))).boxed()
             }
+        }
+        CustomData::Visits => {
+            // This week's visits as blocks of 5, set after attaching, each value marked by a tick,
+            // beside last week's as plain bars.
+            let this_week = vec![23.0, 31.0, 18.5, 27.0, 35.0];
+            let last_week = vec![20.0, 26.0, 22.0, 24.0, 30.0];
+
+            shared.apply(Chart::new(BarController::new((
+                this_week.label("This week").draw_as(Blocks::new()).unit(5.0).overlay(ValueTicks),
+                last_week.label("Last week"),
+            )))
+                .title(options.title.clone())
+                .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(WEEKDAYS).zoom(options.x_zoom.clone()))
+                .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Visits").zoom(options.y_zoom.clone())))
+                .boxed()
         }
     }
 }

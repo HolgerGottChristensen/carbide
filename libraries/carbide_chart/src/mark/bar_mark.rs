@@ -22,7 +22,7 @@ use crate::geometry::{Along, Datum, Shape, Shapes};
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn in a bar controller's slots for `{D}`",
     label = "not a bar mark for this dataset",
-    note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, `BoxMark` (`.box_plot()`) on datasets of `BoxPoint`s, `CandleMark` (`.candles()`, `.ohlc()`) on datasets of `OhlcPoint`s, and types of your own implementing `BarMark`",
+    note = "bar marks are `RangeMark` (`.range()`) and `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, `BoxMark` (`.box_plot()`) on datasets of `BoxPoint`s, `CandleMark` (`.candles()`, `.ohlc()`) on datasets of `OhlcPoint`s, and types of your own implementing `BarMark`, attached with `.draw_as(..)` or `.overlay(..)` (see `Mark`)",
 )]
 pub trait BarMark<D: ?Sized>: Mark {
     /// Calls `f` with each point's x and the lowest and highest value the mark draws for it, for
@@ -267,10 +267,12 @@ pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
 }
 
 impl<'x> BarCanvas<'x, '_, '_, '_> {
-    /// Adds the rectangle across `slot` from `from` to `to` along the value axis (around a circle,
-    /// the wedge) as the shape of the point at `point_index`, whose x is `x`, so picking finds the
-    /// point by it.
-    pub(crate) fn add_rect(&mut self, point_index: usize, x: Scalar, slot: &BarSlot, from: Scalar, to: Scalar, color: Color) {
+    /// Adds the rectangle across `slot` from `from` to `to` along the value axis, in the index
+    /// frame's pixels as `value_pixel` gives them (around a circle, the wedge), as the shape of the
+    /// point at `point_index`, whose x is `x`. That is how the chart finds the point under the
+    /// pointer, for hovering, tooltips and clicks: a mark adds a shape for each point it draws, as
+    /// the built-in marks do, or its points aren't found. Adding a shape draws nothing.
+    pub fn add_rect(&mut self, point_index: usize, x: Scalar, slot: &BarSlot, from: Scalar, to: Scalar, color: Color) {
         let place = self.shapes.place(self.index_id, x, self.frame.along(slot.center));
         let shape = self.frame.shape(slot.side, slot.thickness, from, to);
         self.shapes.add(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, shape);

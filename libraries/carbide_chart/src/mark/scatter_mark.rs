@@ -22,7 +22,7 @@ use crate::mark::line_mark::polar_whisker;
 #[diagnostic::on_unimplemented(
     message = "`{Self}` can't be drawn by a scatter controller for `{D}`",
     label = "not a scatter mark for this dataset",
-    note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `ScatterMark`",
+    note = "scatter marks are `BubbleMark` (`.bubbles()`) on datasets of `SizedPoint`s, `ErrorBars` (`.error_bars()`) on datasets of `RangePoint`s, and types of your own implementing `ScatterMark`, attached with `.draw_as(..)` or `.overlay(..)` (see `Mark`)",
 )]
 pub trait ScatterMark<D: ?Sized>: Mark {
     /// Calls `f` with each x and y the mark draws, for the scale bounds: for a primary mark, the
@@ -178,9 +178,11 @@ impl<'x> ScatterCanvas<'x, '_, '_, '_> {
         (frame.polar.angle(angle), frame.polar.distance(radius))
     }
 
-    /// Adds a circle around `center` as the shape of the point at `point_index`, whose x is `x`,
-    /// so picking finds the point by it.
-    pub(crate) fn add_marker(&mut self, point_index: usize, x: Scalar, center: Position, radius: Scalar, color: Color) {
+    /// Adds a circle around `center`, in pixels on the screen, as the shape of the point at
+    /// `point_index`, whose x is `x`. That is how the chart finds the point under the pointer, for
+    /// hovering, tooltips and clicks: a mark adds a shape for each point it draws, as the built-in
+    /// marks do, or its points aren't found. Adding a shape draws nothing.
+    pub fn add_marker(&mut self, point_index: usize, x: Scalar, center: Position, radius: Scalar, color: Color) {
         let along = match self.polar {
             Some(frame) => {
                 let circle = frame.polar.circle().center;
