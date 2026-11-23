@@ -1,4 +1,4 @@
-use carbide::state::IntoReadState;
+use carbide::state::{AnyState, IntoReadState, IntoState, LocalState, StateExtNew};
 use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 use carbide::color::Color;
@@ -74,6 +74,8 @@ pub struct PieController<D> {
     outline_width: Opt<Scalar>,
     label_text: Option<Arc<dyn Fn(&PiePart) -> String>>,
     labels: Opt<bool>,
+    /// The names of the parts left out (see `hidden_parts`).
+    hidden_parts: Box<dyn AnyState<T=Vec<String>>>,
 }
 
 impl<D: Debug> Debug for PieController<D> {
@@ -87,6 +89,7 @@ impl<D: Debug> Debug for PieController<D> {
             .field("ring_spacing", &get(&self.ring_spacing).max(0.0))
             .field("outline_width", &get(&self.outline_width).max(0.0))
             .field("labels", &get(&self.labels))
+            .field("hidden_parts", &*self.hidden_parts.value_dyn())
             .finish_non_exhaustive()
     }
 }
@@ -104,6 +107,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
             outline_width: constant(DEFAULT_OUTLINE_WIDTH),
             label_text: None,
             labels: constant(true),
+            hidden_parts: LocalState::new(Vec::<String>::new()).as_dyn(),
         }
     }
 
@@ -161,6 +165,36 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     pub fn labels(mut self, labels: impl IntoReadState<bool>) -> PieController<D> {
         self.labels = option(labels);
         self
+    }
+
+    /// The names of the parts left out, a writable state of them, which a click on a part's
+    /// legend entry adds the part's name to or takes it out of (see `Chart::legend_toggles`), so
+    /// the app can read it, or set it from controls of its own. A hidden part is left out of every
+    /// dataset's total, so the parts shown fill the circle or the bar, each keeping its colour; its
+    /// legend entry is dimmed. Without it, the controller keeps a state of its own, empty to start
+    /// with.
+    pub fn hidden_parts(mut self, hidden_parts: impl IntoState<Vec<String>>) -> PieController<D> {
+        self.hidden_parts = hidden_parts.into_state().as_dyn();
+        self
+    }
+
+    /// The parts of `dataset` that are shown: those whose names aren't hidden.
+    fn shown_parts(&self, dataset: &dyn PieDataSet) -> Parts {
+        Parts::of(dataset).without(&self.hidden_parts.value_dyn())
+    }
+
+    /// The name of each legend entry, in the order of `legend_items`: each part's name, once, in
+    /// the order the datasets first name them.
+    fn part_names(&self) -> Vec<String> {
+        let mut names: Vec<String> = vec![];
+        self.dataset_sequence.foreach(&mut |_index, dataset| {
+            for part in Parts::of(dataset).parts {
+                if !names.contains(&part.name) {
+                    names.push(part.name);
+                }
+            }
+        });
+        names
     }
 
     /// The text of each part's label outside the circle, from the part: its name by default.
@@ -223,6 +257,17 @@ impl Parts {
             parts.push(Part { index, name, color: point.color(), value, size: value.abs(), radius });
         });
 
+        let total = parts.iter().map(|part| part.size).sum();
+        Parts { parts, total }
+    }
+
+    /// The parts without those named in `hidden`, the total only of the parts left.
+    pub(crate) fn without(self, hidden: &[String]) -> Parts {
+        if hidden.is_empty() {
+            return self;
+        }
+
+        let parts: Vec<Part> = self.parts.into_iter().filter(|part| !hidden.contains(&part.name)).collect();
         let total = parts.iter().map(|part| part.size).sum();
         Parts { parts, total }
     }
@@ -329,7 +374,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     fn largest_radius(&self) -> Scalar {
         let mut largest: Scalar = 0.0;
         self.dataset_sequence.foreach(&mut |_index, dataset| {
-            for part in Parts::of(dataset).parts {
+            for part in self.shown_parts(dataset).parts {
                 if let Some(radius) = part.radius {
                     largest = largest.max(radius);
                 }
@@ -377,7 +422,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
             };
             let (start, sweep) = angle_range(angle_scale);
 
-            let parts = Parts::of(dataset);
+            let parts = self.shown_parts(dataset);
             for (part, from, to) in parts.shares() {
                 if part.size <= 0.0 {
                     continue;
@@ -401,6 +446,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
         changed |= self.ring_spacing.sync(env);
         changed |= self.outline_width.sync(env);
         changed |= self.labels.sync(env);
+        changed |= self.hidden_parts.sync(env);
         changed
     }
 
@@ -429,7 +475,29 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
         });
     }
 
-    /// An entry for each part, by name, in its colour, each name once.
+    /// Hides the entry's part, by adding its name to the hidden parts, or shows it again.
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        let Some(name) = self.part_names().into_iter().nth(entry) else {
+            return false;
+        };
+
+        let mut hidden = self.hidden_parts.value_dyn().clone();
+        let was_hidden = hidden.contains(&name);
+        if visible && was_hidden {
+            hidden.retain(|hidden| *hidden != name);
+        } else if !visible && !was_hidden {
+            hidden.push(name);
+        } else {
+            return true;
+        }
+
+        // Written through a clone of the state, which shares its value.
+        let mut state = self.hidden_parts.clone();
+        state.set_value_dyn(hidden);
+        true
+    }
+
+    /// An entry for each part, by name, in its colour, each name once, dimmed when hidden.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         let palette = Palette::from_env(env, get(&self.palette_offset));
         let mut named: Vec<String> = vec![];
@@ -442,7 +510,8 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                 }
 
                 let color = part_color(&part, &options, dataset_index, &palette);
-                items.push(LegendItem { label: part.name.clone(), color, marker: LegendMarker::Square });
+                let hidden = self.hidden_parts.value_dyn().contains(&part.name);
+                items.push(LegendItem { label: part.name.clone(), color, marker: LegendMarker::Square, hidden });
                 named.push(part.name);
             }
         });
@@ -511,7 +580,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
             if thickness <= 0.0 {
                 return;
             }
-            let parts = Parts::of(dataset);
+            let parts = self.shown_parts(dataset);
             let shares = parts.shares();
             let gap = if shares.len() > 1 { self.spacing_in_frame(&frame, side + thickness / 2.0) / 2.0 } else { 0.0 };
 

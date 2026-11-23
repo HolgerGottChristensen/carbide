@@ -60,7 +60,16 @@ pub trait DataSet: DynClone + Debug + 'static {
             y_scale: ScaleId::Y,
             stack: None,
             label: None,
+            visible: true,
         }
+    }
+
+    /// Shows or hides the dataset, as a click on its legend entry does, and returns whether it
+    /// could: a dataset with options (`DatasetExt`) writes its visibility state, while a dataset
+    /// without one, the default, can't be hidden and returns `false`. It takes `&self`, as a
+    /// visibility state is shared with its clones, so writing through one writes them all.
+    fn set_visible(&self, _visible: bool) -> bool {
+        false
     }
 }
 
@@ -87,6 +96,10 @@ impl DataSet for Box<dyn DataSet> {
 
     fn options(&self) -> DataSetOptions {
         (**self).options()
+    }
+
+    fn set_visible(&self, visible: bool) -> bool {
+        (**self).set_visible(visible)
     }
 }
 

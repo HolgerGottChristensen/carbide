@@ -6,7 +6,7 @@ use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale};
@@ -127,6 +127,10 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             }
 
             let options = dataset.options();
+            // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+            if !options.visible {
+                return;
+            }
             let coordinates = Coordinates::new(&*bounds, &options.x_scale, &options.y_scale);
             dataset.scatter_marks(&mut |mark| {
                 mark.bounds(&coordinates, &mut |x, y| {
@@ -142,6 +146,11 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// Each named dataset as a point in its colour, or, when lines are shown, a line, or a square
     /// when it is filled, unless one of its marks gives an entry of its own (`ScatterMark::legend`),
     /// such as a bubble.
+    /// Shows or hides the named dataset behind the entry.
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        set_legend_visibility(&self.dataset_sequence, entry, visible)
+    }
+
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         legend_items(
             &self.dataset_sequence,
@@ -175,7 +184,8 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         let replaced = self.replaced_points();
         draw_points(&lines, ctx, &palette, shapes, |dataset_index| !replaced.contains(&dataset_index));
 
-        // One size scale for every dataset's marks, so their sizes compare.
+        // One size scale for every dataset's marks, so their sizes compare, hidden ones included,
+        // so the bubbles shown keep their sizes when another dataset is hidden or shown.
         let mut max_size: Option<Scalar> = None;
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             dataset.scatter_marks(&mut |mark| {
@@ -197,6 +207,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                 }
 
                 let options = dataset.options();
+                if !options.visible {
+                    return;
+                }
                 let Some((x_scale, y_scale)) = dataset_scales(scales, &options) else {
                     return;
                 };

@@ -103,7 +103,7 @@ impl<D: Sequence<dyn DataSet>> DatasetController for LollipopController<D> {
 
             if let Some(label) = options.label {
                 let color = own_color(options.color).unwrap_or(FALLBACK_COLOR);
-                items.push(LegendItem { label, color, marker: LegendMarker::Point });
+                items.push(LegendItem { label, color, marker: LegendMarker::Point, hidden: false });
             }
         });
     }

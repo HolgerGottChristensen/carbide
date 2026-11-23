@@ -162,6 +162,7 @@ pub(crate) struct Shared {
     interactive: LocalState<bool>,
     hover_mode: LocalState<PickMode>,
     legend: LocalState<LegendPosition>,
+    legend_toggles: LocalState<bool>,
     colors: LocalState<Colors>,
 }
 
@@ -173,6 +174,7 @@ impl Shared {
             interactive: LocalState::new(true),
             hover_mode: LocalState::new(PickMode::Index),
             legend: LocalState::new(LegendPosition::Bottom),
+            legend_toggles: LocalState::new(true),
             colors: LocalState::new(Colors::Theme),
         }
     }
@@ -183,6 +185,7 @@ impl Shared {
         let clicked = self.clicked.clone();
         chart
             .legend(self.legend.clone())
+            .legend_toggles(self.legend_toggles.clone())
             .interactive(self.interactive.clone())
             .hover(self.hovered.clone())
             .hover_mode(self.hover_mode.clone())
@@ -215,6 +218,8 @@ impl Shared {
                 Text::new("Left").tag(LegendPosition::Left),
                 Text::new("Right").tag(LegendPosition::Right),
             )),
+            // A click on a legend entry hides or shows its dataset, a double-click shows only it.
+            Toggle::new("Legend toggles datasets", self.legend_toggles.clone()),
             Picker::new("Colours", self.colors.clone(), (
                 Text::new("The theme's").tag(Colors::Theme),
                 Text::new("Pastel").tag(Colors::Pastel),

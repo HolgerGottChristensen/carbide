@@ -6,7 +6,7 @@ use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{Datum, Shapes};
-use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame};
+use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame, set_legend_visibility};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
@@ -133,6 +133,11 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
             bounds.request_offset(index_scale);
             bounds.request_grid_offset(index_scale);
 
+            // A hidden dataset still asks for its scales, so they keep their kind, but adds no data.
+            if !options.visible {
+                return;
+            }
+
             // A dataset whose bars a mark replaces reports the mark's values instead of its bars.
             if !has_primary_mark(dataset) {
                 // Each bar spans from where its stack has reached to where it takes it, and every
@@ -170,6 +175,11 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
     /// Each named dataset as a square in its colour, or as its mark asks, such as a square split
     /// into the rising and falling colours for candlesticks.
+    /// Shows or hides the named dataset behind the entry.
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        set_legend_visibility(&self.dataset_sequence, entry, visible)
+    }
+
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         legend_items(
             &self.dataset_sequence,
@@ -198,7 +208,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
             let orientation = self.orientation().for_dataset(&options, scales);
             let (index_id, value_id) = orientation.index_and_value_scales(&options);
 
-            let (Some(index_scale), Some(_)) = (scales.get(index_id), dataset_scales(scales, &options)) else {
+            // A hidden dataset isn't drawn, and takes no share of its category's slot, so the
+            // bars beside it widen to fill it.
+            let (true, Some(index_scale), Some(_)) = (options.visible, scales.get(index_id), dataset_scales(scales, &options)) else {
                 places.push(None);
                 polar_frames.push(None);
                 return;
@@ -398,6 +410,10 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
             }
 
             let options = dataset.options();
+            // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+            if !options.visible {
+                return;
+            }
             let key = StackKey::new(&options, dataset_index);
             if !matches!(key, StackKey::Stacked { .. }) {
                 return;

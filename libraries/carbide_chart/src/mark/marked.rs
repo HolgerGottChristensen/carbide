@@ -66,6 +66,10 @@ impl<D: DataSet + Clone, M: Mark> DataSet for Marked<D, M> {
     fn options(&self) -> DataSetOptions {
         self.inner.options()
     }
+
+    fn set_visible(&self, visible: bool) -> bool {
+        self.inner.set_visible(visible)
+    }
 }
 
 /// A marked dataset is still a sequence of whatever kind of point the dataset inside is, so

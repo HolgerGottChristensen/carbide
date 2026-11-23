@@ -248,6 +248,10 @@ macro_rules! boxed_dataset {
             fn options(&self) -> DataSetOptions {
                 (**self).options()
             }
+
+            fn set_visible(&self, visible: bool) -> bool {
+                (**self).set_visible(visible)
+            }
         }
 
         impl $family for Box<dyn $family> {

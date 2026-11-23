@@ -65,6 +65,15 @@ pub trait DatasetController: DynClone + Debug + 'static {
     /// `Chart::legend`). `env` holds the chart's `SeriesStyle`. The default adds nothing.
     fn legend_items(&self, _env: &Environment, _items: &mut Vec<LegendItem>) {}
 
+    /// Shows or hides what legend entry `entry` stands for, counting the controller's entries in
+    /// the order `legend_items` adds them, as a click on the entry does (see
+    /// `Chart::legend_toggles`), and returns whether it could. The built-in controllers show or
+    /// hide the entry's dataset (`DataSet::set_visible`), or for a pie its part. The default can't,
+    /// and returns `false`, so the entry doesn't toggle.
+    fn legend_visibility(&self, _entry: usize, _visible: bool) -> bool {
+        false
+    }
+
     /// Whether the controller draws around a circle unless told otherwise, so a chart whose first
     /// controller it is makes its default x and y scales radial, as a pie controller does. The
     /// default is `false`: default scales run along the sides.
@@ -104,6 +113,10 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         (**self).legend_items(env, items);
+    }
+
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        (**self).legend_visibility(entry, visible)
     }
 
     fn prefers_polar(&self) -> bool {

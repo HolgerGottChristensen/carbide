@@ -22,12 +22,14 @@ pub enum LegendPosition {
     Right,
 }
 
-/// One entry of the legend: a dataset's name, and a marker in the colour it is drawn in.
+/// One entry of the legend: a dataset's name, and a marker in the colour it is drawn in, dimmed
+/// when the dataset is `hidden` (see `DatasetExt::visible`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct LegendItem {
     pub label: String,
     pub color: Color,
     pub marker: LegendMarker,
+    pub hidden: bool,
 }
 
 /// The shape of a legend entry's marker, after what its controller draws.
@@ -59,13 +61,16 @@ const MARKER_GAP: Scalar = 6.0;
 const ITEM_GAP: Scalar = 16.0;
 /// The gap between two rows, or two items one above the other.
 const ROW_GAP: Scalar = 4.0;
+/// How opaque a hidden dataset's entry is drawn, its marker and its name.
+const HIDDEN_OPACITY: f32 = 0.35;
 
 /// Where a legend's items go: each item's top-left corner, relative to the legend's top-left, its
-/// height, and the legend's size.
+/// height, and the legend's size, with each item's own width, for finding the item under a click.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct LegendLayout {
     pub(crate) size: Dimension,
     items: Vec<(Position, Scalar)>,
+    widths: Vec<Scalar>,
 }
 
 /// Lays `items` out for a legend on `position`, measuring their names with `measure`. On the top
@@ -95,7 +100,7 @@ pub(crate) fn layout(items: &[LegendItem], position: LegendPosition, max_width: 
             }
 
             let width = sizes.iter().map(|size| size.width).fold(0.0, Scalar::max);
-            return LegendLayout { size: Dimension::new(width, y), items: placed };
+            return LegendLayout { size: Dimension::new(width, y), items: placed, widths: sizes.iter().map(|size| size.width).collect() };
         }
         LegendPosition::Top | LegendPosition::Bottom => {
             // Greedily fill rows, then centre each one.
@@ -134,21 +139,45 @@ pub(crate) fn layout(items: &[LegendItem], position: LegendPosition, max_width: 
                 y += height;
             }
 
-            return LegendLayout { size: Dimension::new(max_width, y), items: placed };
+            return LegendLayout { size: Dimension::new(max_width, y), items: placed, widths: sizes.iter().map(|size| size.width).collect() };
         }
     }
 
-    LegendLayout { size: Dimension::new(0.0, 0.0), items: placed }
+    LegendLayout { size: Dimension::new(0.0, 0.0), items: placed, widths: vec![] }
+}
+
+/// The screen's top edge of a legend laid out by `layout` in `area`: centred down `area` on the
+/// left or right, at its top otherwise.
+fn legend_top(layout: &LegendLayout, position: LegendPosition, area: Rect) -> Scalar {
+    // `Rect`'s `bottom()` is the screen's top edge (see `scale/axis.rs`).
+    match position {
+        LegendPosition::Left | LegendPosition::Right => area.bottom() + (area.height() - layout.size.height).max(0.0) / 2.0,
+        _ => area.bottom(),
+    }
+}
+
+/// Each item's rectangle in `area`, its marker and its name, as `draw` places them: what a click
+/// on the item lands in.
+pub(crate) fn item_rects(layout: &LegendLayout, position: LegendPosition, area: Rect) -> Vec<Rect> {
+    let top = legend_top(layout, position, area);
+    layout.items.iter().zip(&layout.widths)
+        .map(|((corner, height), width)| Rect::new(Position::new(area.left() + corner.x, top + corner.y), Dimension::new(*width, *height)))
+        .collect()
+}
+
+/// `color`, at `HIDDEN_OPACITY` of its opacity when `hidden`.
+fn dimmed(color: Color, hidden: bool) -> Color {
+    if !hidden {
+        return color;
+    }
+    let Rgba(r, g, b, a) = Rgba::from(color);
+    rgba(r, g, b, a * HIDDEN_OPACITY)
 }
 
 /// Draws the legend's items in `area`, as laid out by `layout`: a legend on the left or right is
 /// centred down `area`. Names are drawn in the `AxisStyle`'s label colour.
 pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: LegendPosition, ctx: &mut CanvasContext, area: Rect) {
-    // `Rect`'s `bottom()` is the screen's top edge (see `scale/axis.rs`).
-    let top = match position {
-        LegendPosition::Left | LegendPosition::Right => area.bottom() + (area.height() - layout.size.height).max(0.0) / 2.0,
-        _ => area.bottom(),
-    };
+    let top = legend_top(layout, position, area);
 
     let style = axis_style(ctx.env());
     let label_color = style.label_color(ctx.env());
@@ -159,6 +188,7 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
     for (item, (corner, height)) in items.iter().zip(&layout.items) {
         let x = area.left() + corner.x;
         let middle = top + corner.y + height / 2.0;
+        let color = dimmed(item.color, item.hidden);
 
         ctx.begin_path();
         match item.marker {
@@ -169,12 +199,12 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
                 ctx.line_to(x + MARKER_SIZE, bottom);
                 ctx.line_to(x, bottom);
                 ctx.close_path();
-                ctx.set_fill_style(item.color);
+                ctx.set_fill_style(color);
                 ctx.fill();
             }
             LegendMarker::Split(right) => {
                 let (top, bottom, half) = (middle - MARKER_SIZE / 2.0, middle + MARKER_SIZE / 2.0, MARKER_SIZE / 2.0);
-                for (left, color) in [(x, item.color), (x + half, right)] {
+                for (left, color) in [(x, color), (x + half, dimmed(right, item.hidden))] {
                     ctx.begin_path();
                     ctx.move_to(left, top);
                     ctx.line_to(left + half, top);
@@ -189,32 +219,32 @@ pub(crate) fn draw(items: &[LegendItem], layout: &LegendLayout, position: Legend
                 ctx.move_to(x, middle);
                 ctx.line_to(x + MARKER_SIZE, middle);
                 ctx.set_line_width(2.0);
-                ctx.set_stroke_style(item.color);
+                ctx.set_stroke_style(color);
                 ctx.stroke();
                 ctx.begin_path();
                 ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
-                ctx.set_fill_style(item.color);
+                ctx.set_fill_style(color);
                 ctx.fill();
             }
             LegendMarker::Point => {
                 ctx.circle(x + MARKER_SIZE / 2.0, middle, POINT_DIAMETER);
-                ctx.set_fill_style(item.color);
+                ctx.set_fill_style(color);
                 ctx.fill();
             }
             LegendMarker::Bubble => {
                 let fill_opacity = series_style(ctx.env()).fill_opacity();
-                let Rgba(r, g, b, a) = Rgba::from(item.color);
+                let Rgba(r, g, b, a) = Rgba::from(color);
                 // Inset by half the outline, so the outline stays within the marker's square.
                 ctx.circle(x + MARKER_SIZE / 2.0, middle, MARKER_SIZE - BUBBLE_OUTLINE_WIDTH);
                 ctx.set_fill_style(rgba(r, g, b, a * fill_opacity));
                 ctx.fill();
                 ctx.set_line_width(BUBBLE_OUTLINE_WIDTH);
-                ctx.set_stroke_style(item.color);
+                ctx.set_stroke_style(color);
                 ctx.stroke();
             }
         }
 
-        ctx.set_fill_style(label_color);
+        ctx.set_fill_style(dimmed(label_color, item.hidden));
         ctx.fill_text(&item.label, x + MARKER_SIZE + MARKER_GAP, middle);
     }
 
@@ -228,7 +258,7 @@ mod tests {
     use super::{layout, LegendItem, LegendMarker, LegendPosition, ITEM_GAP, MARKER_GAP, MARKER_SIZE, ROW_GAP};
 
     fn items(labels: &[&str]) -> Vec<LegendItem> {
-        labels.iter().map(|label| LegendItem { label: label.to_string(), color: RED, marker: LegendMarker::Square }).collect()
+        labels.iter().map(|label| LegendItem { label: label.to_string(), color: RED, marker: LegendMarker::Square, hidden: false }).collect()
     }
 
     /// Text 10px per character and 10px tall, so sizes are easy to follow.

@@ -1,4 +1,4 @@
-use carbide::state::IntoReadState;
+use carbide::state::{IntoReadState, IntoState};
 use crate::{DataColor, DataSet, StackId};
 use crate::dataset::options_dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
@@ -52,6 +52,16 @@ pub trait DatasetExt: DataSet + Clone + Sized {
     /// in the legend.
     fn label<L: IntoReadState<String>>(self, label: L) -> OptionsDataset<Self, DataColor, Interpolation, Fill, SpanGaps, ScaleId, ScaleId, StackId, L::Output> {
         OptionsDataset::new(self).label(label)
+    }
+
+    /// Shows the dataset, or hides it with `false`; a writable state of a `bool`, which a click on
+    /// the dataset's legend entry flips (see `Chart::legend_toggles`), so the app can read it, or
+    /// set it from controls of its own. A hidden dataset is left out of the scales' fit, its stack
+    /// and what is drawn, keeping its colour and its place among the others; its legend entry is
+    /// dimmed. Without it, a dataset with options keeps a visibility state of its own, shown to
+    /// start with.
+    fn visible<V: IntoState<bool>>(self, visible: V) -> OptionsDataset<Self, DataColor, Interpolation, Fill, SpanGaps, ScaleId, ScaleId, StackId, String> {
+        OptionsDataset::new(self).visible(visible)
     }
 
     /// Boxes the dataset, so datasets of different types can share a `Vec` or a state of a

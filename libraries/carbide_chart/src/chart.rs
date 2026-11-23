@@ -70,6 +70,22 @@ pub struct Chart<C> where C: ControllerSequence {
     /// The zoomable scale whose band the pointer is over, or whose band a drag in progress started
     /// on: drawn in the `AxisStyle`'s hovered colour, under a cursor showing which way it moves.
     hovered_scale: Option<ScaleId>,
+    /// Whether a click on a legend entry shows or hides what it stands for (see `legend_toggles`).
+    legend_toggles: Box<dyn AnyReadState<T=bool>>,
+    /// Each legend entry on the last render: where it is, in the chart's own coordinates, which
+    /// controller gave it and its index among that controller's entries, and whether it's hidden.
+    legend_entries: Vec<LegendEntry>,
+    /// Whether the pointer is over a legend entry that toggles.
+    hovered_legend: bool,
+}
+
+/// A legend entry as the chart found it on the last render, for clicks on it.
+#[derive(Clone, Debug, PartialEq)]
+struct LegendEntry {
+    rect: Rect,
+    controller: usize,
+    entry: usize,
+    hidden: bool,
 }
 
 impl<C: ControllerSequence> Chart<C> {
@@ -101,6 +117,9 @@ impl<C: ControllerSequence> Chart<C> {
             press: None,
             bands: vec![],
             hovered_scale: None,
+            legend_toggles: IntoReadState::<bool>::into_read_state(true).as_dyn_read(),
+            legend_entries: vec![],
+            hovered_legend: false,
         }
     }
 
@@ -141,6 +160,18 @@ impl<C: ControllerSequence> Chart<C> {
         self
     }
 
+    /// Whether a click on a legend entry shows or hides what it stands for, a value or a state of
+    /// one: `true` by default. A click hides the entry's dataset (see `DatasetExt::visible`), or a
+    /// pie's part (see `PieController::hidden_parts`), dimming its entry, and a click on a dimmed
+    /// entry shows it again; the last entry shown can't be hidden. A double-click shows only that
+    /// entry, or every entry again when it is the only one shown. With `false`, or while the chart
+    /// isn't `interactive`, the legend ignores clicks, and the app can still show and hide datasets
+    /// through their states.
+    pub fn legend_toggles(mut self, toggles: impl IntoReadState<bool>) -> Chart<C> {
+        self.legend_toggles = toggles.into_read_state().as_dyn_read();
+        self
+    }
+
     /// Whether the chart responds to the pointer, a value or a state of one: `true` by default.
     /// While it is `false`, the chart ignores the pointer, so nothing is hovered, outlined or
     /// clicked and no gesture zooms or pans it; a hover state is set to `None`, and a drag or box
@@ -161,6 +192,7 @@ impl<C: ControllerSequence> Chart<C> {
         self.gesture = None;
         self.press = None;
         self.hovered_scale = None;
+        self.hovered_legend = false;
         if let Some(hover) = &mut self.hover
             && hover.value_dyn().is_some() {
                 hover.set_value_dyn(None);
@@ -250,6 +282,46 @@ impl<C: ControllerSequence> Chart<C> {
     fn hover_scale_at(&mut self, position: Option<Position>) {
         if self.gesture.is_none() {
             self.hovered_scale = position.and_then(|position| self.scale_band_at(position));
+        }
+    }
+
+    /// The legend entry under `position`, among those that toggle, when the legend toggles.
+    fn legend_entry_at(&self, position: Position) -> Option<usize> {
+        if !*self.legend_toggles.value_dyn() {
+            return None;
+        }
+        self.legend_entries.iter().position(|entry| inside(entry.rect, position))
+    }
+
+    /// Asks controller `controller` to show or hide its legend entry `entry`.
+    fn set_legend_visibility(&self, controller: usize, entry: usize, visible: bool) -> bool {
+        let mut set = false;
+        self.controllers.foreach(&mut |index, item| {
+            if index == controller {
+                set = item.legend_visibility(entry, visible);
+            }
+        });
+        set
+    }
+
+    /// Shows or hides legend entry `index`, as a click on it does: a shown entry is hidden, unless
+    /// it is the last one shown, and a hidden one shown.
+    fn toggle_legend_entry(&self, index: usize) {
+        let entry = &self.legend_entries[index];
+        let shown = self.legend_entries.iter().filter(|entry| !entry.hidden).count();
+        if !entry.hidden && shown <= 1 {
+            return;
+        }
+        self.set_legend_visibility(entry.controller, entry.entry, entry.hidden);
+    }
+
+    /// Shows only legend entry `index`, as a double-click on it does, or every entry when the
+    /// others are all hidden already. Its first click toggled the entry, so only the others decide.
+    fn show_only_legend_entry(&self, index: usize) {
+        let others_hidden = self.legend_entries.iter().enumerate().all(|(other, entry)| other == index || entry.hidden);
+        for (other, entry) in self.legend_entries.iter().enumerate() {
+            let visible = others_hidden || other == index;
+            self.set_legend_visibility(entry.controller, entry.entry, visible);
         }
     }
 
@@ -588,6 +660,7 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
         }
 
         self.interactive.sync(env);
+        self.legend_toggles.sync(env);
         self.hover_mode.sync(env);
         if let Some(hover) = &mut self.hover {
             hover.sync(env);
@@ -604,8 +677,9 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
 /// drag with Shift held zooms to the box it draws, a double-click shows the whole range again, and
 /// a trackpad's smart zoom toggles between zooming in and the whole range. Over the chart area these move every
 /// zoomable scale; over a scale's band, only that one, whose band is tinted under a cursor showing
-/// which way it moves, and where a Shift-drag's box is a span along the scale. A chart without
-/// these options ignores the pointer.
+/// which way it moves, and where a Shift-drag's box is a span along the scale. A click on a legend
+/// entry shows or hides what it stands for, and a double-click shows only it (see
+/// `legend_toggles`). A chart without these options ignores the pointer.
 impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !self.is_interactive() {
@@ -624,10 +698,12 @@ impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
             MouseEvent::Move { to, .. } => {
                 let at = local(*to);
                 self.hover_scale_at(Some(at));
+                self.hovered_legend = self.gesture.is_none() && self.legend_entry_at(at).is_some();
                 self.hover_at(Some(at), ctx.env);
             }
             MouseEvent::Left => {
                 self.hover_scale_at(None);
+                self.hovered_legend = false;
                 self.hover_at(None, ctx.env);
             }
             MouseEvent::Scroll { x, y, mouse_position, modifiers } => {
@@ -683,7 +759,22 @@ impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
             }
             // A press that moved isn't a click, even let go where it started.
             MouseEvent::NClick(MouseButton::Left, _, _, _) | MouseEvent::Click(MouseButton::Left, _, _) if self.press.is_some_and(|press| press.moved) => {}
-            MouseEvent::Click(MouseButton::Left, position, modifier_key) => self.click(local(*position), *modifier_key, ctx.env),
+            MouseEvent::Click(MouseButton::Left, position, modifier_key) => {
+                let at = local(*position);
+                match self.legend_entry_at(at) {
+                    Some(index) => self.toggle_legend_entry(index),
+                    None => self.click(at, *modifier_key, ctx.env),
+                }
+            }
+            // On the legend, a double-click shows only that entry, and every other click of
+            // several toggles it, as a click does.
+            MouseEvent::NClick(MouseButton::Left, position, _, count) if let Some(index) = self.legend_entry_at(local(*position)) => {
+                if *count == 2 {
+                    self.show_only_legend_entry(index);
+                } else {
+                    self.toggle_legend_entry(index);
+                }
+            }
             MouseEvent::NClick(MouseButton::Left, position, modifier_key, count) => {
                 // Each click of a double-click is a click. A double-click shows the whole range,
                 // unless its first press was a drag, which carbide counts as a click when it ends
@@ -841,9 +932,15 @@ impl<C: ControllerSequence> Render for Chart<C> {
         // The legend's items, from every controller, in order.
         let legend_position = *self.legend.value_dyn();
         let mut legend_items = vec![];
+        // Which controller gave each item, and its index among that controller's items.
+        let mut legend_sources: Vec<(usize, usize)> = vec![];
         if legend_position != LegendPosition::Hidden {
             let env = canvas.env();
-            self.controllers.foreach(&mut |_, controller| controller.legend_items(env, &mut legend_items));
+            self.controllers.foreach(&mut |index, controller| {
+                let first = legend_items.len();
+                controller.legend_items(env, &mut legend_items);
+                legend_sources.extend((0..legend_items.len() - first).map(|entry| (index, entry)));
+            });
         }
 
         let padding = *self.padding.value_dyn();
@@ -927,10 +1024,20 @@ impl<C: ControllerSequence> Render for Chart<C> {
             canvas.restore();
         }
 
-        // Draw the legends of the chart
+        // Draw the legends of the chart, keeping where each entry is for clicks on it.
+        self.legend_entries.clear();
         if let Some((position, area)) = layout.legend {
             legend::draw(&legend_items, &legend_layout, position, &mut canvas, area);
+
+            let rects = legend::item_rects(&legend_layout, position, area);
+            self.legend_entries = rects.into_iter().zip(&legend_sources).zip(&legend_items)
+                .map(|((rect, (controller, entry)), item)| LegendEntry { rect, controller: *controller, entry: *entry, hidden: item.hidden })
+                .collect();
         }
+        if self.is_interactive() && self.hovered_legend
+            && let Some(env_cursor) = canvas.env().get_mut::<MouseCursor>() {
+                *env_cursor = MouseCursor::Pointer;
+            }
 
         // Every datum's shape, laid out and drawn by its controller, then kept for picking.
         // A zoomed scale shows only part of its data: the rest is clipped to the chart area. Without
@@ -1829,6 +1936,51 @@ mod tests {
         let (_, y_max) = scale_range(&visible, ScaleId::Y);
         assert!(y_max < 10.0, "the first three values reach 3, so y shouldn't reach the 50 beyond, but ends at {y_max}");
         assert_eq!(scale_range(&visible, ScaleId::X), (0.0, 9.0), "x still fits every point");
+    }
+
+    /// A click on a legend entry hides its dataset, and again shows it, but not the last one shown;
+    /// a double-click shows only that entry, or every entry when the others are all hidden. Over
+    /// entries from two controllers, so the rules count across the chart.
+    #[test]
+    fn legend_clicks_show_and_hide_entries() {
+        use carbide::state::ReadState;
+        use super::LegendEntry;
+
+        let shown: Vec<LocalState<bool>> = (0..3).map(|_| LocalState::new(true)).collect();
+        let mut chart = Chart::new((
+            BarController::new((vec![1.0, 2.0].label("A").visible(shown[0].clone()), vec![2.0, 1.0].label("B").visible(shown[1].clone()))),
+            LineController::new(vec![1.5, 1.5].label("C").visible(shown[2].clone())),
+        ));
+        let entries = |chart: &mut Chart<_>| {
+            let hidden: Vec<bool> = shown.iter().map(|state| !*state.value()).collect();
+            let sources = [(0, 0), (0, 1), (1, 0)];
+            chart.legend_entries = sources.iter().zip(hidden).map(|(&(controller, entry), hidden)| {
+                LegendEntry { rect: Rect::new(Position::new(0.0, 0.0), Dimension::new(1.0, 1.0)), controller, entry, hidden }
+            }).collect();
+        };
+        let visible = |shown: &[LocalState<bool>]| shown.iter().map(|state| *state.value()).collect::<Vec<_>>();
+
+        entries(&mut chart);
+        chart.toggle_legend_entry(1);
+        assert_eq!(visible(&shown), vec![true, false, true], "B hidden");
+
+        entries(&mut chart);
+        chart.toggle_legend_entry(0);
+        entries(&mut chart);
+        chart.toggle_legend_entry(2);
+        assert_eq!(visible(&shown), vec![false, false, true], "C, the last one shown, stays");
+
+        entries(&mut chart);
+        chart.toggle_legend_entry(1);
+        assert_eq!(visible(&shown), vec![false, true, true], "B shown again");
+
+        entries(&mut chart);
+        chart.show_only_legend_entry(0);
+        assert_eq!(visible(&shown), vec![true, false, false], "only A");
+
+        entries(&mut chart);
+        chart.show_only_legend_entry(0);
+        assert_eq!(visible(&shown), vec![true, true, true], "every entry again");
     }
 
     /// The scale whose band the pointer is over is hovered, when gestures can move it, and its

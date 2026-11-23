@@ -114,6 +114,10 @@ where
 
         let dataset = dataset.as_dataset();
         let options = dataset.options();
+        // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+        if !options.visible {
+            return;
+        }
         if !options.stack.as_ref().is_some_and(StackId::is_normalized) {
             return;
         }

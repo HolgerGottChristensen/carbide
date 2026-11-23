@@ -20,4 +20,7 @@ pub struct DataSetOptions {
     pub stack: Option<StackId>,
     /// The dataset's name, shown in the legend; a dataset without one isn't in it.
     pub label: Option<String>,
+    /// Whether the dataset is shown. A hidden dataset is left out of the scales' fit, its stack
+    /// and what is drawn, and its legend entry is dimmed (see `DatasetExt::visible`).
+    pub visible: bool,
 }

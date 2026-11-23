@@ -1,6 +1,6 @@
 use carbide::draw::Scalar;
 use carbide::environment::{Environment};
-use carbide::state::{IntoReadState, ReadState};
+use carbide::state::{AnyState, IntoReadState, IntoState, LocalState, ReadState, StateExtNew};
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
 use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
 use crate::element::{Fill, Interpolation, SpanGaps};
@@ -10,6 +10,9 @@ use crate::sequence::Sequence;
 /// A dataset with options set through `DatasetExt`. Every option is a state, synced with the
 /// rest of the dataset (see `DataSet::sync`) and read as it was last synced when the chart asks
 /// for the options.
+///
+/// Its visibility is a writable state, its own one, shown to start with, unless set with
+/// `visible`, so a click on its legend entry can hide it.
 #[derive(Debug, Clone)]
 pub struct OptionsDataset<T, C, S, F, G, XS, YS, ST, L>
 where
@@ -31,6 +34,9 @@ where
     y_scale: Option<YS>,
     stack: Option<ST>,
     label: Option<L>,
+    /// Whether the dataset is shown: kept type-erased rather than as one more type parameter, and
+    /// writable, so the legend can flip it.
+    visible: Box<dyn AnyState<T=bool>>,
 }
 
 impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Interpolation, Fill, SpanGaps, ScaleId, ScaleId, StackId, String> {
@@ -45,6 +51,7 @@ impl OptionsDataset<Vec<(Scalar, Scalar)>, DataColor, Interpolation, Fill, SpanG
             y_scale: None,
             stack: None,
             label: None,
+            visible: LocalState::new(true).as_dyn(),
         }
     }
 }
@@ -71,6 +78,7 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -87,6 +95,7 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -102,6 +111,7 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -117,6 +127,7 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -132,6 +143,7 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -147,6 +159,7 @@ where
             y_scale: Some(y_scale.into_read_state()),
             stack: self.stack,
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -163,6 +176,7 @@ where
             y_scale: self.y_scale,
             stack: Some(stack.into_read_state()),
             label: self.label,
+            visible: self.visible,
         }
     }
 
@@ -178,7 +192,15 @@ where
             y_scale: self.y_scale,
             stack: self.stack,
             label: Some(label.into_read_state()),
+            visible: self.visible,
         }
+    }
+
+    /// Shows or hides the dataset with `visible`, a writable state of a `bool` (see
+    /// `DatasetExt::visible`).
+    pub fn visible(mut self, visible: impl IntoState<bool>) -> OptionsDataset<T, C, S, F, G, XS, YS, ST, L> {
+        self.visible = visible.into_state().as_dyn();
+        self
     }
 }
 
@@ -293,6 +315,8 @@ where
             changed |= label.sync(env);
         }
 
+        changed |= self.visible.sync(env);
+
         changed
     }
 
@@ -310,6 +334,48 @@ where
             y_scale: self.y_scale.as_ref().map_or(options.y_scale, |y_scale| y_scale.value().clone()),
             stack: self.stack.as_ref().map_or(options.stack, |stack| Some(stack.value().clone())),
             label: self.label.as_ref().map_or(options.label, |label| Some(label.value().clone())),
+            // Shown only when both this visibility and that of the dataset inside are.
+            visible: options.visible && *self.visible.value_dyn(),
         }
+    }
+
+    /// Writes the visibility state, through a clone of it, which shares its value.
+    fn set_visible(&self, visible: bool) -> bool {
+        if *self.visible.value_dyn() != visible {
+            let mut state = self.visible.clone();
+            state.set_value_dyn(visible);
+        }
+        true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use carbide::environment::Environment;
+    use carbide::state::{LocalState, ReadState, State};
+    use crate::{DataSet, DatasetExt};
+
+    /// A dataset with options is shown by default, through a visibility state of its own, which
+    /// `set_visible` writes. With `visible(state)`, it reads the app's state, and `set_visible`
+    /// writes through to it, as a click on its legend entry does. A plain dataset can't be hidden.
+    #[test]
+    fn visibility_is_a_state() {
+        let own = vec![1.0, 2.0].label("Own");
+        assert!(own.options().visible, "shown to start with");
+        assert!(own.set_visible(false));
+        assert!(!own.options().visible, "its own state, written");
+
+        let mut shown = LocalState::new(true);
+        let mut dataset = vec![1.0, 2.0].label("App's").visible(shown.clone());
+        assert!(dataset.set_visible(false));
+        assert!(!*shown.value(), "written through to the app's state");
+
+        *shown.value_mut() = true;
+        dataset.sync(&mut Environment::new());
+        assert!(dataset.options().visible, "the app showing it again");
+
+        let plain = vec![1.0, 2.0];
+        assert!(!plain.set_visible(false), "a dataset without options can't be hidden");
+        assert!(plain.options().visible);
     }
 }

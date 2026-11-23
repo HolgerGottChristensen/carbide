@@ -51,6 +51,10 @@ where
 
         let dataset = dataset.as_dataset();
         let options = dataset.options();
+        // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+        if !options.visible {
+            return;
+        }
         let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
         let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
         let key = StackKey::new(&options, dataset_index);
@@ -293,6 +297,10 @@ where
 
         let dataset = dataset.as_dataset();
         let options = dataset.options();
+        // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+        if !options.visible {
+            return;
+        }
 
         // A polar dataset keeps its x on its x scale; its controller's orientation picks the roles.
         let wants_x_angle = orientation.polar_roles().0 == PolarRole::Angle;
@@ -940,8 +948,27 @@ pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
         let (color, marker) = mark_entry(dataset, &context)
             .unwrap_or_else(|| (dataset_color(&options, dataset_index, palette), marker(dataset_index, &options)));
 
-        items.push(LegendItem { label, color, marker });
+        items.push(LegendItem { label, color, marker, hidden: !options.visible });
     });
+}
+
+/// Shows or hides the dataset behind legend entry `entry`, counting entries as `legend_items`
+/// adds them, one per named dataset. Returns whether the dataset could be shown or hidden (see
+/// `DataSet::set_visible`).
+pub(crate) fn set_legend_visibility<T: AsDataSet + ?Sized, D: Sequence<T>>(datasets: &D, entry: usize, visible: bool) -> bool {
+    let mut named = 0;
+    let mut set = false;
+    datasets.foreach(&mut |_dataset_index, dataset| {
+        let dataset = dataset.as_dataset();
+        if dataset.options().label.is_none() {
+            return;
+        }
+        if named == entry {
+            set = dataset.set_visible(visible);
+        }
+        named += 1;
+    });
+    set
 }
 
 /// The legend entry of the first of a dataset's marks to give one, from `marks`, which calls its
@@ -1097,6 +1124,7 @@ mod tests {
             y_scale: ScaleId::Y,
             stack: None,
             label: None,
+            visible: true,
         }
     }
 

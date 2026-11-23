@@ -6,7 +6,7 @@ use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::Shapes;
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette};
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility};
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole};
@@ -127,6 +127,10 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             }
 
             let options = dataset.options();
+            // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+            if !options.visible {
+                return;
+            }
             let key = StackKey::new(&options, dataset_index);
             if !matches!(key, StackKey::Stacked { .. }) {
                 return;
@@ -157,6 +161,10 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
             }
 
             let options = dataset.options();
+            // A hidden dataset adds nothing to the bounds, its stack or what is drawn.
+            if !options.visible {
+                return;
+            }
             let wants_x_angle = self.orientation().polar_roles().0 == PolarRole::Angle;
             let orientation = self.orientation().for_dataset(&options, scales);
             let (index_id, value_id) = orientation.index_and_value_scales(&options);
@@ -226,6 +234,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             bounds.request_grid_shape(index_scale, GridShape::Polygon);
             bounds.request_grid_shape(value_scale, GridShape::Polygon);
 
+            // A hidden dataset still asks for its scales, so they keep their kind, but adds no data.
+            if !options.visible {
+                return;
+            }
+
             // A mark's values move with the dataset's line where it is stacked.
             let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
             dataset.line_marks(&mut |mark| {
@@ -245,6 +258,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// Each named dataset as a line in its colour, a point when lines aren't shown, or a square
     /// when it is filled or a mark, such as a band, replaces its line, unless one of its marks gives an entry of its own
     /// (`LineMark::legend`).
+    /// Shows or hides the named dataset behind the entry.
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        set_legend_visibility(&self.dataset_sequence, entry, visible)
+    }
+
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         let replaced = self.replaced_lines();
         legend_items(
