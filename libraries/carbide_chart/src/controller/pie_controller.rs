@@ -462,19 +462,25 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
             let options = dataset.options();
             let (x_id, y_id) = (&options.x_scale, &options.y_scale);
 
-            if is_polar(&options, &*bounds) {
+            // Each dataset is a category of the x scale, registered as it is collected, as nothing
+            // places values on it before.
+            let polar = is_polar(&options, bounds.placement());
+            if polar {
                 Orientation::Horizontal.request_polar_roles(&options, bounds);
+            }
+            let x = bounds.register_category(x_id, &dataset_name(&options, dataset_index)) as Scalar;
+
+            let (_, requests) = bounds.split();
+            if polar {
                 for id in [x_id, y_id] {
-                    bounds.request_grid_shape(id, GridShape::Circle);
-                    bounds.request_hidden_decoration(id);
+                    requests.request_grid_shape(id, GridShape::Circle);
+                    requests.request_hidden_decoration(id);
                 }
             }
-
-            let x = bounds.register_category(x_id, &dataset_name(&options, dataset_index)) as Scalar;
-            bounds.request_kind(x_id, ScaleKind::Category);
-            bounds.request_offset(x_id);
-            bounds.include(x_id, x, x);
-            bounds.include(y_id, 0.0, 100.0);
+            requests.request_kind(x_id, ScaleKind::Category);
+            requests.request_offset(x_id);
+            requests.include(x_id, x, x);
+            requests.include(y_id, 0.0, 100.0);
         });
     }
 

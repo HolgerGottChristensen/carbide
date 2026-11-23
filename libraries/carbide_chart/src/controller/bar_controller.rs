@@ -116,24 +116,25 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// asked for even while a dataset is empty, so the scale doesn't change when data arrives.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         register_values(&self.dataset_sequence, bounds, self.orientation(), true);
+        let (placement, requests) = bounds.split();
 
-        let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(&*bounds));
-        let offsets = self.stack_offsets(&*bounds, self.has_overlays());
+        let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(placement));
+        let offsets = self.stack_offsets(placement, self.has_overlays());
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
 
             // Around a circle, wedges and radial bars ask for circle rings.
-            if is_polar(&options, &*bounds) {
-                bounds.request_grid_shape(&options.x_scale, GridShape::Circle);
-                bounds.request_grid_shape(&options.y_scale, GridShape::Circle);
+            if is_polar(&options, placement) {
+                requests.request_grid_shape(&options.x_scale, GridShape::Circle);
+                requests.request_grid_shape(&options.y_scale, GridShape::Circle);
             }
 
-            let (index_scale, value_scale) = self.orientation().for_dataset(&options, &*bounds).index_and_value_scales(&options);
+            let (index_scale, value_scale) = self.orientation().for_dataset(&options, placement).index_and_value_scales(&options);
 
-            bounds.request_kind(index_scale, ScaleKind::Category);
-            bounds.request_offset(index_scale);
-            bounds.request_grid_offset(index_scale);
+            requests.request_kind(index_scale, ScaleKind::Category);
+            requests.request_offset(index_scale);
+            requests.request_grid_offset(index_scale);
 
             // A hidden dataset still asks for its scales, so they keep their kind, but adds no data.
             if !options.visible {
@@ -146,7 +147,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                 // bar includes zero, its base. A missing value has no bar and adds nothing to its
                 // stack.
                 let key = StackKey::new(&options, dataset_index);
-                let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
+                let coordinates = placement.coordinates(index_scale, value_scale);
                 dataset.points(&mut |_index, point| {
                     let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
                         return;
@@ -154,21 +155,21 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
                     let (start, end) = stacks.add(&key, x, y);
 
-                    bounds.include(index_scale, x, x);
-                    if !bounds.is_hidden(index_scale, value_scale, x) {
-                        bounds.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
+                    requests.include(index_scale, x, x);
+                    if !requests.is_hidden(index_scale, value_scale, x) {
+                        requests.include(value_scale, start.min(end).min(0.0), start.max(end).max(0.0));
                     }
                 });
             }
 
             // A mark's values move with the dataset's bars where they are stacked.
-            let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
+            let coordinates = placement.coordinates(index_scale, value_scale);
             dataset.bar_marks(&mut |mark| {
                 mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
-                    bounds.include(index_scale, x, x);
-                    if !bounds.is_hidden(index_scale, value_scale, x) {
-                        bounds.include(value_scale, low + offset, high + offset);
+                    requests.include(index_scale, x, x);
+                    if !requests.is_hidden(index_scale, value_scale, x) {
+                        requests.include(value_scale, low + offset, high + offset);
                     }
                 });
             });
@@ -533,13 +534,13 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
 
         let plain = BarController::new((vec![10.0].stack(COSTS), vec![5.0].stack(COSTS)));
-        assert!(!plain.has_overlays() && plain.stack_offsets(&ScaleBounds::default(), plain.has_overlays()).is_empty(), "stacked bars without overlays need no offsets");
+        assert!(!plain.has_overlays() && plain.stack_offsets(ScaleBounds::default().placement(), plain.has_overlays()).is_empty(), "stacked bars without overlays need no offsets");
 
         let unstacked = BarController::new((vec![10.0], measured.clone().error_bars()));
-        assert!(unstacked.stack_offsets(&ScaleBounds::default(), unstacked.has_overlays()).is_empty(), "error bars that don't stack are moved by zero");
+        assert!(unstacked.stack_offsets(ScaleBounds::default().placement(), unstacked.has_overlays()).is_empty(), "error bars that don't stack are moved by zero");
 
         let stacked = BarController::new((vec![10.0].stack(COSTS), measured.error_bars().stack(COSTS)));
-        let offsets = stacked.stack_offsets(&ScaleBounds::default(), stacked.has_overlays());
+        let offsets = stacked.stack_offsets(ScaleBounds::default().placement(), stacked.has_overlays());
         assert!(offsets.dataset(0).is_none(), "the bottom dataset has no overlay, so nothing reads its offsets");
         assert_eq!(super::stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on top of the 10 below them");
     }
@@ -553,8 +554,8 @@ mod tests {
         let mut bounds = ScaleBounds::default();
         BarController::new((values.clone().stack(COSTS), vec![1.0, 30.0, 1.0].stack(COSTS))).collect_bounds(&mut bounds, &mut Environment::new());
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-2.0, 30.0)), "at x = 1 the stack is just the 30");
-        assert_eq!(bounds.get(&ScaleId::X).range(), Some((0.0, 2.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((-2.0, 30.0)), "at x = 1 the stack is just the 30");
+        assert_eq!(bounds.requests().get(&ScaleId::X).range(), Some((0.0, 2.0)));
     }
 
     /// The same stack id on two y scales makes two stacks: a stack is the datasets with the same
@@ -569,15 +570,15 @@ mod tests {
         let mut bounds = ScaleBounds::default();
         bars.collect_bounds(&mut bounds, &mut Environment::new());
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 20.0)), "Y should only reach the first dataset");
-        assert_eq!(bounds.get(&RIGHT).range(), Some((0.0, 8.0)), "the right scale should only reach the second dataset, not the sum");
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((0.0, 20.0)), "Y should only reach the first dataset");
+        assert_eq!(bounds.requests().get(&RIGHT).range(), Some((0.0, 8.0)), "the right scale should only reach the second dataset, not the sum");
 
         let lines = crate::LineController::new((vec![10.0, 20.0].stack(COSTS), vec![5.0, 8.0].stack(COSTS).y_scale(RIGHT)));
         let mut bounds = ScaleBounds::default();
         lines.collect_bounds(&mut bounds, &mut Environment::new());
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((10.0, 20.0)));
-        assert_eq!(bounds.get(&RIGHT).range(), Some((5.0, 8.0)), "lines on another y scale don't stack either");
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((10.0, 20.0)));
+        assert_eq!(bounds.requests().get(&RIGHT).range(), Some((5.0, 8.0)), "lines on another y scale don't stack either");
     }
 
     /// Stacked datasets report the sums they reach, positive and negative values each on their own
@@ -596,12 +597,12 @@ mod tests {
 
         // At x = 0 the stack reaches 10 + 5 = 15 upwards and -8 downwards; at x = 1, 20 upwards
         // and -30 - 4 = -34 downwards. The revenue bar on its own stays within that.
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-34.0, 20.0)));
-        assert_eq!(bounds.get(&ScaleId::X).range(), Some((0.0, 1.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((-34.0, 20.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::X).range(), Some((0.0, 1.0)));
 
         let mut unstacked = ScaleBounds::default();
         BarController::new((vec![10.0, 20.0], vec![5.0, 30.0])).collect_bounds(&mut unstacked, &mut Environment::new());
-        assert_eq!(unstacked.get(&ScaleId::Y).range(), Some((0.0, 30.0)), "without a stack, bars don't add up");
+        assert_eq!(unstacked.requests().get(&ScaleId::Y).range(), Some((0.0, 30.0)), "without a stack, bars don't add up");
     }
 
     /// Horizontal bars read the same data as vertical ones, with the scales swapped: the categories
@@ -615,12 +616,12 @@ mod tests {
         let mut bounds = ScaleBounds::default();
         bars.collect_bounds(&mut bounds, &mut Environment::new());
 
-        let y = bounds.get(&ScaleId::Y);
+        let y = bounds.requests().get(&ScaleId::Y);
         assert_eq!(y.range(), Some((0.0, 1.0)), "the categories are the points' x values");
         assert_eq!(y.kind(), Some(ScaleKind::Category));
         assert!(y.offset() && y.grid_offset());
 
-        let x = bounds.get(&ScaleId::X);
+        let x = bounds.requests().get(&ScaleId::X);
         assert_eq!(x.range(), Some((-24.0, 15.0)), "the values, stacked, with zero");
         assert_eq!(x.kind(), None, "the value scale is left to its default");
         assert!(!x.offset() && !x.grid_offset());

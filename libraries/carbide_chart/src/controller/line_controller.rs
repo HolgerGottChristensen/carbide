@@ -222,18 +222,19 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// line, what the mark draws.
     fn collect_bounds(&self, bounds: &mut ScaleBounds, _env: &mut Environment) {
         register_values(&self.dataset_sequence, bounds, self.orientation(), true);
+        let (placement, requests) = bounds.split();
 
         let replaced = self.replaced_lines();
-        let offsets = self.stack_offsets(&*bounds, &replaced);
+        let offsets = self.stack_offsets(placement, &replaced);
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             let options = dataset.options();
-            let (index_scale, value_scale) = self.orientation().for_dataset(&options, &*bounds).index_and_value_scales(&options);
-            bounds.request_kind(index_scale, ScaleKind::Category);
+            let (index_scale, value_scale) = self.orientation().for_dataset(&options, placement).index_and_value_scales(&options);
+            requests.request_kind(index_scale, ScaleKind::Category);
 
             // On polar scales, a radar's rings are polygons through the spokes.
-            bounds.request_grid_shape(index_scale, GridShape::Polygon);
-            bounds.request_grid_shape(value_scale, GridShape::Polygon);
+            requests.request_grid_shape(index_scale, GridShape::Polygon);
+            requests.request_grid_shape(value_scale, GridShape::Polygon);
 
             // A hidden dataset still asks for its scales, so they keep their kind, but adds no data.
             if !options.visible {
@@ -241,13 +242,13 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
             }
 
             // A mark's values move with the dataset's line where it is stacked.
-            let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
+            let coordinates = placement.coordinates(index_scale, value_scale);
             dataset.line_marks(&mut |mark| {
                 mark.bounds(&coordinates, &mut |x, low, high| {
                     let offset = stack_offset(offsets.dataset(dataset_index), x);
-                    bounds.include(index_scale, x, x);
-                    if !bounds.is_hidden(index_scale, value_scale, x) {
-                        bounds.include(value_scale, low + offset, high + offset);
+                    requests.include(index_scale, x, x);
+                    if !requests.is_hidden(index_scale, value_scale, x) {
+                        requests.include(value_scale, low + offset, high + offset);
                     }
                 });
             });
@@ -342,13 +343,13 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
 
         let plain = LineController::new((vec![10.0].stack(ALL), vec![5.0].stack(ALL)));
-        assert!(plain.stack_offsets(&ScaleBounds::default(), &plain.replaced_lines()).is_empty());
+        assert!(plain.stack_offsets(ScaleBounds::default().placement(), &plain.replaced_lines()).is_empty());
 
         let unstacked = LineController::new((vec![10.0], measured.clone().error_bars()));
-        assert!(unstacked.stack_offsets(&ScaleBounds::default(), &unstacked.replaced_lines()).is_empty());
+        assert!(unstacked.stack_offsets(ScaleBounds::default().placement(), &unstacked.replaced_lines()).is_empty());
 
         let stacked = LineController::new((vec![10.0].stack(ALL), measured.error_bars().stack(ALL)));
-        let offsets = stacked.stack_offsets(&ScaleBounds::default(), &stacked.replaced_lines());
+        let offsets = stacked.stack_offsets(ScaleBounds::default().placement(), &stacked.replaced_lines());
         assert!(offsets.dataset(0).is_none());
         assert_eq!(stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on the line at the total of 15");
     }
@@ -363,12 +364,12 @@ mod tests {
         let mut bounds = ScaleBounds::default();
         line.collect_bounds(&mut bounds, &mut Environment::new());
 
-        let y = bounds.get(&ScaleId::Y);
+        let y = bounds.requests().get(&ScaleId::Y);
         assert_eq!(y.range(), Some((0.0, 2.0)), "the categories are the points' x values");
         assert_eq!(y.kind(), Some(ScaleKind::Category));
         assert!(!y.offset());
 
-        let x = bounds.get(&ScaleId::X);
+        let x = bounds.requests().get(&ScaleId::X);
         assert_eq!(x.range(), Some((-5.0, 19.0)), "the values, and the baseline they fill to");
         assert_eq!(x.kind(), None);
     }
@@ -383,7 +384,7 @@ mod tests {
 
         let mut bounds = ScaleBounds::default();
         line.collect_bounds(&mut bounds, &mut Environment::new());
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((8.0, 19.0)), "only the points, not the baseline");
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((8.0, 19.0)), "only the points, not the baseline");
 
         let mut items = vec![];
         line.legend_items(&Environment::new(), &mut items);

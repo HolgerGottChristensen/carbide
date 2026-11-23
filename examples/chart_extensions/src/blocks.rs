@@ -1,5 +1,7 @@
 use carbide::chart::{BarCanvas, BarMark, BarSlots, Coordinates, DataSet, Mark, Marked, Overlay, Primary};
 use carbide::draw::{Position, Scalar};
+use carbide::environment::Environment;
+use carbide::state::{IntoReadState, ReadState};
 
 /// The gap between two blocks, in pixels.
 const BLOCK_GAP: Scalar = 2.0;
@@ -13,13 +15,14 @@ const TICK_WIDTH: Scalar = 2.0;
 /// A bar mark of this crate's own that replaces each bar with a column of blocks, each worth
 /// `unit`, from zero to the point's value, a little apart, so the bar can be counted. The last block
 /// is cut short where the value isn't a whole number of units. Attach it with `DatasetExt::draw_as`,
-/// and set its unit before attaching (`Blocks::new().unit(..)`) or after (`BlocksExt::unit`).
+/// and set its unit, a value or a state of one, before attaching (`Blocks::new().unit(..)`) or after
+/// (`BlocksExt::unit`). A unit in a state is synced with the dataset, so the blocks follow it.
 ///
 /// It reads plain points, so it can be attached to any dataset a bar controller draws, with options
 /// or other marks.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Blocks {
-    unit: Scalar,
+#[derive(Clone, Debug)]
+pub struct Blocks<U: ReadState<T=Scalar> = Scalar> {
+    unit: U,
 }
 
 impl Blocks {
@@ -27,15 +30,18 @@ impl Blocks {
     pub fn new() -> Blocks {
         Blocks { unit: 1.0 }
     }
+}
 
-    /// Makes each block worth `unit`. A unit that isn't a positive number draws the bar whole.
-    pub fn unit(self, unit: Scalar) -> Blocks {
-        Blocks { unit }
+impl<U: ReadState<T=Scalar>> Blocks<U> {
+    /// Makes each block worth `unit`, a value or a state of one. A unit that isn't a positive number
+    /// draws the bar whole.
+    pub fn unit<U2: IntoReadState<Scalar>>(self, unit: U2) -> Blocks<U2::Output> {
+        Blocks { unit: unit.into_read_state() }
     }
 
-    /// What each block is worth.
+    /// What each block is worth, as last synced.
     pub fn block_unit(&self) -> Scalar {
-        self.unit
+        *self.unit.value()
     }
 }
 
@@ -45,24 +51,29 @@ impl Default for Blocks {
     }
 }
 
-impl Mark for Blocks {
+impl<U: ReadState<T=Scalar>> Mark for Blocks<U> {
     type Role = Primary;
+
+    /// Syncs the unit, when it is a state.
+    fn sync(&mut self, env: &mut Environment) -> bool {
+        self.unit.sync(env)
+    }
 }
 
 /// The unit of blocks already attached to a dataset, so it can be set after `draw_as`, as the
 /// built-in marks' options are.
-pub trait BlocksExt {
-    /// Makes each block worth `unit` (see `Blocks::unit`).
-    fn unit(self, unit: Scalar) -> Self;
+pub trait BlocksExt<D> {
+    /// Makes each block worth `unit`, a value or a state of one (see `Blocks::unit`).
+    fn unit<U2: IntoReadState<Scalar>>(self, unit: U2) -> Marked<D, Blocks<U2::Output>>;
 }
 
-impl<D> BlocksExt for Marked<D, Blocks> {
-    fn unit(self, unit: Scalar) -> Self {
+impl<D, U: ReadState<T=Scalar>> BlocksExt<D> for Marked<D, Blocks<U>> {
+    fn unit<U2: IntoReadState<Scalar>>(self, unit: U2) -> Marked<D, Blocks<U2::Output>> {
         self.map_mark(|blocks| blocks.unit(unit))
     }
 }
 
-impl<D: DataSet + ?Sized> BarMark<D> for Blocks {
+impl<D: DataSet + ?Sized, U: ReadState<T=Scalar>> BarMark<D> for Blocks<U> {
     /// From zero to each point's value, as a bar.
     fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {
         data.points(&mut |_, point| {
@@ -86,15 +97,16 @@ impl<D: DataSet + ?Sized> BarMark<D> for Blocks {
             let (zero, value) = (canvas.value_pixel(0.0), canvas.value_pixel(y));
             canvas.add_rect(point_index, x, &slot, zero, value, color);
 
-            let count = (y.abs() / self.unit).ceil();
-            if !(self.unit > 0.0) || !count.is_finite() || count as usize > MAX_BLOCKS {
+            let unit = self.block_unit();
+            let count = (y.abs() / unit).ceil();
+            if !(unit > 0.0) || !count.is_finite() || count as usize > MAX_BLOCKS {
                 canvas.fill_rect(slot.side, slot.thickness, zero, value, color);
                 return;
             }
 
             for block in 0..count as usize {
-                let start = y.signum() * block as Scalar * self.unit;
-                let end = y.signum() * ((block + 1) as Scalar * self.unit).min(y.abs());
+                let start = y.signum() * block as Scalar * unit;
+                let end = y.signum() * ((block + 1) as Scalar * unit).min(y.abs());
                 let (a, b) = (canvas.value_pixel(start), canvas.value_pixel(end));
                 let (low, high) = (a.min(b), a.max(b));
 

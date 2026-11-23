@@ -3,16 +3,17 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use carbide::chart::{Axis, BarController, Chart, ChartStyleExt, DataColor, DatasetExt, DatumKey, LegendPosition, LineController, Pick, PickMode, ScaleId, ScatterController, SeriesStyle, ZoomWindow};
+use carbide::chart::{Axis, BarController, Chart, ChartStyleExt, DataColor, DatasetController, DatasetExt, DatumKey, LegendPosition, LinearScale, LineController, Pick, PickMode, ScaleBounds, ScaleId, ScaleKind, ScatterController, SeriesStyle, TimeScale, TimeScaleZone, ZoomWindow};
 use carbide::color::{Color, GREEN, ORANGE, PURPLE, RED};
 use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
 use carbide::widget::VStack;
 use carbide::state::{LocalState, ReadState};
 use carbide::testing::Harness;
+use chrono::TimeZone;
 use chart_extensions::{Blocks, BlocksExt, Kelvin, LogScale, LollipopController, ValueTicks};
 
-use support::Framed;
+use support::{utc, Framed};
 
 /// A line through readings in `Kelvin`, a coordinate type of this crate's own: the y scale is in
 /// degrees Celsius, as `Kelvin` places itself, and the reading at absolute zero is missing, so the
@@ -245,6 +246,115 @@ fn lollipops_follow_the_series_style() {
     harness.snapshot("lollipops_follow_the_series_style");
 }
 
+/// Lollipops of names and of dates, collected into fresh bounds. Pins down that a controller of
+/// this crate's own registers its datasets' values through the public API
+/// (`ScaleBounds::register_values`), so names become categories in the order the points give them
+/// and a dataset's first value picks the kind of a default scale: a category scale for names, a
+/// time scale for dates, and none for numbers.
+#[test]
+fn lollipops_pick_their_default_scale_from_their_data() {
+    let names = LollipopController::new(vec![("Tue", 5.0), ("Mon", 3.0), ("Tue", 4.0)]);
+    let mut bounds = ScaleBounds::default();
+    names.collect_bounds(&mut bounds, &mut Environment::new());
+    assert_eq!(bounds.requests().get(&ScaleId::X).data_kind(), Some(ScaleKind::Category));
+    assert_eq!(bounds.placement().categories(&ScaleId::X), vec!["Tue".to_string(), "Mon".to_string()]);
+    assert_eq!(bounds.requests().get(&ScaleId::X).range(), Some((0.0, 1.0)), "placed on their categories");
+
+    let dates = LollipopController::new(vec![(utc().with_ymd_and_hms(2026, 3, 2, 0, 0, 0).unwrap(), 4.0)]);
+    let mut bounds = ScaleBounds::default();
+    dates.collect_bounds(&mut bounds, &mut Environment::new());
+    assert_eq!(bounds.requests().get(&ScaleId::X).data_kind(), Some(ScaleKind::Time));
+
+    let numbers = LollipopController::new(vec![(0.0, 4.0)]);
+    let mut bounds = ScaleBounds::default();
+    numbers.collect_bounds(&mut bounds, &mut Environment::new());
+    assert_eq!(bounds.requests().get(&ScaleId::X).data_kind(), None);
+}
+
+/// Two charts of lollipops: weekdays named by the data, on the category scale they pick for the
+/// default x scale, the second dataset adding a day the first doesn't have, the first and last
+/// half a step in from the ends (the controller asks for an offset, `ScaleRequests::request_offset`);
+/// and a week of dates on a time scale in UTC. Pins down that a controller of this crate's own places
+/// names and dates as the built-in controllers do, and maps them to the screen with `Scales::pixel`.
+#[test]
+fn lollipops_on_names_and_dates() {
+    let visits = vec![("Mon", 12.0), ("Tue", 18.0), ("Wed", 9.0), ("Thu", 15.0)];
+    let late = vec![("Thu", 6.0), ("Fri", 11.0)];
+    let names = Chart::new(LollipopController::new((visits.label("Visits"), late.label("Late visits"))))
+        .legend(LegendPosition::Bottom);
+
+    let days: Vec<_> = (2..=8).map(|day| (utc().with_ymd_and_hms(2026, 3, day, 12, 0, 0).unwrap(), (day * 3 % 7) as f64 + 2.0)).collect();
+    let dates = Chart::new(LollipopController::new(days))
+        .scale(ScaleId::X, TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc())));
+
+    let mut harness = Harness::new(VStack::new((names, dates)).framed(), Dimension::new(600.0, 600.0));
+
+    harness.snapshot("lollipops_on_names_and_dates");
+}
+
+/// Lollipops laid along x (`horizontal`), their names down the y scale. Pins down that a
+/// controller of this crate's own can be drawn horizontally through the public `Orientation`: its
+/// index scale is the y scale, which takes the categories, offset half a step at both ends, and its
+/// stems grow from zero along x, left for a negative value.
+#[test]
+fn horizontal_lollipops() {
+    let margins = vec![("North", 8.0), ("South", -3.5), ("East", 5.0), ("West", 11.0)];
+    let chart = Chart::new(LollipopController::new(margins.label("Margin")).horizontal(true))
+        .legend(LegendPosition::Bottom)
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+
+    harness.snapshot("horizontal_lollipops");
+}
+
+/// Lollipops on an x scale zoomed into its first half, with a y scale that fits to the visible data.
+/// Pins down that a controller of this crate's own fits to the lollipops shown, through
+/// `ScaleRequests::include_point`: the large values in the second half are left out of y, which runs
+/// to the largest value shown, 9, not 40.
+#[test]
+fn lollipops_fit_the_visible_data() {
+    let readings = vec![(0.0, 4.0), (1.0, 9.0), (2.0, 6.0), (3.0, 3.0), (6.0, 35.0), (7.0, 40.0), (8.0, 28.0)];
+    let chart = Chart::new(LollipopController::new(readings))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(ZoomWindow::new(0.0, 0.4)))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).fit_visible(true))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+
+    harness.snapshot("lollipops_fit_the_visible_data");
+}
+
+/// The lollipops of `lollipops`, each dataset's visibility a state, with a click on the "Own colour"
+/// legend entry, then, after a click elsewhere, another. Pins down that a controller of this
+/// crate's own hides and shows a dataset from its legend entry (`legend_visibility`): its
+/// lollipops are gone, the scales refit to the ones shown, and its entry is dimmed; the second
+/// click shows it again.
+#[test]
+fn clicking_a_legend_entry_hides_and_shows_lollipops() {
+    let shown = [LocalState::new(true), LocalState::new(true)];
+    let first = vec![(0.0, 4.0), (1.0, -2.5), (2.0, 6.0), (3.0, f64::NAN), (4.0, 3.0)];
+    let second = vec![(0.5, 2.0), (1.5, 5.0), (2.5, -4.0), (3.5, 1.5)];
+
+    let chart = Chart::new(LollipopController::new((
+        first.label("Palette colour").visible(shown[0].clone()),
+        second.color(DataColor::Color(GREEN)).label("Own colour").visible(shown[1].clone()),
+    )))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+    harness.render();
+
+    harness.click(Position::new(370.0, 362.0));
+    harness.snapshot("own_colour_hidden");
+    assert_eq!((*shown[0].value(), *shown[1].value()), (true, false), "the second dataset is hidden");
+
+    // A click elsewhere first, so the next click on the entry isn't the second of a double-click.
+    harness.click(Position::new(5.0, 5.0));
+    harness.click(Position::new(370.0, 362.0));
+    assert_eq!((*shown[0].value(), *shown[1].value()), (true, true), "shown again");
+}
+
 /// Lollipops on a `LogScale`, where zero isn't on the scale: the stems start at its bottom end.
 #[test]
 fn lollipops_on_a_log_scale() {
@@ -265,6 +375,7 @@ fn lollipops_on_a_log_scale() {
 
 mod support {
     use carbide::color::BLUE;
+    use chrono::FixedOffset;
     use carbide::i18n::{locale, LocaleExt};
     use carbide::state::ValueState;
     use carbide::widget::Widget;
@@ -280,4 +391,9 @@ mod support {
     }
 
     impl<W: Widget> Framed for W {}
+
+    /// UTC, so dates and time scales are the same on every machine.
+    pub fn utc() -> FixedOffset {
+        FixedOffset::east_opt(0).expect("zero is a valid offset")
+    }
 }

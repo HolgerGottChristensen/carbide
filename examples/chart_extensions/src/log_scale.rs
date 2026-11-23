@@ -54,6 +54,19 @@ impl LogScale {
         self
     }
 
+    /// Fits the scale to the data inside the zoom windows of the scales its data is placed along,
+    /// a value or a state of one: a value scale whose index scale is zoomed fits the values shown.
+    pub fn fit_visible(mut self, fit_visible: impl IntoReadState<bool>) -> LogScale {
+        self.axis_options = self.axis_options.with_fit_visible(fit_visible);
+        self
+    }
+
+    /// Draws grid lines at the ticks, or not with `false`, a value or a state of one.
+    pub fn grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> LogScale {
+        self.axis_options = self.axis_options.with_grid_lines(grid_lines);
+        self
+    }
+
     /// The share of the fitted range `value` is at, in logarithms, before the zoom window.
     fn share(&self, value: Scalar) -> Scalar {
         let start = self.exponents.start as Scalar;

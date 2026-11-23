@@ -39,7 +39,8 @@ where
     T: AsDataSet + ?Sized,
     D: Sequence<T>,
 {
-    let totals = normalized_totals(datasets, &*bounds, orientation, &counted);
+    let (placement, requests) = bounds.split();
+    let totals = normalized_totals(datasets, placement, orientation, &counted);
     let mut sums = StackSums::single().normalized(totals);
     // The stacks that already have a non-empty line, which a later `Fill::Stack` fills down to.
     let mut filled_stacks: HashSet<StackKey> = HashSet::new();
@@ -55,8 +56,8 @@ where
         if !options.visible {
             return;
         }
-        let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
-        let coordinates = Coordinates::new(&*bounds, index_scale, value_scale);
+        let (index_scale, value_scale) = orientation.for_dataset(&options, placement).index_and_value_scales(&options);
+        let coordinates = placement.coordinates(index_scale, value_scale);
         let key = StackKey::new(&options, dataset_index);
         let mut has_points = false;
 
@@ -66,12 +67,8 @@ where
             };
 
             has_points = true;
-            bounds.include(index_scale, x, x);
-
             let y = if stacks { sums.add(&key, x, y).1 } else { y };
-            if !bounds.is_hidden(index_scale, value_scale, x) {
-                bounds.include(value_scale, y, y);
-            }
+            requests.include_point(index_scale, value_scale, x, y);
         });
 
         // An empty dataset adds nothing, not even its fill's baseline, and isn't a line to fill to.
@@ -82,7 +79,7 @@ where
         // A normalised stack's shares run from zero, as bars from zero, so the value scale shows the
         // whole 0 to 100.
         if stacks && options.stack.as_ref().is_some_and(StackId::is_normalized) {
-            bounds.include(value_scale, 0.0, 0.0);
+            requests.include(value_scale, 0.0, 0.0);
         }
 
         let has_line_below = stacks && matches!(key, StackKey::Stacked { .. }) && !filled_stacks.insert(key.clone());
@@ -90,7 +87,7 @@ where
         let fills_to_line = options.fill == Fill::Stack && has_line_below;
 
         if fills && !fills_to_line && let Some(baseline) = options.fill.baseline_value() {
-            bounds.include(value_scale, baseline, baseline);
+            requests.include(value_scale, baseline, baseline);
         }
     });
 }
@@ -437,7 +434,7 @@ pub(crate) fn polar_frame(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId, wants
 
 /// Logs, once per pair, that a polar dataset on `x_id` and `y_id` isn't drawn because its scales
 /// took the other roles than its controller asked for: another dataset asked first (see
-/// `ScaleBounds::request_polar_role`).
+/// `ScaleRequests::request_polar_role`).
 pub(crate) fn warn_other_roles(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId) {
     scales.warn_once("other roles", x_id, y_id, || format!("A dataset on the radial scales {:?} and {:?} is not drawn: they took the other roles, angle and radius, than its controller asked for, as another dataset asked first", x_id.name(), y_id.name()));
 }
@@ -813,11 +810,9 @@ fn ring_points(ring: &Ring, from: Scalar, to: Scalar) -> Vec<Position> {
     (0..=STEPS).map(|step| ring.point(from + (to - from) * step as Scalar / STEPS as Scalar)).collect()
 }
 
-/// Reports each dataset's values (see `ScaleBounds::report_value`): its first point that isn't
-/// missing, the x for the scale its x is placed on and the y for the scale its y is placed on, as
-/// `orientation` places them. A dataset whose values name categories registers every name, in
-/// point order, as a category of those scales (see `ScaleBounds::register_category`), before
-/// anything reads them, so the categories are numbered in the order the data names them. Every
+/// Registers each dataset's values (see `ScaleBounds::register_values`), its x on the scale its x
+/// is placed on and its y on the scale its y is placed on, as `orientation` places them, and asks
+/// for a polar dataset's scales' roles. Every
 /// dataset reports, whether or not its points are drawn, as its marks are drawn on the same scales,
 /// except a polar dataset when the controller doesn't draw around a circle (`polar` is false):
 /// it is left out entirely, as the controller leaves it out of its bounds.
@@ -829,34 +824,16 @@ where
     datasets.foreach(&mut |_dataset_index, dataset| {
         let dataset = dataset.as_dataset();
         let options = dataset.options();
-        if !polar && is_polar(&options, &*bounds) {
+        if !polar && is_polar(&options, bounds.placement()) {
             return;
         }
 
         orientation.request_polar_roles(&options, bounds);
-        let (index_scale, value_scale) = orientation.for_dataset(&options, &*bounds).index_and_value_scales(&options);
+        let (index_scale, value_scale) = orientation.for_dataset(&options, bounds.placement()).index_and_value_scales(&options);
+        let (index_scale, value_scale) = (index_scale.clone(), value_scale.clone());
 
-        let mut first = None;
-        dataset.points(&mut |_index, point| {
-            if first.is_none() && let (Some(x), Some(y)) = (point.x(), point.y()) {
-                bounds.report_value(index_scale, x);
-                bounds.report_value(value_scale, y);
-                first = Some(matches!(x, Value::Text(_)) || matches!(y, Value::Text(_)));
-            }
-        });
-
-        if first != Some(true) {
-            return;
-        }
-
-        dataset.points(&mut |_index, point| {
-            if let Some(Value::Text(text)) = point.x() {
-                bounds.register_category(index_scale, text);
-            }
-            if let Some(Value::Text(text)) = point.y() {
-                bounds.register_category(value_scale, text);
-            }
-        });
+        // The point's x goes on the index scale and its y on the value scale.
+        bounds.register_values(dataset, &index_scale, &value_scale);
     });
 }
 
@@ -1040,8 +1017,6 @@ mod tests {
     use crate::{Axis, CategoryScale, DatasetExt, Fill, LineController, LineDataSet, Scale, ScatterController, StackId};
     use crate::controller::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, Scales};
-    use carbide::color::{BLUE, GREEN, RED, WHITE};
-    use crate::{DataColor, DataSetOptions, Interpolation};
     use crate::controller::orientation::Orientation;
     use super::{baseline_pixel, drawn_lines};
 
@@ -1050,7 +1025,7 @@ mod tests {
     fn y_range(controller: &dyn DatasetController) -> Option<(f64, f64)> {
         let mut bounds = ScaleBounds::default();
         controller.collect_bounds(&mut bounds, &mut Environment::new());
-        bounds.get(&ScaleId::Y).range()
+        bounds.requests().get(&ScaleId::Y).range()
     }
 
     /// A filled line includes its baseline value in the y bounds, so the area's base is on the
@@ -1156,20 +1131,6 @@ mod tests {
         assert_eq!(baseline_pixel(Fill::Value(10.0), &scale, Axis::Vertical, area), pixel(3.0), "a value past the last label should fill to it");
         assert_eq!(baseline_pixel(Fill::Value(-5.0), &scale, Axis::Vertical, area), pixel(0.0), "a value before the first label should fill to it");
         assert_eq!(baseline_pixel(Fill::Value(2.0), &scale, Axis::Vertical, area), pixel(2.0));
-    }
-
-    fn options(color: DataColor) -> DataSetOptions {
-        DataSetOptions {
-            color,
-            interpolation: Interpolation::Linear,
-            fill: Fill::None,
-            span_gaps: crate::SpanGaps::Never,
-            x_scale: ScaleId::X,
-            y_scale: ScaleId::Y,
-            stack: None,
-            label: None,
-            visible: true,
-        }
     }
 
     /// A line breaks into runs at missing points with `SpanGaps::Never`, joins across them with

@@ -14,9 +14,42 @@ use crate::DataSetOptions;
 use crate::controller::line_path::PathSink;
 use crate::scale::{Axis, Places, PolarRole, Scale, ScaleBounds, ScaleId};
 
-/// The direction a controller's values grow in.
+/// The direction a controller's values grow in: up the y scale, the categories along x
+/// (`Vertical`, the default), or along the x scale, the categories down y (`Horizontal`). A
+/// point's x is its category and its y its value either way.
+///
+/// A controller of your own that can be drawn both ways reads each dataset's points on its index
+/// and value scales (`index_and_value_scales`), and draws in the index frame, whose x runs along
+/// the categories and y along the values: the screen for vertical controllers, the screen with x
+/// and y swapped for horizontal ones. `frame_area` gives the chart area in that frame, and `swap`
+/// turns a position in it into one on the screen.
+///
+/// ```
+/// use carbide_chart::{DataSet, Orientation, Scales};
+/// use carbide_core::draw::{Position, Rect};
+///
+/// /// Where each of `dataset`'s points falls on the screen, read the way `orientation` reads them.
+/// fn screen_positions(dataset: &dyn DataSet, orientation: Orientation, scales: &Scales, area: Rect) -> Vec<Position> {
+///     let options = dataset.options();
+///     let (index_id, value_id) = orientation.index_and_value_scales(&options);
+///     let coordinates = scales.coordinates(index_id, value_id);
+///
+///     let mut positions = vec![];
+///     dataset.points(&mut |_, point| {
+///         let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) else {
+///             return;
+///         };
+///         let (Some(index), Some(value)) = (scales.pixel(index_id, x, area), scales.pixel(value_id, y, area)) else {
+///             return;
+///         };
+///         // In the index frame, x along the categories and y along the values.
+///         positions.push(orientation.swap(Position::new(index, value)));
+///     });
+///     positions
+/// }
+/// ```
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
-pub(crate) enum Orientation {
+pub enum Orientation {
     /// Values grow up the y scale, and the categories run along the x scale.
     #[default]
     Vertical,
@@ -26,7 +59,7 @@ pub(crate) enum Orientation {
 
 impl Orientation {
     /// The axis the categories run along.
-    pub(crate) fn index_axis(self) -> Axis {
+    pub fn index_axis(self) -> Axis {
         match self {
             Orientation::Vertical => Axis::Horizontal,
             Orientation::Horizontal => Axis::Vertical,
@@ -34,7 +67,7 @@ impl Orientation {
     }
 
     /// The axis the values grow along.
-    pub(crate) fn value_axis(self) -> Axis {
+    pub fn value_axis(self) -> Axis {
         match self {
             Orientation::Vertical => Axis::Vertical,
             Orientation::Horizontal => Axis::Horizontal,
@@ -43,7 +76,7 @@ impl Orientation {
 
     /// The ids of the dataset's scales the categories and the values go on: its x and y scales
     /// when vertical, its y and x scales when horizontal.
-    pub(crate) fn index_and_value_scales(self, options: &DataSetOptions) -> (&ScaleId, &ScaleId) {
+    pub fn index_and_value_scales(self, options: &DataSetOptions) -> (&ScaleId, &ScaleId) {
         match self {
             Orientation::Vertical => (&options.x_scale, &options.y_scale),
             Orientation::Horizontal => (&options.y_scale, &options.x_scale),
@@ -74,20 +107,21 @@ impl Orientation {
 
     /// Asks for the roles of a polar dataset's scales (see `polar_roles`), when the dataset with
     /// `options` is on two radial scales.
-    pub(crate) fn request_polar_roles(self, options: &DataSetOptions, bounds: &ScaleBounds) {
-        if bounds.is_radial(&options.x_scale) && bounds.is_radial(&options.y_scale) {
+    pub(crate) fn request_polar_roles(self, options: &DataSetOptions, bounds: &mut ScaleBounds) {
+        let (placement, requests) = bounds.split();
+        if placement.is_radial(&options.x_scale) && placement.is_radial(&options.y_scale) {
             let (x, y) = self.polar_roles();
-            bounds.request_polar_role(&options.x_scale, x);
-            bounds.request_polar_role(&options.y_scale, y);
+            requests.request_polar_role(&options.x_scale, x);
+            requests.request_polar_role(&options.y_scale, y);
             if self == Orientation::Horizontal {
-                bounds.request_horizontal(&options.x_scale);
+                requests.request_horizontal(&options.x_scale);
             }
         }
     }
 
     /// Turns a position in the index frame into one on the screen, or back: the two only differ
     /// by swapping x and y, so the same swap goes both ways.
-    pub(crate) fn swap(self, position: Position) -> Position {
+    pub fn swap(self, position: Position) -> Position {
         match self {
             Orientation::Vertical => position,
             Orientation::Horizontal => Position::new(position.y, position.x),
@@ -95,7 +129,7 @@ impl Orientation {
     }
 
     /// The chart area in the index frame.
-    pub(crate) fn frame_area(self, area: Rect) -> Rect {
+    pub fn frame_area(self, area: Rect) -> Rect {
         match self {
             Orientation::Vertical => area,
             Orientation::Horizontal => Rect::new(self.swap(area.position), Dimension::new(area.height(), area.width())),

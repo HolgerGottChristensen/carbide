@@ -90,12 +90,12 @@ pub trait Scale: DynClone + Debug + 'static {
 
     /// Pads the mapping by half a tick step at both ends, so values on the first and last tick sit
     /// inside the chart area instead of on its edges. The chart sets it on every fit, for the
-    /// scales a controller requested it on (see `ScaleBounds::request_offset`); bar charts use it
+    /// scales a controller requested it on (see `ScaleRequests::request_offset`); bar charts use it
     /// so their first and last bars aren't cut in half. Scales that don't support it ignore it.
     fn set_offset(&mut self, _offset: bool) {}
 
     /// Whether a controller asked for grid lines between ticks instead of on them, set by the
-    /// chart on every fit (see `ScaleBounds::request_grid_offset`). Bar charts ask for it so grid
+    /// chart on every fit (see `ScaleRequests::request_grid_offset`). Bar charts ask for it so grid
     /// lines separate the bar groups. A scale whose grid offset was set explicitly keeps that
     /// setting; scales that don't support it ignore it.
     fn set_grid_offset_requested(&mut self, _requested: bool) {}
@@ -208,7 +208,7 @@ impl Axis {
 /// What a radial scale is in its polar chart, an angle scale or a radius scale: the angle, around the circle from its start angle
 /// to its end angle (see `AxisOptions::start_angle`), or the radius, out from the inner radius to
 /// the rim (see `AxisOptions::inner_radius`). The chart gives each radial scale its role on every
-/// fit, from how datasets bind it (see `ScaleBounds::request_polar_role`).
+/// fit, from how datasets bind it (see `ScaleRequests::request_polar_role`).
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum PolarRole {
     Angle,

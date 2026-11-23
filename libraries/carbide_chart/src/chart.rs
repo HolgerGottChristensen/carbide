@@ -108,7 +108,7 @@ struct LegendEntry {
 impl<C: ControllerSequence> Chart<C> {
     /// A chart drawing `controllers` on the default scales, `ScaleId::X` and `ScaleId::Y`. Each
     /// default is a linear scale unless a controller asks for another kind (see
-    /// `ScaleBounds::request_kind`); the first to ask wins. A bar or line chart's x scale is a
+    /// `ScaleRequests::request_kind`); the first to ask wins. A bar or line chart's x scale is a
     /// `CategoryScale` this way. The kind is decided on every fit, so it follows controllers
     /// added or removed after the chart is built.
     ///
@@ -512,14 +512,13 @@ impl<C: ControllerSequence> Chart<C> {
 
     /// Has every controller fill in `bounds`, after each scale's own categories, which come first
     /// so data naming them is placed on them.
-    fn collect_bounds(&mut self, bounds: ScaleBounds, env: &mut Environment) -> ScaleBounds {
+    fn collect_bounds(&mut self, mut bounds: ScaleBounds, env: &mut Environment) -> ScaleBounds {
         for (id, scale) in self.scales.iter() {
             scale.categories(&mut |text| {
                 bounds.register_category(id, text);
             });
         }
 
-        let mut bounds = bounds;
         self.controllers.foreach(&mut |_, controller| {
             controller.collect_bounds(&mut bounds, env);
         });
@@ -549,20 +548,20 @@ impl<C: ControllerSequence> Chart<C> {
 
         let bounds = self.collect_bounds(ScaleBounds::with_radial(self.scales.radial_ids()), env);
 
-        for id in &bounds.ids() {
+        for id in &bounds.requests().ids() {
             if !self.scales.contains(id) && !self.warned_scale_ids.contains(id) {
                 self.warned_scale_ids.insert(id.clone());
                 log::warn!("Chart has no scale with id {:?}; datasets bound to it are not drawn", id.name());
             }
 
-            let request = bounds.get(id);
+            let request = bounds.requests().get(id);
             if request.polar_role_conflict() {
                 self.scales.warn_once("role conflict", id, id, || format!("The radial scale {:?} is the angle for some datasets and the radius for others; it is drawn as the {:?}, and datasets that need the other role are not drawn", id.name(), request.polar_role().unwrap_or(PolarRole::Angle)));
             }
         }
 
         for id in defaults {
-            let requested = bounds.get(&id).default_kind();
+            let requested = bounds.requests().get(&id).default_kind();
 
             if Some(requested) != self.default_kinds.get(&id).copied()
                 && let Some(axis) = self.scales.get(&id).map(|scale| scale.axis()) {
@@ -592,8 +591,8 @@ impl<C: ControllerSequence> Chart<C> {
         }
 
         // A scale gives up its decoration when a controller asks, unless its grid lines were set.
-        let hidden = bounds.ids().into_iter()
-            .filter(|id| bounds.get(id).hidden_decoration())
+        let hidden = bounds.requests().ids().into_iter()
+            .filter(|id| bounds.requests().get(id).hidden_decoration())
             .filter(|id| self.scales.get(id).is_some_and(|scale| !scale.axis_options().grid_lines_set()))
             .collect();
         self.scales.set_decoration_hidden(hidden);

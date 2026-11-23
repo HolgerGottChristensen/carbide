@@ -116,11 +116,13 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             get(&self.show_line) || !replaced.contains(&dataset_index)
         });
 
+        let (placement, requests) = bounds.split();
+
         // On polar scales, the rings around scattered points are circles.
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
             let options = dataset.options();
-            bounds.request_grid_shape(&options.x_scale, GridShape::Circle);
-            bounds.request_grid_shape(&options.y_scale, GridShape::Circle);
+            requests.request_grid_shape(&options.x_scale, GridShape::Circle);
+            requests.request_grid_shape(&options.y_scale, GridShape::Circle);
         });
 
         self.dataset_sequence.foreach(&mut |_dataset_index, dataset| {
@@ -133,12 +135,12 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
             if !options.visible {
                 return;
             }
-            let coordinates = Coordinates::new(&*bounds, &options.x_scale, &options.y_scale);
+            let coordinates = placement.coordinates(&options.x_scale, &options.y_scale);
             dataset.scatter_marks(&mut |mark| {
                 mark.bounds(&coordinates, &mut |x, y| {
-                    bounds.include(&options.x_scale, x, x);
-                    if !bounds.is_hidden(&options.x_scale, &options.y_scale, x) {
-                        bounds.include(&options.y_scale, y, y);
+                    requests.include(&options.x_scale, x, x);
+                    if !requests.is_hidden(&options.x_scale, &options.y_scale, x) {
+                        requests.include(&options.y_scale, y, y);
                     }
                 });
             });

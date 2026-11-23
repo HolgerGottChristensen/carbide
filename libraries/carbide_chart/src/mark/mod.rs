@@ -314,9 +314,9 @@ mod tests {
         let temperatures = vec![Range { x: 0.0, low: 4.0, high: 12.0 }, Range { x: 1.0, low: 7.0, high: 18.0 }];
         let bounds = bounds(BarController::new(temperatures.range()));
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((4.0, 18.0)), "no zero, and the lows as well as the highs");
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((4.0, 18.0)), "no zero, and the lows as well as the highs");
 
-        let x = bounds.get(&ScaleId::X);
+        let x = bounds.requests().get(&ScaleId::X);
         assert_eq!(x.range(), Some((0.0, 1.0)));
         assert_eq!(x.kind(), Some(ScaleKind::Category));
         assert!(x.offset() && x.grid_offset());
@@ -329,7 +329,7 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 10.0, low: 8.0, high: 13.0 }, Estimate { x: 1.0, y: 6.0, low: 5.0, high: 7.0 }];
         let bounds = bounds(BarController::new(measured.error_bars()));
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 13.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((0.0, 13.0)));
     }
 
     /// On stacked bars the whiskers move with the bars: they keep their distance from the point's
@@ -341,13 +341,13 @@ mod tests {
         let labour = vec![Estimate { x: 0.0, y: 5.0, low: 4.0, high: 7.0 }];
 
         let up = bounds(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS))));
-        assert_eq!(up.get(&ScaleId::Y).range(), Some((0.0, 17.0)), "labour's whisker runs from 14 to 17, around its bar's top at 15");
+        assert_eq!(up.requests().get(&ScaleId::Y).range(), Some((0.0, 17.0)), "labour's whisker runs from 14 to 17, around its bar's top at 15");
 
         let refunds = vec![Estimate { x: 0.0, y: -10.0, low: -11.0, high: -9.0 }];
         let returns = vec![Estimate { x: 0.0, y: -5.0, low: -8.0, high: -4.0 }];
 
         let down = bounds(BarController::new((refunds.error_bars().stack(COSTS), returns.error_bars().stack(COSTS))));
-        assert_eq!(down.get(&ScaleId::Y).range(), Some((-18.0, 0.0)), "returns' whisker runs from -18 to -14, around its bar's end at -15");
+        assert_eq!(down.requests().get(&ScaleId::Y).range(), Some((-18.0, 0.0)), "returns' whisker runs from -18 to -14, around its bar's end at -15");
     }
 
     /// A point whose value is missing has no bar, so it has no whisker either, and its low and
@@ -360,7 +360,7 @@ mod tests {
         ];
 
         let bounds = bounds(BarController::new(measured.error_bars()));
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((0.0, 12.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((0.0, 12.0)));
     }
 
     /// The same range dataset draws in a bar controller and in a line controller. In a line
@@ -376,20 +376,20 @@ mod tests {
         let average = vec![8.0, 12.0];
 
         let bars = bounds(BarController::new(temperatures.clone().range()));
-        assert_eq!(bars.get(&ScaleId::Y).range(), Some((4.0, 18.0)));
+        assert_eq!(bars.requests().get(&ScaleId::Y).range(), Some((4.0, 18.0)));
 
         let lines = LineController::new((temperatures.clone().range().stack(SPAN).label("range"), average.stack(SPAN)));
         let line_bounds = bounds(lines.clone());
-        assert_eq!(line_bounds.get(&ScaleId::Y).range(), Some((4.0, 18.0)), "the band doesn't stack under the average, which stays at 8 to 12");
-        assert_eq!(line_bounds.get(&ScaleId::X).kind(), Some(ScaleKind::Category));
+        assert_eq!(line_bounds.requests().get(&ScaleId::Y).range(), Some((4.0, 18.0)), "the band doesn't stack under the average, which stays at 8 to 12");
+        assert_eq!(line_bounds.requests().get(&ScaleId::X).kind(), Some(ScaleKind::Category));
 
         let mut legend = vec![];
         lines.legend_items(&Environment::new(), &mut legend);
         assert!(matches!(legend.as_slice(), [item] if item.marker == LegendMarker::Square), "{legend:?}");
 
         let horizontal = bounds(LineController::new(temperatures.range()).horizontal(true));
-        assert_eq!(horizontal.get(&ScaleId::X).range(), Some((4.0, 18.0)));
-        assert_eq!(horizontal.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
+        assert_eq!(horizontal.requests().get(&ScaleId::X).range(), Some((4.0, 18.0)));
+        assert_eq!(horizontal.requests().get(&ScaleId::Y).range(), Some((0.0, 1.0)));
     }
 
     /// A mark's options can be states, synced with its dataset: syncing a dataset whose inverted
@@ -427,20 +427,20 @@ mod tests {
             BoxStats { x: 1.0, min: 3.0, q1: 5.0, median: 6.0, q3: 9.0, max: 14.0 },
         ];
         let boxes = bounds(BarController::new((waits.clone().box_plot().stack(ALL), waits.box_plot().stack(ALL))));
-        assert_eq!(boxes.get(&ScaleId::Y).range(), Some((2.0, 14.0)), "not stacked, and without zero");
-        assert_eq!(boxes.get(&ScaleId::X).kind(), Some(ScaleKind::Category));
+        assert_eq!(boxes.requests().get(&ScaleId::Y).range(), Some((2.0, 14.0)), "not stacked, and without zero");
+        assert_eq!(boxes.requests().get(&ScaleId::X).kind(), Some(ScaleKind::Category));
 
         let prices = vec![
             Ohlc { x: 0.0, open: 10.0, high: 12.0, low: 9.0, close: 11.5 },
             Ohlc { x: 1.0, open: 11.5, high: 13.0, low: 8.0, close: 9.5 },
         ];
         let candles = bounds(BarController::new(prices.clone().candles()));
-        assert_eq!(candles.get(&ScaleId::Y).range(), Some((8.0, 13.0)));
+        assert_eq!(candles.requests().get(&ScaleId::Y).range(), Some((8.0, 13.0)));
         let bars = bounds(BarController::new(prices.clone().ohlc()));
-        assert_eq!(bars.get(&ScaleId::Y).range(), Some((8.0, 13.0)));
+        assert_eq!(bars.requests().get(&ScaleId::Y).range(), Some((8.0, 13.0)));
 
         let closes = bounds(crate::LineController::new(prices));
-        assert_eq!(closes.get(&ScaleId::Y).range(), Some((9.5, 11.5)), "without a mark, a line runs through the closes");
+        assert_eq!(closes.requests().get(&ScaleId::Y).range(), Some((9.5, 11.5)), "without a mark, a line runs through the closes");
     }
 
     /// The rising and falling colours of candlesticks can be states, synced with the dataset and
@@ -507,8 +507,8 @@ mod tests {
         ];
         let bounds = bounds(ScatterController::new(measured.error_bars()));
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 9.0)), "the whiskers reach beyond the points");
-        assert_eq!(bounds.get(&ScaleId::X).range(), Some((1.0, 3.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((2.0, 9.0)), "the whiskers reach beyond the points");
+        assert_eq!(bounds.requests().get(&ScaleId::X).range(), Some((1.0, 3.0)));
     }
 
     /// On scatter points, a point's interval along x adds both its ends to the x scale's bounds,
@@ -524,15 +524,15 @@ mod tests {
         ];
         let both = bounds(ScatterController::new(measured.error_bars()));
 
-        assert_eq!(both.get(&ScaleId::X).range(), Some((1.0, 9.0)), "both points' x intervals");
-        assert_eq!(both.get(&ScaleId::Y).range(), Some((3.0, 8.0)), "the second point's y interval lacks its high, so it adds nothing");
+        assert_eq!(both.requests().get(&ScaleId::X).range(), Some((1.0, 9.0)), "both points' x intervals");
+        assert_eq!(both.requests().get(&ScaleId::Y).range(), Some((3.0, 8.0)), "the second point's y interval lacks its high, so it adds nothing");
 
         let only_along_x: Vec<Spread<Option<f64>, f64>> = vec![
             Spread { x: Some(2.0), y: 5.0, x_low: None, x_high: Some(4.0), low: 3.0, high: 8.0 },
             Spread { x: Some(6.0), y: 4.0, x_low: Some(5.0), x_high: Some(7.0), low: 3.5, high: 4.5 },
         ];
         let partial = bounds(ScatterController::new(only_along_x.error_bars()));
-        assert_eq!(partial.get(&ScaleId::X).range(), Some((2.0, 7.0)), "the first point's x interval lacks its low");
+        assert_eq!(partial.requests().get(&ScaleId::X).range(), Some((2.0, 7.0)), "the first point's x interval lacks its low");
     }
 
     /// The whiskers' colour is the chart's label colour until the dataset sets its own, a value or
@@ -594,10 +594,10 @@ mod tests {
         let second: Vec<Estimate<f64, Option<f64>>> = vec![Estimate { x: 0.0, y: Some(5.0), low: Some(3.0), high: Some(8.0) }];
 
         let alone = bounds(LineController::new(first.clone().error_bars()));
-        assert_eq!(alone.get(&ScaleId::Y).range(), Some((9.0, 12.0)), "the point without a value has no whisker");
+        assert_eq!(alone.requests().get(&ScaleId::Y).range(), Some((9.0, 12.0)), "the point without a value has no whisker");
 
         let stacked = bounds(LineController::new((first.error_bars().stack(ALL), second.error_bars().stack(ALL))));
-        assert_eq!(stacked.get(&ScaleId::Y).range(), Some((9.0, 18.0)), "the second whisker runs from 13 to 18, around the total of 15");
+        assert_eq!(stacked.requests().get(&ScaleId::Y).range(), Some((9.0, 18.0)), "the second whisker runs from 13 to 18, around the total of 15");
     }
 
     /// Datasets drawn as ranges don't stack, even with a stack id: each reports its own range.
@@ -609,7 +609,7 @@ mod tests {
 
         let bounds = bounds(BarController::new((first.range().stack(SPAN), second.range().stack(SPAN))));
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 6.0)), "not 2 to 11, as stacked sums would reach");
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((2.0, 6.0)), "not 2 to 11, as stacked sums would reach");
     }
 
     /// Marks and options combine in either order, and the options still apply.
@@ -622,8 +622,8 @@ mod tests {
         let options_first = bounds(BarController::new(measured.clone().y_scale(RIGHT).label("measured").error_bars()));
 
         for bounds in [mark_first, options_first] {
-            assert_eq!(bounds.get(&RIGHT).range(), Some((0.0, 13.0)), "the whiskers go on the dataset's own y scale");
-            assert_eq!(bounds.get(&ScaleId::Y).range(), None);
+            assert_eq!(bounds.requests().get(&RIGHT).range(), Some((0.0, 13.0)), "the whiskers go on the dataset's own y scale");
+            assert_eq!(bounds.requests().get(&ScaleId::Y).range(), None);
         }
 
         let mut marks = 0;
@@ -641,13 +641,13 @@ mod tests {
         let measured = vec![Estimate { x: 0.0, y: 6.0, low: 5.0, high: 11.0 }];
 
         let tuple = bounds(BarController::new((plain.clone(), ranges.clone().range(), measured.clone().error_bars())));
-        assert_eq!(tuple.get(&ScaleId::Y).range(), Some((0.0, 11.0)));
+        assert_eq!(tuple.requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
 
         let named_first = bounds(BarController::new(vec![plain.clone().boxed::<dyn BarDataSet>(), ranges.clone().range().boxed(), measured.clone().error_bars().boxed()]));
-        assert_eq!(named_first.get(&ScaleId::Y).range(), Some((0.0, 11.0)));
+        assert_eq!(named_first.requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
 
         let datasets: Vec<Box<dyn BarDataSet>> = vec![plain.boxed(), ranges.range().boxed(), measured.error_bars().boxed()];
-        assert_eq!(bounds(BarController::new(datasets)).get(&ScaleId::Y).range(), Some((0.0, 11.0)));
+        assert_eq!(bounds(BarController::new(datasets)).requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
     }
 
     /// Bubbles cover the x and y of the points they replace; their sizes don't reach the scales.
@@ -662,8 +662,8 @@ mod tests {
 
         let bounds = bounds(ScatterController::new((tuples.clone().bubbles(), structs.label("cities").bubbles(), tuples.bubbles().color(DataColor::Palette(3)))));
 
-        assert_eq!(bounds.get(&ScaleId::X).range(), Some((1.0, 4.0)));
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((2.0, 10.0)), "the sizes don't reach the y scale");
+        assert_eq!(bounds.requests().get(&ScaleId::X).range(), Some((1.0, 4.0)));
+        assert_eq!(bounds.requests().get(&ScaleId::Y).range(), Some((2.0, 10.0)), "the sizes don't reach the y scale");
     }
 
     /// A point without a bubble, its size negative or missing, isn't drawn, so it isn't in the
@@ -680,12 +680,12 @@ mod tests {
         ];
 
         let without_line = bounds(ScatterController::new(sizes.clone().bubbles()));
-        assert_eq!(without_line.get(&ScaleId::X).range(), Some((1.0, 2.0)), "a size of zero still has a bubble");
-        assert_eq!(without_line.get(&ScaleId::Y).range(), Some((5.0, 9.0)));
+        assert_eq!(without_line.requests().get(&ScaleId::X).range(), Some((1.0, 2.0)), "a size of zero still has a bubble");
+        assert_eq!(without_line.requests().get(&ScaleId::Y).range(), Some((5.0, 9.0)));
 
         let with_line = bounds(ScatterController::new(sizes.bubbles()).show_line(true));
-        assert_eq!(with_line.get(&ScaleId::X).range(), Some((1.0, 4.0)), "the line runs through every point");
-        assert_eq!(with_line.get(&ScaleId::Y).range(), Some((-20.0, 50.0)));
+        assert_eq!(with_line.requests().get(&ScaleId::X).range(), Some((1.0, 4.0)), "the line runs through every point");
+        assert_eq!(with_line.requests().get(&ScaleId::Y).range(), Some((-20.0, 50.0)));
     }
 
     /// A state of marked datasets is a sequence of bar datasets, so marked datasets can be added
@@ -695,9 +695,9 @@ mod tests {
         let mut datasets = LocalState::new(vec![vec![Range { x: 0.0, low: 4.0, high: 6.0 }].range()]);
         let controller = BarController::new(datasets.clone());
 
-        assert_eq!(bounds(controller.clone()).get(&ScaleId::Y).range(), Some((4.0, 6.0)));
+        assert_eq!(bounds(controller.clone()).requests().get(&ScaleId::Y).range(), Some((4.0, 6.0)));
 
         datasets.value_mut().push(vec![Range { x: 0.0, low: 1.0, high: 2.0 }].range());
-        assert_eq!(bounds(controller).get(&ScaleId::Y).range(), Some((1.0, 6.0)));
+        assert_eq!(bounds(controller).requests().get(&ScaleId::Y).range(), Some((1.0, 6.0)));
     }
 }

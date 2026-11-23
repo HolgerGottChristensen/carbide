@@ -9,6 +9,7 @@ pub use controller_sequence::ControllerSequence;
 pub use line_controller::LineController;
 pub use pie_controller::{PieController, PiePart, DEFAULT_OUTLINE_WIDTH, DEFAULT_RING_SPACING};
 pub use scatter_controller::ScatterController;
+pub use orientation::Orientation;
 use crate::legend::LegendItem;
 use crate::scale::{ScaleBounds, Scales};
 use crate::geometry::{DatumKey, Shapes};
@@ -46,15 +47,52 @@ pub trait DatasetController: DynClone + Debug + 'static {
     }
 
     /// Reports what the controller needs from the scales its datasets are bound to: each
-    /// dataset's data range (`ScaleBounds::include`), and anything its kind of chart asks of a
-    /// scale, such as an offset, grid lines between ticks, or a category scale for the default x
-    /// scale (see `ScaleBounds`). It runs on every fit, so the requests follow the controllers
-    /// and datasets as they change. The datasets have been synced by then; `env` is for anything
-    /// else the controller reads from the environment.
+    /// dataset's data range, and anything its kind of chart asks of a scale, such as an offset,
+    /// grid lines between ticks, or a category scale for the default x scale (see `ScaleBounds`).
+    /// It runs on every fit, so the requests follow the controllers and datasets as they change.
+    /// The datasets have been synced by then; `env` is for anything else the controller reads from
+    /// the environment.
+    ///
+    /// A controller first registers each dataset's values (`ScaleBounds::register_values`), so
+    /// names become categories and dates pick a time scale, then splits the bounds
+    /// (`ScaleBounds::split`), reads each dataset's points through the placement
+    /// (`Placement::coordinates`), and includes them in the requests. Including a point with
+    /// `ScaleRequests::include_point` leaves its value out of a scale fitting to the visible data
+    /// when it is outside the zoom window, as the built-in controllers do. A hidden dataset
+    /// (`DataSetOptions::visible`) is registered but adds no bounds.
+    ///
+    /// ```
+    /// use carbide_chart::{DataSet, ScaleBounds};
+    ///
+    /// /// Collects `dataset`'s points, each on its x and y scale.
+    /// fn collect(dataset: &dyn DataSet, bounds: &mut ScaleBounds) {
+    ///     let options = dataset.options();
+    ///     bounds.register_values(dataset, &options.x_scale, &options.y_scale);
+    ///     if !options.visible {
+    ///         return;
+    ///     }
+    ///
+    ///     let (placement, requests) = bounds.split();
+    ///     let coordinates = placement.coordinates(&options.x_scale, &options.y_scale);
+    ///     dataset.points(&mut |_, point| {
+    ///         if let (Some(x), Some(y)) = (coordinates.x(point), coordinates.y(point)) {
+    ///             requests.include_point(&options.x_scale, &options.y_scale, x, y);
+    ///         }
+    ///     });
+    /// }
+    /// ```
     fn collect_bounds(&self, bounds: &mut ScaleBounds, env: &mut Environment);
 
     /// Draws the datasets inside `area`, each on the chart's fitted scales it is bound to.
     /// A dataset bound to a scale the chart doesn't have is skipped.
+    ///
+    /// A controller reads each dataset's points through `Scales::coordinates`, which places names
+    /// on their categories and leaves out values a scale has no place for, and maps them to the
+    /// screen with `Scales::pixel`, or, in the index frame of a controller that can be drawn
+    /// horizontally, with `Orientation`. A dataset on two radial scales is drawn around the
+    /// chart's circle: `Scales::polar` gives the circle for its angle and radius scales, and
+    /// `Polar::at` the position at an angle (`Polar::angle` of the angle scale's normalized value)
+    /// and a distance from the centre (`Polar::distance` of the radius scale's).
     ///
     /// The built-in controllers lay out the shape of each datum into `shapes` and draw from it, so
     /// the chart can find the data under a position. Controllers of your own can't add to it yet,

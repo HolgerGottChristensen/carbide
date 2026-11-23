@@ -169,7 +169,7 @@ type DateFormat = Arc<dyn Fn(DateTime<FixedOffset>, TimeUnit) -> String>;
 ///
 /// It is the chart's default x or y scale when the data placed on it are dates (`Value::Time`,
 /// as chrono's `DateTime` is): the controllers report their datasets' values (see
-/// `ScaleBounds::report_value`). Set it on the chart (`Chart::scale`) to give it options, such
+/// `ScaleRequests::report_value`). Set it on the chart (`Chart::scale`) to give it options, such
 /// as its time zone, or for a scale other than the default x and y.
 #[derive(Clone)]
 pub struct TimeScale {

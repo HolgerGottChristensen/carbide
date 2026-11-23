@@ -81,8 +81,7 @@ pub fn gallery(selected: LocalState<Example>) -> impl Widget {
     ))
         .padding(EdgeInsets::single(0.0, 0.0, 10.0, 10.0))
         .frame_fixed_height(35.0)
-        .background(Rectangle::new().fill(EnvironmentColor::SystemFill))
-        .button_style(BorderedProminentStyle);
+        .background(Rectangle::new().fill(EnvironmentColor::SystemFill));
 
     let status_bar = HStack::new((
         Text::new(Map1::read_map(shared.hovered.clone(), |pick: &Option<Pick>| match pick {
@@ -99,6 +98,7 @@ pub fn gallery(selected: LocalState<Example>) -> impl Widget {
     VStack::new((tool_bar, gallery, status_bar))
         .spacing(0.0)
         .series_style(GalleryStyle { colors: shared.colors.clone() })
+        .button_style(BorderedProminentStyle)
 }
 
 /// A button in the top bar that shows `example`, letting go of what the chart before it hovered.

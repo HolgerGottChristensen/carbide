@@ -4,10 +4,11 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 use indexmap::{IndexMap, IndexSet};
 
-use crate::Value;
+use crate::{DataSet, Value};
+use crate::scale::Coordinates;
 use crate::scale::{Axis, CategoryScale, GridShape, LinearScale, PolarRole, Scale, ScaleId, TimeScale};
 use crate::scale::polar::{Circle, Polar};
-use crate::controller::orientation::pixel_normalized;
+use crate::controller::orientation::{pixel, pixel_normalized};
 
 /// The data range reported for one scale while the chart collects bounds: the union of every
 /// range included so far, or `None` when no dataset has reported anything yet.
@@ -46,7 +47,7 @@ impl DataBounds {
     }
 }
 
-/// A kind of scale a controller can ask for (see `ScaleBounds::request_kind`). The chart builds
+/// A kind of scale a controller can ask for (see `ScaleRequests::request_kind`). The chart builds
 /// its default `ScaleId::X` and `ScaleId::Y` scales from the kind asked for; a scale set with
 /// `Chart::scale` is never replaced.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -113,7 +114,7 @@ impl ScaleRequest {
     }
 
     /// Whether a controller asked for the scale's decoration to be hidden (see
-    /// `ScaleBounds::request_hidden_decoration`).
+    /// `ScaleRequests::request_hidden_decoration`).
     pub fn hidden_decoration(&self) -> bool {
         self.hidden_decoration
     }
@@ -129,13 +130,13 @@ impl ScaleRequest {
     }
 
     /// The shape asked for a radius scale's rings, if anyone asked (see
-    /// `ScaleBounds::request_grid_shape`).
+    /// `ScaleRequests::request_grid_shape`).
     pub fn grid_shape(&self) -> Option<GridShape> {
         self.grid_shape
     }
 
     /// The role asked for a radial scale, the first if several were (see
-    /// `ScaleBounds::request_polar_role`).
+    /// `ScaleRequests::request_polar_role`).
     pub fn polar_role(&self) -> Option<PolarRole> {
         self.polar_role
     }
@@ -152,7 +153,7 @@ impl ScaleRequest {
     }
 
     /// The kind of scale the data on the scale calls for, from the first value reported (see
-    /// `ScaleBounds::report_value`): a time scale for times, a category scale for names, and
+    /// `ScaleRequests::report_value`): a time scale for times, a category scale for names, and
     /// `None` for numbers, or when nothing was reported.
     pub fn data_kind(&self) -> Option<ScaleKind> {
         self.data_kind.flatten()
@@ -166,21 +167,168 @@ impl ScaleRequest {
     }
 }
 
-/// What the controllers ask of each scale on one fit, keyed by scale id. Controllers fill it in
-/// `DatasetController::collect_bounds`, under the ids their datasets are bound to; the chart then
-/// fits each scale to its `ScaleRequest`.
+/// What the controllers ask of each scale on one fit, keyed by scale id, and what they place
+/// values by. Controllers fill it in `DatasetController::collect_bounds`, under the ids their
+/// datasets are bound to; the chart then fits each scale to its `ScaleRequest`.
+///
+/// It has two halves. `Placement` is what placing a value reads: each scale's categories and which
+/// scales are radial. `ScaleRequests` is what collecting writes: each scale's data range and what
+/// the controllers ask of it. A controller first registers its datasets' values
+/// (`register_values`), which adds their categories, then splits the bounds (`split`) and collects:
+/// it reads its points through the placement (`Placement::coordinates`) while it adds to the
+/// requests.
+///
+/// ```
+/// use carbide_chart::{ScaleBounds, ScaleId};
+///
+/// let (x_id, y_id) = (ScaleId::X, ScaleId::Y);
+/// let mut bounds = ScaleBounds::default();
+/// let points = vec![("Mon", 3.0), ("Tue", 5.0)];
+/// bounds.register_values(&points, &x_id, &y_id);
+///
+/// let (placement, requests) = bounds.split();
+/// let coordinates = placement.coordinates(&x_id, &y_id);
+/// let (x, y) = (coordinates.x(&points[1]).unwrap(), coordinates.y(&points[1]).unwrap());
+/// requests.include(&x_id, x, x);
+/// requests.include(&y_id, y, y);
+///
+/// assert_eq!(bounds.requests().get(&x_id).range(), Some((1.0, 1.0)), "Tue is the second category");
+/// ```
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ScaleBounds {
-    /// Behind a `RefCell`, as the categories are, so controllers can add to the bounds while they
-    /// read points through them (see `Coordinates`): every method takes `&self`.
-    requests: RefCell<IndexMap<ScaleId, ScaleRequest>>,
-    /// Each scale's categories, in the order they were first seen: the scale's own labels, then
-    /// the text values controllers registered (see `register_category`). Behind a `RefCell` so
-    /// values can be placed (`Coordinates`) while the bounds are only borrowed.
-    categories: RefCell<IndexMap<ScaleId, IndexSet<String>>>,
+    placement: Placement,
+    requests: ScaleRequests,
+}
+
+impl ScaleBounds {
+    /// The bounds for a chart whose radial scales have the ids `radial`, so controllers can read
+    /// polar datasets as polar while collecting (see `Placement::is_radial`).
+    pub(crate) fn with_radial(radial: IndexSet<ScaleId>) -> ScaleBounds {
+        ScaleBounds { placement: Placement { radial, ..Placement::default() }, requests: ScaleRequests::default() }
+    }
+
+    /// The bounds for a second fit, to the data visible in `windows`, the values each zoomed scale
+    /// shows, for the scales in `fitting_visible` (see `ScaleRequests::is_hidden`).
+    pub(crate) fn with_windows(radial: IndexSet<ScaleId>, windows: IndexMap<ScaleId, (Scalar, Scalar)>, fitting_visible: IndexSet<ScaleId>) -> ScaleBounds {
+        ScaleBounds {
+            placement: Placement { radial, ..Placement::default() },
+            requests: ScaleRequests { windows, fitting_visible, ..ScaleRequests::default() },
+        }
+    }
+
+    /// What placing a value reads: each scale's categories, and which scales are radial.
+    pub fn placement(&self) -> &Placement {
+        &self.placement
+    }
+
+    /// What the controllers asked of each scale so far.
+    pub fn requests(&self) -> &ScaleRequests {
+        &self.requests
+    }
+
+    /// The two halves, to collect with: the placement to read points through
+    /// (`Placement::coordinates`), and the requests to add their bounds to. Register the datasets'
+    /// values (`register_values`) before splitting, as placing a value only reads the categories.
+    pub fn split(&mut self) -> (&Placement, &mut ScaleRequests) {
+        (&self.placement, &mut self.requests)
+    }
+
+    /// Registers the values of `dataset`, whose points' x goes on the scale `x_id` and y on the
+    /// scale `y_id`, before any of them are placed: reports its first point that isn't missing to
+    /// each scale (`ScaleRequests::report_value`), so a time picks a time scale and a name a
+    /// category scale for a default scale, and adds every name its points give as a category of
+    /// the scale it goes on (`register_category`), in point order. A name that isn't registered has
+    /// no place, so its point isn't drawn.
+    ///
+    /// Controllers call it for each dataset at the start of `DatasetController::collect_bounds`,
+    /// whether or not the dataset is shown, as its marks are drawn on the same scales.
+    pub fn register_values(&mut self, dataset: &(impl DataSet + ?Sized), x_id: &ScaleId, y_id: &ScaleId) {
+        let mut first = true;
+        dataset.points(&mut |_index, point| {
+            let (x, y) = (point.x(), point.y());
+            if first && let (Some(x), Some(y)) = (x, y) {
+                self.requests.report_value(x_id, x);
+                self.requests.report_value(y_id, y);
+                first = false;
+            }
+            if let Some(Value::Text(text)) = x {
+                self.placement.register_category(x_id, text);
+            }
+            if let Some(Value::Text(text)) = y {
+                self.placement.register_category(y_id, text);
+            }
+        });
+    }
+
+    /// Adds the category `text` to the scale `id`, after the categories it already has, unless it
+    /// has it, and returns its index. Indices are only ever added, so a category keeps its index
+    /// while the bounds are collected. Categories are numbered in the order they are registered:
+    /// the chart registers each scale's own labels first, then each controller its datasets'
+    /// values (`register_values`), in controller, dataset and point order.
+    pub fn register_category(&mut self, id: &ScaleId, text: &str) -> usize {
+        self.placement.register_category(id, text)
+    }
+}
+
+/// What placing a value reads while the bounds are collected (see `ScaleBounds`): each scale's
+/// categories, in the order they were registered, and which of the chart's scales are radial.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Placement {
+    /// Each scale's categories, in the order they were first registered: the scale's own labels,
+    /// then the names the data gives (see `ScaleBounds::register_values`).
+    categories: IndexMap<ScaleId, IndexSet<String>>,
     /// The ids of the chart's radial scales, set before the controllers collect (see
     /// `is_radial`).
     radial: IndexSet<ScaleId>,
+}
+
+impl Placement {
+    /// Reads points as numbers along the scales `x_id` and `y_id` while the bounds are collected:
+    /// a number or a time at itself, and a name at its category's index, or no place for a name
+    /// that wasn't registered (see `ScaleBounds::register_values`). The ids are borrowed for as
+    /// long as the coordinates are used: a dataset's own (`DataSetOptions::x_scale`), or a constant
+    /// such as `ScaleId::X` bound to a variable first.
+    pub fn coordinates<'a>(&'a self, x_id: &'a ScaleId, y_id: &'a ScaleId) -> Coordinates<'a> {
+        Coordinates::new(self, x_id, y_id)
+    }
+
+    /// The index of the category `text` on the scale `id`, or `None` when it wasn't registered.
+    pub fn category_index(&self, id: &ScaleId, text: &str) -> Option<usize> {
+        self.categories.get(id)?.get_index_of(text)
+    }
+
+    /// The categories of the scale `id`, in index order: its own labels, then the names the data
+    /// gives (see `ScaleBounds::register_values`).
+    pub fn categories(&self, id: &ScaleId) -> Vec<String> {
+        self.categories.get(id).map(|categories| categories.iter().cloned().collect()).unwrap_or_default()
+    }
+
+    /// Whether the chart's scale `id` is radial. A dataset on two radial scales reads its points
+    /// as a polar dataset: its x on its x scale and its y on its y scale, even when its controller
+    /// is `horizontal`, which swaps their roles instead (see `ScaleRequests::request_polar_role`).
+    pub fn is_radial(&self, id: &ScaleId) -> bool {
+        self.radial.contains(id)
+    }
+
+    fn register_category(&mut self, id: &ScaleId, text: &str) -> usize {
+        // Looked up by reference first, so an owned id is only cloned the first time it is seen.
+        if !self.categories.contains_key(id) {
+            self.categories.insert(id.clone(), IndexSet::new());
+        }
+        let categories = self.categories.get_mut(id).expect("inserted above");
+
+        match categories.get_index_of(text) {
+            Some(index) => index,
+            None => categories.insert_full(text.to_string()).0,
+        }
+    }
+}
+
+/// What the controllers ask of each scale on one fit (see `ScaleBounds`), keyed by scale id, in the
+/// order the ids were first seen: each scale's data range and what its controllers ask of it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ScaleRequests {
+    requests: IndexMap<ScaleId, ScaleRequest>,
     /// The values shown by each zoomed scale, lowest first, when some scale fits to the visible
     /// data only (see `is_hidden`).
     windows: IndexMap<ScaleId, (Scalar, Scalar)>,
@@ -188,46 +336,39 @@ pub struct ScaleBounds {
     fitting_visible: IndexSet<ScaleId>,
 }
 
-impl ScaleBounds {
-    /// The bounds for a chart whose radial scales have the ids `radial`, so controllers can read
-    /// polar datasets as polar while collecting (see `is_radial`).
-    pub(crate) fn with_radial(radial: IndexSet<ScaleId>) -> ScaleBounds {
-        ScaleBounds { radial, ..ScaleBounds::default() }
-    }
-
-    /// The bounds for a second fit, to the data visible in `windows`, the values each zoomed scale
-    /// shows, for the scales in `fitting_visible` (see `is_hidden`).
-    pub(crate) fn with_windows(radial: IndexSet<ScaleId>, windows: IndexMap<ScaleId, (Scalar, Scalar)>, fitting_visible: IndexSet<ScaleId>) -> ScaleBounds {
-        ScaleBounds { radial, windows, fitting_visible, ..ScaleBounds::default() }
-    }
-
+impl ScaleRequests {
     /// Whether a value of a point at `x` on the scale `index_id` is left out of the bounds of
     /// the scale `value_id`: when `value_id` fits to the visible data only (see
     /// `LinearScale::fit_visible`) and `x` is outside the zoom window of `index_id`. Controllers
-    /// still include `x` itself, so the zoomed scale keeps its whole range.
+    /// still include `x` itself, so the zoomed scale keeps its whole range (see `include_point`).
     pub fn is_hidden(&self, index_id: &ScaleId, value_id: &ScaleId, x: Scalar) -> bool {
         self.fitting_visible.contains(value_id)
             && self.windows.get(index_id).is_some_and(|(low, high)| x < *low || x > *high)
     }
 
-    /// Whether the chart's scale `id` is radial. A dataset on two radial scales reads its points
-    /// as a polar dataset: its x on its x scale and its y on its y scale, even when its controller
-    /// is `horizontal`, which swaps their roles instead (see `request_polar_role`).
-    pub fn is_radial(&self, id: &ScaleId) -> bool {
-        self.radial.contains(id)
+    /// Includes a point at `x` on the scale `index_id` and `y` on the scale `value_id`: `x` always,
+    /// so a zoomed index scale keeps its whole range, and `y` unless the point is outside the index
+    /// scale's zoom window and the value scale fits to the visible data only (see `is_hidden`).
+    /// A controller that includes its points through it fits to the visible data as the built-in
+    /// ones do.
+    pub fn include_point(&mut self, index_id: &ScaleId, value_id: &ScaleId, x: Scalar, y: Scalar) {
+        self.include(index_id, x, x);
+        if !self.is_hidden(index_id, value_id, x) {
+            self.include(value_id, y, y);
+        }
     }
 
     /// Asks for the scale `id` not to draw its grid, its ticks and its labels around a circle, as a
     /// pie draws only its slices. A scale whose grid lines were set (`grid_lines`) keeps drawing
     /// them, with its labels: `.grid_lines(true)` brings a pie's grid back.
-    pub fn request_hidden_decoration(&self, id: &ScaleId) {
+    pub fn request_hidden_decoration(&mut self, id: &ScaleId) {
         self.change(id, |request| request.hidden_decoration = true);
     }
 
     /// Notes that a horizontal controller has its categories on the radial scale `id`,
     /// out along the radius, so its labels give way to the bars that start beside them (see
     /// `Scales::is_horizontal`).
-    pub(crate) fn request_horizontal(&self, id: &ScaleId) {
+    pub(crate) fn request_horizontal(&mut self, id: &ScaleId) {
         self.change(id, |request| request.horizontal = true);
     }
 
@@ -235,7 +376,7 @@ impl ScaleBounds {
     /// fit. Controllers ask for a polar dataset's x scale to be the angle and its y scale the
     /// radius, or the other way round when `horizontal`. The first role asked for wins; asking for
     /// the other is a conflict, which the chart logs.
-    pub fn request_polar_role(&self, id: &ScaleId, role: PolarRole) {
+    pub fn request_polar_role(&mut self, id: &ScaleId, role: PolarRole) {
         self.change(id, |request| match request.polar_role {
             None => request.polar_role = Some(role),
             Some(first) if first != role => request.polar_role_conflict = true,
@@ -244,39 +385,37 @@ impl ScaleBounds {
     }
 
     /// Changes the request for `id` with `f`, created empty the first time `id` is seen.
-    fn change(&self, id: &ScaleId, f: impl FnOnce(&mut ScaleRequest)) {
-        let mut requests = self.requests.borrow_mut();
-
+    fn change(&mut self, id: &ScaleId, f: impl FnOnce(&mut ScaleRequest)) {
         // Looked up by reference first, so an owned id is only cloned the first time it is seen.
-        if !requests.contains_key(id) {
-            requests.insert(id.clone(), ScaleRequest::default());
+        if !self.requests.contains_key(id) {
+            self.requests.insert(id.clone(), ScaleRequest::default());
         }
 
-        f(requests.get_mut(id).expect("inserted above"));
+        f(self.requests.get_mut(id).expect("inserted above"));
     }
 
     /// Grows the range of the scale `id` to include `min..=max`.
-    pub fn include(&self, id: &ScaleId, min: Scalar, max: Scalar) {
+    pub fn include(&mut self, id: &ScaleId, min: Scalar, max: Scalar) {
         self.change(id, |request| request.bounds.include(min, max));
     }
 
     /// Asks for the scale `id` to be offset on this fit, by half a step at both ends (see
     /// `Scale::set_offset`). Bar controllers ask for it on the scale their bars are spread along.
-    pub fn request_offset(&self, id: &ScaleId) {
+    pub fn request_offset(&mut self, id: &ScaleId) {
         self.change(id, |request| request.offset = true);
     }
 
     /// Asks for the scale `id` to draw its grid lines between ticks instead of on them, on this
     /// fit (see `Scale::set_grid_offset_requested`). Bar controllers ask for it so grid lines
     /// separate the bar groups. A scale whose grid offset was set explicitly keeps it.
-    pub fn request_grid_offset(&self, id: &ScaleId) {
+    pub fn request_grid_offset(&mut self, id: &ScaleId) {
         self.change(id, |request| request.grid_offset = true);
     }
 
     /// Asks for the rings of the radius scale `id` to be drawn as `shape`, on this fit: line
     /// controllers ask for polygons, the radar convention, and scatter controllers for circles.
     /// Any circle wins. A scale whose grid shape was set explicitly keeps it.
-    pub fn request_grid_shape(&self, id: &ScaleId, shape: GridShape) {
+    pub fn request_grid_shape(&mut self, id: &ScaleId, shape: GridShape) {
         self.change(id, |request| {
             request.grid_shape = match (request.grid_shape, shape) {
                 (Some(GridShape::Circle), _) | (_, GridShape::Circle) => Some(GridShape::Circle),
@@ -287,7 +426,7 @@ impl ScaleBounds {
 
     /// Asks for the scale `id` to be of `kind`, if it is a default scale: bar and line charts ask
     /// for a category scale along x. The first kind asked for wins.
-    pub fn request_kind(&self, id: &ScaleId, kind: ScaleKind) {
+    pub fn request_kind(&mut self, id: &ScaleId, kind: ScaleKind) {
         self.change(id, |request| {
             request.kind.get_or_insert(kind);
         });
@@ -297,8 +436,9 @@ impl ScaleBounds {
     /// the data are (see `ScaleRequest::default_kind`): a time calls for a time scale, a name for
     /// a category scale, and a number leaves the kind to the controllers. Controllers report each
     /// dataset's first point that isn't missing, its x for the scale its x is placed on and its y
-    /// for the scale its y is placed on. The first value reported wins.
-    pub fn report_value(&self, id: &ScaleId, value: Value) {
+    /// for the scale its y is placed on (see `ScaleBounds::register_values`). The first value
+    /// reported wins.
+    pub fn report_value(&mut self, id: &ScaleId, value: Value) {
         let kind = match value {
             Value::Number(_) => None,
             Value::Time(_) => Some(ScaleKind::Time),
@@ -310,36 +450,14 @@ impl ScaleBounds {
         });
     }
 
-    /// Adds the category `text` to the scale `id`, after the categories it already has, unless it
-    /// has it, and returns its index. Indices are only ever added, so a category keeps its index
-    /// while the bounds are collected. Controllers register every text value of their datasets
-    /// before reading any (see `register_values` in `controller/drawing.rs`), so categories are
-    /// numbered in controller, dataset and point order, as they are first seen. The chart
-    /// registers each scale's own labels first.
-    pub fn register_category(&self, id: &ScaleId, text: &str) -> usize {
-        let mut categories = self.categories.borrow_mut();
-        let categories = categories.entry(id.clone()).or_default();
-
-        match categories.get_index_of(text) {
-            Some(index) => index,
-            None => categories.insert_full(text.to_string()).0,
-        }
-    }
-
-    /// The categories of the scale `id`, in index order: its own labels, then the text values
-    /// registered (see `register_category`).
-    pub fn categories(&self, id: &ScaleId) -> Vec<String> {
-        self.categories.borrow().get(id).map(|categories| categories.iter().cloned().collect()).unwrap_or_default()
-    }
-
     /// What was asked of the scale `id`; empty when nothing was.
     pub fn get(&self, id: &ScaleId) -> ScaleRequest {
-        self.requests.borrow().get(id).copied().unwrap_or_default()
+        self.requests.get(id).copied().unwrap_or_default()
     }
 
     /// Every scale id something was asked of, in the order they were first seen.
     pub fn ids(&self) -> Vec<ScaleId> {
-        self.requests.borrow().keys().cloned().collect()
+        self.requests.keys().cloned().collect()
     }
 }
 
@@ -384,6 +502,35 @@ impl Scales {
         self.scales.insert(id, scale);
     }
 
+    /// Reads points as numbers along the fitted scales `x_id` and `y_id` while drawing: a number or
+    /// a time where the scale places it (`Scale::place`), and a name at its category's index on the
+    /// scale. A value with no place on its scale, or on a scale the chart doesn't have, isn't
+    /// placed. The ids are borrowed, as for `Placement::coordinates`.
+    pub fn coordinates<'a>(&'a self, x_id: &'a ScaleId, y_id: &'a ScaleId) -> Coordinates<'a> {
+        Coordinates::new(self, x_id, y_id)
+    }
+
+    /// Where `value`, as placed on the scale `id` (see `coordinates`), falls on the screen along
+    /// that scale's side of the chart `area`, the area `DatasetController::draw` is given: an x for
+    /// a horizontal scale, and a y for a vertical one, its largest values at the top. `None` for a
+    /// radial scale, which maps around a circle instead (see `polar`), or a scale the chart doesn't
+    /// have.
+    ///
+    /// Values past the scale's ends, or outside its zoom window, fall outside the area; the chart
+    /// clips what is drawn there when a scale is zoomed.
+    pub fn pixel(&self, id: &ScaleId, value: Scalar, area: Rect) -> Option<Scalar> {
+        let scale = self.get(id)?;
+        (scale.axis() != Axis::Radial).then(|| pixel(scale.axis(), scale, value, area))
+    }
+
+    /// The value on the scale `id` at the screen coordinate `pixel` along its side of the chart
+    /// `area`, an x for a horizontal scale and a y for a vertical one: the inverse of `pixel`.
+    /// `None` for a radial scale or a scale the chart doesn't have.
+    pub fn value_at_pixel(&self, id: &ScaleId, pixel: Scalar, area: Rect) -> Option<Scalar> {
+        let scale = self.get(id)?;
+        (scale.axis() != Axis::Radial).then(|| scale.denormalize(pixel_normalized(scale.axis(), pixel, area)))
+    }
+
     /// The scale with the given id, if the chart has one.
     pub fn get(&self, id: &ScaleId) -> Option<&dyn Scale> {
         self.scales.get(id).map(|scale| scale.as_ref())
@@ -419,7 +566,7 @@ impl Scales {
     }
 
     /// Whether the scale `id`'s grid, ticks and labels are left out (see
-    /// `ScaleBounds::request_hidden_decoration`).
+    /// `ScaleRequests::request_hidden_decoration`).
     pub(crate) fn is_decoration_hidden(&self, id: &ScaleId) -> bool {
         self.hidden_decoration.contains(id)
     }
@@ -562,7 +709,7 @@ impl Scales {
         self.horizontal.clear();
 
         for (id, scale) in &mut self.scales {
-            let request = bounds.get(id);
+            let request = bounds.requests().get(id);
 
             if let Some(shape) = request.grid_shape() {
                 self.grid_shapes.insert(id.clone(), shape);
@@ -580,7 +727,7 @@ impl Scales {
 
             let (min, max) = request.range().unwrap_or((0.0, 1.0));
 
-            scale.set_categories(&bounds.categories(id));
+            scale.set_categories(&bounds.placement().categories(id));
             scale.set_smallest_positive(request.smallest_positive());
             scale.set_offset(request.offset());
             scale.set_grid_offset_requested(request.grid_offset());
@@ -637,7 +784,7 @@ mod tests {
     #[test]
     fn bounds_without_data_have_no_range() {
         assert_eq!(DataBounds::default().range(), None);
-        assert_eq!(ScaleBounds::default().get(&ScaleId::X).range(), None);
+        assert_eq!(ScaleBounds::default().requests().get(&ScaleId::X).range(), None);
     }
 
     /// The smallest positive end of any range included is kept, for log scales: a bar's base at
@@ -705,41 +852,114 @@ mod tests {
         assert_eq!(vertical.axis_options().position(), AxisPosition::Left);
     }
 
+    /// A dataset's names are all registered before anything is placed, also when its first point
+    /// is a number, in point order; its first value, a number, picks no kind of scale. Placing then
+    /// only reads: a registered name is at its category's index, and one that wasn't has no place.
+    #[test]
+    fn every_name_is_registered_before_values_are_placed() {
+        #[derive(Clone, Debug)]
+        enum Mixed {
+            Number(Scalar),
+            Name(&'static str),
+        }
+
+        impl crate::DataValue for Mixed {
+            fn value(&self) -> Option<Value<'_>> {
+                Some(match self {
+                    Mixed::Number(number) => Value::Number(*number),
+                    Mixed::Name(name) => Value::Text(name),
+                })
+            }
+        }
+
+        let points = vec![(Mixed::Number(0.0), 1.0), (Mixed::Name("b"), 2.0), (Mixed::Name("a"), 3.0), (Mixed::Name("b"), 4.0)];
+        let (x_id, y_id) = (ScaleId::X, ScaleId::Y);
+        let mut bounds = ScaleBounds::default();
+        bounds.register_values(&points, &x_id, &y_id);
+
+        assert_eq!(bounds.placement().categories(&x_id), vec!["b".to_string(), "a".to_string()], "in the order the points name them, each once");
+        assert_eq!(bounds.requests().get(&x_id).data_kind(), None, "the first value is a number");
+
+        let coordinates = bounds.placement().coordinates(&x_id, &y_id);
+        assert_eq!(coordinates.x(&points[2]), Some(1.0), "a is the second category");
+        assert_eq!(coordinates.x(&points[0]), Some(0.0), "a number is placed at itself");
+        assert_eq!(coordinates.x(&("c", 1.0)), None, "a name that wasn't registered has no place");
+    }
+
     #[test]
     fn bounds_are_collected_per_scale_id() {
-        let bounds = ScaleBounds::default();
-        bounds.include(&ScaleId::Y, 0.0, 10.0);
-        bounds.include(&ScaleId::new("right"), 100.0, 200.0);
-        bounds.include(&ScaleId::Y, -5.0, 5.0);
+        let mut requests = ScaleRequests::default();
+        requests.include(&ScaleId::Y, 0.0, 10.0);
+        requests.include(&ScaleId::new("right"), 100.0, 200.0);
+        requests.include(&ScaleId::Y, -5.0, 5.0);
 
-        assert_eq!(bounds.get(&ScaleId::Y).range(), Some((-5.0, 10.0)));
-        assert_eq!(bounds.get(&ScaleId::new("right")).range(), Some((100.0, 200.0)));
-        assert_eq!(bounds.get(&ScaleId::X).range(), None);
-        assert_eq!(bounds.ids(), vec![ScaleId::Y, ScaleId::new("right")]);
+        assert_eq!(requests.get(&ScaleId::Y).range(), Some((-5.0, 10.0)));
+        assert_eq!(requests.get(&ScaleId::new("right")).range(), Some((100.0, 200.0)));
+        assert_eq!(requests.get(&ScaleId::X).range(), None);
+        assert_eq!(requests.ids(), vec![ScaleId::Y, ScaleId::new("right")]);
     }
 
     /// Each request combines by its own rule: offsets and grid offsets are on if anyone asks,
     /// the first kind asked for wins, and asking without data leaves the range empty.
     #[test]
     fn requests_combine_by_their_own_rules() {
-        let bounds = ScaleBounds::default();
-        bounds.request_kind(&ScaleId::X, ScaleKind::Category);
-        bounds.request_kind(&ScaleId::X, ScaleKind::Linear);
-        bounds.request_grid_offset(&ScaleId::X);
-        bounds.request_offset(&ScaleId::X);
-        bounds.request_offset(&ScaleId::X);
+        let mut requests = ScaleRequests::default();
+        requests.request_kind(&ScaleId::X, ScaleKind::Category);
+        requests.request_kind(&ScaleId::X, ScaleKind::Linear);
+        requests.request_grid_offset(&ScaleId::X);
+        requests.request_offset(&ScaleId::X);
+        requests.request_offset(&ScaleId::X);
 
-        let x = bounds.get(&ScaleId::X);
+        let x = requests.get(&ScaleId::X);
         assert_eq!(x.kind(), Some(ScaleKind::Category), "the first kind asked for wins");
         assert!(x.offset() && x.grid_offset());
         assert_eq!(x.range(), None, "requests alone include no data");
 
-        let y = bounds.get(&ScaleId::Y);
+        let y = requests.get(&ScaleId::Y);
         assert_eq!((y.kind(), y.offset(), y.grid_offset()), (None, false, false));
     }
 
     /// Positions map back to values along each side, and around the circle by each radial
     /// scale's role; categories come with their names and the fraction across their band.
+    #[test]
+    fn values_map_to_pixels_along_their_scales_side() {
+        use carbide::draw::{Dimension, Position, Rect};
+
+        // The chart area runs from 100 to 500 along x, and its top edge is at y = 50.
+        let area = Rect::new(Position::new(100.0, 50.0), Dimension::new(400.0, 200.0));
+        let mut scales = Scales::new();
+        let mut x = LinearScale::new(Axis::Horizontal);
+        x.set_range(0.0, 10.0);
+        scales.insert(ScaleId::X, x);
+        let mut y = LinearScale::new(Axis::Vertical);
+        y.set_range(0.0, 100.0);
+        scales.insert(ScaleId::Y, y);
+        scales.insert(ScaleId::new("angle"), LinearScale::new(Axis::Radial));
+
+        assert_eq!(scales.pixel(&ScaleId::X, 5.0, area), Some(300.0), "halfway along x");
+        assert_eq!(scales.pixel(&ScaleId::Y, 75.0, area), Some(100.0), "larger values towards the top");
+        assert_eq!(scales.value_at_pixel(&ScaleId::X, 300.0, area), Some(5.0));
+        assert_eq!(scales.value_at_pixel(&ScaleId::Y, 100.0, area), Some(75.0));
+        assert_eq!(scales.pixel(&ScaleId::new("angle"), 1.0, area), None, "a radial scale maps around a circle");
+        assert_eq!(scales.pixel(&ScaleId::new("missing"), 1.0, area), None);
+    }
+
+    /// A point always widens its index scale, and widens its value scale unless the value scale
+    /// fits to the visible data and the point is outside the index scale's zoom window.
+    #[test]
+    fn included_points_leave_out_values_outside_the_zoom_window() {
+        let (x_id, y_id) = (ScaleId::X, ScaleId::Y);
+        let windows = IndexMap::from([(x_id.clone(), (2.0, 4.0))]);
+        let mut bounds = ScaleBounds::with_windows(IndexSet::new(), windows, IndexSet::from([y_id.clone()]));
+        let (_, requests) = bounds.split();
+
+        requests.include_point(&x_id, &y_id, 3.0, 10.0);
+        requests.include_point(&x_id, &y_id, 8.0, 99.0);
+
+        assert_eq!(requests.get(&x_id).range(), Some((3.0, 8.0)), "every x");
+        assert_eq!(requests.get(&y_id).range(), Some((10.0, 10.0)), "only the visible point's y");
+    }
+
     #[test]
     fn positions_map_back_to_values() {
         use carbide::draw::{Dimension, Position, Rect};

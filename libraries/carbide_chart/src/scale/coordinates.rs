@@ -1,7 +1,7 @@
 use carbide::draw::Scalar;
 
 use crate::{DataPoint, Value};
-use crate::scale::{ScaleBounds, ScaleId, Scales};
+use crate::scale::{Placement, ScaleId, Scales};
 
 /// Where a value is placed along a scale: a number or a time at itself, and a category's name at
 /// the category's index on the scale.
@@ -14,17 +14,18 @@ pub(crate) trait Places {
 }
 
 /// While the bounds are collected, a name is placed at its category's index among the categories
-/// registered so far, and registered when it is new (see `ScaleBounds::register_category`).
-impl Places for ScaleBounds {
+/// registered before collecting (see `ScaleBounds::register_values`); a name that wasn't has no
+/// place.
+impl Places for Placement {
     fn place(&self, id: &ScaleId, value: Value) -> Option<Scalar> {
         match value {
             Value::Number(number) | Value::Time(number) => Some(number),
-            Value::Text(text) => Some(self.register_category(id, text) as Scalar),
+            Value::Text(text) => self.category_index(id, text).map(|index| index as Scalar),
         }
     }
 
     fn is_radial(&self, id: &ScaleId) -> bool {
-        ScaleBounds::is_radial(self, id)
+        Placement::is_radial(self, id)
     }
 }
 
