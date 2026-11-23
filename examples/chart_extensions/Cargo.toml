@@ -8,8 +8,8 @@ publish = false
 # Extends carbide's charts from outside, through the `carbide` crate alone, as an application
 # would: a coordinate type, a scale and a controller of its own. The snapshot tests in `tests/`
 # check that each one works. `main` is a gallery of charts to play with, one at a time, each with
-# its options in a side bar; the `extensions` bin shows the crate's own elements in a window, and
-# the `interaction` bin plays with the charts' pointer input (both in `src/bin/`). See
+# its options in a side bar, the crate's own elements on its "Custom" page; the `interaction` bin
+# (`src/bin/interaction.rs`) plays with the charts' pointer input. See
 # `libraries/carbide_chart/docs/api-review.md`, step 1, for what can't be extended yet.
 
 [dependencies]

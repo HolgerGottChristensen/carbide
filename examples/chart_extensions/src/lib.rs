@@ -7,8 +7,8 @@
 //! - `LollipopController`: a controller (`DatasetController`) that draws each point as a stem from
 //!   zero to its value, with a dot at the end.
 //!
-//! The tests in `tests/` snapshot each one, and the `extensions` bin (`src/bin/extensions.rs`) shows
-//! them in a window. `main` is a gallery of the built-in charts, with their options in a side bar.
+//! The tests in `tests/` snapshot each one. `main` is a gallery of charts, with their options in a
+//! side bar, and its "Custom" page shows these elements (`src/gallery/custom.rs`).
 //!
 //! Not covered yet, as the public API doesn't allow it (see
 //! `libraries/carbide_chart/docs/api-review.md`, step 1):

@@ -42,7 +42,7 @@ impl ZoomWindow {
     /// The window as it can be shown: its ends in order, at least `min_span` apart, widened about
     /// its middle, and moved, not cut, to lie within the fitted range. A window that isn't a
     /// number shows the whole range.
-    pub(crate) fn limited(self, min_span: Scalar) -> ZoomWindow {
+    pub fn limited(self, min_span: Scalar) -> ZoomWindow {
         if !self.start.is_finite() || !self.end.is_finite() {
             return ZoomWindow::WHOLE;
         }
@@ -80,12 +80,12 @@ impl ZoomWindow {
 
     /// Where `share`, a share of the fitted range, falls in the window: 0 at its start and 1 at
     /// its end.
-    pub(crate) fn zoom(&self, share: Scalar) -> Scalar {
+    pub fn zoom(&self, share: Scalar) -> Scalar {
         (share - self.start) / self.span()
     }
 
     /// The share of the fitted range at `normalized` in the window: the inverse of `zoom`.
-    pub(crate) fn unzoom(&self, normalized: Scalar) -> Scalar {
+    pub fn unzoom(&self, normalized: Scalar) -> Scalar {
         self.start + normalized * self.span()
     }
 }

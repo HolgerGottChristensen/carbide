@@ -1,8 +1,12 @@
 //! The chart elements of this crate, each drawn by a chart through the public API alone.
 
-use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LegendPosition, LineController, ScaleId, ScatterController};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LegendPosition, LineController, ScaleId, ScatterController, ZoomWindow};
 use carbide::color::{GREEN, RED};
-use carbide::draw::Dimension;
+use carbide::draw::{Dimension, Position};
+use carbide::state::{LocalState, ReadState};
 use carbide::testing::Harness;
 use chart_extensions::{Kelvin, LogScale, LollipopController};
 
@@ -36,6 +40,94 @@ fn points_on_a_log_scale() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
 
     harness.snapshot("points_on_a_log_scale");
+}
+
+/// Clicks at three heights the same distance apart on a chart with a `LogScale` as its y scale.
+/// Pins down that the scale reads a position back through the inverse of its own mapping: equal
+/// steps up the chart multiply the value by the same factor, as each power of ten takes the same
+/// height, where a linear reading would add the same amount.
+#[test]
+fn values_read_back_from_a_log_scale() {
+    let clicked: Rc<RefCell<Vec<f64>>> = Rc::new(RefCell::new(vec![]));
+    let record = clicked.clone();
+    let populations = vec![(0.0, 120.0), (1.0, 2_400.0), (2.0, 58_000.0), (3.0, 730_000.0), (4.0, 9_100_000.0)];
+
+    let chart = Chart::new(ScatterController::new(populations))
+        .scale(ScaleId::Y, LogScale::new(Axis::Vertical))
+        .on_click(move |click| {
+            let value = click.pick.value(&ScaleId::Y).expect("the chart has a y scale").value;
+            record.borrow_mut().push(value);
+        })
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+    harness.render();
+
+    // Downwards from near the top of the chart area, 80 pixels apart.
+    harness.click(Position::new(300.0, 80.0));
+    harness.click(Position::new(300.0, 160.0));
+    harness.click(Position::new(300.0, 240.0));
+
+    let values = clicked.borrow().clone();
+    assert_eq!(values.len(), 3, "each click is in the chart area: {values:?}");
+    assert!(values[0] > values[1] && values[1] > values[2], "values fall down the chart: {values:?}");
+    assert!(values.iter().all(|value| (100.0..=10_000_000.0).contains(value)), "values are within the scale's range, 100 to 10 000 000: {values:?}");
+
+    let (upper, lower) = (values[0] / values[1], values[1] / values[2]);
+    assert!((upper - lower).abs() < 1e-6 * upper, "equal steps multiply by the same factor: {upper} and {lower}");
+}
+
+/// A line of readings on a `LogScale`, two of them at or below zero. Pins down that the scale has
+/// no place for them, so they aren't drawn and the line has a gap at each, and that the range
+/// starts at a thousandth of its end, as it does for data reaching zero.
+#[test]
+fn readings_at_or_below_zero_on_a_log_scale() {
+    let readings = vec![(0.0, 40.0), (1.0, 300.0), (2.0, 0.0), (3.0, 2_500.0), (4.0, 900.0), (5.0, -15.0), (6.0, 6_000.0), (7.0, 7_500.0)];
+
+    let chart = Chart::new(LineController::new(readings))
+        .scale(ScaleId::Y, LogScale::new(Axis::Vertical))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+
+    harness.snapshot("readings_at_or_below_zero_on_a_log_scale");
+}
+
+/// Points on a `LogScale` zoomed into a stretch between two powers of ten, from about 12 600 to
+/// 79 400. Pins down that the scale maps values through the window, and that, with no power of ten
+/// inside it, its ticks are the multiples of 10 000 there, from 20 000 to 70 000; the points outside
+/// the window are clipped.
+#[test]
+fn a_zoomed_log_scale() {
+    let populations = vec![(0.0, 120.0), (1.0, 2_400.0), (2.0, 58_000.0), (3.0, 730_000.0), (4.0, 9_100_000.0)];
+
+    let chart = Chart::new(ScatterController::new(populations))
+        .scale(ScaleId::Y, LogScale::new(Axis::Vertical).zoom(ZoomWindow::new(0.42, 0.58)))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+
+    harness.snapshot("a_zoomed_log_scale");
+}
+
+/// Lollipops on a `LogScale` zoomed into its middle half, dragged down. Pins down that the chart's
+/// gestures reach a scale of this crate's own: the drag pans it, the data following the pointer, so
+/// larger values come into view, and the window keeps its width.
+#[test]
+fn dragging_pans_a_log_scale() {
+    let zoom = LocalState::new(ZoomWindow::new(0.25, 0.75));
+    let populations = vec![(0.0, 120.0), (1.0, 2_400.0), (2.0, 58_000.0), (3.0, 730_000.0), (4.0, 9_100_000.0)];
+
+    let chart = Chart::new(LollipopController::new(populations))
+        .scale(ScaleId::Y, LogScale::new(Axis::Vertical).zoom(zoom.clone()))
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+    harness.render();
+
+    harness.drag(Position::new(300.0, 150.0), Position::new(300.0, 250.0), 4);
+    harness.snapshot("dragging_pans_a_log_scale");
+
+    let window = *zoom.value();
+    assert!(window.start > 0.25 && (window.span() - 0.5).abs() < 1e-9, "moved towards larger values, keeping its width: {window:?}");
 }
 
 /// Two datasets drawn by the `LollipopController`, a controller of this crate's own, with options

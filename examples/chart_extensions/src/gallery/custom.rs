@@ -1,16 +1,16 @@
 //! A chart built from this crate's own chart elements, through the public API alone: the
-//! `LollipopController`, the `LogScale` and `Kelvin` values.
+//! `LollipopController`, the `LogScale` and `Kelvin` values, zooming along both scales.
 
-use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LinearScale, LineController, ScaleId};
+use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LinearScale, LineController, ScaleId, ZoomWindow};
 use carbide::color::{BLUE, GREEN, PURPLE};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
-use carbide::state::{LocalState, Map1, Map2};
+use carbide::state::{LocalState, Map1, Map2, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
 use chart_extensions::{Kelvin, LogScale, LollipopController};
-use super::{first_section, shown_when, text_input, with_side_bar, Shared};
+use super::{first_section, section, shown_when, text_input, with_side_bar, zoom_controls, Shared};
 
 
 /// The data the custom chart can show, drawn with this crate's own chart elements.
@@ -48,6 +48,10 @@ pub(crate) struct Options {
     data: LocalState<CustomData>,
     log_scale: LocalState<bool>,
     color: LocalState<LollipopColor>,
+    /// What the x scale shows, which drags and the wheel pan and pinches zoom.
+    x_zoom: LocalState<ZoomWindow>,
+    /// What the y scale shows, the `LogScale` or the linear one.
+    y_zoom: LocalState<ZoomWindow>,
 }
 
 impl Options {
@@ -57,6 +61,8 @@ impl Options {
             data: LocalState::new(CustomData::Temperature),
             log_scale: LocalState::new(true),
             color: LocalState::new(LollipopColor::Fallback),
+            x_zoom: LocalState::new(ZoomWindow::WHOLE),
+            y_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
     }
 }
@@ -78,7 +84,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         first_section("Custom"),
         Text::new("Drawn with this crate's own\nLollipopController, LogScale and\nKelvin values, through the public API."),
         text_input("Title", &options.title),
-        Picker::new("Data", options.data.clone(), (
+        Picker::new("Data", data_resetting_zoom(&options), (
             Text::new("Temperature").tag(CustomData::Temperature),
             Text::new("Settlements").tag(CustomData::Settlements),
         )),
@@ -91,9 +97,28 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         shown_when(Map1::read_map(options.data.clone(), |data: &CustomData| *data == CustomData::Settlements),
             Toggle::new("On the LogScale", options.log_scale.clone())),
         Text::new("Hover finds no lollipops: a\ncontroller outside the crate can't\nadd its shapes yet."),
+        section("Zoom"),
+        zoom_controls("x", &options.x_zoom),
+        zoom_controls("y", &options.y_zoom),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     with_side_bar(chart, side, &shared)
+}
+
+/// The data option, which shows each new choice of data whole: picking other data resets both
+/// scales' zoom.
+fn data_resetting_zoom(options: &Options) -> impl State<T=CustomData> + use<> {
+    Map3::map(
+        options.data.clone(), options.x_zoom.clone(), options.y_zoom.clone(),
+        |data: &CustomData, _: &ZoomWindow, _: &ZoomWindow| *data,
+        |new, mut data, mut x_zoom, mut y_zoom| {
+            if *data != new {
+                *data = new;
+                *x_zoom = ZoomWindow::WHOLE;
+                *y_zoom = ZoomWindow::WHOLE;
+            }
+        },
+    )
 }
 
 /// The custom chart of `data`, on the crate's `LogScale` when `log` is set.
@@ -111,18 +136,21 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
                 LineController::new(readings.label("Measured (°C)")),
                 LollipopController::new(forecast.label("Forecast (°C)").color(color)),
             ))
-                .title(options.title.clone()))
+                .title(options.title.clone())
+                .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()))
+                .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone())))
                 .boxed()
         }
         CustomData::Settlements => {
             let populations = vec![(0.0, 120.0), (1.0, 2_400.0), (2.0, 58_000.0), (3.0, 730_000.0), (4.0, 9_100_000.0)];
             let chart = Chart::new(LollipopController::new(populations.label("Population").color(color)))
-                .title(options.title.clone());
+                .title(options.title.clone())
+                .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()));
 
             if log {
-                shared.apply(chart.scale(ScaleId::Y, LogScale::new(Axis::Vertical).title("Inhabitants (log)"))).boxed()
+                shared.apply(chart.scale(ScaleId::Y, LogScale::new(Axis::Vertical).title("Inhabitants (log)").zoom(options.y_zoom.clone()))).boxed()
             } else {
-                shared.apply(chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Inhabitants"))).boxed()
+                shared.apply(chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).title("Inhabitants").zoom(options.y_zoom.clone()))).boxed()
             }
         }
     }
