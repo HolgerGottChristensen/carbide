@@ -17,8 +17,6 @@
 //!   public way to attach one to a dataset.
 //! - Text categories and dates in `LollipopController`: placing them needs `Coordinates`, which a
 //!   controller outside the crate can't make, so it reads plain numbers only.
-//! - Palette colours in `LollipopController`: the chart's palette isn't public, so a dataset
-//!   without a colour of its own falls back to `FALLBACK_COLOR`.
 
 mod kelvin;
 mod log_scale;
@@ -26,4 +24,4 @@ mod lollipop;
 
 pub use kelvin::Kelvin;
 pub use log_scale::LogScale;
-pub use lollipop::{LollipopController, FALLBACK_COLOR};
+pub use lollipop::LollipopController;

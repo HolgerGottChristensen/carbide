@@ -6,7 +6,8 @@ use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility, describe_datum};
+use crate::colors::SeriesColors;
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, set_legend_visibility, describe_datum};
 use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
@@ -155,7 +156,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
 
     /// Draws every dataset's marks with `role`, in dataset order, each on its dataset's scales.
     /// Datasets without such marks are passed over without reading their options.
-    fn draw_marks(&self, role: MarkRole, offsets: &StackOffsets, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
+    fn draw_marks(&self, role: MarkRole, offsets: &StackOffsets, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, colors: &SeriesColors) {
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             if !has_mark(dataset, role) {
                 return;
@@ -186,8 +187,7 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
                 value_scale,
                 area: chart_area,
                 options: &options,
-                dataset_index,
-                palette,
+                colors: colors.dataset(options.color, dataset_index),
                 stack_offsets: offsets.dataset(dataset_index),
                 polar: frame.as_ref(),
             };
@@ -261,11 +261,11 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
     /// (`LineMark::legend`).
     /// The datum's value, or a mark's values, with the marker its dataset has in the legend.
     fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
-        let palette = Palette::from_env(env, get(&self.palette_offset));
+        let colors = SeriesColors::new(env, get(&self.palette_offset));
         let replaced = self.replaced_lines();
         let show_line = get(&self.show_line);
-        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &palette, env, |dataset, options, dataset_index, env| {
-            let context = LegendContext { env, options, dataset_index, palette: &palette };
+        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &colors, env, |dataset, options, dataset_index| {
+            let context = LegendContext { colors: colors.dataset(options.color, dataset_index) };
             if let Some((color, marker)) = first_mark_entry(|f| dataset.line_marks(&mut |mark| f(mark.legend(&context)))) {
                 return (Some(color), marker);
             }
@@ -288,8 +288,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
         let replaced = self.replaced_lines();
         legend_items(
             &self.dataset_sequence,
-            env,
-            &Palette::from_env(env, get(&self.palette_offset)),
+            &SeriesColors::new(env, get(&self.palette_offset)),
             items,
             |dataset_index, options| match (replaced.contains(&dataset_index), get(&self.show_line), options.fill) {
                 (true, _, _) => LegendMarker::Square,
@@ -306,19 +305,19 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
 
         let replaced = self.replaced_lines();
         let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, true, true, self.orientation(), |dataset_index| !replaced.contains(&dataset_index));
-        let palette = Palette::new(ctx, get(&self.palette_offset));
+        let colors = SeriesColors::new(ctx.env(), get(&self.palette_offset));
 
         // Marks replacing lines are usually areas, so they go first, under every line; overlays
         // go on top of everything.
         let offsets = self.stack_offsets(scales, &replaced);
-        self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &palette);
+        self.draw_marks(MarkRole::Primary, &offsets, ctx, scales, chart_area, &colors);
         if get(&self.show_line) {
-            draw_fills(&lines, ctx, scales, chart_area, &palette);
-            draw_lines(&lines, ctx, chart_area, &palette);
-            add_lines(&lines, shapes, scales, chart_area, &palette);
+            draw_fills(&lines, ctx, scales, chart_area, &colors);
+            draw_lines(&lines, ctx, chart_area, &colors);
+            add_lines(&lines, shapes, scales, chart_area, &colors);
         }
-        draw_points(&lines, ctx, &palette, shapes, |_| true);
-        self.draw_marks(MarkRole::Overlay, &offsets, ctx, scales, chart_area, &palette);
+        draw_points(&lines, ctx, &colors, shapes, |_| true);
+        self.draw_marks(MarkRole::Overlay, &offsets, ctx, scales, chart_area, &colors);
 
         ctx.restore();
     }

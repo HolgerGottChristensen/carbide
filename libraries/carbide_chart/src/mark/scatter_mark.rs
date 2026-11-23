@@ -1,10 +1,9 @@
 use std::fmt::Debug;
 use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
-use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataPoint, DataSetOptions};
-use crate::controller::drawing::{point_color, resolve_color, Palette};
+use crate::{DataColor, DataPoint};
+use crate::colors::DatasetColors;
 use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
@@ -12,7 +11,6 @@ use crate::scale::{Axis, Coordinates, Scale, ScaleId};
 use crate::geometry::{Along, Datum, Shape, Shapes};
 use crate::controller::drawing::PolarFrame;
 use crate::mark::line_mark::polar_whisker;
-use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a scatter controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `ScatterController` (see `ScatterDataSet`).
@@ -129,9 +127,8 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) x_scale: &'x dyn Scale,
     pub(crate) y_scale: &'x dyn Scale,
     pub(crate) area: Rect,
-    pub(crate) options: &'x DataSetOptions,
     pub(crate) dataset_index: usize,
-    pub(crate) palette: &'x Palette,
+    pub(crate) colors: DatasetColors<'x>,
     pub(crate) sizes: SizeScale,
     /// How the dataset lies around the circle, when it is on polar scales.
     pub(crate) polar: Option<&'x PolarFrame>,
@@ -141,7 +138,12 @@ pub struct ScatterCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) x_id: &'x ScaleId,
 }
 
-impl ScatterCanvas<'_, '_, '_, '_> {
+impl<'x> ScatterCanvas<'x, '_, '_, '_> {
+    /// The dataset's colours (see `DatasetColors`), and through them the controller's.
+    pub fn colors(&self) -> DatasetColors<'x> {
+        self.colors
+    }
+
     /// Where the point's x is placed: a number at itself, and text at its category's index (see
     /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
     /// numbers.
@@ -231,20 +233,19 @@ impl ScatterCanvas<'_, '_, '_, '_> {
     /// The colour of the point at `point_index`, whose own colour is `color` (see
     /// `DataPoint::color`), as a point would be drawn in.
     pub fn point_color(&self, point_index: usize, color: DataColor) -> Color {
-        point_color(color, self.options, self.dataset_index, point_index, self.palette)
+        self.colors.point(point_index, color)
     }
 
     /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
     /// colour by dataset or by point, the dataset's colour.
     pub fn resolve(&self, color: DataColor) -> Color {
-        resolve_color(color, self.options, self.dataset_index, self.palette)
+        self.colors.resolve(color)
     }
 
     /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's
     /// label colour, so they stand out on any point.
-    pub fn ink(&mut self) -> Color {
-        let env = self.ctx.env();
-        axis_style(env).label_color(env)
+    pub fn ink(&self) -> Color {
+        self.colors.series().ink()
     }
 
     /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
@@ -270,10 +271,8 @@ impl ScatterCanvas<'_, '_, '_, '_> {
 
     /// `color` at the `SeriesStyle`'s fill opacity, for shapes that may overlap, so the ones
     /// behind show through.
-    pub fn translucent(&mut self, color: Color) -> Color {
-        let fill_opacity = series_style(self.ctx.env()).fill_opacity();
-        let Rgba(r, g, b, a) = Rgba::from(color);
-        rgba(r, g, b, a * fill_opacity)
+    pub fn translucent(&self, color: Color) -> Color {
+        self.colors.series().translucent(color)
     }
 
     /// Fills a circle around `center`, and outlines it `outline_width` wide.

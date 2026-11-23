@@ -3,9 +3,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use carbide::chart::{Axis, Chart, DataColor, DatasetExt, LegendPosition, LineController, ScaleId, ScatterController, ZoomWindow};
-use carbide::color::{GREEN, RED};
+use carbide::chart::{Axis, Chart, ChartStyleExt, DataColor, DatasetExt, LegendPosition, LineController, ScaleId, ScatterController, SeriesStyle, ZoomWindow};
+use carbide::color::{Color, GREEN, ORANGE, PURPLE, RED};
 use carbide::draw::{Dimension, Position};
+use carbide::environment::Environment;
+use carbide::widget::VStack;
 use carbide::state::{LocalState, ReadState};
 use carbide::testing::Harness;
 use chart_extensions::{Kelvin, LogScale, LollipopController};
@@ -132,9 +134,9 @@ fn dragging_pans_a_log_scale() {
 
 /// Two datasets drawn by the `LollipopController`, a controller of this crate's own, with options
 /// set through `DatasetExt`: stems grow from zero, up or down; the first dataset takes the
-/// fallback colour, as palette colours aren't public, the second its own green, and one of its
-/// points its own red; the missing point has no lollipop; and both named datasets are in the
-/// legend.
+/// palette's first colour, as a built-in controller's first dataset does, the second its own green,
+/// and the third dataset's point its own red; the missing point has no lollipop; and both named
+/// datasets are in the legend, in their colours.
 #[test]
 fn lollipops() {
     let first = vec![(0.0, 4.0), (1.0, -2.5), (2.0, 6.0), (3.0, f64::NAN), (4.0, 3.0)];
@@ -142,7 +144,7 @@ fn lollipops() {
     let marked = vec![(4.5, 7.0)].color(DataColor::Color(RED));
 
     let chart = Chart::new(LollipopController::new((
-        first.label("Fallback colour"),
+        first.label("Palette colour"),
         second.color(DataColor::Color(GREEN)).label("Own colour"),
         marked,
     )))
@@ -152,6 +154,42 @@ fn lollipops() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
 
     harness.snapshot("lollipops");
+}
+
+/// Lollipops beside a line, in a series style of the test's own with three colours, set on a stack
+/// around the chart. Pins down that a controller of this crate's own colours its datasets from the
+/// chart's `SeriesStyle` as the built-in ones do (`SeriesColors`): the line takes the style's first
+/// colour, purple; the lollipops, starting one colour in (`palette_offset`), its second, green;
+/// a dataset of them coloured by point a colour per lollipop, from green on, wrapping to purple;
+/// and the legend shows each dataset in its colour, orange for the one coloured by point.
+#[test]
+fn lollipops_follow_the_series_style() {
+    /// Purple, green and orange.
+    #[derive(Debug, Clone)]
+    struct ThreeColours;
+
+    impl SeriesStyle for ThreeColours {
+        fn palette(&self, _env: &Environment) -> Vec<Color> {
+            vec![PURPLE, GREEN, ORANGE]
+        }
+    }
+
+    let line = vec![(0.0, 3.0), (1.0, 5.0), (2.0, 4.0), (3.0, 6.0), (4.0, 5.5), (5.0, 7.0)];
+    let forecast = vec![(0.0, 2.0), (1.0, 4.0), (2.0, 3.0)];
+    let by_point = vec![(2.5, 1.5), (3.0, 3.0), (3.5, 2.0), (4.0, 4.0), (4.5, 2.5)];
+
+    let chart = Chart::new((
+        LineController::new(line.label("Line")),
+        LollipopController::new((
+            forecast.label("Lollipops"),
+            by_point.color(DataColor::ByPoint).label("By point"),
+        )).palette_offset(1),
+    ))
+        .legend(LegendPosition::Bottom);
+
+    let mut harness = Harness::new(VStack::new(chart).series_style(ThreeColours).framed(), Dimension::new(600.0, 400.0));
+
+    harness.snapshot("lollipops_follow_the_series_style");
 }
 
 /// Lollipops on a `LogScale`, where zero isn't on the scale: the stems start at its bottom end.

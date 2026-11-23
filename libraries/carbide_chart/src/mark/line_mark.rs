@@ -1,18 +1,17 @@
 use std::collections::HashMap;
 use carbide::color::Color;
 use carbide::draw::{Position, Rect, Scalar};
-use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataPoint, DataSetOptions};
 use crate::controller::band::{clip, flatten, strips};
-use crate::controller::drawing::{closes, dataset_color, resolve_color, split_runs, Palette, PolarFrame};
+use crate::colors::DatasetColors;
+use crate::controller::drawing::{closes, split_runs, PolarFrame};
 use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
 use crate::scale::{Coordinates, Scale};
-use crate::style::{axis_style, series_style};
 
 /// A mark that can be drawn by a line controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `LineController` (see `LineDataSet`).
@@ -95,14 +94,18 @@ pub struct LineCanvas<'x, 'a, 'b, 'c: 'b> {
     pub(crate) value_scale: &'x dyn Scale,
     pub(crate) area: Rect,
     pub(crate) options: &'x DataSetOptions,
-    pub(crate) dataset_index: usize,
-    pub(crate) palette: &'x Palette,
+    pub(crate) colors: DatasetColors<'x>,
     pub(crate) stack_offsets: Option<&'x HashMap<u64, Scalar>>,
     /// How the dataset lies around the circle, when it is on polar scales.
     pub(crate) polar: Option<&'x PolarFrame>,
 }
 
-impl LineCanvas<'_, '_, '_, '_> {
+impl<'x> LineCanvas<'x, '_, '_, '_> {
+    /// The dataset's colours (see `DatasetColors`), and through them the controller's.
+    pub fn colors(&self) -> DatasetColors<'x> {
+        self.colors
+    }
+
     /// Where the point's x is placed: a number at itself, and text at its category's index (see
     /// `Coordinates`). Marks read their points' x and y through it, so they draw text as well as
     /// numbers.
@@ -124,9 +127,8 @@ impl LineCanvas<'_, '_, '_, '_> {
 
     /// The colour for marks drawn over the datasets' colours, such as error bars: the chart's
     /// label colour, so they stand out on any line or area.
-    pub fn ink(&mut self) -> Color {
-        let env = self.ctx.env();
-        axis_style(env).label_color(env)
+    pub fn ink(&self) -> Color {
+        self.colors.series().ink()
     }
 
     /// Starts a path of straight lines, added one at a time with `add_line` and stroked together
@@ -220,21 +222,19 @@ impl LineCanvas<'_, '_, '_, '_> {
 
     /// The dataset's colour, as its line would be drawn in.
     pub fn color(&self) -> Color {
-        dataset_color(self.options, self.dataset_index, self.palette)
+        self.colors.color()
     }
 
     /// The colour `color` stands for in this dataset: a fixed colour, a palette colour, or, for a
     /// colour by dataset or by point, the dataset's colour.
     pub fn resolve(&self, color: DataColor) -> Color {
-        resolve_color(color, self.options, self.dataset_index, self.palette)
+        self.colors.resolve(color)
     }
 
     /// `color` at the `SeriesStyle`'s fill opacity, for areas, so the grid and areas behind show
     /// through.
-    pub fn translucent(&mut self, color: Color) -> Color {
-        let fill_opacity = series_style(self.ctx.env()).fill_opacity();
-        let Rgba(r, g, b, a) = Rgba::from(color);
-        rgba(r, g, b, a * fill_opacity)
+    pub fn translucent(&self, color: Color) -> Color {
+        self.colors.series().translucent(color)
     }
 
     /// Fills the area between the line through `upper` and the line through `lower`, both in

@@ -6,7 +6,8 @@ use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
-use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, Palette, set_legend_visibility, describe_datum};
+use crate::colors::SeriesColors;
+use crate::controller::drawing::{polar_frame, register_values, collect_point_bounds, dataset_scales, draw_fills, add_lines, draw_lines, draw_points, drawn_lines, first_mark_entry, legend_items, set_legend_visibility, describe_datum};
 use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
@@ -149,9 +150,9 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// such as a bubble.
     /// The datum's values, as a point, or as its mark draws it, such as a bubble.
     fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
-        let palette = Palette::from_env(env, get(&self.palette_offset));
-        describe_datum(&self.dataset_sequence, key, scales, Orientation::Vertical, &palette, env, |dataset, options, dataset_index, env| {
-            let context = LegendContext { env, options, dataset_index, palette: &palette };
+        let colors = SeriesColors::new(env, get(&self.palette_offset));
+        describe_datum(&self.dataset_sequence, key, scales, Orientation::Vertical, &colors, env, |dataset, options, dataset_index| {
+            let context = LegendContext { colors: colors.dataset(options.color, dataset_index) };
             match first_mark_entry(|f| dataset.scatter_marks(&mut |mark| f(mark.legend(&context)))) {
                 // A mark's marker, but each point keeps its own colour.
                 Some((_, marker)) => (None, marker),
@@ -168,8 +169,7 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         legend_items(
             &self.dataset_sequence,
-            env,
-            &Palette::from_env(env, get(&self.palette_offset)),
+            &SeriesColors::new(env, get(&self.palette_offset)),
             items,
             |_, options| match (get(&self.show_line), options.fill) {
                 (false, _) => LegendMarker::Point,
@@ -186,17 +186,17 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
         // Scatter charts don't stack: each dataset's points are drawn at their own values.
         let lines = drawn_lines(&self.dataset_sequence, scales, chart_area, false, false, Orientation::Vertical, |_| true);
 
-        let palette = Palette::new(ctx, get(&self.palette_offset));
+        let colors = SeriesColors::new(ctx.env(), get(&self.palette_offset));
 
         if get(&self.show_line) {
-            draw_fills(&lines, ctx, scales, chart_area, &palette);
-            draw_lines(&lines, ctx, chart_area, &palette);
-            add_lines(&lines, shapes, scales, chart_area, &palette);
+            draw_fills(&lines, ctx, scales, chart_area, &colors);
+            draw_lines(&lines, ctx, chart_area, &colors);
+            add_lines(&lines, shapes, scales, chart_area, &colors);
         }
 
         // The points of datasets whose points a mark replaces are drawn by the mark instead.
         let replaced = self.replaced_points();
-        draw_points(&lines, ctx, &palette, shapes, |dataset_index| !replaced.contains(&dataset_index));
+        draw_points(&lines, ctx, &colors, shapes, |dataset_index| !replaced.contains(&dataset_index));
 
         // One size scale for every dataset's marks, so their sizes compare, hidden ones included,
         // so the bubbles shown keep their sizes when another dataset is hidden or shown.
@@ -240,9 +240,8 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
                     x_scale,
                     y_scale,
                     area: chart_area,
-                    options: &options,
                     dataset_index,
-                    palette: &palette,
+                    colors: colors.dataset(options.color, dataset_index),
                     sizes,
                     polar: frame.as_ref(),
                     shapes: &mut *shapes,

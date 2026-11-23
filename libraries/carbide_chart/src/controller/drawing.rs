@@ -8,7 +8,6 @@ use std::collections::{HashMap, HashSet};
 use std::ops::{Range, RangeInclusive};
 use std::rc::Rc;
 use carbide::draw::{Position, Rect, Scalar};
-use carbide::draw::color::{rgba, Rgba};
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, Fill, PointValue, SpanGaps, StackId, Value};
 use crate::mark::{AsDataSet, LegendContext};
@@ -22,7 +21,7 @@ use crate::scale::axis::{angle_corners, format_number, tick_label};
 use crate::scale::polar::{Ring, RingShape};
 use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
-use crate::style::series_style;
+use crate::colors::{DatasetColors, SeriesColors};
 use crate::geometry::{Along, Datum, DatumKey, Polyline, Shape, Shapes};
 use crate::interaction::{DatumInfo, ValueText};
 use carbide::environment::Environment;
@@ -123,6 +122,11 @@ pub(crate) struct DrawnLine {
 }
 
 impl DrawnLine {
+    /// The colours of the line's dataset, among the controller's `colors`.
+    fn dataset_colors<'a>(&self, colors: &'a SeriesColors) -> DatasetColors<'a> {
+        colors.dataset(self.options.color, self.dataset_index)
+    }
+
     /// The datum the drawn point at `point` shows, and where it sits along the index axis.
     fn datum(&self, point: usize, shapes: &mut Shapes) -> Datum {
         let along = match &self.polar {
@@ -443,9 +447,7 @@ pub(crate) fn warn_other_roles(scales: &Scales, x_id: &ScaleId, y_id: &ScaleId) 
 /// `trace_line`, then closes along the baseline, or, for `Fill::Stack`, back along the line below
 /// it in its stack, traced in reverse with that line's own interpolation, so the area fits
 /// exactly between the two drawn lines. A run needs two points to have an area.
-pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, palette: &Palette) {
-    let fill_opacity = series_style(ctx.env()).fill_opacity();
-
+pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, colors: &SeriesColors) {
     for line in lines {
         let options = &line.options;
 
@@ -460,8 +462,7 @@ pub(crate) fn draw_fills(lines: &[DrawnLine], ctx: &mut CanvasContext, scales: &
 
         let area = line.orientation.frame_area(chart_area);
 
-        let Rgba(r, g, b, a) = Rgba::from(dataset_color(options, line.dataset_index, palette));
-        let color = rgba(r, g, b, a * fill_opacity);
+        let color = colors.translucent(line.dataset_colors(colors).color());
 
         if let Some(polar_line) = &line.polar {
             draw_polar_fill(line, polar_line, lines, value_scale, ctx, color);
@@ -637,7 +638,7 @@ fn baseline_pixel(fill: Fill, value_scale: &dyn Scale, value_axis: Axis, chart_a
 
 /// Draws each line through its points, in order, with its dataset's `interpolation` (straight,
 /// smooth, monotone or stepped), each unbroken run on its own (see `SpanGaps`).
-pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_area: Rect, palette: &Palette) {
+pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_area: Rect, colors: &SeriesColors) {
     for line in lines {
         if let Some(polar_line) = &line.polar {
             ctx.begin_path();
@@ -646,7 +647,7 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
                 let rings = RingShape { polar: &polar_line.polar, corners: polar_line.corners.as_deref() };
                 trace_polar_line(&mut *ctx, &polar_line.points[run.clone()], closing, line.options.interpolation, rings);
             }
-            ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
+            ctx.set_stroke_style(line.dataset_colors(colors).color());
             ctx.stroke();
             continue;
         }
@@ -658,17 +659,19 @@ pub(crate) fn draw_lines(lines: &[DrawnLine], ctx: &mut CanvasContext, chart_are
         for run in &line.runs {
             trace_line(&mut path, &line.points[run.clone()], line.options.interpolation, area);
         }
-        ctx.set_stroke_style(dataset_color(&line.options, line.dataset_index, palette));
+        ctx.set_stroke_style(line.dataset_colors(colors).color());
         ctx.stroke();
     }
 }
 
 /// Draws a filled circle at each of each line's points that isn't missing, in its colour (see
-/// `point_color`), for the lines whose dataset index `drawn` accepts, each a marker in `shapes`.
-pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, palette: &Palette, shapes: &mut Shapes, drawn: impl Fn(usize) -> bool) {
+/// `DatasetColors::point`), for the lines whose dataset index `drawn` accepts, each a marker in
+/// `shapes`.
+pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, colors: &SeriesColors, shapes: &mut Shapes, drawn: impl Fn(usize) -> bool) {
     for line in lines.iter().filter(|line| drawn(line.dataset_index)) {
+        let dataset_colors = line.dataset_colors(colors);
         for point in 0..line.points.len() {
-            let color = point_color(line.colors[point], &line.options, line.dataset_index, line.point_indices[point], palette);
+            let color = dataset_colors.point(line.point_indices[point], line.colors[point]);
             let datum = line.datum(point, shapes);
             let marker = Shape::Marker { center: line.screen(point), radius: POINT_RADIUS };
             let item = shapes.add(line.dataset_index, Some(datum), color, marker);
@@ -686,7 +689,7 @@ const POINT_RADIUS: Scalar = 3.5;
 
 /// Adds each line to `shapes` as a polyline through its points, with the areas it fills, for
 /// picking: the lines a controller draws, in the order it draws them.
-pub(crate) fn add_lines(lines: &[DrawnLine], shapes: &mut Shapes, scales: &Scales, chart_area: Rect, palette: &Palette) {
+pub(crate) fn add_lines(lines: &[DrawnLine], shapes: &mut Shapes, scales: &Scales, chart_area: Rect, colors: &SeriesColors) {
     for line in lines {
         let vertices = (0..line.points.len()).map(|point| (line.screen(point), line.datum(point, shapes))).collect();
         let areas = if line.options.fill == Fill::None { vec![] } else { fill_areas(line, lines, scales, chart_area) };
@@ -697,7 +700,7 @@ pub(crate) fn add_lines(lines: &[DrawnLine], shapes: &mut Shapes, scales: &Scale
             areas,
         };
 
-        shapes.add(line.dataset_index, None, dataset_color(&line.options, line.dataset_index, palette), Shape::Polyline(polyline));
+        shapes.add(line.dataset_index, None, line.dataset_colors(colors).color(), Shape::Polyline(polyline));
     }
 }
 
@@ -810,75 +813,6 @@ fn ring_points(ring: &Ring, from: Scalar, to: Scalar) -> Vec<Position> {
     (0..=STEPS).map(|step| ring.point(from + (to - from) * step as Scalar / STEPS as Scalar)).collect()
 }
 
-/// The colours of the chart's `SeriesStyle`, and how far into them a controller starts.
-pub(crate) struct Palette {
-    colors: Vec<Color>,
-    offset: usize,
-}
-
-impl Palette {
-    /// The palette of the `SeriesStyle` in `ctx`'s environment, for a controller starting at
-    /// `offset`.
-    pub(crate) fn new(ctx: &mut CanvasContext, offset: usize) -> Palette {
-        Palette::from_env(ctx.env(), offset)
-    }
-
-    /// The palette of the `SeriesStyle` in `env`, for a controller starting at `offset`.
-    pub(crate) fn from_env(env: &Environment, offset: usize) -> Palette {
-        Palette { colors: series_style(env).palette(env), offset }
-    }
-
-    /// The colour for a dataset or point by its `index` in the controller, shifted by the
-    /// controller's offset.
-    fn by_index(&self, index: usize) -> Color {
-        self.at(self.offset + index)
-    }
-
-    /// The colour at `index`, wrapping around at the end. An empty palette gives the default
-    /// colour.
-    fn at(&self, index: usize) -> Color {
-        if self.colors.is_empty() {
-            Color::default()
-        } else {
-            self.colors[index % self.colors.len()]
-        }
-    }
-}
-
-/// The dataset's own colour, or the `palette`'s colour for its index in the controller. This is
-/// the colour of everything drawn once for the whole dataset, such as a line and its area, so a
-/// dataset coloured `ByPoint` uses its palette colour here too.
-pub(crate) fn dataset_color(options: &DataSetOptions, dataset_index: usize, palette: &Palette) -> Color {
-    match options.color {
-        DataColor::ByDataSet | DataColor::ByPoint => palette.by_index(dataset_index),
-        DataColor::Palette(index) => palette.at(index),
-        DataColor::Color(color) => color,
-    }
-}
-
-/// The colour `color` stands for in a dataset: a fixed colour, or a palette colour, picked or by
-/// the dataset's index, as for `dataset_color`. A colour by point, which needs a point, is the
-/// dataset's colour here.
-pub(crate) fn resolve_color(color: DataColor, options: &DataSetOptions, dataset_index: usize, palette: &Palette) -> Color {
-    match color {
-        DataColor::Color(color) => color,
-        DataColor::Palette(index) => palette.at(index),
-        DataColor::ByDataSet | DataColor::ByPoint => dataset_color(options, dataset_index, palette),
-    }
-}
-
-/// The colour of one bar or point: the point's own colour if it sets one, otherwise its
-/// dataset's. A dataset coloured `ByPoint` gives each point the palette colour for its index in
-/// the dataset (`point_index`), as does a point coloured `ByPoint` itself.
-pub(crate) fn point_color(color: DataColor, options: &DataSetOptions, dataset_index: usize, point_index: usize, palette: &Palette) -> Color {
-    match (color, options.color) {
-        (DataColor::Color(color), _) => color,
-        (DataColor::Palette(index), _) => palette.at(index),
-        (DataColor::ByPoint, _) | (DataColor::ByDataSet, DataColor::ByPoint) => palette.by_index(point_index),
-        (DataColor::ByDataSet, _) => dataset_color(options, dataset_index, palette),
-    }
-}
-
 /// Reports each dataset's values (see `ScaleBounds::report_value`): its first point that isn't
 /// missing, the x for the scale its x is placed on and the y for the scale its y is placed on, as
 /// `orientation` places them. A dataset whose values name categories registers every name, in
@@ -928,12 +862,11 @@ where
 
 /// Adds a legend entry for each of `datasets` that has a name: the entry the dataset's first mark
 /// to give one asks for (`mark_entry`, which reads the marks with the context it is given), or
-/// else the colour its line, area or bars are drawn in (see `dataset_color`), with the marker
-/// `marker` gives for its index and options.
+/// else the colour its line, area or bars are drawn in (see `DatasetColors::color`), with the
+/// marker `marker` gives for its index and options.
 pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
     datasets: &D,
-    env: &Environment,
-    palette: &Palette,
+    colors: &SeriesColors,
     items: &mut Vec<LegendItem>,
     marker: impl Fn(usize, &DataSetOptions) -> LegendMarker,
     mark_entry: impl Fn(&T, &LegendContext) -> Option<(Color, LegendMarker)>,
@@ -945,9 +878,9 @@ pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
             return;
         };
 
-        let context = LegendContext { env, options: &options, dataset_index, palette };
+        let context = LegendContext { colors: colors.dataset(options.color, dataset_index) };
         let (color, marker) = mark_entry(dataset, &context)
-            .unwrap_or_else(|| (dataset_color(&options, dataset_index, palette), marker(dataset_index, &options)));
+            .unwrap_or_else(|| (context.colors.color(), marker(dataset_index, &options)));
 
         items.push(LegendItem { label, color, marker, hidden: !options.visible });
     });
@@ -963,9 +896,9 @@ pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
     key: DatumKey,
     scales: &Scales,
     orientation: Orientation,
-    palette: &Palette,
+    colors: &SeriesColors,
     env: &mut Environment,
-    look: impl Fn(&T, &DataSetOptions, usize, &Environment) -> (Option<Color>, LegendMarker),
+    look: impl Fn(&T, &DataSetOptions, usize) -> (Option<Color>, LegendMarker),
 ) -> Option<DatumInfo> {
     let mut found = None;
     datasets.foreach(&mut |dataset_index, item| {
@@ -979,7 +912,7 @@ pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
             return;
         }
 
-        let (own_color, marker) = look(item, &options, dataset_index, env);
+        let (own_color, marker) = look(item, &options, dataset_index);
         let (index_id, value_id) = orientation.for_dataset(&options, scales).index_and_value_scales(&options);
         let coordinates = Coordinates::new(scales, index_id, value_id);
 
@@ -990,7 +923,7 @@ pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
 
             let mut values = vec![];
             point.describe(&mut |value| values.push(OwnedPointValue::from(value)));
-            let color = own_color.unwrap_or_else(|| point_color(point.color(), &options, dataset_index, point_index, palette));
+            let color = own_color.unwrap_or_else(|| colors.dataset(options.color, dataset_index).point(point_index, point.color()));
             found = Some((options.label.clone(), color, marker, coordinates.x(point), values, index_id.clone(), value_id.clone()));
         });
     });
@@ -1110,7 +1043,7 @@ mod tests {
     use carbide::color::{BLUE, GREEN, RED, WHITE};
     use crate::{DataColor, DataSetOptions, Interpolation};
     use crate::controller::orientation::Orientation;
-    use super::{baseline_pixel, dataset_color, drawn_lines, point_color, Palette};
+    use super::{baseline_pixel, drawn_lines};
 
     const SALES: StackId = StackId::new("sales");
 
@@ -1237,42 +1170,6 @@ mod tests {
             label: None,
             visible: true,
         }
-    }
-
-    /// A dataset coloured `ByPoint` gives each point the palette colour for its index in the
-    /// dataset, wrapping at the palette's end, while what is drawn once for the whole dataset
-    /// keeps the palette colour for the dataset's index. A point's own colour always wins.
-    #[test]
-    fn points_coloured_by_point_cycle_through_the_palette() {
-        let by_point = options(DataColor::ByPoint);
-
-        let palette = Palette { colors: vec![WHITE, GREEN, RED], offset: 0 };
-        let colours: Vec<_> = (0..4).map(|point_index| point_color(DataColor::ByDataSet, &by_point, 1, point_index, &palette)).collect();
-        assert_eq!(colours, vec![WHITE, GREEN, RED, WHITE], "by the point's index, not the dataset's");
-        assert_eq!(dataset_color(&by_point, 1, &palette), GREEN, "the line and its area keep the dataset's palette colour");
-
-        assert_eq!(point_color(DataColor::Color(BLUE), &by_point, 1, 2, &palette), BLUE, "a point's own colour wins");
-        assert_eq!(point_color(DataColor::ByPoint, &options(DataColor::ByDataSet), 0, 2, &palette), RED, "a point can ask for its palette colour itself");
-        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::ByDataSet), 1, 2, &palette), GREEN, "otherwise points take the dataset's colour");
-        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::Color(BLUE)), 1, 2, &palette), BLUE);
-    }
-
-    /// A controller's palette offset shifts the colours its datasets and points take by their
-    /// index; a dataset or point that picks a palette colour itself keeps it, and a fixed colour
-    /// stays fixed. Palette indices wrap around at the end.
-    #[test]
-    fn palette_offsets_shift_colours_by_index_but_not_picked_ones() {
-        let palette = Palette { colors: vec![WHITE, GREEN, RED], offset: 2 };
-
-        assert_eq!(dataset_color(&options(DataColor::ByDataSet), 0, &palette), RED, "dataset 0 starts two colours in");
-        assert_eq!(dataset_color(&options(DataColor::ByDataSet), 1, &palette), WHITE, "and wraps around");
-        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::ByPoint), 0, 1, &palette), WHITE, "points by index are shifted too");
-
-        assert_eq!(dataset_color(&options(DataColor::Palette(1)), 0, &palette), GREEN, "a picked colour isn't shifted");
-        assert_eq!(dataset_color(&options(DataColor::Palette(4)), 0, &palette), GREEN, "picked indices wrap around");
-        assert_eq!(point_color(DataColor::Palette(0), &options(DataColor::ByDataSet), 1, 1, &palette), WHITE, "a point can pick a colour itself");
-        assert_eq!(point_color(DataColor::ByDataSet, &options(DataColor::Palette(1)), 1, 1, &palette), GREEN, "its points take the dataset's picked colour");
-        assert_eq!(dataset_color(&options(DataColor::Color(BLUE)), 0, &palette), BLUE);
     }
 
     /// A line breaks into runs at missing points with `SpanGaps::Never`, joins across them with

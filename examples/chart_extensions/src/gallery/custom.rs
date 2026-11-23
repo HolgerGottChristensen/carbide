@@ -25,7 +25,10 @@ pub(crate) enum CustomData {
 /// The lollipops' colour.
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum LollipopColor {
-    Fallback,
+    /// The palette colour for the dataset, as the built-in controllers colour theirs.
+    Palette,
+    /// The next palette colour for each lollipop.
+    ByPoint,
     Blue,
     Green,
     Purple,
@@ -34,7 +37,8 @@ enum LollipopColor {
 impl LollipopColor {
     fn data_color(&self) -> DataColor {
         match self {
-            LollipopColor::Fallback => DataColor::ByDataSet,
+            LollipopColor::Palette => DataColor::ByDataSet,
+            LollipopColor::ByPoint => DataColor::ByPoint,
             LollipopColor::Blue => DataColor::Color(BLUE),
             LollipopColor::Green => DataColor::Color(GREEN),
             LollipopColor::Purple => DataColor::Color(PURPLE),
@@ -60,7 +64,7 @@ impl Options {
             title: LocalState::new("Extended from outside".to_string()),
             data: LocalState::new(CustomData::Temperature),
             log_scale: LocalState::new(true),
-            color: LocalState::new(LollipopColor::Fallback),
+            color: LocalState::new(LollipopColor::Palette),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
@@ -89,7 +93,8 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Settlements").tag(CustomData::Settlements),
         )),
         Picker::new("Lollipops", options.color.clone(), (
-            Text::new("Fallback orange").tag(LollipopColor::Fallback),
+            Text::new("Palette").tag(LollipopColor::Palette),
+            Text::new("One per lollipop").tag(LollipopColor::ByPoint),
             Text::new("Blue").tag(LollipopColor::Blue),
             Text::new("Green").tag(LollipopColor::Green),
             Text::new("Purple").tag(LollipopColor::Purple),
@@ -134,7 +139,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
 
             shared.apply(Chart::new((
                 LineController::new(readings.label("Measured (°C)")),
-                LollipopController::new(forecast.label("Forecast (°C)").color(color)),
+                // One colour into the palette, so the forecast doesn't take the line's colour.
+                LollipopController::new(forecast.label("Forecast (°C)").color(color)).palette_offset(1),
             ))
                 .title(options.title.clone())
                 .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()))

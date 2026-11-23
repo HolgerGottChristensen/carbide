@@ -13,7 +13,8 @@ use crate::geometry::{Datum, DatumKey, Shapes};
 use crate::interaction::{DatumInfo, ValueText};
 use crate::scale::axis::format_number;
 use crate::controller::bar_controller::min_sample_size;
-use crate::controller::drawing::{point_color, polar_frame, Palette, PolarFrame};
+use crate::colors::SeriesColors;
+use crate::controller::drawing::{polar_frame, PolarFrame};
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{is_polar, Orientation};
 use crate::legend::{LegendItem, LegendMarker};
@@ -21,7 +22,7 @@ use crate::mark::BarFrame;
 use crate::scale::{GridShape, ScaleBounds, ScaleKind, Scales, System};
 use crate::scale::polar::{angle_range, direction};
 use crate::sequence::{IntoSequence, Sequence};
-use crate::style::{axis_style, series_style};
+use crate::style::axis_style;
 
 /// How far a leader line runs out from its slice before it turns level.
 const RADIAL_RUN: Scalar = 12.0;
@@ -302,12 +303,12 @@ impl Parts {
 
 /// The colour a part is drawn in: its point's own colour if it sets one, its dataset's if that
 /// picks one, and otherwise the palette colour for its index, as a dataset coloured `ByPoint`.
-fn part_color(part: &Part, options: &DataSetOptions, dataset_index: usize, palette: &Palette) -> Color {
+fn part_color(part: &Part, options: &DataSetOptions, dataset_index: usize, colors: &SeriesColors) -> Color {
     let color = match (part.color, options.color) {
         (DataColor::ByDataSet, DataColor::ByDataSet) => DataColor::ByPoint,
         (color, _) => color,
     };
-    point_color(color, options, dataset_index, part.index, palette)
+    colors.dataset(options.color, dataset_index).point(part.index, color)
 }
 
 /// The name of a dataset, its category on the x scale: its label, or its index.
@@ -479,7 +480,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
     /// The part: its name as its index, its value and its share of the parts shown, in its colour.
     fn describe(&self, key: DatumKey, _scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
-        let palette = Palette::from_env(env, get(&self.palette_offset));
+        let colors = SeriesColors::new(env, get(&self.palette_offset));
         let mut found = None;
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
             if dataset_index != key.dataset {
@@ -489,7 +490,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
             let parts = self.shown_parts(dataset);
             if let Some(part) = parts.parts.iter().find(|part| part.index == key.index) {
                 let share = if parts.total > 0.0 { part.size / parts.total * 100.0 } else { 0.0 };
-                found = Some((options.label.clone(), part.name.clone(), part_color(part, &options, dataset_index, &palette), part.value, share));
+                found = Some((options.label.clone(), part.name.clone(), part_color(part, &options, dataset_index, &colors), part.value, share));
             }
         });
 
@@ -525,7 +526,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
     /// An entry for each part, by name, in its colour, each name once, dimmed when hidden.
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        let palette = Palette::from_env(env, get(&self.palette_offset));
+        let colors = SeriesColors::new(env, get(&self.palette_offset));
         let mut named: Vec<String> = vec![];
 
         self.dataset_sequence.foreach(&mut |dataset_index, dataset| {
@@ -535,7 +536,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                     continue;
                 }
 
-                let color = part_color(&part, &options, dataset_index, &palette);
+                let color = part_color(&part, &options, dataset_index, &colors);
                 let hidden = self.hidden_parts.value_dyn().contains(&part.name);
                 items.push(LegendItem { label: part.name.clone(), color, marker: LegendMarker::Square, hidden });
                 named.push(part.name);
@@ -564,8 +565,8 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, chart_area: Rect, shapes: &mut Shapes) {
         let (placed, ruler) = self.layout(scales, chart_area);
-        let palette = Palette::new(ctx, get(&self.palette_offset));
-        let outline = series_style(ctx.env()).outline_color(ctx.env());
+        let colors = SeriesColors::new(ctx.env(), get(&self.palette_offset));
+        let outline = colors.outline();
         ctx.save();
 
         // Rings that touch the next one out reach a little into it, so the seam between two rings,
@@ -631,7 +632,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
 
                 // Each part is a datum of its ring, at the ring's place on the x scale.
                 let datum = Datum { index: part.index, place: Some(shapes.place(&place.options.x_scale, place.x, frame.along(center))) };
-                let color = part_color(part, &place.options, dataset_index, &palette);
+                let color = part_color(part, &place.options, dataset_index, &colors);
                 let item = shapes.add(dataset_index, Some(datum), color, frame.shape(part_side, part_thickness, base, head));
 
                 ctx.begin_path();

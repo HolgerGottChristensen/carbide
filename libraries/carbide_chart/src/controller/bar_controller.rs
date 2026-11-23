@@ -6,7 +6,8 @@ use indexmap::{IndexMap, IndexSet};
 use crate::controller::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Datum, Shapes};
-use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, point_color, Palette, PolarFrame, set_legend_visibility, describe_datum};
+use crate::colors::SeriesColors;
+use crate::controller::drawing::{zoomed_points, polar_frame, register_values, dataset_scales, first_mark_entry, legend_items, PolarFrame, set_legend_visibility, describe_datum};
 use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
@@ -178,9 +179,9 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     /// into the rising and falling colours for candlesticks.
     /// The datum's bar value, or a mark's values, in its colour or the mark's own.
     fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
-        let palette = Palette::from_env(env, get(&self.palette_offset));
-        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &palette, env, |dataset, options, dataset_index, env| {
-            let context = LegendContext { env, options, dataset_index, palette: &palette };
+        let colors = SeriesColors::new(env, get(&self.palette_offset));
+        describe_datum(&self.dataset_sequence, key, scales, self.orientation(), &colors, env, |dataset, options, dataset_index| {
+            let context = LegendContext { colors: colors.dataset(options.color, dataset_index) };
             match first_mark_entry(|f| dataset.bar_marks(&mut |mark| f(mark.legend(&context)))) {
                 Some((color, marker)) => (Some(color), marker),
                 None => (None, LegendMarker::Square),
@@ -196,8 +197,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
         legend_items(
             &self.dataset_sequence,
-            env,
-            &Palette::from_env(env, get(&self.palette_offset)),
+            &SeriesColors::new(env, get(&self.palette_offset)),
             items,
             |_, _| LegendMarker::Square,
             |dataset, context| first_mark_entry(|f| dataset.bar_marks(&mut |mark| f(mark.legend(context)))),
@@ -267,7 +267,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
         // colours of the chart's `SeriesStyle`, or the marks that replace them. Third pass: the
         // overlays, on top of every dataset's bars.
         let mut stacks = StackSums::split_by_sign().normalized(self.normalized_totals(scales));
-        let palette = Palette::new(ctx, get(&self.palette_offset));
+        let colors = SeriesColors::new(ctx.env(), get(&self.palette_offset));
         ctx.save();
 
         // Overlays are drawn in a pass of their own, and only read the stack offsets, so a chart
@@ -315,9 +315,8 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     coordinates,
                     frame,
                     value_scale,
-                    options: &options,
                     dataset_index,
-                    palette: &palette,
+                    colors: colors.dataset(options.color, dataset_index),
                     shapes: &mut *shapes,
                     index_id,
                 };
@@ -367,7 +366,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
 
                     // In the index frame, along the index axis and along the value axis: a
                     // rectangle along the sides, a wedge around the circle.
-                    let color = point_color(point.color(), &options, dataset_index, point_index, &palette);
+                    let color = colors.dataset(options.color, dataset_index).point(point_index, point.color());
                     let place = shapes.place(index_id, x, frame.along(center));
                     let item = shapes.add(dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, frame.shape(side, thickness, base, head));
 
