@@ -36,7 +36,8 @@ impl Data {
                 let cluster = |cx: Scalar, cy: Scalar, seed: Scalar| -> Vec<(Scalar, Scalar, Scalar)> {
                     (0..20).map(|i| {
                         let i = i as Scalar + seed;
-                        let jitter = |k: Scalar| ((i * k).sin() * 43758.5453).fract() - 0.5;
+                        // From -0.5 to 0.5: `fract` keeps the sign, so it alone would reach -1.
+                        let jitter = |k: Scalar| ((i * k).sin() * 43758.5453).rem_euclid(1.0) - 0.5;
                         (cx + jitter(12.9898) * 6.0, cy + jitter(78.233) * 6.0, 2.0 + (jitter(39.425) + 0.5) * 50.0)
                     }).collect()
                 };

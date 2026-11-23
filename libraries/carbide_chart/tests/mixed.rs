@@ -100,7 +100,7 @@ fn bars_on_secondary_y_scale() {
     harness.snapshot("bars_on_secondary_y_scale");
 }
 
-/// Revenue as horizontal bars with a target line laid down over them. Pins down that a horizontal
+/// Revenue as horizontal bars with a horizontal target line over them. Pins down that a horizontal
 /// line puts each point on the same row as the bar for its category, through the bars' centres,
 /// and that its values run along the same x scale as the bars.
 #[test]

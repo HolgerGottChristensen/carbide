@@ -62,7 +62,7 @@ fn bars_snap_to_whole_categories() {
     harness.snapshot("bars_snap_to_whole_categories");
 }
 
-/// Lying bars zoomed along their category y scale, and standing bars zoomed along their value
+/// Horizontal bars zoomed along their category y scale, and vertical bars zoomed along their value
 /// scale. Pins down that a vertical category scale's window counts from the first category, at
 /// the top, so the window from 0 to 0.25 shows January to March; and that zooming the value scale
 /// cuts the tall bars off at the chart area's top, the value ticks following the part shown.
@@ -74,7 +74,7 @@ fn zoomed_along_either_scale() {
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(MONTHS).zoom(ZoomWindow::new(0.0, 0.25)))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("lying_bars_zoomed_along_the_categories");
+    harness.snapshot("horizontal_bars_zoomed_along_the_categories");
 
     let chart = Chart::new(BarController::new(revenue))
         .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS))

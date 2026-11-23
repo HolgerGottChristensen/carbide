@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(marker.hit(Position::new(100.0, 100.0 + 5.0 + LINE_TOLERANCE + 0.5)), None);
     }
 
-    /// A rectangle is hit inside only, in its index frame: a lying bar's from and to run along x
+    /// A rectangle is hit inside only, in its index frame: a horizontal bar's from and to run along x
     /// on the screen.
     #[test]
     fn rectangles_are_hit_inside() {
@@ -315,10 +315,10 @@ mod tests {
         assert!(standing.hit(Position::new(15.0, 40.0)).is_none(), "above its head");
         assert_eq!(standing.center(), Some(Position::new(20.0, 125.0)));
 
-        let lying = Shape::Rect { orientation: Orientation::Horizontal, side: 10.0, thickness: 20.0, from: 0.0, to: 150.0 };
-        assert!(lying.hit(Position::new(100.0, 15.0)).is_some());
-        assert!(lying.hit(Position::new(15.0, 100.0)).is_none());
-        assert_eq!(lying.center(), Some(Position::new(75.0, 20.0)));
+        let horizontal = Shape::Rect { orientation: Orientation::Horizontal, side: 10.0, thickness: 20.0, from: 0.0, to: 150.0 };
+        assert!(horizontal.hit(Position::new(100.0, 15.0)).is_some());
+        assert!(horizontal.hit(Position::new(15.0, 100.0)).is_none());
+        assert_eq!(horizontal.center(), Some(Position::new(75.0, 20.0)));
     }
 
     fn polar() -> Polar {

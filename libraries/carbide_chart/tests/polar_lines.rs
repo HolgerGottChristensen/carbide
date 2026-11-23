@@ -1,7 +1,7 @@
 //! Radars: a line controller on two radial scales, its x scale the angle and its y scale the
 //! radius. Covers what `polar.rs` doesn't: fills to a value's ring, the other interpolations and
 //! gaps, colours, the legend, categories and times around the circle, marks that aren't drawn
-//! around a circle yet, and a lying line's fill.
+//! around a circle yet, and a horizontal line's fill.
 
 use carbide_chart::{Axis, CategoryScale, Chart, DataColor, DatasetExt, Estimate, Fill, GridShape, Interpolation, LinearScale, LegendPosition, LineController, Range, RangeDataSetExt, ScaleId, SpanGaps, Stepped, TimeScale, TimeScaleZone};
 use carbide_core::draw::Dimension;
@@ -194,9 +194,9 @@ fn band_and_error_bars() {
     harness.snapshot("band_and_error_bars");
 }
 
-/// A stepped band with a missing value, and error bars on a lying radar. Pins down that a band
+/// A stepped band with a missing value, and error bars on a horizontal radar. Pins down that a band
 /// broken by a gap is open, each run filled between its lows and highs back along the lows, its
-/// steps turning around the polygon rings; and that on a lying radar, whose values run around the
+/// steps turning around the polygon rings; and that on a horizontal radar, whose values run around the
 /// circle, the whiskers run around the ring at each category's distance, from the low's angle to
 /// the high's, with caps along the spoke.
 #[test]
@@ -232,11 +232,11 @@ fn stepped_band_with_a_gap_and_error_bars_around_the_ring() {
     harness.snapshot("error_bars_around_the_ring");
 }
 
-/// A lying radar, its categories out along the radius, filled. Pins down that a line whose
+/// A horizontal radar, its categories out along the radius, filled. Pins down that a line whose
 /// categories run along the radius isn't filled, as there is no ring for its baseline, while its
 /// line and points are drawn as without the fill.
 #[test]
-fn lying_line_with_a_fill() {
+fn horizontal_line_with_a_fill() {
     let ratings = vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4].fill(Fill::Bottom);
 
     let chart = Chart::new(LineController::new(ratings).horizontal(true))
@@ -244,7 +244,7 @@ fn lying_line_with_a_fill() {
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
-    harness.snapshot("lying_line_with_a_fill");
+    harness.snapshot("horizontal_line_with_a_fill");
 }
 
 // ===============================

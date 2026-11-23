@@ -136,7 +136,7 @@ fn between_stacked_lines_of_different_interpolations() {
     harness.snapshot("between_stacked_lines_of_different_interpolations");
 }
 
-/// Three monotone lines in one stack, filled as a stacked area chart, laid down. Pins down that
+/// Three monotone lines in one stack, filled as a stacked area chart, horizontal. Pins down that
 /// each line is drawn at the running total along the x scale, and that each area fills exactly
 /// between its line and the line before it in the stack, sideways.
 #[test]
@@ -230,7 +230,7 @@ fn range_bands_with_curves_and_a_gap() {
     harness.snapshot("range_bands_with_curves_and_a_gap");
 }
 
-/// A lying band with a lying line through it. Pins down that the band follows the controller's
+/// A horizontal band with a horizontal line through it. Pins down that the band follows the controller's
 /// orientation, the categories running down the y scale and the band spreading along the x scale.
 #[test]
 fn horizontal_range_band() {

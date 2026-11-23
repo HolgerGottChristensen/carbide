@@ -202,7 +202,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             )).cross_axis_alignment(CrossAxisAlignment::Start)
         ),
         Toggle::new("Stacked", options.stacked.clone()),
-        Toggle::new("Lying", options.horizontal.clone()),
+        Toggle::new("Horizontal", options.horizontal.clone()),
         VStack::new((
             section("Zoom"),
             zoom_controls("x", &options.x_zoom),

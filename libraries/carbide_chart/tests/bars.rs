@@ -1,5 +1,5 @@
-//! Bar charts: bars growing from zero, grouped datasets splitting a slot, stacked bars, bars
-//! lying down, and floating bars from a low to a high value.
+//! Bar charts: bars growing from zero, grouped datasets splitting a slot, stacked bars, horizontal
+//! bars, and floating bars from a low to a high value.
 
 use carbide_chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, Range, RangeDataSetExt, ScaleId, StackId};
 use carbide_core::draw::Dimension;

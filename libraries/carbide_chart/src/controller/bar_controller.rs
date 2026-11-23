@@ -16,9 +16,9 @@ use crate::controller::orientation::{is_polar, Orientation};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
-/// (y), and the bar grows from zero to the value. Bars stand up by default: the categories run
-/// along the dataset's x scale and the values up its y scale. `horizontal` lays them down, with
-/// the same data: the categories run down the dataset's y scale and the values along its x scale.
+/// (y), and the bar grows from zero to the value. Bars are vertical by default: the categories
+/// run along the dataset's x scale and the values up its y scale. `horizontal` makes them
+/// horizontal, with the same data: the categories run down the dataset's y scale and the values along its x scale.
 ///
 /// The index scale is the one the categories run along, and the value scale the one the bars grow
 /// along. A missing value (see `DataPoint::is_missing`) has no bar, and leaves its place in the
@@ -59,10 +59,10 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
         }
     }
 
-    /// Lays the bars down with `true`, a value or a state of one: each point's category runs down
+    /// Makes the bars horizontal with `true`, a value or a state of one: each point's category runs down
     /// the dataset's y scale, the first at the top on a category scale, and its bar grows along
-    /// the x scale, from zero to the value. The data is read as for standing bars, so the same
-    /// datasets draw either way. `false`, standing, by default.
+    /// the x scale, from zero to the value. The data is read as for vertical bars, so the same
+    /// datasets draw either way. `false`, vertical, by default.
     pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> BarController<D> {
         self.horizontal = option(horizontal);
         self
@@ -476,7 +476,7 @@ pub(crate) fn min_sample_size(mut index_positions: Vec<Scalar>, mut tick_positio
 /// Where one bar starts along the index axis, and how thick it is: the group's slot is
 /// `category_percentage` of `ruler`, centred on the point's category; it is split into
 /// `group_size` equal shares, and the bar is `bar_percentage` of share number `group_index`,
-/// centred in it. Share 0 is at the smaller pixel: the left, or the top for lying bars.
+/// centred in it. Share 0 is at the smaller pixel: the left, or the top for horizontal bars.
 pub(crate) fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_size: usize, category_percentage: Scalar, bar_percentage: Scalar) -> (Scalar, Scalar) {
     let slot = ruler * category_percentage;
     let share = slot / group_size.max(1) as Scalar;
@@ -576,7 +576,7 @@ mod tests {
         assert_eq!(unstacked.get(&ScaleId::Y).range(), Some((0.0, 30.0)), "without a stack, bars don't add up");
     }
 
-    /// Lying bars read the same data as standing ones, with the scales swapped: the categories
+    /// Horizontal bars read the same data as vertical ones, with the scales swapped: the categories
     /// run along the dataset's y scale, which is asked to be an offset category scale with grid
     /// lines between the groups, and the stacked values along its x scale.
     #[test]

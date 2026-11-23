@@ -1550,7 +1550,7 @@ mod tests {
     }
 
     /// Dates make a default scale a time scale, whatever the controller asks for: the x of a bar
-    /// chart, which would be a category scale, and the y of lying bars, where the dates go.
+    /// chart, which would be a category scale, and the y of horizontal bars, where the dates go.
     /// Numbers keep the scales the controllers ask for, and a scale set on the chart is kept.
     #[test]
     fn dates_get_a_default_time_scale() {
@@ -1572,8 +1572,8 @@ mod tests {
         let bars = fitted(Chart::new(BarController::new(days.clone())));
         assert_eq!(kinds(&bars), (Some(ScaleKind::Time), Some(ScaleKind::Linear)), "dates win over the category scale bars ask for");
 
-        let lying = fitted(Chart::new(BarController::new(days.clone()).horizontal(true)));
-        assert_eq!(kinds(&lying), (Some(ScaleKind::Linear), Some(ScaleKind::Time)), "lying bars place their dates on the y scale");
+        let horizontal = fitted(Chart::new(BarController::new(days.clone()).horizontal(true)));
+        assert_eq!(kinds(&horizontal), (Some(ScaleKind::Linear), Some(ScaleKind::Time)), "horizontal bars place their dates on the y scale");
 
         let numbers = fitted(Chart::new(BarController::new(vec![1.0, 2.0])));
         assert_eq!(kinds(&numbers).0, Some(ScaleKind::Category));
@@ -1611,8 +1611,8 @@ mod tests {
         assert_eq!(x.category_index("Thu"), Some(2.0), "and new names follow the labels");
         assert_eq!(x.ticks(), &[0.0, 1.0, 2.0]);
 
-        let lying = fitted(Chart::new(BarController::new(monday).horizontal(true)));
-        assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Category), "lying bars name their categories on the y scale");
+        let horizontal = fitted(Chart::new(BarController::new(monday).horizontal(true)));
+        assert_eq!(horizontal.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Category), "horizontal bars name their categories on the y scale");
     }
 
     /// Text placed on a scale without categories, such as a linear scale set on the chart, isn't
@@ -1648,11 +1648,11 @@ mod tests {
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
         assert_eq!((radar.scales.polar_role(&ScaleId::X), radar.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Angle), Some(PolarRole::Radius)));
 
-        let lying = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]).horizontal(true))
+        let horizontal = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]).horizontal(true))
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial)));
-        assert_eq!((lying.scales.polar_role(&ScaleId::X), lying.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Radius), Some(PolarRole::Angle)));
-        assert_eq!(lying.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Linear), "the categories stayed on x");
-        assert_eq!(scale_range(&lying, ScaleId::X), (0.0, 2.0), "the x scale spans the three categories");
+        assert_eq!((horizontal.scales.polar_role(&ScaleId::X), horizontal.scales.polar_role(&ScaleId::Y)), (Some(PolarRole::Radius), Some(PolarRole::Angle)));
+        assert_eq!(horizontal.default_kinds.get(&ScaleId::Y).copied(), Some(ScaleKind::Linear), "the categories stayed on x");
+        assert_eq!(scale_range(&horizontal, ScaleId::X), (0.0, 2.0), "the x scale spans the three categories");
     }
 
     /// A dataset is drawn in polar coordinates on two radial scales of different roles, and on a
@@ -1660,18 +1660,18 @@ mod tests {
     /// role, belong to no system, so the dataset isn't drawn.
     #[test]
     fn scale_pairs_pick_a_coordinate_system() {
-        let lying = ScaleId::new("lying");
+        let horizontal = ScaleId::new("horizontal");
         let chart = fitted(Chart::new((
             LineController::new(vec![1.0, 2.0]),
-            LineController::new(vec![1.0, 2.0].x_scale(lying.clone())).horizontal(true),
+            LineController::new(vec![1.0, 2.0].x_scale(horizontal.clone())).horizontal(true),
         ))
             .scale(ScaleId::X, CategoryScale::new(Axis::Radial))
-            .scale(lying.clone(), CategoryScale::new(Axis::Radial)));
+            .scale(horizontal.clone(), CategoryScale::new(Axis::Radial)));
 
         let scales = &chart.scales;
         assert_eq!(scales.system(&ScaleId::X, &ScaleId::Y), Some(System::Polar { x_is_angle: true }));
-        assert_eq!(scales.system(&lying, &ScaleId::Y), None, "the y scale is the radius, and so is the lying x scale");
-        assert_eq!(scales.polar_role(&lying), Some(PolarRole::Radius));
+        assert_eq!(scales.system(&horizontal, &ScaleId::Y), None, "the y scale is the radius, and so is the horizontal x scale");
+        assert_eq!(scales.polar_role(&horizontal), Some(PolarRole::Radius));
 
         let cartesian = Scales::new();
         assert_eq!(cartesian.system(&ScaleId::X, &ScaleId::Y), Some(System::Cartesian));

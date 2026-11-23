@@ -310,7 +310,7 @@ mod tests {
 
     /// The same range dataset draws in a bar controller and in a line controller. In a line
     /// controller its band reports the lows and highs, without zero, and doesn't stack, even with a
-    /// stack id; lying down, the band's values go on the x scale. Its legend entry is a square, as
+    /// stack id; when horizontal, the band's values go on the x scale. Its legend entry is a square, as
     /// for a filled area.
     #[test]
     fn ranges_in_lines_report_their_bands() {
@@ -332,9 +332,9 @@ mod tests {
         lines.legend_items(&Environment::new(), &mut legend);
         assert!(matches!(legend.as_slice(), [item] if item.marker == LegendMarker::Square), "{legend:?}");
 
-        let lying = bounds(LineController::new(temperatures.range()).horizontal(true));
-        assert_eq!(lying.get(&ScaleId::X).range(), Some((4.0, 18.0)));
-        assert_eq!(lying.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
+        let horizontal = bounds(LineController::new(temperatures.range()).horizontal(true));
+        assert_eq!(horizontal.get(&ScaleId::X).range(), Some((4.0, 18.0)));
+        assert_eq!(horizontal.get(&ScaleId::Y).range(), Some((0.0, 1.0)));
     }
 
     /// A mark's options can be states, synced with its dataset: syncing a dataset whose inverted

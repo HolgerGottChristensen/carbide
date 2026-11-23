@@ -33,7 +33,7 @@ use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, Scale
 /// `show_line(false)` leaves the lines out, and the areas with them, drawing only the points, at
 /// the same places as with lines, stacked where they stack.
 ///
-/// `horizontal` lays the line down, with the same data, as `BarController::horizontal` does for
+/// `horizontal` makes the line horizontal, with the same data, as `BarController::horizontal` does for
 /// bars: the categories run down the dataset's y scale, the first at the top on a category scale,
 /// and the values along its x scale. Everything that follows the categories follows them down:
 /// monotone curves stay monotone along them, steps step along them, and areas fill sideways to
@@ -57,10 +57,10 @@ impl<D: Sequence<dyn LineDataSet>> LineController<D> {
         }
     }
 
-    /// Lays the line down with `true`, a value or a state of one: each point's category runs down
+    /// Makes the line horizontal with `true`, a value or a state of one: each point's category runs down
     /// the dataset's y scale, the first at the top on a category scale, and its value along the x
-    /// scale. The data is read as for an upright line, so the same datasets draw either way, and
-    /// line up with horizontal bars. `false`, upright, by default.
+    /// scale. The data is read as for a vertical line, so the same datasets draw either way, and
+    /// line up with horizontal bars. `false`, vertical, by default.
     pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> LineController<D> {
         self.horizontal = option(horizontal);
         self
@@ -315,7 +315,7 @@ mod tests {
         assert_eq!(stack_offset(offsets.dataset(1), 0.0), 10.0, "the error bars sit on the line at the total of 15");
     }
 
-    /// A horizontal line reads the same data as an upright one, with the scales swapped: the
+    /// A horizontal line reads the same data as a vertical one, with the scales swapped: the
     /// categories go on the dataset's y scale, which is asked to be a category scale, without the
     /// bars' offset, and the values, with the fill's baseline, on its x scale.
     #[test]

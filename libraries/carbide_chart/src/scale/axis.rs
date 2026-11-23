@@ -392,7 +392,7 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
 
     // Each radius scale's labels sit beside the start spoke, on the side the sweep runs towards:
     // right of a spoke pointing up on a clockwise scale, left of it on a counter-clockwise one. A
-    // lying chart's categories go on the other side, as its bars start at the spoke and run the
+    // horizontal chart's categories go on the other side, as its bars start at the spoke and run the
     // way of the sweep, over labels on that side.
     for (radius_id, radius_scale) in scales.with_role(PolarRole::Radius) {
         if scales.is_decoration_hidden(radius_id) {
@@ -402,7 +402,7 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
         let polar = Polar::new(angle_scale, radius_scale, circle);
         let (start, end) = polar.angle_range();
         let towards_sweep = if end >= start { 1.0 } else { -1.0 };
-        let side_sign = if scales.is_lying(radius_id) { -towards_sweep } else { towards_sweep };
+        let side_sign = if scales.is_horizontal(radius_id) { -towards_sweep } else { towards_sweep };
         let side = Position::new(side_sign * start.cos(), side_sign * start.sin());
         let beside = Position::new(side.x * RADIUS_LABEL_GAP, side.y * RADIUS_LABEL_GAP);
         let alignment = rim_alignment(side);

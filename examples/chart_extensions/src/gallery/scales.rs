@@ -1,17 +1,17 @@
 //! Scales: time, linear, logarithmic and category scales, a second y axis for one dataset, axes on
-//! either side with titles and tick marks, a fixed start and step, and grid lines between
-//! categories.
+//! either side with titles and tick marks, a fixed start and step, grid lines between categories,
+//! and zooming along each scale.
 
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, ControllerSequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, TimeScale, TimeScaleZone};
+use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, ControllerSequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, TimeScale, TimeScaleZone, ZoomWindow};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
 use carbide::draw::Scalar;
-use carbide::state::{LocalState, Map1, Map3};
+use carbide::state::{LocalState, Map1, Map3, Map4, State};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{first_section, section, shown_when, slider, text_input, with_side_bar, Shared};
+use super::{first_section, section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
 
 /// The second y axis, for the second dataset.
 const SECOND: ScaleId = ScaleId::new("second");
@@ -41,6 +41,9 @@ pub(crate) struct Options {
     from_zero: LocalState<bool>,
     step: LocalState<Scalar>,
     grid_offset: LocalState<bool>,
+    x_zoom: LocalState<ZoomWindow>,
+    y_zoom: LocalState<ZoomWindow>,
+    second_zoom: LocalState<ZoomWindow>,
 }
 
 impl Options {
@@ -58,6 +61,9 @@ impl Options {
             from_zero: LocalState::new(false),
             step: LocalState::new(0.0),
             grid_offset: LocalState::new(true),
+            x_zoom: LocalState::new(ZoomWindow::WHOLE),
+            y_zoom: LocalState::new(ZoomWindow::WHOLE),
+            second_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
     }
 }
@@ -87,7 +93,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     let side = VStack::new((
         first_section("Scales"),
         text_input("Title", &options.title),
-        Picker::new("Data", options.data.clone(), (
+        Picker::new("Data", data_resetting_zoom(&options), (
             Text::new("Weather, on a time scale").tag(Data::Weather),
             Text::new("A city by distance, on a linear scale").tag(Data::City),
             Text::new("Words, named by the data").tag(Data::Words),
@@ -116,9 +122,32 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Words),
                 Toggle::new("Grid lines between words", options.grid_offset.clone())),
         )).cross_axis_alignment(CrossAxisAlignment::Start),
+        VStack::new((
+            section("Zoom"),
+            zoom_controls("x", &options.x_zoom),
+            zoom_controls("y", &options.y_zoom),
+            shown_when(options.second_axis.clone(), zoom_controls("Second y", &options.second_zoom)),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     with_side_bar(chart, side, &shared)
+}
+
+/// The data option, which shows each new choice of data whole: picking other data resets every
+/// scale's zoom.
+fn data_resetting_zoom(options: &Options) -> impl State<T=Data> + use<> {
+    Map4::map(
+        options.data.clone(), options.x_zoom.clone(), options.y_zoom.clone(), options.second_zoom.clone(),
+        |data: &Data, _: &ZoomWindow, _: &ZoomWindow, _: &ZoomWindow| *data,
+        |new, mut data, mut x_zoom, mut y_zoom, mut second_zoom| {
+            if *data != new {
+                *data = new;
+                *x_zoom = ZoomWindow::WHOLE;
+                *y_zoom = ZoomWindow::WHOLE;
+                *second_zoom = ZoomWindow::WHOLE;
+            }
+        },
+    )
 }
 
 /// The chart of `data`, its y scale logarithmic when `log` is set, and its second dataset on a
@@ -138,7 +167,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 rainfall.label("Rainfall (mm)").y_scale(second_id),
             )))
                 .scale(ScaleId::X, TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc))
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()));
+                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
             finish(chart, options, shared, log, second)
         }
         Data::City => {
@@ -152,7 +181,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 rent.label("Rent per m²").y_scale(second_id),
             )))
                 .scale(ScaleId::X, LinearScale::new(Axis::Horizontal)
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()));
+                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
             finish(chart, options, shared, log, second)
         }
         Data::Words => {
@@ -164,7 +193,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 letters.label("Letters").y_scale(second_id),
             )))
                 .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).grid_offset(options.grid_offset.clone())
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()));
+                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
             finish(chart, options, shared, log, second)
         }
     }
@@ -177,17 +206,17 @@ fn finish<C: ControllerSequence>(chart: Chart<C>, options: Options, shared: Shar
 
     let chart = if log {
         chart.scale(ScaleId::Y, LogScale::new(Axis::Vertical)
-            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()))
+            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()))
     } else {
         // A start or a step that isn't a number leaves the scale to fit its data.
         let min = Map1::read_map(options.from_zero.clone(), |from_zero: &bool| if *from_zero { 0.0 } else { Scalar::NAN });
         chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).min(min).step(options.step.clone())
-            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()))
+            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()))
     };
 
     let chart = if second {
         let other_side = Map1::read_map(options.y_position.clone(), |side: &AxisPosition| if *side == AxisPosition::Left { AxisPosition::Right } else { AxisPosition::Left });
-        chart.scale(SECOND, LinearScale::new(Axis::Vertical).position(other_side).title("Second dataset").grid_lines(false).tick_marks(options.tick_marks.clone()))
+        chart.scale(SECOND, LinearScale::new(Axis::Vertical).position(other_side).title("Second dataset").grid_lines(false).tick_marks(options.tick_marks.clone()).zoom(options.second_zoom.clone()))
     } else {
         chart
     };

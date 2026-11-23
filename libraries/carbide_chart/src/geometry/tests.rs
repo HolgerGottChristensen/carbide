@@ -29,7 +29,7 @@ fn point_finds_the_bar_under_it() {
     assert_eq!(found[3], vec![], "below the chart area");
 }
 
-/// Standing grouped bars, and lying stacked bars. Pins down that `Index` finds every dataset's
+/// Vertical grouped bars, and horizontal stacked bars. Pins down that `Index` finds every dataset's
 /// bar at the category nearest the position along the index axis, from above the bars along x,
 /// and from beside them along y, where the stack's parts sit at the same category.
 #[test]
@@ -45,7 +45,7 @@ fn index_finds_every_dataset_at_the_nearest_category() {
         .scale(ScaleId::Y, CategoryScale::new(Axis::Vertical).labels(QUARTERS));
 
     // In the empty space right of Q3's stack, a little below its middle.
-    let found = probe(chart, "lying_stacked", vec![(At::Offset(Box::new(At::Datum(key(0, 1, 2))), 110.0, 15.0), PickMode::Index)]);
+    let found = probe(chart, "horizontal_stacked", vec![(At::Offset(Box::new(At::Datum(key(0, 1, 2))), 110.0, 15.0), PickMode::Index)]);
     assert_eq!(found[0], vec![key(0, 0, 2), key(0, 1, 2)]);
 }
 

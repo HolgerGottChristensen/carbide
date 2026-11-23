@@ -28,7 +28,7 @@ fn data_changed_between_renders() {
     harness.snapshot("after_change");
 }
 
-/// Grouped bars whose controller options are states, laid down and narrowed between the two
+/// Grouped bars whose controller options are states, made horizontal and narrowed between the two
 /// snapshots. Pins down that a controller's options follow their states after the chart is built:
 /// the categories move to the y scale and the values to the x scale, and each bar takes less of
 /// its share of the slot.
@@ -43,11 +43,11 @@ fn controller_options_changed_between_renders() {
         .framed();
 
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("standing");
+    harness.snapshot("vertical");
 
     *horizontal.value_mut() = true;
     *bar_percentage.value_mut() = 0.5;
-    harness.snapshot("lying_and_narrower");
+    harness.snapshot("horizontal_and_narrower");
 }
 
 /// Grouped bars whose datasets are a state of a `Vec`, with a third dataset added between the two

@@ -114,7 +114,7 @@ impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> BarMark<D> for Erro
 }
 
 /// Whiskers through a line's points, each the same length across, on top of every dataset's lines
-/// and points. Around a circle they run along each point's spoke, or around its ring on a lying
+/// and points. Around a circle they run along each point's spoke, or around its ring on a horizontal
 /// radar, whose values run around the circle (see `LineCanvas::add_whisker`).
 impl<D: Sequence<dyn RangePoint>, C: ReadState<T=DataColor>> LineMark<D> for ErrorBars<C> {
     fn bounds(&self, data: &D, coordinates: &Coordinates, f: &mut dyn FnMut(Scalar, Scalar, Scalar)) {

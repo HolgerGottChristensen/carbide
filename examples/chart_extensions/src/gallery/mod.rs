@@ -242,7 +242,10 @@ pub(crate) fn with_side_bar(chart: impl Widget, options: impl Widget, shared: &S
                 .cross_axis_alignment(CrossAxisAlignment::Start)
                 .padding(10.0)
                 .toggle_style(CheckboxStyle)
-                .picker_style(MenuStyle),
+                .picker_style(MenuStyle)
+                .scroll()
+                .with_scroll_direction(ScrollDirection::Vertical)
+                .clip(),
         )),
     ).relative_to_end(300.0).boxed()
 }

@@ -4,17 +4,17 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use carbide::asynchronous::Timer;
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId};
+use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId, ZoomWindow};
 use carbide::controls::button::Button;
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
 use carbide::draw::Scalar;
-use carbide::state::{LocalState, Map1, Map2, ReadState, State};
+use carbide::state::{LocalState, Map1, Map2, Map4, ReadState, State};
 use carbide::time::Duration;
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, note, section, shown_when, text_input, with_side_bar, Shared, MONTHS};
+use super::{first_section, note, section, shown_when, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
 
 /// The growth line's own y axis.
 const GROWTH: ScaleId = ScaleId::new("growth");
@@ -37,6 +37,9 @@ pub(crate) struct Options {
     ticks: Arc<AtomicUsize>,
     /// How many live datasets are shown.
     datasets: LocalState<usize>,
+    x_zoom: LocalState<ZoomWindow>,
+    y_zoom: LocalState<ZoomWindow>,
+    growth_zoom: LocalState<ZoomWindow>,
 }
 
 impl Options {
@@ -47,6 +50,9 @@ impl Options {
             own_axis: LocalState::new(true),
             ticks: Arc::new(AtomicUsize::new(60)),
             datasets: LocalState::new(1),
+            x_zoom: LocalState::new(ZoomWindow::WHOLE),
+            y_zoom: LocalState::new(ZoomWindow::WHOLE),
+            growth_zoom: LocalState::new(ZoomWindow::WHOLE),
         }
     }
 }
@@ -74,7 +80,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     let side = VStack::new((
         first_section("Mixed"),
         text_input("Title", &options.title),
-        Picker::new("Data", options.data.clone(), (
+        Picker::new("Data", data_resetting_zoom(&options), (
             Text::new("Revenue and growth").tag(Data::RevenueAndGrowth),
             Text::new("Live readings").tag(Data::Live),
         )),
@@ -101,9 +107,34 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new(Map1::read_map(datasets, |count: &usize| format!("Live datasets: {count}"))),
             note("The line moves on as each reading arrives, keeping the last 60."),
         )).cross_axis_alignment(CrossAxisAlignment::Start)),
+        VStack::new((
+            section("Zoom"),
+            zoom_controls("x", &options.x_zoom),
+            zoom_controls("y", &options.y_zoom),
+            // Growth has a scale of its own only beside the revenue, on its own axis.
+            shown_when(Map2::read_map(options.data.clone(), options.own_axis.clone(), |data: &Data, own: &bool| *data == Data::RevenueAndGrowth && *own),
+                zoom_controls("Growth", &options.growth_zoom)),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     with_side_bar(chart, side, &shared)
+}
+
+/// The data option, which shows each new choice of data whole: picking other data resets every
+/// scale's zoom.
+fn data_resetting_zoom(options: &Options) -> impl State<T=Data> + use<> {
+    Map4::map(
+        options.data.clone(), options.x_zoom.clone(), options.y_zoom.clone(), options.growth_zoom.clone(),
+        |data: &Data, _: &ZoomWindow, _: &ZoomWindow, _: &ZoomWindow| *data,
+        |new, mut data, mut x_zoom, mut y_zoom, mut growth_zoom| {
+            if *data != new {
+                *data = new;
+                *x_zoom = ZoomWindow::WHOLE;
+                *y_zoom = ZoomWindow::WHOLE;
+                *growth_zoom = ZoomWindow::WHOLE;
+            }
+        },
+    )
 }
 
 /// Revenue as bars and its growth as a line, the line on an axis of its own on the right, or on
@@ -120,10 +151,11 @@ pub(super) fn revenue(options: Options, shared: Shared, own_axis: bool) -> Box<d
         LineController::new(growth.label("Growth (%)").y_scale(growth_scale)).palette_offset(1),
     ))
         .title(options.title.clone())
-        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS));
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).zoom(options.x_zoom.clone()))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()));
 
     let chart = if own_axis {
-        chart.scale(GROWTH, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).title("Growth (%)").grid_lines(false))
+        chart.scale(GROWTH, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).title("Growth (%)").grid_lines(false).zoom(options.growth_zoom.clone()))
     } else {
         chart
     };
@@ -147,7 +179,8 @@ pub(super) fn live(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     });
     shared.apply(Chart::new(LineController::new(readings))
         .title(options.title.clone())
-        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Reading")))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Reading").zoom(options.x_zoom.clone()))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone())))
         .boxed()
 }
 

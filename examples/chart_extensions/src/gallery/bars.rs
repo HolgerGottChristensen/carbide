@@ -1,4 +1,4 @@
-//! Bars: grouped, stacked or stacked to 100%, standing or lying, with categories from a scale's
+//! Bars: grouped, stacked or stacked to 100%, vertical or horizontal, with categories from a scale's
 //! labels or named by the data, coloured by dataset or by bar.
 
 use carbide::chart::{Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, ScaleId, StackId, ZoomWindow};
@@ -23,7 +23,7 @@ pub(crate) enum Data {
 
 /// How the bars of the datasets share a category.
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum Stacking {
+pub(super) enum Stacking {
     Grouped,
     Stacked,
     Percent,
@@ -102,8 +102,8 @@ impl Options {
 
 pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     // The data and a scale's axis are fixed when the chart is built, so choosing other data, or
-    // lying the bars down, which swaps the category and value scales, shows a chart built for it.
-    let shown = Map2::read_map(options.data.clone(), options.horizontal.clone(), |data: &Data, lying: &bool| (*data, *lying));
+    // making the bars horizontal, which swaps the category and value scales, shows a chart built for it.
+    let shown = Map2::read_map(options.data.clone(), options.horizontal.clone(), |data: &Data, horizontal: &bool| (*data, *horizontal));
     let (o, s) = (options.clone(), shared.clone());
     let chart = ui!(
         match shown {
@@ -136,7 +136,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("By dataset").tag(ColorBy::Dataset),
             Text::new("By bar").tag(ColorBy::Bar),
         )),
-        Toggle::new("Lying", options.horizontal.clone()),
+        Toggle::new("Horizontal", options.horizontal.clone()),
         slider("Group", &options.category_percentage, 0.1, 1.0, 0.05, percent),
         slider("Bar", &options.bar_percentage, 0.1, 1.0, 0.05, percent),
         Toggle::new("Grid lines", options.grid_lines.clone()),
@@ -148,8 +148,8 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     with_side_bar(chart, side, &shared)
 }
 
-/// The bars of `data`, standing or lying: the categories along x or down y.
-pub(super) fn chart(options: Options, shared: Shared, data: Data, lying: bool) -> Box<dyn AnyWidget> {
+/// The bars of `data`, vertical or horizontal: the categories along x or down y.
+pub(super) fn chart(options: Options, shared: Shared, data: Data, horizontal: bool) -> Box<dyn AnyWidget> {
     let (categories, series) = data.data();
 
     // Grouped, each dataset is a stack of its own; stacked, they share one, normalised for 100%.
@@ -175,7 +175,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, lying: bool) -
         .category_percentage(options.category_percentage.clone())
         .bar_percentage(options.bar_percentage.clone());
 
-    let (category_id, value_id, category_axis, value_axis) = if lying {
+    let (category_id, value_id, category_axis, value_axis) = if horizontal {
         (ScaleId::Y, ScaleId::X, Axis::Vertical, Axis::Horizontal)
     } else {
         (ScaleId::X, ScaleId::Y, Axis::Horizontal, Axis::Vertical)

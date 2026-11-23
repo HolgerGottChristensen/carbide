@@ -72,7 +72,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )),
         // Points' error bars run both ways already, and only range bars can fall.
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data != Data::ScatterErrors),
-            Toggle::new("Lying", options.horizontal.clone())),
+            Toggle::new("Horizontal", options.horizontal.clone())),
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::RangeBars),
             Toggle::new("Falling ranges in their own colour", options.inverted.clone())),
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| matches!(data, Data::Candlesticks | Data::Ohlc)),
@@ -84,7 +84,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
 
 const WEEKS: [&str; 5] = ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"];
 
-/// The chart of the mark `data`, on the default scales, so they follow the bars when they lie down.
+/// The chart of the mark `data`, on the default scales, so they follow the bars when they are horizontal.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
     let horizontal = options.horizontal.clone();
 
@@ -137,7 +137,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         Data::Candlesticks | Data::Ohlc => {
             let mut close: Scalar = 100.0;
             let prices: Vec<Ohlc<Scalar, Scalar>> = (0..30).map(|day| {
-                let step = |k: Scalar| ((day as Scalar * k).sin() * 43758.5453).fract() - 0.5;
+                // From -0.5 to 0.5: `fract` keeps the sign, so it alone would reach -1.
+                let step = |k: Scalar| ((day as Scalar * k).sin() * 43758.5453).rem_euclid(1.0) - 0.5;
                 let open = close;
                 // A walk pulled back towards 100, so the price stays about it.
                 close = open + step(12.9898) * 8.0 + (100.0 - open) * 0.15;

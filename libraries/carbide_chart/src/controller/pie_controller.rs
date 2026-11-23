@@ -55,7 +55,7 @@ pub struct PiePart<'a> {
 /// coloured `ByDataSet` is drawn `ByPoint`. The legend has an entry for each part, by name.
 ///
 /// Each dataset is placed on its x scale, at its name (its label, or its index), and its parts'
-/// running shares, 0 to 100, on its y scale, as lying bars place categories and values. With no
+/// running shares, 0 to 100, on its y scale, as horizontal bars place categories and values. With no
 /// scales set, a chart whose first controller this is makes its default scales radial
 /// (`prefers_polar`), so `Chart::new(PieController::new(values))` draws a pie, and asks them not to
 /// draw their grid, ticks and labels, so only the slices are drawn. Around a circle, x is the
@@ -301,7 +301,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
                 return;
             };
 
-            // A pie's x is its radius around a circle: the roles of a lying controller.
+            // A pie's x is its radius around a circle: the roles of a horizontal controller.
             let Some(polar) = polar_frame(scales, &options.x_scale, &options.y_scale, false) else {
                 placed.push(None);
                 return;

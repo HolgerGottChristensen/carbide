@@ -47,7 +47,7 @@ impl Places for Scales {
 /// itself, and a category's name is its category's index on the scale (see `Value`). Controllers
 /// and marks read every point's x and y through it, so names work wherever numbers do.
 ///
-/// `x` is placed on the scale the point's x goes on, which is the y scale for lying bars and
+/// `x` is placed on the scale the point's x goes on, which is the y scale for horizontal bars and
 /// lines, and `y` on the scale its y goes on.
 #[derive(Copy, Clone)]
 pub struct Coordinates<'a> {

@@ -169,16 +169,16 @@ fn datasets_that_cannot_be_drawn() {
     harness.snapshot("datasets_that_cannot_be_drawn");
 }
 
-/// A lying line, which asks for its x scale to be the radius, before scatter points on the same
-/// scales, which ask for it to be the angle. Pins down that the first to ask wins, so the lying
+/// A horizontal line, which asks for its x scale to be the radius, before scatter points on the same
+/// scales, which ask for it to be the angle. Pins down that the first to ask wins, so the horizontal
 /// line is drawn with its categories out along the radius, and that the scatter points, whose
 /// scales took the other roles, are left out, logged once, rather than drawn in the wrong place.
 #[test]
 fn scatter_points_whose_scales_took_the_other_roles() {
-    let lying = LineController::new(vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4]).horizontal(true);
+    let horizontal = LineController::new(vec![7.3, 6.1, 6.8, 8.6, 5.2, 4.4]).horizontal(true);
     let points = ScatterController::new(vec![(1.0, 5.0), (3.0, 7.0), (4.0, 6.0)]);
 
-    let chart = Chart::new((lying, points))
+    let chart = Chart::new((horizontal, points))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));

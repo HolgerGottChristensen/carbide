@@ -6,8 +6,8 @@ use carbide::impl_state_value;
 /// `Interpolation`, and is drawn in the dataset's colour, translucent, under the lines and points
 /// of its controller.
 ///
-/// The baseline lies along the dataset's value scale: the y scale for an upright line, and the x
-/// scale for a line laid down with `LineController::horizontal`, which fills sideways to it.
+/// The baseline lies along the dataset's value scale: the y scale for a vertical line, and the x
+/// scale for a line made horizontal with `LineController::horizontal`, which fills sideways to it.
 ///
 /// An area assumes the points are in order along the categories (x), as `Interpolation::Monotone`
 /// does: it follows the line in data order and closes along the baseline from the last point back
@@ -21,11 +21,11 @@ pub enum Fill {
     /// To zero. Zero is included in the value scale's bounds, so the area always has its base on
     /// the chart, and parts of the line on the other side of zero are filled back to it.
     Origin,
-    /// To the start of the value scale: the bottom edge of the chart area for an upright line,
-    /// the left edge for a lying one.
+    /// To the start of the value scale: the bottom edge of the chart area for a vertical line,
+    /// the left edge for a horizontal one.
     Bottom,
     /// To the end of the value scale: the top edge of the chart area for an upright line, the
-    /// right edge for a lying one.
+    /// right edge for a horizontal one.
     Top,
     /// To the value. It is included in the value scale's bounds, as zero is for `Origin`.
     Value(Scalar),

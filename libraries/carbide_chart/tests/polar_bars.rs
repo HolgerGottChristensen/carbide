@@ -1,5 +1,5 @@
-//! Bars around a circle: a bar controller on two radial scales. Upright, the categories go around
-//! the circle and the values out along the radius, each bar a wedge; lying down (`horizontal`),
+//! Bars around a circle: a bar controller on two radial scales. When vertical, the categories go
+//! around the circle and the values out along the radius, each bar a wedge; when horizontal,
 //! the categories run out along the radius and the values around the circle, radial bars. Covers
 //! the slots, stacking and grouping, the base at zero, the ring shapes, and the marks that draw
 //! around a circle.
@@ -135,10 +135,10 @@ fn wedges_around_polygons() {
     harness.snapshot("wedges_around_polygons");
 }
 
-/// Floating bars and error bars around a circle, upright and lying down. Pins down that a
-/// floating bar is a wedge from its low's ring to its high's, or, lying down, an arc from its
+/// Floating bars and error bars around a circle, vertical and horizontal. Pins down that a
+/// floating bar is a wedge from its low's ring to its high's, or, when horizontal, an arc from its
 /// low's angle to its high's; and that error bars run along the middle spoke of their bar's
-/// share, caps across it as wide as that share of the wedge where they are, or, lying down,
+/// share, caps across it as wide as that share of the wedge where they are, or, when horizontal,
 /// around the ring through the bar's middle, caps across the ring.
 #[test]
 fn floating_bars_and_error_bars() {
@@ -163,14 +163,14 @@ fn floating_bars_and_error_bars() {
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("upright");
+    harness.snapshot("vertical");
 
     let chart = Chart::new(BarController::new((ranges, estimates)).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(labels))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(10.0))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("lying_down");
+    harness.snapshot("horizontal");
 }
 
 /// Box plots next to bars around a circle. Pins down that box plots, which don't draw around a
@@ -194,7 +194,7 @@ fn box_plots_left_out() {
     harness.snapshot("box_plots_left_out");
 }
 
-/// Radial bars grouped and stacked: a dataset of its own next to a stack of two, lying down, with
+/// Horizontal radial bars grouped and stacked: a dataset of its own next to a stack of two, with
 /// a legend. Pins down that each category's slot out along the radius is split between the group's
 /// members, each a ring of its own; that the stack's second arc goes on around the circle from
 /// where the first ends; and that the legend shows a square per dataset.
@@ -257,9 +257,9 @@ fn stacked_radial_bars_either_side_of_zero() {
     harness.snapshot("stacked_radial_bars_either_side_of_zero");
 }
 
-/// Error bars on stacked bars, upright and lying down. Pins down that each whisker moves with its
+/// Error bars on stacked bars, vertical and horizontal. Pins down that each whisker moves with its
 /// stacked bar, around where the bar ends rather than its own value: upright, along the middle
-/// spoke of the bar's share, beyond the stack's lower wedges; lying down, around the ring through
+/// spoke of the bar's share, beyond the stack's lower wedges; when horizontal, around the ring through
 /// the bar's middle, beyond the stack's earlier arcs.
 #[test]
 fn error_bars_on_stacked_bars() {
@@ -283,12 +283,12 @@ fn error_bars_on_stacked_bars() {
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(labels))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("upright");
+    harness.snapshot("vertical");
 
     let chart = Chart::new(BarController::new((materials.error_bars().stack(COSTS), labour.error_bars().stack(COSTS))).horizontal(true))
         .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(labels))
         .scale(ScaleId::Y, LinearScale::new(Axis::Radial).min(0.0).max(25.0).step(5.0))
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
-    harness.snapshot("lying_down");
+    harness.snapshot("horizontal");
 }

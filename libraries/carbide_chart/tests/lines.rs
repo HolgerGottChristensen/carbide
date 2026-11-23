@@ -1,5 +1,5 @@
 //! Line charts: lines through points, straight, smooth, monotone or stepped, breaking at
-//! gaps, stacked, and lying down.
+//! gaps, stacked, and horizontal.
 
 use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, SpanGaps, StackId, Stepped};
 use carbide_core::draw::Dimension;
@@ -100,7 +100,7 @@ fn stacked() {
     harness.snapshot("stacked");
 }
 
-/// A monotone line filled to zero and a stepped line, both laid down. Pins down that what follows
+/// A monotone line filled to zero and a stepped line, both horizontal. Pins down that what follows
 /// the categories follows them down the chart: the monotone curve never overshoots between two
 /// rows, the steps change value halfway between rows, and the area fills sideways, between the
 /// line and zero on the x scale, left of zero where the values are negative.

@@ -108,7 +108,7 @@ fn on_stacked_lines() {
     harness.snapshot("on_stacked_lines");
 }
 
-/// Lying floating bars beside lying bars with error bars, in one controller. Pins down that both
+/// Horizontal floating bars beside horizontal bars with error bars, in one controller. Pins down that both
 /// marks follow the controller's orientation: the ranges and whiskers run along the x scale, the
 /// whiskers' caps across the bars, and each dataset keeps its share of the slot.
 #[test]

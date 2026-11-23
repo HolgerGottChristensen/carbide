@@ -79,7 +79,7 @@ impl<M: LineMark<D>, D> DatasetLineMark for BoundLineMark<'_, M, D> {
 }
 
 /// What a line mark draws on. Positions are in the index frame: x along the categories and y along
-/// the values, both in pixels, so a mark draws the same code for upright and lying lines. Lines
+/// the values, both in pixels, so a mark draws the same code for vertical and horizontal lines. Lines
 /// and areas traced through it follow the dataset's `interpolation`.
 ///
 /// Around a polar chart's circle, the frame is the circle's own: x is the screen angle, in radians
@@ -303,7 +303,7 @@ impl LineCanvas<'_, '_, '_, '_> {
         let (high_line, low_line) = (flatten(highs, interpolation, area), flatten(lows, interpolation, area));
 
         // Which way the values grow along y in the frame: up the screen for upright lines, whose
-        // pixels grow downwards, and along it for lying ones.
+        // pixels grow downwards, and along it for horizontal ones.
         let higher_is_greater = self.position(0.0, self.value_scale.max()).y >= self.position(0.0, self.value_scale.min()).y;
         let strips = strips(&high_line, &low_line, higher_is_greater);
 

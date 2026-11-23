@@ -1,12 +1,12 @@
-//! Which way a controller's values grow. Bar and line controllers stand upright by default, the
-//! categories along the x scale and the values up the y scale, and can be laid down with
+//! Which way a controller's values grow. Bar and line controllers are vertical by default, the
+//! categories along the x scale and the values up the y scale, and can be made horizontal with
 //! `horizontal`, the categories down the y scale and the values along the x scale. The data is
 //! read the same way both times: a point's x is its category and its y its value.
 //!
 //! Drawing code that depends on which way is which (monotone curves, steps, fills down to a
 //! baseline, the edge of a stacked area) works in the index frame: positions whose x is along the
-//! categories and whose y is along the values. For upright controllers it is the screen itself;
-//! for lying ones it is the screen with x and y swapped, so the same code draws both, and
+//! categories and whose y is along the values. For vertical controllers it is the screen itself;
+//! for horizontal ones it is the screen with x and y swapped, so the same code draws both, and
 //! `Oriented` swaps them back on the way to the canvas.
 
 use carbide::draw::{Dimension, Position, Rect, Scalar};
@@ -42,7 +42,7 @@ impl Orientation {
     }
 
     /// The ids of the dataset's scales the categories and the values go on: its x and y scales
-    /// when upright, its y and x scales when lying down.
+    /// when vertical, its y and x scales when horizontal.
     pub(crate) fn index_and_value_scales(self, options: &DataSetOptions) -> (&ScaleId, &ScaleId) {
         match self {
             Orientation::Vertical => (&options.x_scale, &options.y_scale),
@@ -53,7 +53,7 @@ impl Orientation {
     /// How a dataset with `options` reads its points: as this orientation says, unless it is on
     /// two radial scales. A polar dataset keeps its x on its x scale and its y on its y scale, and
     /// the orientation swaps the scales' roles instead (see `polar_roles`), so the same scales
-    /// and labels draw a radar upright and categories out along the radius lying down.
+    /// and labels draw a radar when vertical and categories out along the radius when horizontal.
     pub(crate) fn for_dataset(self, options: &DataSetOptions, places: &dyn Places) -> Orientation {
         if is_polar(options, places) {
             Orientation::Vertical
@@ -62,8 +62,8 @@ impl Orientation {
         }
     }
 
-    /// The roles of a polar dataset's x and y scales: upright, the x scale is the angle and the
-    /// y scale the radius, so the categories run around the circle; lying down, the other way
+    /// The roles of a polar dataset's x and y scales: when vertical, the x scale is the angle and
+    /// the y scale the radius, so the categories run around the circle; when horizontal, the other way
     /// round, so they run out along the radius.
     pub(crate) fn polar_roles(self) -> (PolarRole, PolarRole) {
         match self {
@@ -80,7 +80,7 @@ impl Orientation {
             bounds.request_polar_role(&options.x_scale, x);
             bounds.request_polar_role(&options.y_scale, y);
             if self == Orientation::Horizontal {
-                bounds.request_lying(&options.x_scale);
+                bounds.request_horizontal(&options.x_scale);
             }
         }
     }
@@ -173,7 +173,7 @@ mod tests {
     use crate::controller::line_path::PathSink;
     use super::{Oriented, Orientation};
 
-    /// The index frame of a lying controller is the screen with x and y swapped, the chart area
+    /// The index frame of a horizontal controller is the screen with x and y swapped, the chart area
     /// included, and a path traced in it reaches the screen swapped back.
     #[test]
     fn the_horizontal_frame_swaps_x_and_y() {

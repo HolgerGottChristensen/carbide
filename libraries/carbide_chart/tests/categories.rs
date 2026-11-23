@@ -51,11 +51,11 @@ fn after_the_scale_labels() {
     harness.snapshot("after_the_scale_labels");
 }
 
-/// Lying bars, stacked, naming their categories, with the second dataset naming them in another
+/// Horizontal bars, stacked, naming their categories, with the second dataset naming them in another
 /// order and one the first doesn't. Pins down that the categories go on the y scale, from the top,
 /// and that bars stack by category name, not by their position in their dataset.
 #[test]
-fn stacked_and_lying() {
+fn stacked_and_horizontal() {
     const COSTS: StackId = StackId::new("costs");
 
     let materials = vec![("Kitchen", 12.0), ("Bath", 8.0), ("Garden", 5.0)];
@@ -64,7 +64,7 @@ fn stacked_and_lying() {
     let chart = Chart::new(BarController::new((materials.stack(COSTS), labour.stack(COSTS))).horizontal(true)).framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
-    harness.snapshot("stacked_and_lying");
+    harness.snapshot("stacked_and_horizontal");
 }
 
 /// Scatter points whose y names a status, at times along x. Pins down that text works on the y

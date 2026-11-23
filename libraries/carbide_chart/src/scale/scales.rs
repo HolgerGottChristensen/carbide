@@ -91,8 +91,8 @@ pub struct ScaleRequest {
     polar_role: Option<PolarRole>,
     /// Whether a dataset asked for the other role than the first.
     polar_role_conflict: bool,
-    /// Whether a lying controller's categories run out along the scale (see `request_lying`).
-    lying: bool,
+    /// Whether a horizontal controller's categories run out along the scale (see `request_horizontal`).
+    horizontal: bool,
     /// Whether a controller asked for the scale's grid, ticks and labels not to be drawn (see
     /// `request_hidden_decoration`).
     hidden_decoration: bool,
@@ -224,11 +224,11 @@ impl ScaleBounds {
         self.change(id, |request| request.hidden_decoration = true);
     }
 
-    /// Notes that a lying controller (`horizontal`) has its categories on the radial scale `id`,
+    /// Notes that a horizontal controller has its categories on the radial scale `id`,
     /// out along the radius, so its labels give way to the bars that start beside them (see
-    /// `Scales::is_lying`).
-    pub(crate) fn request_lying(&self, id: &ScaleId) {
-        self.change(id, |request| request.lying = true);
+    /// `Scales::is_horizontal`).
+    pub(crate) fn request_horizontal(&self, id: &ScaleId) {
+        self.change(id, |request| request.horizontal = true);
     }
 
     /// Asks for the radial scale `id` to be the angle or the radius of its polar chart on this
@@ -356,8 +356,8 @@ pub struct Scales {
     circle: Option<Circle>,
     /// Each radial scale's role on the last fit.
     roles: IndexMap<ScaleId, PolarRole>,
-    /// The radial scales a lying controller's categories ran out along on the last fit.
-    lying: HashSet<ScaleId>,
+    /// The radial scales a horizontal controller's categories ran out along on the last fit.
+    horizontal: HashSet<ScaleId>,
     /// The scales whose grid, ticks and labels aren't drawn (see `set_decoration_hidden`).
     hidden_decoration: HashSet<ScaleId>,
     /// What was already logged about a dataset's pair of scales, so each is logged once.
@@ -370,7 +370,7 @@ impl Scales {
         scales.insert(ScaleId::X, Box::new(LinearScale::new(Axis::Horizontal)));
         scales.insert(ScaleId::Y, Box::new(LinearScale::new(Axis::Vertical)));
 
-        Scales { scales, grid_shapes: IndexMap::new(), circle: None, roles: IndexMap::new(), lying: HashSet::new(), hidden_decoration: HashSet::new(), warned_pairs: RefCell::new(HashSet::new()) }
+        Scales { scales, grid_shapes: IndexMap::new(), circle: None, roles: IndexMap::new(), horizontal: HashSet::new(), hidden_decoration: HashSet::new(), warned_pairs: RefCell::new(HashSet::new()) }
     }
 
     /// Adds `scale` under `id`. A scale already under `id` is replaced in place, so replacing a
@@ -429,9 +429,9 @@ impl Scales {
         self.hidden_decoration = ids;
     }
 
-    /// Whether a lying controller's categories ran out along the radial scale `id` on the last fit.
-    pub(crate) fn is_lying(&self, id: &ScaleId) -> bool {
-        self.lying.contains(id)
+    /// Whether a horizontal controller's categories ran out along the radial scale `id` on the last fit.
+    pub(crate) fn is_horizontal(&self, id: &ScaleId) -> bool {
+        self.horizontal.contains(id)
     }
 
     /// The scales with `role`, in the chart's order.
@@ -559,7 +559,7 @@ impl Scales {
     pub fn fit(&mut self, bounds: &ScaleBounds) {
         self.grid_shapes.clear();
         self.roles.clear();
-        self.lying.clear();
+        self.horizontal.clear();
 
         for (id, scale) in &mut self.scales {
             let request = bounds.get(id);
@@ -568,8 +568,8 @@ impl Scales {
                 self.grid_shapes.insert(id.clone(), shape);
             }
 
-            if request.lying && scale.axis() == Axis::Radial {
-                self.lying.insert(id.clone());
+            if request.horizontal && scale.axis() == Axis::Radial {
+                self.horizontal.insert(id.clone());
             }
 
             let role = request.polar_role().filter(|_| scale.axis() == Axis::Radial);

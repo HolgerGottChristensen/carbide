@@ -609,7 +609,7 @@ fn trace_lower_edge(path: &mut impl PathSink, below: &DrawnLine, top: &[Position
 }
 
 /// Where a fill's baseline is along `value_axis`, the axis the values grow along: a y for upright
-/// lines and an x for lying ones. Baseline values are included in the value scale's bounds, but a
+/// lines and an x for horizontal ones. Baseline values are included in the value scale's bounds, but a
 /// scale can still end before one: a category scale with labels spans its labels, whatever the
 /// data. A value outside the scale's range then fills to the nearest end of it, as bars grow from
 /// the end nearest zero. `Fill::Bottom` is the start of the value axis and `Fill::Top` its end.

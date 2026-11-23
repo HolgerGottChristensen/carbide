@@ -199,7 +199,7 @@ impl BarFrame<'_> {
 
 /// Where a point's glyph goes along the index axis, in pixels: the centre of its category, and
 /// the dataset's share of the category's slot, from `side`, `thickness` long. Share 0 is at the
-/// smaller pixel: the left, or the top for lying bars. Around a polar chart's circle, in the
+/// smaller pixel: the left, or the top for horizontal bars. Around a polar chart's circle, in the
 /// circle's frame (see `BarCanvas`): screen angles in radians for categories around the circle,
 /// distances from the centre for categories out along the radius.
 ///
@@ -246,11 +246,11 @@ impl BarSlots<'_> {
 }
 
 /// What a bar mark draws on. Positions are in the index frame: x along the categories and y along
-/// the values, both in pixels, so a mark draws the same code for standing and lying bars.
+/// the values, both in pixels, so a mark draws the same code for vertical and horizontal bars.
 ///
 /// Around a polar chart's circle, the frame is the circle's own: for upright bars, x is the
 /// screen angle, in radians clockwise from the top, and y the distance from the centre, in pixels;
-/// for lying bars, whose categories run out along the radius, the other way round. A mark that
+/// for horizontal bars, whose categories run out along the radius, the other way round. A mark that
 /// draws through `value_pixel`, `fill_rect` and `add_whisker` draws wedges and whiskers around the
 /// circle unchanged, and says so with `BarMark::draws_around_a_circle`.
 pub struct BarCanvas<'x, 'a, 'b, 'c: 'b> {
@@ -348,7 +348,7 @@ impl BarCanvas<'_, '_, '_, '_> {
     /// started. Along a side, it is straight along the value axis. Around a circle it follows the
     /// values: out along the wedge's middle spoke for upright bars, its caps across the spoke and as
     /// wide as that share of the wedge where they are; or around the ring through the bar's middle
-    /// for lying bars, its caps across the ring.
+    /// for horizontal bars, its caps across the ring.
     pub fn add_whisker(&mut self, slot: &BarSlot, low: Scalar, high: Scalar, cap_share: Scalar) {
         let middle = slot.middle();
         let (from, to) = (self.value_pixel(low), self.value_pixel(high));

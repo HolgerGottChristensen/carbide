@@ -77,7 +77,7 @@ dyn_clone::clone_trait_object!(LineDataSet);
 /// through `scatter_marks`.
 ///
 /// Scatter charts are a family of their own, apart from line charts: their points sit freely on
-/// two numeric scales, in any order, with no index to group, stack or lay down along, so the
+/// two numeric scales, in any order, with no index to group, stack or make horizontal, so the
 /// marks that suit them differ. A band along the categories suits lines, a size per point suits
 /// scatter points, and a mark that suits both implements both families.
 ///

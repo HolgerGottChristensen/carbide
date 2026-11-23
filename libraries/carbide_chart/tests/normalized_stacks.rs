@@ -32,11 +32,11 @@ fn bars_of_100_percent() {
     harness.snapshot("bars_of_100_percent");
 }
 
-/// Lying 100% stacked bars with a negative value. Pins down that `horizontal` stacks the shares
+/// Horizontal 100% stacked bars with a negative value. Pins down that `horizontal` stacks the shares
 /// along x; that the absolute values make up the total, so a stack with a negative part splits the
 /// 100 between its two sides of zero; and that a category whose values are all zero has no bar.
 #[test]
-fn lying_bars_with_a_negative_part() {
+fn horizontal_bars_with_a_negative_part() {
     const SHARE: StackId = StackId::new("share").normalized();
 
     let gains = vec![30.0, 60.0, 0.0, 25.0].stack(SHARE).label("Gains");
@@ -48,7 +48,7 @@ fn lying_bars_with_a_negative_part() {
         .framed();
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
-    harness.snapshot("lying_bars_with_a_negative_part");
+    harness.snapshot("horizontal_bars_with_a_negative_part");
 }
 
 /// A 100% stacked area: three filled lines in one normalised stack. Pins down that the top line
@@ -74,7 +74,7 @@ fn area_of_100_percent() {
     harness.snapshot("area_of_100_percent");
 }
 
-/// Normalised radial bars: lying bars around a circle, in one normalised stack. Pins down that
+/// Normalised radial bars: horizontal bars around a circle, in one normalised stack. Pins down that
 /// every ring goes all the way round, as the angle scale fits the stack's 0 to 100 exactly, each
 /// arc its share of the ring, so each ring is a doughnut of its own category's parts.
 #[test]
@@ -92,4 +92,25 @@ fn rings_of_100_percent() {
     let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
 
     harness.snapshot("rings_of_100_percent");
+}
+
+/// Normalised wedges: upright bars around a circle, in one normalised stack, with totals that
+/// differ from quarter to quarter. Pins down that every wedge reaches the rim, as the radius scale
+/// fits the stack's 0 to 100, each part a ring of its slice as wide as its share of its quarter's
+/// total, the first from the centre.
+#[test]
+fn wedges_of_100_percent() {
+    const SHARE: StackId = StackId::new("share").normalized();
+
+    let north = vec![30.0, 50.0, 20.0, 45.0].stack(SHARE).label("North");
+    let south = vec![50.0, 20.0, 40.0, 15.0].stack(SHARE).label("South");
+    let west = vec![20.0, 30.0, 60.0, 40.0].stack(SHARE).label("West");
+
+    let chart = Chart::new(BarController::new((north, south, west)))
+        .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(QUARTERS))
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 500.0));
+
+    harness.snapshot("wedges_of_100_percent");
 }

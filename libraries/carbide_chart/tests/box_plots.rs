@@ -32,7 +32,7 @@ fn grouped() {
     harness.snapshot("grouped");
 }
 
-/// Lying box plots. Pins down that the boxes, medians, whiskers and caps follow the controller's
+/// Horizontal box plots. Pins down that the boxes, medians, whiskers and caps follow the controller's
 /// orientation: the categories down the y scale, the values along the x scale, the caps across.
 #[test]
 fn horizontal() {
