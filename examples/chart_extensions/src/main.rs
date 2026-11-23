@@ -48,7 +48,7 @@ mod tests {
         for (example, at) in [
             (Example::Bars, Position::new(450.0, 300.0)),
             (Example::Lines, Position::new(300.0, 350.0)),
-            (Example::Bubbles, Position::new(520.0, 450.0)),
+            (Example::Scatter, Position::new(520.0, 450.0)),
             (Example::Pie, Position::new(600.0, 300.0)),
             (Example::Polar, Position::new(560.0, 300.0)),
             (Example::Scales, Position::new(450.0, 300.0)),

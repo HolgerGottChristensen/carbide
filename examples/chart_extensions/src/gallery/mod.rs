@@ -3,7 +3,6 @@
 //! is in a module of its own.
 
 mod bars;
-mod bubbles;
 mod custom;
 mod lines;
 mod marks;
@@ -11,6 +10,7 @@ mod mixed;
 mod pie;
 mod polar;
 mod scales;
+mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
 use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, ZoomWindow};
@@ -32,7 +32,7 @@ use carbide::ui;
 pub enum Example {
     Bars,
     Lines,
-    Bubbles,
+    Scatter,
     Pie,
     Polar,
     Scales,
@@ -49,7 +49,7 @@ pub(crate) const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 pub fn gallery(selected: LocalState<Example>) -> impl Widget {
     let shared = Shared::new();
 
-    let (bars, lines, bubbles, pie, polar) = (bars::Options::new(), lines::Options::new(), bubbles::Options::new(), pie::Options::new(), polar::Options::new());
+    let (bars, lines, scatter, pie, polar) = (bars::Options::new(), lines::Options::new(), scatter::Options::new(), pie::Options::new(), polar::Options::new());
     let (scales, marks, mixed, custom) = (scales::Options::new(), marks::Options::new(), mixed::Options::new(), custom::Options::new());
     let s = shared.clone();
 
@@ -57,7 +57,7 @@ pub fn gallery(selected: LocalState<Example>) -> impl Widget {
         match selected {
             Example::Bars => bars::view(bars.clone(), s.clone()),
             Example::Lines => lines::view(lines.clone(), s.clone()),
-            Example::Bubbles => bubbles::view(bubbles.clone(), s.clone()),
+            Example::Scatter => scatter::view(scatter.clone(), s.clone()),
             Example::Pie => pie::view(pie.clone(), s.clone()),
             Example::Polar => polar::view(polar.clone(), s.clone()),
             Example::Scales => scales::view(scales.clone(), s.clone()),
@@ -70,7 +70,7 @@ pub fn gallery(selected: LocalState<Example>) -> impl Widget {
     let tool_bar = HStack::new((
         example_button("Bars", Example::Bars, &selected, &shared),
         example_button("Lines", Example::Lines, &selected, &shared),
-        example_button("Bubbles", Example::Bubbles, &selected, &shared),
+        example_button("Scatter", Example::Scatter, &selected, &shared),
         example_button("Pie", Example::Pie, &selected, &shared),
         example_button("Polar", Example::Polar, &selected, &shared),
         example_button("Scales", Example::Scales, &selected, &shared),
