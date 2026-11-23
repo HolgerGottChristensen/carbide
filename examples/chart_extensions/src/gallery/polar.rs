@@ -9,7 +9,7 @@ use carbide::draw::{Angle, Scalar};
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{degrees, percent, section, shown_when, slider, text_input, with_side_bar, Shared, MONTHS};
+use super::{first_section, degrees, percent, section, shown_when, slider, text_input, with_side_bar, Shared, MONTHS};
 
 const SKILLS: [&str; 6] = ["Speed", "Strength", "Stamina", "Passing", "Shooting", "Defence"];
 
@@ -70,7 +70,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Polar"),
+        first_section("Polar"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Radar of two players").tag(Data::Players),

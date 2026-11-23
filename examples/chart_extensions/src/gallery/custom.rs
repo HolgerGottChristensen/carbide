@@ -10,7 +10,7 @@ use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
 use chart_extensions::{Kelvin, LogScale, LollipopController};
-use super::{section, shown_when, text_input, with_side_bar, Shared};
+use super::{first_section, shown_when, text_input, with_side_bar, Shared};
 
 
 /// The data the custom chart can show, drawn with this crate's own chart elements.
@@ -75,7 +75,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Custom"),
+        first_section("Custom"),
         Text::new("Drawn with this crate's own\nLollipopController, LogScale and\nKelvin values, through the public API."),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (

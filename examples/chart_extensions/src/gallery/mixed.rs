@@ -14,7 +14,7 @@ use carbide::state::{LocalState, Map1, Map2, ReadState, State};
 use carbide::time::Duration;
 use carbide::widget::*;
 use carbide::ui;
-use super::{note, section, shown_when, text_input, with_side_bar, Shared, MONTHS};
+use super::{first_section, note, section, shown_when, text_input, with_side_bar, Shared, MONTHS};
 
 /// The growth line's own y axis.
 const GROWTH: ScaleId = ScaleId::new("growth");
@@ -72,7 +72,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     let (more, fewer) = (datasets.clone(), datasets.clone());
 
     let side = VStack::new((
-        section("Mixed"),
+        first_section("Mixed"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Revenue and growth").tag(Data::RevenueAndGrowth),

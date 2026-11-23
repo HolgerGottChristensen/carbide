@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{section, shown_when, slider, text_input, with_side_bar, Shared};
+use super::{first_section, section, shown_when, slider, text_input, with_side_bar, Shared};
 
 /// The second y axis, for the second dataset.
 const SECOND: ScaleId = ScaleId::new("second");
@@ -85,7 +85,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Scales"),
+        first_section("Scales"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Weather, on a time scale").tag(Data::Weather),

@@ -9,7 +9,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
 
 /// The data the line chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -38,7 +38,8 @@ enum Curve {
 enum Gaps {
     Break,
     Bridge,
-    BridgeShort,
+    /// Bridge gaps up to the gap slider's width along x.
+    BridgeWithin,
 }
 
 impl Data {
@@ -87,6 +88,7 @@ pub(crate) struct Options {
     curve: LocalState<Curve>,
     tension: LocalState<Scalar>,
     gaps: LocalState<Gaps>,
+    gap_width: LocalState<Scalar>,
     fill: LocalState<Fill>,
     stacked: LocalState<bool>,
     x_zoom: LocalState<ZoomWindow>,
@@ -103,6 +105,7 @@ impl Options {
             curve: LocalState::new(Curve::Monotone),
             tension: LocalState::new(0.4),
             gaps: LocalState::new(Gaps::Break),
+            gap_width: LocalState::new(3.0),
             fill: LocalState::new(Fill::None),
             stacked: LocalState::new(false),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
@@ -126,7 +129,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Lines"),
+        first_section("Lines"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("The carbide chart example").tag(Data::CarbideExample),
@@ -150,11 +153,18 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         ),
         shown_when(
             Map1::read_map(options.data.clone(), |data: &Data| *data == Data::Gaps),
-            Picker::new("Gaps", options.gaps.clone(), (
-                Text::new("Break the line").tag(Gaps::Break),
-                Text::new("Bridge them").tag(Gaps::Bridge),
-                Text::new("Bridge up to 3").tag(Gaps::BridgeShort),
-            ))
+            VStack::new((
+                Picker::new("Gaps", options.gaps.clone(), (
+                    Text::new("Break the line").tag(Gaps::Break),
+                    Text::new("Bridge them").tag(Gaps::Bridge),
+                    Text::new("Bridge the narrow ones").tag(Gaps::BridgeWithin),
+                )),
+                // How wide a gap may be, along x, and still be bridged.
+                shown_when(
+                    Map1::read_map(options.gaps.clone(), |gaps: &Gaps| *gaps == Gaps::BridgeWithin),
+                    slider("Up to", &options.gap_width, 1.0, 12.0, 1.0, |width| format!("{width:.0}"))
+                ),
+            )).cross_axis_alignment(CrossAxisAlignment::Start)
         ),
         Picker::new("Fill", options.fill.clone(), (
             Text::new("None").tag(Fill::None),
@@ -189,10 +199,10 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         Curve::StepsAfter => Interpolation::Stepped(Stepped::After),
     });
 
-    let span_gaps = Map1::read_map(options.gaps.clone(), |gaps: &Gaps| match gaps {
+    let span_gaps = Map2::read_map(options.gaps.clone(), options.gap_width.clone(), |gaps: &Gaps, width: &Scalar| match gaps {
         Gaps::Break => SpanGaps::Never,
         Gaps::Bridge => SpanGaps::Always,
-        Gaps::BridgeShort => SpanGaps::Within(3.0),
+        Gaps::BridgeWithin => SpanGaps::Within(*width),
     });
 
     let lines: Vec<Box<dyn LineDataSet>> = data.data().into_iter().map(|(name, values)| {

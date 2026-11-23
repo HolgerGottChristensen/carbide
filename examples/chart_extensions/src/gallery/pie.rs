@@ -9,7 +9,7 @@ use carbide::draw::{Angle, Scalar};
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{degrees, percent, section, shown_when, slider, text_input, with_side_bar, Shared};
+use super::{first_section, degrees, percent, shown_when, slider, text_input, with_side_bar, Shared};
 
 /// The data the pie can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -95,7 +95,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Pie"),
+        first_section("Pie"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Spending, two years").tag(Data::Spending),

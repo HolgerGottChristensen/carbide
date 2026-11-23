@@ -8,7 +8,7 @@ use carbide::draw::Scalar;
 use carbide::state::LocalState;
 use carbide::widget::*;
 use carbide::ui;
-use super::{pixels, section, slider, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, pixels, section, slider, text_input, with_side_bar, zoom_controls, Shared};
 
 /// The data the bubble chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -84,7 +84,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Bubbles"),
+        first_section("Bubbles"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Stores").tag(Data::Stores),

@@ -10,7 +10,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1};
 use carbide::widget::*;
 use carbide::ui;
-use super::{note, section, shown_when, text_input, with_side_bar, Shared};
+use super::{first_section, note, shown_when, text_input, with_side_bar, Shared};
 
 /// The mark shown, each on data of the kind it draws.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -59,7 +59,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Marks"),
+        first_section("Marks"),
         text_input("Title", &options.title),
         Picker::new("Mark", options.data.clone(), (
             Text::new("Error bars on bars").tag(Data::ErrorBars),

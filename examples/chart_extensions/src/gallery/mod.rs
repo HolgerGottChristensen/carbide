@@ -247,8 +247,13 @@ pub(crate) fn with_side_bar(chart: impl Widget, options: impl Widget, shared: &S
     ).relative_to_end(300.0).boxed()
 }
 
-/// A heading in the side bar.
+/// A heading in the side bar, set apart from the section above it.
 pub(crate) fn section(title: &str) -> impl Widget + use<> {
+    first_section(title).padding(EdgeInsets::single(12.0, 0.0, 0.0, 0.0))
+}
+
+/// The heading at the top of a side bar, with nothing above it to be set apart from.
+pub(crate) fn first_section(title: &str) -> impl Widget + use<> {
     Text::new(title.to_string()).font_size(EnvironmentFontSize::Title3)
 }
 

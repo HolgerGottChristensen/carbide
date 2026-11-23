@@ -9,7 +9,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{percent, section, slider, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
+use super::{first_section, percent, section, slider, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
 
 /// The data the bar chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -119,7 +119,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     );
 
     let side = VStack::new((
-        section("Bars"),
+        first_section("Bars"),
         text_input("Title", &options.title),
         Picker::new("Data", options.data.clone(), (
             Text::new("Sales by region").tag(Data::Regions),
