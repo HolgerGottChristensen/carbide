@@ -196,10 +196,6 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
         MouseArea::new(self).hovered(hovered)
     }
 
-    fn boxed(self) -> Box<dyn AnyWidget> where Self: WidgetProperties<Kind=WidgetKindSimple> {
-        Box::new(self)
-    }
-
     fn on_key_pressed<A2: OnKeyAction>(self, action: A2) -> OnKey<A2, fn(&KeyboardKey, ModifierKey, &mut KeyboardEventContext), Self> {
         OnKey::new(self)
             .on_key_pressed(action)

@@ -24,6 +24,13 @@ use crate::widget::properties::WidgetKindSimple;
 pub trait AnyWidget: EventHandler + Initialize + Update + Accessibility + Layout + Render + Focusable + DynClone + Debug + 'static {
     fn as_widget(&self) -> &dyn AnyWidget;
     fn as_widget_mut(&mut self) -> &mut dyn AnyWidget;
+
+    fn boxed(self) -> Box<dyn AnyWidget>
+    where
+        Self: Sized + WidgetProperties<Kind=WidgetKindSimple> + 'static,
+    {
+        Box::new(self)
+    }
 }
 
 impl dyn AnyWidget {
@@ -58,6 +65,11 @@ impl AnyWidget for Box<dyn AnyWidget> {
     }
 
     fn as_widget_mut(&mut self) -> &mut dyn AnyWidget {
+        self
+    }
+
+    fn boxed(self) -> Box<dyn AnyWidget>
+    {
         self
     }
 }
