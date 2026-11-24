@@ -1,9 +1,8 @@
-use crate::DataSet;
-use crate::sequence::{tuple_sequences, Sequence};
+use crate::{DataSet, Sequence};
 
 /// The datasets of one controller: any `Sequence` of datasets.
 ///
-/// Implemented for, with `D` any dataset that is `Clone` (see `sequence.rs`):
+/// Implemented for, with `D` any dataset that is `Clone` (see `Sequence`):
 /// - tuples `(D1,)` to `(D1, …, D12)`, each of its own dataset type;
 /// - collections (`Collection`): `Vec<D>`, `[D; N]`, `VecDeque<D>`, `Box<[D]>`, `Rc<[D]>`,
 ///   `Arc<[D]>`, `&'static [D]`, and any type of your own implementing `Collection`;
@@ -32,5 +31,3 @@ use crate::sequence::{tuple_sequences, Sequence};
 pub trait DataSetSequence: Sequence<dyn DataSet> {}
 
 impl<S: Sequence<dyn DataSet>> DataSetSequence for S {}
-
-tuple_sequences!([] dyn DataSet);

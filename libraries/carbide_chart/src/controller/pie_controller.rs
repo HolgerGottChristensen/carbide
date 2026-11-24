@@ -7,7 +7,8 @@ use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, PieDataSet, Value};
 use crate::mark::MarkRole;
-use crate::controller::{bar_slot, DatasetController};
+use crate::controller::bar_slot;
+use crate::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{Datum, DatumKey, Shapes};
 use crate::interaction::{DatumInfo, ValueText};
@@ -21,7 +22,7 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::mark::BarFrame;
 use crate::scale::{GridShape, ScaleBounds, ScaleKind, Scales, System};
 use crate::scale::polar::{angle_range, direction};
-use crate::sequence::{IntoSequence, Sequence};
+use crate::{IntoSequence, Sequence};
 use crate::style::axis_style;
 
 /// How far a leader line runs out from its slice before it turns level.

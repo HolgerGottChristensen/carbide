@@ -10,8 +10,10 @@ use crate::controller::drawing::PolarFrame;
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::mark::line_mark::polar_whisker;
-use crate::mark::{Mark, MarkRole, Role};
-use crate::scale::{Coordinates, Scale, ScaleId};
+use crate::mark::MarkRole;
+use crate::{Mark, Role};
+use crate::scale::{Coordinates, ScaleId};
+use crate::Scale;
 use crate::geometry::{Along, Datum, ShapeKind, Shapes};
 
 /// A mark that can be drawn in a bar controller's slots, for datasets of type `D`. Implementing

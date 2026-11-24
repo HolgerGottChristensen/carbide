@@ -4,7 +4,9 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadState, ReadStateExt};
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, Scale, MIN_ZOOM_SPAN};
+use crate::scale::{Axis, AxisOptions, AxisPosition, MIN_ZOOM_SPAN};
+
+use crate::Scale;
 
 /// At most how many labelled ticks a log scale shows: more powers than this show every second,
 /// fifth or tenth one.
@@ -335,7 +337,9 @@ impl LogScale {
 mod tests {
     use carbide::draw::Scalar;
 
-    use crate::scale::{Axis, Scale};
+    use crate::scale::Axis;
+
+    use crate::Scale;
     use super::LogScale;
 
     fn fitted(scale: LogScale, min: Scalar, max: Scalar) -> LogScale {

@@ -13,7 +13,8 @@ use carbide::draw::{Alignment, Angle, Dimension, Position, Rect, Scalar};
 use carbide::math::Vector3;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
-use crate::scale::{Axis, AxisPosition, GridShape, PolarRole, Scale, Scales};
+use crate::scale::{Axis, AxisPosition, GridShape, PolarRole, Scales};
+use crate::Scale;
 use crate::scale::polar::{self, Circle, Polar, RimLabel, Ring};
 use crate::style::axis_style;
 

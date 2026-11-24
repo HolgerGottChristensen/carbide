@@ -8,7 +8,8 @@
 use std::f64::consts::{FRAC_PI_2, TAU};
 use carbide::draw::{Dimension, Position, Rect, Scalar};
 use crate::controller::line_path::PathSink;
-use crate::scale::{AngleDirection, Scale};
+use crate::scale::AngleDirection;
+use crate::Scale;
 
 /// The gap between the rim and the labels around it.
 pub(crate) const RIM_LABEL_GAP: Scalar = 6.0;
@@ -419,7 +420,8 @@ mod tests {
     use std::f64::consts::{FRAC_PI_2, PI};
     use carbide::draw::{Angle, Dimension, Position, Rect, Scalar};
     use crate::controller::line_path::PathSink;
-    use crate::scale::{AngleDirection, Axis, CategoryScale, LinearScale, PolarRole, Scale};
+    use crate::scale::{AngleDirection, Axis, CategoryScale, LinearScale, PolarRole};
+    use crate::Scale;
     use super::{fit_circle, trace_arc, Circle, Polar, RimLabel, Ring};
 
     fn close(a: Position, b: Position) -> bool {

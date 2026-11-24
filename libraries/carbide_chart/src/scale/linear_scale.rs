@@ -4,7 +4,9 @@ use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExt};
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, MIN_ZOOM_SPAN};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, MIN_ZOOM_SPAN};
+
+use crate::Scale;
 
 const MIN_TICK_SPACING: f64 = 1e-14;
 
@@ -466,7 +468,8 @@ mod tests {
     use carbide::draw::Scalar;
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
-    use crate::scale::{Axis, LinearScale, Scale};
+    use crate::scale::{Axis, LinearScale};
+    use crate::Scale;
 
     /// A fixed start, end and step replace the fitted ones exactly, whatever the data: an angle
     /// from 0 to 360 in steps of 45, for data from 10 to 320.

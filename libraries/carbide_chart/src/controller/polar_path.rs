@@ -175,7 +175,8 @@ mod tests {
     use carbide::draw::{Position, Scalar};
     use crate::controller::line_path::PathSink;
     use crate::element::{Interpolation, Stepped};
-    use crate::scale::{Axis, Circle, LinearScale, Polar, PolarRole, Scale};
+    use crate::scale::{Axis, Circle, LinearScale, Polar, PolarRole};
+    use crate::Scale;
     use crate::scale::polar::RingShape;
     use super::{trace_polar_line, trace_polar_line_reversed, PolarPoint};
 

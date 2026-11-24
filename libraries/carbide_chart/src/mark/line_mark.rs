@@ -10,8 +10,10 @@ use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed,
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::legend::LegendMarker;
-use crate::mark::{LegendContext, Mark, MarkRole, Role};
-use crate::scale::{Coordinates, Scale};
+use crate::mark::{LegendContext, MarkRole};
+use crate::{Mark, Role};
+use crate::scale::Coordinates;
+use crate::Scale;
 
 /// A mark that can be drawn by a line controller, for datasets of type `D`. Implementing it is
 /// what lets a dataset with this mark be drawn by a `LineController` (see `LineDataSet`).

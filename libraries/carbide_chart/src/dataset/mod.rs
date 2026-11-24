@@ -1,9 +1,6 @@
-mod dataset;
-mod datapoint;
-mod datavalue;
-mod dataset_sequence;
+mod point_value;
+mod value;
 mod dataset_options;
-mod dataset_ext;
 mod options_dataset;
 mod stack_id;
 mod range_point;
@@ -13,13 +10,10 @@ mod ohlc_point;
 
 use carbide::draw::Color;
 use carbide::impl_state_value;
-pub use datapoint::*;
-pub use dataset::*;
-pub use datavalue::*;
-pub use dataset_sequence::*;
+pub use point_value::PointValue;
+pub use value::Value;
 pub use stack_id::StackId;
 pub use dataset_options::*;
-pub use dataset_ext::*;
 pub use range_point::{Estimate, Range, RangePoint, Spread};
 pub use sized_point::{Bubble, SizedPoint};
 pub use box_point::{BoxPoint, BoxStats};

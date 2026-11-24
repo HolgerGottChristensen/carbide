@@ -3,9 +3,10 @@ use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Marked, Overlay, ScatterCanvas, ScatterMark};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Marked, Overlay, ScatterCanvas, ScatterMark};
+use crate::Mark;
 use crate::scale::Coordinates;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// Draws a whisker from each point's low to its high value, with a cap at each end, on top of the
 /// dataset's glyph (see `RangeDataSetExt::error_bars`): through the middle of its bar in a bar

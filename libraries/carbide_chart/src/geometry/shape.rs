@@ -331,7 +331,8 @@ mod tests {
     use carbide::draw::{Position, Scalar};
     use crate::controller::orientation::Orientation;
     use crate::geometry::Datum;
-    use crate::scale::{Axis, CategoryScale, Circle, LinearScale, Polar, PolarRole, Scale};
+    use crate::scale::{Axis, CategoryScale, Circle, LinearScale, Polar, PolarRole};
+    use crate::Scale;
     use super::{Along, Hit, Polyline, ShapeKind, LINE_TOLERANCE};
 
     /// A marker is hit on it and within the tolerance around its edge, measured from the edge.

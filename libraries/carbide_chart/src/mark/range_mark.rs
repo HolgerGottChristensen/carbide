@@ -3,9 +3,10 @@ use carbide::environment::Environment;
 use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::RangePoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Mark, Marked, Primary};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LineCanvas, LineMark, Marked, Primary};
+use crate::Mark;
 use crate::scale::Coordinates;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// Draws a dataset's ranges, from each point's low to its high value (see `RangeDataSetExt::range`):
 /// in a bar controller, each point as a floating bar in place of a bar growing from zero; in a

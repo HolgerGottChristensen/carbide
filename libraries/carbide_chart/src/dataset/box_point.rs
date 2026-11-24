@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::{DataPoint, PointValue};
-use crate::dataset::datavalue::{DataValue, Value};
-use crate::sequence::SequenceItem;
+use crate::{DataPoint, PointValue};
+use crate::{DataValue, Value};
+use crate::SequenceItem;
 
 /// A data point with the five statistics a box plot draws: the minimum, the first quartile, the
 /// median, the third quartile and the maximum. Box plots (`BoxDataSetExt::box_plot`) exist only on

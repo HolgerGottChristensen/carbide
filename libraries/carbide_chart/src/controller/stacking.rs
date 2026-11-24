@@ -7,7 +7,7 @@ use crate::{DataSetOptions, StackId};
 use crate::controller::orientation::Orientation;
 use crate::mark::AsDataSet;
 use crate::scale::{Coordinates, Places, ScaleId};
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// Which datasets stack together: those in one controller with the same stack on the same x and
 /// y scales. A dataset without a stack stands alone.

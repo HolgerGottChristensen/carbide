@@ -6,7 +6,8 @@ use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::mark::{DatasetBarMark, DatasetLineMark, DatasetPieMark, DatasetScatterMark};
 use crate::scale::ScaleId;
-use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
+use crate::common::tuple_sequences;
+use crate::{Sequence, SequenceItem};
 
 /// A dataset a `BarController` can draw: a plain dataset, or one whose marks can all be drawn in
 /// bar slots (`BarMark`). The bar controller reads the marks through `bar_marks`.

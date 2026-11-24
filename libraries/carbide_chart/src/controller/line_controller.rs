@@ -2,7 +2,7 @@ use carbide::state::IntoReadState;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
-use crate::controller::DatasetController;
+use crate::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
@@ -13,7 +13,7 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{LineCanvas, LineDataSet, MarkRole, LegendContext};
 use crate::controller::stacking::{normalized_totals, stack_offset, StackKey, StackOffsets, StackSums};
-use crate::sequence::{IntoSequence, Sequence};
+use crate::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleKind, Scales};
 
 /// Draws each dataset as a line through its points, in order, with the points on top. The line
@@ -338,7 +338,7 @@ impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
 mod tests {
     use carbide::environment::Environment;
     use crate::{DatasetExt, Fill};
-    use crate::controller::DatasetController;
+    use crate::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
     use super::LineController;
 

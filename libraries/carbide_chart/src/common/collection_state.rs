@@ -1,18 +1,4 @@
-//! The chart's own sequence trait. Points, datasets and controllers are all sequences of the
-//! level below: a `DataSet` is a sequence of `DataPoint`s, a `DataSetSequence` a sequence of
-//! `DataSet`s, and a `ControllerSequence` a sequence of `DatasetController`s.
-//!
-//! Unlike carbide's widget `Sequence`, reading one goes only through `&self`, handing each item
-//! to a callback, and never asks for an item by index. That is what lets a state be a sequence:
-//! a state lends its value only through a borrow guard that lives inside the call, so
-//! `LocalState<Vec<Position>>` is a dataset, and `LocalState<Vec<LocalState<Vec<Position>>>>` a
-//! sequence of datasets. Only `sync` reaches the items mutably, through the containers that can
-//! lend them so (`Collection::visit_items_mut`, `CollectionState::with_collection_mut`).
-
-use std::collections::VecDeque;
 use std::fmt::Debug;
-use std::rc::Rc;
-use std::sync::Arc;
 use carbide::cell::ValueRefMut;
 use carbide::environment::Environment;
 use carbide::state::StateSync;
@@ -25,172 +11,7 @@ use carbide::state::{
     ReadState, StateContract, ValueState,
 };
 
-/// An ordered sequence of `T`s, visited in order with their index.
-#[diagnostic::on_unimplemented(
-    message = "`{Self}` is not a sequence of `{T}`",
-    label = "not a sequence of `{T}`",
-    note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
-)]
-pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &T));
-
-    /// Syncs the states in the sequence with the environment: the sequence itself when it is a
-    /// state, and its items. Returns whether anything may have changed. The chart syncs its
-    /// controllers before every update, render and event, as carbide syncs a widget's states, so
-    /// reads afterwards see the current values without syncing.
-    fn sync(&mut self, env: &mut Environment) -> bool;
-
-    fn count(&self) -> usize {
-        let mut count = 0;
-        self.foreach(&mut |_, _| count += 1);
-        count
-    }
-}
-
-/// A value that can be visited as a `T`, at `index` in its sequence. Containers (collections,
-/// states holding a collection, tuples) are sequences of anything that is an item, so they are
-/// written once for points, datasets and controllers alike.
-///
-/// The index is passed in so an item can depend on its position: a plain `Scalar` is the point
-/// `(index, value)`.
-#[diagnostic::on_unimplemented(
-    message = "`{Self}` can't be an item in a sequence of `{T}`",
-    label = "not an item of a sequence of `{T}`",
-    note = "the items are data points or plain `Scalar` y values in a dataset, datasets in a controller, and controllers in a chart",
-)]
-pub trait SequenceItem<T: ?Sized>: Debug + Clone + 'static {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &T));
-
-    /// Syncs the states in the item with the environment, and returns whether anything may have
-    /// changed. By default there is nothing to sync: a data point or a plain `Scalar` holds no
-    /// states. Datasets and controllers sync theirs.
-    fn sync(&mut self, _env: &mut Environment) -> bool {
-        false
-    }
-}
-
-/// A container of items: what a sequence is made of.
-///
-/// Every collection is a `Sequence` of anything its items are (`SequenceItem`). Implemented for
-/// `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, and for every
-/// `CollectionState`, so `LocalState<VecDeque<Position>>` is a dataset and
-/// `GlobalState<Rc<[Vec<Scalar>]>>` a sequence of datasets. Implementing it for a type of your own
-/// makes that type, and every state holding it, a sequence.
-///
-/// The items are visited through a callback rather than returned as an iterator: a state can only
-/// lend its value through a borrow guard that lives inside the call.
-///
-/// It is implemented once per collection type, not through a blanket implementation over
-/// `IntoIterator`: a blanket over a trait from another crate would conflict with the tuple
-/// implementations. As `Collection` belongs to this crate, the blanket implementations over it
-/// don't conflict with anything.
-#[diagnostic::on_unimplemented(
-    message = "`{Self}` is not a collection of items",
-    label = "not a collection",
-    note = "collections are `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>` and `&'static [_]`, any state holding one (`CollectionState`), and any type implementing `Collection`",
-)]
-pub trait Collection: Debug + Clone + 'static {
-    type Item;
-
-    /// Calls `f` with each item and its index, in order.
-    fn visit_items(&self, f: &mut dyn FnMut(usize, &Self::Item));
-
-    fn len(&self) -> usize;
-
-    /// Syncs the collection itself with the environment, and returns whether it may have
-    /// changed. A plain container has nothing to sync; a state holding a collection syncs the
-    /// state.
-    fn sync(&mut self, _env: &mut Environment) -> bool {
-        false
-    }
-
-    /// Calls `f` with each item, mutably, so the sequence can sync the items. By default no items
-    /// are visited: a container that shares its items (`Rc<[_]>`, `Arc<[_]>`, `&'static [_]`)
-    /// or only lends them for reading can't hand out `&mut`, so items inside it aren't synced.
-    fn visit_items_mut(&mut self, _f: &mut dyn FnMut(usize, &mut Self::Item)) {}
-}
-
-/// Implements `Collection` for a container whose items are visited through `.iter()`. With
-/// `mut`, the container owns its items, so they are also visited mutably, through `.iter_mut()`,
-/// for syncing.
-macro_rules! collection {
-    (@impl [$($generics:tt)*] $collection:ty { $($extra:tt)* }) => {
-        impl<I: Debug + Clone + 'static, $($generics)*> Collection for $collection {
-            type Item = I;
-
-            fn visit_items(&self, f: &mut dyn FnMut(usize, &I)) {
-                for (index, item) in self.iter().enumerate() {
-                    f(index, item);
-                }
-            }
-
-            fn len(&self) -> usize {
-                <[I]>::len(&self[..])
-            }
-
-            $($extra)*
-        }
-    };
-    (mut [$($generics:tt)*] $collection:ty) => {
-        collection!(@impl [$($generics)*] $collection {
-            fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut I)) {
-                for (index, item) in self.iter_mut().enumerate() {
-                    f(index, item);
-                }
-            }
-        });
-    };
-    ([$($generics:tt)*] $collection:ty) => {
-        collection!(@impl [$($generics)*] $collection {});
-    };
-}
-
-collection!(mut [] Vec<I>);
-collection!(mut [const N: usize] [I; N]);
-collection!(mut [] Box<[I]>);
-// Shares its items without copying them: cloning an `Rc` only copies a pointer.
-collection!([] Rc<[I]>);
-// Shares its items without copying them, across threads.
-collection!([] Arc<[I]>);
-// Static data, borrowed rather than copied.
-collection!([] &'static [I]);
-
-impl<I: Debug + Clone + 'static> Collection for VecDeque<I> {
-    type Item = I;
-
-    fn visit_items(&self, f: &mut dyn FnMut(usize, &I)) {
-        for (index, item) in self.iter().enumerate() {
-            f(index, item);
-        }
-    }
-
-    fn len(&self) -> usize {
-        VecDeque::len(self)
-    }
-
-    fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut I)) {
-        for (index, item) in self.iter_mut().enumerate() {
-            f(index, item);
-        }
-    }
-}
-
-/// Every collection is a sequence of anything its items are.
-impl<T: ?Sized + 'static, C: Collection> Sequence<T> for C where C::Item: SequenceItem<T> {
-    fn foreach(&self, f: &mut dyn FnMut(usize, &T)) {
-        self.visit_items(&mut |index, item| item.visit(index, f));
-    }
-
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        let mut changed = Collection::sync(self, env);
-        self.visit_items_mut(&mut |_, item| changed |= <C::Item as SequenceItem<T>>::sync(item, env));
-        changed
-    }
-
-    fn count(&self) -> usize {
-        self.len()
-    }
-}
+use crate::Collection;
 
 /// A state holding a collection. It is a collection of the same items, read through its current
 /// value, so the items and their number can change after the chart is built.
@@ -231,31 +52,6 @@ pub trait CollectionState: Debug + Clone + 'static {
     fn with_collection_mut(&mut self, _f: &mut dyn FnMut(&mut Self::Value)) {}
 }
 
-/// A state holding a collection is a collection of the same items.
-impl<S: CollectionState> Collection for S {
-    type Item = <S::Value as Collection>::Item;
-
-    fn visit_items(&self, f: &mut dyn FnMut(usize, &Self::Item)) {
-        self.with_collection(&mut |collection| collection.visit_items(f));
-    }
-
-    fn len(&self) -> usize {
-        let mut len = 0;
-        self.with_collection(&mut |collection| len = collection.len());
-        len
-    }
-
-    /// Syncs the state, then the collection it holds, in case that is a state too.
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        let mut changed = CollectionState::sync(self, env);
-        self.with_collection_mut(&mut |collection| changed |= Collection::sync(collection, env));
-        changed
-    }
-
-    fn visit_items_mut(&mut self, f: &mut dyn FnMut(usize, &mut Self::Item)) {
-        self.with_collection_mut(&mut |collection| collection.visit_items_mut(f));
-    }
-}
 
 /// Implements `CollectionState` for a carbide state holding any collection `C`: read through
 /// `AnyReadState::value_dyn`, synced through `StateSync::sync`. With `mut`, the state stores its
@@ -352,93 +148,6 @@ map_states!(RMap10, EnvMap10, RWMap10, RWOMap10; T1 S1, T2 S2, T3 S3, T4 S4, T5 
 map_states!(RMap11, EnvMap11, RWMap11, RWOMap11; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11);
 map_states!(RMap12, EnvMap12, RWMap12, RWOMap12; T1 S1, T2 S2, T3 S3, T4 S4, T5 S5, T6 S6, T7 S7, T8 S8, T9 S9, T10 S10, T11 S11, T12 S12);
 
-/// Marks the `IntoSequence` implementation for a single item, which becomes a sequence of one.
-#[doc(hidden)]
-pub struct One;
-
-/// Marks the `IntoSequence` implementation for a value that is already a sequence.
-#[doc(hidden)]
-pub struct Many;
-
-/// What a constructor takes where it wants a sequence: a sequence, or a single item, which
-/// becomes a sequence of one. So `LineController::new(data)` and `LineController::new((a, b))`
-/// both work.
-///
-/// A single item can't simply be a `Sequence` of one itself: a `Vec` of datasets would then be
-/// both a sequence of its datasets and, being a dataset when its items are points, a sequence of
-/// one. The marker `M` keeps the two implementations apart; it is always inferred.
-#[diagnostic::on_unimplemented(
-    message = "`{Self}` is neither a `{T}` nor a sequence of them",
-    label = "expected a `{T}`, or a sequence of them",
-    note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
-    note = "a tuple can mix item types; the other sequences hold items of one type, so box items of different types with `.boxed()` to mix them",
-    note = "a dataset with a mark is a `dyn BarDataSet`, `dyn LineDataSet` or `dyn ScatterDataSet` only when the mark can be drawn by that kind of controller: `.range()` and `.error_bars()` are drawn by bar and line controllers, `.box_plot()`, `.candles()` and `.ohlc()` by bar controllers, and `.bubbles()` by scatter controllers",
-)]
-pub trait IntoSequence<T: ?Sized, M> {
-    type Sequence: Sequence<T>;
-
-    fn into_sequence(self) -> Self::Sequence;
-}
-
-impl<T: ?Sized + 'static, S: Sequence<T>> IntoSequence<T, Many> for S {
-    type Sequence = S;
-
-    fn into_sequence(self) -> S {
-        self
-    }
-}
-
-/// Implements `Sequence<$item>` for tuples of up to 12 items, and `IntoSequence<$item, One>` for
-/// a single item, as a 1-tuple. Tuples are implemented per item kind, not for every `T`: a tuple
-/// of points would make `(f64, f64)` both a point and a dataset.
-macro_rules! tuple_sequences {
-    ([$($generics:tt)*] $item:ty) => {
-        impl<$($generics)* I: $crate::sequence::SequenceItem<$item>> $crate::sequence::IntoSequence<$item, $crate::sequence::One> for I {
-            type Sequence = (I,);
-
-            fn into_sequence(self) -> (I,) {
-                (self,)
-            }
-        }
-
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G) (7 H));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G) (7 H) (8 J));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G) (7 H) (8 J) (9 K));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G) (7 H) (8 J) (9 K) (10 L));
-        $crate::sequence::tuple_sequences!(@tuples [$($generics)*] $item; (0 A) (1 B) (2 C) (3 D) (4 E) (5 F) (6 G) (7 H) (8 J) (9 K) (10 L) (11 M));
-    };
-    (@tuples [$($generics:tt)*] $item:ty; $(($index:tt $name:ident))+) => {
-        impl<$($generics)* $($name: $crate::sequence::SequenceItem<$item>),+> $crate::sequence::Sequence<$item> for ($($name,)+) {
-            fn foreach(&self, f: &mut dyn FnMut(usize, &$item)) {
-                $(
-                    self.$index.visit($index, f);
-                )+
-            }
-
-            fn count(&self) -> usize {
-                [$($index),+].len()
-            }
-
-            fn sync(&mut self, env: &mut carbide::environment::Environment) -> bool {
-                let mut changed = false;
-                $(
-                    changed |= <$name as $crate::sequence::SequenceItem<$item>>::sync(&mut self.$index, env);
-                )+
-                changed
-            }
-        }
-    };
-}
-
-pub(crate) use tuple_sequences;
-
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;
@@ -466,26 +175,6 @@ mod tests {
     const VALUES: [Scalar; 3] = [3.0, 5.0, 4.0];
     const INDEXED: [(Scalar, Scalar); 3] = [(0.0, 3.0), (1.0, 5.0), (2.0, 4.0)];
     static STATIC_VALUES: [Scalar; 3] = VALUES;
-
-    /// Every collection is a dataset of points (plain values at their index), and a sequence of
-    /// datasets.
-    #[test]
-    fn collections_are_sequences() {
-        assert_eq!(points(&VALUES.to_vec()), INDEXED);
-        assert_eq!(points(&VALUES), INDEXED);
-        assert_eq!(points(&VecDeque::from(VALUES.to_vec())), INDEXED);
-        assert_eq!(points(&Box::<[Scalar]>::from(VALUES)), INDEXED);
-        assert_eq!(points(&Rc::<[Scalar]>::from(VALUES)), INDEXED);
-        assert_eq!(points(&Arc::<[Scalar]>::from(VALUES)), INDEXED);
-        assert_eq!(points(&&STATIC_VALUES[..]), INDEXED);
-
-        let positions: Rc<[Position]> = Rc::from(vec![Position::new(1.0, 2.0)]);
-        assert_eq!(points(&positions), vec![(1.0, 2.0)]);
-
-        assert_eq!(dataset_count(&[VALUES.to_vec(), VALUES.to_vec()]), 2);
-        assert_eq!(dataset_count(&VecDeque::from(vec![VALUES.to_vec()])), 1);
-        assert_eq!(dataset_count(&Rc::<[Vec<Scalar>]>::from(vec![VALUES.to_vec(); 3])), 3);
-    }
 
     /// Every state of a `Vec` is a dataset, read through its current value, so a change to the
     /// state shows on the next read.
@@ -540,43 +229,13 @@ mod tests {
         assert_eq!(dataset_count(&datasets), 2);
     }
 
-    /// A collection type of your own, implementing `Collection`, is a sequence, and so is every
-    /// state holding it.
-    #[test]
-    fn custom_collections_are_sequences() {
-        #[derive(Clone, Debug)]
-        struct Readings { values: Vec<Scalar> }
-
-        impl super::Collection for Readings {
-            type Item = Scalar;
-
-            fn visit_items(&self, f: &mut dyn FnMut(usize, &Scalar)) {
-                for (index, value) in self.values.iter().enumerate() {
-                    f(index, value);
-                }
-            }
-
-            fn len(&self) -> usize {
-                self.values.len()
-            }
-        }
-
-        let readings = Readings { values: VALUES.to_vec() };
-        assert_eq!(points(&readings), INDEXED);
-
-        let mut state = LocalState::new(readings);
-        assert_eq!(points(&state), INDEXED);
-        *state.value_mut() = Readings { values: vec![1.0] };
-        assert_eq!(points(&state), vec![(0.0, 1.0)]);
-    }
-
     /// A state type of your own, implementing `CollectionState` generically over the collection,
     /// works with every collection: the standard ones, one of your own, and collections of
     /// datasets. States of states work too.
     #[test]
     fn custom_states_are_sequences() {
         use std::cell::RefCell;
-        use super::{Collection, CollectionState};
+        use crate::{Collection, CollectionState};
 
         /// A shared, swappable value, standing in for a user's own state type. It isn't a carbide
         /// state: it lends its value through a `RefCell` borrow.

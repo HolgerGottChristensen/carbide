@@ -10,7 +10,8 @@ use carbide::event::ModifierKey;
 use crate::controller::orientation::pixel_normalized;
 use crate::geometry::DatumKey;
 use crate::legend::LegendMarker;
-use crate::scale::{Axis, Scale, ScaleId, ScaleValue, ZoomWindow};
+use crate::scale::{Axis, ScaleId, ScaleValue, ZoomWindow};
+use crate::Scale;
 
 /// What the pointer found in a chart: where it is, in the chart's own coordinates, from its
 /// top-left corner; the data found there, as the chart's pick mode finds them (see

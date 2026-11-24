@@ -5,7 +5,7 @@ use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
 use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// A dataset with options set through `DatasetExt`. Every option is a state, synced with the
 /// rest of the dataset (see `DataSet::sync`) and read as it was last synced when the chart asks

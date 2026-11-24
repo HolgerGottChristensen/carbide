@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::{DataPoint, PointValue};
-use crate::dataset::datavalue::{DataValue, Value};
-use crate::sequence::SequenceItem;
+use crate::{DataPoint, PointValue};
+use crate::{DataValue, Value};
+use crate::SequenceItem;
 
 /// A data point with an open, a high, a low and a close value, such as a trading period's prices.
 /// Candlesticks and OHLC bars (`OhlcDataSetExt`) exist only on datasets of such points.

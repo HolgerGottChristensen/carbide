@@ -12,7 +12,8 @@
 use carbide::draw::{Dimension, Position, Rect, Scalar};
 use crate::DataSetOptions;
 use crate::controller::line_path::PathSink;
-use crate::scale::{Axis, Places, PolarRole, Scale, ScaleBounds, ScaleId};
+use crate::scale::{Axis, Places, PolarRole, ScaleBounds, ScaleId};
+use crate::Scale;
 
 /// The direction a controller's values grow in: up the y scale, the categories along x
 /// (`Vertical`, the default), or along the x scale, the categories down y (`Horizontal`). A

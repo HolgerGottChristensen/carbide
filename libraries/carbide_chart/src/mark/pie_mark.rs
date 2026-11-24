@@ -1,7 +1,8 @@
 use carbide::draw::Scalar;
 use crate::dataset::SizedPoint;
-use crate::mark::{Mark, MarkRole, Primary, Role};
-use crate::sequence::Sequence;
+use crate::mark::{MarkRole, Primary};
+use crate::{Mark, Role};
+use crate::Sequence;
 
 /// A mark that can be drawn by a pie controller, for datasets of type `D`: implementing it is what
 /// lets a dataset with this mark be drawn by a `PieController` (see `PieDataSet`). A pie's parts

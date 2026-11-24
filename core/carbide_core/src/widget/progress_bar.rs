@@ -5,7 +5,7 @@ use crate::CommonWidgetImpl;
 use crate::draw::{Dimension, Position};
 use crate::environment::EnvironmentColor;
 use crate::state::ReadStateExt;
-use crate::widget::{Capsule, CommonWidget, Empty, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
+use crate::widget::{AnyWidget, Capsule, CommonWidget, Empty, HSplit, Spacer, Widget, WidgetExt, WidgetId, ZStack};
 
 #[derive(Debug, Clone, Widget)]
 pub struct ProgressBar<P, W> where P: ReadState<T=f64>, W: Widget {

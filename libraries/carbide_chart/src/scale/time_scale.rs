@@ -9,7 +9,8 @@ use carbide_derive::StateValue;
 use chrono::{DateTime, Datelike, FixedOffset, Local, Months, NaiveDate, NaiveDateTime, TimeDelta, TimeZone, Timelike};
 
 use crate::{DataValue, Value};
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, MIN_ZOOM_SPAN};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, MIN_ZOOM_SPAN};
+use crate::Scale;
 
 /// The time zone a `TimeScale` places its ticks in and shows its labels in: whole days start at
 /// midnight in it, and months on its first of the month.
@@ -495,7 +496,8 @@ mod tests {
     use chrono::{DateTime, FixedOffset, TimeZone};
 
     use crate::{DataValue, Value};
-    use crate::scale::{Axis, Scale};
+    use crate::scale::Axis;
+    use crate::Scale;
     use super::{TimeScale, TimeScaleZone, TimeUnit};
 
     fn utc() -> FixedOffset {

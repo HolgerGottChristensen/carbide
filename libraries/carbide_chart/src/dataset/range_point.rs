@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use carbide::draw::Scalar;
-use crate::dataset::datapoint::{DataPoint, PointValue};
-use crate::dataset::datavalue::{DataValue, Value};
-use crate::sequence::SequenceItem;
+use crate::{DataPoint, PointValue};
+use crate::{DataValue, Value};
+use crate::SequenceItem;
 
 /// A data point with a low and a high value next to its x and y: the two ends of a floating bar,
 /// or the error interval around a measured value. Marks that draw ranges (`RangeDataSetExt`)

@@ -5,9 +5,10 @@ use carbide::state::{IntoReadState, ReadState};
 use crate::DataColor;
 use crate::dataset::OhlcPoint;
 use crate::legend::LegendMarker;
-use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Mark, Marked, Primary};
+use crate::mark::{BarCanvas, BarMark, BarSlots, LegendContext, Marked, Primary};
+use crate::Mark;
 use crate::scale::Coordinates;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// How a `CandleMark` draws each period.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

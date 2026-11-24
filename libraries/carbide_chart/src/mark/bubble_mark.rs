@@ -3,9 +3,10 @@ use carbide::draw::Scalar;
 use crate::DataColor;
 use crate::legend::LegendMarker;
 use crate::dataset::SizedPoint;
-use crate::mark::{LegendContext, Mark, Primary, ScatterCanvas, ScatterMark, SizeScale};
+use crate::mark::{LegendContext, Primary, ScatterCanvas, ScatterMark, SizeScale};
+use crate::Mark;
 use crate::scale::Coordinates;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// Draws each point as a bubble whose area is proportional to its size, in place of a point (see
 /// `SizedDataSetExt::bubbles`). The controller maps the sizes of all its datasets through one size

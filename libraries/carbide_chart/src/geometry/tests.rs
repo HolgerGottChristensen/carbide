@@ -280,7 +280,7 @@ mod support {
     use carbide_fluent::{locale, LocaleExt};
     use carbide_testing::Harness;
     use crate::Chart;
-    use crate::controller::ControllerSequence;
+    use crate::ControllerSequence;
     use carbide::draw::Rect;
     use carbide::environment::Environment;
     use crate::{DataSet, DatasetController, IntoSequence, Orientation, PolarRole, ScaleBounds, Scales, Sequence, Shape};

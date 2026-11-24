@@ -1,8 +1,9 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::BoxPoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, Mark, Primary};
+use crate::mark::{BarCanvas, BarMark, BarSlots, Primary};
+use crate::Mark;
 use crate::scale::Coordinates;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// Draws each point as a box plot, in place of a bar (see `BoxDataSetExt::box_plot`): a box from
 /// the first to the third quartile with a line across it at the median, and a whisker from each

@@ -9,9 +9,10 @@ use crate::dataset::{BoxPoint, OhlcPoint, OptionsDataset, RangePoint, SizedPoint
 use crate::mark::bar_mark::BoundBarMark;
 use crate::mark::line_mark::BoundLineMark;
 use crate::mark::scatter_mark::BoundScatterMark;
-use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetPieMark, DatasetScatterMark, LineDataSet, LineMark, Mark, Overlay, PieDataSet, PieMark, ScatterDataSet, ScatterMark};
+use crate::mark::{BarDataSet, BarMark, DatasetBarMark, DatasetLineMark, DatasetPieMark, DatasetScatterMark, LineDataSet, LineMark, Overlay, PieDataSet, PieMark, ScatterDataSet, ScatterMark};
+use crate::Mark;
 use crate::mark::pie_mark::BoundPieMark;
-use crate::sequence::Sequence;
+use crate::Sequence;
 
 /// A dataset with a mark, made by a mark's extension method, such as `RangeDataSetExt::range`, or
 /// by `DatasetExt::draw_as` and `DatasetExt::overlay` for marks of your own. It

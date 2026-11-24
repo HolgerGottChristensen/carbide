@@ -1,9 +1,10 @@
 use carbide::state::{IntoReadState, IntoState};
 use crate::{DataColor, DataSet, StackId};
-use crate::dataset::options_dataset::OptionsDataset;
+use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
-use crate::mark::{IntoBoxed, Mark, Marked, Overlay, Primary, WithoutPrimaryMark};
+use crate::Mark;
+use crate::mark::{IntoBoxed, Marked, Overlay, Primary, WithoutPrimaryMark};
 
 
 pub trait DatasetExt: DataSet + Clone + Sized {

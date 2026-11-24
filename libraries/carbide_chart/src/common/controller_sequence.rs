@@ -1,10 +1,9 @@
-use crate::controller::DatasetController;
-use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
+use crate::{DatasetController, Sequence};
 
 /// The controllers of a chart: any `Sequence` of controllers. They are visited in sequence
 /// order, which is also the order they are drawn in.
 ///
-/// Implemented for, with `C` any controller that is `Clone` (see `sequence.rs`):
+/// Implemented for, with `C` any controller that is `Clone` (see `Sequence`):
 /// - tuples `(C1,)` to `(C1, …, C12)`, each of its own controller type;
 /// - collections (`Collection`): `Vec<C>`, `[C; N]`, `VecDeque<C>`, `Box<[C]>`, `Rc<[C]>`,
 ///   `Arc<[C]>`, `&'static [C]`, and any type of your own implementing `Collection`;
@@ -25,16 +24,3 @@ use crate::sequence::{tuple_sequences, Sequence, SequenceItem};
 pub trait ControllerSequence: Sequence<dyn DatasetController> {}
 
 impl<S: Sequence<dyn DatasetController>> ControllerSequence for S {}
-
-/// A controller is an item of a sequence of controllers.
-impl<C: DatasetController + Clone> SequenceItem<dyn DatasetController> for C {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DatasetController + 'static))) {
-        f(index, self);
-    }
-
-    fn sync(&mut self, env: &mut carbide::environment::Environment) -> bool {
-        DatasetController::sync(self, env)
-    }
-}
-
-tuple_sequences!([] dyn DatasetController);

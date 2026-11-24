@@ -6,8 +6,10 @@ use carbide::environment::Environment;
 use carbide::state::{AnyReadState, IntoReadState, ReadStateExt};
 use dyn_clone::DynClone;
 
-use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, Scale, SnapMode};
-use crate::sequence::{Sequence, SequenceItem};
+use crate::scale::{Axis, AxisOptions, AxisPosition, PolarRole, SnapMode};
+
+use crate::Scale;
+use crate::{Sequence, SequenceItem};
 
 /// A category scale's labels, boxed: any sequence of strings (see `CategoryScale::labels`).
 trait Labels: DynClone + Debug {
@@ -410,7 +412,8 @@ mod tests {
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
     use carbide::draw::Scalar;
-    use crate::scale::{Axis, Scale, SnapMode};
+    use crate::scale::{Axis, SnapMode};
+    use crate::Scale;
     use super::CategoryScale;
 
     /// The labels can be a state: after a sync, the scale names its ticks with the new labels,

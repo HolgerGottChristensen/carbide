@@ -3,7 +3,7 @@ use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use indexmap::{IndexMap, IndexSet};
-use crate::controller::DatasetController;
+use crate::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Datum, Shapes};
 use crate::colors::SeriesColors;
@@ -13,9 +13,10 @@ use crate::legend::{LegendItem, LegendMarker};
 use crate::controller::stacking::{normalized_totals, stack_offset, NormalizedTotals, StackKey, StackOffsets, StackSums};
 use crate::DataSetOptions;
 use crate::mark::{AsDataSet, BarCanvas, BarDataSet, BarFrame, BarSlots, MarkRole, LegendContext};
-use crate::sequence::{IntoSequence, Sequence};
+use crate::{IntoSequence, Sequence};
 use crate::controller::orientation::{is_polar, Orientation};
-use crate::scale::{Coordinates, GridShape, Places, PolarRole, Scale, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::Scale;
 
 /// Draws each dataset as bars, one per point. A point is read as its category (x) and its value
 /// (y), and the bar grows from zero to the value. Bars are vertical by default: the categories
@@ -529,7 +530,7 @@ pub(crate) fn bar_slot(center: Scalar, ruler: Scalar, group_index: usize, group_
 mod tests {
     use carbide::environment::Environment;
     use crate::{DatasetExt, StackId};
-    use crate::controller::DatasetController;
+    use crate::DatasetController;
     use crate::scale::{ScaleBounds, ScaleId, ScaleKind};
     use super::{bar_slot, BarController};
 

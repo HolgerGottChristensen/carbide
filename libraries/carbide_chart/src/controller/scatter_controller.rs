@@ -2,7 +2,7 @@ use carbide::state::IntoReadState;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
-use crate::controller::DatasetController;
+use crate::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};
 use crate::geometry::{DatumKey, Shapes};
 use crate::controller::orientation::Orientation;
@@ -12,7 +12,7 @@ use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
 use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale, LegendContext};
-use crate::sequence::{IntoSequence, Sequence};
+use crate::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales};
 
 /// Draws each dataset's points: points only by default. With `show_line(true)` it also draws a line

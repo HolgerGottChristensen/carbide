@@ -6,7 +6,8 @@ use indexmap::{IndexMap, IndexSet};
 
 use crate::{DataSet, Value};
 use crate::scale::Coordinates;
-use crate::scale::{Axis, CategoryScale, GridShape, LinearScale, PolarRole, Scale, ScaleId, TimeScale};
+use crate::scale::{Axis, CategoryScale, GridShape, LinearScale, PolarRole, ScaleId, TimeScale};
+use crate::Scale;
 use crate::scale::polar::{Circle, Polar};
 use crate::controller::orientation::{pixel, pixel_normalized};
 

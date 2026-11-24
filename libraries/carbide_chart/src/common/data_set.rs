@@ -3,12 +3,12 @@ use dyn_clone::DynClone;
 use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use crate::DataColor;
-use crate::dataset::datapoint::DataPoint;
-use crate::dataset::dataset_options::DataSetOptions;
+use crate::DataPoint;
+use crate::DataSetOptions;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
 use crate::Value;
-use crate::sequence::{Sequence, SequenceItem};
+use crate::Sequence;
 
 /// One series: a sequence of data points, with options for how it is drawn.
 ///
@@ -111,43 +111,6 @@ impl<S: Sequence<dyn DataPoint>> DataSet for S {
 
     fn sync(&mut self, env: &mut Environment) -> bool {
         Sequence::<dyn DataPoint>::sync(self, env)
-    }
-}
-
-/// A point is an item of a sequence of points.
-///
-/// The `+ 'static` in `visit` matches the `&T` in `SequenceItem<T>`: as a type argument, the
-/// trait object is `'static`, while a bare `&dyn DataPoint` would only live as long as the
-/// reference.
-impl<P: DataPoint + Clone + Debug + 'static> SequenceItem<dyn DataPoint> for P {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataPoint + 'static))) {
-        f(index, self);
-    }
-}
-
-/// A plain y value is the point `(index, value)`.
-impl SequenceItem<dyn DataPoint> for Scalar {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataPoint + 'static))) {
-        f(index, &(index as Scalar, *self));
-    }
-}
-
-/// An optional y value is the point `(index, value)` whose y may be missing, so
-/// `vec![Some(3.0), None, Some(5.0)]` is a dataset with a gap in the middle.
-impl SequenceItem<dyn DataPoint> for Option<Scalar> {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataPoint + 'static))) {
-        f(index, &(index as Scalar, *self));
-    }
-}
-
-/// A dataset is an item of a sequence of datasets.
-impl<D: DataSet + Clone> SequenceItem<dyn DataSet> for D {
-    fn visit(&self, index: usize, f: &mut dyn FnMut(usize, &(dyn DataSet + 'static))) {
-        f(index, self);
-    }
-
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        DataSet::sync(self, env)
     }
 }
 
