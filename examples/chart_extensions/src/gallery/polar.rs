@@ -2,7 +2,7 @@
 //! stacked to 100%, with the widths of their slots and bars, and scattered points, with the circle's start, sweep, direction and hole, and its rings as polygons
 //! or circles.
 
-use carbide::chart::{AngleDirection, Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, Fill, GridShape, Interpolation, LinearScale, LineController, LineDataSet, ScaleId, ScatterController, StackId, Stepped};
+use carbide::chart::{AngleDirection, Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, Fill, GridShape, Interpolation, LinearScale, LineController, LineDataSet, RimOrientation, ScaleId, ScatterController, StackId, Stepped};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -37,6 +37,8 @@ pub(crate) struct Options {
     grid_shape: LocalState<GridShape>,
     rings: LocalState<bool>,
     spokes: LocalState<bool>,
+    rim_orientation: LocalState<RimOrientation>,
+    label_skip: LocalState<bool>,
     fill: LocalState<Fill>,
     interpolation: LocalState<Interpolation>,
     start_angle: LocalState<Scalar>,
@@ -57,6 +59,8 @@ impl Options {
             grid_shape: LocalState::new(GridShape::Polygon),
             rings: LocalState::new(true),
             spokes: LocalState::new(true),
+            rim_orientation: LocalState::new(RimOrientation::Flat),
+            label_skip: LocalState::new(true),
             fill: LocalState::new(Fill::Origin),
             interpolation: LocalState::new(Interpolation::Linear),
             start_angle: LocalState::new(0.0),
@@ -128,17 +132,28 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             slider("Group", &options.category_percentage, 0.1, 1.0, 0.05, percent),
             slider("Bar", &options.bar_percentage, 0.1, 1.0, 0.05, percent),
         )).cross_axis_alignment(CrossAxisAlignment::Start)),
-        section("Circle"),
-        slider("Start", &options.start_angle, 0.0, 360.0, 5.0, degrees),
-        slider("Sweep", &options.sweep, 30.0, 360.0, 5.0, degrees),
-        Picker::new("Direction", options.direction.clone(), (
-            Text::new("Clockwise").tag(AngleDirection::Clockwise),
-            Text::new("Counter-clockwise").tag(AngleDirection::CounterClockwise),
-        )),
-        slider("Hole", &options.inner_radius, 0.0, 0.9, 0.05, percent),
-        // Scattered points have no categories to lay out along the radius.
-        shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data != Data::Wind),
-            Toggle::new("Categories out from the centre", options.horizontal.clone())),
+        VStack::new((
+            section("Circle"),
+            slider("Start", &options.start_angle, 0.0, 360.0, 5.0, degrees),
+            slider("Sweep", &options.sweep, 30.0, 360.0, 5.0, degrees),
+            Picker::new("Direction", options.direction.clone(), (
+                Text::new("Clockwise").tag(AngleDirection::Clockwise),
+                Text::new("Counter-clockwise").tag(AngleDirection::CounterClockwise),
+            )),
+            slider("Hole", &options.inner_radius, 0.0, 0.9, 0.05, percent),
+            // Scattered points have no categories to lay out along the radius.
+            shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data != Data::Wind),
+                Toggle::new("Categories out from the centre", options.horizontal.clone())),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
+        VStack::new((
+            section("Labels"),
+            Picker::new("Around the rim", options.rim_orientation.clone(), (
+                Text::new("Flat").tag(RimOrientation::Flat),
+                Text::new("Along the circle").tag(RimOrientation::Along),
+                Text::new("Out from the centre").tag(RimOrientation::Outward),
+            )),
+            Toggle::new("Leave out labels that don't fit", options.label_skip.clone()),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     with_side_bar(chart, side, &shared)
@@ -161,6 +176,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
     let values = LinearScale::new(Axis::Radial).min(0.0)
         .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone())
         .start_angle(start()).end_angle(end()).direction(options.direction.clone())
+        .rim_orientation(options.rim_orientation.clone()).label_skip(options.label_skip.clone())
         .grid_lines(y_grid);
 
     match data {
@@ -180,7 +196,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(LineController::new(players).horizontal(options.horizontal.clone()))
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone())
+                    .rim_orientation(options.rim_orientation.clone()).label_skip(options.label_skip.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -197,7 +214,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(bars)
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(MONTHS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone())
+                    .rim_orientation(options.rim_orientation.clone()).label_skip(options.label_skip.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -227,7 +245,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(bars)
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(MONTHS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone())
+                    .rim_orientation(options.rim_orientation.clone()).label_skip(options.label_skip.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -246,7 +265,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(ScatterController::new((station(0.0, 120.0).label("Coast"), station(50.0, 300.0).label("Hills"))))
                 .title(options.title.clone())
                 .scale(ScaleId::X, LinearScale::new(Axis::Radial).min(0.0).max(360.0).step(45.0).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone())
+                    .rim_orientation(options.rim_orientation.clone()).label_skip(options.label_skip.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }

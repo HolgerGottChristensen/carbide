@@ -10,6 +10,7 @@ mod coordinates;
 pub(crate) mod polar;
 mod zoom;
 mod label_rotation;
+mod rim_orientation;
 pub(crate) mod tick_labels;
 
 use std::fmt::Debug;
@@ -25,6 +26,7 @@ pub use coordinates::Coordinates;
 pub use polar::{Circle, Polar};
 pub use zoom::{SnapMode, ZoomWindow};
 pub use label_rotation::LabelRotation;
+pub use rim_orientation::RimOrientation;
 pub(crate) use zoom::MIN_ZOOM_SPAN;
 pub(crate) use coordinates::Places;
 

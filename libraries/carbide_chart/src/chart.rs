@@ -20,7 +20,7 @@ use crate::legend::{self, LegendPosition};
 use crate::tooltip::{self, TooltipAnchor, TooltipText, TooltipTitle};
 use crate::IntoSequence;
 use crate::style::axis_style;
-use crate::scale::{axis, Axis, AxisPosition, PolarRole, ScaleBounds, ScaleId, ScaleKind, Scales};
+use crate::scale::{axis, Axis, AxisPosition, PolarRole, RimOrientation, ScaleBounds, ScaleId, ScaleKind, Scales};
 use crate::Scale;
 use crate::scale::polar::RimLabel;
 use crate::scale::tick_labels::TickLabels;
@@ -1114,7 +1114,7 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
         let scales = &self.scales;
         self.controllers.foreach(&mut |_, controller| {
             controller.polar_labels(scales, &mut |text| canvas.measure_text(text), &mut |angle, size, gap| {
-                outside.push(RimLabel { angle, size, gap });
+                outside.push(RimLabel { angle, size, gap, orientation: RimOrientation::Flat });
             });
         });
 

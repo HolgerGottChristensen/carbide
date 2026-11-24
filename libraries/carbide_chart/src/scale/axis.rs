@@ -16,7 +16,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::scale::{Axis, AxisPosition, GridShape, PolarRole, Scales};
 use crate::Scale;
 use crate::scale::polar::{self, Circle, Polar, RimLabel, Ring};
-use crate::scale::tick_labels::{self, TickLabels};
+use crate::scale::tick_labels::{self, TickLabels, LABEL_GAP};
 use crate::style::axis_style;
 
 /// How far tick marks reach out from the inner edge of their scale's band.
@@ -264,7 +264,7 @@ pub(crate) fn rim_labels(angle_scale: &dyn Scale, ctx: &mut CanvasContext) -> Ve
 
         let text = tick_label(angle_scale, *tick, ctx.env());
         let size = ctx.measure_text(&text);
-        labels.push((text, RimLabel { angle, size, gap: polar::RIM_LABEL_GAP }));
+        labels.push((text, RimLabel { angle, size, gap: polar::RIM_LABEL_GAP, orientation: angle_scale.axis_options().rim_orientation() }));
     }
 
     labels
@@ -371,17 +371,46 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
     let mut rim_boxes: Vec<Rect> = vec![];
 
     let rim_labels = if angle_hidden { vec![] } else { rim_labels(angle_scale, ctx) };
-    for (text, label) in rim_labels {
-        let direction = polar::direction(label.angle);
-        let anchor = Position::new(
-            circle.center.x + (circle.radius + polar::RIM_LABEL_GAP) * direction.x,
-            circle.center.y + (circle.radius + polar::RIM_LABEL_GAP) * direction.y,
-        );
+    let anchors: Vec<Position> = rim_labels.iter()
+        .map(|(_, label)| {
+            let direction = polar::direction(label.angle);
+            Position::new(
+                circle.center.x + (circle.radius + polar::RIM_LABEL_GAP) * direction.x,
+                circle.center.y + (circle.radius + polar::RIM_LABEL_GAP) * direction.y,
+            )
+        })
+        .collect();
+    let boxes: Vec<Rect> = rim_labels.iter().zip(&anchors)
+        .map(|((_, label), anchor)| {
+            let extent = label.extent();
+            Rect::new(Position::new(anchor.x + extent.position.x, anchor.y + extent.position.y), extent.dimension)
+        })
+        .collect();
 
-        let alignment = rim_alignment(direction);
-        rim_boxes.push(text_box(anchor, alignment, label.size));
+    // Labels still too close together are thinned out, counted both ways from the first around a
+    // full circle.
+    let shown = if angle_scale.axis_options().label_skip() {
+        polar::evenly_clear(&boxes, angle_scale.axis_options().is_full_circle(), LABEL_GAP)
+    } else {
+        (0..rim_labels.len()).collect()
+    };
+
+    for index in shown {
+        let (text, label) = &rim_labels[index];
+        let anchor = anchors[index];
+        let (rotation, alignment) = label.placement();
+        rim_boxes.push(boxes[index]);
         ctx.set_text_align(alignment);
-        ctx.fill_text(&text, anchor.x, anchor.y);
+
+        if rotation == 0.0 {
+            ctx.fill_text(text, anchor.x, anchor.y);
+        } else {
+            ctx.save();
+            ctx.translate(Vector3::new(anchor.x, anchor.y, 0.0));
+            ctx.rotate(Angle::Radians(rotation));
+            ctx.fill_text(text, 0.0, 0.0);
+            ctx.restore();
+        }
     }
 
     // Each radius scale's labels sit beside the start spoke, on the side the sweep runs towards:
@@ -399,31 +428,43 @@ pub(crate) fn draw_polar_grid(scales: &Scales, ctx: &mut CanvasContext) {
         let side_sign = if scales.is_horizontal(radius_id) { -towards_sweep } else { towards_sweep };
         let side = Position::new(side_sign * start.cos(), side_sign * start.sin());
         let beside = Position::new(side.x * RADIUS_LABEL_GAP, side.y * RADIUS_LABEL_GAP);
-        let alignment = rim_alignment(side);
+        let alignment = polar::rim_alignment(side);
         let inward = polar::direction(start);
         let inward = Position::new(-inward.x, -inward.y);
         ctx.set_text_align(alignment);
 
-        for tick in radius_scale.ticks() {
-            let normalized = radius_scale.normalize(*tick);
-            if !(-1e-9..=1.0 + 1e-9).contains(&normalized) {
-                continue;
-            }
+        // Every label beside the spoke, then thinned out along it when they are too close.
+        let labels: Vec<(Scalar, String, Position, Dimension)> = radius_scale.ticks().iter()
+            .filter(|tick| (-1e-9..=1.0 + 1e-9).contains(&radius_scale.normalize(**tick)))
+            .map(|tick| {
+                let text = tick_label(radius_scale, *tick, ctx.env());
+                let at = polar.at(start, polar.distance(radius_scale.normalize(*tick)));
+                let size = ctx.measure_text(&text);
+                (*tick, text, at, size)
+            })
+            .collect();
+        let shown = if radius_scale.axis_options().label_skip() {
+            let boxes: Vec<Rect> = labels.iter()
+                .map(|(_, _, at, size)| text_box(Position::new(at.x + beside.x, at.y + beside.y), alignment, *size))
+                .collect();
+            polar::evenly_clear(&boxes, false, LABEL_GAP)
+        } else {
+            (0..labels.len()).collect()
+        };
 
-            let text = tick_label(radius_scale, *tick, ctx.env());
-            let at = polar.at(start, polar.distance(normalized));
-            let size = ctx.measure_text(&text);
+        for (tick, text, at, size) in shown.into_iter().map(|index| &labels[index]) {
+            let (tick, at, size) = (*tick, *at, *size);
 
             // A label that would overlap a label around the rim moves in along the spoke until
             // it clears it, by at most half its own length along the spoke. A number that still
             // overlaps gives way to the rim label; a radius scale's categories are all kept.
             let anchor = clear_of(Position::new(at.x + beside.x, at.y + beside.y), inward, alignment, size, &rim_boxes);
-            let is_category = radius_scale.category_index(&text) == Some(*tick);
+            let is_category = radius_scale.category_index(text) == Some(tick);
             let Some(anchor) = anchor.or_else(|| is_category.then_some(Position::new(at.x + beside.x, at.y + beside.y))) else {
                 continue;
             };
 
-            ctx.fill_text(&text, anchor.x, anchor.y);
+            ctx.fill_text(text, anchor.x, anchor.y);
         }
     }
 
@@ -548,27 +589,6 @@ fn overlaps(a: Rect, b: Rect) -> bool {
         && b.position.x < a.position.x + a.dimension.width
         && a.position.y < b.position.y + b.dimension.height
         && b.position.y < a.position.y + a.dimension.height
-}
-
-/// How a label around the rim hangs off its anchor, `direction` being the unit direction from
-/// the centre: away from the circle, so its nearest edge or corner faces the rim.
-fn rim_alignment(direction: Position) -> Alignment {
-    let horizontal = if direction.x > 0.2 { 1 } else if direction.x < -0.2 { -1 } else { 0 };
-    let vertical = if direction.y > 0.2 { 1 } else if direction.y < -0.2 { -1 } else { 0 };
-
-    // The alignment names the point of the text box at the anchor: a label below the circle
-    // hangs from its top edge, one to the right starts at its leading edge.
-    match (horizontal, vertical) {
-        (0, -1) => Alignment::Bottom,
-        (0, 1) => Alignment::Top,
-        (1, 0) => Alignment::Leading,
-        (-1, 0) => Alignment::Trailing,
-        (1, -1) => Alignment::BottomLeading,
-        (-1, -1) => Alignment::BottomTrailing,
-        (1, 1) => Alignment::TopLeading,
-        (-1, 1) => Alignment::TopTrailing,
-        _ => Alignment::Center,
-    }
 }
 
 #[cfg(feature = "carbide_fluent")]

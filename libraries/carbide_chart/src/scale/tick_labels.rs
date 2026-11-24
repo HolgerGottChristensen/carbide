@@ -12,7 +12,7 @@ use crate::scale::axis::tick_label;
 use crate::Scale;
 
 /// The space kept between two neighbouring labels, along the axis.
-const LABEL_GAP: Scalar = 4.0;
+pub(crate) const LABEL_GAP: Scalar = 4.0;
 
 /// How close, in degrees, the way to the axis must be to a label's own up or down for the label
 /// to hang centred off its tick, rather than from its end.
@@ -206,7 +206,7 @@ fn inward(axis: Axis, side: AxisPosition) -> Position {
 
 /// `point` turned by `rotation` radians around the origin, as the canvas turns: clockwise on the
 /// screen, whose y grows downwards.
-fn turn(point: Position, rotation: Scalar) -> Position {
+pub(crate) fn turn(point: Position, rotation: Scalar) -> Position {
     let (sin, cos) = rotation.sin_cos();
     Position::new(point.x * cos - point.y * sin, point.x * sin + point.y * cos)
 }

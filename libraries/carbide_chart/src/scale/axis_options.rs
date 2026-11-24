@@ -1,7 +1,7 @@
 use carbide::draw::{Alignment, Angle, Scalar};
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateContract, StateExtNew};
-use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, LabelRotation, PolarRole, ZoomWindow};
+use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, LabelRotation, PolarRole, RimOrientation, ZoomWindow};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order
 /// among the scales on that side, whether it draws grid lines and tick marks, its title, and how
@@ -35,6 +35,7 @@ pub struct AxisOptions {
     start_angle: Box<dyn AnyReadState<T=Angle>>,
     end_angle: Box<dyn AnyReadState<T=Angle>>,
     direction: Box<dyn AnyReadState<T=AngleDirection>>,
+    rim_orientation: Box<dyn AnyReadState<T=RimOrientation>>,
     inner_radius: Box<dyn AnyReadState<T=Scalar>>,
     grid_shape: Option<Box<dyn AnyReadState<T=GridShape>>>,
     /// A radial scale's role, as the chart gave it on the last fit.
@@ -69,6 +70,7 @@ impl AxisOptions {
             start_angle: constant(Angle::Degrees(0.0)),
             end_angle: constant(Angle::Degrees(360.0)),
             direction: constant(AngleDirection::Clockwise),
+            rim_orientation: constant(RimOrientation::Flat),
             inner_radius: constant(0.0),
             grid_shape: None,
             polar_role: None,
@@ -122,20 +124,24 @@ impl AxisOptions {
     }
 
     /// How far the axis's tick labels are turned (see `LabelRotation`). Turned only when they
-    /// don't fit, by default.
+    /// don't fit, by default. A polar scale's labels ignore it: an angle scale's labels turn by
+    /// `rim_orientation`.
     pub fn label_rotation(&self) -> LabelRotation {
         *self.label_rotation.value_dyn()
     }
 
     /// The point of each tick label that sits at the end of its tick mark, in the label's own
     /// frame, so a turned label turns around it; `None`, the default, picks it from the side the
-    /// axis is on and the rotation, so a label points at its tick.
+    /// axis is on and the rotation, so a label points at its tick. A polar scale's labels ignore
+    /// it: they hang away from the circle, or from the spoke they sit beside.
     pub fn label_alignment(&self) -> Option<Alignment> {
         *self.label_alignment.value_dyn()
     }
 
     /// Whether labels that are still too close together, as turned, are thinned out: every n-th
-    /// is drawn, from the first, while the ticks and grid lines all stay. On by default.
+    /// is drawn, from the first, while the ticks and grid lines all stay. On by default. Around a
+    /// full circle, the labels are counted out both ways from the first, so the two ends meet
+    /// evenly; a radius scale's labels are thinned out along their spoke.
     pub fn label_skip(&self) -> bool {
         *self.label_skip.value_dyn()
     }
@@ -150,6 +156,12 @@ impl AxisOptions {
     /// by default, a full circle.
     pub fn end_angle(&self) -> Angle {
         *self.end_angle.value_dyn()
+    }
+
+    /// How an angle scale's labels around the rim are turned (see `RimOrientation`). Flat by
+    /// default.
+    pub fn rim_orientation(&self) -> RimOrientation {
+        *self.rim_orientation.value_dyn()
     }
 
     /// Which way an angle scale runs around the circle. Clockwise by default.
@@ -253,6 +265,7 @@ impl AxisOptions {
         changed |= self.start_angle.sync(env);
         changed |= self.end_angle.sync(env);
         changed |= self.direction.sync(env);
+        changed |= self.rim_orientation.sync(env);
         changed |= self.inner_radius.sync(env);
         changed |= self.grid_shape.as_mut().is_some_and(|shape| shape.sync(env));
         changed |= self.zoom.as_mut().is_some_and(|zoom| zoom.sync(env));
@@ -344,6 +357,13 @@ impl AxisOptions {
         self
     }
 
+    /// Sets how an angle scale's labels around the rim are turned, a `RimOrientation` or a state
+    /// of one.
+    pub fn with_rim_orientation(mut self, orientation: impl IntoReadState<RimOrientation>) -> AxisOptions {
+        self.rim_orientation = orientation.into_read_state().as_dyn_read();
+        self
+    }
+
     /// Sets a radius scale's hole in the middle, as a share of the radius, a number or a state
     /// of one (see `inner_radius`).
     pub fn with_inner_radius(mut self, ratio: impl IntoReadState<Scalar>) -> AxisOptions {
@@ -400,7 +420,7 @@ pub(crate) use zoom_options;
 
 /// The builder methods for tick labels, in the impl block of a scale type with an `axis_options`
 /// field: `label_rotation`, `label_alignment` and `label_skip`. Polar scales place their labels
-/// around the circle, and ignore them.
+/// around the circle and beside a spoke, and ignore the first two.
 macro_rules! label_options {
     ($scale:ty) => {
         /// How far the tick labels are turned: a `LabelRotation`, or an `Angle` or a number of
@@ -424,7 +444,9 @@ macro_rules! label_options {
 
         /// Whether tick labels still too close together, as turned, are thinned out, a value or a
         /// state of one: every n-th label is drawn, from the first, and the ticks and grid lines
-        /// all stay. `true` by default.
+        /// all stay. Around a full circle the labels are counted out both ways from the first, so
+        /// the two ends meet evenly, and a radius scale's labels are thinned out along their
+        /// spoke. `true` by default.
         pub fn label_skip(mut self, skip: impl carbide::state::IntoReadState<bool>) -> $scale {
             self.axis_options = self.axis_options.with_label_skip(skip);
             self
@@ -459,6 +481,13 @@ macro_rules! polar_options {
         /// one. Clockwise by default.
         pub fn direction(mut self, direction: impl carbide::state::IntoReadState<crate::scale::AngleDirection>) -> $scale {
             self.axis_options = self.axis_options.with_direction(direction);
+            self
+        }
+
+        /// On an angle scale, how the labels around the rim are turned: flat, along the circle,
+        /// or out from the centre, a `RimOrientation` or a state of one. Flat by default.
+        pub fn rim_orientation(mut self, orientation: impl carbide::state::IntoReadState<crate::scale::RimOrientation>) -> $scale {
+            self.axis_options = self.axis_options.with_rim_orientation(orientation);
             self
         }
 

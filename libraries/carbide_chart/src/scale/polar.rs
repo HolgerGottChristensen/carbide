@@ -5,10 +5,11 @@
 //! a direction `(sin a, -cos a)` points from the centre towards angle `a` (the screen's y grows
 //! downwards).
 
-use std::f64::consts::{FRAC_PI_2, TAU};
-use carbide::draw::{Dimension, Position, Rect, Scalar};
+use std::f64::consts::{FRAC_PI_2, PI, TAU};
+use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use crate::controller::line_path::PathSink;
-use crate::scale::AngleDirection;
+use crate::scale::{AngleDirection, RimOrientation};
+use crate::scale::tick_labels::{alignment_fractions, turn};
 use crate::Scale;
 
 /// The gap between the rim and the labels around it.
@@ -308,13 +309,139 @@ pub(crate) fn trace_arc(path: &mut (impl PathSink + ?Sized), center: Position, r
     }
 }
 
-/// A label around the rim: its screen angle, its measured size, and how far out from the rim it
-/// starts.
+/// A label around the rim: its screen angle, its measured size, how far out from the rim it
+/// starts, and how it is turned.
 #[derive(Copy, Clone, Debug)]
 pub(crate) struct RimLabel {
     pub(crate) angle: Scalar,
     pub(crate) size: Dimension,
     pub(crate) gap: Scalar,
+    pub(crate) orientation: RimOrientation,
+}
+
+impl RimLabel {
+    /// How far the label is turned, in radians as the canvas turns, and the point of it at its
+    /// anchor, in its own frame. Flat, it hangs away from the circle by the edge or corner facing
+    /// it. Out from the centre, it starts at the rim, or ends at it where it would otherwise read
+    /// upside down, on the left half. Along the circle, its bottom edge faces the rim, or its top
+    /// edge, turned half a turn, where it would read upside down, on the lower half.
+    pub(crate) fn placement(&self) -> (Scalar, Alignment) {
+        let direction = direction(self.angle);
+        let outward = direction.y.atan2(direction.x);
+
+        match self.orientation {
+            RimOrientation::Flat => (0.0, rim_alignment(direction)),
+            RimOrientation::Outward if direction.x < -1e-9 => (outward + PI, Alignment::Trailing),
+            RimOrientation::Outward => (outward, Alignment::Leading),
+            RimOrientation::Along if (outward + FRAC_PI_2).cos() < -1e-9 => (outward + FRAC_PI_2 + PI, Alignment::Top),
+            RimOrientation::Along => (outward + FRAC_PI_2, Alignment::Bottom),
+        }
+    }
+
+    /// The screen box the label covers as turned, its position the top-left corner relative to
+    /// its anchor.
+    pub(crate) fn extent(&self) -> Rect {
+        let (rotation, alignment) = self.placement();
+        turned_box(self.size, alignment, rotation)
+    }
+}
+
+/// The screen box a text of `size` covers when drawn with `alignment` at the origin and turned
+/// by `rotation` around it: the bounds of its four turned corners, its position the top-left
+/// corner.
+pub(crate) fn turned_box(size: Dimension, alignment: Alignment, rotation: Scalar) -> Rect {
+    let (along_x, along_y) = alignment_fractions(alignment);
+    let (left, top) = (-along_x * size.width, -along_y * size.height);
+    let corners = [
+        Position::new(left, top),
+        Position::new(left + size.width, top),
+        Position::new(left, top + size.height),
+        Position::new(left + size.width, top + size.height),
+    ].map(|corner| turn(corner, rotation));
+
+    let min = corners.iter().fold(Position::new(Scalar::INFINITY, Scalar::INFINITY), |min, point| Position::new(min.x.min(point.x), min.y.min(point.y)));
+    let max = corners.iter().fold(Position::new(Scalar::NEG_INFINITY, Scalar::NEG_INFINITY), |max, point| Position::new(max.x.max(point.x), max.y.max(point.y)));
+
+    Rect::new(min, Dimension::new(max.x - min.x, max.y - min.y))
+}
+
+/// How a flat label around the rim hangs off its anchor, `direction` being the unit direction
+/// from the centre: away from the circle, so its nearest edge or corner faces the rim.
+pub(crate) fn rim_alignment(direction: Position) -> Alignment {
+    let horizontal = if direction.x > 0.2 { 1 } else if direction.x < -0.2 { -1 } else { 0 };
+    let vertical = if direction.y > 0.2 { 1 } else if direction.y < -0.2 { -1 } else { 0 };
+
+    // The alignment names the point of the text box at the anchor: a label below the circle
+    // hangs from its top edge, one to the right starts at its leading edge.
+    match (horizontal, vertical) {
+        (0, -1) => Alignment::Bottom,
+        (0, 1) => Alignment::Top,
+        (1, 0) => Alignment::Leading,
+        (-1, 0) => Alignment::Trailing,
+        (1, -1) => Alignment::BottomLeading,
+        (-1, -1) => Alignment::BottomTrailing,
+        (1, 1) => Alignment::TopLeading,
+        (-1, 1) => Alignment::TopTrailing,
+        _ => Alignment::Center,
+    }
+}
+
+/// Which of `boxes`, in order, are shown when every n-th is, from the first, for the smallest n
+/// that keeps every two neighbours shown `gap` apart. `closed` boxes go around a full circle:
+/// they are counted out both ways from the first, so the two ends meet evenly, and the last one
+/// shown is a neighbour of the first. When no n clears them, only the first is shown.
+pub(crate) fn evenly_clear(boxes: &[Rect], closed: bool, gap: Scalar) -> Vec<usize> {
+    let count = boxes.len();
+    if count < 2 {
+        return (0..count).collect();
+    }
+
+    let grown = |rect: Rect| Rect::new(
+        Position::new(rect.position.x - gap / 2.0, rect.position.y - gap / 2.0),
+        Dimension::new(rect.dimension.width + gap, rect.dimension.height + gap),
+    );
+    let overlap = |a: Rect, b: Rect| {
+        let (a, b) = (grown(a), grown(b));
+        a.position.x < b.position.x + b.dimension.width
+            && b.position.x < a.position.x + a.dimension.width
+            && a.position.y < b.position.y + b.dimension.height
+            && b.position.y < a.position.y + a.dimension.height
+    };
+
+    let max_step = if closed { (count / 2).max(1) } else { count - 1 };
+    for step in 1..=max_step {
+        let shown = shown_every(count, step, closed);
+        let mut pairs: Vec<(usize, usize)> = shown.windows(2).map(|pair| (pair[0], pair[1])).collect();
+        if closed && shown.len() > 2 {
+            pairs.push((shown[shown.len() - 1], shown[0]));
+        }
+
+        if pairs.iter().all(|(a, b)| !overlap(boxes[*a], boxes[*b])) {
+            return shown;
+        }
+    }
+
+    vec![0]
+}
+
+/// The indices, in order, of every `step`-th of `count` items from the first: forwards along a
+/// line, or both ways around a closed circle, forwards up to halfway and backwards from the end
+/// beyond that.
+fn shown_every(count: usize, step: usize, closed: bool) -> Vec<usize> {
+    if !closed {
+        return (0..count).step_by(step).collect();
+    }
+
+    let forwards: Vec<usize> = (0..).map(|k| k * step).take_while(|index| *index <= count / 2).collect();
+    let last_forwards = *forwards.last().unwrap();
+    let mut backwards: Vec<usize> = (1..)
+        .map(|k| count as isize - (k * step) as isize)
+        .take_while(|index| *index > last_forwards as isize && *index > 0)
+        .map(|index| index as usize)
+        .collect();
+    backwards.reverse();
+
+    forwards.into_iter().chain(backwards).collect()
 }
 
 /// The circle for the chart's polar scales inside `area`. The arc from `start` sweeping `sweep`
@@ -340,8 +467,9 @@ pub(crate) fn fit_circle(area: Rect, start: Scalar, sweep: Scalar, inner: Scalar
         let direction = direction(label.angle);
         let anchor = Position::new(area_center.x + label.gap * direction.x, area_center.y + label.gap * direction.y);
         let per_radius = Position::new(direction.x - middle.x, direction.y - middle.y);
-        let (left, right) = label_extent(direction.x, label.size.width);
-        let (top, bottom) = label_extent(direction.y, label.size.height);
+        let extent = label.extent();
+        let (left, right) = (extent.position.x, extent.position.x + extent.dimension.width);
+        let (top, bottom) = (extent.position.y, extent.position.y + extent.dimension.height);
 
         // (fixed part, per-radius part, limit, whether the edge must stay below the limit)
         let edges = [
@@ -364,20 +492,6 @@ pub(crate) fn fit_circle(area: Rect, start: Scalar, sweep: Scalar, inner: Scalar
     Circle {
         center: Position::new(area_center.x - radius * middle.x, area_center.y - radius * middle.y),
         radius,
-    }
-}
-
-/// How far a label reaches from its anchor along one screen direction, before and after it, when
-/// it hangs off the rim in direction `towards` (one coordinate of the unit direction): beyond the
-/// anchor when it points that way, before it when it points the other, and centred on it in
-/// between.
-fn label_extent(towards: Scalar, size: Scalar) -> (Scalar, Scalar) {
-    if towards > 0.2 {
-        (0.0, size)
-    } else if towards < -0.2 {
-        (-size, 0.0)
-    } else {
-        (-size / 2.0, size / 2.0)
     }
 }
 
@@ -420,9 +534,10 @@ mod tests {
     use std::f64::consts::{FRAC_PI_2, PI};
     use carbide::draw::{Angle, Dimension, Position, Rect, Scalar};
     use crate::controller::line_path::PathSink;
-    use crate::scale::{AngleDirection, Axis, CategoryScale, LinearScale, PolarRole};
+    use crate::scale::{AngleDirection, Axis, CategoryScale, LinearScale, PolarRole, RimOrientation};
     use crate::Scale;
-    use super::{fit_circle, trace_arc, Circle, Polar, RimLabel, Ring};
+    use carbide::draw::Alignment;
+    use super::{evenly_clear, fit_circle, trace_arc, turned_box, Circle, Polar, RimLabel, Ring};
 
     fn close(a: Position, b: Position) -> bool {
         (a.x - b.x).abs() < 1e-6 && (a.y - b.y).abs() < 1e-6
@@ -535,7 +650,7 @@ mod tests {
     #[test]
     fn rim_labels_shrink_the_circle_to_fit_down_to_half() {
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(200.0, 200.0));
-        let label = |angle: Scalar, width: Scalar| RimLabel { angle, size: Dimension::new(width, 10.0), gap: super::RIM_LABEL_GAP };
+        let label = |angle: Scalar, width: Scalar| RimLabel { angle, size: Dimension::new(width, 10.0), gap: super::RIM_LABEL_GAP, orientation: RimOrientation::Flat };
 
         let fitted = fit_circle(area, 0.0, 2.0 * PI, 0.0, &[label(0.0, 20.0), label(FRAC_PI_2, 30.0)]);
         // The right label needs 6 + 30 beside the rim, the top one 6 + 10 above it.
@@ -657,5 +772,63 @@ mod tests {
         assert!(before < 0.0 && before > -0.2, "just before the left: {before}");
         let bottom = polar.normalized_angle(PI - 0.1);
         assert!(bottom > 1.0, "nearer the right than the left: {bottom}");
+    }
+
+    /// A rim label at each quarter of the circle, turned each way: flat it hangs away from the
+    /// circle; out from the centre it starts at the rim, and ends at it on the left half, so it
+    /// reads from left to right; along the circle its bottom edge faces the rim, and on the lower
+    /// half its top edge, turned half a turn, so it never reads upside down.
+    #[test]
+    fn rim_labels_turn_without_reading_upside_down() {
+        let placement = |degrees: Scalar, orientation| {
+            let (rotation, alignment) = RimLabel { angle: degrees.to_radians(), size: Dimension::new(40.0, 10.0), gap: 0.0, orientation }.placement();
+            (rotation.to_degrees().rem_euclid(360.0).round() % 360.0, alignment)
+        };
+
+        assert_eq!(placement(0.0, RimOrientation::Flat), (0.0, Alignment::Bottom));
+        assert_eq!(placement(90.0, RimOrientation::Flat), (0.0, Alignment::Leading));
+
+        assert_eq!(placement(90.0, RimOrientation::Outward), (0.0, Alignment::Leading), "right: reads outwards");
+        assert_eq!(placement(270.0, RimOrientation::Outward), (0.0, Alignment::Trailing), "left: flipped, ends at the rim");
+        assert_eq!(placement(0.0, RimOrientation::Outward), (270.0, Alignment::Leading), "top: reads upwards");
+
+        assert_eq!(placement(0.0, RimOrientation::Along), (0.0, Alignment::Bottom), "top: upright");
+        assert_eq!(placement(180.0, RimOrientation::Along), (0.0, Alignment::Top), "bottom: flipped upright");
+        assert_eq!(placement(90.0, RimOrientation::Along), (90.0, Alignment::Bottom), "right: reads downwards");
+        assert_eq!(placement(270.0, RimOrientation::Along), (270.0, Alignment::Bottom), "left: reads upwards");
+    }
+
+    /// A turned text's box is the bounds of its turned corners: a quarter turn swaps its width
+    /// and height, around the point its alignment names.
+    #[test]
+    fn turned_boxes_bound_the_turned_text() {
+        let flat = turned_box(Dimension::new(40.0, 10.0), Alignment::Leading, 0.0);
+        assert!(close(flat.position, Position::new(0.0, -5.0)) && (flat.dimension.width - 40.0).abs() < 1e-9);
+
+        let quarter = turned_box(Dimension::new(40.0, 10.0), Alignment::Leading, FRAC_PI_2);
+        assert!(close(quarter.position, Position::new(-5.0, 0.0)), "{:?}", quarter.position);
+        assert!((quarter.dimension.width - 10.0).abs() < 1e-9 && (quarter.dimension.height - 40.0).abs() < 1e-9);
+    }
+
+    /// Labels are thinned out evenly: along a line every n-th from the first; around a full circle
+    /// counted both ways from the first, so the last shown and the first are neighbours too; and
+    /// only the first when nothing clears.
+    #[test]
+    fn labels_are_thinned_out_evenly() {
+        let row = |count: usize, width: Scalar, spacing: Scalar| -> Vec<Rect> {
+            (0..count).map(|index| Rect::new(Position::new(index as Scalar * spacing, 0.0), Dimension::new(width, 10.0))).collect()
+        };
+
+        assert_eq!(evenly_clear(&row(5, 10.0, 20.0), false, 4.0), vec![0, 1, 2, 3, 4], "all clear");
+        assert_eq!(evenly_clear(&row(5, 30.0, 20.0), false, 4.0), vec![0, 2, 4], "every other");
+        assert_eq!(evenly_clear(&row(3, 100.0, 20.0), false, 4.0), vec![0], "nothing clears");
+
+        // Twelve labels around a circle, each overlapping its neighbours: every other one, from
+        // the first both ways, meeting at the sixth.
+        let around: Vec<Rect> = (0..12).map(|index| {
+            let angle = (index as Scalar * 30.0).to_radians();
+            Rect::new(Position::new(100.0 * angle.sin() - 25.0, -100.0 * angle.cos() - 5.0), Dimension::new(50.0, 10.0))
+        }).collect();
+        assert_eq!(evenly_clear(&around, true, 4.0), vec![0, 2, 4, 6, 8, 10]);
     }
 }
