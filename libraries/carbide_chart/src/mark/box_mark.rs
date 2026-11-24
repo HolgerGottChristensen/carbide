@@ -1,6 +1,7 @@
 use carbide::draw::{Position, Scalar};
 use crate::dataset::BoxPoint;
-use crate::mark::{BarCanvas, BarMark, BarSlots, Primary};
+use crate::mark::{BarCanvas, BarMark, BarSlots};
+use crate::Primary;
 use crate::Mark;
 use crate::scale::Coordinates;
 use crate::Sequence;

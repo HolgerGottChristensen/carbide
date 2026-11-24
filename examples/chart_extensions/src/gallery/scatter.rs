@@ -2,7 +2,7 @@
 //! order, points coloured one by one, at times on a time scale, named by text, and bubbles sized
 //! by a third value, with or without a line through them, zooming along both scales.
 
-use carbide::chart::{Axis, CategoryScale, Chart, ControllerSequence, DataColor, DatasetExt, LinearScale, ScaleId, ScatterController, ScatterDataSet, SizedDataSetExt, TimeScale, TimeScaleZone, ZoomWindow};
+use carbide::chart::{Axis, CategoryScale, Chart, Sequence, DataColor, DatasetExt, LinearScale, ScaleId, ScatterController, ScatterDataSet, SizedDataSetExt, TimeScale, TimeScaleZone, ZoomWindow, DatasetController};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -241,7 +241,7 @@ fn bubbles(data: Data) -> Vec<(&'static str, Vec<(Scalar, Scalar, Scalar)>)> {
 }
 
 /// `chart` with its title, and a linear y scale zooming and showing grid lines as the options say.
-fn finish<C: ControllerSequence>(chart: Chart<C>, options: Options, shared: Shared) -> Box<dyn AnyWidget> {
+fn finish<C: Sequence<dyn DatasetController>>(chart: Chart<C>, options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     shared.apply(chart
         .title(options.title.clone())
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).grid_lines(options.grid_lines.clone())))

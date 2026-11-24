@@ -1,6 +1,6 @@
 use carbide::draw::Scalar;
 use crate::dataset::SizedPoint;
-use crate::mark::{MarkRole, Primary};
+use crate::{MarkRole, Primary};
 use crate::{Mark, Role};
 use crate::Sequence;
 

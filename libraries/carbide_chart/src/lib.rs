@@ -20,7 +20,7 @@ pub use interaction::{ChartClick, DatumInfo, Pick, ValueText};
 pub use tooltip::TooltipAnchor;
 pub use controller::*;
 pub use element::*;
-pub use mark::{DatasetPieMark, PieDataSet, PieMark, RadiiMark, LegendContext, BarCanvas, BarDataSet, BarMark, BarSlot, BarSlots, DatasetBarMark, ErrorBars, IntoBoxed, LineDataSet, MarkRole, Marked, Overlay, Primary, WithoutPrimaryMark, RangeDataSetExt, RangeMark, ScatterDataSet, BubbleMark, DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale, SizedDataSetExt, DatasetLineMark, LineCanvas, LineMark, BoxDataSetExt, BoxMark, CandleGlyph, CandleMark, OhlcDataSetExt};
+pub use mark::{DatasetPieMark, PieDataSet, PieMark, RadiiMark, LegendContext, BarCanvas, BarDataSet, BarMark, BarSlot, BarSlots, DatasetBarMark, ErrorBars, IntoBoxed, LineDataSet, Marked, WithoutPrimaryMark, RangeDataSetExt, RangeMark, ScatterDataSet, BubbleMark, DatasetScatterMark, ScatterCanvas, ScatterMark, SizeScale, SizedDataSetExt, DatasetLineMark, LineCanvas, LineMark, BoxDataSetExt, BoxMark, CandleGlyph, CandleMark, OhlcDataSetExt};
 pub use style::{AxisStyle, ChartStyleExt, SeriesStyle, TooltipStyle};
 pub use colors::{DatasetColors, SeriesColors};
 pub use legend::{LegendItem, LegendMarker, LegendPosition};

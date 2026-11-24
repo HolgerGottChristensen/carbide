@@ -6,7 +6,7 @@ use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
 use carbide::environment::Environment;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::{DataColor, DataSetOptions, PieDataSet, Value};
-use crate::mark::MarkRole;
+use crate::MarkRole;
 use crate::controller::bar_slot;
 use crate::DatasetController;
 use crate::controller::options::{constant, get, option, Opt};

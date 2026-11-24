@@ -2,7 +2,7 @@
 //! and on scattered points, floating range bars and range bands, box plots, candlesticks and OHLC
 //! bars.
 
-use carbide::chart::{BarController, BoxDataSetExt, BoxStats, Chart, ControllerSequence, DataColor, DatasetExt, Estimate, LineController, Ohlc, OhlcDataSetExt, Range, RangeDataSetExt, ScatterController, Spread};
+use carbide::chart::{BarController, BoxDataSetExt, BoxStats, Chart, Sequence, DataColor, DatasetExt, Estimate, LineController, Ohlc, OhlcDataSetExt, Range, RangeDataSetExt, ScatterController, Spread, DatasetController};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -156,6 +156,6 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
 }
 
 /// `chart` with its title and the shared options.
-fn titled<C: ControllerSequence>(options: &Options, shared: &Shared, chart: Chart<C>) -> Box<dyn AnyWidget> {
+fn titled<C: Sequence<dyn DatasetController>>(options: &Options, shared: &Shared, chart: Chart<C>) -> Box<dyn AnyWidget> {
     shared.apply(chart.title(options.title.clone())).boxed()
 }

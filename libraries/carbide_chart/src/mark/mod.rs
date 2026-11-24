@@ -46,41 +46,9 @@ pub use line_mark::{DatasetLineMark, LineCanvas, LineMark};
 pub use box_mark::BoxMark;
 pub use candle_mark::{CandleGlyph, CandleMark};
 
-use std::fmt::Debug;
 use crate::DataSet;
 use crate::dataset::{BoxPoint, OhlcPoint, RangePoint, SizedPoint};
-use crate::{Role, Sealed, Sequence};
-
-/// Whether a mark replaces the glyph its controller draws by default, or is drawn on top of it.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum MarkRole {
-    /// Drawn instead of the controller's default glyph: a floating bar instead of a bar. The
-    /// controller then leaves the dataset's own values out of the scale bounds, and the mark
-    /// reports its values instead.
-    Primary,
-    /// Drawn on top of the dataset's glyph, after every dataset of the controller is drawn: error
-    /// bars over bars.
-    Overlay,
-}
-
-/// The role of a mark drawn instead of its controller's default glyph (`MarkRole::Primary`).
-#[derive(Copy, Clone, Debug)]
-pub enum Primary {}
-
-/// The role of a mark drawn on top of its dataset's glyph (`MarkRole::Overlay`).
-#[derive(Copy, Clone, Debug)]
-pub enum Overlay {}
-
-impl Role for Primary {
-    const ROLE: MarkRole = MarkRole::Primary;
-}
-
-impl Role for Overlay {
-    const ROLE: MarkRole = MarkRole::Overlay;
-}
-
-impl Sealed for Primary {}
-impl Sealed for Overlay {}
+use crate::Sequence;
 
 /// Marks for datasets of `RangePoint`s: points with a low and a high value.
 pub trait RangeDataSetExt: DataSet + Sequence<dyn RangePoint> + Sized {

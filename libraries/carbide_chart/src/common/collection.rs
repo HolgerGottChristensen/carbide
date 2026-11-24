@@ -146,7 +146,7 @@ mod tests {
     use std::sync::Arc;
     use carbide::draw::{Position, Scalar};
     use carbide::state::{LocalState, State};
-    use crate::{DataSet, DataSetSequence, Value};
+    use crate::{DataSet, Sequence, Value};
 
     /// The points of a dataset, as `(x, y)`. None of the datasets here have missing points.
     fn points<D: DataSet>(dataset: &D) -> Vec<(Scalar, Scalar)> {
@@ -155,7 +155,7 @@ mod tests {
         points
     }
 
-    fn dataset_count<S: DataSetSequence>(datasets: &S) -> usize {
+    fn dataset_count<S: Sequence<dyn DataSet>>(datasets: &S) -> usize {
         let mut count = 0;
         datasets.foreach(&mut |_, _| count += 1);
         assert_eq!(count, datasets.count(), "`count` should agree with `foreach`");

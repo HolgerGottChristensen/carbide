@@ -1,4 +1,3 @@
-use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use carbide::state::ReadState;
 use crate::{DataColor, DataPoint, DataSet, DataSetOptions, StackId};
@@ -232,14 +231,6 @@ macro_rules! boxed_dataset {
         impl DataSet for Box<dyn $family> {
             fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint)) {
                 (**self).points(f);
-            }
-
-            fn min(&self) -> Option<(Scalar, Scalar)> {
-                (**self).min()
-            }
-
-            fn max(&self) -> Option<(Scalar, Scalar)> {
-                (**self).max()
             }
 
             fn sync(&mut self, env: &mut Environment) -> bool {

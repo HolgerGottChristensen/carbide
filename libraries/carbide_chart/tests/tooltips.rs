@@ -2,7 +2,7 @@
 //! values, from the data's descriptions (`Pick::items`), placed where it fits and drawn above
 //! everything else.
 
-use carbide_chart::{Axis, BarController, TooltipAnchor, CategoryScale, Chart, ControllerSequence, DatasetExt, LegendPosition, LineController, Measure, Ohlc, OhlcDataSetExt, Pick, PickMode, PieController, ScaleId, ScatterController};
+use carbide_chart::{Axis, BarController, TooltipAnchor, CategoryScale, Chart, Sequence, DatasetExt, LegendPosition, LineController, Measure, Ohlc, OhlcDataSetExt, Pick, PickMode, PieController, ScaleId, ScatterController, DatasetController};
 use carbide_core::draw::{Alignment, Dimension, Position};
 use carbide_core::draw::theme::Theme;
 use carbide_core::state::{LocalState, ReadState};
@@ -15,7 +15,7 @@ use common::Framed;
 const QUARTERS: [&str; 4] = ["Q1", "Q2", "Q3", "Q4"];
 
 /// Grouped, named bars with a legend, as the pointer tests hover them.
-fn regions() -> Chart<impl ControllerSequence> {
+fn regions() -> Chart<impl Sequence<dyn DatasetController>> {
     Chart::new(BarController::new((vec![10.0, 20.0, 30.0, 25.0].label("North"), vec![15.0, 25.0, 5.0, 20.0].label("South"))))
         .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(QUARTERS))
         .legend(LegendPosition::Bottom)

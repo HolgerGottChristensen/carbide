@@ -10,7 +10,8 @@ use crate::controller::polar_path::{trace_polar_line, trace_polar_line_reversed,
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
 use crate::controller::orientation::{pixel, Oriented, Orientation};
 use crate::legend::LegendMarker;
-use crate::mark::{LegendContext, MarkRole};
+use crate::mark::LegendContext;
+use crate::MarkRole;
 use crate::{Mark, Role};
 use crate::scale::Coordinates;
 use crate::Scale;

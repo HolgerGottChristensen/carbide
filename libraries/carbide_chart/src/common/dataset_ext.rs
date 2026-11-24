@@ -4,7 +4,8 @@ use crate::dataset::OptionsDataset;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
 use crate::Mark;
-use crate::mark::{IntoBoxed, Marked, Overlay, Primary, WithoutPrimaryMark};
+use crate::mark::{IntoBoxed, Marked, WithoutPrimaryMark};
+use crate::{Overlay, Primary};
 
 
 pub trait DatasetExt: DataSet + Clone + Sized {

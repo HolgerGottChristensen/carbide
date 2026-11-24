@@ -15,7 +15,7 @@ use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
 use carbide_core::text::{FontSize, FontWeight};
 use carbide_core::widget::canvas::CanvasContext;
 use carbide_derive::Widget;
-use crate::{ControllerSequence, DatasetController};
+use crate::{Sequence, DatasetController};
 use crate::legend::{self, LegendPosition};
 use crate::tooltip::{self, TooltipAnchor, TooltipText, TooltipTitle};
 use crate::IntoSequence;
@@ -35,9 +35,12 @@ const DECORATION_SPACING: Scalar = 12.0;
 /// A container that owns the scales and draws a sequence of controllers on them. Each dataset
 /// is drawn on the scales it is bound to (`ScaleId::X` and `ScaleId::Y` by default), so datasets
 /// in different controllers share a scale when they are bound to the same id.
+///
+/// The controllers are a `Sequence<dyn DatasetController>`, drawn in sequence order, the first
+/// at the bottom.
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Update, Sync, MouseEvent)]
-pub struct Chart<C> where C: ControllerSequence {
+pub struct Chart<C> where C: Sequence<dyn DatasetController> {
     #[id] id: WidgetId,
     position: Position,
     dimension: Dimension,
@@ -106,7 +109,7 @@ struct LegendEntry {
     hidden: bool,
 }
 
-impl<C: ControllerSequence> Chart<C> {
+impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// A chart drawing `controllers` on the default scales, `ScaleId::X` and `ScaleId::Y`. Each
     /// default is a linear scale unless a controller asks for another kind (see
     /// `ScaleRequests::request_kind`); the first to ask wins. A bar or line chart's x scale is a
@@ -750,7 +753,7 @@ impl ChartLayout {
     }
 }
 
-impl<C: ControllerSequence> CommonWidget for Chart<C> {
+impl<C: Sequence<dyn DatasetController>> CommonWidget for Chart<C> {
     CommonWidgetImpl!(self, child: (), position: self.position, dimension: self.dimension);
 }
 
@@ -758,7 +761,7 @@ impl<C: ControllerSequence> CommonWidget for Chart<C> {
 /// controllers and their datasets. carbide calls it before every update and event, and `render`
 /// calls it first, as carbide's default `render` does, so the scales are fitted and everything is
 /// drawn from synced values.
-impl<C: ControllerSequence> WidgetSync for Chart<C> {
+impl<C: Sequence<dyn DatasetController>> WidgetSync for Chart<C> {
     fn sync(&mut self, env: &mut Environment) {
         self.padding.sync(env);
         self.legend.sync(env);
@@ -791,7 +794,7 @@ impl<C: ControllerSequence> WidgetSync for Chart<C> {
 /// which way it moves, and where a Shift-drag's box is a span along the scale. A click on a legend
 /// entry shows or hides what it stands for, and a double-click shows only it (see
 /// `legend_toggles`). A chart without these options ignores the pointer.
-impl<C: ControllerSequence> MouseEventHandler for Chart<C> {
+impl<C: Sequence<dyn DatasetController>> MouseEventHandler for Chart<C> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
         if !self.is_interactive() {
             self.release_pointer();
@@ -1019,7 +1022,7 @@ fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar) 
     }
 }
 
-impl<C: ControllerSequence> Update for Chart<C> {
+impl<C: Sequence<dyn DatasetController>> Update for Chart<C> {
     fn update(&mut self, ctx: &mut UpdateContext) {
         // Turned off while hovered or dragged, the chart lets go before the next render.
         if !self.is_interactive() {
@@ -1030,7 +1033,7 @@ impl<C: ControllerSequence> Update for Chart<C> {
     }
 }
 
-impl<C: ControllerSequence> Render for Chart<C> {
+impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
@@ -1238,9 +1241,8 @@ mod tests {
     use carbide::state::{LocalState, Map1, ReadStateExt, State};
     use carbide::widget::WidgetSync;
     use indexmap::IndexMap;
-    use crate::{BarController, ControllerSequence, DatasetController, LineController, ScatterController};
+    use crate::{BarController, Sequence, DatasetController, LineController, ScatterController};
     use crate::DatasetExt;
-    use crate::Sequence;
     use crate::{DataColor, ScatterDataSet, StackId};
     use crate::scale::{Axis, AxisPosition, CategoryScale, GridShape, LinearScale, PolarRole, ScaleId, ScaleKind, Scales, System};
     use super::{Chart, Decorations, SCALE_SPACING};
@@ -1894,7 +1896,7 @@ mod tests {
         use chrono::{DateTime, FixedOffset, TimeZone};
         use crate::ScaleKind;
 
-        fn kinds<C: ControllerSequence>(chart: &Chart<C>) -> (Option<ScaleKind>, Option<ScaleKind>) {
+        fn kinds<C: Sequence<dyn DatasetController>>(chart: &Chart<C>) -> (Option<ScaleKind>, Option<ScaleKind>) {
             (chart.default_kinds.get(&ScaleId::X).copied(), chart.default_kinds.get(&ScaleId::Y).copied())
         }
 
@@ -2158,12 +2160,12 @@ mod tests {
         assert_eq!(chart.hovered_scale, Some(ScaleId::X), "dragging keeps the scale it started on, even off the chart");
     }
 
-    fn fitted<C: ControllerSequence>(mut chart: Chart<C>) -> Chart<C> {
+    fn fitted<C: Sequence<dyn DatasetController>>(mut chart: Chart<C>) -> Chart<C> {
         chart.fit_scales(&mut Environment::new());
         chart
     }
 
-    fn scale_range<C: ControllerSequence>(chart: &Chart<C>, id: ScaleId) -> (Scalar, Scalar) {
+    fn scale_range<C: Sequence<dyn DatasetController>>(chart: &Chart<C>, id: ScaleId) -> (Scalar, Scalar) {
         let range = chart.scales.get(&id).expect("the chart should have the scale").range();
         (range.start, range.end)
     }

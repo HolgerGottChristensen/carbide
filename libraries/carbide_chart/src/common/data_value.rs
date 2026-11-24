@@ -79,7 +79,6 @@ mod tests {
         let mut ys = vec![];
         readings.points(&mut |_, point| ys.push(point.y().and_then(Value::number).map(Scalar::round)));
         assert_eq!(ys, vec![Some(20.0), None, Some(30.0)]);
-        assert_eq!(readings.max().map(|(x, y)| (x, y.round())), Some((2.0, 30.0)));
 
         assert_eq!(Some(Kelvin(373.15)).value().and_then(Value::number).map(Scalar::round), Some(100.0), "an `Option` of it is a coordinate too");
         assert_eq!(None::<Kelvin>.value(), None);

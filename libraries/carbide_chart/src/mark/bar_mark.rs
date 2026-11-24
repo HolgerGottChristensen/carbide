@@ -10,7 +10,7 @@ use crate::controller::drawing::PolarFrame;
 use crate::controller::line_path::PathSink;
 use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::mark::line_mark::polar_whisker;
-use crate::mark::MarkRole;
+use crate::MarkRole;
 use crate::{Mark, Role};
 use crate::scale::{Coordinates, ScaleId};
 use crate::Scale;

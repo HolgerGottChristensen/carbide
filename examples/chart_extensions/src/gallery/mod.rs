@@ -13,7 +13,7 @@ mod scales;
 mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
-use carbide::chart::{Chart, ChartStyleExt, ControllerSequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, TooltipAnchor, ZoomWindow};
+use carbide::chart::{Chart, ChartStyleExt, Sequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, TooltipAnchor, ZoomWindow, DatasetController};
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
@@ -187,7 +187,7 @@ impl Shared {
 
     /// `chart` with the shared options: the legend, the pointer's options, and its hover and click
     /// reported to the bottom bar.
-    pub(crate) fn apply<C: ControllerSequence>(&self, chart: Chart<C>) -> Chart<C> {
+    pub(crate) fn apply<C: Sequence<dyn DatasetController>>(&self, chart: Chart<C>) -> Chart<C> {
         let clicked = self.clicked.clone();
         chart
             .legend(self.legend.clone())

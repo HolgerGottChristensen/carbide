@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 use carbide::environment::Environment;
-use crate::Role;
 
 /// What every mark is, whichever controllers draw it (`BarMark`, `LineMark`, `ScatterMark`): a
 /// value that can be cloned, printed, and synced. A mark's options can be states, as a dataset's
@@ -71,4 +70,46 @@ pub trait Mark: Clone + Debug + 'static {
     fn sync(&mut self, _env: &mut Environment) -> bool {
         false
     }
+}
+
+/// Whether a mark replaces the glyph its controller draws by default, or is drawn on top of it.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum MarkRole {
+    /// Drawn instead of the controller's default glyph: a floating bar instead of a bar. The
+    /// controller then leaves the dataset's own values out of the scale bounds, and the mark
+    /// reports its values instead.
+    Primary,
+    /// Drawn on top of the dataset's glyph, after every dataset of the controller is drawn: error
+    /// bars over bars.
+    Overlay,
+}
+
+/// A mark's `MarkRole` as a type, for `Mark::Role`: `Primary` or `Overlay`.
+pub trait Role: sealed::Sealed + 'static {
+    /// The role as a value, for the controllers reading marks through trait objects.
+    const ROLE: MarkRole;
+}
+
+/// The role of a mark drawn instead of its controller's default glyph (`MarkRole::Primary`).
+#[derive(Copy, Clone, Debug)]
+pub enum Primary {}
+
+/// The role of a mark drawn on top of its dataset's glyph (`MarkRole::Overlay`).
+#[derive(Copy, Clone, Debug)]
+pub enum Overlay {}
+
+impl Role for Primary {
+    const ROLE: MarkRole = MarkRole::Primary;
+}
+
+impl Role for Overlay {
+    const ROLE: MarkRole = MarkRole::Overlay;
+}
+
+/// Keeps `Role` to the crate's own roles, `Primary` and `Overlay`.
+mod sealed {
+    pub trait Sealed {}
+
+    impl Sealed for super::Primary {}
+    impl Sealed for super::Overlay {}
 }

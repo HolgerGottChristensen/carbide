@@ -280,7 +280,6 @@ mod support {
     use carbide_fluent::{locale, LocaleExt};
     use carbide_testing::Harness;
     use crate::Chart;
-    use crate::ControllerSequence;
     use carbide::draw::Rect;
     use carbide::environment::Environment;
     use crate::{DataSet, DatasetController, IntoSequence, Orientation, PolarRole, ScaleBounds, Scales, Sequence, Shape};
@@ -339,7 +338,7 @@ mod support {
 
     /// Renders `chart` and picks at each position as its mode says, then snapshots it as `name`,
     /// with what each pick found outlined, and returns what each found.
-    pub(super) fn probe<C: ControllerSequence>(chart: Chart<C>, name: &str, picks: Vec<(At, PickMode)>) -> Vec<Vec<DatumKey>> {
+    pub(super) fn probe<C: Sequence<dyn DatasetController>>(chart: Chart<C>, name: &str, picks: Vec<(At, PickMode)>) -> Vec<Vec<DatumKey>> {
         let found = Rc::new(RefCell::new(vec![]));
         let probe = Probe { id: WidgetId::new(), position: Position::new(0.0, 0.0), dimension: Dimension::new(100.0, 100.0), child: chart, picks, found: found.clone() };
 
@@ -354,7 +353,7 @@ mod support {
     /// A chart that picks after it renders, and draws what it found on top of itself.
     #[derive(Debug, Clone, Widget)]
     #[carbide_exclude(Render)]
-    struct Probe<C> where C: ControllerSequence {
+    struct Probe<C> where C: Sequence<dyn DatasetController> {
         #[id] id: WidgetId,
         position: Position,
         dimension: Dimension,
@@ -363,11 +362,11 @@ mod support {
         found: Rc<RefCell<Vec<Vec<DatumKey>>>>,
     }
 
-    impl<C: ControllerSequence> CommonWidget for Probe<C> {
+    impl<C: Sequence<dyn DatasetController>> CommonWidget for Probe<C> {
         CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension);
     }
 
-    impl<C: ControllerSequence> Render for Probe<C> {
+    impl<C: Sequence<dyn DatasetController>> Render for Probe<C> {
         fn render(&mut self, ctx: &mut RenderContext) {
             self.sync(ctx.env);
             self.child.render(ctx);

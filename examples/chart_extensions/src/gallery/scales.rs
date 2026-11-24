@@ -2,7 +2,7 @@
 //! either side with titles and tick marks, a fixed start and step, grid lines between categories,
 //! and zooming along each scale, the categories snapping to whole ones or scrolling freely.
 
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, ControllerSequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, SnapMode, TimeScale, TimeScaleZone, ZoomWindow};
+use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, Sequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, SnapMode, TimeScale, TimeScaleZone, ZoomWindow, DatasetController};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -205,7 +205,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
 
 /// `chart` with its y scale, logarithmic or linear, its second y axis on the other side when it
 /// has one, and the shared options.
-fn finish<C: ControllerSequence>(chart: Chart<C>, options: Options, shared: Shared, log: bool, second: bool) -> Box<dyn AnyWidget> {
+fn finish<C: Sequence<dyn DatasetController>>(chart: Chart<C>, options: Options, shared: Shared, log: bool, second: bool) -> Box<dyn AnyWidget> {
     let chart = chart.title(options.title.clone());
 
     let chart = if log {

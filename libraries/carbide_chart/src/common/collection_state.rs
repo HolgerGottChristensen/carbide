@@ -156,7 +156,7 @@ mod tests {
     use carbide::draw::{Position, Scalar};
     use carbide::environment::Environment;
     use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExt, State, StateExtNew, ValueState};
-    use crate::{DataSet, DataSetSequence, Value};
+    use crate::{DataSet, Sequence, Value};
 
     /// The points of a dataset, as `(x, y)`. None of the datasets here have missing points.
     fn points<D: DataSet>(dataset: &D) -> Vec<(Scalar, Scalar)> {
@@ -165,7 +165,7 @@ mod tests {
         points
     }
 
-    fn dataset_count<S: DataSetSequence>(datasets: &S) -> usize {
+    fn dataset_count<S: Sequence<dyn DataSet>>(datasets: &S) -> usize {
         let mut count = 0;
         datasets.foreach(&mut |_, _| count += 1);
         assert_eq!(count, datasets.count(), "`count` should agree with `foreach`");
@@ -322,14 +322,14 @@ mod tests {
         computed.set(0);
 
         assert_eq!(points(&cached), INDEXED);
-        assert!(cached.min().is_some() && cached.max().is_some());
+        assert_eq!(points(&cached), INDEXED);
         assert_eq!(computed.get(), 0, "reads of a synced cached state shouldn't recompute");
 
         DataSet::sync(&mut cached, &mut Environment::new());
         assert_eq!(computed.get(), 1, "a sync should compute the mapping once");
 
         computed.set(0);
-        let _ = (points(&mapped), mapped.min(), mapped.max());
+        let _ = (points(&mapped), points(&mapped), points(&mapped));
         assert_eq!(computed.get(), 3, "unwrapped, every read recomputes");
     }
 

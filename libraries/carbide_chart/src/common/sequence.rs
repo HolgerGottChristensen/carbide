@@ -1,6 +1,7 @@
 //! The chart's own sequence trait. Points, datasets and controllers are all sequences of the
-//! level below: a `DataSet` is a sequence of `DataPoint`s, a `DataSetSequence` a sequence of
-//! `DataSet`s, and a `ControllerSequence` a sequence of `DatasetController`s.
+//! level below: a `DataSet` is a sequence of `DataPoint`s, a controller holds a
+//! `Sequence<dyn DataSet>` (or of its family, such as `dyn BarDataSet`), and a chart a
+//! `Sequence<dyn DatasetController>`.
 //!
 //! Unlike carbide's widget `Sequence`, reading one goes only through `&self`, handing each item
 //! to a callback, and never asks for an item by index. That is what lets a state be a sequence:
@@ -13,13 +14,32 @@ use std::fmt::Debug;
 use carbide::environment::Environment;
 use crate::{Collection, DataSet, DatasetController, SequenceItem};
 
-/// An ordered sequence of `T`s, visited in order with their index.
+/// An ordered sequence of `T`s, visited in order with their index, such as a dataset's points, a
+/// controller's datasets or a chart's controllers.
+///
+/// Implemented for, with each item anything that is a `T` (see `SequenceItem`):
+/// - tuples of 1 to 12 items, each of its own type;
+/// - collections (`Collection`): `Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`,
+///   `&'static [_]`, and any type of your own implementing `Collection`;
+/// - states holding any of those collections (`CollectionState`): `LocalState`, `GlobalState`,
+///   `ValueState`, `FieldState`, carbide's mapped states (`read_map`, `read_map_env`, `map`,
+///   `map_owned`), its cached states (`CachedReadState`, `CachedState`), and
+///   `Box<dyn AnyReadState>` / `Box<dyn AnyState>`. Any other carbide state is a sequence once
+///   boxed with `.as_dyn_read()`, and a state type of your own once it implements
+///   `CollectionState`.
+///
+/// Every item of a collection or state has the same type, while each item of a tuple has its own.
+/// With a `Vec` or a state, the number of items can change at runtime.
+///
+/// A single item is not a sequence of one; where a single item should do, take an `IntoSequence`,
+/// which turns it into the 1-tuple `(item,)`.
 #[diagnostic::on_unimplemented(
     message = "`{Self}` is not a sequence of `{T}`",
     label = "not a sequence of `{T}`",
     note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
 )]
 pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
+    /// Internal iteration of each item and index in the sequence
     fn foreach(&self, f: &mut dyn FnMut(usize, &T));
 
     /// Syncs the states in the sequence with the environment: the sequence itself when it is a
@@ -28,6 +48,8 @@ pub trait Sequence<T: ?Sized>: Debug + Clone + 'static {
     /// reads afterwards see the current values without syncing.
     fn sync(&mut self, env: &mut Environment) -> bool;
 
+    /// The total number of items in the sequence. By default it iterates and counts.
+    /// Overridden for collections that provide faster count/len methods.
     fn count(&self) -> usize {
         let mut count = 0;
         self.foreach(&mut |_, _| count += 1);

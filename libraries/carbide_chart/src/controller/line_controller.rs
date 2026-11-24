@@ -11,7 +11,8 @@ use crate::controller::drawing::{polar_frame, register_values, collect_point_bou
 use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::mark::{LineCanvas, LineDataSet, MarkRole, LegendContext};
+use crate::mark::{LineCanvas, LineDataSet, LegendContext};
+use crate::MarkRole;
 use crate::controller::stacking::{normalized_totals, stack_offset, StackKey, StackOffsets, StackSums};
 use crate::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, Places, PolarRole, ScaleBounds, ScaleKind, Scales};

@@ -271,14 +271,6 @@ where
         self.inner.points(f);
     }
 
-    fn min(&self) -> Option<(Scalar, Scalar)> {
-        self.inner.min()
-    }
-
-    fn max(&self) -> Option<(Scalar, Scalar)> {
-        self.inner.max()
-    }
-
     /// Syncs the inner dataset and every option state.
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut changed = self.inner.sync(env);

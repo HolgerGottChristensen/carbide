@@ -1,13 +1,11 @@
 use std::fmt::Debug;
 use dyn_clone::DynClone;
-use carbide::draw::Scalar;
 use carbide::environment::Environment;
 use crate::DataColor;
 use crate::DataPoint;
 use crate::DataSetOptions;
 use crate::element::{Fill, Interpolation, SpanGaps};
 use crate::scale::ScaleId;
-use crate::Value;
 use crate::Sequence;
 
 /// One series: a sequence of data points, with options for how it is drawn.
@@ -28,19 +26,8 @@ use crate::Sequence;
     note = "sequences are tuples of up to 12 items; collections (`Vec`, arrays, `VecDeque`, `Box<[_]>`, `Rc<[_]>`, `Arc<[_]>`, `&'static [_]`, or any type implementing `Collection`); and states holding a collection: `LocalState`, `GlobalState`, `ValueState`, `FieldState`, mapped states, or any read state boxed with `.as_dyn_read()`",
 )]
 pub trait DataSet: DynClone + Debug + 'static {
+    /// Method providing internal iteration of all the data points of the dataset
     fn points(&self, f: &mut dyn FnMut(usize, &dyn DataPoint));
-
-    /// The smallest x and y of the dataset's points, leaving out missing ones, or `None` when it
-    /// has none.
-    fn min(&self) -> Option<(Scalar, Scalar)> {
-        extreme(self, Scalar::min)
-    }
-
-    /// The largest x and y of the dataset's points, leaving out missing ones, or `None` when it
-    /// has none.
-    fn max(&self) -> Option<(Scalar, Scalar)> {
-        extreme(self, Scalar::max)
-    }
 
     /// Syncs the states in the dataset with the environment, and returns whether anything may
     /// have changed. A dataset that is a sequence of points syncs as a sequence: the state
@@ -82,14 +69,6 @@ impl DataSet for Box<dyn DataSet> {
         (**self).points(f);
     }
 
-    fn min(&self) -> Option<(Scalar, Scalar)> {
-        (**self).min()
-    }
-
-    fn max(&self) -> Option<(Scalar, Scalar)> {
-        (**self).max()
-    }
-
     fn sync(&mut self, env: &mut Environment) -> bool {
         (**self).sync(env)
     }
@@ -114,70 +93,18 @@ impl<S: Sequence<dyn DataPoint>> DataSet for S {
     }
 }
 
-/// The x and y of the dataset's points that aren't missing, each combined across the points with
-/// `pick` (`Scalar::min` or `Scalar::max`), or `None` when it has none. Only numbers and times
-/// count: a category's name has no number until a scale places it (see `Coordinates`).
-fn extreme<D: DataSet + ?Sized>(dataset: &D, pick: fn(Scalar, Scalar) -> Scalar) -> Option<(Scalar, Scalar)> {
-    let mut result: Option<(Scalar, Scalar)> = None;
-
-    dataset.points(&mut |_index, point| {
-        let (Some(x), Some(y)) = (point.x().and_then(Value::number), point.y().and_then(Value::number)) else {
-            return;
-        };
-
-        result = Some(match result {
-            Some((rx, ry)) => (pick(rx, x), pick(ry, y)),
-            None => (x, y),
-        });
-    });
-
-    result
-}
-
 #[cfg(test)]
 mod tests {
     use carbide::draw::Scalar;
     use crate::{DataSet, Value};
 
-    /// Empty datasets have no bounds. `Vec<Scalar>::max` used to compute `len() - 1` for the
-    /// last index even when empty, which underflowed and panicked.
+    /// A missing value in a dataset of `Option`s keeps its index, as its x, but has no y.
     #[test]
-    fn empty_datasets_have_no_bounds() {
-        let values: Vec<Scalar> = vec![];
-        assert_eq!(values.min(), None);
-        assert_eq!(values.max(), None);
-
-        let points: Vec<(Scalar, Scalar)> = vec![];
-        assert_eq!(points.min(), None);
-        assert_eq!(points.max(), None);
-    }
-
-    #[test]
-    fn value_lists_use_the_index_as_x() {
-        let values: Vec<Scalar> = vec![3.0, -1.0, 7.0];
-        assert_eq!(values.min(), Some((0.0, -1.0)));
-        assert_eq!(values.max(), Some((2.0, 7.0)));
-    }
-
-    /// `None` in a dataset of `Option`s, and NaN in a plain dataset, are missing points, which a
-    /// dataset's bounds leave out. A dataset of only missing points has no bounds.
-    #[test]
-    fn missing_points_are_left_out_of_the_bounds() {
+    fn missing_values_keep_their_index() {
         let options: Vec<Option<Scalar>> = vec![Some(3.0), None, Some(-1.0)];
-        assert_eq!(options.min(), Some((0.0, -1.0)));
-        assert_eq!(options.max(), Some((2.0, 3.0)));
 
         let mut points = vec![];
         options.points(&mut |index, point| points.push((index, point.x().and_then(Value::number), point.y().and_then(Value::number))));
-        assert_eq!(points, vec![(0, Some(0.0), Some(3.0)), (1, Some(1.0), None), (2, Some(2.0), Some(-1.0))], "a missing value keeps its index, but has no y");
-
-        let nan: Vec<Scalar> = vec![5.0, Scalar::NAN, 7.0];
-        assert_eq!(nan.max(), Some((2.0, 7.0)), "a NaN is missing too, and doesn't poison the bounds");
-
-        let optional_points: Vec<Option<(Scalar, Scalar)>> = vec![None, Some((4.0, 2.0)), None];
-        assert_eq!(optional_points.min(), Some((4.0, 2.0)));
-
-        let all_missing: Vec<Option<Scalar>> = vec![None, None];
-        assert_eq!(all_missing.min(), None);
+        assert_eq!(points, vec![(0, Some(0.0), Some(3.0)), (1, Some(1.0), None), (2, Some(2.0), Some(-1.0))]);
     }
 }

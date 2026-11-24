@@ -11,7 +11,8 @@ use crate::controller::drawing::{polar_frame, register_values, collect_point_bou
 use crate::interaction::DatumInfo;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::Fill;
-use crate::mark::{MarkRole, ScatterCanvas, ScatterDataSet, SizeScale, LegendContext};
+use crate::mark::{ScatterCanvas, ScatterDataSet, SizeScale, LegendContext};
+use crate::MarkRole;
 use crate::{IntoSequence, Sequence};
 use crate::scale::{Coordinates, GridShape, ScaleBounds, Scales};
 
