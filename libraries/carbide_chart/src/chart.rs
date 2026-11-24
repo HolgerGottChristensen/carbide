@@ -11,6 +11,7 @@ use carbide::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, Mo
 use carbide::draw::color::{rgba, Rgba};
 use indexmap::{IndexMap, IndexSet};
 use carbide_core::render::{Render, RenderContext};
+use crate::colors::DimmedDatasetsKey;
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
 use carbide_core::text::{FontSize, FontWeight};
 use carbide_core::widget::canvas::CanvasContext;
@@ -365,7 +366,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
             return self.scales.iter().map(|(id, _)| id.clone()).filter(|id| self.is_zoomable(id)).collect();
         }
 
-        self.scale_band_at(position).into_iter().collect()
+        self.zoomable_band_at(position).into_iter().collect()
     }
 
     /// Whether the chart has the scale `id`, and gestures can move it.
@@ -373,15 +374,31 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
         self.scales.get(id).is_some_and(|scale| scale.axis_options().is_zoomable())
     }
 
-    /// The zoomable scale whose band `position` is over, outside the chart area.
+    /// Whether the scale `id` runs the same way as another of the chart's scales, as a second y
+    /// scale does, so hovering its band shows which datasets are on it.
+    fn is_linked(&self, id: &ScaleId) -> bool {
+        let Some(axis) = self.scales.get(id).map(|scale| scale.axis()).filter(|axis| *axis != Axis::Radial) else {
+            return false;
+        };
+
+        self.scales.iter().any(|(other, scale)| other != id && scale.axis() == axis)
+    }
+
+    /// The scale whose band `position` is over, outside the chart area, when hovering it does
+    /// something: a scale gestures can move, or one linked to its datasets (see `is_linked`).
     fn scale_band_at(&self, position: Position) -> Option<ScaleId> {
         if inside(self.shapes.area(), position) {
             return None;
         }
 
         self.bands.iter()
-            .find(|(id, band)| self.is_zoomable(id) && inside(*band, position))
+            .find(|(id, band)| (self.is_zoomable(id) || self.is_linked(id)) && inside(*band, position))
             .map(|(id, _)| id.clone())
+    }
+
+    /// The zoomable scale whose band `position` is over, which a gesture there moves.
+    fn zoomable_band_at(&self, position: Position) -> Option<ScaleId> {
+        self.scale_band_at(position).filter(|id| self.is_zoomable(id))
     }
 
     /// Notes the scale whose band the pointer is over, at `position`, or none when it left the
@@ -441,7 +458,8 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// The cursor over the hovered scale (see `hovered_scale`), showing the way gestures move it:
     /// left and right along a horizontal scale, up and down along a vertical one.
     pub(crate) fn scale_cursor(&self) -> Option<MouseCursor> {
-        let scale = self.scales.get(self.hovered_scale.as_ref()?)?;
+        let id = self.hovered_scale.as_ref().filter(|id| self.is_zoomable(id))?;
+        let scale = self.scales.get(id)?;
         match scale.axis() {
             Axis::Horizontal => Some(MouseCursor::EwResize),
             Axis::Vertical => Some(MouseCursor::NsResize),
@@ -924,7 +942,7 @@ impl<C: Sequence<dyn DatasetController>> MouseEventHandler for Chart<C> {
                     // Shift selects what to zoom to: a box over the chart area, or a span along the
                     // scale whose band the drag started on.
                     self.gesture = Some(if modifiers.contains(ModifierKey::SHIFT) {
-                        Gesture::Box { origin, to: origin, scales, band: self.scale_band_at(origin) }
+                        Gesture::Box { origin, to: origin, scales, band: self.zoomable_band_at(origin) }
                     } else {
                         Gesture::Pan { last: origin, scales }
                     });
@@ -1188,11 +1206,35 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
             canvas.render_context().render.clip(on_screen);
         }
 
+        // While the band of a scale linked to its datasets is hovered, each controller draws its
+        // datasets on other scales dimmed: the indices are scoped in the environment, where its
+        // `SeriesColors` read them, around a canvas made inside the scope.
+        let linked = self.hovered_scale.clone().filter(|id| self.is_interactive() && self.is_linked(id));
+        let (position, dimension) = (self.position, self.dimension);
         let mut shapes = Shapes::new(chart_area, circle);
         let scales = &self.scales;
         self.controllers.foreach(&mut |index, controller| {
             shapes.set_controller(index);
-            controller.draw(&mut canvas, scales, chart_area, &mut shapes);
+
+            let Some(hovered) = &linked else {
+                controller.draw(&mut canvas, scales, chart_area, &mut shapes);
+                return;
+            };
+
+            let mut dimmed = vec![];
+            controller.visit_datasets(&mut |dataset_index, dataset| {
+                let options = dataset.options();
+                if options.x_scale != *hovered && options.y_scale != *hovered {
+                    dimmed.push(dataset_index);
+                }
+            });
+
+            let RenderContext { render, image, env } = canvas.render_context();
+            env.with::<DimmedDatasetsKey>(&dimmed, |env| {
+                let mut context = RenderContext { render: &mut **render, image: &mut **image, env };
+                let mut dimming = CanvasContext::new(position, dimension, &mut context);
+                controller.draw(&mut dimming, scales, chart_area, &mut shapes);
+            });
         });
 
         shapes.place_on_scales(scales);
@@ -2176,14 +2218,42 @@ mod tests {
         chart.hover_scale_at(Some(Position::new(200.0, 100.0)));
         assert_eq!((chart.hovered_scale.clone(), chart.scale_cursor()), (None, None), "the chart area isn't a scale's band");
 
+        // The fixed scale runs the same way as y, so hovering it shows which datasets are on it,
+        // but gestures can't move it: no resize cursor, and nothing for a drag to move.
         chart.hover_scale_at(Some(Position::new(470.0, 100.0)));
-        assert_eq!(chart.hovered_scale, None, "a scale gestures can't move isn't hovered");
+        assert_eq!((chart.hovered_scale.clone(), chart.scale_cursor()), (Some(ScaleId::new("fixed")), None));
+        assert!(chart.gesture_scales(Position::new(470.0, 100.0)).is_empty());
 
         chart.hover_scale_at(Some(Position::new(200.0, 310.0)));
         chart.gesture = Some(Gesture::Pan { last: Position::new(200.0, 310.0), scales: vec![ScaleId::X] });
         chart.hover_scale_at(Some(Position::new(200.0, 100.0)));
         chart.hover_scale_at(None);
         assert_eq!(chart.hovered_scale, Some(ScaleId::X), "dragging keeps the scale it started on, even off the chart");
+    }
+
+    /// A band whose scale can't be moved by gestures responds to hover only when another scale
+    /// runs the same way: alone on its axis, hovering it would show nothing.
+    #[test]
+    fn only_scales_sharing_an_axis_are_linked() {
+        use crate::geometry::Shapes;
+
+        let mut alone = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0])));
+        alone.shapes = Shapes::new(Rect::new(Position::new(50.0, 10.0), Dimension::new(400.0, 290.0)), None);
+        alone.bands = vec![(ScaleId::Y, Rect::new(Position::new(0.0, 10.0), Dimension::new(50.0, 290.0)))];
+        alone.hover_scale_at(Some(Position::new(20.0, 100.0)));
+        assert_eq!(alone.hovered_scale, None, "one y scale: nothing to tell apart");
+
+        let mut twin = fitted(Chart::new(LineController::new(vec![1.0, 2.0, 3.0]))
+            .scale(ScaleId::new("second"), LinearScale::new(Axis::Vertical).position(AxisPosition::Right)));
+        twin.shapes = Shapes::new(Rect::new(Position::new(50.0, 10.0), Dimension::new(400.0, 290.0)), None);
+        twin.bands = vec![
+            (ScaleId::X, Rect::new(Position::new(50.0, 300.0), Dimension::new(400.0, 30.0))),
+            (ScaleId::Y, Rect::new(Position::new(0.0, 10.0), Dimension::new(50.0, 290.0))),
+        ];
+        twin.hover_scale_at(Some(Position::new(20.0, 100.0)));
+        assert_eq!(twin.hovered_scale, Some(ScaleId::Y), "two vertical scales: y is linked");
+        twin.hover_scale_at(Some(Position::new(200.0, 310.0)));
+        assert_eq!(twin.hovered_scale, None, "x is the only horizontal scale");
     }
 
     fn fitted<C: Sequence<dyn DatasetController>>(mut chart: Chart<C>) -> Chart<C> {

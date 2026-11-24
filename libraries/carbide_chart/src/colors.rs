@@ -5,7 +5,7 @@
 
 use carbide::color::Color;
 use carbide::draw::color::{rgba, Rgba};
-use carbide::environment::Environment;
+use carbide::environment::{Environment, EnvironmentKey, Shared};
 use crate::DataColor;
 use crate::style::{axis_style, series_style};
 
@@ -38,6 +38,10 @@ pub struct SeriesColors {
     falling: Color,
     outline: Color,
     ink: Color,
+    /// The indices of the controller's datasets drawn dimmed, while the chart shows which
+    /// datasets are on a hovered scale.
+    dimmed: Vec<usize>,
+    dimmed_opacity: f32,
 }
 
 impl SeriesColors {
@@ -54,12 +58,18 @@ impl SeriesColors {
             falling: series.falling_color(env),
             outline: series.outline_color(env),
             ink: axis_style(env).label_color(env),
+            dimmed: env.get::<DimmedDatasetsKey>().cloned().unwrap_or_default(),
+            dimmed_opacity: series.dimmed_opacity(),
         }
     }
 
     /// The colours of the dataset at `dataset_index` in the controller, coloured `color` (its
     /// `DataSetOptions::color`). Count every dataset of the controller, shown or hidden, so a
     /// dataset keeps its colour when another is hidden from the legend.
+    ///
+    /// While the chart shows which datasets are on a hovered scale, the colours of the datasets
+    /// on other scales come at the series style's dimmed opacity (`SeriesStyle::dimmed_opacity`),
+    /// so a controller that colours its datasets here dims them without doing anything else.
     pub fn dataset(&self, color: DataColor, dataset_index: usize) -> DatasetColors<'_> {
         DatasetColors { series: self, color, dataset_index }
     }
@@ -135,20 +145,20 @@ impl<'a> DatasetColors<'a> {
     /// The colour of what is drawn once for the whole dataset, such as a line, its area, or its
     /// legend entry.
     pub fn color(&self) -> Color {
-        match self.color {
+        self.dim(match self.color {
             DataColor::ByDataSet | DataColor::ByPoint => self.series.by_index(self.dataset_index),
             DataColor::Palette(index) => self.series.palette(index),
             DataColor::Color(color) => color,
-        }
+        })
     }
 
     /// The colour of one bar or point at `point_index` in the dataset, whose own colour is
     /// `color` (`DataPoint::color`).
     pub fn point(&self, point_index: usize, color: DataColor) -> Color {
         match (color, self.color) {
-            (DataColor::Color(color), _) => color,
-            (DataColor::Palette(index), _) => self.series.palette(index),
-            (DataColor::ByPoint, _) | (DataColor::ByDataSet, DataColor::ByPoint) => self.series.by_index(point_index),
+            (DataColor::Color(color), _) => self.dim(color),
+            (DataColor::Palette(index), _) => self.dim(self.series.palette(index)),
+            (DataColor::ByPoint, _) | (DataColor::ByDataSet, DataColor::ByPoint) => self.dim(self.series.by_index(point_index)),
             (DataColor::ByDataSet, _) => self.color(),
         }
     }
@@ -158,16 +168,36 @@ impl<'a> DatasetColors<'a> {
     /// resolve their colour options with it, such as a range's inverted colour.
     pub fn resolve(&self, color: DataColor) -> Color {
         match color {
-            DataColor::Color(color) => color,
-            DataColor::Palette(index) => self.series.palette(index),
+            DataColor::Color(color) => self.dim(color),
+            DataColor::Palette(index) => self.dim(self.series.palette(index)),
             DataColor::ByDataSet | DataColor::ByPoint => self.color(),
         }
+    }
+
+    /// `color`, at the dimmed opacity when this dataset is dimmed.
+    fn dim(&self, color: Color) -> Color {
+        if !self.series.dimmed.contains(&self.dataset_index) {
+            return color;
+        }
+
+        let Rgba(r, g, b, a) = Rgba::from(color);
+        rgba(r, g, b, a * self.series.dimmed_opacity)
     }
 
     /// The colours of the whole controller, for the styles' other colours.
     pub fn series(&self) -> &'a SeriesColors {
         self.series
     }
+}
+
+/// The indices of the datasets of the controller being drawn that the chart dims, while it shows
+/// which datasets are on a hovered scale. The chart scopes it around each controller's draw.
+#[derive(Debug, Copy, Clone)]
+pub(crate) struct DimmedDatasetsKey;
+
+impl EnvironmentKey for DimmedDatasetsKey {
+    type Value = Vec<usize>;
+    type Access = Shared;
 }
 
 #[cfg(test)]
@@ -181,7 +211,7 @@ mod tests {
 
     /// Colours with a palette of white, green and red, starting `offset` colours in.
     fn colors(offset: usize) -> SeriesColors {
-        SeriesColors { palette: vec![WHITE, GREEN, RED], offset, fill_opacity: 0.5, rising: GREEN, falling: RED, outline: WHITE, ink: BLUE }
+        SeriesColors { palette: vec![WHITE, GREEN, RED], offset, fill_opacity: 0.5, rising: GREEN, falling: RED, outline: WHITE, ink: BLUE, dimmed: vec![], dimmed_opacity: 0.25 }
     }
 
     /// A dataset coloured `ByPoint` gives each point the palette colour for its index in the
@@ -254,5 +284,18 @@ mod tests {
 
         let empty = SeriesColors { palette: vec![], ..colors };
         assert_eq!(empty.dataset(DataColor::ByDataSet, 3).color(), Color::default());
+    }
+
+    /// The datasets the chart dims are coloured at the dimmed opacity, whatever their colour; the
+    /// others keep theirs.
+    #[test]
+    fn dimmed_datasets_are_faded() {
+        let colors = SeriesColors { dimmed: vec![1], ..colors(0) };
+        let alpha = |color: Color| Rgba::from(color).3;
+
+        assert_eq!(alpha(colors.dataset(DataColor::ByDataSet, 0).color()), 1.0, "not dimmed");
+        assert_eq!(alpha(colors.dataset(DataColor::ByDataSet, 1).color()), 0.25);
+        assert_eq!(alpha(colors.dataset(DataColor::Color(BLUE), 1).point(0, DataColor::ByPoint)), 0.25, "by point too");
+        assert_eq!(alpha(colors.dataset(DataColor::ByDataSet, 1).resolve(DataColor::Color(RED))), 0.25, "and fixed colours");
     }
 }

@@ -1,3 +1,5 @@
+use crate::DataSet;
+use crate::mark::AsDataSet;
 use carbide::state::IntoReadState;
 use carbide::draw::{Rect, Scalar};
 use carbide::environment::Environment;
@@ -172,6 +174,10 @@ impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D>
     /// Shows or hides the named dataset behind the entry.
     fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
         set_legend_visibility(&self.dataset_sequence, entry, visible)
+    }
+
+    fn visit_datasets(&self, f: &mut dyn FnMut(usize, &dyn DataSet)) {
+        self.dataset_sequence.foreach(&mut |index, dataset| f(index, dataset.as_dataset()));
     }
 
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {

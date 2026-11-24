@@ -63,6 +63,13 @@ pub trait SeriesStyle: WidgetStyle {
         0.3
     }
 
+    /// How opaque the datasets on other scales are drawn, from 0 to 1, while the chart shows
+    /// which datasets are on a hovered scale (see `Chart`): hovering the band of one of two y
+    /// scales dims the datasets on the other.
+    fn dimmed_opacity(&self) -> f32 {
+        0.25
+    }
+
     /// The colour of a rising candlestick or OHLC bar, whose close is above its open (see
     /// `OhlcDataSetExt`). The environment's green by default.
     fn rising_color(&self, env: &Environment) -> Color {
