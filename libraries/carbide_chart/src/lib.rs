@@ -14,7 +14,7 @@ mod tooltip;
 
 pub use dataset::*;
 pub use chart::Chart;
-pub use geometry::{DatumKey, Measure, PickMode, Shapes};
+pub use geometry::{AddedShape, DatumKey, LineShape, Measure, PickMode, Shape, Shapes};
 pub use interaction::{ChartClick, DatumInfo, Pick, ValueText};
 pub use tooltip::TooltipAnchor;
 pub use controller::*;

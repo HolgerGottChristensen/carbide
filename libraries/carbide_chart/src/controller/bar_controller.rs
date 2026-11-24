@@ -101,6 +101,16 @@ impl<D: Sequence<dyn BarDataSet>> BarController<D> {
 }
 
 impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
+    /// Horizontal when `horizontal` was last synced `true`.
+    fn orientation(&self) -> Orientation {
+        Self::orientation(self)
+    }
+
+    /// The offset set with `palette_offset`, as last synced.
+    fn palette_offset(&self) -> usize {
+        get(&self.palette_offset)
+    }
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut changed = self.dataset_sequence.sync(env);
         changed |= self.category_percentage.sync(env);
@@ -369,7 +379,7 @@ impl<D: Sequence<dyn BarDataSet>> DatasetController for BarController<D> {
                     // rectangle along the sides, a wedge around the circle.
                     let color = colors.dataset(options.color, dataset_index).point(point_index, point.color());
                     let place = shapes.place(index_id, x, frame.along(center));
-                    let item = shapes.add(dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, frame.shape(side, thickness, base, head));
+                    let item = shapes.add_item(dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, frame.shape(side, thickness, base, head));
 
                     ctx.begin_path();
                     item.shape.trace(ctx);

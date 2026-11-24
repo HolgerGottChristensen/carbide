@@ -10,7 +10,9 @@ pub use line_controller::LineController;
 pub use pie_controller::{PieController, PiePart, DEFAULT_OUTLINE_WIDTH, DEFAULT_RING_SPACING};
 pub use scatter_controller::ScatterController;
 pub use orientation::Orientation;
-use crate::legend::LegendItem;
+use crate::{DataSet, SeriesColors};
+use crate::legend::{LegendItem, LegendMarker};
+use drawing::describe_point;
 use crate::scale::{ScaleBounds, Scales};
 use crate::geometry::{DatumKey, Shapes};
 use crate::interaction::DatumInfo;
@@ -94,31 +96,97 @@ pub trait DatasetController: DynClone + Debug + 'static {
     /// `Polar::at` the position at an angle (`Polar::angle` of the angle scale's normalized value)
     /// and a distance from the centre (`Polar::distance` of the radius scale's).
     ///
-    /// The built-in controllers lay out the shape of each datum into `shapes` and draw from it, so
-    /// the chart can find the data under a position. Controllers of your own can't add to it yet,
-    /// and leave it as it is: their data isn't found.
+    /// For each point it draws, a controller adds its shape to `shapes` (`Shapes::add`, or
+    /// `Shapes::add_line` for a line through a dataset's points), so the chart can find the point
+    /// under or near the pointer, for hovering, tooltips and clicks; a point without a shape isn't
+    /// found. A hidden dataset (`DataSetOptions::visible`) is neither drawn nor added.
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, shapes: &mut Shapes);
+
+    /// Calls `f` with each of the controller's datasets and its index in the controller, shown or
+    /// hidden, so the provided `legend_items`, `legend_visibility` and `describe` can read them.
+    /// The default visits none, and those then add no entries, toggle nothing and describe
+    /// nothing. A controller of your own whose datasets are a `Sequence<dyn DataSet>` visits them
+    /// with `self.datasets.foreach(f)`.
+    fn visit_datasets(&self, _f: &mut dyn FnMut(usize, &dyn DataSet)) {}
+
+    /// The marker of the dataset at `dataset_index`, in its legend entry and in tooltips, for the
+    /// provided `legend_items` and `describe`. The default is a square.
+    fn legend_marker(&self, _dataset_index: usize) -> LegendMarker {
+        LegendMarker::Square
+    }
+
+    /// Which way the controller draws: upright, its datasets' values up their y scale, or
+    /// horizontal, along x, for the provided `describe`, which reads a datum's index and value off
+    /// its index and value scales (see `Orientation::index_and_value_scales`). The default is
+    /// upright.
+    fn orientation(&self) -> Orientation {
+        Orientation::Vertical
+    }
+
+    /// How many colours into the palette the controller's datasets start (see
+    /// `SeriesColors::new`), for the provided `legend_items` and `describe`. The default is 0.
+    fn palette_offset(&self) -> usize {
+        0
+    }
 
     /// Adds an entry to `items` for each of the controller's datasets that has a name (see
     /// `DatasetExt::label`), in the colour it is drawn in, for the chart's legend (see
-    /// `Chart::legend`). `env` holds the chart's `SeriesStyle`. The default adds nothing.
-    fn legend_items(&self, _env: &Environment, _items: &mut Vec<LegendItem>) {}
+    /// `Chart::legend`). `env` holds the chart's `SeriesStyle`.
+    ///
+    /// The default adds an entry for each named dataset `visit_datasets` visits, in its colour
+    /// (see `SeriesColors`, with `palette_offset`), with its `legend_marker`, dimmed when the
+    /// dataset is hidden.
+    fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
+        let colors = SeriesColors::new(env, self.palette_offset());
+        self.visit_datasets(&mut |dataset_index, dataset| {
+            let options = dataset.options();
+            if let Some(label) = options.label.clone() {
+                let color = colors.dataset(options.color, dataset_index).color();
+                items.push(LegendItem { label, color, marker: self.legend_marker(dataset_index), hidden: !options.visible });
+            }
+        });
+    }
 
     /// Shows or hides what legend entry `entry` stands for, counting the controller's entries in
     /// the order `legend_items` adds them, as a click on the entry does (see
     /// `Chart::legend_toggles`), and returns whether it could. The built-in controllers show or
-    /// hide the entry's dataset (`DataSet::set_visible`), or for a pie its part. The default can't,
-    /// and returns `false`, so the entry doesn't toggle.
-    fn legend_visibility(&self, _entry: usize, _visible: bool) -> bool {
-        false
+    /// hide the entry's dataset (`DataSet::set_visible`), or for a pie its part.
+    ///
+    /// The default shows or hides the named dataset behind the entry, among those
+    /// `visit_datasets` visits, counted as the provided `legend_items` adds them; with none, it
+    /// can't, and returns `false`, so the entry doesn't toggle.
+    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
+        let (mut named, mut set) = (0, false);
+        self.visit_datasets(&mut |_, dataset| {
+            if dataset.options().label.is_none() {
+                return;
+            }
+            if named == entry {
+                set = dataset.set_visible(visible);
+            }
+            named += 1;
+        });
+        set
     }
 
     /// Describes the datum `key` (its dataset and index; its controller is this one) for a
     /// tooltip and for `Pick::items`: its dataset's name, colour and legend marker, its index value
-    /// and its values as text, labelled by the fitted `scales`. The built-in controllers describe
-    /// their data; the default can't, and returns `None`, so the datum is left out.
-    fn describe(&self, _key: DatumKey, _scales: &Scales, _env: &mut Environment) -> Option<DatumInfo> {
-        None
+    /// and its values as text, labelled by the fitted `scales`, or `None` to leave it out.
+    ///
+    /// The default describes the point at `key.index` of the dataset at `key.dataset` that
+    /// `visit_datasets` visits, as the built-in controllers do: its index value and its values
+    /// (`DataPoint::describe`) labelled by its index and value scales as `orientation` reads them,
+    /// in its colour (with `palette_offset`) and with its dataset's `legend_marker`. `None` for a
+    /// hidden dataset, a datum it doesn't have, or a controller that visits no datasets.
+    fn describe(&self, key: DatumKey, scales: &Scales, env: &mut Environment) -> Option<DatumInfo> {
+        let colors = SeriesColors::new(env, self.palette_offset());
+        let mut found = None;
+        self.visit_datasets(&mut |dataset_index, dataset| {
+            if dataset_index == key.dataset {
+                found = describe_point(dataset, key, scales, self.orientation(), &colors, env, None, self.legend_marker(dataset_index));
+            }
+        });
+        found
     }
 
     /// Whether the controller draws around a circle unless told otherwise, so a chart whose first
@@ -156,6 +224,22 @@ impl DatasetController for Box<dyn DatasetController> {
 
     fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, shapes: &mut Shapes) {
         (**self).draw(ctx, scales, area, shapes);
+    }
+
+    fn visit_datasets(&self, f: &mut dyn FnMut(usize, &dyn DataSet)) {
+        (**self).visit_datasets(f);
+    }
+
+    fn legend_marker(&self, dataset_index: usize) -> LegendMarker {
+        (**self).legend_marker(dataset_index)
+    }
+
+    fn orientation(&self) -> Orientation {
+        (**self).orientation()
+    }
+
+    fn palette_offset(&self) -> usize {
+        (**self).palette_offset()
     }
 
     fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {

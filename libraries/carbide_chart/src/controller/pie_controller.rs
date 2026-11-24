@@ -440,6 +440,11 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
 }
 
 impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
+    /// The offset set with `palette_offset`, as last synced.
+    fn palette_offset(&self) -> usize {
+        get(&self.palette_offset)
+    }
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut changed = self.dataset_sequence.sync(env);
         changed |= self.palette_offset.sync(env);
@@ -639,7 +644,7 @@ impl<D: Sequence<dyn PieDataSet>> DatasetController for PieController<D> {
                 // Each part is a datum of its ring, at the ring's place on the x scale.
                 let datum = Datum { index: part.index, place: Some(shapes.place(&place.options.x_scale, place.x, frame.along(center))) };
                 let color = part_color(part, &place.options, dataset_index, &colors);
-                let item = shapes.add(dataset_index, Some(datum), color, frame.shape(part_side, part_thickness, base, head));
+                let item = shapes.add_item(dataset_index, Some(datum), color, frame.shape(part_side, part_thickness, base, head));
 
                 ctx.begin_path();
                 item.shape.trace(ctx);

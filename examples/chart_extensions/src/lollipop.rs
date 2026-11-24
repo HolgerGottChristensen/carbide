@@ -1,5 +1,5 @@
 use carbide::chart::{
-    DataSet, DatasetController, IntoSequence, LegendItem, LegendMarker, Orientation, ScaleBounds, Scales, SeriesColors,
+    DataSet, DatasetController, IntoSequence, LegendMarker, Orientation, ScaleBounds, Scales, SeriesColors, Shape,
     Shapes, Sequence,
 };
 use carbide::draw::{Position, Rect, Scalar};
@@ -29,10 +29,15 @@ const DOT_DIAMETER: Scalar = 10.0;
 /// one with `DatasetExt::color`, a dataset coloured by point gives each lollipop the next one, and
 /// a point's own colour wins.
 ///
-/// A missing point, or one with no place on its scales, has no lollipop. A click on a dataset's
-/// legend entry hides or shows it, as for the built-in controllers; a hidden dataset
-/// (`DatasetExt::visible`) has no lollipops and adds nothing to the scales, and its legend entry is
-/// dimmed.
+/// A missing point, or one with no place on its scales, has no lollipop. Each lollipop is found by
+/// the pointer, by its stem or its dot, for hovering, tooltips and clicks, as two shapes of one
+/// point (`Shapes::add`), placed on the index scale for the data at one value (`on_index`).
+///
+/// It gives its datasets to the chart (`DatasetController::visit_datasets`), so the provided legend
+/// entries, legend clicks and tooltips work for it as for the built-in controllers: a named dataset
+/// has a legend entry with a point marker, a click on it hides or shows the dataset, and a tooltip
+/// describes a lollipop's x and value. A hidden dataset (`DatasetExt::visible`) has no lollipops
+/// and adds nothing to the scales, and its legend entry is dimmed.
 #[derive(Clone, Debug)]
 pub struct LollipopController<D> {
     datasets: D,
@@ -64,11 +69,6 @@ impl<D: Sequence<dyn DataSet>> LollipopController<D> {
     pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> LollipopController<D> {
         self.horizontal = horizontal.into_read_state().as_dyn_read();
         self
-    }
-
-    /// Which way the lollipops grow, as `horizontal` was last synced.
-    fn orientation(&self) -> Orientation {
-        if *self.horizontal.value_dyn() { Orientation::Horizontal } else { Orientation::Vertical }
     }
 }
 
@@ -107,7 +107,7 @@ impl<D: Sequence<dyn DataSet>> DatasetController for LollipopController<D> {
         });
     }
 
-    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, _shapes: &mut Shapes) {
+    fn draw(&self, ctx: &mut CanvasContext, scales: &Scales, area: Rect, shapes: &mut Shapes) {
         let colors = SeriesColors::new(ctx.env(), self.palette_offset);
         let orientation = self.orientation();
         ctx.save();
@@ -147,6 +147,12 @@ impl<D: Sequence<dyn DataSet>> DatasetController for LollipopController<D> {
                 let to = orientation.swap(Position::new(index, value));
                 let color = dataset_colors.point(point_index, point.color());
 
+                // Two shapes for one point, so the pointer finds it by either: the stem, in the
+                // index frame, and the dot, on the screen.
+                let stem = Shape::rect(orientation, index - STEM_WIDTH / 2.0, STEM_WIDTH, base, value);
+                shapes.add(dataset_index, point_index, color, stem).on_index(index_id, x);
+                shapes.add(dataset_index, point_index, color, Shape::marker(to, DOT_DIAMETER / 2.0)).on_index(index_id, x);
+
                 ctx.begin_path();
                 ctx.move_to(from.x, from.y);
                 ctx.line_to(to.x, to.y);
@@ -163,34 +169,24 @@ impl<D: Sequence<dyn DataSet>> DatasetController for LollipopController<D> {
         ctx.restore();
     }
 
-    fn legend_items(&self, env: &Environment, items: &mut Vec<LegendItem>) {
-        let colors = SeriesColors::new(env, self.palette_offset);
-
-        self.datasets.foreach(&mut |dataset_index, dataset| {
-            let options = dataset.options();
-
-            if let Some(label) = options.label {
-                let color = colors.dataset(options.color, dataset_index).color();
-                items.push(LegendItem { label, color, marker: LegendMarker::Point, hidden: !options.visible });
-            }
-        });
+    /// Every dataset, shown or hidden, for the provided legend entries, legend clicks and
+    /// tooltips.
+    fn visit_datasets(&self, f: &mut dyn FnMut(usize, &dyn DataSet)) {
+        self.datasets.foreach(f);
     }
 
-    /// Shows or hides the dataset behind legend entry `entry`, counting the named datasets as
-    /// `legend_items` adds them, so a click on an entry toggles it (see `Chart::legend_toggles`).
-    /// Returns whether the dataset could be shown or hidden: a dataset with options can
-    /// (`DataSet::set_visible`).
-    fn legend_visibility(&self, entry: usize, visible: bool) -> bool {
-        let (mut named, mut set) = (0, false);
-        self.datasets.foreach(&mut |_, dataset| {
-            if dataset.options().label.is_none() {
-                return;
-            }
-            if named == entry {
-                set = dataset.set_visible(visible);
-            }
-            named += 1;
-        });
-        set
+    /// A point, as each lollipop ends in a dot.
+    fn legend_marker(&self, _dataset_index: usize) -> LegendMarker {
+        LegendMarker::Point
+    }
+
+    /// Horizontal when `horizontal` was last synced `true`.
+    fn orientation(&self) -> Orientation {
+        if *self.horizontal.value_dyn() { Orientation::Horizontal } else { Orientation::Vertical }
+    }
+
+    /// The offset set with `palette_offset`.
+    fn palette_offset(&self) -> usize {
+        self.palette_offset
     }
 }

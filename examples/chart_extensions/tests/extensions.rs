@@ -3,7 +3,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use carbide::chart::{Axis, BarController, Chart, ChartStyleExt, DataColor, DatasetController, DatasetExt, DatumKey, LegendPosition, LinearScale, LineController, Pick, PickMode, ScaleBounds, ScaleId, ScaleKind, ScatterController, SeriesStyle, TimeScale, TimeScaleZone, ZoomWindow};
+use carbide::chart::{Axis, BarController, Chart, ChartStyleExt, DataColor, DatasetController, DatasetExt, DatumKey, LegendMarker, LegendPosition, LinearScale, LineController, Pick, PickMode, ScaleBounds, ScaleId, ScaleKind, ScatterController, SeriesStyle, TimeScale, TimeScaleZone, ZoomWindow};
 use carbide::color::{Color, GREEN, ORANGE, PURPLE, RED};
 use carbide::draw::{Dimension, Position};
 use carbide::environment::Environment;
@@ -353,6 +353,37 @@ fn clicking_a_legend_entry_hides_and_shows_lollipops() {
     harness.click(Position::new(5.0, 5.0));
     harness.click(Position::new(370.0, 362.0));
     assert_eq!((*shown[0].value(), *shown[1].value()), (true, true), "shown again");
+}
+
+/// Two named datasets of lollipops on weekdays, hovered above Wednesday, in the default `Index`
+/// mode. Pins down that a controller of this crate's own is found by the pointer through the shapes
+/// it adds (a stem and a dot per point), and that the provided `describe` and `legend_items`
+/// describe it as the built-in controllers do: the tooltip is titled with the weekday and has a row
+/// per dataset, with its point marker in its colour, its name and its value; the hover state's
+/// `Pick::items` carries the same.
+#[test]
+fn hovering_lollipops_shows_their_tooltip() {
+    let hovered = LocalState::new(None::<Pick>);
+    let days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    let runs: Vec<(&str, f64)> = days.into_iter().zip([4.0, 6.5, 5.0, 8.0, 3.0]).collect();
+    let walks: Vec<(&str, f64)> = days.into_iter().zip([2.0, 1.5, 3.0, 2.5, 6.0]).collect();
+
+    let chart = Chart::new(LollipopController::new((runs.label("Runs"), walks.label("Walks"))))
+        .hover(hovered.clone())
+        .legend(LegendPosition::Bottom)
+        .framed();
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 400.0));
+    harness.render();
+
+    harness.mouse_move(Position::new(310.0, 100.0));
+    harness.snapshot("hovering_lollipops_shows_their_tooltip");
+
+    let pick = hovered.value().clone().expect("the pointer is over the chart area");
+    assert_eq!(pick.data, vec![DatumKey { controller: 0, dataset: 0, index: 2 }, DatumKey { controller: 0, dataset: 1, index: 2 }]);
+    let rows: Vec<String> = pick.items.iter().map(|item| item.row_text()).collect();
+    assert_eq!(rows, vec!["Runs: 5", "Walks: 3"]);
+    assert_eq!(pick.items[0].index.as_deref(), Some("Wed"));
+    assert_eq!(pick.items[0].marker, LegendMarker::Point);
 }
 
 /// Lollipops on a `LogScale`, where zero isn't on the scale: the stems start at its bottom end.

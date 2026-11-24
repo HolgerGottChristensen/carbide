@@ -96,6 +96,11 @@ fn has_mark(dataset: &dyn ScatterDataSet, role: Option<MarkRole>) -> bool {
 }
 
 impl<D: Sequence<dyn ScatterDataSet>> DatasetController for ScatterController<D> {
+    /// The offset set with `palette_offset`, as last synced.
+    fn palette_offset(&self) -> usize {
+        get(&self.palette_offset)
+    }
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut changed = self.dataset_sequence.sync(env);
         changed |= self.palette_offset.sync(env);

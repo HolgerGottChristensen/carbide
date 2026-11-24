@@ -13,9 +13,48 @@ use crate::scale::polar::RingShape;
 /// How far from a marker or a line, in pixels, a position still hits it.
 pub(crate) const LINE_TOLERANCE: Scalar = 4.0;
 
-/// A shape a datum is drawn as, in the chart's own pixels.
+/// The shape a datum is drawn as, in the chart's pixels, which a controller adds to `Shapes` so
+/// the chart can find the datum under or near the pointer (see `Shapes::add`): a marker, a
+/// rectangle or a wedge. A datum drawn as several, such as a lollipop's stem and dot, adds one
+/// shape for each; a line through a dataset's points is added with `Shapes::add_line`.
+///
+/// ```
+/// use carbide_chart::{Orientation, Shape};
+/// use carbide_core::draw::Position;
+///
+/// // A lollipop: a stem 2 pixels wide from 200 up to 80, and a dot of radius 5 at its end.
+/// let stem = Shape::rect(Orientation::Vertical, 99.0, 2.0, 200.0, 80.0);
+/// let dot = Shape::marker(Position::new(100.0, 80.0), 5.0);
+/// ```
 #[derive(Clone, Debug)]
-pub(crate) enum Shape {
+pub struct Shape(pub(crate) ShapeKind);
+
+impl Shape {
+    /// A filled circle of `radius` pixels around `center` on the screen, such as a point or a
+    /// bubble. Nearest picks measure from its edge, so the pointer anywhere on it is at it.
+    pub fn marker(center: Position, radius: Scalar) -> Shape {
+        Shape(ShapeKind::Marker { center, radius })
+    }
+
+    /// A rectangle in the index frame of `orientation` (see `Orientation::swap`): from `side` to
+    /// `side + thickness` along the index axis, and from `from` to `to` along the value axis, in
+    /// pixels. Upright (`Orientation::Vertical`), the index frame is the screen: `side` and
+    /// `thickness` are along x, and `from` and `to` are ys.
+    pub fn rect(orientation: Orientation, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) -> Shape {
+        Shape(ShapeKind::Rect { orientation, side, thickness, from, to })
+    }
+
+    /// The part of a ring around `polar`'s centre between the screen angles `angles` (see `Polar`)
+    /// and the distances `distances` from the centre, in pixels, such as a pie's slice or a polar
+    /// bar. Its inner and outer edges are circles.
+    pub fn wedge(polar: Polar, angles: (Scalar, Scalar), distances: (Scalar, Scalar)) -> Shape {
+        Shape(ShapeKind::Wedge { polar, corners: None, angles, distances })
+    }
+}
+
+/// The kinds of shape a datum is drawn as, in the chart's own pixels.
+#[derive(Clone, Debug)]
+pub(crate) enum ShapeKind {
     /// A filled circle around `center`, such as a line's point or a bubble.
     Marker { center: Position, radius: Scalar },
     /// A rectangle in the index frame of `orientation` (see `Orientation`): from `side` to
@@ -51,24 +90,24 @@ pub(crate) struct Hit {
     pub(crate) distance: Scalar,
 }
 
-impl Shape {
+impl ShapeKind {
     /// Adds the shape's outline to the current path, closed. A polyline adds nothing, as lines
     /// are drawn with their interpolation by their controllers.
     pub(crate) fn trace(&self, ctx: &mut CanvasContext) {
         match self {
-            Shape::Marker { center, radius } => {
+            ShapeKind::Marker { center, radius } => {
                 // The canvas takes a circle's diameter.
                 ctx.circle(center.x, center.y, radius * 2.0);
                 return;
             }
-            Shape::Rect { orientation, side, thickness, from, to } => {
+            ShapeKind::Rect { orientation, side, thickness, from, to } => {
                 let mut path = Oriented { path: &mut *ctx, orientation: *orientation };
                 path.move_to(Position::new(*side, *from));
                 path.line_to(Position::new(side + thickness, *from));
                 path.line_to(Position::new(side + thickness, *to));
                 path.line_to(Position::new(*side, *to));
             }
-            Shape::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
+            ShapeKind::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
                 let rings = RingShape { polar, corners: corners.as_deref() };
                 let (outer, inner) = (rings.at(d1.max(*d2)), rings.at(d1.min(*d2)));
                 PathSink::move_to(ctx, outer.point(*a1));
@@ -76,7 +115,7 @@ impl Shape {
                 PathSink::line_to(ctx, inner.point(*a2));
                 inner.trace(ctx, *a2, *a1);
             }
-            Shape::Polyline(_) => return,
+            ShapeKind::Polyline(_) => return,
         }
         ctx.close_path();
     }
@@ -86,15 +125,15 @@ impl Shape {
     /// polyline's data are measured from its vertices instead.
     pub(crate) fn center(&self) -> Option<Position> {
         match self {
-            Shape::Marker { center, .. } => Some(*center),
-            Shape::Rect { orientation, side, thickness, from, to } => Some(orientation.swap(Position::new(side + thickness / 2.0, (from + to) / 2.0))),
-            Shape::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
+            ShapeKind::Marker { center, .. } => Some(*center),
+            ShapeKind::Rect { orientation, side, thickness, from, to } => Some(orientation.swap(Position::new(side + thickness / 2.0, (from + to) / 2.0))),
+            ShapeKind::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
                 let angle = (a1 + a2) / 2.0;
                 let rings = RingShape { polar, corners: corners.as_deref() };
                 let reach = rings.at(d1.max(*d2)).reach(angle);
                 Some(polar.at(angle, (d1 + d2) / 2.0 * reach))
             }
-            Shape::Polyline(_) => None,
+            ShapeKind::Polyline(_) => None,
         }
     }
 
@@ -112,15 +151,15 @@ impl Shape {
         };
 
         match self {
-            Shape::Marker { center, radius } => Some((center.x - radius, center.y - radius, center.x + radius, center.y + radius)),
-            Shape::Rect { orientation, side, thickness, from, to } => around(&mut [(*side, *from), (side + thickness, *to)].into_iter().map(|(x, y)| orientation.swap(Position::new(x, y)))),
-            Shape::Wedge { polar, angles: (a1, a2), distances: (d1, d2), .. } => {
+            ShapeKind::Marker { center, radius } => Some((center.x - radius, center.y - radius, center.x + radius, center.y + radius)),
+            ShapeKind::Rect { orientation, side, thickness, from, to } => around(&mut [(*side, *from), (side + thickness, *to)].into_iter().map(|(x, y)| orientation.swap(Position::new(x, y)))),
+            ShapeKind::Wedge { polar, angles: (a1, a2), distances: (d1, d2), .. } => {
                 const STEPS: usize = 8;
                 let outer = d1.max(*d2);
                 let mut points = (0..=STEPS).map(|step| polar.at(a1 + (a2 - a1) * step as Scalar / STEPS as Scalar, outer)).chain(std::iter::once(polar.at(*a1, d1.min(*d2))));
                 around(&mut points)
             }
-            Shape::Polyline(_) => None,
+            ShapeKind::Polyline(_) => None,
         }
     }
 
@@ -130,17 +169,17 @@ impl Shape {
     /// the index axis (see `Along::gap`).
     pub(crate) fn hit(&self, position: Position) -> Option<Hit> {
         match self {
-            Shape::Marker { center, radius } => {
+            ShapeKind::Marker { center, radius } => {
                 let distance = (distance(position, *center) - radius).max(0.0);
                 (distance <= LINE_TOLERANCE).then_some(Hit { vertex: 0, distance })
             }
-            Shape::Rect { orientation, side, thickness, from, to } => {
+            ShapeKind::Rect { orientation, side, thickness, from, to } => {
                 let frame = orientation.swap(position);
                 let (left, right) = (side.min(side + thickness), side.max(side + thickness));
                 let (low, high) = (from.min(*to), from.max(*to));
                 (left <= frame.x && frame.x <= right && low <= frame.y && frame.y <= high).then_some(Hit { vertex: 0, distance: 0.0 })
             }
-            Shape::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
+            ShapeKind::Wedge { polar, corners, angles: (a1, a2), distances: (d1, d2) } => {
                 let (angle, from_center) = polar.locate(position);
                 let (low, high) = (a1.min(*a2), a1.max(*a2));
 
@@ -156,13 +195,13 @@ impl Shape {
                 let (inner, outer) = (d1.min(*d2) * reach, d1.max(*d2) * reach);
                 (inner <= from_center && from_center <= outer).then_some(Hit { vertex: 0, distance: 0.0 })
             }
-            Shape::Polyline(line) => line.hit(position),
+            ShapeKind::Polyline(line) => line.hit(position),
         }
     }
 }
 
 impl Polyline {
-    /// Where `position` hits the line or its areas (see `Shape::hit`): the line first, as it is
+    /// Where `position` hits the line or its areas (see `ShapeKind::hit`): the line first, as it is
     /// drawn over its area.
     fn hit(&self, position: Position) -> Option<Hit> {
         let mut nearest: Option<Hit> = None;
@@ -293,12 +332,12 @@ mod tests {
     use crate::controller::orientation::Orientation;
     use crate::geometry::Datum;
     use crate::scale::{Axis, CategoryScale, Circle, LinearScale, Polar, PolarRole, Scale};
-    use super::{Along, Hit, Polyline, Shape, LINE_TOLERANCE};
+    use super::{Along, Hit, Polyline, ShapeKind, LINE_TOLERANCE};
 
     /// A marker is hit on it and within the tolerance around its edge, measured from the edge.
     #[test]
     fn markers_are_hit_near_their_edge() {
-        let marker = Shape::Marker { center: Position::new(100.0, 100.0), radius: 5.0 };
+        let marker = ShapeKind::Marker { center: Position::new(100.0, 100.0), radius: 5.0 };
 
         assert_eq!(marker.hit(Position::new(100.0, 100.0)), Some(Hit { vertex: 0, distance: 0.0 }));
         assert_eq!(marker.hit(Position::new(108.0, 100.0)), Some(Hit { vertex: 0, distance: 3.0 }));
@@ -309,13 +348,13 @@ mod tests {
     /// on the screen.
     #[test]
     fn rectangles_are_hit_inside() {
-        let standing = Shape::Rect { orientation: Orientation::Vertical, side: 10.0, thickness: 20.0, from: 200.0, to: 50.0 };
+        let standing = ShapeKind::Rect { orientation: Orientation::Vertical, side: 10.0, thickness: 20.0, from: 200.0, to: 50.0 };
         assert!(standing.hit(Position::new(15.0, 100.0)).is_some());
         assert!(standing.hit(Position::new(35.0, 100.0)).is_none(), "past its far side");
         assert!(standing.hit(Position::new(15.0, 40.0)).is_none(), "above its head");
         assert_eq!(standing.center(), Some(Position::new(20.0, 125.0)));
 
-        let horizontal = Shape::Rect { orientation: Orientation::Horizontal, side: 10.0, thickness: 20.0, from: 0.0, to: 150.0 };
+        let horizontal = ShapeKind::Rect { orientation: Orientation::Horizontal, side: 10.0, thickness: 20.0, from: 0.0, to: 150.0 };
         assert!(horizontal.hit(Position::new(100.0, 15.0)).is_some());
         assert!(horizontal.hit(Position::new(15.0, 100.0)).is_none());
         assert_eq!(horizontal.center(), Some(Position::new(75.0, 20.0)));
@@ -335,17 +374,17 @@ mod tests {
     fn wedges_are_hit_between_their_angles_and_distances() {
         let polar = polar();
         // The quarter from the top to the right, from 50 to 100 pixels out.
-        let wedge = Shape::Wedge { polar, corners: None, angles: (0.0, FRAC_PI_2), distances: (50.0, 100.0) };
+        let wedge = ShapeKind::Wedge { polar, corners: None, angles: (0.0, FRAC_PI_2), distances: (50.0, 100.0) };
 
         assert!(wedge.hit(Position::new(250.0, 150.0)).is_some(), "up and to the right, 70 out");
         assert!(wedge.hit(Position::new(150.0, 150.0)).is_none(), "up and to the left");
         assert!(wedge.hit(Position::new(220.0, 180.0)).is_none(), "in the hole, 28 out");
         assert!(wedge.hit(Position::new(290.0, 110.0)).is_none(), "outside, 127 out");
 
-        let backwards = Shape::Wedge { polar, corners: None, angles: (2.0 * PI + FRAC_PI_2, 2.0 * PI), distances: (100.0, 50.0) };
+        let backwards = ShapeKind::Wedge { polar, corners: None, angles: (2.0 * PI + FRAC_PI_2, 2.0 * PI), distances: (100.0, 50.0) };
         assert!(backwards.hit(Position::new(250.0, 150.0)).is_some(), "the same quarter, a turn on and backwards");
 
-        let around = Shape::Wedge { polar, corners: None, angles: (0.0, 2.0 * PI), distances: (0.0, 100.0) };
+        let around = ShapeKind::Wedge { polar, corners: None, angles: (0.0, 2.0 * PI), distances: (0.0, 100.0) };
         assert!(around.hit(Position::new(150.0, 250.0)).is_some());
     }
 
@@ -355,7 +394,7 @@ mod tests {
     fn polygon_wedges_follow_their_edges() {
         let polar = polar();
         let corners: Rc<[Scalar]> = Rc::from(vec![0.0, FRAC_PI_2, PI, 3.0 * FRAC_PI_2]);
-        let wedge = Shape::Wedge { polar, corners: Some(corners), angles: (0.0, FRAC_PI_2), distances: (0.0, 100.0) };
+        let wedge = ShapeKind::Wedge { polar, corners: Some(corners), angles: (0.0, FRAC_PI_2), distances: (0.0, 100.0) };
 
         // Halfway between the corners at the top and the right, the edge is 71 out.
         let between = |out: Scalar| Position::new(200.0 + out / 2.0_f64.sqrt(), 200.0 - out / 2.0_f64.sqrt());
@@ -381,7 +420,7 @@ mod tests {
             closed: false,
             areas: vec![vec![Position::new(0.0, 100.0), Position::new(100.0, 0.0), Position::new(200.0, 100.0), Position::new(200.0, 200.0), Position::new(0.0, 200.0)]],
         };
-        let shape = Shape::Polyline(line);
+        let shape = ShapeKind::Polyline(line);
 
         assert_eq!(shape.hit(Position::new(70.0, 31.0)).map(|hit| hit.vertex), Some(1), "on the first piece, nearer the second point");
         assert_eq!(shape.hit(Position::new(20.0, 81.0)).map(|hit| hit.vertex), Some(0));

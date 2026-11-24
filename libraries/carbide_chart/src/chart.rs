@@ -1165,6 +1165,7 @@ impl<C: ControllerSequence> Render for Chart<C> {
             controller.draw(&mut canvas, scales, chart_area, &mut shapes);
         });
 
+        shapes.place_on_scales(scales);
         shapes.finish();
 
         // The hovered data outlined, but not during a drag, and the box a Shift-drag zooms to, in the

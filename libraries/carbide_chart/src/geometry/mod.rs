@@ -13,9 +13,10 @@ use carbide::color::Color;
 use carbide::draw::{Dimension, Position, Rect, Scalar};
 use indexmap::IndexSet;
 use carbide_derive::StateValue;
-pub(crate) use shape::{Along, Hit, Polyline, Shape};
+pub(crate) use shape::{Along, Hit, Polyline, ShapeKind};
+pub use shape::Shape;
 use shape::distance;
-use crate::scale::{Circle, ScaleId};
+use crate::scale::{Axis, Circle, PolarRole, ScaleId, Scales};
 
 /// Which datum something is: its controller's index in the chart, its dataset's index in the
 /// controller, and its index in the dataset, as the controllers count them.
@@ -62,7 +63,7 @@ pub(crate) struct IndexPlace {
 pub(crate) struct Item {
     pub(crate) dataset: DatasetKey,
     pub(crate) color: Color,
-    pub(crate) shape: Shape,
+    pub(crate) shape: ShapeKind,
     /// The datum the shape shows, or `None` for a polyline, whose vertices each show their own.
     pub(crate) datum: Option<Datum>,
 }
@@ -71,9 +72,133 @@ impl Item {
     /// The datum of the shape, or of the polyline's vertex `vertex`.
     fn datum(&self, vertex: usize) -> Option<&Datum> {
         match (&self.shape, &self.datum) {
-            (Shape::Polyline(line), _) => line.vertices.get(vertex).map(|(_, datum)| datum),
+            (ShapeKind::Polyline(line), _) => line.vertices.get(vertex).map(|(_, datum)| datum),
             (_, datum) => datum.as_ref(),
         }
+    }
+}
+
+/// Where `value` on the scale `id` is on the screen, along the way the scale runs: along a side
+/// of `area`, or around the chart's circle or out from its centre, as the scale's polar role
+/// says, measured with the first scale of the other role. `None` for a scale the chart doesn't
+/// have, or a radial scale without a role or a partner.
+fn along_scale(scales: &Scales, id: &ScaleId, value: Scalar, area: Rect) -> Option<Along> {
+    let scale = scales.get(id)?;
+    match scale.axis() {
+        Axis::Horizontal => scales.pixel(id, value, area).map(Along::X),
+        Axis::Vertical => scales.pixel(id, value, area).map(Along::Y),
+        Axis::Radial => {
+            let role = scales.polar_role(id)?;
+            let other = match role {
+                PolarRole::Angle => PolarRole::Radius,
+                PolarRole::Radius => PolarRole::Angle,
+            };
+            let (other_id, _) = scales.iter().find(|(other_id, _)| scales.polar_role(other_id) == Some(other))?;
+            let normalized = scale.normalize(value);
+            match role {
+                PolarRole::Angle => {
+                    let polar = scales.polar(id, other_id)?;
+                    Some(Along::Angle { center: polar.circle().center, angle: polar.angle(normalized) })
+                }
+                PolarRole::Radius => {
+                    let polar = scales.polar(other_id, id)?;
+                    Some(Along::Distance { center: polar.circle().center, distance: polar.distance(normalized) })
+                }
+            }
+        }
+    }
+}
+
+/// A shape just added to `Shapes` (see `Shapes::add`), to say where its datum is on its index
+/// scale.
+#[derive(Debug)]
+pub struct AddedShape<'a> {
+    shapes: &'a mut Shapes,
+    item: usize,
+}
+
+impl<'a> AddedShape<'a> {
+    /// Says that the shape's datum is at `value` on its index scale `scale`, as its x is placed
+    /// (see `Scales::coordinates`), so `PickMode::Index` finds it with the other data at that
+    /// value, such as bars side by side at one category. Where that is on the screen comes from the
+    /// value, along the way the scale runs: its pixel along a side, or its angle or distance around
+    /// the circle. A scale the chart doesn't have places nothing.
+    pub fn on_index(self, scale: &ScaleId, value: Scalar) -> AddedShape<'a> {
+        let place = self.shapes.place_later(scale, value, self.item, None);
+        if let Some(datum) = &mut self.shapes.items[self.item].datum {
+            datum.place = Some(place);
+        }
+        self
+    }
+}
+
+/// A line just added to `Shapes` (see `Shapes::add_line`), to add its vertices, gaps and areas
+/// to.
+#[derive(Debug)]
+pub struct LineShape<'a> {
+    shapes: &'a mut Shapes,
+    item: usize,
+    /// Whether the last vertex added continues the line, so the next one joins it.
+    open: bool,
+}
+
+impl<'a> LineShape<'a> {
+    /// The line being built.
+    fn line(&mut self) -> &mut Polyline {
+        match &mut self.shapes.items[self.item].shape {
+            ShapeKind::Polyline(line) => line,
+            _ => unreachable!("a line's item holds a polyline"),
+        }
+    }
+
+    /// Adds the point at `point_index` in the dataset at `position` on the screen, joined to the
+    /// vertex before it unless a gap was made since.
+    pub fn vertex(mut self, point_index: usize, position: Position) -> LineShape<'a> {
+        let open = self.open;
+        let line = self.line();
+        line.vertices.push((position, Datum { index: point_index, place: None }));
+        let end = line.vertices.len();
+        match line.runs.last_mut() {
+            Some(run) if open => run.end = end,
+            _ => line.runs.push(end - 1..end),
+        }
+        self.open = true;
+        self
+    }
+
+    /// Says that the last vertex's point is at `value` on its index scale `scale` (see
+    /// `AddedShape::on_index`).
+    pub fn on_index(mut self, scale: &ScaleId, value: Scalar) -> LineShape<'a> {
+        let Some(vertex) = self.line().vertices.len().checked_sub(1) else {
+            return self;
+        };
+        let place = self.shapes.place_later(scale, value, self.item, Some(vertex));
+        if let Some((_, datum)) = self.line().vertices.last_mut() {
+            datum.place = Some(place);
+        }
+        self
+    }
+
+    /// Breaks the line after the last vertex, so the next one starts a new piece, as at a missing
+    /// point.
+    pub fn gap(mut self) -> LineShape<'a> {
+        self.open = false;
+        self
+    }
+
+    /// Closes the line into a loop, each piece of more than two vertices from its last vertex back
+    /// to its first, as a radar's line is.
+    pub fn close(mut self) -> LineShape<'a> {
+        self.line().closed = true;
+        self
+    }
+
+    /// Adds a polygon through `corners` on the screen to the area the line fills. A position inside
+    /// an odd number of the line's polygons is inside its area, so a ring is two polygons.
+    pub fn area(mut self, corners: impl IntoIterator<Item=Position>) -> LineShape<'a> {
+        let polygon = corners.into_iter().collect();
+        self.line().areas.push(polygon);
+        self
     }
 }
 
@@ -158,6 +283,9 @@ pub struct Shapes {
     /// The index scales the data's places are on (see `IndexPlace`), so each place holds a slot
     /// instead of an id.
     scales: IndexSet<ScaleId>,
+    /// The places `on_index` gave, by item and, for a line, vertex, whose position on the screen
+    /// is worked out from the scales once every shape is added (see `place_on_scales`).
+    unplaced: Vec<(usize, Option<usize>)>,
     items: Vec<Item>,
     /// Every datum's anchors, by dataset, built by `finish`.
     anchors: Vec<Anchor>,
@@ -173,12 +301,103 @@ impl Default for Shapes {
 impl Shapes {
     /// No shapes yet, for a render into `area`, around `circle` when the chart has polar scales.
     pub(crate) fn new(area: Rect, circle: Option<Circle>) -> Shapes {
-        Shapes { area, circle, controller: 0, scales: IndexSet::new(), items: vec![], anchors: vec![], groups: vec![] }
+        Shapes { area, circle, controller: 0, scales: IndexSet::new(), unplaced: vec![], items: vec![], anchors: vec![], groups: vec![] }
     }
 
     /// The chart area the shapes were drawn in.
     pub(crate) fn area(&self) -> Rect {
         self.area
+    }
+
+    /// Works out where on the screen each datum placed with `on_index` sits along its index scale,
+    /// from its value there: along a side, the value's pixel on the scale (see `Scales::pixel`);
+    /// around the circle, its angle on an angle scale or its distance from the centre on a radius
+    /// scale. A place on a scale the chart doesn't have, or a radial scale without a role, is
+    /// dropped. Called once every controller has drawn, before `finish`.
+    pub(crate) fn place_on_scales(&mut self, scales: &Scales) {
+        let unplaced = std::mem::take(&mut self.unplaced);
+        for (item, vertex) in unplaced {
+            let datum = match (&mut self.items[item].shape, vertex) {
+                (ShapeKind::Polyline(line), Some(vertex)) => line.vertices.get_mut(vertex).map(|(_, datum)| datum),
+                (_, None) => self.items[item].datum.as_mut(),
+                _ => None,
+            };
+            let Some(datum) = datum else {
+                continue;
+            };
+            let Some(place) = &mut datum.place else {
+                continue;
+            };
+
+            let id = &self.scales[place.scale];
+            match along_scale(scales, id, place.value, self.area) {
+                Some(along) => place.along = along,
+                None => datum.place = None,
+            }
+        }
+    }
+
+    /// Adds `shape`, filled with `color`, as the shape of the point at `point_index` in the
+    /// controller's dataset at `dataset_index`, both as the controller counts them (see
+    /// `DatumKey`). That is how the chart finds the point under or near the pointer, for hovering,
+    /// tooltips and clicks (see `Chart::hover_mode`): a controller adds a shape for each point it
+    /// draws, or its points aren't found. Adding a shape draws nothing.
+    ///
+    /// A point drawn as several shapes adds each, and is found once by any of them. To be found
+    /// by `PickMode::Index`, a shape also says where its point is on its index scale, with
+    /// `AddedShape::on_index`.
+    ///
+    /// ```
+    /// use carbide_chart::{Orientation, ScaleId, Shape, Shapes};
+    /// use carbide_core::color::RED;
+    /// use carbide_core::draw::Position;
+    ///
+    /// /// Adds the lollipop of the point at index 2 of dataset 0, whose x is 2.0 on the x scale.
+    /// fn add_lollipop(shapes: &mut Shapes) {
+    ///     let x = ScaleId::X;
+    ///     shapes.add(0, 2, RED, Shape::rect(Orientation::Vertical, 99.0, 2.0, 200.0, 80.0)).on_index(&x, 2.0);
+    ///     shapes.add(0, 2, RED, Shape::marker(Position::new(100.0, 80.0), 5.0)).on_index(&x, 2.0);
+    /// }
+    /// ```
+    pub fn add(&mut self, dataset_index: usize, point_index: usize, color: Color, shape: Shape) -> AddedShape<'_> {
+        self.add_item(dataset_index, Some(Datum { index: point_index, place: None }), color, shape.0);
+        let item = self.items.len() - 1;
+        AddedShape { shapes: self, item }
+    }
+
+    /// Adds a line through points of the controller's dataset at `dataset_index`, in `color`,
+    /// each of its vertices a point, added one by one with the returned `LineShape`'s methods.
+    /// A position on the line finds the nearer of the two points either side, and one inside an
+    /// area the line fills (`LineShape::area`) the point nearest along the index axis. Lines are
+    /// tested straight between their vertices. Adding a line draws nothing.
+    ///
+    /// ```
+    /// use carbide_chart::{ScaleId, Shapes};
+    /// use carbide_core::color::RED;
+    /// use carbide_core::draw::Position;
+    ///
+    /// /// Adds a line through three points of dataset 0, the third after a gap, at x 0, 1 and 3.
+    /// fn add_line(shapes: &mut Shapes) {
+    ///     let x = ScaleId::X;
+    ///     shapes.add_line(0, RED)
+    ///         .vertex(0, Position::new(10.0, 50.0)).on_index(&x, 0.0)
+    ///         .vertex(1, Position::new(30.0, 20.0)).on_index(&x, 1.0)
+    ///         .gap()
+    ///         .vertex(3, Position::new(70.0, 40.0)).on_index(&x, 3.0);
+    /// }
+    /// ```
+    pub fn add_line(&mut self, dataset_index: usize, color: Color) -> LineShape<'_> {
+        let line = Polyline { vertices: vec![], runs: vec![], closed: false, areas: vec![] };
+        self.add_item(dataset_index, None, color, ShapeKind::Polyline(line));
+        let item = self.items.len() - 1;
+        LineShape { shapes: self, item, open: false }
+    }
+
+    /// A place at `value` on the index scale `scale` for the datum of `item`, or of its vertex
+    /// `vertex`, whose position on the screen `place_on_scales` works out later.
+    fn place_later(&mut self, scale: &ScaleId, value: Scalar, item: usize, vertex: Option<usize>) -> IndexPlace {
+        self.unplaced.push((item, vertex));
+        self.place(scale, value, Along::X(Scalar::NAN))
     }
 
     /// Makes the shapes added from now on the controller at `controller`'s.
@@ -196,7 +415,7 @@ impl Shapes {
     /// Adds `shape`, filled with `color`, for the datum `datum` of the current controller's
     /// dataset at `dataset`, or for a polyline (whose vertices name their data, so `datum` is
     /// `None`), and returns it, for the controller to draw.
-    pub(crate) fn add(&mut self, dataset: usize, datum: Option<Datum>, color: Color, shape: Shape) -> &Item {
+    pub(crate) fn add_item(&mut self, dataset: usize, datum: Option<Datum>, color: Color, shape: ShapeKind) -> &Item {
         let dataset = DatasetKey { controller: self.controller, dataset };
         self.items.push(Item { dataset, color, shape, datum });
         self.items.last().unwrap()
@@ -216,7 +435,7 @@ impl Shapes {
 
         for item in &self.items {
             match &item.shape {
-                Shape::Polyline(line) => {
+                ShapeKind::Polyline(line) => {
                     for (position, datum) in &line.vertices {
                         let bounds = (position.x, position.y, position.x, position.y);
                         anchors.push((item.dataset, Anchor { key: item.dataset.datum(datum.index), center: *position, place: datum.place.clone(), bounds, radius: 0.0 }));
@@ -225,7 +444,7 @@ impl Shapes {
                 shape => {
                     if let (Some(datum), Some(center)) = (&item.datum, shape.center()) {
                         let radius = match shape {
-                            Shape::Marker { radius, .. } => *radius,
+                            ShapeKind::Marker { radius, .. } => *radius,
                             _ => 0.0,
                         };
                         let bounds = shape.bounds().unwrap_or((center.x, center.y, center.x, center.y));
@@ -441,7 +660,7 @@ impl Shapes {
             }
 
             match &item.shape {
-                Shape::Polyline(line) => {
+                ShapeKind::Polyline(line) => {
                     if vertex.is_none() {
                         vertex = line.vertices.iter().find(|(_, datum)| datum.index == key.index).map(|(position, _)| *position);
                     }
@@ -460,7 +679,7 @@ impl Shapes {
             }
 
             match &item.shape {
-                Shape::Polyline(line) => {
+                ShapeKind::Polyline(line) => {
                     for (position, datum) in &line.vertices {
                         if datum.index == key.index {
                             ctx.begin_path();
@@ -473,7 +692,7 @@ impl Shapes {
                     ctx.begin_path();
                     match shape {
                         // A ring a little outside the marker, so small points show it.
-                        Shape::Marker { center, radius } => ctx.circle(center.x, center.y, (radius + 4.0) * 2.0),
+                        ShapeKind::Marker { center, radius } => ctx.circle(center.x, center.y, (radius + 4.0) * 2.0),
                         shape => shape.trace(ctx),
                     }
                     ctx.stroke();

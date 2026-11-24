@@ -209,6 +209,16 @@ fn has_mark(dataset: &dyn LineDataSet, role: MarkRole) -> bool {
 }
 
 impl<D: Sequence<dyn LineDataSet>> DatasetController for LineController<D> {
+    /// Horizontal when `horizontal` was last synced `true`.
+    fn orientation(&self) -> Orientation {
+        Self::orientation(self)
+    }
+
+    /// The offset set with `palette_offset`, as last synced.
+    fn palette_offset(&self) -> usize {
+        get(&self.palette_offset)
+    }
+
     fn sync(&mut self, env: &mut Environment) -> bool {
         let mut changed = self.dataset_sequence.sync(env);
         changed |= self.palette_offset.sync(env);

@@ -9,7 +9,7 @@ use std::ops::{Range, RangeInclusive};
 use std::rc::Rc;
 use carbide::draw::{Position, Rect, Scalar};
 use carbide_core::widget::canvas::CanvasContext;
-use crate::{DataColor, DataSetOptions, Fill, PointValue, SpanGaps, StackId, Value};
+use crate::{DataColor, DataSet, DataSetOptions, Fill, PointValue, SpanGaps, StackId, Value};
 use crate::mark::{AsDataSet, LegendContext};
 use crate::sequence::Sequence;
 use crate::controller::line_path::{trace_line, trace_line_reversed, PathSink};
@@ -22,7 +22,7 @@ use crate::scale::polar::{Ring, RingShape};
 use crate::scale::GridShape;
 use crate::legend::{LegendItem, LegendMarker};
 use crate::colors::{DatasetColors, SeriesColors};
-use crate::geometry::{Along, Datum, DatumKey, Polyline, Shape, Shapes};
+use crate::geometry::{Along, Datum, DatumKey, Polyline, ShapeKind, Shapes};
 use crate::interaction::{DatumInfo, ValueText};
 use carbide::environment::Environment;
 
@@ -670,8 +670,8 @@ pub(crate) fn draw_points(lines: &[DrawnLine], ctx: &mut CanvasContext, colors: 
         for point in 0..line.points.len() {
             let color = dataset_colors.point(line.point_indices[point], line.colors[point]);
             let datum = line.datum(point, shapes);
-            let marker = Shape::Marker { center: line.screen(point), radius: POINT_RADIUS };
-            let item = shapes.add(line.dataset_index, Some(datum), color, marker);
+            let marker = ShapeKind::Marker { center: line.screen(point), radius: POINT_RADIUS };
+            let item = shapes.add_item(line.dataset_index, Some(datum), color, marker);
 
             ctx.begin_path();
             item.shape.trace(ctx);
@@ -697,7 +697,7 @@ pub(crate) fn add_lines(lines: &[DrawnLine], shapes: &mut Shapes, scales: &Scale
             areas,
         };
 
-        shapes.add(line.dataset_index, None, line.dataset_colors(colors).color(), Shape::Polyline(polyline));
+        shapes.add_item(line.dataset_index, None, line.dataset_colors(colors).color(), ShapeKind::Polyline(polyline));
     }
 }
 
@@ -863,11 +863,9 @@ pub(crate) fn legend_items<T: AsDataSet + ?Sized, D: Sequence<T>>(
     });
 }
 
-/// Describes the datum `key` of `datasets` (see `DatasetController::describe`): its dataset's
-/// name, its index value as its index scale labels it, and its values (`DataPoint::describe`) as
-/// its value scale labels them, the scales read as `orientation` reads them. Its colour and marker
-/// are those `look` gives for the dataset, a mark's own colour or `None` for the point's colour.
-/// `None` for a hidden dataset, or a datum it doesn't have.
+/// Describes the datum `key` of `datasets` (see `DatasetController::describe`), as
+/// `describe_point` does, its colour and marker those `look` gives for the dataset, a mark's own
+/// colour or `None` for the point's colour.
 pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
     datasets: &D,
     key: DatumKey,
@@ -879,41 +877,59 @@ pub(crate) fn describe_datum<T: AsDataSet + ?Sized, D: Sequence<T>>(
 ) -> Option<DatumInfo> {
     let mut found = None;
     datasets.foreach(&mut |dataset_index, item| {
-        if dataset_index != key.dataset {
+        if dataset_index == key.dataset {
+            let (own_color, marker) = look(item, &item.as_dataset().options(), dataset_index);
+            found = describe_point(item.as_dataset(), key, scales, orientation, colors, env, own_color, marker);
+        }
+    });
+    found
+}
+
+/// Describes the datum `key` of `dataset`, the controller's dataset at `key.dataset`: its
+/// dataset's name, its index value as its index scale labels it, and its values
+/// (`DataPoint::describe`) as its value scale labels them, the scales read as `orientation` reads
+/// them, with `marker`, in `own_color` or else the point's colour. `None` for a hidden dataset, or
+/// a datum it doesn't have.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn describe_point(
+    dataset: &dyn DataSet,
+    key: DatumKey,
+    scales: &Scales,
+    orientation: Orientation,
+    colors: &SeriesColors,
+    env: &mut Environment,
+    own_color: Option<Color>,
+    marker: LegendMarker,
+) -> Option<DatumInfo> {
+    let options = dataset.options();
+    if !options.visible {
+        return None;
+    }
+
+    let (index_id, value_id) = orientation.for_dataset(&options, scales).index_and_value_scales(&options);
+    let coordinates = Coordinates::new(scales, index_id, value_id);
+
+    let mut found = None;
+    dataset.points(&mut |point_index, point| {
+        if point_index != key.index {
             return;
         }
 
-        let dataset = item.as_dataset();
-        let options = dataset.options();
-        if !options.visible {
-            return;
-        }
-
-        let (own_color, marker) = look(item, &options, dataset_index);
-        let (index_id, value_id) = orientation.for_dataset(&options, scales).index_and_value_scales(&options);
-        let coordinates = Coordinates::new(scales, index_id, value_id);
-
-        dataset.points(&mut |point_index, point| {
-            if point_index != key.index {
-                return;
-            }
-
-            let mut values = vec![];
-            point.describe(&mut |value| values.push(OwnedPointValue::from(value)));
-            let color = own_color.unwrap_or_else(|| colors.dataset(options.color, dataset_index).point(point_index, point.color()));
-            found = Some((options.label.clone(), color, marker, coordinates.x(point), values, index_id.clone(), value_id.clone()));
-        });
+        let mut values = vec![];
+        point.describe(&mut |value| values.push(OwnedPointValue::from(value)));
+        let color = own_color.unwrap_or_else(|| colors.dataset(options.color, key.dataset).point(point_index, point.color()));
+        found = Some((color, coordinates.x(point), values));
     });
 
-    let (dataset, color, marker, x, values, index_id, value_id) = found?;
-    let index = match (x, scales.get(&index_id)) {
+    let (color, x, values) = found?;
+    let index = match (x, scales.get(index_id)) {
         (Some(x), Some(scale)) => Some(tick_label(scale, x, env)),
         _ => None,
     };
-    let value_scale = scales.get(&value_id);
+    let value_scale = scales.get(value_id);
     let values = values.into_iter().map(|value| value.text(value_scale, env)).collect();
 
-    Some(DatumInfo { key, dataset, color, marker, index, values })
+    Some(DatumInfo { key, dataset: options.label.clone(), color, marker, index, values })
 }
 
 /// A point's value (`PointValue`), kept past the point it was read from.

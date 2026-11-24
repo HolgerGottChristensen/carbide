@@ -12,7 +12,7 @@ use crate::controller::orientation::{length, pixel, Oriented, Orientation};
 use crate::mark::line_mark::polar_whisker;
 use crate::mark::{Mark, MarkRole, Role};
 use crate::scale::{Coordinates, Scale, ScaleId};
-use crate::geometry::{Along, Datum, Shape, Shapes};
+use crate::geometry::{Along, Datum, ShapeKind, Shapes};
 
 /// A mark that can be drawn in a bar controller's slots, for datasets of type `D`. Implementing
 /// it is what lets a dataset with this mark be drawn by a `BarController` (see `BarDataSet`).
@@ -164,9 +164,9 @@ impl BarFrame<'_> {
     /// The shape from `side` to `side + thickness` along the index axis and from `from` to `to`
     /// along the value axis: a rectangle along the sides, and around the circle the part of a
     /// ring between two angles, its inner and outer edges in the grid's ring shape.
-    pub(crate) fn shape(&self, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) -> Shape {
+    pub(crate) fn shape(&self, side: Scalar, thickness: Scalar, from: Scalar, to: Scalar) -> ShapeKind {
         match self {
-            BarFrame::Sides { orientation, .. } => Shape::Rect { orientation: *orientation, side, thickness, from, to },
+            BarFrame::Sides { orientation, .. } => ShapeKind::Rect { orientation: *orientation, side, thickness, from, to },
             BarFrame::Around(frame) => {
                 let (angles, distances) = if frame.x_is_angle {
                     ((side, side + thickness), (from, to))
@@ -174,7 +174,7 @@ impl BarFrame<'_> {
                     ((from, to), (side, side + thickness))
                 };
 
-                Shape::Wedge { polar: frame.polar, corners: frame.corners.clone(), angles, distances }
+                ShapeKind::Wedge { polar: frame.polar, corners: frame.corners.clone(), angles, distances }
             }
         }
     }
@@ -275,7 +275,7 @@ impl<'x> BarCanvas<'x, '_, '_, '_> {
     pub fn add_rect(&mut self, point_index: usize, x: Scalar, slot: &BarSlot, from: Scalar, to: Scalar, color: Color) {
         let place = self.shapes.place(self.index_id, x, self.frame.along(slot.center));
         let shape = self.frame.shape(slot.side, slot.thickness, from, to);
-        self.shapes.add(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, shape);
+        self.shapes.add_item(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, shape);
     }
 
     /// Where the point's x is placed: a number at itself, and text at its category's index (see

@@ -8,7 +8,7 @@ use crate::controller::orientation::pixel;
 use crate::legend::LegendMarker;
 use crate::mark::{LegendContext, Mark, MarkRole, Role};
 use crate::scale::{Axis, Coordinates, Scale, ScaleId};
-use crate::geometry::{Along, Datum, Shape, Shapes};
+use crate::geometry::{Along, Datum, ShapeKind, Shapes};
 use crate::controller::drawing::PolarFrame;
 use crate::mark::line_mark::polar_whisker;
 
@@ -197,7 +197,7 @@ impl<'x> ScatterCanvas<'x, '_, '_, '_> {
         };
 
         let place = self.shapes.place(self.x_id, x, along);
-        self.shapes.add(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, Shape::Marker { center, radius });
+        self.shapes.add_item(self.dataset_index, Some(Datum { index: point_index, place: Some(place) }), color, ShapeKind::Marker { center, radius });
     }
 
     /// Adds a whisker through the point `point`, from `from` to `to`, each an x and a y on the
