@@ -2,7 +2,7 @@
 //! either side with titles and tick marks, a fixed start and step, grid lines between categories,
 //! and zooming along each scale, the categories snapping to whole ones or scrolling freely.
 
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, Sequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, SnapMode, TimeScale, TimeScaleZone, ZoomWindow, DatasetController};
+use carbide::chart::{Axis, BarController, CategoryScale, Chart, Sequence, DatasetExt, LinearScale, LineController, LogScale, ScaleId, SnapMode, TimeScale, TimeScaleZone, ZoomWindow, DatasetController};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3, Map4, State};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{first_section, section, shown_when, slider, snap_picker, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, section, shown_when, slider, snap_picker, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
 
 /// The second y axis, for the second dataset.
 const SECOND: ScaleId = ScaleId::new("second");
@@ -33,8 +33,6 @@ pub(crate) struct Options {
     data: LocalState<Data>,
     log: LocalState<bool>,
     second_axis: LocalState<bool>,
-    x_position: LocalState<AxisPosition>,
-    y_position: LocalState<AxisPosition>,
     x_title: LocalState<String>,
     y_title: LocalState<String>,
     tick_marks: LocalState<bool>,
@@ -54,8 +52,6 @@ impl Options {
             data: LocalState::new(Data::Weather),
             log: LocalState::new(false),
             second_axis: LocalState::new(true),
-            x_position: LocalState::new(AxisPosition::Bottom),
-            y_position: LocalState::new(AxisPosition::Left),
             x_title: LocalState::new("x".to_string()),
             y_title: LocalState::new("y".to_string()),
             tick_marks: LocalState::new(true),
@@ -104,14 +100,6 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         Toggle::new("The second dataset on its own axis", options.second_axis.clone()),
         VStack::new((
             section("Axes"),
-            Picker::new("x side", options.x_position.clone(), (
-                Text::new("Bottom").tag(AxisPosition::Bottom),
-                Text::new("Top").tag(AxisPosition::Top),
-            )),
-            Picker::new("y side", options.y_position.clone(), (
-                Text::new("Left").tag(AxisPosition::Left),
-                Text::new("Right").tag(AxisPosition::Right),
-            )),
             text_input("x title", &options.x_title),
             text_input("y title", &options.y_title),
             Toggle::new("Tick marks", options.tick_marks.clone()),
@@ -134,7 +122,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The data option, which shows each new choice of data whole: picking other data resets every
@@ -171,7 +159,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 rainfall.label("Rainfall (mm)").y_scale(second_id),
             )))
                 .scale(ScaleId::X, TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc))
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
+                    .title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()).placed(&shared));
             finish(chart, options, shared, log, second)
         }
         Data::City => {
@@ -185,7 +173,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 rent.label("Rent per m²").y_scale(second_id),
             )))
                 .scale(ScaleId::X, LinearScale::new(Axis::Horizontal)
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
+                    .title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()).placed(&shared));
             finish(chart, options, shared, log, second)
         }
         Data::Words => {
@@ -197,7 +185,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, log: bool, sec
                 letters.label("Letters").y_scale(second_id),
             )))
                 .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).grid_offset(options.grid_offset.clone()).snap_mode(options.snap_mode.clone())
-                    .position(options.x_position.clone()).title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()));
+                    .title(options.x_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.x_zoom.clone()).placed(&shared));
             finish(chart, options, shared, log, second)
         }
     }
@@ -210,17 +198,16 @@ fn finish<C: Sequence<dyn DatasetController>>(chart: Chart<C>, options: Options,
 
     let chart = if log {
         chart.scale(ScaleId::Y, LogScale::new(Axis::Vertical)
-            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()))
+            .title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()).placed(&shared))
     } else {
         // A start or a step that isn't a number leaves the scale to fit its data.
         let min = Map1::read_map(options.from_zero.clone(), |from_zero: &bool| if *from_zero { 0.0 } else { Scalar::NAN });
         chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).min(min).step(options.step.clone())
-            .position(options.y_position.clone()).title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()))
+            .title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()).placed(&shared))
     };
 
     let chart = if second {
-        let other_side = Map1::read_map(options.y_position.clone(), |side: &AxisPosition| if *side == AxisPosition::Left { AxisPosition::Right } else { AxisPosition::Left });
-        chart.scale(SECOND, LinearScale::new(Axis::Vertical).position(other_side).title("Second dataset").grid_lines(false).tick_marks(options.tick_marks.clone()).zoom(options.second_zoom.clone()))
+        chart.scale(SECOND, LinearScale::new(Axis::Vertical).position(shared.other_side(Axis::Vertical)).title("Second dataset").grid_lines(false).tick_marks(options.tick_marks.clone()).zoom(options.second_zoom.clone()).labelled(&shared))
     } else {
         chart
     };

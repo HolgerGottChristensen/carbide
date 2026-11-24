@@ -7,7 +7,7 @@ use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
 use carbide::draw::{Angle, Scalar};
-use carbide::state::{LocalState, Map1, Map2};
+use carbide::state::{LocalState, Map1, Map2, Map3};
 use carbide::widget::*;
 use carbide::ui;
 use super::bars::Stacking;
@@ -35,6 +35,8 @@ pub(crate) struct Options {
     title: LocalState<String>,
     data: LocalState<Data>,
     grid_shape: LocalState<GridShape>,
+    rings: LocalState<bool>,
+    spokes: LocalState<bool>,
     fill: LocalState<Fill>,
     interpolation: LocalState<Interpolation>,
     start_angle: LocalState<Scalar>,
@@ -53,6 +55,8 @@ impl Options {
             title: LocalState::new("Around a circle".to_string()),
             data: LocalState::new(Data::Players),
             grid_shape: LocalState::new(GridShape::Polygon),
+            rings: LocalState::new(true),
+            spokes: LocalState::new(true),
             fill: LocalState::new(Fill::Origin),
             interpolation: LocalState::new(Interpolation::Linear),
             start_angle: LocalState::new(0.0),
@@ -90,13 +94,18 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Rainfall in three cities").tag(Data::CitiesRadialBars),
             Text::new("Wind as scattered points").tag(Data::Wind),
         )),
-        // Rings are polygons only around categories: not around the wind's degrees, nor when the
-        // categories run out from the centre instead.
-        shown_when(Map2::read_map(options.data.clone(), options.horizontal.clone(), |data: &Data, horizontal: &bool| *data != Data::Wind && !*horizontal),
-            Picker::new("Rings", options.grid_shape.clone(), (
-                Text::new("Polygons").tag(GridShape::Polygon),
-                Text::new("Circles").tag(GridShape::Circle),
-            ))),
+        VStack::new((
+            Toggle::new("Rings", options.rings.clone()),
+            Toggle::new("Spokes", options.spokes.clone()),
+            // Rings are polygons only around categories: not around the wind's degrees, nor when
+            // the categories run out from the centre instead. The shape holds without the rings
+            // inside: the rim and the wedges of bars follow it.
+            shown_when(Map2::read_map(options.data.clone(), options.horizontal.clone(), |data: &Data, horizontal: &bool| *data != Data::Wind && !*horizontal),
+                Picker::new("Ring shape", options.grid_shape.clone(), (
+                    Text::new("Polygons").tag(GridShape::Polygon),
+                    Text::new("Circles").tag(GridShape::Circle),
+                ))),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| matches!(data, Data::Players | Data::Squad)), VStack::new((
             Picker::new("Radar fill", options.fill.clone(), (
                 Text::new("None").tag(Fill::None),
@@ -143,9 +152,16 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
     // When horizontal, the categories run out along the radius and the values around the circle, so the
     // scales swap roles. Each scale is given the options of both roles, and reads those of the
     // role it has: the start, sweep and direction as the angle, the hole and rings as the radius.
+    // The rings are the radius scale's grid lines and the spokes the angle scale's, so each scale
+    // draws whichever its role has. The wind's points have no other way round.
+    let swapped = move |horizontal: bool| horizontal && data != Data::Wind;
+    let x_grid = Map3::read_map(options.horizontal.clone(), options.rings.clone(), options.spokes.clone(), move |horizontal: &bool, rings: &bool, spokes: &bool| if swapped(*horizontal) { *rings } else { *spokes });
+    let y_grid = Map3::read_map(options.horizontal.clone(), options.rings.clone(), options.spokes.clone(), move |horizontal: &bool, rings: &bool, spokes: &bool| if swapped(*horizontal) { *spokes } else { *rings });
+
     let values = LinearScale::new(Axis::Radial).min(0.0)
         .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone())
-        .start_angle(start()).end_angle(end()).direction(options.direction.clone());
+        .start_angle(start()).end_angle(end()).direction(options.direction.clone())
+        .grid_lines(y_grid);
 
     match data {
         Data::Players | Data::Squad => {
@@ -164,7 +180,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(LineController::new(players).horizontal(options.horizontal.clone()))
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(SKILLS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -181,7 +197,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(bars)
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(MONTHS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -211,7 +227,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(bars)
                 .title(options.title.clone())
                 .scale(ScaleId::X, CategoryScale::new(Axis::Radial).labels(MONTHS).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }
@@ -230,7 +246,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
             shared.apply(Chart::new(ScatterController::new((station(0.0, 120.0).label("Coast"), station(50.0, 300.0).label("Hills"))))
                 .title(options.title.clone())
                 .scale(ScaleId::X, LinearScale::new(Axis::Radial).min(0.0).max(360.0).step(45.0).start_angle(start()).end_angle(end()).direction(options.direction.clone())
-                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()))
+                    .grid_shape(options.grid_shape.clone()).inner_radius(options.inner_radius.clone()).grid_lines(x_grid.clone()))
                 .scale(ScaleId::Y, values))
                 .boxed()
         }

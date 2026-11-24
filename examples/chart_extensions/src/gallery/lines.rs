@@ -10,7 +10,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, section, shown_when, slider, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
 
 /// The data the line chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -211,7 +211,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The lines of `data`.
@@ -262,8 +262,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
         .horizontal(options.horizontal.clone())
         .show_line(Map1::read_map(options.curve.clone(), |curve: &Curve| *curve != Curve::None)))
         .title(options.title.clone())
-        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()))
-        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).fit_visible(options.fit_visible.clone())))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).placed(&shared))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).fit_visible(options.fit_visible.clone()).placed(&shared)))
         .boxed()
 }
 

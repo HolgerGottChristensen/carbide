@@ -313,6 +313,7 @@ impl TimeScale {
 
     crate::scale::axis_options::polar_options!(TimeScale);
     crate::scale::axis_options::zoom_options!(TimeScale);
+    crate::scale::axis_options::label_options!(TimeScale);
 
     /// The unit the ticks are spaced in, as last fitted.
     pub fn unit(&self) -> TimeUnit {

@@ -10,7 +10,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, percent, section, slider, snap_picker, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
+use super::{first_section, percent, section, slider, snap_picker, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared, MONTHS};
 
 /// The data the bar chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -151,7 +151,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The bars of `data`, vertical or horizontal: the categories along x or down y.
@@ -189,7 +189,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data, horizontal: bo
 
     shared.apply(Chart::new(bars)
         .title(options.title.clone())
-        .scale(category_id, CategoryScale::new(category_axis).labels(categories).zoom(options.zoom.clone()).snap_mode(options.snap_mode.clone()))
-        .scale(value_id, LinearScale::new(value_axis).fit_visible(options.fit_visible.clone()).grid_lines(options.grid_lines.clone())))
+        .scale(category_id, CategoryScale::new(category_axis).labels(categories).zoom(options.zoom.clone()).snap_mode(options.snap_mode.clone()).placed(&shared))
+        .scale(value_id, LinearScale::new(value_axis).fit_visible(options.fit_visible.clone()).grid_lines(options.grid_lines.clone()).placed(&shared)))
         .boxed()
 }

@@ -23,6 +23,7 @@ use crate::style::axis_style;
 use crate::scale::{axis, Axis, AxisPosition, PolarRole, ScaleBounds, ScaleId, ScaleKind, Scales};
 use crate::Scale;
 use crate::scale::polar::RimLabel;
+use crate::scale::tick_labels::TickLabels;
 use crate::geometry::{DatumKey, PickMode, Shapes};
 use crate::interaction::{pan, share_at, zoom_about, ChartClick, ClickAction, DatumInfo, Gesture, Pick, WHEEL_ZOOM_PER_LINE};
 
@@ -1039,8 +1040,13 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
 
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
-        let sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
-            .map(|(id, scale)| (id.clone(), axis::size(scale, &mut canvas)))
+        // Every scale's tick labels, measured, flat or turned by a fixed rotation, and the bands
+        // they need.
+        let mut tick_labels: IndexMap<ScaleId, TickLabels> = self.scales.iter()
+            .map(|(id, scale)| (id.clone(), TickLabels::new(scale, &mut canvas)))
+            .collect();
+        let mut sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
+            .map(|(id, scale)| (id.clone(), axis::size(scale, &tick_labels[id], &mut canvas)))
             .collect();
 
         // The legend's items, from every controller, in order.
@@ -1074,8 +1080,28 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
             legend: (!legend_items.is_empty()).then_some((legend_position, legend_layout.size)),
         };
 
-        let layout = self.layout(&sizes, &decorations);
+        let mut layout = self.layout(&sizes, &decorations);
+
+        // Labels that turn when they don't fit flat need deeper bands, so the chart is laid out
+        // again with those. Only horizontal axes turn, so the second layout keeps the area's width,
+        // and with it the room along those axes.
+        let mut turned = false;
+        for (id, scale) in self.scales.iter() {
+            if tick_labels[id].turn_to_fit(scale, layout.chart_area) {
+                sizes[id] = axis::size(scale, &tick_labels[id], &mut canvas);
+                turned = true;
+            }
+        }
+        if turned {
+            layout = self.layout(&sizes, &decorations);
+        }
+
         let chart_area = layout.chart_area;
+
+        // Labels still too close together, as laid out, are thinned out.
+        for (id, scale) in self.scales.iter() {
+            tick_labels[id].skip_to_fit(scale, chart_area);
+        }
 
         self.bands = self.scales.iter()
             .filter(|(_, scale)| scale.axis() != Axis::Radial)
@@ -1117,7 +1143,7 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
         }
 
         for (id, scale) in self.scales.iter() {
-            axis::draw_grid(scale, &mut canvas, chart_area, layout.offset(id));
+            axis::draw_grid(scale, &tick_labels[id], &mut canvas, chart_area, layout.offset(id));
         }
         axis::draw_polar_grid(&self.scales, &mut canvas);
 

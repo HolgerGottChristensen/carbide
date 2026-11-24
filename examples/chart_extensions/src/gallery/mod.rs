@@ -13,7 +13,7 @@ mod scales;
 mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
-use carbide::chart::{Chart, ChartStyleExt, Sequence, LegendPosition, Measure, Pick, PickMode, SeriesStyle, SnapMode, TooltipAnchor, ZoomWindow, DatasetController};
+use carbide::chart::{Axis, AxisPosition, CategoryScale, Chart, ChartStyleExt, Sequence, LabelRotation, LegendPosition, LinearScale, LogScale, Measure, Pick, PickMode, Scale, SeriesStyle, SnapMode, TimeScale, TooltipAnchor, ZoomWindow, DatasetController};
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
@@ -21,9 +21,9 @@ use carbide::controls::slider::{Slider, SliderStepping};
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::{ControlsExt, TextInput};
 use carbide::draw::color::rgba_bytes;
-use carbide::draw::{Alignment, Scalar};
+use carbide::draw::{Alignment, Angle, Scalar};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide::state::{IntoReadState, LocalState, Map1, ReadState, State};
+use carbide::state::{IntoReadState, LocalState, Map1, Map3, ReadState, State};
 use carbide::widget::*;
 use carbide::ui;
 
@@ -167,6 +167,8 @@ pub(crate) struct Shared {
     tooltip_anchor: LocalState<TooltipAnchor>,
     tooltip_alignment: LocalState<Alignment>,
     colors: LocalState<Colors>,
+    horizontal_axis: AxisControls,
+    vertical_axis: AxisControls,
 }
 
 impl Shared {
@@ -182,7 +184,38 @@ impl Shared {
             tooltip_anchor: LocalState::new(TooltipAnchor::Data),
             tooltip_alignment: LocalState::new(Alignment::Top),
             colors: LocalState::new(Colors::Theme),
+            horizontal_axis: AxisControls::new(Axis::Horizontal),
+            vertical_axis: AxisControls::new(Axis::Vertical),
         }
+    }
+
+    /// The side and tick label options of the scales along `axis`, shared by every chart.
+    pub(crate) fn axis_controls(&self, axis: Axis) -> &AxisControls {
+        match axis {
+            Axis::Vertical => &self.vertical_axis,
+            _ => &self.horizontal_axis,
+        }
+    }
+
+    /// The side across from the one the main scales along `axis` are on, for a second scale
+    /// beside them, as a state that follows the side bar.
+    pub(crate) fn other_side(&self, axis: Axis) -> impl ReadState<T=AxisPosition> + Clone + use<> {
+        Map1::read_map(self.axis_controls(axis).side.clone(), |side: &AxisPosition| match side {
+            AxisPosition::Left => AxisPosition::Right,
+            AxisPosition::Right => AxisPosition::Left,
+            AxisPosition::Top => AxisPosition::Bottom,
+            AxisPosition::Bottom => AxisPosition::Top,
+        })
+    }
+
+    /// The side bar's sections for the horizontal and the vertical scales, in the charts with
+    /// scales along the sides: their side and tick labels. Polar charts place their labels around
+    /// the circle, and leave these out.
+    pub(crate) fn axis_options(&self) -> impl Widget + use<> {
+        VStack::new((
+            self.horizontal_axis.options("x axis", Axis::Horizontal),
+            self.vertical_axis.options("y axis", Axis::Vertical),
+        )).cross_axis_alignment(CrossAxisAlignment::Start)
     }
 
     /// `chart` with the shared options: the legend, the pointer's options, and its hover and click
@@ -255,6 +288,138 @@ impl Shared {
 }
 
 // ===============================
+//  Tick labels
+// ===============================
+
+/// How the side bar turns tick labels: only when they don't fit, or always by an angle.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) enum Turning {
+    Auto,
+    Fixed,
+}
+
+/// The options of the scales along one direction, set in the side bar: the side of the chart they
+/// are on, and how their tick labels turn, by how much, where they hang off their ticks, and
+/// whether those too close together are left out.
+#[derive(Clone)]
+pub(crate) struct AxisControls {
+    side: LocalState<AxisPosition>,
+    turning: LocalState<Turning>,
+    /// The angle of a fixed rotation, in degrees.
+    angle: LocalState<Scalar>,
+    /// The angle automatic rotation turns to, in degrees.
+    max_angle: LocalState<Scalar>,
+    alignment: LocalState<Option<Alignment>>,
+    skip: LocalState<bool>,
+}
+
+impl AxisControls {
+    /// The options for the scales along `axis`, on its default side.
+    fn new(axis: Axis) -> AxisControls {
+        AxisControls {
+            side: LocalState::new(axis.default_position()),
+            turning: LocalState::new(Turning::Auto),
+            angle: LocalState::new(-45.0),
+            max_angle: LocalState::new(-45.0),
+            alignment: LocalState::new(None),
+            skip: LocalState::new(true),
+        }
+    }
+
+    /// The rotation the options choose, as a state of a `LabelRotation`.
+    fn rotation(&self) -> impl ReadState<T=LabelRotation> + Clone + use<> {
+        Map3::read_map(self.turning.clone(), self.angle.clone(), self.max_angle.clone(), |turning: &Turning, angle: &Scalar, max: &Scalar| match turning {
+            Turning::Auto => LabelRotation::Auto { max: Angle::Degrees(*max) },
+            Turning::Fixed => LabelRotation::Fixed(Angle::Degrees(*angle)),
+        })
+    }
+
+    /// The side bar's section for these options, headed `title`, for the scales along `axis`:
+    /// the two sides the axis can take, the angle slider of the chosen way of turning, and only
+    /// where labels turn automatically along a horizontal axis does the automatic angle apply.
+    fn options(&self, title: &str, axis: Axis) -> impl Widget + use<> {
+        let horizontal = axis == Axis::Horizontal;
+        let (first, second) = if horizontal {
+            (("Bottom", AxisPosition::Bottom), ("Top", AxisPosition::Top))
+        } else {
+            (("Left", AxisPosition::Left), ("Right", AxisPosition::Right))
+        };
+        let fixed = Map1::read_map(self.turning.clone(), |turning: &Turning| *turning == Turning::Fixed);
+        let auto_along = Map1::read_map(self.turning.clone(), move |turning: &Turning| *turning == Turning::Auto && horizontal);
+        let auto_beside = Map1::read_map(self.turning.clone(), move |turning: &Turning| *turning == Turning::Auto && !horizontal);
+
+        VStack::new((
+            section(title),
+            Picker::new("Side", self.side.clone(), (
+                Text::new(first.0).tag(first.1),
+                Text::new(second.0).tag(second.1),
+            )),
+            Picker::new("Turn labels", self.turning.clone(), (
+                Text::new("When they don't fit").tag(Turning::Auto),
+                Text::new("Always").tag(Turning::Fixed),
+            )),
+            shown_when(fixed, slider("Angle", &self.angle, -90.0, 90.0, 5.0, degrees)),
+            shown_when(auto_along, slider("Up to", &self.max_angle, -90.0, 90.0, 5.0, degrees)),
+            shown_when(auto_beside, note("Labels beside a vertical axis stay flat: turning them makes no room between them.")),
+            Picker::new("Hang from", self.alignment.clone(), (
+                Text::new("Pointing at the tick").tag(None),
+                Text::new("Top").tag(Some(Alignment::Top)),
+                Text::new("Bottom").tag(Some(Alignment::Bottom)),
+                Text::new("Start").tag(Some(Alignment::Leading)),
+                Text::new("End").tag(Some(Alignment::Trailing)),
+                Text::new("Top, start").tag(Some(Alignment::TopLeading)),
+                Text::new("Top, end").tag(Some(Alignment::TopTrailing)),
+                Text::new("Bottom, start").tag(Some(Alignment::BottomLeading)),
+                Text::new("Bottom, end").tag(Some(Alignment::BottomTrailing)),
+                Text::new("Centre").tag(Some(Alignment::Center)),
+            )),
+            Toggle::new("Leave out labels that don't fit", self.skip.clone()),
+        )).cross_axis_alignment(CrossAxisAlignment::Start)
+    }
+}
+
+/// A scale that follows the side bar's options for the direction it runs in.
+pub(crate) trait Labelled: Scale + Sized {
+    /// The scale with `rotation`, `alignment` and `skip` set.
+    fn with_labels(self, rotation: impl IntoReadState<LabelRotation>, alignment: LocalState<Option<Alignment>>, skip: LocalState<bool>) -> Self;
+
+    /// The scale on `side`.
+    fn with_side(self, side: impl IntoReadState<AxisPosition>) -> Self;
+
+    /// The scale with the tick label options `shared` has for its axis, on a side of its own: a
+    /// second scale beside the main one.
+    fn labelled(self, shared: &Shared) -> Self {
+        let options = shared.axis_controls(self.axis()).clone();
+        self.with_labels(options.rotation(), options.alignment, options.skip)
+    }
+
+    /// The scale on the side `shared` has for its axis, with its tick label options: the main
+    /// scale along that axis.
+    fn placed(self, shared: &Shared) -> Self {
+        let side = shared.axis_controls(self.axis()).side.clone();
+        self.with_side(side).labelled(shared)
+    }
+}
+
+macro_rules! labelled {
+    ($($scale:ty),*) => {
+        $(
+            impl Labelled for $scale {
+                fn with_labels(self, rotation: impl IntoReadState<LabelRotation>, alignment: LocalState<Option<Alignment>>, skip: LocalState<bool>) -> Self {
+                    self.label_rotation(rotation).label_alignment(alignment).label_skip(skip)
+                }
+
+                fn with_side(self, side: impl IntoReadState<AxisPosition>) -> Self {
+                    self.position(side)
+                }
+            }
+        )*
+    };
+}
+
+labelled!(LinearScale, CategoryScale, TimeScale, LogScale, chart_extensions::LogScale);
+
+// ===============================
 //  Helpers for the side bars
 // ===============================
 
@@ -278,6 +443,13 @@ pub(crate) fn with_side_bar(chart: impl Widget, options: impl Widget, shared: &S
                 .clip(),
         )),
     ).relative_to_end(300.0).boxed()
+}
+
+/// A chart with scales along its sides beside its side bar: the chart's own options, then the
+/// options of its x and y axes, then the shared ones.
+pub(crate) fn with_labelled_side_bar(chart: impl Widget, options: impl Widget, shared: &Shared) -> Box<dyn AnyWidget> {
+    let options = VStack::new((options, shared.axis_options())).cross_axis_alignment(CrossAxisAlignment::Start);
+    with_side_bar(chart, options, shared)
 }
 
 /// A heading in the side bar, set apart from the section above it.

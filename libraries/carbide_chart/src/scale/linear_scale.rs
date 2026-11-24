@@ -118,6 +118,7 @@ impl LinearScale {
 
     crate::scale::axis_options::polar_options!(LinearScale);
     crate::scale::axis_options::zoom_options!(LinearScale);
+    crate::scale::axis_options::label_options!(LinearScale);
 
     /// At most how many ticks the scale has: fewer along a radius, which is half as long as the
     /// chart area is wide, and whose labels sit beside one spoke.

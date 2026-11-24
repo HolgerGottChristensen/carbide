@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{first_section, pixels, section, shown_when, slider, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, pixels, section, shown_when, slider, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
 
 /// What the scatter chart shows.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -113,7 +113,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The data option, which shows each new choice of data whole: picking other data resets the
@@ -135,7 +135,7 @@ fn data_resetting_zoom(options: &Options) -> impl State<T=Data> + use<> {
 /// The scatter chart of `data`, its x scale linear, a time scale or categories, as its x values
 /// are numbers, times or text.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
-    let linear_x = || LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone());
+    let linear_x = || LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
 
     match data {
         Data::Points => {
@@ -183,7 +183,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                 quakes
             };
             let scatter = ScatterController::new((region(0.0, 30, 2.0).label("Coast"), region(100.0, 15, 3.0).label("Mountains")));
-            let x = TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc)).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone());
+            let x = TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc)).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
             finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, x), options, shared)
         }
         Data::Weekdays => {
@@ -199,7 +199,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                 }).collect()
             };
             let scatter = ScatterController::new((readings(0.0, &DAYS, 250.0).label("Morning (ms)"), readings(100.0, &DAYS[1..], 290.0).label("Evening (ms)")));
-            let x = CategoryScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone());
+            let x = CategoryScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
             finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, x), options, shared)
         }
         Data::Stores | Data::Clusters => {
@@ -244,6 +244,6 @@ fn bubbles(data: Data) -> Vec<(&'static str, Vec<(Scalar, Scalar, Scalar)>)> {
 fn finish<C: Sequence<dyn DatasetController>>(chart: Chart<C>, options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     shared.apply(chart
         .title(options.title.clone())
-        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).grid_lines(options.grid_lines.clone())))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared)))
         .boxed()
 }

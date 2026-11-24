@@ -105,6 +105,7 @@ impl LogScale {
 
     crate::scale::axis_options::polar_options!(LogScale);
     crate::scale::axis_options::zoom_options!(LogScale);
+    crate::scale::axis_options::label_options!(LogScale);
 
     /// The base as last synced, or 10 when it is 1 or less, or not a number.
     fn base_value(&self) -> Scalar {

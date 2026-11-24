@@ -1,7 +1,7 @@
 use std::ops::Range;
 
-use carbide::chart::{Axis, AxisOptions, AxisPosition, Scale, ZoomWindow};
-use carbide::draw::Scalar;
+use carbide::chart::{Axis, AxisOptions, AxisPosition, LabelRotation, Scale, ZoomWindow};
+use carbide::draw::{Alignment, Scalar};
 use carbide::environment::Environment;
 use carbide::state::{IntoReadState, IntoState};
 
@@ -64,6 +64,27 @@ impl LogScale {
     /// Draws grid lines at the ticks, or not with `false`, a value or a state of one.
     pub fn grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> LogScale {
         self.axis_options = self.axis_options.with_grid_lines(grid_lines);
+        self
+    }
+
+    /// How far the tick labels are turned: a `LabelRotation`, an `Angle` or a number of degrees,
+    /// or a state of any of them. The chart turns, aligns and thins out the labels of any scale
+    /// from its axis options, so a scale of its own only passes the option on.
+    pub fn label_rotation(mut self, rotation: impl IntoReadState<LabelRotation>) -> LogScale {
+        self.axis_options = self.axis_options.with_label_rotation(rotation);
+        self
+    }
+
+    /// The point of each tick label at the end of its tick mark, an `Alignment` or a state of an
+    /// `Option<Alignment>`, where `None` picks it automatically.
+    pub fn label_alignment(mut self, alignment: impl IntoReadState<Option<Alignment>>) -> LogScale {
+        self.axis_options = self.axis_options.with_label_alignment(alignment);
+        self
+    }
+
+    /// Whether tick labels too close together are thinned out, a value or a state of one.
+    pub fn label_skip(mut self, skip: impl IntoReadState<bool>) -> LogScale {
+        self.axis_options = self.axis_options.with_label_skip(skip);
         self
     }
 

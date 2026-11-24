@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
 use chart_extensions::{Blocks, BlocksExt, Kelvin, LogScale, LollipopController, ValueTicks};
-use super::{first_section, percent, section, shown_when, slider, snap_picker, text_input, with_side_bar, zoom_controls, Shared};
+use super::{first_section, percent, section, shown_when, slider, snap_picker, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
 
 /// The weekdays the visits are counted on.
 const WEEKDAYS: [&str; 5] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -172,7 +172,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         zoom,
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The data option, which shows each new choice of data whole: picking other data resets both
@@ -207,7 +207,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
         let scale = LinearScale::new(value_axis)
             .zoom(zoom(&value_id))
             .fit_visible(options.fit_visible.clone())
-            .grid_lines(options.grid_lines.clone());
+            .grid_lines(options.grid_lines.clone())
+            .placed(&shared);
         match title {
             Some(title) => scale.title(title.to_string()),
             None => scale,
@@ -227,7 +228,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
                 LollipopController::new(forecast.label("Forecast (°C)").color(color)).palette_offset(1).horizontal(options.horizontal.clone()),
             ))
                 .title(options.title.clone())
-                .scale(index_id.clone(), LinearScale::new(index_axis).zoom(zoom(&index_id)))
+                .scale(index_id.clone(), LinearScale::new(index_axis).zoom(zoom(&index_id)).placed(&shared))
                 .scale(value_id.clone(), linear_values(None)))
                 .boxed()
         }
@@ -244,14 +245,15 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
                 norway.label("Norway").color(color),
             )).horizontal(options.horizontal.clone()))
                 .title(options.title.clone())
-                .scale(index_id.clone(), CategoryScale::new(index_axis).zoom(zoom(&index_id)).snap_mode(options.snap_mode.clone()));
+                .scale(index_id.clone(), CategoryScale::new(index_axis).zoom(zoom(&index_id)).snap_mode(options.snap_mode.clone()).placed(&shared));
 
             if log {
                 let values = LogScale::new(value_axis)
                     .title("Inhabitants (log)")
                     .zoom(zoom(&value_id))
                     .fit_visible(options.fit_visible.clone())
-                    .grid_lines(options.grid_lines.clone());
+                    .grid_lines(options.grid_lines.clone())
+                    .placed(&shared);
                 shared.apply(chart.scale(value_id.clone(), values)).boxed()
             } else {
                 shared.apply(chart.scale(value_id.clone(), linear_values(Some("Inhabitants")))).boxed()
@@ -271,7 +273,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: boo
                 .category_percentage(options.category_percentage.clone())
                 .bar_percentage(options.bar_percentage.clone()))
                 .title(options.title.clone())
-                .scale(index_id.clone(), CategoryScale::new(index_axis).labels(WEEKDAYS).zoom(zoom(&index_id)).snap_mode(options.snap_mode.clone()))
+                .scale(index_id.clone(), CategoryScale::new(index_axis).labels(WEEKDAYS).zoom(zoom(&index_id)).snap_mode(options.snap_mode.clone()).placed(&shared))
                 .scale(value_id.clone(), linear_values(Some("Visits"))))
                 .boxed()
         }

@@ -186,6 +186,7 @@ impl CategoryScale {
 
     crate::scale::axis_options::polar_options!(CategoryScale);
     crate::scale::axis_options::zoom_options!(CategoryScale);
+    crate::scale::axis_options::label_options!(CategoryScale);
 
     /// The value at the start of the mapped range and the range's length. Around a full circle
     /// the range is one category longer, so the last category sits one step before the first

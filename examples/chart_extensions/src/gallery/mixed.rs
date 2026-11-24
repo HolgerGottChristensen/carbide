@@ -5,7 +5,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use carbide::asynchronous::Timer;
-use carbide::chart::{Axis, AxisPosition, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId, SnapMode, ZoomWindow};
+use carbide::chart::{Axis, BarController, CategoryScale, Chart, DatasetExt, LinearScale, LineController, ScaleId, SnapMode, ZoomWindow};
 use carbide::controls::button::Button;
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
@@ -15,7 +15,7 @@ use carbide::state::{LocalState, Map1, Map2, Map4, ReadState, State};
 use carbide::time::Duration;
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, note, section, shown_when, snap_picker, text_input, with_side_bar, zoom_controls, Shared, MONTHS};
+use super::{first_section, note, section, shown_when, snap_picker, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared, MONTHS};
 
 /// The growth line's own y axis.
 const GROWTH: ScaleId = ScaleId::new("growth");
@@ -122,7 +122,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
-    with_side_bar(chart, side, &shared)
+    with_labelled_side_bar(chart, side, &shared)
 }
 
 /// The data option, which shows each new choice of data whole: picking other data resets every
@@ -156,11 +156,11 @@ pub(super) fn revenue(options: Options, shared: Shared, own_axis: bool) -> Box<d
         LineController::new(growth.label("Growth (%)").y_scale(growth_scale)).palette_offset(1),
     ))
         .title(options.title.clone())
-        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).zoom(options.x_zoom.clone()).snap_mode(options.snap_mode.clone()))
-        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()));
+        .scale(ScaleId::X, CategoryScale::new(Axis::Horizontal).labels(MONTHS).zoom(options.x_zoom.clone()).snap_mode(options.snap_mode.clone()).placed(&shared))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).placed(&shared));
 
     let chart = if own_axis {
-        chart.scale(GROWTH, LinearScale::new(Axis::Vertical).position(AxisPosition::Right).title("Growth (%)").grid_lines(false).zoom(options.growth_zoom.clone()))
+        chart.scale(GROWTH, LinearScale::new(Axis::Vertical).position(shared.other_side(Axis::Vertical)).title("Growth (%)").grid_lines(false).zoom(options.growth_zoom.clone()).labelled(&shared))
     } else {
         chart
     };
@@ -184,8 +184,8 @@ pub(super) fn live(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
     });
     shared.apply(Chart::new(LineController::new(readings))
         .title(options.title.clone())
-        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Reading").zoom(options.x_zoom.clone()))
-        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone())))
+        .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).title("Reading").zoom(options.x_zoom.clone()).placed(&shared))
+        .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).placed(&shared)))
         .boxed()
 }
 

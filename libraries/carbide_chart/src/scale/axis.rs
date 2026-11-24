@@ -16,6 +16,7 @@ use carbide_core::widget::canvas::CanvasContext;
 use crate::scale::{Axis, AxisPosition, GridShape, PolarRole, Scales};
 use crate::Scale;
 use crate::scale::polar::{self, Circle, Polar, RimLabel, Ring};
+use crate::scale::tick_labels::{self, TickLabels};
 use crate::style::axis_style;
 
 /// How far tick marks reach out from the inner edge of their scale's band.
@@ -30,28 +31,18 @@ pub(crate) fn tick_label(scale: &dyn Scale, value: Scalar, env: &mut Environment
     scale.label(value, env).unwrap_or_else(|| format_number(value, env))
 }
 
-/// How far the scale's band reaches out from the chart area: its tick marks plus its widest tick
-/// label for a vertical scale, or its tallest for a horizontal one, plus its title's height (a
+/// How far the scale's band reaches out from the chart area: its tick marks, plus as far as its
+/// tick `labels` reach outwards as turned (see `TickLabels::depth`), plus its title's height (a
 /// vertical scale's title is turned along the axis, so its height also lies across it). Scales on
 /// the same side are stacked outwards, each in its own band.
-pub(crate) fn size(scale: &dyn Scale, ctx: &mut CanvasContext) -> Scalar {
+pub(crate) fn size(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext) -> Scalar {
     // Polar scales take no band: their labels sit around and inside the circle.
     if scale.axis() == Axis::Radial {
         return 0.0;
     }
 
     let tick_length = if scale.axis_options().tick_marks() { TICK_LENGTH } else { 0.0 };
-
-    let mut label_extent: Scalar = 0.0;
-    for tick in scale.ticks() {
-        let label = tick_label(scale, *tick, ctx.env());
-        let size = ctx.measure_text(&label);
-
-        label_extent = label_extent.max(match scale.axis() {
-            Axis::Horizontal => size.height,
-            _ => size.width,
-        });
-    }
+    let label_extent = labels.depth(scale.axis(), scale.axis_options().position());
 
     let title_extent = match (scale.axis(), scale.axis_options().title()) {
         (Axis::Horizontal | Axis::Vertical, Some(title)) => TITLE_GAP + ctx.measure_text(&title).height,
@@ -96,19 +87,19 @@ pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect,
 }
 
 /// Draws the scale's grid lines across the chart area (if it has grid lines), its tick marks in
-/// its band (if it has tick marks), and its tick labels, in the chart's `AxisStyle`. Turning the grid lines off keeps the
+/// its band (if it has tick marks), and its shown tick `labels`, each turned around the point of
+/// it at the end of its tick mark, in the chart's `AxisStyle`. Turning the grid lines off keeps the
 /// labels, which is what secondary scales usually want.
-pub(crate) fn draw_grid(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
+pub(crate) fn draw_grid(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
     let options = scale.axis_options();
 
     // Per side: the chart area's edge the band starts at, which way is outwards across the axis
-    // (+1 or -1), the opposite edge the grid lines run to, and how labels hang off the end of the
-    // tick marks.
-    let (horizontal, area_edge, outward, far_edge, alignment) = match (scale.axis(), options.position()) {
-        (Axis::Horizontal, AxisPosition::Top) => (true, area.bottom(), -1.0, area.top(), Alignment::Bottom),
-        (Axis::Horizontal, _) => (true, area.top(), 1.0, area.bottom(), Alignment::Top),
-        (Axis::Vertical, AxisPosition::Right) => (false, area.right(), 1.0, area.left(), Alignment::Leading),
-        (Axis::Vertical, _) => (false, area.left(), -1.0, area.right(), Alignment::Trailing),
+    // (+1 or -1), and the opposite edge the grid lines run to.
+    let (horizontal, area_edge, outward, far_edge) = match (scale.axis(), options.position()) {
+        (Axis::Horizontal, AxisPosition::Top) => (true, area.bottom(), -1.0, area.top()),
+        (Axis::Horizontal, _) => (true, area.top(), 1.0, area.bottom()),
+        (Axis::Vertical, AxisPosition::Right) => (false, area.right(), 1.0, area.left()),
+        (Axis::Vertical, _) => (false, area.left(), -1.0, area.right()),
         (Axis::Radial, _) => return,
     };
 
@@ -127,18 +118,10 @@ pub(crate) fn draw_grid(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, 
 
     ctx.save();
     ctx.set_line_width(1.0);
-    ctx.set_text_align(alignment);
+    ctx.set_text_align(labels.alignment());
 
     // `along` is a value's coordinate along the axis; `across` a coordinate across it.
-    let along = |value: Scalar| {
-        let fraction = scale.normalize(value);
-
-        if horizontal {
-            area.left() + fraction * area.width()
-        } else {
-            area.bottom() + (1.0 - fraction) * area.height()
-        }
-    };
+    let along = |value: Scalar| tick_labels::along(scale, area, value);
     let point = |along: Scalar, across: Scalar| if horizontal { (along, across) } else { (across, along) };
 
     // The values grid lines and tick marks are drawn at, skipping those that would fall outside
@@ -208,10 +191,20 @@ pub(crate) fn draw_grid(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, 
 
     ctx.set_fill_style(label_color);
 
-    for tick in scale.ticks() {
-        let label = &tick_label(scale, *tick, ctx.env());
-        let (x, y) = point(along(*tick), tick_end);
-        ctx.fill_text(label, x, y);
+    // Flat labels are drawn where they are; turned ones turn around their anchor.
+    let rotation = labels.rotation();
+    for label in labels.labels().iter().filter(|label| label.shown) {
+        let (x, y) = point(along(label.value), tick_end);
+
+        if rotation == 0.0 {
+            ctx.fill_text(&label.text, x, y);
+        } else {
+            ctx.save();
+            ctx.translate(Vector3::new(x, y, 0.0));
+            ctx.rotate(Angle::Radians(rotation));
+            ctx.fill_text(&label.text, 0.0, 0.0);
+            ctx.restore();
+        }
     }
 
     ctx.restore();
@@ -528,18 +521,7 @@ fn trace_ring(path: &mut CanvasContext, polar: &Polar, distance: Scalar, corners
 /// The box a text of `size` covers when drawn at `anchor` with `alignment`, as the canvas places
 /// it (`CanvasContext::fill_text`): `Rect`'s position is its top-left corner on the screen.
 fn text_box(anchor: Position, alignment: Alignment, size: Dimension) -> Rect {
-    let (along_x, along_y) = match alignment {
-        Alignment::TopLeading => (0.0, 0.0),
-        Alignment::Top => (0.5, 0.0),
-        Alignment::TopTrailing => (1.0, 0.0),
-        Alignment::Leading => (0.0, 0.5),
-        Alignment::Center => (0.5, 0.5),
-        Alignment::Trailing => (1.0, 0.5),
-        Alignment::BottomLeading => (0.0, 1.0),
-        Alignment::Bottom => (0.5, 1.0),
-        Alignment::BottomTrailing => (1.0, 1.0),
-        Alignment::Custom(x, y) => (x, y),
-    };
+    let (along_x, along_y) = tick_labels::alignment_fractions(alignment);
 
     Rect::new(Position::new(anchor.x - size.width * along_x, anchor.y - size.height * along_y), size)
 }

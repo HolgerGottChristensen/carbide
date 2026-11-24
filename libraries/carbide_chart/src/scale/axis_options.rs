@@ -1,10 +1,11 @@
-use carbide::draw::{Angle, Scalar};
+use carbide::draw::{Alignment, Angle, Scalar};
 use carbide::environment::Environment;
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateContract, StateExtNew};
-use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, PolarRole, ZoomWindow};
+use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, LabelRotation, PolarRole, ZoomWindow};
 
 /// How a scale's axis is laid out and drawn: the side of the chart area it sits on, its order
-/// among the scales on that side, whether it draws grid lines and tick marks, and its title. Every
+/// among the scales on that side, whether it draws grid lines and tick marks, its title, and how
+/// its tick labels are turned, aligned and thinned out when they don't fit. Every
 /// scale type holds one and hands it out with `Scale::axis_options`; the axis code
 /// (`scale/axis.rs`) reads it, so it is laid out and drawn the same way for every scale. The
 /// scales' builder methods (`LinearScale::position` and so on) set it.
@@ -28,6 +29,9 @@ pub struct AxisOptions {
     grid_lines_set: bool,
     tick_marks: Box<dyn AnyReadState<T=bool>>,
     title: Option<Box<dyn AnyReadState<T=String>>>,
+    label_rotation: Box<dyn AnyReadState<T=LabelRotation>>,
+    label_alignment: Box<dyn AnyReadState<T=Option<Alignment>>>,
+    label_skip: Box<dyn AnyReadState<T=bool>>,
     start_angle: Box<dyn AnyReadState<T=Angle>>,
     end_angle: Box<dyn AnyReadState<T=Angle>>,
     direction: Box<dyn AnyReadState<T=AngleDirection>>,
@@ -59,6 +63,9 @@ impl AxisOptions {
             grid_lines_set: false,
             tick_marks: constant(true),
             title: None,
+            label_rotation: constant(LabelRotation::default()),
+            label_alignment: constant(None),
+            label_skip: constant(true),
             start_angle: constant(Angle::Degrees(0.0)),
             end_angle: constant(Angle::Degrees(360.0)),
             direction: constant(AngleDirection::Clockwise),
@@ -112,6 +119,25 @@ impl AxisOptions {
     /// The axis's title, as its state was last synced, or `None` when it has none.
     pub fn title(&self) -> Option<String> {
         self.title.as_ref().map(|title| title.value_dyn().clone())
+    }
+
+    /// How far the axis's tick labels are turned (see `LabelRotation`). Turned only when they
+    /// don't fit, by default.
+    pub fn label_rotation(&self) -> LabelRotation {
+        *self.label_rotation.value_dyn()
+    }
+
+    /// The point of each tick label that sits at the end of its tick mark, in the label's own
+    /// frame, so a turned label turns around it; `None`, the default, picks it from the side the
+    /// axis is on and the rotation, so a label points at its tick.
+    pub fn label_alignment(&self) -> Option<Alignment> {
+        *self.label_alignment.value_dyn()
+    }
+
+    /// Whether labels that are still too close together, as turned, are thinned out: every n-th
+    /// is drawn, from the first, while the ticks and grid lines all stay. On by default.
+    pub fn label_skip(&self) -> bool {
+        *self.label_skip.value_dyn()
     }
 
     /// Where an angle scale starts, clockwise from the top of the circle whichever way it runs.
@@ -221,6 +247,9 @@ impl AxisOptions {
         changed |= self.grid_lines.sync(env);
         changed |= self.tick_marks.sync(env);
         changed |= self.title.as_mut().is_some_and(|title| title.sync(env));
+        changed |= self.label_rotation.sync(env);
+        changed |= self.label_alignment.sync(env);
+        changed |= self.label_skip.sync(env);
         changed |= self.start_angle.sync(env);
         changed |= self.end_angle.sync(env);
         changed |= self.direction.sync(env);
@@ -272,6 +301,28 @@ impl AxisOptions {
     /// Gives the axis a title, a text or a state of one.
     pub fn with_title(mut self, title: impl IntoReadState<String>) -> AxisOptions {
         self.title = Some(title.into_read_state().as_dyn_read());
+        self
+    }
+
+    /// Sets how far the tick labels are turned, a `LabelRotation`, an `Angle` or a number of
+    /// degrees for a fixed rotation, or a state of any of them.
+    pub fn with_label_rotation(mut self, rotation: impl IntoReadState<LabelRotation>) -> AxisOptions {
+        self.label_rotation = rotation.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets the point of each tick label that sits at the end of its tick mark (see
+    /// `label_alignment`): an `Alignment`, or a state of an `Option<Alignment>`, where `None` picks
+    /// it automatically.
+    pub fn with_label_alignment(mut self, alignment: impl IntoReadState<Option<Alignment>>) -> AxisOptions {
+        self.label_alignment = alignment.into_read_state().as_dyn_read();
+        self
+    }
+
+    /// Sets whether tick labels that don't fit are thinned out, a value or a state of one (see
+    /// `label_skip`).
+    pub fn with_label_skip(mut self, skip: impl IntoReadState<bool>) -> AxisOptions {
+        self.label_skip = skip.into_read_state().as_dyn_read();
         self
     }
 
@@ -347,6 +398,42 @@ macro_rules! zoom_options {
 
 pub(crate) use zoom_options;
 
+/// The builder methods for tick labels, in the impl block of a scale type with an `axis_options`
+/// field: `label_rotation`, `label_alignment` and `label_skip`. Polar scales place their labels
+/// around the circle, and ignore them.
+macro_rules! label_options {
+    ($scale:ty) => {
+        /// How far the tick labels are turned: a `LabelRotation`, or an `Angle` or a number of
+        /// degrees for a fixed rotation, or a state of any of them. By default
+        /// (`LabelRotation::AUTO`) labels stay flat while they fit, and turn by 45°, rising to the
+        /// right, on a horizontal axis where they don't. A negative angle turns counter-clockwise.
+        pub fn label_rotation(mut self, rotation: impl carbide::state::IntoReadState<crate::scale::LabelRotation>) -> $scale {
+            self.axis_options = self.axis_options.with_label_rotation(rotation);
+            self
+        }
+
+        /// The point of each tick label that sits at the end of its tick mark, in the label's own
+        /// frame, so a turned label turns around it: an `Alignment`, or a state of an
+        /// `Option<Alignment>`. `None`, the default, picks it from the side and the rotation, so
+        /// each label points at its tick: centred under a flat label on a bottom axis, and at the
+        /// end of a turned one.
+        pub fn label_alignment(mut self, alignment: impl carbide::state::IntoReadState<Option<carbide::draw::Alignment>>) -> $scale {
+            self.axis_options = self.axis_options.with_label_alignment(alignment);
+            self
+        }
+
+        /// Whether tick labels still too close together, as turned, are thinned out, a value or a
+        /// state of one: every n-th label is drawn, from the first, and the ticks and grid lines
+        /// all stay. `true` by default.
+        pub fn label_skip(mut self, skip: impl carbide::state::IntoReadState<bool>) -> $scale {
+            self.axis_options = self.axis_options.with_label_skip(skip);
+            self
+        }
+    };
+}
+
+pub(crate) use label_options;
+
 /// The builder methods for a polar scale's options, in the impl block of a scale type with an
 /// `axis_options` field: `start_angle`, `end_angle` and `direction` for angle scales, and
 /// `inner_radius` and `grid_shape` for radius scales.
@@ -400,9 +487,10 @@ fn constant<T: StateContract + IntoReadState<T>>(value: T) -> Box<dyn AnyReadSta
 
 #[cfg(test)]
 mod tests {
+    use carbide::draw::{Alignment, Angle};
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
-    use crate::scale::{Axis, AxisPosition};
+    use crate::scale::{Axis, AxisPosition, LabelRotation};
     use super::AxisOptions;
 
     /// Every option is a value or a state, read as it was last synced.
@@ -427,6 +515,34 @@ mod tests {
         *tick_marks.value_mut() = false;
         options.sync(&mut Environment::new());
         assert_eq!((options.position(), options.weight(), options.grid_lines(), options.tick_marks()), (AxisPosition::Right, 2, false, false));
+    }
+
+    /// The label options are states too: the rotation switches between automatic and fixed, the
+    /// alignment between automatic and set, and skipping off and on. A number of degrees, an
+    /// `Angle` and an `Alignment` convert to a fixed rotation and a set alignment.
+    #[test]
+    fn label_options_are_states() {
+        let defaults = AxisOptions::new(Axis::Horizontal);
+        assert_eq!((defaults.label_rotation(), defaults.label_alignment(), defaults.label_skip()), (LabelRotation::AUTO, None, true));
+
+        let mut rotation = LocalState::new(LabelRotation::AUTO);
+        let mut alignment = LocalState::new(None);
+        let mut skip = LocalState::new(true);
+
+        let mut options = AxisOptions::new(Axis::Horizontal)
+            .with_label_rotation(rotation.clone())
+            .with_label_alignment(alignment.clone())
+            .with_label_skip(skip.clone());
+
+        *rotation.value_mut() = LabelRotation::Fixed(Angle::Degrees(-30.0));
+        *alignment.value_mut() = Some(Alignment::Leading);
+        *skip.value_mut() = false;
+        options.sync(&mut Environment::new());
+        assert_eq!((options.label_rotation(), options.label_alignment(), options.label_skip()), (LabelRotation::Fixed(Angle::Degrees(-30.0)), Some(Alignment::Leading), false));
+
+        let converted = AxisOptions::new(Axis::Horizontal).with_label_rotation(-45.0).with_label_alignment(Alignment::Trailing);
+        assert_eq!((converted.label_rotation(), converted.label_alignment()), (LabelRotation::Fixed(Angle::Degrees(-45.0)), Some(Alignment::Trailing)));
+        assert_eq!(AxisOptions::new(Axis::Horizontal).with_label_rotation(Angle::Degrees(90.0)).label_rotation(), LabelRotation::Fixed(Angle::Degrees(90.0)));
     }
 
     /// A side the axis can't take, set as a value or reached by a state, draws the axis on its

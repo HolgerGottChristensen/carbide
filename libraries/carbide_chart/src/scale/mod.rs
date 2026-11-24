@@ -9,6 +9,8 @@ mod scale_id;
 mod coordinates;
 pub(crate) mod polar;
 mod zoom;
+mod label_rotation;
+pub(crate) mod tick_labels;
 
 use std::fmt::Debug;
 use carbide_derive::StateValue;
@@ -22,6 +24,7 @@ pub use scale_id::ScaleId;
 pub use coordinates::Coordinates;
 pub use polar::{Circle, Polar};
 pub use zoom::{SnapMode, ZoomWindow};
+pub use label_rotation::LabelRotation;
 pub(crate) use zoom::MIN_ZOOM_SPAN;
 pub(crate) use coordinates::Places;
 
