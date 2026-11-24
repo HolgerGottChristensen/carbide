@@ -1033,9 +1033,9 @@ fn draw_selection(canvas: &mut CanvasContext, rect: Rect, ink: carbide::color::C
 /// The band of a scale on `position`'s side of `chart_area`, `offset` from it and `size` deep, in
 /// the chart's own coordinates. `Rect::bottom` is the screen's top edge.
 fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar) -> Rect {
-    match position {
-        AxisPosition::Left => Rect::new(Position::new(chart_area.left() - offset - size, chart_area.bottom()), Dimension::new(size, chart_area.height())),
-        AxisPosition::Right => Rect::new(Position::new(chart_area.right() + offset, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+    match position.resolved() {
+        AxisPosition::Left | AxisPosition::Leading => Rect::new(Position::new(chart_area.left() - offset - size, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+        AxisPosition::Right | AxisPosition::Trailing => Rect::new(Position::new(chart_area.right() + offset, chart_area.bottom()), Dimension::new(size, chart_area.height())),
         AxisPosition::Top => Rect::new(Position::new(chart_area.left(), chart_area.bottom() - offset - size), Dimension::new(chart_area.width(), size)),
         AxisPosition::Bottom => Rect::new(Position::new(chart_area.left(), chart_area.top() + offset), Dimension::new(chart_area.width(), size)),
     }

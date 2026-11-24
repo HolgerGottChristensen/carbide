@@ -203,6 +203,8 @@ impl Shared {
         Map1::read_map(self.axis_controls(axis).side.clone(), |side: &AxisPosition| match side {
             AxisPosition::Left => AxisPosition::Right,
             AxisPosition::Right => AxisPosition::Left,
+            AxisPosition::Leading => AxisPosition::Trailing,
+            AxisPosition::Trailing => AxisPosition::Leading,
             AxisPosition::Top => AxisPosition::Bottom,
             AxisPosition::Bottom => AxisPosition::Top,
         })
@@ -335,25 +337,29 @@ impl AxisControls {
     }
 
     /// The side bar's section for these options, headed `title`, for the scales along `axis`:
-    /// the two sides the axis can take, the angle slider of the chosen way of turning, and only
+    /// the sides the axis can take, the angle slider of the chosen way of turning, and only
     /// where labels turn automatically along a horizontal axis does the automatic angle apply.
     fn options(&self, title: &str, axis: Axis) -> impl Widget + use<> {
         let horizontal = axis == Axis::Horizontal;
-        let (first, second) = if horizontal {
-            (("Bottom", AxisPosition::Bottom), ("Top", AxisPosition::Top))
-        } else {
-            (("Left", AxisPosition::Left), ("Right", AxisPosition::Right))
-        };
+        // A vertical axis takes its side by name or by reading direction.
+        let side = IfElse::new(horizontal)
+            .when_true(Picker::new("Side", self.side.clone(), (
+                Text::new("Bottom").tag(AxisPosition::Bottom),
+                Text::new("Top").tag(AxisPosition::Top),
+            )))
+            .when_false(Picker::new("Side", self.side.clone(), (
+                Text::new("Left").tag(AxisPosition::Left),
+                Text::new("Right").tag(AxisPosition::Right),
+                Text::new("Leading").tag(AxisPosition::Leading),
+                Text::new("Trailing").tag(AxisPosition::Trailing),
+            )));
         let fixed = Map1::read_map(self.turning.clone(), |turning: &Turning| *turning == Turning::Fixed);
         let auto_along = Map1::read_map(self.turning.clone(), move |turning: &Turning| *turning == Turning::Auto && horizontal);
         let auto_beside = Map1::read_map(self.turning.clone(), move |turning: &Turning| *turning == Turning::Auto && !horizontal);
 
         VStack::new((
             section(title),
-            Picker::new("Side", self.side.clone(), (
-                Text::new(first.0).tag(first.1),
-                Text::new(second.0).tag(second.1),
-            )),
+            side,
             Picker::new("Turn labels", self.turning.clone(), (
                 Text::new("When they don't fit").tag(Turning::Auto),
                 Text::new("Always").tag(Turning::Fixed),

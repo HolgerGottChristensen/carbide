@@ -53,8 +53,9 @@ impl Axis {
     }
 
     /// Whether a scale on this axis can sit at `position`: horizontal scales above or below the
-    /// chart area, vertical scales left or right of it.
+    /// chart area, vertical scales left or right of it, or leading or trailing it.
     pub fn allows(&self, position: AxisPosition) -> bool {
+        let position = position.resolved();
         match self {
             Axis::Horizontal => matches!(position, AxisPosition::Top | AxisPosition::Bottom),
             Axis::Vertical => matches!(position, AxisPosition::Left | AxisPosition::Right),
@@ -93,11 +94,28 @@ pub enum GridShape {
     Polygon,
 }
 
-/// The side of the chart area a scale is drawn on.
+/// The side of the chart area a scale is drawn on. `Leading` and `Trailing` name the sides a
+/// vertical scale can take by reading direction, where text starts and where it ends; carbide lays
+/// out from left to right, so they are drawn left and right (see `resolved`).
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, StateValue)]
 pub enum AxisPosition {
     Left,
     Right,
     Top,
     Bottom,
+    /// The side text starts on: left.
+    Leading,
+    /// The side text ends on: right.
+    Trailing,
+}
+
+impl AxisPosition {
+    /// The side drawn on: `Leading` and `Trailing` as left and right, every other side as itself.
+    pub fn resolved(self) -> AxisPosition {
+        match self {
+            AxisPosition::Leading => AxisPosition::Left,
+            AxisPosition::Trailing => AxisPosition::Right,
+            side => side,
+        }
+    }
 }

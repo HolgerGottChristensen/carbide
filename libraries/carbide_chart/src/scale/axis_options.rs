@@ -83,9 +83,10 @@ impl AxisOptions {
 
     /// The side of the chart area the axis's ticks, labels and border are drawn on, and where the
     /// chart reserves space for them. A side the axis can't take (see `Axis::allows`) gives its
-    /// default side instead.
+    /// default side instead. `Leading` and `Trailing` are given as the sides they are drawn on
+    /// (see `AxisPosition::resolved`).
     pub fn position(&self) -> AxisPosition {
-        let position = *self.position.value_dyn();
+        let position = self.position.value_dyn().resolved();
 
         if self.axis.allows(position) {
             position
@@ -284,7 +285,7 @@ impl AxisOptions {
     }
 
     /// Puts the axis on `position`, a side or a state of one. Horizontal axes go above or below
-    /// the chart area, vertical axes left or right of it; any other side is logged and the axis is
+    /// the chart area, vertical axes left or right of it, or leading or trailing it; any other side is logged and the axis is
     /// drawn on its default side.
     pub fn with_position(mut self, position: impl IntoReadState<AxisPosition>) -> AxisOptions {
         self.position = position.into_read_state().as_dyn_read();
@@ -592,5 +593,21 @@ mod tests {
         assert_eq!(options.position(), AxisPosition::Right);
 
         assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Left).position(), AxisPosition::Bottom);
+    }
+
+    /// A vertical axis leading or trailing the chart area is drawn left or right of it, as text
+    /// reads from left to right; a horizontal axis can't take either and takes its default side.
+    #[test]
+    fn leading_and_trailing_are_drawn_left_and_right() {
+        let mut position = LocalState::new(AxisPosition::Leading);
+        let mut options = AxisOptions::new(Axis::Vertical).with_position(position.clone());
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(), AxisPosition::Left);
+
+        *position.value_mut() = AxisPosition::Trailing;
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(), AxisPosition::Right);
+
+        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Trailing).position(), AxisPosition::Bottom);
     }
 }
