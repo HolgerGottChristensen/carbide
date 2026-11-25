@@ -6,6 +6,7 @@
 
 use std::f64::consts::PI;
 use carbide::draw::{Alignment, Dimension, Position, Rect, Scalar};
+use carbide::layout::LayoutDirection;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::scale::{Axis, AxisPosition, LabelRotation};
 use crate::scale::axis::tick_label;
@@ -42,7 +43,7 @@ impl TickLabels {
     /// The labels of `scale`'s ticks, measured with the canvas's text style, all shown, turned
     /// by a fixed rotation or flat, before they are fitted. A polar scale has none here: its
     /// labels go around the circle.
-    pub(crate) fn new(scale: &dyn Scale, ctx: &mut CanvasContext) -> TickLabels {
+    pub(crate) fn new(scale: &dyn Scale, ctx: &mut CanvasContext, layout_direction: LayoutDirection) -> TickLabels {
         if scale.axis() == Axis::Radial {
             return TickLabels { labels: vec![], rotation: 0.0, alignment: Alignment::Center };
         }
@@ -60,7 +61,7 @@ impl TickLabels {
             LabelRotation::Auto { .. } => 0.0,
         };
 
-        TickLabels::with_labels(labels, scale.axis(), scale.axis_options().position(), rotation, scale.axis_options().label_alignment())
+        TickLabels::with_labels(labels, scale.axis(), scale.axis_options().position(layout_direction), rotation, scale.axis_options().label_alignment())
     }
 
     /// Labels turned by `rotation`, aligned by `alignment`, or, when that is `None`, so they point
@@ -111,7 +112,7 @@ impl TickLabels {
     /// Turns automatically rotated labels on a horizontal axis by their maximum when they don't
     /// fit flat along `area`, and returns whether they turned, so the chart lays out again with
     /// the deeper band.
-    pub(crate) fn turn_to_fit(&mut self, scale: &dyn Scale, area: Rect) -> bool {
+    pub(crate) fn turn_to_fit(&mut self, scale: &dyn Scale, area: Rect, layout_direction: LayoutDirection) -> bool {
         let options = scale.axis_options();
         let LabelRotation::Auto { max } = options.label_rotation() else {
             return false;
@@ -121,7 +122,7 @@ impl TickLabels {
             return false;
         }
 
-        let turned = TickLabels::with_labels(std::mem::take(&mut self.labels), scale.axis(), options.position(), max.radians(), options.label_alignment());
+        let turned = TickLabels::with_labels(std::mem::take(&mut self.labels), scale.axis(), options.position(layout_direction), max.radians(), options.label_alignment());
         *self = turned;
         true
     }

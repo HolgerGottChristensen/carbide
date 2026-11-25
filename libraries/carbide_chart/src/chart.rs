@@ -10,6 +10,7 @@ use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadState
 use carbide::event::{ModifierKey, MouseButton, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::draw::color::{rgba, Rgba};
 use indexmap::{IndexMap, IndexSet};
+use carbide::layout::LayoutDirection;
 use carbide_core::render::{Render, RenderContext};
 use crate::colors::DimmedDatasetsKey;
 use carbide_core::widget::{CommonWidget, WidgetId, WidgetSync};
@@ -648,7 +649,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// in the order they were added, and stacked outwards from the chart area, each taking a band
     /// as wide as its measured `sizes` entry (see `axis::size`), with `SCALE_SPACING` between
     /// neighbouring bands. The chart area is what is left over.
-    fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>, decorations: &Decorations) -> ChartLayout {
+    fn layout(&self, sizes: &IndexMap<ScaleId, Scalar>, decorations: &Decorations, layout_direction: LayoutDirection) -> ChartLayout {
         let padding = *self.padding.value_dyn();
 
         // The space left, as screen edges: `top` is the smaller y.
@@ -695,7 +696,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
         let mut stack_side = |side: AxisPosition| -> Scalar {
             let mut on_side: Vec<(i32, usize, &ScaleId)> = self.scales.iter()
                 .enumerate()
-                .filter(|(_, (_, scale))| scale.axis_options().position() == side)
+                .filter(|(_, (_, scale))| scale.axis_options().position(layout_direction) == side)
                 .map(|(index, (id, scale))| (scale.axis_options().weight(), index, id))
                 .collect();
 
@@ -1032,12 +1033,20 @@ fn draw_selection(canvas: &mut CanvasContext, rect: Rect, ink: carbide::color::C
 
 /// The band of a scale on `position`'s side of `chart_area`, `offset` from it and `size` deep, in
 /// the chart's own coordinates. `Rect::bottom` is the screen's top edge.
-fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar) -> Rect {
-    match position.resolved() {
-        AxisPosition::Left | AxisPosition::Leading => Rect::new(Position::new(chart_area.left() - offset - size, chart_area.bottom()), Dimension::new(size, chart_area.height())),
-        AxisPosition::Right | AxisPosition::Trailing => Rect::new(Position::new(chart_area.right() + offset, chart_area.bottom()), Dimension::new(size, chart_area.height())),
-        AxisPosition::Top => Rect::new(Position::new(chart_area.left(), chart_area.bottom() - offset - size), Dimension::new(chart_area.width(), size)),
-        AxisPosition::Bottom => Rect::new(Position::new(chart_area.left(), chart_area.top() + offset), Dimension::new(chart_area.width(), size)),
+fn band(position: AxisPosition, chart_area: Rect, offset: Scalar, size: Scalar, layout_direction: LayoutDirection) -> Rect {
+    match (position, layout_direction) {
+        (AxisPosition::Left, _)
+        | (AxisPosition::Leading, LayoutDirection::LeftToRight)
+        | (AxisPosition::Trailing, LayoutDirection::RightToLeft) =>
+            Rect::new(Position::new(chart_area.left() - offset - size, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+        (AxisPosition::Right, _)
+        | (AxisPosition::Trailing, LayoutDirection::LeftToRight)
+        | (AxisPosition::Leading, LayoutDirection::RightToLeft) =>
+            Rect::new(Position::new(chart_area.right() + offset, chart_area.bottom()), Dimension::new(size, chart_area.height())),
+        (AxisPosition::Top, _) =>
+            Rect::new(Position::new(chart_area.left(), chart_area.bottom() - offset - size), Dimension::new(chart_area.width(), size)),
+        (AxisPosition::Bottom, _) =>
+            Rect::new(Position::new(chart_area.left(), chart_area.top() + offset), Dimension::new(chart_area.width(), size)),
     }
 }
 
@@ -1056,15 +1065,20 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
     fn render(&mut self, context: &mut RenderContext) {
         self.sync(context.env);
 
+        let layout_direction = context.env
+            .get::<LayoutDirection>()
+            .copied()
+            .unwrap_or(LayoutDirection::LeftToRight);
+
         let mut canvas = CanvasContext::new(self.position, self.dimension, context);
 
         // Every scale's tick labels, measured, flat or turned by a fixed rotation, and the bands
         // they need.
         let mut tick_labels: IndexMap<ScaleId, TickLabels> = self.scales.iter()
-            .map(|(id, scale)| (id.clone(), TickLabels::new(scale, &mut canvas)))
+            .map(|(id, scale)| (id.clone(), TickLabels::new(scale, &mut canvas, layout_direction)))
             .collect();
         let mut sizes: IndexMap<ScaleId, Scalar> = self.scales.iter()
-            .map(|(id, scale)| (id.clone(), axis::size(scale, &tick_labels[id], &mut canvas)))
+            .map(|(id, scale)| (id.clone(), axis::size(scale, &tick_labels[id], &mut canvas, layout_direction)))
             .collect();
 
         // The legend's items, from every controller, in order.
@@ -1098,20 +1112,20 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
             legend: (!legend_items.is_empty()).then_some((legend_position, legend_layout.size)),
         };
 
-        let mut layout = self.layout(&sizes, &decorations);
+        let mut layout = self.layout(&sizes, &decorations, layout_direction);
 
         // Labels that turn when they don't fit flat need deeper bands, so the chart is laid out
         // again with those. Only horizontal axes turn, so the second layout keeps the area's width,
         // and with it the room along those axes.
         let mut turned = false;
         for (id, scale) in self.scales.iter() {
-            if tick_labels[id].turn_to_fit(scale, layout.chart_area) {
-                sizes[id] = axis::size(scale, &tick_labels[id], &mut canvas);
+            if tick_labels[id].turn_to_fit(scale, layout.chart_area, layout_direction) {
+                sizes[id] = axis::size(scale, &tick_labels[id], &mut canvas, layout_direction);
                 turned = true;
             }
         }
         if turned {
-            layout = self.layout(&sizes, &decorations);
+            layout = self.layout(&sizes, &decorations, layout_direction);
         }
 
         let chart_area = layout.chart_area;
@@ -1123,7 +1137,7 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
 
         self.bands = self.scales.iter()
             .filter(|(_, scale)| scale.axis() != Axis::Radial)
-            .map(|(id, scale)| (id.clone(), band(scale.axis_options().position(), chart_area, layout.offset(id), sizes[id])))
+            .map(|(id, scale)| (id.clone(), band(scale.axis_options().position(layout_direction), chart_area, layout.offset(id), sizes[id], layout_direction)))
             .collect();
 
         // Polar scales share a circle inside the chart area, with room for the surrounding labels.
@@ -1161,13 +1175,13 @@ impl<C: Sequence<dyn DatasetController>> Render for Chart<C> {
         }
 
         for (id, scale) in self.scales.iter() {
-            axis::draw_grid(scale, &tick_labels[id], &mut canvas, chart_area, layout.offset(id));
+            axis::draw_grid(scale, &tick_labels[id], &mut canvas, chart_area, layout.offset(id), layout_direction);
         }
         axis::draw_polar_grid(&self.scales, &mut canvas);
 
         for (id, scale) in self.scales.iter() {
-            axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id));
-            axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id]);
+            axis::draw_border(scale, &mut canvas, chart_area, layout.offset(id), layout_direction);
+            axis::draw_title(scale, &mut canvas, chart_area, layout.offset(id), sizes[id], layout_direction);
         }
         axis::draw_polar_border(&self.scales, &mut canvas);
 
@@ -1309,6 +1323,7 @@ mod tests {
     use carbide::state::{LocalState, Map1, ReadStateExt, State};
     use carbide::widget::WidgetSync;
     use indexmap::IndexMap;
+    use carbide::layout::layout_direction::LayoutDirection;
     use crate::{BarController, Sequence, DatasetController, LineController, ScatterController};
     use crate::DatasetExt;
     use crate::{DataColor, ScatterDataSet, StackId};
@@ -1632,7 +1647,7 @@ mod tests {
         assert!(y_min >= 100.0, "Y should fit only the revenue, but starts at {y_min}");
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let area = chart.layout(&sizes(&[(ScaleId::Y, 35.0), (PERCENT, 45.0)]), &Decorations::default()).chart_area;
+        let area = chart.layout(&sizes(&[(ScaleId::Y, 35.0), (PERCENT, 45.0)]), &Decorations::default(), LayoutDirection::LeftToRight).chart_area;
         assert_eq!(area.left(), 30.0 + 35.0, "left: padding + Y's band");
         assert_eq!(area.right(), 400.0 - 30.0 - 45.0, "right: padding + percent's band");
     }
@@ -1669,7 +1684,7 @@ mod tests {
         let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
 
         let decorations = Decorations { title: Some(14.0), legend: Some((LegendPosition::Top, Dimension::new(340.0, 16.0))) };
-        let layout = chart.layout(&bands, &decorations);
+        let layout = chart.layout(&bands, &decorations, LayoutDirection::LeftToRight);
 
         assert_eq!(layout.title, Some(Position::new(200.0, 30.0)), "the title is centred along the top, inside the padding");
         let (side, legend) = layout.legend.unwrap();
@@ -1684,7 +1699,7 @@ mod tests {
             (LegendPosition::Bottom, Box::new(|area: Rect| area.top() == 300.0 - 30.0 - 16.0 - DECORATION_SPACING - 20.0)),
         ] {
             let decorations = Decorations { legend: Some((side, Dimension::new(50.0, 16.0))), ..Decorations::default() };
-            let layout = chart.layout(&bands, &decorations);
+            let layout = chart.layout(&bands, &decorations, LayoutDirection::LeftToRight);
             assert!(check(layout.chart_area), "a legend on the {side:?} should take its size and a gap off that side: {:?}", layout.chart_area);
         }
     }
@@ -1701,13 +1716,13 @@ mod tests {
         chart.dimension = Dimension::new(400.0, 300.0);
         let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
 
-        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 10.0 + 35.0);
+        assert_eq!(chart.layout(&bands, &Decorations::default(), LayoutDirection::LeftToRight).chart_area.left(), 10.0 + 35.0);
 
         *padding.value_mut() = 40.0;
         *legend.value_mut() = LegendPosition::Right;
         chart.sync(&mut Environment::new());
 
-        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 40.0 + 35.0);
+        assert_eq!(chart.layout(&bands, &Decorations::default(), LayoutDirection::LeftToRight).chart_area.left(), 40.0 + 35.0);
         assert_eq!(*chart.legend.value_dyn(), LegendPosition::Right);
     }
 
@@ -1721,11 +1736,11 @@ mod tests {
         let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
 
         chart.sync(&mut Environment::new());
-        assert_eq!(chart.layout(&bands, &Decorations::default()).chart_area.left(), 30.0 + 35.0, "the y band is on the left");
+        assert_eq!(chart.layout(&bands, &Decorations::default(), LayoutDirection::LeftToRight).chart_area.left(), 30.0 + 35.0, "the y band is on the left");
 
         *position.value_mut() = AxisPosition::Right;
         chart.sync(&mut Environment::new());
-        let area = chart.layout(&bands, &Decorations::default()).chart_area;
+        let area = chart.layout(&bands, &Decorations::default(), LayoutDirection::LeftToRight).chart_area;
         assert_eq!((area.left(), area.right()), (30.0, 400.0 - 30.0 - 35.0), "the y band moved to the right");
     }
 
@@ -1777,7 +1792,7 @@ mod tests {
         let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]), &Decorations::default());
+        let layout = chart.layout(&sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]), &Decorations::default(), LayoutDirection::LeftToRight);
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0);
         assert_eq!(layout.chart_area.left(), 30.0 + 35.0);
         assert_eq!(layout.chart_area.height(), 300.0 - 30.0 - 30.0 - 20.0, "X's band comes off the height");
@@ -1796,7 +1811,7 @@ mod tests {
             .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]), &Decorations::default());
+        let layout = chart.layout(&sizes(&[(INNER, 40.0), (OUTER, 25.0)]), &Decorations::default(), LayoutDirection::LeftToRight);
 
         assert_eq!(layout.offset(&INNER), 0.0);
         assert_eq!(layout.offset(&OUTER), 40.0 + SCALE_SPACING);
@@ -1815,7 +1830,7 @@ mod tests {
             .scale(OUTER, LinearScale::new(Axis::Vertical).position(AxisPosition::Right));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]), &Decorations::default());
+        let layout = chart.layout(&sizes(&[(EMPTY, 0.0), (OUTER, 25.0)]), &Decorations::default(), LayoutDirection::LeftToRight);
 
         assert_eq!(layout.offset(&OUTER), 0.0);
         assert_eq!(layout.chart_area.right(), 400.0 - 30.0 - 25.0);
@@ -1833,7 +1848,7 @@ mod tests {
             .scale(LIGHT, LinearScale::new(Axis::Vertical).weight(1));
 
         chart.dimension = Dimension::new(400.0, 300.0);
-        let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]), &Decorations::default());
+        let layout = chart.layout(&sizes(&[(ScaleId::Y, 30.0), (HEAVY, 20.0), (LIGHT, 10.0)]), &Decorations::default(), LayoutDirection::LeftToRight);
 
         assert_eq!(layout.offset(&ScaleId::Y), 0.0);
         assert_eq!(layout.offset(&LIGHT), 30.0 + SCALE_SPACING);

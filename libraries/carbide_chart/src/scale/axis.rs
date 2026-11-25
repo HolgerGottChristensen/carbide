@@ -12,6 +12,7 @@
 use carbide::draw::{Alignment, Angle, Dimension, Position, Rect, Scalar};
 use carbide::math::Vector3;
 use carbide::environment::Environment;
+use carbide::layout::LayoutDirection;
 use carbide_core::widget::canvas::CanvasContext;
 use crate::scale::{Axis, AxisPosition, GridShape, PolarRole, Scales};
 use crate::Scale;
@@ -35,14 +36,14 @@ pub(crate) fn tick_label(scale: &dyn Scale, value: Scalar, env: &mut Environment
 /// tick `labels` reach outwards as turned (see `TickLabels::depth`), plus its title's height (a
 /// vertical scale's title is turned along the axis, so its height also lies across it). Scales on
 /// the same side are stacked outwards, each in its own band.
-pub(crate) fn size(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext) -> Scalar {
+pub(crate) fn size(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext, layout_direction: LayoutDirection) -> Scalar {
     // Polar scales take no band: their labels sit around and inside the circle.
     if scale.axis() == Axis::Radial {
         return 0.0;
     }
 
     let tick_length = if scale.axis_options().tick_marks() { TICK_LENGTH } else { 0.0 };
-    let label_extent = labels.depth(scale.axis(), scale.axis_options().position());
+    let label_extent = labels.depth(scale.axis(), scale.axis_options().position(layout_direction));
 
     let title_extent = match (scale.axis(), scale.axis_options().title()) {
         (Axis::Horizontal | Axis::Vertical, Some(title)) => TITLE_GAP + ctx.measure_text(&title).height,
@@ -56,7 +57,7 @@ pub(crate) fn size(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasConte
 /// outer edge of its band, `size` (see `size`) from its inner edge. A vertical scale's title is
 /// turned along the axis: on the left it reads from bottom to top, on the right from top to
 /// bottom, so the top of the text faces the chart area on both sides.
-pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar, size: Scalar) {
+pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar, size: Scalar, layout_direction: LayoutDirection) {
     let Some(title) = scale.axis_options().title() else {
         return;
     };
@@ -66,7 +67,7 @@ pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect,
     let middle_y = area.bottom() + area.height() / 2.0;
 
     // Where the middle of the title goes, and how far it is turned.
-    let (x, y, degrees) = match (scale.axis(), scale.axis_options().position()) {
+    let (x, y, degrees) = match (scale.axis(), scale.axis_options().position(layout_direction)) {
         (Axis::Horizontal, AxisPosition::Top) => (middle_x, area.bottom() - offset - size + height / 2.0, 0.0),
         (Axis::Horizontal, _) => (middle_x, area.top() + offset + size - height / 2.0, 0.0),
         (Axis::Vertical, AxisPosition::Right) => (area.right() + offset + size - height / 2.0, middle_y, 90.0),
@@ -90,12 +91,12 @@ pub(crate) fn draw_title(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect,
 /// its band (if it has tick marks), and its shown tick `labels`, each turned around the point of
 /// it at the end of its tick mark, in the chart's `AxisStyle`. Turning the grid lines off keeps the
 /// labels, which is what secondary scales usually want.
-pub(crate) fn draw_grid(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
+pub(crate) fn draw_grid(scale: &dyn Scale, labels: &TickLabels, ctx: &mut CanvasContext, area: Rect, offset: Scalar, layout_direction: LayoutDirection) {
     let options = scale.axis_options();
 
     // Per side: the chart area's edge the band starts at, which way is outwards across the axis
     // (+1 or -1), and the opposite edge the grid lines run to.
-    let (horizontal, area_edge, outward, far_edge) = match (scale.axis(), options.position()) {
+    let (horizontal, area_edge, outward, far_edge) = match (scale.axis(), options.position(layout_direction)) {
         (Axis::Horizontal, AxisPosition::Top) => (true, area.bottom(), -1.0, area.top()),
         (Axis::Horizontal, _) => (true, area.top(), 1.0, area.bottom()),
         (Axis::Vertical, AxisPosition::Right) => (false, area.right(), 1.0, area.left()),
@@ -212,8 +213,8 @@ pub(crate) fn draw_grid(scale: &dyn Scale, labels: &TickLabels, ctx: &mut Canvas
 
 /// Draws the scale's border: a line along the inner edge of its band, in the chart's
 /// `AxisStyle`.
-pub(crate) fn draw_border(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar) {
-    let (from, to) = match (scale.axis(), scale.axis_options().position()) {
+pub(crate) fn draw_border(scale: &dyn Scale, ctx: &mut CanvasContext, area: Rect, offset: Scalar, layout_direction: LayoutDirection) {
+    let (from, to) = match (scale.axis(), scale.axis_options().position(layout_direction)) {
         (Axis::Horizontal, AxisPosition::Top) => {
             (Position::new(area.left(), area.bottom() - offset), Position::new(area.right(), area.bottom() - offset))
         }

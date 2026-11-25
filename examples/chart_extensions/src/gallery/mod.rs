@@ -23,6 +23,7 @@ use carbide::controls::{ControlsExt, TextInput};
 use carbide::draw::color::rgba_bytes;
 use carbide::draw::{Alignment, Angle, Scalar};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide::layout::LayoutDirection;
 use carbide::state::{IntoReadState, LocalState, Map1, Map3, ReadState, State};
 use carbide::widget::*;
 use carbide::ui;
@@ -99,6 +100,7 @@ pub fn gallery(selected: LocalState<Example>) -> impl Widget {
         .spacing(0.0)
         .series_style(GalleryStyle { colors: shared.colors.clone() })
         .button_style(BorderedProminentStyle)
+        .layout_direction(LayoutDirection::LeftToRight)
 }
 
 /// A button in the top bar that shows `example`, letting go of what the chart before it hovered.

@@ -202,12 +202,23 @@ fn finish<C: Sequence<dyn DatasetController>>(chart: Chart<C>, options: Options,
     } else {
         // A start or a step that isn't a number leaves the scale to fit its data.
         let min = Map1::read_map(options.from_zero.clone(), |from_zero: &bool| if *from_zero { 0.0 } else { Scalar::NAN });
-        chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical).min(min).step(options.step.clone())
-            .title(options.y_title.clone()).tick_marks(options.tick_marks.clone()).zoom(options.y_zoom.clone()).placed(&shared))
+        chart.scale(ScaleId::Y, LinearScale::new(Axis::Vertical)
+            .min(min)
+            .step(options.step.clone())
+            .title(options.y_title.clone())
+            .tick_marks(options.tick_marks.clone())
+            .zoom(options.y_zoom.clone())
+            .placed(&shared))
     };
 
     let chart = if second {
-        chart.scale(SECOND, LinearScale::new(Axis::Vertical).position(shared.other_side(Axis::Vertical)).title("Second dataset").grid_lines(false).tick_marks(options.tick_marks.clone()).zoom(options.second_zoom.clone()).labelled(&shared))
+        chart.scale(SECOND, LinearScale::new(Axis::Vertical)
+            //.position(shared.other_side(Axis::Vertical))
+            .title("Second dataset")
+            .grid_lines(false)
+            .tick_marks(options.tick_marks.clone())
+            .zoom(options.second_zoom.clone())
+            .labelled(&shared))
     } else {
         chart
     };

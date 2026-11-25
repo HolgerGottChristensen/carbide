@@ -1,5 +1,6 @@
 use carbide::draw::{Alignment, Angle, Scalar};
 use carbide::environment::Environment;
+use carbide::layout::LayoutDirection;
 use carbide::state::{AnyReadState, AnyState, IntoReadState, IntoState, ReadStateExt, StateContract, StateExtNew};
 use crate::scale::{AngleDirection, Axis, AxisPosition, GridShape, LabelRotation, PolarRole, RimOrientation, ZoomWindow};
 
@@ -85,8 +86,8 @@ impl AxisOptions {
     /// chart reserves space for them. A side the axis can't take (see `Axis::allows`) gives its
     /// default side instead. `Leading` and `Trailing` are given as the sides they are drawn on
     /// (see `AxisPosition::resolved`).
-    pub fn position(&self) -> AxisPosition {
-        let position = self.position.value_dyn().resolved();
+    pub fn position(&self, layout_direction: LayoutDirection) -> AxisPosition {
+        let position = self.position.value_dyn().resolved(layout_direction);
 
         if self.axis.allows(position) {
             position

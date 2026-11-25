@@ -16,6 +16,7 @@ pub(crate) mod tick_labels;
 use std::fmt::Debug;
 use carbide_derive::StateValue;
 pub use axis_options::AxisOptions;
+use carbide::layout::LayoutDirection;
 pub use category_scale::CategoryScale;
 pub use linear_scale::*;
 pub use log_scale::LogScale;
@@ -55,10 +56,10 @@ impl Axis {
     /// Whether a scale on this axis can sit at `position`: horizontal scales above or below the
     /// chart area, vertical scales left or right of it, or leading or trailing it.
     pub fn allows(&self, position: AxisPosition) -> bool {
-        let position = position.resolved();
+        let position = position;
         match self {
             Axis::Horizontal => matches!(position, AxisPosition::Top | AxisPosition::Bottom),
-            Axis::Vertical => matches!(position, AxisPosition::Left | AxisPosition::Right),
+            Axis::Vertical => matches!(position, AxisPosition::Left | AxisPosition::Right | AxisPosition::Leading | AxisPosition::Trailing),
             Axis::Radial => position == self.default_position(),
         }
     }
@@ -111,11 +112,13 @@ pub enum AxisPosition {
 
 impl AxisPosition {
     /// The side drawn on: `Leading` and `Trailing` as left and right, every other side as itself.
-    pub fn resolved(self) -> AxisPosition {
-        match self {
-            AxisPosition::Leading => AxisPosition::Left,
-            AxisPosition::Trailing => AxisPosition::Right,
-            side => side,
+    pub fn resolved(self, layout_direction: LayoutDirection) -> AxisPosition {
+        match (self, layout_direction) {
+            (AxisPosition::Leading, LayoutDirection::LeftToRight) => AxisPosition::Left,
+            (AxisPosition::Leading, LayoutDirection::RightToLeft) => AxisPosition::Right,
+            (AxisPosition::Trailing, LayoutDirection::LeftToRight) => AxisPosition::Right,
+            (AxisPosition::Trailing, LayoutDirection::RightToLeft) => AxisPosition::Left,
+            (side, _) => side,
         }
     }
 }
