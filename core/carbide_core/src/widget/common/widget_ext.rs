@@ -15,6 +15,7 @@ use crate::state::{IntoReadState, RMap1};
 use crate::state::{IntoState, ReadState, StateContract};
 use crate::draw::theme::{Theme};
 use crate::event;
+use crate::layout::LayoutDirection;
 use crate::text::text_wrap::{TextWrapKey, Wrap};
 use crate::widget::{Absolute, AnyWidget, AspectRatio, Background, Border, Changed, Clip, ClipShape, ContentMode, CornerRadii, EdgeInsets, Flagged, Flexibility, Frame, GeometryReader, Hidden, HueRotation, Mask, MouseArea, Offset, OnKey, OnKeyAction, Padding, Rotation3DEffect, RoundedRectangle, Saturation, Shadow, AnyShape, Transform, MouseAreaActionContext, Action, EnvUpdatingNew3, Overlay, OverlayManager};
 use crate::widget::environment_updating_new2::EnvUpdatingNew2;
@@ -226,6 +227,10 @@ pub trait WidgetExt: AnyWidget + WidgetProperties + Clone + Sized {
 
     fn theme<T: IntoReadState<Theme>>(self, theme: T) -> EnvUpdatingNew2<ThemeManager<Self>, impl EnvironmentKey<Value=Theme, Access=Shared>, impl ReadState<T=Theme>> {
         EnvUpdatingNew2::<ThemeManager<Self>, Theme, T::Output>::new(theme.into_read_state(), ThemeManager::new(self))
+    }
+
+    fn layout_direction<T: IntoReadState<LayoutDirection>>(self, direction: T) -> EnvUpdatingNew2<Self, impl EnvironmentKey<Value=LayoutDirection, Access=Shared>, impl ReadState<T=LayoutDirection>> {
+        EnvUpdatingNew2::<Self, LayoutDirection, T::Output>::new(direction.into_read_state(), self)
     }
 
     fn environment<K: EnvironmentKeyable + Clone, V: IntoReadState<K::Output>>(self, key: K, value: V) -> EnvUpdatingNew3<Self, K, V::Output> where K::Output: Clone {
