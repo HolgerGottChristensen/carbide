@@ -106,6 +106,10 @@ impl<N: Node3dSequence> Scene3d<N> {
         self.render_context = (factory.render_context)(env);
         self.render_context_id = Some(factory.id);
 
+        // A new layer as well: the old one still holds the last frame the old renderer drew, which
+        // a renderer that draws nothing would leave showing.
+        self.layer = LayerId::new();
+
         true
     }
 }

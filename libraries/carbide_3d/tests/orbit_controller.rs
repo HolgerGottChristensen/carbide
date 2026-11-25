@@ -69,6 +69,24 @@ fn pinching_zooms_the_camera() {
     harness.snapshot("pinched_out");
 }
 
+/// A view with an orbit controller and an orthographic camera, pinched outwards. Pins down that a
+/// scale gesture zooms an orthographic camera by changing its projection's height, since moving it
+/// closer would change nothing on screen: the cube is drawn larger.
+#[test]
+fn pinching_zooms_an_orthographic_camera() {
+    let scene = cube_scene()
+        .camera(Camera::orthographic(3.0).look_at(Point3::new(0.0, 0.5, -3.0), Point3::new(0.0, 0.0, 0.0)))
+        .controller(OrbitController::new())
+        .border().color(BLUE).padding(20.0);
+
+    let mut harness = Harness::new(scene, Dimension::new(400.0, 300.0));
+    harness.snapshot("start");
+
+    harness.mouse_move(Position::new(200.0, 150.0));
+    harness.pinch(0.5);
+    harness.snapshot("pinched_out");
+}
+
 /// Two views of one scene, the left a clone with an orbit controller and the right without one,
 /// both starting from the same camera. The left view is dragged. Pins down that a clone gets a
 /// copy of the camera, not a share of it: the left view turns, and the right view stays where it

@@ -2,29 +2,30 @@ use std::fmt::{Debug, Formatter};
 
 use carbide::environment::Environment;
 use carbide::math::{EuclideanSpace, Matrix4, Point3, SquareMatrix, Vector3};
-use carbide::state::{AnyReadState, AnyState, IntoReadState, LocalState, ReadState, StateSync};
+use carbide::state::{AnyState, LocalState, ReadState, StateSync};
 
 use crate::camera::{CameraSpec, Projection};
 
 /// The camera of one view of a scene: where it looks from, and how it projects.
 ///
-/// Both parts are states. The view matrix is a writable state, so a camera controller can move
-/// the camera, and the app can read and set where it looks from. The projection is a read state.
+/// Both parts are writable states, so a camera controller can move the camera and zoom it, and
+/// the app can read and set where it looks from and how it projects.
 ///
-/// Cloning a camera copies its current view matrix into a new state, also when the camera was
-/// given a state with [`view`](Camera::view): two views never move each other's camera by
-/// accident. To have two cameras share one view matrix, give each of them the same state.
+/// Cloning a camera copies its current view matrix and projection into new states, also when the
+/// camera was given states with [`view`](Camera::view) or [`projection`](Camera::projection): two
+/// views never move or zoom each other's camera by accident. To have two cameras share one view
+/// matrix or projection, give each of them the same state.
 pub struct Camera {
     view: Box<dyn AnyState<T=Matrix4<f32>>>,
-    projection: Box<dyn AnyReadState<T=Projection>>,
+    projection: Box<dyn AnyState<T=Projection>>,
 }
 
 impl Camera {
     /// A camera with the given projection, at the origin looking along +Z, with +Y up.
-    pub fn new<P: IntoReadState<Projection>>(projection: P) -> Camera {
+    pub fn new(projection: Projection) -> Camera {
         Camera {
             view: LocalState::new(Matrix4::identity()).as_dyn(),
-            projection: Box::new(projection.into_read_state()),
+            projection: LocalState::new(projection).as_dyn(),
         }
     }
 
@@ -39,9 +40,10 @@ impl Camera {
         Camera::new(Projection::Orthographic { height })
     }
 
-    /// Use `projection` instead of the camera's current one.
-    pub fn projection<P: IntoReadState<Projection>>(mut self, projection: P) -> Camera {
-        self.projection = Box::new(projection.into_read_state());
+    /// Use `projection` as the camera's projection. A controller writes into this state when it
+    /// zooms an orthographic camera.
+    pub fn projection<S: AnyState<T=Projection> + Clone>(mut self, projection: S) -> Camera {
+        self.projection = projection.as_dyn();
         self
     }
 
@@ -53,7 +55,7 @@ impl Camera {
             _ => 0.1,
         };
 
-        self.projection(Projection::Perspective { vfov, near })
+        self.projection(LocalState::new(Projection::Perspective { vfov, near }))
     }
 
     /// Place the camera at `eye`, looking at `target`, with +Y up.
@@ -90,6 +92,11 @@ impl Camera {
         *self.projection.value()
     }
 
+    /// Set the projection, writing through to the state the camera was given.
+    pub fn set_projection(&mut self, projection: Projection) {
+        self.projection.set_value_dyn(projection);
+    }
+
     /// The matrices a render context draws with, for a layer with the given width divided by
     /// height.
     pub fn spec(&self, aspect_ratio: f32) -> CameraSpec {
@@ -117,7 +124,7 @@ impl Clone for Camera {
     fn clone(&self) -> Self {
         Camera {
             view: LocalState::new(self.view_matrix()).as_dyn(),
-            projection: self.projection.clone(),
+            projection: LocalState::new(self.projection_value()).as_dyn(),
         }
     }
 }

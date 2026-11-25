@@ -4,7 +4,7 @@ use carbide::math::{EuclideanSpace, InnerSpace, Point3, Vector3};
 use carbide::state::{AnyReadState, IntoReadState, ReadState};
 
 use crate::camera::controller::contains;
-use crate::camera::{look_at, Camera, CameraController};
+use crate::camera::{look_at, Camera, CameraController, Projection};
 
 /// The highest and lowest the camera can orbit to, in degrees above or below the target. Short
 /// of straight up or down, where the camera's up direction would be undefined.
@@ -15,8 +15,9 @@ const MAX_ELEVATION: f32 = 89.0;
 /// - Dragging with the left button inside the view turns the camera around the target: sideways
 ///   around the vertical axis, and up or down, stopping short of straight above or below.
 /// - Scrolling inside the view turns the camera as dragging the same distance would.
-/// - Pinching (a scale gesture) inside the view moves the camera towards or away from the
-///   target.
+/// - Pinching (a scale gesture) inside the view zooms: a perspective camera moves towards or
+///   away from the target, and an orthographic camera shows less or more, by changing its
+///   projection's height. Moving an orthographic camera closer would change nothing on screen.
 /// - The arrow keys turn the camera in steps.
 ///
 /// The camera always looks at the target. Every event starts from the camera's current position,
@@ -30,6 +31,8 @@ pub struct OrbitController {
     zoom_speed: f32,
     min_distance: f32,
     max_distance: f32,
+    min_height: f32,
+    max_height: f32,
 }
 
 impl OrbitController {
@@ -41,6 +44,8 @@ impl OrbitController {
             zoom_speed: 1.0,
             min_distance: 0.01,
             max_distance: f32::MAX,
+            min_height: 0.01,
+            max_height: f32::MAX,
         }
     }
 
@@ -54,6 +59,13 @@ impl OrbitController {
     pub fn distance(mut self, min: f32, max: f32) -> OrbitController {
         self.min_distance = min;
         self.max_distance = max;
+        self
+    }
+
+    /// Keep an orthographic camera's height between `min` and `max` when zooming.
+    pub fn height(mut self, min: f32, max: f32) -> OrbitController {
+        self.min_height = min;
+        self.max_height = max;
         self
     }
 
@@ -88,9 +100,17 @@ impl OrbitController {
         camera.set_view_matrix(look_at(target + offset, target));
     }
 
-    /// Move the camera towards the target, to `factor` times its current distance, within the
-    /// distance limits.
+    /// Zoom by `factor`: a factor below 1 shows less, so things look larger. A perspective (or raw)
+    /// camera moves towards the target, to `factor` times its distance, within the distance
+    /// limits. An orthographic camera's height is multiplied by `factor`, within the height
+    /// limits.
     pub fn zoom(&self, camera: &mut Camera, factor: f32) {
+        if let Projection::Orthographic { height } = camera.projection_value() {
+            let height = (height * factor).clamp(self.min_height, self.max_height);
+            camera.set_projection(Projection::Orthographic { height });
+            return;
+        }
+
         let target = self.target_point();
         let offset = camera.position() - target;
         let distance = offset.magnitude();

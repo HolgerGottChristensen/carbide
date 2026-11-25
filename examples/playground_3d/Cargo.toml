@@ -1,0 +1,24 @@
+[package]
+name = "playground_3d"
+version.workspace = true
+repository.workspace = true
+edition.workspace = true
+publish = false
+
+# A playground for carbide's 3D: a scene with its options in a side bar. Every option is a state
+# the scene reads, so it changes the picture as it is set. See
+# `libraries/carbide_3d/docs/design.md` for the design and what is not built yet.
+
+[dependencies]
+carbide = { workspace = true, features = ["3d", "controls"] }
+tobj.workspace = true
+
+[dev-dependencies]
+carbide = { workspace = true, features = ["3d", "controls", "testing"] }
+
+[package.metadata.bundle]
+name = "3D Playground - Carbide"
+identifier = "rs.carbide.playground3dapplication"
+
+[lints]
+workspace = true

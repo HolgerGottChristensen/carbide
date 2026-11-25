@@ -1,5 +1,4 @@
 pub use carbide_core::*;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 #[cfg(feature = "carbide_macro")]
 pub use carbide_macro::*;
@@ -19,6 +18,10 @@ pub mod controls {
 #[cfg(feature = "carbide_3d")]
 pub mod d3 {
     pub use carbide_3d::*;
+
+    // Also links carbide_wgpu_3d, which registers itself as the 3D renderer through its plugin.
+    #[cfg(feature = "carbide_wgpu_3d")]
+    pub use carbide_wgpu_3d as wgpu;
 }
 
 #[cfg(feature = "carbide_chart")]
@@ -54,12 +57,4 @@ pub mod icons {
 #[cfg(feature = "carbide_testing")]
 pub mod testing {
     pub use carbide_testing::*;
-}
-
-pub fn init() {
-    static INITIALIZED: AtomicBool = AtomicBool::new(false);
-    if !INITIALIZED.swap(true, Ordering::Relaxed) {
-        #[cfg(feature = "carbide_wgpu_3d")]
-        carbide_wgpu_3d::init()
-    }
 }
