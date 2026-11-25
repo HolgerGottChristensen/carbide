@@ -1,5 +1,5 @@
-use std::any::TypeId;
 use carbide::draw::Rect;
+use carbide::environment::Environment;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::render::{LayerId, RenderContext};
@@ -10,7 +10,7 @@ use carbide_core::CommonWidgetImpl;
 
 use crate::camera::{Camera, OrbitCamera};
 use crate::node3d_sequence::Node3dSequence;
-use crate::render::{InnerRenderContext3d, NoopRenderContext3d, RenderContext3d};
+use crate::render::{ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId};
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Render, Update, KeyboardEvent)]
@@ -21,7 +21,9 @@ pub struct Scene3d<N, C> where N: Node3dSequence, C: Camera {
 
     target: LayerId,
     render_context: Box<dyn InnerRenderContext3d>,
-    render_context_factory_id: TypeId,
+    /// The id of the factory that created `render_context`, or `None` while it is the no-op
+    /// context the scene starts with.
+    render_context_id: Option<RenderContext3dId>,
 
     nodes: N,
 
@@ -36,7 +38,7 @@ impl Scene3d<(), OrbitCamera> {
             dimension: Dimension::default(),
             target: LayerId::new(),
             render_context: Box::new(NoopRenderContext3d),
-            render_context_factory_id: TypeId::of::<()>(),
+            render_context_id: None,
             nodes,
             camera,
         }
@@ -59,17 +61,32 @@ impl<C: Node3dSequence, V: Camera> KeyboardEventHandler for Scene3d<C, V> {
     }
 }
 
+impl<C: Node3dSequence, V: Camera> Scene3d<C, V> {
+    /// Recreate the render context if the factory in the environment is not the one that created
+    /// it. Keeps the current context if the environment has no factory, so a scene without a 3D
+    /// renderer keeps rendering nothing. Returns whether the context was recreated.
+    fn recreate_render_context_if_factory_changed(&mut self, env: &mut Environment) -> bool {
+        let Some(&factory) = env.get::<ContextFactory3d>() else {
+            return false;
+        };
+
+        if Some(factory.id) == self.render_context_id {
+            return false;
+        }
+
+        // Drop the old context before creating the new one, so the two never hold their
+        // resources at the same time.
+        self.render_context = Box::new(NoopRenderContext3d);
+        self.render_context = (factory.render_context)(env);
+        self.render_context_id = Some(factory.id);
+
+        true
+    }
+}
+
 impl<C: Node3dSequence, V: Camera> Render for Scene3d<C, V> {
     fn render(&mut self, ctx: &mut RenderContext) {
-        /*ctx.env.extract::<ContextFactory3d>(|factory, env| {
-            if factory.type_id() != self.render_context_factory_id {
-                self.render_context = (factory.render_context)(env);
-                self.render_context_factory_id = factory.type_id();
-
-                println!("Set new render context: {:#?}", self.render_context);
-            }
-        });*/
-        panic!();
+        self.recreate_render_context_if_factory_changed(ctx.env);
 
         ctx.layer(self.target, Rect::new(self.position, self.dimension), |layer, env| {
             self.render_context.start();
