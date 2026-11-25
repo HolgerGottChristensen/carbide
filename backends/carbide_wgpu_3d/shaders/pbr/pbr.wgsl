@@ -188,10 +188,16 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         //color = vec3<f32>(1.0, 0.0, 0.0);
     }
 
-    let ambient = uniforms.ambient * pixel.albedo;
-    let shaded = vec4<f32>(color, pixel.albedo.a);
-    let lit = max(ambient, shaded);
-    return vec4<f32>(tonemap_pbr_neutral(lit.rgb), lit.a);
+    // Hemisphere ambient light: the sky's light on surfaces facing up, the ground's on surfaces
+    // facing down, blended in between.
+    let up = normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0));
+    let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
+    let ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up);
+    let ambient = vec4<f32>(ambient_light * pixel.albedo.rgb, pixel.albedo.a);
+
+    // Ambient light adds to the light from the scene's lights.
+    let lit = ambient.rgb + color;
+    return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), pixel.albedo.a);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);
     //return pixel.albedo;

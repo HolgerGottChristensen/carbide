@@ -1,6 +1,6 @@
 //! The playground: the scene, shown in one or two views, with its options in a side bar.
 
-use carbide::color::{Color, BLUE, GREEN, ORANGE, RED, WHITE};
+use carbide::color::{rgba_bytes, Color, BLUE, GREEN, ORANGE, RED, TRANSPARENT, WHITE};
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::controls::slider::Slider;
@@ -10,9 +10,9 @@ use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
 use carbide::d3::light::DirectionalLight;
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
-use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId};
+use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{Group, Mesh, Node3dExt, Object, Scene3d};
+use carbide::d3::{Group, Mesh, Node3dExt, Node3dSequence, Object, Scene3d};
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, SquareMatrix, Vector3};
@@ -74,6 +74,14 @@ pub struct Options {
     pub light_elevation: LocalState<Scalar>,
     pub light_intensity: LocalState<Scalar>,
 
+    /// The views' background.
+    pub background: LocalState<Color>,
+    /// The hemisphere's colour from below; the sky is white.
+    pub ground: LocalState<Color>,
+    pub ambient: LocalState<Scalar>,
+    pub exposure: LocalState<Scalar>,
+    pub tonemapping: LocalState<Tonemapping>,
+
     pub projection: LocalState<ProjectionKind>,
     pub fov: LocalState<Scalar>,
     pub height: LocalState<Scalar>,
@@ -94,6 +102,11 @@ impl Options {
             light_azimuth: LocalState::new(-35.0),
             light_elevation: LocalState::new(50.0),
             light_intensity: LocalState::new(5.0),
+            background: LocalState::new(TRANSPARENT),
+            ground: LocalState::new(WHITE),
+            ambient: LocalState::new(0.1),
+            exposure: LocalState::new(1.0),
+            tonemapping: LocalState::new(Tonemapping::PbrNeutral),
             projection: LocalState::new(ProjectionKind::Perspective),
             fov: LocalState::new(60.0),
             height: LocalState::new(2.0),
@@ -163,6 +176,13 @@ impl Options {
             .roughness(Map1::read_map(self.roughness.clone(), |roughness: &Scalar| Some(*roughness as f32)))
     }
 
+    /// `view` with the side bar's background, exposure and tone mapping.
+    fn look<N: Node3dSequence>(&self, view: Scene3d<N>) -> Scene3d<N> {
+        view.background(self.background.clone())
+            .exposure(Map1::read_map(self.exposure.clone(), |exposure: &Scalar| *exposure as f32))
+            .tonemapping(self.tonemapping.clone())
+    }
+
     /// The renderer's factory, put in the environment of the views.
     fn factory(&self) -> impl ReadState<T=ContextFactory3d> + Clone + use<> {
         Map1::read_map(self.renderer.clone(), |renderer: &Renderer| match renderer {
@@ -222,14 +242,16 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
 /// orthographic view of the same scene, a clone with its own camera and controller.
 fn views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
-    let scene = Scene3d::new(nodes(model, options));
+    // The ambient light is the scene's, shared by both views.
+    let scene = Scene3d::new(nodes(model, options))
+        .hemisphere(WHITE, options.ground.clone(), Map1::read_map(options.ambient.clone(), |ambient: &Scalar| *ambient as f32));
 
     // The height limits match the side bar's slider, so a pinch stays within what it shows.
-    let main = scene.clone()
+    let main = options.look(scene.clone())
         .camera(options.main_camera())
         .controller(OrbitController::new().height(0.1, 10.0));
 
-    let front = scene
+    let front = options.look(scene)
         .camera(Camera::orthographic(2.0).look_at(Point3::new(0.0, 0.0, -5.0), Point3::new(0.0, 0.0, 0.0)))
         .controller(OrbitController::new());
 
@@ -322,6 +344,27 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         shown_when(spin_off, slider("Turn", &options.turn, -180.0, 180.0, degrees)),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
+    let environment = VStack::new((
+        heading("Environment"),
+        Picker::new("Background", options.background.clone(), (
+            Text::new("None").tag(TRANSPARENT),
+            Text::new("Night").tag(rgba_bytes(20, 30, 70, 1.0)),
+            Text::new("Paper").tag(rgba_bytes(235, 232, 225, 1.0)),
+        )),
+        Picker::new("Ground light", options.ground.clone(), (
+            Text::new("White, like the sky").tag(WHITE),
+            Text::new("Warm").tag(rgba_bytes(160, 90, 40, 1.0)),
+            Text::new("Cool").tag(rgba_bytes(60, 90, 160, 1.0)),
+        )),
+        slider("Ambient", &options.ambient, 0.0, 1.0, |value| format!("{value:.2}")),
+        slider("Exposure", &options.exposure, 0.1, 3.0, |value| format!("{value:.2}")),
+        Picker::new("Tone mapping", options.tonemapping.clone(), (
+            Text::new("PBR Neutral").tag(Tonemapping::PbrNeutral),
+            Text::new("ACES").tag(Tonemapping::Aces),
+            Text::new("None").tag(Tonemapping::None),
+        )),
+    )).cross_axis_alignment(CrossAxisAlignment::Start);
+
     let light = VStack::new((
         heading("Light"),
         slider("From", &options.light_azimuth, -180.0, 180.0, degrees),
@@ -361,7 +404,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     VStack::new((
         scene,
         shown_when(not_rendering, note("With no renderer, the views draw nothing.")),
-        shown_when(rendering, VStack::new((material, motion, light, camera)).cross_axis_alignment(CrossAxisAlignment::Start)),
+        shown_when(rendering, VStack::new((material, motion, environment, light, camera)).cross_axis_alignment(CrossAxisAlignment::Start)),
         Spacer::new(),
     ))
         .cross_axis_alignment(CrossAxisAlignment::Start)

@@ -4,9 +4,9 @@ use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGrou
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::InnerRenderContext3d;
+use carbide_3d::render::{InnerRenderContext3d, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
-use carbide_core::color::{Color, ColorExt};
+use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
 use carbide_core::math::{InnerSpace, Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 use carbide_core::render::{InnerLayer, Layer};
@@ -49,6 +49,8 @@ pub struct WgpuRenderContext3d {
     objects: Vec<WgpuObject>,
 
     directional_lights: Vec<WgpuDirectionalLight>,
+    /// The scene's hemisphere light: sky, ground and intensity, as last given.
+    hemisphere: (Color, Color, f32),
 
     /// Used when the environment has no shared [`MeshCache`], for example when the context was
     /// created without the plugin.
@@ -92,6 +94,7 @@ impl WgpuRenderContext3d {
             transform_stack: vec![Matrix4::identity()],
             objects: vec![],
             directional_lights: vec![],
+            hemisphere: (WHITE, WHITE, 0.1),
             fallback_mesh_cache: None,
             commands: vec![],
             image_context: ImageContext3d,
@@ -345,7 +348,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         self.clear();
     }
 
-    fn render(&mut self, layer: Layer, camera: CameraSpec, env: &mut Environment) {
+    fn render(&mut self, layer: Layer, camera: CameraSpec, view: ViewSpec, env: &mut Environment) {
         // A layer from another 2D renderer, or no device: nothing this context can draw into.
         let Some(render_target) = layer.inner.downcast_ref::<WgpuRenderTarget>() else {
             return;
@@ -380,8 +383,12 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             label: Some("carbide_3d_encoder"),
         });
 
+        // The background, converted as the 2D renderer converts colours: to linear, premultiplied.
+        let [r, g, b, a] = view.background.gamma_srgb_to_linear().pre_multiply().to_fsa();
+        let background = wgpu::Color { r: r as f64, g: g as f64, b: b as f64, a: a as f64 };
+
         let clear = Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+            load: wgpu::LoadOp::Clear(background),
             store: StoreOp::Store,
         };
 
@@ -429,8 +436,20 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             inv_view: camera.view.invert().unwrap_or(Matrix4::identity()),
             aspect_ratio,
         });
+        let (sky, ground, intensity) = self.hemisphere;
+        let linear = |color: Color| {
+            let [r, g, b, _] = color.gamma_srgb_to_linear().to_fsa();
+            Vector4::new(r * intensity, g * intensity, b * intensity, 1.0)
+        };
         let mut uniforms = StorageBuffer::from(WgpuUniforms {
-            ambient: Vector4::new(0.1, 0.1, 0.1, 1.0)
+            sky: linear(sky),
+            ground: linear(ground),
+            exposure: view.exposure,
+            tonemapping: match view.tonemapping {
+                Tonemapping::PbrNeutral => 0,
+                Tonemapping::Aces => 1,
+                Tonemapping::None => 2,
+            },
         });
 
         let mut directional_lights = StorageBuffer::from(WgpuDirectionalLightBuffer::new(self.directional_lights.clone()));
@@ -493,7 +512,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     view: &gpu.multisampled.as_ref().unwrap().1,
                     resolve_target: Some(render_target.view()),
                     ops: Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                        load: wgpu::LoadOp::Clear(background),
                         store: StoreOp::Discard,
                     },
                 })],
@@ -595,6 +614,10 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             atlas_offset: Vector2::zero(),
             atlas_size: Vector2::zero(),
         })
+    }
+
+    fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32) {
+        self.hemisphere = (sky, ground, intensity);
     }
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d {

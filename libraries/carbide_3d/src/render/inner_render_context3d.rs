@@ -5,13 +5,16 @@ use carbide::environment::Environment;
 use carbide::math::{Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
+use crate::render::ViewSpec;
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh};
 
 pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     fn start(&mut self);
 
-    fn render(&mut self, layer: Layer, camera_spec: CameraSpec, env: &mut Environment);
+    /// Draw what the calls since [`start`](Self::start) described into `layer`, through `camera`,
+    /// looking as `view` says.
+    fn render(&mut self, layer: Layer, camera: CameraSpec, view: ViewSpec, env: &mut Environment);
 
     fn mesh(&mut self, mesh: &Mesh);
 
@@ -26,6 +29,10 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     /// A directional light. `direction` is the way the light shines, in the space of the current
     /// transform: a light inside a rotated group turns with it.
     fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>);
+
+    /// The scene's ambient light: `sky` lights surfaces facing up, `ground` surfaces facing down,
+    /// blended by each surface's normal, both times `intensity`. Colours are in sRGB.
+    fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32);
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d;
 }

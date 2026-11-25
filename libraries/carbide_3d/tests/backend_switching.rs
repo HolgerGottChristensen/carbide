@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, RenderContext3dId};
+use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, RenderContext3dId, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh, NoopImageContext3d, Scene3d};
 use carbide_core::color::Color;
 use carbide_core::draw::Dimension;
@@ -39,7 +39,7 @@ impl RecordingContext {
 impl InnerRenderContext3d for RecordingContext {
     fn start(&mut self) {}
 
-    fn render(&mut self, _layer: Layer, _camera_spec: CameraSpec, _env: &mut Environment) {
+    fn render(&mut self, _layer: Layer, _camera_spec: CameraSpec, _view: ViewSpec, _env: &mut Environment) {
         EVENTS.lock().unwrap().push(format!("render {}", self.name));
     }
 
@@ -54,6 +54,8 @@ impl InnerRenderContext3d for RecordingContext {
     fn pop_transform(&mut self) {}
 
     fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {}
+
+    fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {}
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d {
         &mut self.image_context

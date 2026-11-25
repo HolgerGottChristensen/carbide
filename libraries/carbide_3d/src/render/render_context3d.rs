@@ -5,7 +5,7 @@ use carbide::draw::Color;
 use carbide::environment::Environment;
 use carbide::render::Layer;
 use carbide::math::{Matrix4, Vector3};
-use crate::render::InnerRenderContext3d;
+use crate::render::{InnerRenderContext3d, ViewSpec};
 
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
@@ -14,8 +14,8 @@ pub struct RenderContext3d<'a, 'b: 'a> {
 }
 
 impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
-    pub fn render(&mut self, layer: Layer, camera: CameraSpec) {
-        self.render.render(layer, camera, self.env)
+    pub fn render(&mut self, layer: Layer, camera: CameraSpec, view: ViewSpec) {
+        self.render.render(layer, camera, view, self.env)
     }
 
     pub fn transform<R, F: FnOnce(&mut RenderContext3d)->R>(&mut self, transform: &Matrix4<f32>, f: F) -> R {

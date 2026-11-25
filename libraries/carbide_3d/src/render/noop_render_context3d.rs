@@ -5,7 +5,7 @@ use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh, NoopImageContext3d};
-use crate::render::InnerRenderContext3d;
+use crate::render::{InnerRenderContext3d, ViewSpec};
 
 /// The render context of a scene without a 3D renderer, used until a
 /// [`ContextFactory3d`](crate::render::ContextFactory3d) is found in the environment. It draws
@@ -17,7 +17,7 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     fn start(&mut self) {
     }
 
-    fn render(&mut self, _layer: Layer, _camera: CameraSpec, _env: &mut Environment) {
+    fn render(&mut self, _layer: Layer, _camera: CameraSpec, _view: ViewSpec, _env: &mut Environment) {
     }
 
     fn mesh(&mut self, _mesh: &Mesh) {
@@ -36,6 +36,9 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     }
 
     fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {
+    }
+
+    fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {
     }
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d {
