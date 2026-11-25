@@ -6,7 +6,8 @@ use wgpu::BindGroup;
 use crate::wgpu_gradient::{WgpuGradient};
 use crate::render_context::TargetState::{Free, Used};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
-use crate::wgpu_render_target::WgpuRenderTarget;
+use carbide_wgpu_core::WgpuRenderTarget;
+use crate::wgpu_render_target::create_render_target;
 use crate::wgpu_vertex::WgpuVertex;
 use crate::wgpu_msaa::WgpuMsaa;
 use crate::{MODE_GEOMETRY, MODE_GEOMETRY_DASH, MODE_GEOMETRY_DASH_FAST, MODE_GRADIENT_GEOMETRY, MODE_GRADIENT_GEOMETRY_DASH, MODE_GRADIENT_GEOMETRY_DASH_FAST, MODE_GRADIENT_ICON, MODE_GRADIENT_TEXT, MODE_ICON, MODE_IMAGE, MODE_TEXT, MODE_TEXT_COLOR};
@@ -206,7 +207,7 @@ impl WGPURenderContext {
     }
 
     pub fn layer_bind_group(&self, layer_id: LayerId) -> &BindGroup {
-        &self.layers[&layer_id].bind_group
+        self.layers[&layer_id].bind_group()
     }
 
     pub fn target_count(&self) -> usize {
@@ -1249,8 +1250,8 @@ impl InnerRenderContext for WGPURenderContext {
         if self.layers.contains_key(&layer_id) {
             let target = self.layers.get_mut(&layer_id).unwrap();
 
-            if target.texture.width() != width || target.texture.height() != height {
-                *target = WgpuRenderTarget::new(width, height, self.msaa, env);
+            if target.texture().width() != width || target.texture().height() != height {
+                *target = create_render_target(width, height, self.msaa, env);
             }
 
             Layer {
@@ -1258,7 +1259,7 @@ impl InnerRenderContext for WGPURenderContext {
                 inner2: target,
             }
         } else {
-            let new_layer = WgpuRenderTarget::new(width, height, self.msaa, env);
+            let new_layer = create_render_target(width, height, self.msaa, env);
 
             self.layers.insert(layer_id, new_layer);
 

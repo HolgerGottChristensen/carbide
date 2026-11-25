@@ -24,7 +24,8 @@ use crate::wgpu_context::WgpuContext;
 use crate::wgpu_dashes::WgpuDashes;
 use crate::wgpu_gradient::WgpuGradient;
 use crate::wgpu_msaa::WgpuMsaa;
-use crate::wgpu_render_target::RENDER_TARGET_FORMAT;
+use carbide_wgpu_core::RENDER_TARGET_FORMAT;
+use crate::wgpu_render_target::create_render_target;
 use crate::wgpu_vertex::WgpuVertex;
 use crate::util::calculate_carbide_to_wgpu_matrix;
 use crate::{render_pass_ops, RenderPassOps, WgpuRenderTarget};
@@ -145,7 +146,7 @@ impl OffscreenRenderer {
             size,
             msaa,
             texture_size_bind_group,
-            targets: vec![WgpuRenderTarget::new(size.width, size.height, msaa, env)],
+            targets: vec![create_render_target(size.width, size.height, msaa, env)],
             uniform_bind_group,
             gradient_buffer,
             dashes_buffer,
@@ -186,12 +187,12 @@ impl OffscreenRenderer {
             let required_height = self.size.height + 2 * padding_y;
 
             if index >= self.targets.len() {
-                self.targets.push(WgpuRenderTarget::new(required_width, required_height, self.msaa, ctx.env));
+                self.targets.push(create_render_target(required_width, required_height, self.msaa, ctx.env));
             } else {
-                let current_width = self.targets[index].texture.width();
-                let current_height = self.targets[index].texture.height();
+                let current_width = self.targets[index].texture().width();
+                let current_height = self.targets[index].texture().height();
                 if current_width < required_width || current_height < required_height {
-                    self.targets[index] = WgpuRenderTarget::new(required_width, required_height, self.msaa, ctx.env);
+                    self.targets[index] = create_render_target(required_width, required_height, self.msaa, ctx.env);
                 }
             }
         }
@@ -249,7 +250,7 @@ impl OffscreenRenderer {
         self.size = new_size;
 
         self.targets = vec![
-            WgpuRenderTarget::new(new_size.width, new_size.height, self.msaa, env)
+            create_render_target(new_size.width, new_size.height, self.msaa, env)
         ];
 
         let (wgpu_context, wgpu_context_new) = env.get_many::<(WgpuContext, WgpuContextNew)>().unwrap();
@@ -313,7 +314,7 @@ impl OffscreenRenderer {
                 let texture_size = self.render_context.filter_source_target(*filter_id)
                     .map(|index| {
                         let target = &self.targets[index];
-                        (target.texture.width() as f32, target.texture.height() as f32)
+                        (target.texture().width() as f32, target.texture().height() as f32)
                     })
                     .unwrap_or((size.width as f32, size.height as f32));
 
@@ -440,7 +441,7 @@ impl OffscreenRenderer {
         for command in render_passes {
             match command {
                 RenderPass::Normal { commands: inner, target_index: index } => {
-                    current_target_view = &self.targets[index].view;
+                    current_target_view = self.targets[index].view();
 
                     if inner.is_empty() {
                         continue;
@@ -453,7 +454,7 @@ impl OffscreenRenderer {
                         render_pass_ops(RenderPassOps::Start)
                     };
 
-                    let (view, resolve_target) = self.targets[index].msaa_view.as_ref()
+                    let (view, resolve_target) = self.targets[index].msaa_view()
                         .map(|a| (a, Some(current_target_view)))
                         .unwrap_or((current_target_view, None));
 
@@ -465,7 +466,7 @@ impl OffscreenRenderer {
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.targets[index].depth_view,
+                            view: self.targets[index].depth_view(),
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
@@ -491,7 +492,7 @@ impl OffscreenRenderer {
                                         render_pass.set_bind_group(0, &bind_groups[&id].bind_group, &[]);
                                     }
                                     WGPUBindGroup::Target(index) => {
-                                        render_pass.set_bind_group(0, &self.targets[index].bind_group, &[]);
+                                        render_pass.set_bind_group(0, self.targets[index].bind_group(), &[]);
                                     }
                                     WGPUBindGroup::Layer(id) => {
                                         render_pass.set_bind_group(0, self.render_context.layer_bind_group(id), &[])
@@ -583,7 +584,7 @@ impl OffscreenRenderer {
                                         render_pass.set_bind_group(4, &bind_groups[&id].bind_group, &[]);
                                     }
                                     WGPUBindGroup::Target(index) => {
-                                        render_pass.set_bind_group(4, &self.targets[index].bind_group, &[]);
+                                        render_pass.set_bind_group(4, self.targets[index].bind_group(), &[]);
                                     }
                                     WGPUBindGroup::Layer(id) => {
                                         render_pass.set_bind_group(4, self.render_context.layer_bind_group(id), &[]);
@@ -608,13 +609,13 @@ impl OffscreenRenderer {
                     if initial_copy {
                         encoder.copy_texture_to_texture(
                             TexelCopyTextureInfo {
-                                texture: &self.targets[target_id].texture,
+                                texture: self.targets[target_id].texture(),
                                 mip_level: 0,
                                 origin: Default::default(),
                                 aspect: Default::default(),
                             },
                             TexelCopyTextureInfo {
-                                texture: &self.targets[source_id].texture,
+                                texture: self.targets[source_id].texture(),
                                 mip_level: 0,
                                 origin: Default::default(),
                                 aspect: Default::default(),
@@ -634,10 +635,9 @@ impl OffscreenRenderer {
                         render_pass_ops(RenderPassOps::Start)
                     };
 
-                    let (view, resolve_target) = self.targets[target_id].msaa_view
-                        .as_ref()
-                        .map(|a| (a, Some(&self.targets[target_id].view)))
-                        .unwrap_or((&self.targets[target_id].view, None));
+                    let (view, resolve_target) = self.targets[target_id].msaa_view()
+                        .map(|a| (a, Some(self.targets[target_id].view())))
+                        .unwrap_or((self.targets[target_id].view(), None));
 
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
@@ -647,7 +647,7 @@ impl OffscreenRenderer {
                             ops: color_op,
                         })],
                         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                            view: &self.targets[target_id].depth_view,
+                            view: self.targets[target_id].depth_view(),
                             depth_ops: Some(depth_op),
                             stencil_ops: Some(stencil_op),
                         }),
@@ -658,11 +658,11 @@ impl OffscreenRenderer {
                     render_pass.set_pipeline(&render_pipelines.render_pipeline_in_mask_filter);
                     render_pass.set_stencil_reference(stencil_level);
                     render_pass.set_vertex_buffer(0, current_vertex_buffer_slice);
-                    render_pass.set_bind_group(0, &self.targets[source_id].bind_group, &[]);
+                    render_pass.set_bind_group(0, self.targets[source_id].bind_group(), &[]);
                     render_pass.set_bind_group(1, &filter_bind_groups[&filter_id], &[]);
                     render_pass.set_bind_group(2, current_uniform_bind_group, &[]);
                     if let Some(id) = mask_id {
-                        render_pass.set_bind_group(3, &self.targets[id].bind_group, &[]);
+                        render_pass.set_bind_group(3, self.targets[id].bind_group(), &[]);
                     } else {
                         render_pass.set_bind_group(3, &bind_groups[&ImageId::default()].bind_group, &[]);
                     }
@@ -670,7 +670,7 @@ impl OffscreenRenderer {
                     render_pass.draw(vertex_range, 0..1);
                 }
                 RenderPass::Clear { target_index: index } => {
-                    encoder.clear_texture(&self.targets[index].texture, &Default::default())
+                    encoder.clear_texture(self.targets[index].texture(), &Default::default())
                 }
             }
         }

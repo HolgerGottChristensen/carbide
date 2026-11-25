@@ -15,7 +15,7 @@ extern crate carbide_cosmic_text;
 #[cfg(feature = "icons")]
 extern crate carbide_icons;
 
-pub use wgpu_render_target::WgpuRenderTarget;
+pub use carbide_wgpu_core::WgpuRenderTarget;
 
 pub use crate::image_context::create_bind_group_from_wgpu_texture;
 

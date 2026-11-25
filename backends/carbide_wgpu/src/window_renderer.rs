@@ -92,7 +92,7 @@ impl WgpuWindowRendererBackend {
         });
 
         render_pass.set_pipeline(&self.surface_render_pipeline);
-        render_pass.set_bind_group(0, &self.offscreen.targets[0].bind_group, &[]);
+        render_pass.set_bind_group(0, self.offscreen.targets[0].bind_group(), &[]);
 
         render_pass.draw(0..6, 0..1);
     }
@@ -166,7 +166,7 @@ impl WindowRendererBackend for WgpuWindowRendererBackend {
         Ok(carbide_wgpu_core::capture_texture_to_image(
             &wgpu_context.device,
             &wgpu_context.queue,
-            &self.offscreen.targets[0].texture,
+            self.offscreen.targets[0].texture(),
         )?)
     }
 }

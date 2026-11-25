@@ -62,7 +62,7 @@ impl HeadlessRenderer {
         carbide_wgpu_core::capture_texture_to_image(
             &wgpu_context_new.device,
             &wgpu_context_new.queue,
-            &self.offscreen.targets[0].texture,
+            self.offscreen.targets[0].texture(),
         ).expect("the offscreen target uses RENDER_TARGET_FORMAT, which capture_texture_to_image supports")
     }
 
