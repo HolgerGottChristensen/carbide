@@ -529,10 +529,10 @@ mod tests {
         let tuple = bounds(BarController::new((plain.clone(), ranges.clone().range(), measured.clone().error_bars())));
         assert_eq!(tuple.requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
 
-        let named_first = bounds(BarController::new(vec![plain.clone().to_dyn::<dyn BarDataSet>(), ranges.clone().range().boxed(), measured.clone().error_bars().boxed()]));
+        let named_first = bounds(BarController::new(vec![plain.clone().boxed::<dyn BarDataSet>(), ranges.clone().range().boxed(), measured.clone().error_bars().boxed()]));
         assert_eq!(named_first.requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
 
-        let datasets: Vec<Box<dyn BarDataSet>> = vec![plain.to_dyn(), ranges.range().boxed(), measured.error_bars().boxed()];
+        let datasets: Vec<Box<dyn BarDataSet>> = vec![plain.boxed(), ranges.range().boxed(), measured.error_bars().boxed()];
         assert_eq!(bounds(BarController::new(datasets)).requests().get(&ScaleId::Y).range(), Some((0.0, 11.0)));
     }
 

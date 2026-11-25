@@ -155,7 +155,7 @@ mod tests {
     use std::sync::Arc;
     use carbide::draw::{Position, Scalar};
     use carbide::environment::Environment;
-    use carbide::state::{AnyState, FieldState, GlobalState, LocalState, Map1, ReadStateExt, State, StateExtNew, ValueState};
+    use carbide::state::{AnyReadState, AnyState, FieldState, GlobalState, LocalState, Map1, State, ValueState};
     use crate::{DataSet, Sequence, Value};
 
     /// The points of a dataset, as `(x, y)`. None of the datasets here have missing points.

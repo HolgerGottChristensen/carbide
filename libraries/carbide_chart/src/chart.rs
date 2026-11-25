@@ -1320,10 +1320,10 @@ mod tests {
     use carbide::color::RED;
     use carbide::draw::{Dimension, Position, Rect, Scalar};
     use carbide::environment::Environment;
-    use carbide::state::{LocalState, Map1, ReadStateExt, State};
+    use carbide::state::{LocalState, Map1, AnyReadState, State};
     use carbide::widget::WidgetSync;
     use indexmap::IndexMap;
-    use carbide::layout::layout_direction::LayoutDirection;
+    use carbide::layout::LayoutDirection;
     use crate::{BarController, Sequence, DatasetController, LineController, ScatterController};
     use crate::DatasetExt;
     use crate::{DataColor, ScatterDataSet, StackId};
@@ -1521,7 +1521,7 @@ mod tests {
         const PERCENT: ScaleId = ScaleId::new("percent");
 
         let positions = vec![Position::new(0.0, 10.0), Position::new(1.0, 20.0)].boxed::<dyn ScatterDataSet>();
-        let values = LocalState::new(vec![15.0, 25.0]).to_dyn::<dyn ScatterDataSet>();
+        let values = LocalState::new(vec![15.0, 25.0]).boxed::<dyn ScatterDataSet>();
         let margin = vec![0.2, 0.4].y_scale(PERCENT).boxed();
 
         let chart = fitted(
@@ -1742,6 +1742,37 @@ mod tests {
         chart.sync(&mut Environment::new());
         let area = chart.layout(&bands, &Decorations::default(), LayoutDirection::LeftToRight).chart_area;
         assert_eq!((area.left(), area.right()), (30.0, 400.0 - 30.0 - 35.0), "the y band moved to the right");
+    }
+
+    /// A y scale leading the chart area takes the band on the left when text reads from left to
+    /// right and the band on the right when it reads from right to left, and one trailing it takes
+    /// the other side. A y scale set on the left stays on the left either way.
+    #[test]
+    fn leading_and_trailing_scales_follow_the_layout_direction() {
+        let mut position = LocalState::new(AxisPosition::Leading);
+        let mut chart = fitted(Chart::new(ScatterController::new(vec![1.0, 2.0])).scale(ScaleId::Y, LinearScale::new(Axis::Vertical).position(position.clone())));
+        chart.dimension = Dimension::new(400.0, 300.0);
+        let bands = sizes(&[(ScaleId::X, 20.0), (ScaleId::Y, 35.0)]);
+        let on_the_left = (30.0 + 35.0, 400.0 - 30.0);
+        let on_the_right = (30.0, 400.0 - 30.0 - 35.0);
+
+        let sides = |chart: &Chart<_>, layout_direction: LayoutDirection| {
+            let area = chart.layout(&bands, &Decorations::default(), layout_direction).chart_area;
+            (area.left(), area.right())
+        };
+
+        chart.sync(&mut Environment::new());
+        assert_eq!(sides(&chart, LayoutDirection::LeftToRight), on_the_left, "leading is left");
+        assert_eq!(sides(&chart, LayoutDirection::RightToLeft), on_the_right, "leading is right");
+
+        *position.value_mut() = AxisPosition::Trailing;
+        chart.sync(&mut Environment::new());
+        assert_eq!(sides(&chart, LayoutDirection::LeftToRight), on_the_right, "trailing is right");
+        assert_eq!(sides(&chart, LayoutDirection::RightToLeft), on_the_left, "trailing is left");
+
+        *position.value_mut() = AxisPosition::Left;
+        chart.sync(&mut Environment::new());
+        assert_eq!(sides(&chart, LayoutDirection::RightToLeft), on_the_left, "left isn't mirrored");
     }
 
     /// A scale's axis title is a state, synced with the chart, so a changed title is drawn on the

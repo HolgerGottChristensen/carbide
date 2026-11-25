@@ -519,6 +519,7 @@ fn constant<T: StateContract + IntoReadState<T>>(value: T) -> Box<dyn AnyReadSta
 #[cfg(test)]
 mod tests {
     use carbide::draw::{Alignment, Angle};
+    use carbide::layout::LayoutDirection;
     use carbide::environment::Environment;
     use carbide::state::{LocalState, State};
     use crate::scale::{Axis, AxisPosition, LabelRotation};
@@ -538,14 +539,14 @@ mod tests {
             .with_grid_lines(grid_lines.clone())
             .with_tick_marks(tick_marks.clone());
         options.sync(&mut Environment::new());
-        assert_eq!((options.position(), options.weight(), options.grid_lines(), options.tick_marks()), (AxisPosition::Left, 0, true, true));
+        assert_eq!((options.position(LayoutDirection::LeftToRight), options.weight(), options.grid_lines(), options.tick_marks()), (AxisPosition::Left, 0, true, true));
 
         *position.value_mut() = AxisPosition::Right;
         *weight.value_mut() = 2;
         *grid_lines.value_mut() = false;
         *tick_marks.value_mut() = false;
         options.sync(&mut Environment::new());
-        assert_eq!((options.position(), options.weight(), options.grid_lines(), options.tick_marks()), (AxisPosition::Right, 2, false, false));
+        assert_eq!((options.position(LayoutDirection::LeftToRight), options.weight(), options.grid_lines(), options.tick_marks()), (AxisPosition::Right, 2, false, false));
     }
 
     /// The label options are states too: the rotation switches between automatic and fixed, the
@@ -583,17 +584,17 @@ mod tests {
         let mut position = LocalState::new(AxisPosition::Right);
         let mut options = AxisOptions::new(Axis::Vertical).with_position(position.clone());
         options.sync(&mut Environment::new());
-        assert_eq!(options.position(), AxisPosition::Right);
+        assert_eq!(options.position(LayoutDirection::LeftToRight), AxisPosition::Right);
 
         *position.value_mut() = AxisPosition::Top;
         options.sync(&mut Environment::new());
-        assert_eq!(options.position(), AxisPosition::Left, "a vertical axis can't sit on top");
+        assert_eq!(options.position(LayoutDirection::LeftToRight), AxisPosition::Left, "a vertical axis can't sit on top");
 
         *position.value_mut() = AxisPosition::Right;
         options.sync(&mut Environment::new());
-        assert_eq!(options.position(), AxisPosition::Right);
+        assert_eq!(options.position(LayoutDirection::LeftToRight), AxisPosition::Right);
 
-        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Left).position(), AxisPosition::Bottom);
+        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Left).position(LayoutDirection::LeftToRight), AxisPosition::Bottom);
     }
 
     /// A vertical axis leading or trailing the chart area is drawn left or right of it, as text
@@ -603,12 +604,37 @@ mod tests {
         let mut position = LocalState::new(AxisPosition::Leading);
         let mut options = AxisOptions::new(Axis::Vertical).with_position(position.clone());
         options.sync(&mut Environment::new());
-        assert_eq!(options.position(), AxisPosition::Left);
+        assert_eq!(options.position(LayoutDirection::LeftToRight), AxisPosition::Left);
 
         *position.value_mut() = AxisPosition::Trailing;
         options.sync(&mut Environment::new());
-        assert_eq!(options.position(), AxisPosition::Right);
+        assert_eq!(options.position(LayoutDirection::LeftToRight), AxisPosition::Right);
 
-        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Trailing).position(), AxisPosition::Bottom);
+        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Trailing).position(LayoutDirection::LeftToRight), AxisPosition::Bottom);
+    }
+
+    /// When text reads from right to left, a vertical axis leading the chart area is drawn right
+    /// of it and one trailing it left of it. A side set as left or right stays where it is, and a
+    /// horizontal axis still can't take leading or trailing and takes its default side.
+    #[test]
+    fn leading_and_trailing_swap_sides_right_to_left() {
+        let mut position = LocalState::new(AxisPosition::Leading);
+        let mut options = AxisOptions::new(Axis::Vertical).with_position(position.clone());
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(LayoutDirection::RightToLeft), AxisPosition::Right);
+
+        *position.value_mut() = AxisPosition::Trailing;
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(LayoutDirection::RightToLeft), AxisPosition::Left);
+
+        *position.value_mut() = AxisPosition::Left;
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(LayoutDirection::RightToLeft), AxisPosition::Left, "left isn't mirrored");
+
+        *position.value_mut() = AxisPosition::Right;
+        options.sync(&mut Environment::new());
+        assert_eq!(options.position(LayoutDirection::RightToLeft), AxisPosition::Right, "right isn't mirrored");
+
+        assert_eq!(AxisOptions::new(Axis::Horizontal).with_position(AxisPosition::Leading).position(LayoutDirection::RightToLeft), AxisPosition::Bottom);
     }
 }
