@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
 use chrono::{DateTime, Duration, FixedOffset, TimeZone};
-use super::{first_section, pixels, section, shown_when, slider, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
+use super::{first_section, Curve, CurveControls, pixels, section, shown_when, slider, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
 
 /// What the scatter chart shows.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -52,7 +52,7 @@ pub(crate) struct Options {
     x_zoom: LocalState<ZoomWindow>,
     y_zoom: LocalState<ZoomWindow>,
     grid_lines: LocalState<bool>,
-    show_line: LocalState<bool>,
+    curve: CurveControls,
     min_radius: LocalState<Scalar>,
     max_radius: LocalState<Scalar>,
 }
@@ -65,7 +65,7 @@ impl Options {
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
             grid_lines: LocalState::new(true),
-            show_line: LocalState::new(false),
+            curve: CurveControls::new(Curve::None),
             min_radius: LocalState::new(4.0),
             max_radius: LocalState::new(30.0),
         }
@@ -99,7 +99,16 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Stores as bubbles").tag(Data::Stores),
             Text::new("Three clusters of bubbles").tag(Data::Clusters),
         )),
-        Toggle::new("Line through them", options.show_line.clone()),
+        Picker::new("Line through them", options.curve.curve.clone(), (
+            Text::new("None, only points").tag(Curve::None),
+            Text::new("Straight").tag(Curve::Straight),
+            Text::new("Smooth").tag(Curve::Smooth),
+            Text::new("Cardinal").tag(Curve::Cardinal),
+            Text::new("Catmull-Rom").tag(Curve::CatmullRom),
+            Text::new("Monotone").tag(Curve::Monotone),
+            Text::new("Steps").tag(Curve::StepsAfter),
+        )),
+        options.curve.sliders(),
         // Only bubbles have sizes to fit between the smallest and the largest radius.
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| data.is_bubbles()), VStack::new((
             slider("Smallest", &options.min_radius, 1.0, 20.0, 1.0, pixels),
@@ -135,6 +144,8 @@ fn data_resetting_zoom(options: &Options) -> impl State<T=Data> + use<> {
 /// The scatter chart of `data`, its x scale linear, a time scale or categories, as its x values
 /// are numbers, times or text.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
+    // The curve through each dataset's points, when a line is drawn through them.
+    let interpolation = options.curve.interpolation();
     let linear_x = || LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
 
     match data {
@@ -147,8 +158,8 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                     (h, weight + (h - height) * 0.9 + (jitter(i, 78.233) - 0.5) * 16.0)
                 }).collect()
             };
-            let scatter = ScatterController::new((group(0.0, 168.0, 64.0).label("Group A"), group(100.0, 180.0, 78.0).label("Group B")));
-            finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, linear_x()), options, shared)
+            let scatter = ScatterController::new((group(0.0, 168.0, 64.0).label("Group A").interpolation(interpolation.clone()), group(100.0, 180.0, 78.0).label("Group B").interpolation(interpolation.clone())));
+            finish(Chart::new(scatter.show_line(options.curve.shows_line())).scale(ScaleId::X, linear_x()), options, shared)
         }
         Data::Path => {
             // A figure of eight, traced once: its x turns back twice, so a line through the points
@@ -157,16 +168,16 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                 let t = i as Scalar / 40.0 * std::f64::consts::TAU;
                 (10.0 * t.sin(), 6.0 * (2.0 * t).sin())
             }).collect();
-            let scatter = ScatterController::new(path.label("Path"));
-            finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, linear_x()), options, shared)
+            let scatter = ScatterController::new(path.label("Path").interpolation(interpolation.clone()));
+            finish(Chart::new(scatter.show_line(options.curve.shows_line())).scale(ScaleId::X, linear_x()), options, shared)
         }
         Data::ColouredPoints => {
             let points: Vec<(Scalar, Scalar)> = (0..12).map(|i| {
                 let i = i as Scalar;
                 (i + jitter(i, 12.9898) * 2.0, 3.0 + i * 0.6 + (jitter(i, 78.233) - 0.5) * 4.0)
             }).collect();
-            let scatter = ScatterController::new(points.label("Samples").color(DataColor::ByPoint));
-            finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, linear_x()), options, shared)
+            let scatter = ScatterController::new(points.label("Samples").interpolation(interpolation.clone()).color(DataColor::ByPoint));
+            finish(Chart::new(scatter.show_line(options.curve.shows_line())).scale(ScaleId::X, linear_x()), options, shared)
         }
         Data::Times => {
             let utc = FixedOffset::east_opt(0).unwrap();
@@ -182,9 +193,9 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                 quakes.sort_by_key(|(time, _)| *time);
                 quakes
             };
-            let scatter = ScatterController::new((region(0.0, 30, 2.0).label("Coast"), region(100.0, 15, 3.0).label("Mountains")));
+            let scatter = ScatterController::new((region(0.0, 30, 2.0).label("Coast").interpolation(interpolation.clone()), region(100.0, 15, 3.0).label("Mountains").interpolation(interpolation.clone())));
             let x = TimeScale::new(Axis::Horizontal).time_zone(TimeScaleZone::Fixed(utc)).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
-            finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, x), options, shared)
+            finish(Chart::new(scatter.show_line(options.curve.shows_line())).scale(ScaleId::X, x), options, shared)
         }
         Data::Weekdays => {
             // Several readings a day, so each weekday is a strip of points; the evening group
@@ -198,16 +209,16 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                     })
                 }).collect()
             };
-            let scatter = ScatterController::new((readings(0.0, &DAYS, 250.0).label("Morning (ms)"), readings(100.0, &DAYS[1..], 290.0).label("Evening (ms)")));
+            let scatter = ScatterController::new((readings(0.0, &DAYS, 250.0).label("Morning (ms)").interpolation(interpolation.clone()), readings(100.0, &DAYS[1..], 290.0).label("Evening (ms)").interpolation(interpolation.clone())));
             let x = CategoryScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).grid_lines(options.grid_lines.clone()).placed(&shared);
-            finish(Chart::new(scatter.show_line(options.show_line.clone())).scale(ScaleId::X, x), options, shared)
+            finish(Chart::new(scatter.show_line(options.curve.shows_line())).scale(ScaleId::X, x), options, shared)
         }
         Data::Stores | Data::Clusters => {
             let datasets: Vec<Box<dyn ScatterDataSet>> = bubbles(data).into_iter()
-                .map(|(name, bubbles)| bubbles.bubbles().label(name).boxed::<dyn ScatterDataSet>())
+                .map(|(name, bubbles)| bubbles.bubbles().label(name).interpolation(interpolation.clone()).boxed::<dyn ScatterDataSet>())
                 .collect();
             let scatter = ScatterController::new(datasets)
-                .show_line(options.show_line.clone())
+                .show_line(options.curve.shows_line())
                 .radius_range(options.min_radius.clone(), options.max_radius.clone());
             finish(Chart::new(scatter).scale(ScaleId::X, linear_x()), options, shared)
         }

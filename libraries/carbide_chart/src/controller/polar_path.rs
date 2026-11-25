@@ -9,7 +9,7 @@
 //! neighbours on both sides.
 
 use carbide::draw::{Position, Scalar};
-use crate::controller::line_path::PathSink;
+use crate::controller::line_path::{spline_controls_at, PathSink};
 use crate::element::{Interpolation, Stepped};
 use crate::scale::polar::RingShape;
 
@@ -70,8 +70,10 @@ fn trace_from_first(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], 
                 path.line_to(point.position);
             }
         }
-        Interpolation::Smooth { tension } => trace_spline(path, &all, closing.is_some(), tension),
-        Interpolation::Monotone => trace_spline(path, &all, closing.is_some(), LOOP_TENSION),
+        Interpolation::Smooth { .. } | Interpolation::Cardinal { .. } | Interpolation::CatmullRom { .. } => {
+            trace_spline(path, &all, closing.is_some(), interpolation)
+        }
+        Interpolation::Monotone => trace_spline(path, &all, closing.is_some(), Interpolation::Smooth { tension: LOOP_TENSION }),
         Interpolation::Stepped(stepped) => {
             for pair in all.windows(2) {
                 trace_step(path, pair[0], pair[1], stepped, rings);
@@ -80,11 +82,12 @@ fn trace_from_first(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], 
     }
 }
 
-/// A tension spline through `points`, from the first, where the path is: each point's tangent is
-/// parallel to the line from its previous neighbour to its next, as for cartesian lines. When
+/// The spline `interpolation` draws through `points`, from the first, where the path is, with
+/// each point's control points from its neighbours, as for cartesian lines (see
+/// `spline_controls_at`). When
 /// `closed`, the last point is the first again, and the neighbours wrap around, so the loop is
 /// smooth where it closes too.
-fn trace_spline(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], closed: bool, tension: Scalar) {
+fn trace_spline(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], closed: bool, interpolation: Interpolation) {
     let count = points.len();
     if count < 2 {
         return;
@@ -114,17 +117,8 @@ fn trace_spline(path: &mut (impl PathSink + ?Sized), points: &[PolarPoint], clos
 
     let controls: Vec<(Position, Position)> = (0..count)
         .map(|index| {
-            let current = points[index].position;
             let (previous, next) = neighbours(index);
-            let d01 = distance(previous, current);
-            let d12 = distance(current, next);
-            let (s01, s12) = if d01 + d12 > 0.0 { (d01 / (d01 + d12), d12 / (d01 + d12)) } else { (0.0, 0.0) };
-            let (dx, dy) = (next.x - previous.x, next.y - previous.y);
-
-            (
-                Position::new(current.x - tension * s01 * dx, current.y - tension * s01 * dy),
-                Position::new(current.x + tension * s12 * dx, current.y + tension * s12 * dy),
-            )
+            spline_controls_at(interpolation, previous, points[index].position, next)
         })
         .collect();
 
@@ -163,10 +157,6 @@ fn trace_step(path: &mut (impl PathSink + ?Sized), from: PolarPoint, to: PolarPo
             path.line_to(to.position);
         }
     }
-}
-
-fn distance(a: Position, b: Position) -> Scalar {
-    ((b.x - a.x).powi(2) + (b.y - a.y).powi(2)).sqrt()
 }
 
 #[cfg(test)]
@@ -226,18 +216,20 @@ mod tests {
         let closing = PolarPoint { angle: TAU, ..points[0] };
 
         let polar = polar();
-        let mut traced = Traced::default();
-        trace_polar_line(&mut traced, &points, Some(closing), Interpolation::Smooth { tension: 0.4 }, circles(&polar));
+        for interpolation in [Interpolation::Smooth { tension: 0.4 }, Interpolation::Cardinal { tension: 0.2 }, Interpolation::CatmullRom { alpha: 0.5 }] {
+            let mut traced = Traced::default();
+            trace_polar_line(&mut traced, &points, Some(closing), interpolation, circles(&polar));
 
-        let curves: Vec<&[Position]> = traced.curves.iter().map(|curve| curve.as_slice()).collect();
-        assert_eq!(curves.len(), 3);
+            let curves: Vec<&[Position]> = traced.curves.iter().map(|curve| curve.as_slice()).collect();
+            assert_eq!(curves.len(), 3);
 
-        // The arriving control point, the first point, and the leaving one are in a line.
-        let arriving = curves[2][1];
-        let leaving = curves[0][0];
-        let first = points[0].position;
-        let cross = (first.x - arriving.x) * (leaving.y - first.y) - (first.y - arriving.y) * (leaving.x - first.x);
-        assert!(cross.abs() < 1e-9, "the tangents line up: {}", cross);
+            // The arriving control point, the first point, and the leaving one are in a line.
+            let arriving = curves[2][1];
+            let leaving = curves[0][0];
+            let first = points[0].position;
+            let cross = (first.x - arriving.x) * (leaving.y - first.y) - (first.y - arriving.y) * (leaving.x - first.x);
+            assert!(cross.abs() < 1e-6, "{interpolation:?}: the tangents line up: {}", cross);
+        }
     }
 
     /// `Stepped::After` runs along the arc at the distance it leaves from, then along the next

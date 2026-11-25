@@ -13,7 +13,7 @@ mod scales;
 mod scatter;
 
 use carbide::automatic_style::AutomaticStyle;
-use carbide::chart::{Axis, AxisPosition, CategoryScale, Chart, ChartStyleExt, Sequence, LabelRotation, LegendPosition, LinearScale, LogScale, Measure, Pick, PickMode, Scale, SeriesStyle, SnapMode, TimeScale, TooltipAnchor, ZoomWindow, DatasetController};
+use carbide::chart::{Axis, AxisPosition, CategoryScale, Chart, ChartStyleExt, Interpolation, Sequence, Stepped, LabelRotation, LegendPosition, LinearScale, LogScale, Measure, Pick, PickMode, Scale, SeriesStyle, SnapMode, TimeScale, TooltipAnchor, ZoomWindow, DatasetController};
 use carbide::color::Color;
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
@@ -292,6 +292,78 @@ impl Shared {
 // ===============================
 //  Tick labels
 // ===============================
+
+/// The kind of curve through a line's points, picked in the side bar: smooth and cardinal curves
+/// take the tension slider's tension, Catmull-Rom curves the alpha slider's alpha, and with none
+/// only the points are drawn. Each page offers the curves that suit its charts.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub(crate) enum Curve {
+    None,
+    Straight,
+    Smooth,
+    Cardinal,
+    CatmullRom,
+    Monotone,
+    StepsBefore,
+    StepsMiddle,
+    StepsMiddleVertical,
+    StepsAfter,
+}
+
+/// A curve picked in the side bar, with the tension and the alpha the curves that have one take.
+#[derive(Clone)]
+pub(crate) struct CurveControls {
+    pub(crate) curve: LocalState<Curve>,
+    tension: LocalState<Scalar>,
+    alpha: LocalState<Scalar>,
+}
+
+impl CurveControls {
+    /// `curve` to start with, a tension of 0.4 and the centripetal alpha of 0.5.
+    pub(crate) fn new(curve: Curve) -> CurveControls {
+        CurveControls {
+            curve: LocalState::new(curve),
+            tension: LocalState::new(0.4),
+            alpha: LocalState::new(0.5),
+        }
+    }
+
+    /// The interpolation of the picked curve, as a state that follows the side bar. No curve is
+    /// drawn straight, for the points the line would join.
+    pub(crate) fn interpolation(&self) -> impl ReadState<T=Interpolation> + Clone + use<> {
+        Map3::read_map(self.curve.clone(), self.tension.clone(), self.alpha.clone(), |curve: &Curve, tension: &Scalar, alpha: &Scalar| match curve {
+            Curve::None | Curve::Straight => Interpolation::Linear,
+            Curve::Smooth => Interpolation::Smooth { tension: *tension },
+            Curve::Cardinal => Interpolation::Cardinal { tension: *tension },
+            Curve::CatmullRom => Interpolation::CatmullRom { alpha: *alpha },
+            Curve::Monotone => Interpolation::Monotone,
+            Curve::StepsBefore => Interpolation::Stepped(Stepped::Before),
+            Curve::StepsMiddle => Interpolation::Stepped(Stepped::Middle),
+            Curve::StepsMiddleVertical => Interpolation::Stepped(Stepped::MiddleVertical),
+            Curve::StepsAfter => Interpolation::Stepped(Stepped::After),
+        })
+    }
+
+    /// Whether a line is drawn: with no curve, only the points are.
+    pub(crate) fn shows_line(&self) -> impl ReadState<T=bool> + Clone + use<> {
+        Map1::read_map(self.curve.clone(), |curve: &Curve| *curve != Curve::None)
+    }
+
+    /// The sliders of the picked curve: the tension for smooth and cardinal curves, the alpha for
+    /// Catmull-Rom curves, and none for the others.
+    pub(crate) fn sliders(&self) -> impl Widget + use<> {
+        VStack::new((
+            shown_when(
+                Map1::read_map(self.curve.clone(), |curve: &Curve| matches!(curve, Curve::Smooth | Curve::Cardinal)),
+                slider("Tension", &self.tension, 0.0, 1.0, 0.05, |tension| format!("{tension:.2}")),
+            ),
+            shown_when(
+                Map1::read_map(self.curve.clone(), |curve: &Curve| *curve == Curve::CatmullRom),
+                slider("Alpha", &self.alpha, 0.0, 1.0, 0.05, |alpha| format!("{alpha:.2}")),
+            ),
+        )).cross_axis_alignment(CrossAxisAlignment::Start)
+    }
+}
 
 /// How the side bar turns tick labels: only when they don't fit, or always by an angle.
 #[derive(Copy, Clone, Debug, PartialEq)]

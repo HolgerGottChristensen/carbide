@@ -2,7 +2,7 @@
 //! stacked to 100%, with the widths of their slots and bars, and scattered points, with the circle's start, sweep, direction and hole, and its rings as polygons
 //! or circles.
 
-use carbide::chart::{AngleDirection, Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, Fill, GridShape, Interpolation, LinearScale, LineController, LineDataSet, RimOrientation, ScaleId, ScatterController, StackId, Stepped};
+use carbide::chart::{AngleDirection, Axis, BarController, BarDataSet, CategoryScale, Chart, DataColor, DatasetExt, Fill, GridShape, LinearScale, LineController, LineDataSet, RimOrientation, ScaleId, ScatterController, StackId};
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
@@ -11,7 +11,7 @@ use carbide::state::{LocalState, Map1, Map2, Map3};
 use carbide::widget::*;
 use carbide::ui;
 use super::bars::Stacking;
-use super::{first_section, degrees, percent, section, shown_when, slider, text_input, with_side_bar, Shared, MONTHS};
+use super::{first_section, Curve, CurveControls, degrees, percent, section, shown_when, slider, text_input, with_side_bar, Shared, MONTHS};
 
 const SKILLS: [&str; 6] = ["Speed", "Strength", "Stamina", "Passing", "Shooting", "Defence"];
 
@@ -40,7 +40,7 @@ pub(crate) struct Options {
     rim_orientation: LocalState<RimOrientation>,
     label_skip: LocalState<bool>,
     fill: LocalState<Fill>,
-    interpolation: LocalState<Interpolation>,
+    curve: CurveControls,
     start_angle: LocalState<Scalar>,
     sweep: LocalState<Scalar>,
     direction: LocalState<AngleDirection>,
@@ -62,7 +62,7 @@ impl Options {
             rim_orientation: LocalState::new(RimOrientation::Flat),
             label_skip: LocalState::new(true),
             fill: LocalState::new(Fill::Origin),
-            interpolation: LocalState::new(Interpolation::Linear),
+            curve: CurveControls::new(Curve::Straight),
             start_angle: LocalState::new(0.0),
             sweep: LocalState::new(360.0),
             direction: LocalState::new(AngleDirection::Clockwise),
@@ -116,11 +116,14 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
                 Text::new("To the centre").tag(Fill::Origin),
                 Text::new("To the rim").tag(Fill::Top),
             )),
-            Picker::new("Radar curve", options.interpolation.clone(), (
-                Text::new("Straight").tag(Interpolation::Linear),
-                Text::new("Smooth").tag(Interpolation::Smooth { tension: 0.4 }),
-                Text::new("Steps").tag(Interpolation::Stepped(Stepped::Middle)),
+            Picker::new("Radar curve", options.curve.curve.clone(), (
+                Text::new("Straight").tag(Curve::Straight),
+                Text::new("Smooth").tag(Curve::Smooth),
+                Text::new("Cardinal").tag(Curve::Cardinal),
+                Text::new("Catmull-Rom").tag(Curve::CatmullRom),
+                Text::new("Steps").tag(Curve::StepsMiddle),
             )),
+            options.curve.sliders(),
         )).cross_axis_alignment(CrossAxisAlignment::Start)),
         shown_when(Map1::read_map(options.data.clone(), |data: &Data| matches!(data, Data::RadialBars | Data::CitiesRadialBars)), VStack::new((
             shown_when(Map1::read_map(options.data.clone(), |data: &Data| *data == Data::CitiesRadialBars),
@@ -190,7 +193,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
                 skills.push(("Dee", vec![4.0, 9.0, 5.0, 7.0, 3.0, 8.0]));
             }
             let players: Vec<Box<dyn LineDataSet>> = skills.into_iter()
-                .map(|(name, values)| values.label(name).fill(options.fill.clone()).interpolation(options.interpolation.clone()).boxed::<dyn LineDataSet>())
+                .map(|(name, values)| values.label(name).fill(options.fill.clone()).interpolation(options.curve.interpolation()).boxed::<dyn LineDataSet>())
                 .collect();
 
             shared.apply(Chart::new(LineController::new(players).horizontal(options.horizontal.clone()))

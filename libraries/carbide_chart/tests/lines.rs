@@ -1,4 +1,4 @@
-//! Line charts: lines through points, straight, smooth, monotone or stepped, breaking at
+//! Line charts: lines through points, straight, smooth, cardinal, Catmull-Rom, monotone or stepped, breaking at
 //! gaps, stacked, and horizontal.
 
 use carbide_chart::{Chart, DatasetExt, Fill, Interpolation, LineController, SpanGaps, StackId, Stepped};
@@ -23,6 +23,23 @@ fn smooth_modes() {
 
     *interpolation.value_mut() = Interpolation::Monotone;
     harness.snapshot("monotone");
+}
+
+/// The example chart with its first dataset's line a cardinal spline, without tension and with a
+/// tension of 0.5, then a centripetal Catmull-Rom spline. Pins down that a cardinal spline's
+/// tension pulls the curve towards straight lines, and that on the example's evenly spaced
+/// categories the Catmull-Rom spline bends less than the cardinal one where the values jump far.
+#[test]
+fn cardinal_and_catmull_rom() {
+    let mut interpolation = LocalState::new(Interpolation::Cardinal { tension: 0.0 });
+    let mut harness = Harness::new(example_chart(interpolation.clone()), Dimension::new(600.0, 500.0));
+    harness.snapshot("cardinal");
+
+    *interpolation.value_mut() = Interpolation::Cardinal { tension: 0.5 };
+    harness.snapshot("cardinal_tension");
+
+    *interpolation.value_mut() = Interpolation::CatmullRom { alpha: 0.5 };
+    harness.snapshot("catmull_rom");
 }
 
 /// Renders the chart from `carbide/examples/chart/chart.rs` (two datasets, the first one's

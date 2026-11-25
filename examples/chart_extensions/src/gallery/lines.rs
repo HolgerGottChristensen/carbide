@@ -1,7 +1,7 @@
 //! Lines: curves, steps and their tension, fills to every kind of baseline, stacks, gaps and how
 //! they are bridged, and zooming along both scales.
 
-use carbide::chart::{Axis, Chart, DatasetExt, Fill, Interpolation, LinearScale, LineController, LineDataSet, ScaleId, SpanGaps, StackId, Stepped, ZoomWindow};
+use carbide::chart::{Axis, Chart, DatasetExt, Fill, LinearScale, LineController, LineDataSet, ScaleId, SpanGaps, StackId, ZoomWindow};
 use carbide::controls::picker::Picker;
 use carbide::controls::slider::SliderStepping;
 use carbide::controls::toggle::Toggle;
@@ -10,7 +10,7 @@ use carbide::draw::Scalar;
 use carbide::state::{LocalState, Map1, Map2};
 use carbide::widget::*;
 use carbide::ui;
-use super::{first_section, section, shown_when, slider, text_input, with_labelled_side_bar, Labelled, zoom_controls, Shared};
+use super::{first_section, section, shown_when, slider, text_input, with_labelled_side_bar, Curve, CurveControls, Labelled, zoom_controls, Shared};
 
 /// The data the line chart can show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -20,20 +20,6 @@ pub(crate) enum Data {
     Visitors,
     Gaps,
     Dense,
-}
-
-/// The kind of curve through the points; smooth curves take the tension slider's tension, and
-/// with none only the points are drawn.
-#[derive(Copy, Clone, Debug, PartialEq)]
-enum Curve {
-    None,
-    Straight,
-    Smooth,
-    Monotone,
-    StepsBefore,
-    StepsMiddle,
-    StepsMiddleVertical,
-    StepsAfter,
 }
 
 /// How a line goes on past a missing value.
@@ -99,8 +85,7 @@ impl Data {
 pub(crate) struct Options {
     title: LocalState<String>,
     data: LocalState<Data>,
-    curve: LocalState<Curve>,
-    tension: LocalState<Scalar>,
+    curve: CurveControls,
     gaps: LocalState<Gaps>,
     gap_width: LocalState<Scalar>,
     fill: LocalState<FillTo>,
@@ -117,8 +102,7 @@ impl Options {
         Options {
             title: LocalState::new("Readings".to_string()),
             data: LocalState::new(Data::Visitors),
-            curve: LocalState::new(Curve::Monotone),
-            tension: LocalState::new(0.4),
+            curve: CurveControls::new(Curve::Monotone),
             gaps: LocalState::new(Gaps::Break),
             gap_width: LocalState::new(3.0),
             fill: LocalState::new(FillTo::None),
@@ -153,24 +137,23 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Sensors with gaps").tag(Data::Gaps),
             Text::new("2000 noisy readings").tag(Data::Dense),
         )),
-        Picker::new("Curve", options.curve.clone(), (
+        Picker::new("Curve", options.curve.curve.clone(), (
             Text::new("None, only points").tag(Curve::None),
             Text::new("Straight").tag(Curve::Straight),
             Text::new("Smooth").tag(Curve::Smooth),
+            Text::new("Cardinal").tag(Curve::Cardinal),
+            Text::new("Catmull-Rom").tag(Curve::CatmullRom),
             Text::new("Monotone").tag(Curve::Monotone),
             Text::new("Steps before").tag(Curve::StepsBefore),
             Text::new("Steps in the middle").tag(Curve::StepsMiddle),
             Text::new("Steps in the middle, upright").tag(Curve::StepsMiddleVertical),
             Text::new("Steps after").tag(Curve::StepsAfter),
         )),
-        // Only smooth curves have a tension, only the sensors' data has gaps to bridge, and
-        // without a line there is nothing to bridge them with, nor an area to fill.
+        options.curve.sliders(),
+        // Only the sensors' data has gaps to bridge, and without a line there is nothing to bridge
+        // them with, nor an area to fill.
         shown_when(
-            Map1::read_map(options.curve.clone(), |curve: &Curve| *curve == Curve::Smooth),
-            slider("Tension", &options.tension, 0.0, 1.0, 0.05, |tension| format!("{tension:.2}"))
-        ),
-        shown_when(
-            Map2::read_map(options.data.clone(), options.curve.clone(), |data: &Data, curve: &Curve| *data == Data::Gaps && *curve != Curve::None),
+            Map2::read_map(options.data.clone(), options.curve.curve.clone(), |data: &Data, curve: &Curve| *data == Data::Gaps && *curve != Curve::None),
             VStack::new((
                 Picker::new("Gaps", options.gaps.clone(), (
                     Text::new("Break the line").tag(Gaps::Break),
@@ -185,7 +168,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             )).cross_axis_alignment(CrossAxisAlignment::Start)
         ),
         shown_when(
-            Map1::read_map(options.curve.clone(), |curve: &Curve| *curve != Curve::None),
+            options.curve.shows_line(),
             VStack::new((
                 Picker::new("Fill", options.fill.clone(), (
                     Text::new("None").tag(FillTo::None),
@@ -216,15 +199,7 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
 
 /// The lines of `data`.
 pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn AnyWidget> {
-    let interpolation = Map2::read_map(options.curve.clone(), options.tension.clone(), |curve: &Curve, tension: &Scalar| match curve {
-        Curve::None | Curve::Straight => Interpolation::Linear,
-        Curve::Smooth => Interpolation::Smooth { tension: *tension },
-        Curve::Monotone => Interpolation::Monotone,
-        Curve::StepsBefore => Interpolation::Stepped(Stepped::Before),
-        Curve::StepsMiddle => Interpolation::Stepped(Stepped::Middle),
-        Curve::StepsMiddleVertical => Interpolation::Stepped(Stepped::MiddleVertical),
-        Curve::StepsAfter => Interpolation::Stepped(Stepped::After),
-    });
+    let interpolation = options.curve.interpolation();
 
     let span_gaps = Map2::read_map(options.gaps.clone(), options.gap_width.clone(), |gaps: &Gaps, width: &Scalar| match gaps {
         Gaps::Break => SpanGaps::Never,
@@ -260,7 +235,7 @@ pub(super) fn chart(options: Options, shared: Shared, data: Data) -> Box<dyn Any
 
     shared.apply(Chart::new(LineController::new(lines)
         .horizontal(options.horizontal.clone())
-        .show_line(Map1::read_map(options.curve.clone(), |curve: &Curve| *curve != Curve::None)))
+        .show_line(options.curve.shows_line()))
         .title(options.title.clone())
         .scale(ScaleId::X, LinearScale::new(Axis::Horizontal).zoom(options.x_zoom.clone()).placed(&shared))
         .scale(ScaleId::Y, LinearScale::new(Axis::Vertical).zoom(options.y_zoom.clone()).fit_visible(options.fit_visible.clone()).placed(&shared)))

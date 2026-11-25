@@ -20,6 +20,22 @@ pub enum Interpolation {
     /// rises, and peaks stay at the points. Monotone cubic interpolation (Fritsch–Carlson). It
     /// assumes the points are in x order.
     Monotone,
+    /// A cardinal spline: a smooth curve through the points whose tangent at each point is
+    /// parallel to the line from the previous point to the next, as for `Smooth`, but with arms
+    /// of the same length on both sides. `tension` sets how tight the curve is: 0 is a uniform
+    /// Catmull-Rom spline, 1 draws straight lines. Like `Smooth`, it can overshoot the data
+    /// between points.
+    Cardinal {
+        tension: Scalar,
+    },
+    /// A Catmull-Rom spline: a smooth curve through the points, its tangents set by the distances
+    /// between them. `alpha` sets how much the distances count: 0 is the uniform spline, the same
+    /// curve as a cardinal spline with a tension of 0; 0.5, the centripetal spline, never forms a
+    /// loop or a cusp within a segment, however unevenly the points are spaced; 1 is the chordal
+    /// spline, which hugs the points more tightly.
+    CatmullRom {
+        alpha: Scalar,
+    },
     /// Horizontal and vertical steps between points.
     Stepped(Stepped),
 }

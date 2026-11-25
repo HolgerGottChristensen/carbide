@@ -109,8 +109,8 @@ fn segments(points: &[Position], interpolation: Interpolation, area: Rect) -> Ve
         // A tension of 0 is a straight line.
         Interpolation::Smooth { tension: 0.0 } => pairs.map(|_| Segment::Straight).collect(),
         Interpolation::Stepped(stepped) => pairs.map(|pair| Segment::Corners(step_corners(pair[0], pair[1], stepped))).collect(),
-        Interpolation::Smooth { tension } => {
-            let mut controls = spline_control_points(points, tension);
+        Interpolation::Smooth { .. } | Interpolation::Cardinal { .. } | Interpolation::CatmullRom { .. } => {
+            let mut controls = spline_control_points(points, interpolation);
             cap_control_points(points, &mut controls, area);
             curves(&controls)
         }
@@ -152,19 +152,37 @@ fn curves(controls: &[ControlPoints]) -> Vec<Segment> {
     controls.windows(2).map(|pair| Segment::Curve(pair[0].after, pair[1].before)).collect()
 }
 
-/// Control points for a tension spline through `points`: at each point, the tangent is parallel to
-/// the line from the previous point to the next, and its two arms are `tension` times that line's
-/// length, split in proportion to the distances to the two neighbours. The end points use
-/// themselves as their missing neighbour.
-fn spline_control_points(points: &[Position], tension: Scalar) -> Vec<ControlPoints> {
+/// Control points for the spline `interpolation` draws through `points` (see
+/// `spline_controls_at`). The end points use themselves as their missing neighbour.
+fn spline_control_points(points: &[Position], interpolation: Interpolation) -> Vec<ControlPoints> {
     let last = points.len().saturating_sub(1);
 
     (0..points.len())
         .map(|index| {
             let previous = points[index.saturating_sub(1)];
-            let current = points[index];
             let next = points[(index + 1).min(last)];
+            let (before, after) = spline_controls_at(interpolation, previous, points[index], next);
+            ControlPoints { before, after }
+        })
+        .collect()
+}
 
+/// The control points before and after `current` on the spline `interpolation` draws, from its
+/// neighbours `previous` and `next`. Only the splines whose control points depend on the
+/// neighbours alone are drawn this way: `Smooth`, `Cardinal` and `CatmullRom`; any other
+/// interpolation gets the point itself on both sides.
+///
+/// - `Smooth`: the tangent is parallel to the line from `previous` to `next`, and its two arms
+///   are `tension` times that line's length, split in proportion to the distances to the two
+///   neighbours.
+/// - `Cardinal`: the same tangent, with arms of a sixth of that line on both sides, shortened by
+///   `tension`.
+/// - `CatmullRom`: the Bézier form of the Catmull-Rom spline with the distances to the
+///   neighbours raised to `alpha` (Barry and Goldman's parametrisation). A neighbour at the
+///   same place as `current` gives the point itself on that side.
+pub(crate) fn spline_controls_at(interpolation: Interpolation, previous: Position, current: Position, next: Position) -> (Position, Position) {
+    match interpolation {
+        Interpolation::Smooth { tension } => {
             let d01 = distance(previous, current);
             let d12 = distance(current, next);
 
@@ -175,18 +193,55 @@ fn spline_control_points(points: &[Position], tension: Scalar) -> Vec<ControlPoi
                 (0.0, 0.0)
             };
 
-            let fa = tension * s01;
-            let fb = tension * s12;
-            let dx = next.x - previous.x;
-            let dy = next.y - previous.y;
+            let (fa, fb) = (tension * s01, tension * s12);
+            let (dx, dy) = (next.x - previous.x, next.y - previous.y);
 
-            ControlPoints {
-                before: Position::new(current.x - fa * dx, current.y - fa * dy),
-                after: Position::new(current.x + fb * dx, current.y + fb * dy),
-            }
-        })
-        .collect()
+            (
+                Position::new(current.x - fa * dx, current.y - fa * dy),
+                Position::new(current.x + fb * dx, current.y + fb * dy),
+            )
+        }
+        Interpolation::Cardinal { tension } => {
+            let arm = (1.0 - tension) / 6.0;
+            let (dx, dy) = (arm * (next.x - previous.x), arm * (next.y - previous.y));
+
+            (Position::new(current.x - dx, current.y - dy), Position::new(current.x + dx, current.y + dy))
+        }
+        Interpolation::CatmullRom { alpha } => {
+            // The distances to the neighbours, raised to alpha and to twice alpha.
+            let (to_previous, to_next) = (distance(previous, current), distance(current, next));
+            let (lp, ln) = (to_previous.powf(alpha), to_next.powf(alpha));
+            let (lp2, ln2) = (to_previous.powf(2.0 * alpha), to_next.powf(2.0 * alpha));
+
+            let before = if ln > EPSILON {
+                let (weight, divisor) = (2.0 * ln2 + 3.0 * ln * lp + lp2, 3.0 * ln * (ln + lp));
+                Position::new(
+                    (current.x * weight + previous.x * ln2 - next.x * lp2) / divisor,
+                    (current.y * weight + previous.y * ln2 - next.y * lp2) / divisor,
+                )
+            } else {
+                current
+            };
+
+            let after = if lp > EPSILON {
+                let (weight, divisor) = (2.0 * lp2 + 3.0 * lp * ln + ln2, 3.0 * lp * (lp + ln));
+                Position::new(
+                    (current.x * weight - previous.x * ln2 + next.x * lp2) / divisor,
+                    (current.y * weight - previous.y * ln2 + next.y * lp2) / divisor,
+                )
+            } else {
+                current
+            };
+
+            (before, after)
+        }
+        _ => (current, current),
+    }
 }
+
+/// Distances, raised to a Catmull-Rom spline's alpha, below which a neighbour is at the same
+/// place as the point.
+const EPSILON: Scalar = 1e-12;
 
 /// Control points for a monotone cubic through `points`, which are in x order: the curve never
 /// goes above or below both of a segment's end points, so it adds no peaks the data doesn't
@@ -314,9 +369,9 @@ fn sign(value: Scalar) -> i8 {
 
 #[cfg(test)]
 mod tests {
-    use carbide::draw::{Dimension, Position, Rect};
+    use carbide::draw::{Dimension, Position, Rect, Scalar};
     use crate::element::{Interpolation, Stepped};
-    use super::{cap_control_points, monotone_control_points, spline_control_points, trace_line, trace_line_reversed, PathSink};
+    use super::{cap_control_points, distance, monotone_control_points, spline_control_points, trace_line, trace_line_reversed, PathSink};
 
     /// The commands a path is traced with.
     #[derive(Debug, PartialEq)]
@@ -351,6 +406,8 @@ mod tests {
         for interpolation in [
             Interpolation::Linear,
             Interpolation::Smooth { tension: 0.4 },
+            Interpolation::Cardinal { tension: 0.3 },
+            Interpolation::CatmullRom { alpha: 0.5 },
             Interpolation::Monotone,
             Interpolation::Stepped(Stepped::Before),
             Interpolation::Stepped(Stepped::Middle),
@@ -405,7 +462,7 @@ mod tests {
 
         // On the same data, the tension spline dips below the segment from 10 to 11 before the
         // jump, so this data does tell the two apart.
-        let spline = spline_control_points(&points, 0.4);
+        let spline = spline_control_points(&points, Interpolation::Smooth { tension: 0.4 });
         assert!(spline[2].before.y < points[1].y, "the tension spline should overshoot here, at {}", spline[2].before.y);
     }
 
@@ -436,7 +493,7 @@ mod tests {
     #[test]
     fn spline_tangents_follow_the_neighbours() {
         let points = positions(&[(0.0, 0.0), (10.0, 10.0), (20.0, 0.0)]);
-        let controls = spline_control_points(&points, 0.5);
+        let controls = spline_control_points(&points, Interpolation::Smooth { tension: 0.5 });
 
         // Equal distances to both neighbours: each arm is 0.5 * 0.5 of the 20px from 0 to 20.
         assert_eq!(controls[1].before, Position::new(5.0, 10.0));
@@ -446,13 +503,74 @@ mod tests {
         assert_eq!(controls[0].before, points[0]);
     }
 
+    fn close(a: Position, b: Position) -> bool {
+        (a.x - b.x).abs() < 1e-9 && (a.y - b.y).abs() < 1e-9
+    }
+
+    /// A cardinal spline's arms are a sixth of the line from the previous point to the next on
+    /// both sides, shortened by the tension, and a tension of 1 puts the control points on the
+    /// points, so the curves are straight.
+    #[test]
+    fn cardinal_arms_are_even_and_shortened_by_the_tension() {
+        let points = positions(&[(0.0, 0.0), (10.0, 10.0), (40.0, 0.0)]);
+
+        let loose = spline_control_points(&points, Interpolation::Cardinal { tension: 0.0 });
+        assert!(close(loose[1].before, Position::new(10.0 - 40.0 / 6.0, 10.0)));
+        assert!(close(loose[1].after, Position::new(10.0 + 40.0 / 6.0, 10.0)));
+
+        let half = spline_control_points(&points, Interpolation::Cardinal { tension: 0.5 });
+        assert!(close(half[1].after, Position::new(10.0 + 20.0 / 6.0, 10.0)));
+
+        let tight = spline_control_points(&points, Interpolation::Cardinal { tension: 1.0 });
+        assert!(tight.iter().zip(&points).all(|(controls, point)| controls.before == *point && controls.after == *point));
+    }
+
+    /// A Catmull-Rom spline with an alpha of 0 is the uniform spline: the same curve as a
+    /// cardinal spline with a tension of 0, the ends included.
+    #[test]
+    fn uniform_catmull_rom_is_a_cardinal_spline_without_tension() {
+        let points = positions(&[(0.0, 50.0), (20.0, 80.0), (45.0, 30.0), (70.0, 60.0), (100.0, 40.0)]);
+
+        let uniform = spline_control_points(&points, Interpolation::CatmullRom { alpha: 0.0 });
+        let cardinal = spline_control_points(&points, Interpolation::Cardinal { tension: 0.0 });
+
+        for (uniform, cardinal) in uniform.iter().zip(&cardinal) {
+            assert!(close(uniform.before, cardinal.before) && close(uniform.after, cardinal.after), "{uniform:?} and {cardinal:?}");
+        }
+    }
+
+    /// On evenly spaced points the distances are all the same, so every alpha draws the uniform
+    /// spline; with a near neighbour on one side and a far one on the other, the centripetal and
+    /// chordal splines shorten the arm towards the near one, where the uniform spline would
+    /// overshoot it.
+    #[test]
+    fn catmull_rom_arms_follow_the_distances() {
+        let even = positions(&[(0.0, 0.0), (10.0, 10.0), (20.0, 0.0), (30.0, 10.0)]);
+        let uniform = spline_control_points(&even, Interpolation::CatmullRom { alpha: 0.0 });
+        for alpha in [0.5, 1.0] {
+            let spline = spline_control_points(&even, Interpolation::CatmullRom { alpha });
+            assert!(close(spline[1].before, uniform[1].before) && close(spline[1].after, uniform[1].after), "alpha {alpha}");
+        }
+
+        // Far from the previous point, near the next.
+        let uneven = positions(&[(0.0, 0.0), (100.0, 0.0), (102.0, 2.0)]);
+        let arm = |alpha: Scalar| {
+            let controls = spline_control_points(&uneven, Interpolation::CatmullRom { alpha });
+            distance(uneven[1], controls[1].after)
+        };
+        assert!(arm(0.5) < arm(0.0), "the centripetal arm, {}, should be shorter than the uniform one, {}", arm(0.5), arm(0.0));
+        assert!(arm(1.0) < arm(0.5), "the chordal arm, {}, should be shorter still than the centripetal one, {}", arm(1.0), arm(0.5));
+        // The segment to the near point is under 3px long; the centripetal arm stays within it.
+        assert!(arm(0.5) < distance(uneven[1], uneven[2]));
+    }
+
     /// Control points between two points inside the area are pulled into it; a single point or
     /// several at the same place don't produce NaNs.
     #[test]
     fn control_points_are_capped_to_the_area() {
         let area = Rect::new(Position::new(0.0, 0.0), Dimension::new(100.0, 100.0));
         let points = positions(&[(0.0, 50.0), (50.0, 100.0), (100.0, 50.0)]);
-        let mut controls = spline_control_points(&points, 1.0);
+        let mut controls = spline_control_points(&points, Interpolation::Smooth { tension: 1.0 });
         controls[1].before.y = 130.0;
         controls[1].after.y = 130.0;
 
@@ -461,7 +579,7 @@ mod tests {
         assert_eq!(controls[1].after.y, 100.0);
 
         let same = positions(&[(5.0, 5.0), (5.0, 5.0)]);
-        assert!(spline_control_points(&same, 0.4).iter().all(|c| c.before.x.is_finite() && c.after.y.is_finite()));
+        assert!(spline_control_points(&same, Interpolation::Smooth { tension: 0.4 }).iter().all(|c| c.before.x.is_finite() && c.after.y.is_finite()));
         assert!(monotone_control_points(&same).iter().all(|c| c.before.x.is_finite() && c.after.y.is_finite()));
         assert_eq!(monotone_control_points(&positions(&[(1.0, 2.0)])).len(), 1);
     }

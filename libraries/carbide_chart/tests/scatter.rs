@@ -43,3 +43,24 @@ fn with_lines() {
 
     harness.snapshot("with_lines");
 }
+
+/// The same unevenly spaced points three times, one above the other, through Catmull-Rom splines
+/// with an alpha of 0, 0.5 and 1, from the bottom. The points bunch up in the middle, two of them
+/// almost on top of each other. Pins down that the uniform spline overshoots and loops around
+/// the bunched points, the centripetal one passes them without a loop, and the chordal one hugs
+/// them tightest.
+#[test]
+fn catmull_rom_alphas() {
+    let shape = [(0.0, 0.0), (4.0, 6.0), (4.6, 6.4), (4.8, 5.6), (9.0, 1.0), (10.0, 4.0)];
+    let line = |alpha: f64, offset: f64| {
+        shape.iter().map(|(x, y)| (*x, y + offset)).collect::<Vec<_>>()
+            .interpolation(Interpolation::CatmullRom { alpha })
+    };
+
+    let chart = Chart::new(ScatterController::new((line(0.0, 0.0), line(0.5, 10.0), line(1.0, 20.0))).show_line(true))
+        .framed();
+
+    let mut harness = Harness::new(chart, Dimension::new(600.0, 600.0));
+
+    harness.snapshot("catmull_rom_alphas");
+}
