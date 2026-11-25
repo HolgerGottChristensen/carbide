@@ -86,19 +86,15 @@ impl KeyboardEventHandler for OrbitCamera {
         match event {
             KeyboardEvent::Press { key: Key::ArrowLeft, .. } => {
                 self.rig.borrow_mut().driver_mut::<YawPitch>().rotate_yaw_pitch(15.0, 0.0);
-                println!("Yaw");
             }
             KeyboardEvent::Press { key: Key::ArrowRight, .. } => {
                 self.rig.borrow_mut().driver_mut::<YawPitch>().rotate_yaw_pitch(-15.0, 0.0);
-                println!("Yaw");
             }
             KeyboardEvent::Press { key: Key::ArrowUp, .. } => {
                 self.rig.borrow_mut().driver_mut::<YawPitch>().rotate_yaw_pitch(0.0, -10.0);
-                println!("Yaw");
             }
             KeyboardEvent::Press { key: Key::ArrowDown, .. } => {
                 self.rig.borrow_mut().driver_mut::<YawPitch>().rotate_yaw_pitch(0.0, 10.0);
-                println!("Yaw");
             }
             _ => ()
         }
