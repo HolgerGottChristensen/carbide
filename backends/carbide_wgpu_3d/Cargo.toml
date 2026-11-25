@@ -11,7 +11,7 @@ authors = [
 
 [dependencies]
 wgpu.workspace = true
-carbide_wgpu.workspace = true
+carbide_wgpu_core.workspace = true
 carbide_core.workspace = true
 carbide_3d.workspace = true
 bytemuck.workspace = true

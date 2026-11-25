@@ -1,6 +1,5 @@
 use encase::ShaderType;
 use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, Device};
-use carbide_3d::InnerImageContext3d;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;
@@ -10,7 +9,6 @@ use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix3, Vector3, Vector4, Zero};
 use carbide_core::state::ReadState;
-use crate::image_context_3d::{ImageContext3d};
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
 pub struct WgpuPbrMaterial {
@@ -36,15 +34,10 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
-    pub(crate) fn from_material(material: &PbrMaterial, env: &mut Environment) -> Self {
+    /// The material's values, as the shader reads them. Textures are not loaded yet (see
+    /// `ImageContext3d`): the texture flags are set, but the shader doesn't sample them.
+    pub(crate) fn from_material(material: &PbrMaterial, _env: &mut Environment) -> Self {
         let albedo = material.albedo.value().to_value();
-
-        if let Some(image_id) = material.albedo.value().to_texture() {
-            load_image(image_id, env);
-        }
-        if let Some(image_id) = material.normal.value().to_texture() {
-            load_image(image_id, env);
-        }
 
         Self {
             uv_transform0: material.uv_transform0,
@@ -95,36 +88,6 @@ impl WgpuPbrMaterial {
     }
 }
 
-fn load_image(id: &ImageId, env: &mut Environment) {
-    if !ImageContext3d.texture_exist(id, env) {
-        /*let path = if id.is_relative() {
-            let assets = carbide_core::locate_folder::Search::KidsThenParents(3, 5)
-                .for_folder("assets")
-                .unwrap();
-
-            assets.join(id)
-        } else {
-            id.as_ref().to_path_buf()
-        };
-
-        let image = image::open(path)
-            .expect("Couldn't load image")
-            .pre_multiplied();
-
-        let texture = Texture {
-            width: image.width(),
-            height: image.height(),
-            bytes_per_row: image.width() * 4,
-            format: TextureFormat::RGBA8,
-            data: &image.to_rgba8().into_raw(),
-        };
-
-        ImageContext3d.update_texture(id.clone(), texture, env);*/
-
-        todo!()
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Hash, Eq, Default)]
 pub struct WgpuPbrMaterialTextures {
     pub(crate) albedo: ImageId,
@@ -159,23 +122,11 @@ pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
     })
 }
 
-pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, device: &Device) -> BindGroup {
-
-    let layout = create_pbr_bind_group_layout(device);
-
-    let views = &[
-        //TEXTURES.get(&textures.albedo).unwrap().create_view(&Default::default()),
-        //TEXTURES.get(&textures.normal).unwrap().create_view(&Default::default())
-    ];
-
+pub(crate) fn create_pbr_bind_group(_textures: &WgpuPbrMaterialTextures, layout: &BindGroupLayout, device: &Device) -> BindGroup {
+    // Textures are not loaded yet, so the layout has no entries, and neither has the bind group.
     device.create_bind_group(&BindGroupDescriptor {
-        label: None,
-        layout: &layout,
-        entries: &views.into_iter().enumerate().map(|(idx, view)| {
-            wgpu::BindGroupEntry {
-                binding: idx as u32,
-                resource: wgpu::BindingResource::TextureView(view),
-            }
-        }).collect::<Vec<_>>(),
+        label: Some("carbide_3d_pbr_textures"),
+        layout,
+        entries: &[],
     })
 }

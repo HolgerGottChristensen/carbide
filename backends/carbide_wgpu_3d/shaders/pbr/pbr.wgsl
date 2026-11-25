@@ -72,7 +72,7 @@ fn main_vs(
     var out: VertexOutput;
     out.position = model_view_proj * vec4<f32>(position, 1.0);
     out.view_position = model_view * vec4<f32>(position, 1.0);
-    out.normal = normalize(mv_mat3 * (inv_scale_sq * -normal));
+    out.normal = normalize(mv_mat3 * (inv_scale_sq * normal));
     out.tangent = normalize(mv_mat3 * (inv_scale_sq * tangent));
     //out.normal = normalize((inv_scale_sq * normal));
     //out.tangent = normalize((inv_scale_sq * tangent));
