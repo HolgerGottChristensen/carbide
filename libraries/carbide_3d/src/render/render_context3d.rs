@@ -4,7 +4,7 @@ use crate::mesh::Mesh;
 use carbide::draw::Color;
 use carbide::environment::Environment;
 use carbide::render::Layer;
-use carbide::math::{Matrix4, Vector3};
+use carbide::math::{Deg, Matrix4, Vector3};
 use crate::render::{InnerRenderContext3d, ViewSpec};
 
 pub struct RenderContext3d<'a, 'b: 'a> {
@@ -38,6 +38,14 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
 
     pub fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>) {
         self.render.directional(color, intensity, direction)
+    }
+
+    pub fn point(&mut self, color: Color, intensity: f32, range: Option<f32>) {
+        self.render.point(color, intensity, range)
+    }
+
+    pub fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>) {
+        self.render.spot(color, intensity, range, inner, outer)
     }
 }
 

@@ -1,6 +1,6 @@
 use carbide::color::Color;
 use carbide::environment::Environment;
-use carbide::math::{Matrix4, Vector3};
+use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::material::Material;
@@ -36,6 +36,12 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     }
 
     fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {
+    }
+
+    fn point(&mut self, _color: Color, _intensity: f32, _range: Option<f32>) {
+    }
+
+    fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>) {
     }
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {

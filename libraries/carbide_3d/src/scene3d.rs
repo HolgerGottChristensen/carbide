@@ -70,7 +70,7 @@ struct Scene3dContent<N> where N: Node3dSequence {
 }
 
 impl<N: Node3dSequence> Scene3d<N> {
-    /// A view of `nodes`, through a perspective camera at the origin looking along +Z.
+    /// A view of `nodes`, through a perspective camera at the origin looking along -Z.
     pub fn new(nodes: N) -> Scene3d<N> {
         Scene3d {
             id: WidgetId::new(),

@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{playground, Model, Options, ProjectionKind, Renderer, Views};
+    use super::playground::{playground, LightKind, Model, Options, ProjectionKind, Renderer, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -43,7 +43,7 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        for model in [Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall] {
+        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
                     for renderer in [Renderer::Wgpu, Renderer::None] {
@@ -57,8 +57,17 @@ mod tests {
             }
         }
 
+        *options.axes.clone().value_mut() = true;
+        harness.render();
+
         harness.drag(Position::new(300.0, 400.0), Position::new(400.0, 400.0), 5);
         harness.render();
+
+        // Each kind of light.
+        for kind in [LightKind::Point, LightKind::Spot, LightKind::Directional] {
+            *options.light_kind.clone().value_mut() = kind;
+            harness.render();
+        }
 
         // Spinning, with time moving on so the animation runs.
         *options.spin.clone().value_mut() = true;

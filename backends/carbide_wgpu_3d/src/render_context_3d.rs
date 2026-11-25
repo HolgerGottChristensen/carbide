@@ -8,7 +8,7 @@ use carbide_3d::render::{InnerRenderContext3d, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
-use carbide_core::math::{InnerSpace, Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
+use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 use carbide_core::render::{InnerLayer, Layer};
 use carbide_core::state::ReadState;
 use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
@@ -19,7 +19,7 @@ use crate::image_context_3d::ImageContext3d;
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
 use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, WgpuPbrMaterial, WgpuPbrMaterialTextures};
-use crate::point_light::WgpuPointLightBuffer;
+use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
 use crate::render_pass_command::RenderPassCommand;
 use crate::storage_buffer::StorageBuffer;
@@ -49,6 +49,8 @@ pub struct WgpuRenderContext3d {
     objects: Vec<WgpuObject>,
 
     directional_lights: Vec<WgpuDirectionalLight>,
+    /// Point and spot lights.
+    punctual_lights: Vec<WgpuPunctualLight>,
     /// The scene's hemisphere light: sky, ground and intensity, as last given.
     hemisphere: (Color, Color, f32),
 
@@ -94,6 +96,7 @@ impl WgpuRenderContext3d {
             transform_stack: vec![Matrix4::identity()],
             objects: vec![],
             directional_lights: vec![],
+            punctual_lights: vec![],
             hemisphere: (WHITE, WHITE, 0.1),
             fallback_mesh_cache: None,
             commands: vec![],
@@ -111,6 +114,7 @@ impl WgpuRenderContext3d {
         self.transform_stack.push(Matrix4::identity());
         self.objects.clear();
         self.directional_lights.clear();
+        self.punctual_lights.clear();
 
         self.commands.clear();
     }
@@ -144,6 +148,30 @@ impl WgpuRenderContext3d {
             self.commands.push(RenderPassCommand::SetPbrMaterial(tex.clone()))
         }
     }
+}
+
+impl WgpuRenderContext3d {
+    /// A point or spot light at the origin of the current transform, shining along its -Z.
+    fn punctual(&mut self, color: Color, intensity: f32, range: Option<f32>, cone_scale: f32, cone_offset: f32) {
+        let transform = *self.transform_stack.last().unwrap();
+        let direction = (transform * Vector4::new(0.0, 0.0, -1.0, 0.0)).truncate();
+        let direction = if direction.magnitude2() > f32::EPSILON { direction.normalize() } else { -Vector3::unit_z() };
+
+        self.punctual_lights.push(WgpuPunctualLight {
+            position: transform * Vector4::new(0.0, 0.0, 0.0, 1.0),
+            direction: direction.extend(0.0),
+            color: linear(color) * intensity,
+            range: range.unwrap_or(0.0).max(0.0),
+            cone_scale,
+            cone_offset,
+        });
+    }
+}
+
+/// `color` converted from sRGB to linear, as the 2D renderer converts colours, without alpha.
+fn linear(color: Color) -> Vector3<f32> {
+    let [r, g, b, _] = color.gamma_srgb_to_linear().to_fsa();
+    Vector3::new(r, g, b)
 }
 
 impl Default for WgpuRenderContext3d {
@@ -306,7 +334,8 @@ impl GpuState {
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
-                front_face: FrontFace::Cw,
+                // Right-handed, as OBJ and glTF: counter-clockwise triangles face the viewer.
+                front_face: FrontFace::Ccw,
                 cull_mode: Some(Face::Back),
                 unclipped_depth: false,
                 polygon_mode: PolygonMode::Fill,
@@ -453,7 +482,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         });
 
         let mut directional_lights = StorageBuffer::from(WgpuDirectionalLightBuffer::new(self.directional_lights.clone()));
-        let mut point_lights = StorageBuffer::from(WgpuPointLightBuffer::new(vec![]));
+        let mut point_lights = StorageBuffer::from(WgpuPunctualLightBuffer::new(self.punctual_lights.clone()));
 
         materials_buffer.write_buffer(device, queue);
         objects_buffer.write_buffer(device, queue);
@@ -608,12 +637,22 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
         self.directional_lights.push(WgpuDirectionalLight {
             view_proj: Matrix4::identity(),
-            color: Vector3::new(color.red(), color.green(), color.blue()) * intensity,
+            color: linear(color) * intensity,
             direction: world.normalize(),
             inv_resolution: Vector2::zero(),
             atlas_offset: Vector2::zero(),
             atlas_size: Vector2::zero(),
         })
+    }
+
+    fn point(&mut self, color: Color, intensity: f32, range: Option<f32>) {
+        self.punctual(color, intensity, range, 0.0, 1.0);
+    }
+
+    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>) {
+        let (cos_inner, cos_outer) = (Rad::from(inner).0.cos(), Rad::from(outer).0.cos());
+        let scale = 1.0 / (cos_inner - cos_outer).max(0.001);
+        self.punctual(color, intensity, range, scale, -cos_outer * scale);
     }
 
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32) {

@@ -7,16 +7,16 @@ use carbide::controls::slider::Slider;
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::ControlsExt;
 use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
-use carbide::d3::light::DirectionalLight;
+use carbide::d3::light::{DirectionalLight, PointLight, SpotLight};
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{Group, Mesh, Node3dExt, Node3dSequence, Object, Scene3d};
+use carbide::d3::{AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d};
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide::math::{Deg, Euler, Matrix4, Point3, SquareMatrix, Vector3};
-use carbide::state::{AnimatedState, LocalState, Map1, Map3, ReadState, State};
+use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
+use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, ReadState, State};
 use carbide::time::Duration;
 use carbide::ui;
 use carbide::widget::*;
@@ -26,6 +26,8 @@ use crate::meshes;
 /// The models to show.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Model {
+    /// No model: only the lights, and the axes when shown.
+    Empty,
     Cube,
     Sphere,
     Cubes,
@@ -47,6 +49,19 @@ pub enum ProjectionKind {
     Orthographic,
 }
 
+/// The kind of light lighting the model.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LightKind {
+    Directional,
+    /// A point light 2.5 metres from the model.
+    Point,
+    /// A spot light 2.5 metres from the model, aimed at it.
+    Spot,
+}
+
+/// How far point and spot lights are from the model, in metres.
+const LIGHT_DISTANCE: f32 = 2.5;
+
 /// The 3D renderer the views render with.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Renderer {
@@ -61,6 +76,8 @@ pub struct Options {
     pub model: LocalState<Model>,
     pub views: LocalState<Views>,
     pub renderer: LocalState<Renderer>,
+    /// Whether the axes are drawn at the origin.
+    pub axes: LocalState<bool>,
 
     pub color: LocalState<Color>,
     pub roughness: LocalState<Scalar>,
@@ -73,6 +90,9 @@ pub struct Options {
     pub light_azimuth: LocalState<Scalar>,
     pub light_elevation: LocalState<Scalar>,
     pub light_intensity: LocalState<Scalar>,
+    pub light_kind: LocalState<LightKind>,
+    /// The spot light's outer cone angle, in degrees; the inner angle is 60% of it.
+    pub spot_angle: LocalState<Scalar>,
 
     /// The views' background.
     pub background: LocalState<Color>,
@@ -95,6 +115,7 @@ impl Options {
             model: LocalState::new(Model::Cube),
             views: LocalState::new(Views::One),
             renderer: LocalState::new(Renderer::Wgpu),
+            axes: LocalState::new(false),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
             spin: LocalState::new(false),
@@ -102,6 +123,8 @@ impl Options {
             light_azimuth: LocalState::new(-35.0),
             light_elevation: LocalState::new(50.0),
             light_intensity: LocalState::new(5.0),
+            light_kind: LocalState::new(LightKind::Directional),
+            spot_angle: LocalState::new(20.0),
             background: LocalState::new(TRANSPARENT),
             ground: LocalState::new(WHITE),
             ambient: LocalState::new(0.1),
@@ -140,18 +163,52 @@ impl Options {
         Camera::perspective().projection(projection).view(self.view.clone())
     }
 
-    /// The direction the light shines in, from the side bar's angles of where it comes from: an
-    /// azimuth of 0° is from in front of the scene (the camera's side at the start, -Z), positive
-    /// to the right, and the height is degrees above the horizon.
-    fn light(&self) -> DirectionalLight<impl ReadState<T=Vector3<f32>> + Clone + use<>, Color, impl ReadState<T=f32> + Clone + use<>> {
-        let direction = carbide::state::Map2::read_map(self.light_azimuth.clone(), self.light_elevation.clone(), |azimuth: &Scalar, elevation: &Scalar| {
+    /// Where the light comes from, as a unit vector from the model, from the side bar's angles:
+    /// an azimuth of 0° is from in front of the scene (the camera's side at the start, +Z),
+    /// positive to the right, and the height is degrees above the horizon.
+    fn light_from(&self) -> impl ReadState<T=Vector3<f32>> + Clone + use<> {
+        Map2::read_map(self.light_azimuth.clone(), self.light_elevation.clone(), |azimuth: &Scalar, elevation: &Scalar| {
             let (azimuth, elevation) = ((*azimuth as f32).to_radians(), (*elevation as f32).to_radians());
-            let from = Vector3::new(elevation.cos() * azimuth.sin(), elevation.sin(), -elevation.cos() * azimuth.cos());
-            -from
-        });
+            Vector3::new(elevation.cos() * azimuth.sin(), elevation.sin(), elevation.cos() * azimuth.cos())
+        })
+    }
 
-        DirectionalLight::new(direction)
-            .intensity(Map1::read_map(self.light_intensity.clone(), |intensity: &Scalar| *intensity as f32))
+    /// The side bar's intensity for a light of `kind`, and none for the others. The side bar
+    /// gives the illuminance at the model in lux, so point and spot lights get it times the
+    /// distance squared, in candela: switching kinds keeps the model as bright.
+    fn intensity_for(&self, kind: LightKind) -> impl ReadState<T=f32> + Clone + use<> {
+        Map2::read_map(self.light_kind.clone(), self.light_intensity.clone(), move |current: &LightKind, lux: &Scalar| {
+            match (*current == kind, kind) {
+                (false, _) => 0.0,
+                (true, LightKind::Directional) => *lux as f32,
+                (true, _) => *lux as f32 * LIGHT_DISTANCE * LIGHT_DISTANCE,
+            }
+        })
+    }
+
+    /// The three lights, of which only the side bar's kind shines.
+    fn lights(&self) -> Vec<Box<dyn AnyNode3d>> {
+        let from = self.light_from();
+        let position = Map1::read_map(from.clone(), |from: &Vector3<f32>| from * LIGHT_DISTANCE);
+        // The spot light shines along its -Z: turn -Z to point back at the model.
+        let aim = Map1::read_map(from.clone(), |from: &Vector3<f32>| Rotation(Quaternion::from_arc(-Vector3::unit_z(), -*from, None)));
+        let outer = Map1::read_map(self.spot_angle.clone(), |angle: &Scalar| Deg(*angle as f32));
+        let inner = Map1::read_map(self.spot_angle.clone(), |angle: &Scalar| Deg(*angle as f32 * 0.6));
+
+        vec![
+            DirectionalLight::new(Map1::read_map(from, |from: &Vector3<f32>| -*from))
+                .intensity(self.intensity_for(LightKind::Directional))
+                .boxed(),
+            PointLight::new()
+                .intensity(self.intensity_for(LightKind::Point))
+                .position(position.clone())
+                .boxed(),
+            SpotLight::new(inner, outer)
+                .intensity(self.intensity_for(LightKind::Spot))
+                .rotation(aim)
+                .position(position)
+                .boxed(),
+        ]
     }
 
     /// The model's rotation around the vertical axis: a full turn every eight seconds while
@@ -198,9 +255,11 @@ impl Options {
     }
 }
 
-/// The main camera's starting point: above and in front of the origin, looking at it.
+/// The main camera's starting point, looking at the origin: 30° above the horizon and turned 35°
+/// around the vertical axis towards +X, about 2.8 metres away, so it sees the front, right and top,
+/// and all three positive axes.
 fn default_view() -> Matrix4<f32> {
-    look_at(Point3::new(0.0, 1.2, -2.5), Point3::new(0.0, 0.0, 0.0))
+    look_at(Point3::new(1.4, 1.4, 2.0), Point3::new(0.0, 0.0, 0.0))
 }
 
 /// The nodes of `model`, all with the side bar's material, in a group turned by the side bar, and
@@ -209,6 +268,7 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
     let mut parts: Vec<Box<dyn AnyNode3d>> = vec![];
 
     match model {
+        Model::Empty => {}
         Model::Cube => {
             parts.push(Object::new(Mesh::cube(1.0), options.material()).boxed());
         }
@@ -233,10 +293,11 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
         }
     }
 
-    vec![
-        options.light().boxed(),
-        Group::new(parts).rotation(options.rotation()).boxed(),
-    ]
+    let mut nodes = options.lights();
+    nodes.push(Group::new(parts).rotation(options.rotation()).boxed());
+    // The scene's axes, which don't turn with the model.
+    nodes.push(AxisHelper::new(1.0).shown(options.axes.clone()).boxed());
+    nodes
 }
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
@@ -252,7 +313,7 @@ fn views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
         .controller(OrbitController::new().height(0.1, 10.0));
 
     let front = options.look(scene)
-        .camera(Camera::orthographic(2.0).look_at(Point3::new(0.0, 0.0, -5.0), Point3::new(0.0, 0.0, 0.0)))
+        .camera(Camera::orthographic(2.0).look_at(Point3::new(0.0, 0.0, 5.0), Point3::new(0.0, 0.0, 0.0)))
         .controller(OrbitController::new());
 
     // The clone of `main` gets a copy of its camera; giving it the main camera again keeps it on
@@ -280,6 +341,7 @@ pub fn playground(options: Options) -> impl Widget {
 
     let scene = ui!(
         match model {
+            Model::Empty => views(Model::Empty, &o),
             Model::Cube => views(Model::Cube, &o),
             Model::Sphere => views(Model::Sphere, &o),
             Model::Cubes => views(Model::Cubes, &o),
@@ -310,6 +372,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     let scene = VStack::new((
         heading("Scene"),
         Picker::new("Model", options.model.clone(), (
+            Text::new("Empty").tag(Model::Empty),
             Text::new("A cube").tag(Model::Cube),
             Text::new("A sphere").tag(Model::Sphere),
             Text::new("A grid of cubes").tag(Model::Cubes),
@@ -323,6 +386,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("wgpu").tag(Renderer::Wgpu),
             Text::new("None").tag(Renderer::None),
         )),
+        Toggle::new("Show axes", options.axes.clone()),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let material = VStack::new((
@@ -367,9 +431,18 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
 
     let light = VStack::new((
         heading("Light"),
+        Picker::new("Kind", options.light_kind.clone(), (
+            Text::new("Directional").tag(LightKind::Directional),
+            Text::new("Point, 2.5 m away").tag(LightKind::Point),
+            Text::new("Spot, 2.5 m away").tag(LightKind::Spot),
+        )),
         slider("From", &options.light_azimuth, -180.0, 180.0, degrees),
         slider("Height", &options.light_elevation, -90.0, 90.0, degrees),
-        slider("Intensity", &options.light_intensity, 0.0, 20.0, |value| format!("{value:.1}")),
+        slider("Lux at model", &options.light_intensity, 0.0, 20.0, |value| format!("{value:.1}")),
+        shown_when(
+            Map1::read_map(options.light_kind.clone(), |kind: &LightKind| *kind == LightKind::Spot),
+            slider("Spot cone", &options.spot_angle, 5.0, 60.0, degrees),
+        ),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let camera = VStack::new((

@@ -17,10 +17,10 @@ mod common;
 /// cube is in front of it.
 fn cube_scene(material: PbrMaterial) -> impl Widget {
     let cube = Object::new(Mesh::cube(1.0), material)
-        .position(Vector3::new(0.0, 0.0, 3.0))
-        .rotation(Euler::new(Deg(25.0), Deg(35.0), Deg(0.0)));
+        .position(Vector3::new(0.0, 0.0, -3.0))
+        .rotation(Euler::new(Deg(-25.0), Deg(-35.0), Deg(0.0)));
 
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     Scene3d::new((cube, light))
         .border()

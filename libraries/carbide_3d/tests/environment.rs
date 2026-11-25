@@ -23,11 +23,11 @@ fn size() -> Dimension {
 /// A red cube turned so three faces show, lit by one bright directional light.
 fn lit_cube() -> Scene3d<impl Node3dSequence> {
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED))
-        .rotation(Euler::new(Deg(25.0), Deg(35.0), Deg(0.0)));
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+        .rotation(Euler::new(Deg(-25.0), Deg(-35.0), Deg(0.0)));
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     Scene3d::new((cube, light))
-        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, -3.0), Point3::new(0.0, 0.0, 0.0)))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 3.0), Point3::new(0.0, 0.0, 0.0)))
 }
 
 /// An empty view whose background is the theme's system background, the colour the window is
@@ -65,7 +65,7 @@ fn a_hemisphere_lights_from_above_and_below() {
 
     let scene = Scene3d::new(sphere)
         .hemisphere(WHITE, rgba_bytes(160, 90, 40, 1.0), 0.8)
-        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, -3.0), Point3::new(0.0, 0.0, 0.0)))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 3.0), Point3::new(0.0, 0.0, 0.0)))
         .border().color(BLUE).padding(20.0);
 
     let mut harness = Harness::new(scene, size());
@@ -113,7 +113,7 @@ fn each_view_has_its_own_tonemapping() {
 fn ambient_light_is_shared_by_every_view() {
     let sphere = Object::new(Mesh::icosphere(1.0, 3), PbrMaterial::new().color(WHITE));
     let scene = Scene3d::new(sphere)
-        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, -3.0), Point3::new(0.0, 0.0, 0.0)));
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 3.0), Point3::new(0.0, 0.0, 0.0)));
 
     let first = scene.clone();
     let second = scene.ambient(rgba_bytes(80, 200, 120, 1.0), 0.8);

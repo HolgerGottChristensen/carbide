@@ -88,7 +88,8 @@ impl OrbitController {
         let current_azimuth = offset.x.atan2(offset.z).to_degrees();
         let current_elevation = (offset.y / distance).clamp(-1.0, 1.0).asin().to_degrees();
 
-        let new_azimuth = (current_azimuth + azimuth).to_radians();
+        // In right-handed space, moving the camera to its left lowers this azimuth.
+        let new_azimuth = (current_azimuth - azimuth).to_radians();
         let new_elevation = (current_elevation + elevation).clamp(-MAX_ELEVATION, MAX_ELEVATION).to_radians();
 
         let offset = Vector3::new(

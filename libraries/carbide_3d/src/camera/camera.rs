@@ -21,7 +21,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    /// A camera with the given projection, at the origin looking along +Z, with +Y up.
+    /// A camera with the given projection, at the origin looking along -Z, with +Y up.
     pub fn new(projection: Projection) -> Camera {
         Camera {
             view: LocalState::new(Matrix4::identity()).as_dyn(),
@@ -109,9 +109,10 @@ impl Camera {
     }
 }
 
-/// The view matrix of a camera at `eye`, looking at `target`, with +Y up.
+/// The view matrix of a camera at `eye`, looking at `target`, with +Y up. carbide_3d's space is
+/// right-handed: +X right, +Y up and +Z towards the viewer, so an unturned camera looks along -Z.
 pub fn look_at(eye: Point3<f32>, target: Point3<f32>) -> Matrix4<f32> {
-    Matrix4::look_at_lh(eye, target, Vector3::unit_y())
+    Matrix4::look_at_rh(eye, target, Vector3::unit_y())
 }
 
 impl Default for Camera {

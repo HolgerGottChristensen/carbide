@@ -20,7 +20,7 @@ fn size() -> Dimension {
 
 /// A camera 4 units in front of the origin, slightly above, looking at it.
 fn camera() -> Camera {
-    Camera::perspective().look_at(Point3::new(0.0, 1.0, -4.0), Point3::new(0.0, 0.0, 0.0))
+    Camera::perspective().look_at(Point3::new(0.0, 1.0, 4.0), Point3::new(0.0, 0.0, 0.0))
 }
 
 fn framed(scene: impl Widget) -> impl Widget {
@@ -36,9 +36,9 @@ fn a_rotated_group_turns_its_nodes_together() {
         Object::new(Mesh::cube(0.8), PbrMaterial::new().color(RED)).position(Vector3::new(-0.8, 0.0, 0.0)),
         Object::new(Mesh::cube(0.8), PbrMaterial::new().color(GREEN)).position(Vector3::new(0.8, 0.0, 0.0)),
     ))
-        .rotation(Euler::new(Deg(0.0), Deg(45.0), Deg(0.0)));
+        .rotation(Euler::new(Deg(0.0), Deg(-45.0), Deg(0.0)));
 
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     let mut harness = Harness::new(framed(Scene3d::new((pair, light)).camera(camera())), size());
     harness.snapshot("turned");
@@ -56,11 +56,11 @@ fn a_pivot_is_what_a_node_turns_around() {
         .rotation(turn)
         .position(Vector3::new(-1.0, 0.0, 0.0));
     let corner = Object::new(Mesh::cube(0.8), PbrMaterial::new().color(ORANGE))
-        .pivot(Vector3::new(0.4, 0.4, -0.4))
+        .pivot(Vector3::new(0.4, 0.4, 0.4))
         .rotation(turn)
         .position(Vector3::new(1.0, 0.0, 0.0));
 
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     let mut harness = Harness::new(framed(Scene3d::new((centre, corner, light)).camera(camera())), size());
     harness.snapshot("turned");
@@ -74,12 +74,12 @@ fn a_rotation_follows_its_state() {
     let mut rotation = LocalState::new(Euler::new(Deg(0.0f32), Deg(0.0), Deg(0.0)));
 
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED)).rotation(rotation.clone());
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     let mut harness = Harness::new(framed(Scene3d::new((cube, light)).camera(camera())), size());
     harness.snapshot("still");
 
-    *rotation.value_mut() = Euler::new(Deg(0.0), Deg(45.0), Deg(0.0));
+    *rotation.value_mut() = Euler::new(Deg(0.0), Deg(-45.0), Deg(0.0));
     harness.snapshot("turned");
 }
 
@@ -90,10 +90,10 @@ fn a_rotation_follows_its_state() {
 #[test]
 fn an_animated_rotation_follows_the_clock() {
     let angle = AnimatedState::linear().duration(Duration::from_secs(8)).repeat().range(0.0, 360.0);
-    let rotation = Map1::read_map(angle, |angle: &f64| Euler::new(Deg(0.0), Deg(*angle as f32), Deg(0.0)));
+    let rotation = Map1::read_map(angle, |angle: &f64| Euler::new(Deg(0.0), Deg(-*angle as f32), Deg(0.0)));
 
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED)).rotation(rotation);
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     let mut harness = Harness::new(framed(Scene3d::new((cube, light)).camera(camera())), size());
     harness.snapshot("start");
@@ -112,13 +112,13 @@ fn a_light_turns_with_its_group() {
     let mut rotation = LocalState::new(Euler::new(Deg(0.0f32), Deg(0.0), Deg(0.0)));
 
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED));
-    let light = Group::new(DirectionalLight::new(Vector3::new(0.0, 0.0, 1.0)).intensity(5.0))
+    let light = Group::new(DirectionalLight::new(Vector3::new(0.0, 0.0, -1.0)).intensity(5.0))
         .rotation(rotation.clone());
 
-    let camera = Camera::perspective().look_at(Point3::new(0.0, 0.0, -3.0), Point3::new(0.0, 0.0, 0.0));
+    let camera = Camera::perspective().look_at(Point3::new(0.0, 0.0, 3.0), Point3::new(0.0, 0.0, 0.0));
     let mut harness = Harness::new(framed(Scene3d::new((cube, light)).camera(camera)), size());
     harness.snapshot("front_lit");
 
-    *rotation.value_mut() = Euler::new(Deg(0.0), Deg(180.0), Deg(0.0));
+    *rotation.value_mut() = Euler::new(Deg(0.0), Deg(-180.0), Deg(0.0));
     harness.snapshot("front_dark");
 }

@@ -9,7 +9,7 @@ use carbide_3d::{InnerImageContext3d, Mesh, NoopImageContext3d, Scene3d};
 use carbide_core::color::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
-use carbide_core::math::{Matrix4, Vector3};
+use carbide_core::math::{Deg, Matrix4, Vector3};
 use carbide_core::render::Layer;
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::EnvUpdatingNew2;
@@ -54,6 +54,10 @@ impl InnerRenderContext3d for RecordingContext {
     fn pop_transform(&mut self) {}
 
     fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {}
+
+    fn point(&mut self, _color: Color, _intensity: f32, _range: Option<f32>) {}
+
+    fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>) {}
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {}
 

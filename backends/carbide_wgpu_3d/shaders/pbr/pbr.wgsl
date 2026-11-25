@@ -39,7 +39,7 @@ var<storage> camera: Camera;
 @group(1) @binding(0)
 var<storage> directional_lights: DirectionalLights;
 @group(1) @binding(1)
-var<storage> point_lights: PointLights;
+var<storage> punctual_lights: PunctualLights;
 @group(1) @binding(2)
 var primary_sampler: sampler;
 @group(1) @binding(3)
@@ -103,6 +103,11 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     if (pixel.albedo.a < material.alpha_cutout) {
         discard;
+    }
+
+    // Unlit materials show their colour as it is: no lighting, exposure or tone mapping.
+    if ((material.flags & 0x2000u) != 0u) {
+        return pixel.albedo;
     }
     pixel.normal = get_normal(material, primary_sampler, in, coords, uvdx, uvdy);
 
@@ -194,6 +199,21 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
     let ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up);
     let ambient = vec4<f32>(ambient_light * pixel.albedo.rgb, pixel.albedo.a);
+
+    // Point and spot lights, in view space like everything else here.
+    for (var i = 0; i < i32(punctual_lights.count); i += 1) {
+        let light = punctual_lights.data[i];
+
+        let to_light = (camera.view * light.position).xyz - in.view_position.xyz;
+        let distance = length(to_light);
+        let l = to_light / max(distance, 0.0001);
+
+        let axis = normalize((camera.view * light.direction).xyz + vec3<f32>(0.0, 0.0, 1e-9));
+        let attenuation = distance_attenuation(distance, light.range)
+            * cone_attenuation(dot(-l, axis), light.cone_scale, light.cone_offset);
+
+        color += surface_shading(l, light.color * attenuation, pixel, v, pixel.ambient_occlusion);
+    }
 
     // Ambient light adds to the light from the scene's lights.
     let lit = ambient.rgb + color;

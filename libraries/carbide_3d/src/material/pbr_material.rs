@@ -89,6 +89,13 @@ impl PbrMaterial {
         }
     }
 
+    /// Show the material's colour as it is, unaffected by lights, exposure and tone mapping: for
+    /// helpers such as axes, and for labels and markers that must keep their exact colour.
+    pub fn unlit(mut self) -> PbrMaterial {
+        self.unlit = true;
+        self
+    }
+
     pub fn roughness<R: IntoReadState<Option<f32>>>(self, roughness: R) -> PbrMaterial {
         PbrMaterial {
             roughness_factor: roughness.into_dyn_read_state(),

@@ -2,7 +2,7 @@ use dyn_clone::DynClone;
 use carbide::any_debug::AnyDebug;
 use carbide::color::Color;
 use carbide::environment::Environment;
-use carbide::math::{Matrix4, Vector3};
+use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::render::ViewSpec;
@@ -29,6 +29,14 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     /// A directional light. `direction` is the way the light shines, in the space of the current
     /// transform: a light inside a rotated group turns with it.
     fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>);
+
+    /// A point light at the origin of the current transform. `intensity` is in candela, `range`
+    /// (in metres) is where it has faded to nothing, and `color` is in sRGB.
+    fn point(&mut self, color: Color, intensity: f32, range: Option<f32>);
+
+    /// A spot light at the origin of the current transform, shining along its -Z: full brightness
+    /// within `inner` of its axis, dark beyond `outer`. Otherwise as [`point`](Self::point).
+    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>);
 
     /// The scene's ambient light: `sky` lights surfaces facing up, `ground` surfaces facing down,
     /// blended by each surface's normal, both times `intensity`. Colours are in sRGB.

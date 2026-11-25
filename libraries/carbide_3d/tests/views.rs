@@ -23,15 +23,15 @@ fn two_views_of_one_scene() {
     let mut color = LocalState::new(RED);
 
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(color.clone()))
-        .rotation(Euler::new(Deg(0.0), Deg(30.0), Deg(0.0)));
-    let light = DirectionalLight::new(carbide_core::math::Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+        .rotation(Euler::new(Deg(0.0), Deg(-30.0), Deg(0.0)));
+    let light = DirectionalLight::new(carbide_core::math::Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     let scene = Scene3d::new((cube, light))
-        .camera(Camera::perspective().look_at(Point3::new(-2.0, 2.0, -3.0), Point3::new(0.0, 0.0, 0.0)));
+        .camera(Camera::perspective().look_at(Point3::new(-2.0, 2.0, 3.0), Point3::new(0.0, 0.0, 0.0)));
 
     let views = HStack::new((
         scene.clone().border().color(BLUE),
-        scene.camera(Camera::orthographic(2.5).look_at(Point3::new(0.0, 0.0, -5.0), Point3::new(0.0, 0.0, 0.0)))
+        scene.camera(Camera::orthographic(2.5).look_at(Point3::new(0.0, 0.0, 5.0), Point3::new(0.0, 0.0, 0.0)))
             .border().color(BLUE),
     ))
         .padding(20.0);

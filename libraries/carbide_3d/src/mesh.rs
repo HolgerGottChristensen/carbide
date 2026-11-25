@@ -6,7 +6,6 @@ use std::sync::{Arc, Weak};
 
 use carbide::impl_state_value;
 
-use crate::handedness::Handedness;
 use crate::vertex::Vertex;
 use tobj::Model;
 use carbide::math::{InnerSpace, Vector2, Vector3, Zero};
@@ -25,8 +24,9 @@ impl MeshId {
 
 /// Triangles, as vertices and indices into them, three per triangle.
 ///
-/// The renderer draws the side a triangle's vertices go round clockwise, seen from that side, in
-/// carbide_3d's left-handed space. Vertex normals point out of that side.
+/// The renderer draws the side a triangle's vertices go round counter-clockwise, seen from that
+/// side, in carbide_3d's right-handed space (+X right, +Y up, +Z towards the viewer), as OBJ and
+/// glTF do. Vertex normals point out of that side.
 ///
 /// A mesh is a cheap handle to data that never changes: cloning it shares the data, and a renderer
 /// uploads the data once for every clone, in every view. A changed mesh is a new mesh, with a new
@@ -42,7 +42,6 @@ pub struct Mesh {
 
 #[derive(Clone)]
 struct MeshData {
-    handedness: Handedness,
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
 }
@@ -79,7 +78,6 @@ impl_state_value!(Mesh);
 impl Mesh {
     pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>) -> Mesh {
         Mesh::from_data(MeshData {
-            handedness: Default::default(),
             vertices,
             indices,
         })
@@ -110,10 +108,6 @@ impl Mesh {
         &self.data.indices
     }
 
-    pub fn handedness(&self) -> Handedness {
-        self.data.handedness
-    }
-
     /// A reference to the data that doesn't keep it alive.
     pub fn downgrade(&self) -> WeakMesh {
         WeakMesh(Arc::downgrade(&self.data))
@@ -134,9 +128,10 @@ impl Mesh {
 
         for normal in normals {
             // Seen from outside, looking along -normal: pick an up direction, and the right
-            // direction follows (left-handed: right = up × view direction).
-            let up = if normal.y.abs() > 0.5 { Vector3::unit_z() } else { Vector3::unit_y() };
-            let right = up.cross(-normal).normalize();
+            // direction follows (right-handed: right = view direction × up). Texture coordinates
+            // run along right (u) and down (v), so they read correctly from outside.
+            let up = if normal.y.abs() > 0.5 { -Vector3::unit_z() } else { Vector3::unit_y() };
+            let right = (-normal).cross(up).normalize();
 
             let center = normal * half;
             let corners = [
@@ -151,7 +146,9 @@ impl Mesh {
                 vertices.push(Vertex::new(corner).normal(normal).texture_coords_0(coords));
             }
 
-            indices.extend([first, first + 1, first + 2, first, first + 2, first + 3]);
+            // Top left, bottom right, top right; top left, bottom left, bottom right: counter-
+            // clockwise seen from outside.
+            indices.extend([first, first + 2, first + 1, first, first + 3, first + 2]);
         }
 
         Mesh::new(vertices, indices).calculate_tangents()
@@ -163,7 +160,7 @@ impl Mesh {
         let (x, z) = (width / 2.0, depth / 2.0);
         let up = Vector3::unit_y();
 
-        // Clockwise seen from above, with +X right and +Z away.
+        // Counter-clockwise seen from above, with +X right and +Z towards the viewer.
         let vertices = vec![
             Vertex::new(Vector3::new(-x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(0.0, 0.0)),
             Vertex::new(Vector3::new(x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(1.0, 0.0)),
@@ -190,7 +187,8 @@ impl Mesh {
             [Z, X, N], [-Z, X, N], [Z, -X, N], [-Z, -X, N],
         ];
 
-        // Wound the other way round from the source, so they are clockwise seen from outside.
+        // Wound the other way round from the source, so they are counter-clockwise seen from
+        // outside.
         const INDICES: [[u32; 3]; 20] = [
             [0, 1, 4], [0, 4, 9], [9, 4, 5], [4, 8, 5], [4, 1, 8],
             [8, 1, 10], [8, 10, 3], [5, 8, 3], [5, 3, 2], [2, 3, 7],
@@ -244,7 +242,7 @@ impl Mesh {
             .collect::<Vec<_>>();
         let indices = (0..vertices.len() as u32).collect::<Vec<u32>>();
 
-        Mesh::new(vertices, indices).calculate_normals(Handedness::Left)
+        Mesh::new(vertices, indices).calculate_normals()
     }
 
     /// The meshes of the OBJ file at `path`, one per object or group in it, triangulated with one
@@ -255,9 +253,9 @@ impl Mesh {
         Ok(models.into_iter().map(Mesh::from).collect())
     }
 
-    /// Calculate each vertex's normal from the triangles it is part of, wound as `handedness`
-    /// says, and normalise it. Replaces the normals the vertices had.
-    pub fn calculate_normals(self, handedness: Handedness) -> Self {
+    /// Calculate each vertex's normal from the triangles it is part of, pointing out of the side
+    /// they go round counter-clockwise, and normalise it. Replaces the normals the vertices had.
+    pub fn calculate_normals(self) -> Self {
         let mut data = self.into_data();
 
         for vertex in &mut data.vertices {
@@ -272,7 +270,7 @@ impl Mesh {
             let edge1 = pos1 - pos0;
             let edge2 = pos2 - pos0;
 
-            let normal = if handedness == Handedness::Left { edge1.cross(edge2) } else { edge2.cross(edge1) };
+            let normal = edge1.cross(edge2);
 
             data.vertices[chunk[0] as usize].normal += normal;
             data.vertices[chunk[1] as usize].normal += normal;
@@ -361,9 +359,8 @@ impl From<Model> for Mesh {
 
         let mesh = Mesh::new(vertices, mesh.indices);
 
-        // OBJ files wind counter-clockwise in their right-handed space, which is clockwise in
-        // carbide_3d's left-handed one: the left-handed rule gives outward normals.
-        let mesh = if has_normals { mesh } else { mesh.calculate_normals(Handedness::Left) };
+        // OBJ files are right-handed and wind counter-clockwise, as carbide_3d does.
+        let mesh = if has_normals { mesh } else { mesh.calculate_normals() };
 
         mesh.calculate_tangents()
     }
@@ -407,7 +404,7 @@ mod tests {
             vertex.normal = Vector3::new(0.0, 0.0, 0.0);
         }
 
-        let mesh = Mesh::new(vertices, cube.indices().to_vec()).calculate_normals(crate::Handedness::Left);
+        let mesh = Mesh::new(vertices, cube.indices().to_vec()).calculate_normals();
         assert_outward_unit_normals(&mesh);
     }
 
@@ -421,16 +418,16 @@ mod tests {
     #[test]
     fn tangents_follow_the_texture_coordinates() {
         // The cube's faces have u along their right direction, so the tangent is that direction:
-        // for the front face (normal -Z), +X.
+        // for the front face (normal +Z, facing the default camera), +X.
         let cube = Mesh::cube(1.0);
-        let front = cube.vertices().iter().find(|vertex| vertex.normal.z < -0.5).unwrap();
+        let front = cube.vertices().iter().find(|vertex| vertex.normal.z > 0.5).unwrap();
         assert!((front.tangent - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1e-4, "tangent {:?}", front.tangent);
     }
 
     #[test]
     fn an_obj_without_normals_gets_outward_normals() {
-        // A tetrahedron around the origin, counter-clockwise seen from outside in OBJ's
-        // right-handed space, with no normals or texture coordinates.
+        // A tetrahedron around the origin, counter-clockwise seen from outside, with no normals
+        // or texture coordinates.
         let obj = "v 0 1 0\nv -1 -1 1\nv 1 -1 1\nv 0 -1 -1\nf 1 2 3\nf 1 3 4\nf 1 4 2\nf 2 4 3\n";
         let (models, _) = tobj::load_obj_buf(&mut obj.as_bytes(), &tobj::GPU_LOAD_OPTIONS, |_| Ok(Default::default())).unwrap();
 

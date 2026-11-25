@@ -16,10 +16,10 @@ mod common;
 /// in front of it, slightly above.
 fn cube_scene() -> Scene3d<impl Node3dSequence> {
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED));
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(5.0);
 
     Scene3d::new((cube, light))
-        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.5, -3.0), Point3::new(0.0, 0.0, 0.0)))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.5, 3.0), Point3::new(0.0, 0.0, 0.0)))
 }
 
 /// A view with an orbit controller, dragged to the right and then down. Pins down that dragging
@@ -75,7 +75,7 @@ fn pinching_zooms_the_camera() {
 #[test]
 fn pinching_zooms_an_orthographic_camera() {
     let scene = cube_scene()
-        .camera(Camera::orthographic(3.0).look_at(Point3::new(0.0, 0.5, -3.0), Point3::new(0.0, 0.0, 0.0)))
+        .camera(Camera::orthographic(3.0).look_at(Point3::new(0.0, 0.5, 3.0), Point3::new(0.0, 0.0, 0.0)))
         .controller(OrbitController::new())
         .border().color(BLUE).padding(20.0);
 

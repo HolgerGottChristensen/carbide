@@ -11,6 +11,12 @@ use crate::render::{Render3d, RenderContext3d};
 /// A state of a `Quaternion<f32>`, an `Euler<Deg<f32>>` or an `Euler<Rad<f32>>` converts into it,
 /// so a rotation can be given in whichever form suits, for example Euler angles from a slider.
 /// For an axis and an angle, use [`Rotation::axis_angle`].
+///
+/// Euler angles compose as cgmath composes them: `Rx · Ry · Rz`, so the rotation about Z is applied
+/// first and the one about X last. Positive angles turn counter-clockwise seen from the axis's
+/// positive end, as usual in right-handed space. To turn -Z (where a spot light shines) to point
+/// right and 60° below the horizon, for example, turn -30° about Y and then -90° about X:
+/// `Euler::new(Deg(-90.0), Deg(-30.0), Deg(0.0))`.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Rotation(pub Quaternion<f32>);
 

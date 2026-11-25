@@ -38,39 +38,40 @@ impl Projection {
     pub fn matrix(&self, aspect_ratio: f32) -> Matrix4<f32> {
         match *self {
             Projection::Perspective { vfov, near } => {
-                perspective_infinite_reverse_lh(Deg(vfov), aspect_ratio, near)
+                perspective_infinite_reverse_rh(Deg(vfov), aspect_ratio, near)
             }
             Projection::Orthographic { height } => {
                 let half_height = height * 0.5;
                 let half_width = half_height * aspect_ratio;
                 // Near and far swapped, so the projection is reverse-Z like the perspective one:
                 // depth 1 at the camera, 0 at `ORTHOGRAPHIC_DEPTH` in front of it.
-                orthographic_lh(-half_width, half_width, -half_height, half_height, ORTHOGRAPHIC_DEPTH, 0.0)
+                orthographic_rh(-half_width, half_width, -half_height, half_height, ORTHOGRAPHIC_DEPTH, 0.0)
             }
             Projection::Raw(matrix) => matrix,
         }
     }
 }
 
-pub fn perspective_infinite_reverse_lh<T: Into<Rad<f32>>>(
+/// A right-handed perspective projection with an infinite far plane and reverse-Z depth: the
+/// camera looks along -Z, depth is 1 at `z_near` in front of it and approaches 0 far away.
+pub fn perspective_infinite_reverse_rh<T: Into<Rad<f32>>>(
     fov_y: T,
     aspect_ratio: f32,
     z_near: f32,
 ) -> Matrix4<f32> {
     assert!(z_near > 0.0);
-    let fov_y_radians = fov_y.into().0;
-    let (sin_fov, cos_fov) = f32::sin_cos(0.5 * fov_y_radians);
-    let h = cos_fov / sin_fov;
-    let w = h / aspect_ratio;
+    let f = 1.0 / (0.5 * fov_y.into().0).tan();
     Matrix4::from_cols(
-        Vector4::new(w, 0.0, 0.0, 0.0),
-        Vector4::new(0.0, h, 0.0, 0.0),
-        Vector4::new(0.0, 0.0, 0.0, 1.0),
+        Vector4::new(f / aspect_ratio, 0.0, 0.0, 0.0),
+        Vector4::new(0.0, f, 0.0, 0.0),
+        Vector4::new(0.0, 0.0, 0.0, -1.0),
         Vector4::new(0.0, 0.0, z_near, 0.0),
     )
 }
 
-pub fn orthographic_lh(
+/// A right-handed orthographic projection: the camera looks along -Z, and depth goes from 0 at
+/// `near` in front of it to 1 at `far`. Give `near` and `far` the other way round for reverse-Z.
+pub fn orthographic_rh(
     left: f32,
     right: f32,
     bottom: f32,
@@ -80,15 +81,15 @@ pub fn orthographic_lh(
 ) -> Matrix4<f32> {
     let rcp_width = 1.0 / (right - left);
     let rcp_height = 1.0 / (top - bottom);
-    let r = 1.0 / (far - near);
+    let rcp_depth = 1.0 / (near - far);
     Matrix4::<f32>::from_cols(
         Vector4::new(rcp_width + rcp_width, 0.0, 0.0, 0.0),
         Vector4::new(0.0, rcp_height + rcp_height, 0.0, 0.0),
-        Vector4::new(0.0, 0.0, r, 0.0),
+        Vector4::new(0.0, 0.0, rcp_depth, 0.0),
         Vector4::new(
             -(left + right) * rcp_width,
             -(top + bottom) * rcp_height,
-            -r * near,
+            rcp_depth * near,
             1.0,
         ),
     )
