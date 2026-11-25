@@ -1,4 +1,5 @@
 use carbide::draw::Color;
+use carbide::color::WHITE;
 use carbide::math::{Vector2, Vector3, Zero};
 
 #[derive(Debug, Clone, Copy)]
@@ -13,6 +14,8 @@ pub struct Vertex {
 }
 
 impl Vertex {
+    /// A vertex at `position`, with no normal, tangent or texture coordinates, and white vertex
+    /// colours.
     pub fn new(position: Vector3<f32>) -> Vertex {
         Vertex {
             position,
@@ -20,8 +23,8 @@ impl Vertex {
             tangent: Vector3::zero(),
             texture_coords_0: Vector2::zero(),
             texture_coords_1: Vector2::zero(),
-            color_0: Color::random(),
-            color_1: Color::random(),
+            color_0: WHITE,
+            color_1: WHITE,
         }
     }
 

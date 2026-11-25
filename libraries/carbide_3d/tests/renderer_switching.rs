@@ -3,7 +3,7 @@
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId};
-use carbide_3d::{Node3dExt, Object, Scene3d};
+use carbide_3d::{Node3dExt, Mesh, Object, Scene3d};
 use carbide_core::color::{BLUE, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::math::{Deg, Euler, Vector3};
@@ -30,7 +30,7 @@ fn none() -> ContextFactory3d {
 fn switching_to_no_renderer_empties_the_view() {
     let mut factory = LocalState::new(wgpu());
 
-    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(RED))
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED))
         .position(Vector3::new(0.0, 0.0, 3.0))
         .rotation(Euler::new(Deg(25.0), Deg(35.0), Deg(0.0)));
     let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);

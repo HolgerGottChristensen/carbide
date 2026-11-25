@@ -12,7 +12,7 @@ use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{Group, Node3dExt, Object, Scene3d};
+use carbide::d3::{Group, Mesh, Node3dExt, Object, Scene3d};
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, SquareMatrix, Vector3};
@@ -27,6 +27,7 @@ use crate::meshes;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Model {
     Cube,
+    Sphere,
     Cubes,
     RenderBall,
 }
@@ -141,11 +142,13 @@ impl Options {
     }
 
     /// The model's rotation around the vertical axis: a full turn every eight seconds while
-    /// spinning, and the side bar's angle otherwise.
+    /// spinning, and the side bar's angle otherwise. The spin continues from where it stopped.
     fn rotation(&self) -> impl ReadState<T=Euler<Deg<f32>>> + Clone + use<> {
+        // Paused while not spinning, so the views don't redraw for an animation nobody sees.
         let spinning = AnimatedState::linear()
             .duration(Duration::from_secs(8))
             .repeat()
+            .running(self.spin.clone())
             .range(0.0, 360.0);
 
         Map3::read_map(self.spin.clone(), self.turn.clone(), spinning, |spin: &bool, turn: &Scalar, spinning: &f64| {
@@ -187,12 +190,15 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
 
     match model {
         Model::Cube => {
-            parts.push(Object::new(meshes::cube(1.0), options.material()).boxed());
+            parts.push(Object::new(Mesh::cube(1.0), options.material()).boxed());
+        }
+        Model::Sphere => {
+            parts.push(Object::new(Mesh::icosphere(0.6, 3), options.material()).boxed());
         }
         Model::Cubes => {
             for x in -1..=1 {
                 for z in -1..=1 {
-                    let cube = Object::new(meshes::cube(0.4), options.material())
+                    let cube = Object::new(Mesh::cube(0.4), options.material())
                         .position(Vector3::new(x as f32 * 0.6, 0.0, z as f32 * 0.6));
                     parts.push(cube.boxed());
                 }
@@ -253,6 +259,7 @@ pub fn playground(options: Options) -> impl Widget {
     let scene = ui!(
         match model {
             Model::Cube => views(Model::Cube, &o),
+            Model::Sphere => views(Model::Sphere, &o),
             Model::Cubes => views(Model::Cubes, &o),
             Model::RenderBall => views(Model::RenderBall, &o),
         }
@@ -282,6 +289,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         heading("Scene"),
         Picker::new("Model", options.model.clone(), (
             Text::new("A cube").tag(Model::Cube),
+            Text::new("A sphere").tag(Model::Sphere),
             Text::new("A grid of cubes").tag(Model::Cubes),
             Text::new("The render ball (OBJ)").tag(Model::RenderBall),
         )),

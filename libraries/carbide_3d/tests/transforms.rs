@@ -3,11 +3,12 @@
 use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::{Group, Node3dExt, Object, Scene3d};
+use carbide_3d::{Group, Node3dExt, Mesh, Object, Scene3d};
 use carbide_core::color::{BLUE, GREEN, ORANGE, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::math::{Deg, Euler, Point3, Vector3};
-use carbide_core::state::{LocalState, State};
+use carbide_core::state::{AnimatedState, LocalState, Map1, State};
+use carbide_core::time::Duration;
 use carbide_core::widget::{Widget, WidgetExt};
 use carbide_testing::Harness;
 
@@ -32,8 +33,8 @@ fn framed(scene: impl Widget) -> impl Widget {
 #[test]
 fn a_rotated_group_turns_its_nodes_together() {
     let pair = Group::new((
-        Object::new(common::cube(0.8), PbrMaterial::new().color(RED)).position(Vector3::new(-0.8, 0.0, 0.0)),
-        Object::new(common::cube(0.8), PbrMaterial::new().color(GREEN)).position(Vector3::new(0.8, 0.0, 0.0)),
+        Object::new(Mesh::cube(0.8), PbrMaterial::new().color(RED)).position(Vector3::new(-0.8, 0.0, 0.0)),
+        Object::new(Mesh::cube(0.8), PbrMaterial::new().color(GREEN)).position(Vector3::new(0.8, 0.0, 0.0)),
     ))
         .rotation(Euler::new(Deg(0.0), Deg(45.0), Deg(0.0)));
 
@@ -51,10 +52,10 @@ fn a_rotated_group_turns_its_nodes_together() {
 fn a_pivot_is_what_a_node_turns_around() {
     let turn = Euler::new(Deg(0.0), Deg(0.0), Deg(45.0));
 
-    let centre = Object::new(common::cube(0.8), PbrMaterial::new().color(RED))
+    let centre = Object::new(Mesh::cube(0.8), PbrMaterial::new().color(RED))
         .rotation(turn)
         .position(Vector3::new(-1.0, 0.0, 0.0));
-    let corner = Object::new(common::cube(0.8), PbrMaterial::new().color(ORANGE))
+    let corner = Object::new(Mesh::cube(0.8), PbrMaterial::new().color(ORANGE))
         .pivot(Vector3::new(0.4, 0.4, -0.4))
         .rotation(turn)
         .position(Vector3::new(1.0, 0.0, 0.0));
@@ -72,7 +73,7 @@ fn a_pivot_is_what_a_node_turns_around() {
 fn a_rotation_follows_its_state() {
     let mut rotation = LocalState::new(Euler::new(Deg(0.0f32), Deg(0.0), Deg(0.0)));
 
-    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(RED)).rotation(rotation.clone());
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED)).rotation(rotation.clone());
     let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 
     let mut harness = Harness::new(framed(Scene3d::new((cube, light)).camera(camera())), size());
@@ -80,6 +81,25 @@ fn a_rotation_follows_its_state() {
 
     *rotation.value_mut() = Euler::new(Deg(0.0), Deg(45.0), Deg(0.0));
     harness.snapshot("turned");
+}
+
+/// The same cube as `a_rotation_follows_its_state`, turned by an animation: a full turn every
+/// eight seconds, rendered at its start and after one second of the harness's simulated clock.
+/// Pins down that an animation starts at its first render and follows the harness's clock
+/// exactly: the second snapshot is that test's 45° `turned`, pixel for pixel.
+#[test]
+fn an_animated_rotation_follows_the_clock() {
+    let angle = AnimatedState::linear().duration(Duration::from_secs(8)).repeat().range(0.0, 360.0);
+    let rotation = Map1::read_map(angle, |angle: &f64| Euler::new(Deg(0.0), Deg(*angle as f32), Deg(0.0)));
+
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED)).rotation(rotation);
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
+
+    let mut harness = Harness::new(framed(Scene3d::new((cube, light)).camera(camera())), size());
+    harness.snapshot("start");
+
+    harness.advance_time(Duration::from_secs(1));
+    harness.snapshot("after_a_second");
 }
 
 /// A cube facing the camera, and a light in a group of its own shining along +Z, away from the
@@ -91,7 +111,7 @@ fn a_rotation_follows_its_state() {
 fn a_light_turns_with_its_group() {
     let mut rotation = LocalState::new(Euler::new(Deg(0.0f32), Deg(0.0), Deg(0.0)));
 
-    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(RED));
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED));
     let light = Group::new(DirectionalLight::new(Vector3::new(0.0, 0.0, 1.0)).intensity(5.0))
         .rotation(rotation.clone());
 

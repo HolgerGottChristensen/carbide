@@ -3,7 +3,7 @@
 use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::{Node3dExt, Object, Scene3d};
+use carbide_3d::{Node3dExt, Mesh, Object, Scene3d};
 use carbide_core::color::{BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;
 use carbide_core::math::{Deg, Euler, Point3};
@@ -22,7 +22,7 @@ mod common;
 fn two_views_of_one_scene() {
     let mut color = LocalState::new(RED);
 
-    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(color.clone()))
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(color.clone()))
         .rotation(Euler::new(Deg(0.0), Deg(30.0), Deg(0.0)));
     let light = DirectionalLight::new(carbide_core::math::Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 

@@ -43,7 +43,7 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        for model in [Model::Cube, Model::Cubes, Model::RenderBall] {
+        for model in [Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
                     for renderer in [Renderer::Wgpu, Renderer::None] {

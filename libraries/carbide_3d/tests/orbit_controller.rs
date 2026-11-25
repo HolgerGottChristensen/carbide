@@ -3,7 +3,7 @@
 use carbide_3d::camera::{Camera, OrbitController};
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::{Node3dSequence, Object, Scene3d};
+use carbide_3d::{Node3dSequence, Mesh, Object, Scene3d};
 use carbide_core::color::{BLUE, RED};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::math::{Point3, Vector3};
@@ -15,7 +15,7 @@ mod common;
 /// A red cube at the origin, lit from above and to the left, seen by a perspective camera 3 units
 /// in front of it, slightly above.
 fn cube_scene() -> Scene3d<impl Node3dSequence> {
-    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(RED));
+    let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(RED));
     let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 
     Scene3d::new((cube, light))

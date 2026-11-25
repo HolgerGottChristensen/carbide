@@ -1,8 +1,15 @@
+use std::collections::HashMap;
+use std::path::Path;
+
 use crate::handedness::Handedness;
 use crate::vertex::Vertex;
 use tobj::Model;
 use carbide::math::{InnerSpace, Vector2, Vector3, Zero};
 
+/// Triangles, as vertices and indices into them, three per triangle.
+///
+/// The renderer draws the side a triangle's vertices go round clockwise, seen from that side, in
+/// carbide_3d's left-handed space. Vertex normals point out of that side.
 #[derive(Debug, Clone)]
 pub struct Mesh {
     pub handedness: Handedness,
@@ -19,8 +26,150 @@ impl Mesh {
         }
     }
 
+    /// A cube centred on the origin with sides of `size`, with flat normals: four vertices per
+    /// face, so each face is shaded on its own.
+    pub fn cube(size: f32) -> Mesh {
+        let half = size / 2.0;
+        let normals: [Vector3<f32>; 6] = [
+            Vector3::unit_x(), -Vector3::unit_x(),
+            Vector3::unit_y(), -Vector3::unit_y(),
+            Vector3::unit_z(), -Vector3::unit_z(),
+        ];
+
+        let mut vertices = vec![];
+        let mut indices = vec![];
+
+        for normal in normals {
+            // Seen from outside, looking along -normal: pick an up direction, and the right
+            // direction follows (left-handed: right = up × view direction).
+            let up = if normal.y.abs() > 0.5 { Vector3::unit_z() } else { Vector3::unit_y() };
+            let right = up.cross(-normal).normalize();
+
+            let center = normal * half;
+            let corners = [
+                (center + (-right + up) * half, Vector2::new(0.0, 0.0)),
+                (center + (right + up) * half, Vector2::new(1.0, 0.0)),
+                (center + (right - up) * half, Vector2::new(1.0, 1.0)),
+                (center + (-right - up) * half, Vector2::new(0.0, 1.0)),
+            ];
+
+            let first = vertices.len() as u32;
+            for (corner, coords) in corners {
+                vertices.push(Vertex::new(corner).normal(normal).texture_coords_0(coords));
+            }
+
+            indices.extend([first, first + 1, first + 2, first, first + 2, first + 3]);
+        }
+
+        Mesh::new(vertices, indices).calculate_tangents()
+    }
+
+    /// A flat rectangle on the ground: `width` along X and `depth` along Z, centred on the origin,
+    /// facing up (+Y).
+    pub fn plane(width: f32, depth: f32) -> Mesh {
+        let (x, z) = (width / 2.0, depth / 2.0);
+        let up = Vector3::unit_y();
+
+        // Clockwise seen from above, with +X right and +Z away.
+        let vertices = vec![
+            Vertex::new(Vector3::new(-x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(0.0, 0.0)),
+            Vertex::new(Vector3::new(x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(1.0, 0.0)),
+            Vertex::new(Vector3::new(x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(1.0, 1.0)),
+            Vertex::new(Vector3::new(-x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(0.0, 1.0)),
+        ];
+
+        Mesh::new(vertices, vec![0, 1, 2, 0, 2, 3]).calculate_tangents()
+    }
+
+    /// A sphere centred on the origin with the given `radius`, made by splitting each triangle of
+    /// an icosahedron into four `subdivisions` times: 20 triangles at 0, 20 · 4ⁿ at n. Each
+    /// triangle has vertices and a normal of its own, so it is shaded flat.
+    ///
+    /// After <https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/>.
+    pub fn icosphere(radius: f32, subdivisions: u32) -> Mesh {
+        const X: f32 = 0.525731112119133606;
+        const Z: f32 = 0.850650808352039932;
+        const N: f32 = 0.0;
+
+        const VERTICES: [[f32; 3]; 12] = [
+            [-X, N, Z], [X, N, Z], [-X, N, -Z], [X, N, -Z],
+            [N, Z, X], [N, Z, -X], [N, -Z, X], [N, -Z, -X],
+            [Z, X, N], [-Z, X, N], [Z, -X, N], [-Z, -X, N],
+        ];
+
+        // Wound the other way round from the source, so they are clockwise seen from outside.
+        const INDICES: [[u32; 3]; 20] = [
+            [0, 1, 4], [0, 4, 9], [9, 4, 5], [4, 8, 5], [4, 1, 8],
+            [8, 1, 10], [8, 10, 3], [5, 8, 3], [5, 3, 2], [2, 3, 7],
+            [7, 3, 10], [7, 10, 6], [7, 6, 11], [11, 6, 0], [0, 6, 1],
+            [6, 10, 1], [9, 11, 0], [9, 2, 11], [9, 5, 2], [7, 11, 2],
+        ];
+
+        fn vertex_for_edge(map: &mut HashMap<(u32, u32), u32>, positions: &mut Vec<Vector3<f32>>, first: u32, second: u32) -> u32 {
+            // The same midpoint for an edge in either direction.
+            let key = (first.min(second), first.max(second));
+
+            if let Some(index) = map.get(&key) {
+                return *index;
+            }
+
+            let index = positions.len() as u32;
+            let position = (positions[first as usize] + positions[second as usize]).normalize();
+            positions.push(position);
+            map.insert(key, index);
+
+            index
+        }
+
+        let mut lookup = HashMap::new();
+        let mut positions = VERTICES.iter().map(|p| Vector3::new(p[0], p[1], p[2])).collect::<Vec<_>>();
+        let mut triangles = INDICES.to_vec();
+
+        for _ in 0..subdivisions {
+            let mut split = Vec::with_capacity(triangles.len() * 4);
+
+            for triangle in triangles {
+                let mut mid = [0u32; 3];
+
+                for i in 0..3 {
+                    mid[i] = vertex_for_edge(&mut lookup, &mut positions, triangle[i], triangle[(i + 1) % 3]);
+                }
+
+                split.push([triangle[0], mid[0], mid[2]]);
+                split.push([triangle[1], mid[1], mid[0]]);
+                split.push([triangle[2], mid[2], mid[1]]);
+                split.push([mid[0], mid[1], mid[2]]);
+            }
+
+            triangles = split;
+        }
+
+        // Three vertices of its own for each triangle, so the normals are flat.
+        let vertices = triangles.iter()
+            .flatten()
+            .map(|index| Vertex::new(positions[*index as usize] * radius))
+            .collect::<Vec<_>>();
+        let indices = (0..vertices.len() as u32).collect::<Vec<u32>>();
+
+        Mesh::new(vertices, indices).calculate_normals(Handedness::Left)
+    }
+
+    /// The meshes of the OBJ file at `path`, one per object or group in it, triangulated with one
+    /// index per vertex. Missing normals are calculated (flat), and missing texture coordinates
+    /// are zero. OBJ materials are not loaded.
+    pub fn load_obj<P: AsRef<Path>>(path: P) -> Result<Vec<Mesh>, tobj::LoadError> {
+        let (models, _materials) = tobj::load_obj(path.as_ref(), &tobj::GPU_LOAD_OPTIONS)?;
+        Ok(models.into_iter().map(Mesh::from).collect())
+    }
+
+    /// Calculate each vertex's normal from the triangles it is part of, wound as `handedness`
+    /// says, and normalise it. Replaces the normals the vertices had.
     pub fn calculate_normals(mut self, handedness: Handedness) -> Self {
-        for chunk in self.indices.chunks(3) {
+        for vertex in &mut self.vertices {
+            vertex.normal = Vector3::zero();
+        }
+
+        for chunk in self.indices.chunks_exact(3) {
             let pos0 = self.vertices[chunk[0] as usize].position;
             let pos1 = self.vertices[chunk[1] as usize].position;
             let pos2 = self.vertices[chunk[2] as usize].position;
@@ -36,16 +185,23 @@ impl Mesh {
         }
 
         for vertex in &mut self.vertices {
-            if vertex.normal.magnitude() != 0.0 {
-                vertex.normal.normalize();
+            if vertex.normal.magnitude2() > 0.0 {
+                vertex.normal = vertex.normal.normalize();
             }
         }
 
         self
     }
 
+    /// Calculate each vertex's tangent from its triangles' positions and first texture
+    /// coordinates, made perpendicular to its normal. Triangles whose texture coordinates don't
+    /// span an area add nothing; a vertex with no tangent gets zero.
     pub fn calculate_tangents(mut self) -> Self {
-        for chunk in self.indices.chunks(3) {
+        for vertex in &mut self.vertices {
+            vertex.tangent = Vector3::zero();
+        }
+
+        for chunk in self.indices.chunks_exact(3) {
             let pos0 = self.vertices[chunk[0] as usize].position;
             let pos1 = self.vertices[chunk[1] as usize].position;
             let pos2 = self.vertices[chunk[2] as usize].position;
@@ -60,10 +216,12 @@ impl Mesh {
             let edge1 = pos1 - pos0;
             let edge2 = pos2 - pos0;
 
-            let r = 1.0 / (uv1.x * uv2.y - uv1.y * uv2.x);
+            let determinant = uv1.x * uv2.y - uv1.y * uv2.x;
+            if determinant.abs() <= f32::EPSILON {
+                continue;
+            }
 
-            let tangent = (edge1 * uv2.y) - (edge2 * uv1.y) * r;
-
+            let tangent = (edge1 * uv2.y - edge2 * uv1.y) / determinant;
 
             self.vertices[chunk[0] as usize].tangent += tangent;
             self.vertices[chunk[1] as usize].tangent += tangent;
@@ -72,35 +230,99 @@ impl Mesh {
 
         for vertex in &mut self.vertices {
             let t = vertex.tangent - (vertex.normal * vertex.normal.dot(vertex.tangent));
-            if t.magnitude() != 0.0 {
-                vertex.tangent = t.normalize();
-            } else {
-                vertex.tangent = Vector3::zero();
-            }
+            vertex.tangent = if t.magnitude2() > 0.0 { t.normalize() } else { Vector3::zero() };
         }
 
         self
     }
 }
 
+/// A mesh from a model loaded with tobj's `GPU_LOAD_OPTIONS` (triangulated, one index per
+/// vertex). Normals the model doesn't have are calculated, and texture coordinates it doesn't
+/// have are zero.
 impl From<Model> for Mesh {
     fn from(value: Model) -> Self {
-        println!("{:?}", value.mesh.positions.len());
-        println!("{:?}", value.mesh.normals.len());
-        println!("{:?}", value.mesh.texcoords.len());
-        println!("{:?}", value.mesh.vertex_color.len());
-        let vertices = value.mesh.positions.chunks(3)
-            .zip(value.mesh.normals.chunks(3))
-            .zip(value.mesh.texcoords.chunks(2)).map(|((pos, normal), tex)| {
-            Vertex::new(Vector3::new(pos[0], pos[1], pos[2]))
-                .normal(Vector3::new(normal[0], normal[1], normal[2]))
-                .texture_coords_0(Vector2::new(tex[0], tex[1]))
+        let mesh = value.mesh;
+        let count = mesh.positions.len() / 3;
+        let has_normals = mesh.normals.len() == mesh.positions.len();
+        let has_coords = mesh.texcoords.len() / 2 == count;
+
+        let vertices = (0..count).map(|i| {
+            let position = Vector3::new(mesh.positions[3 * i], mesh.positions[3 * i + 1], mesh.positions[3 * i + 2]);
+            let mut vertex = Vertex::new(position);
+
+            if has_normals {
+                vertex = vertex.normal(Vector3::new(mesh.normals[3 * i], mesh.normals[3 * i + 1], mesh.normals[3 * i + 2]));
+            }
+
+            if has_coords {
+                vertex = vertex.texture_coords_0(Vector2::new(mesh.texcoords[2 * i], mesh.texcoords[2 * i + 1]));
+            }
+
+            vertex
         }).collect::<Vec<_>>();
 
-        let indices = value.mesh.indices;
+        let mesh = Mesh::new(vertices, mesh.indices);
 
-        Mesh::new(vertices, indices)
-            .calculate_tangents()
+        // OBJ files wind counter-clockwise in their right-handed space, which is clockwise in
+        // carbide_3d's left-handed one: the left-handed rule gives outward normals.
+        let mesh = if has_normals { mesh } else { mesh.calculate_normals(Handedness::Left) };
 
+        mesh.calculate_tangents()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use carbide::math::{InnerSpace, Vector3};
+    use crate::Mesh;
+
+    /// Every normal of `mesh` has length 1 and points away from the origin, as for a closed
+    /// shape around it.
+    fn assert_outward_unit_normals(mesh: &Mesh) {
+        for vertex in &mesh.vertices {
+            assert!((vertex.normal.magnitude() - 1.0).abs() < 1e-4, "normal {:?} is not unit length", vertex.normal);
+            assert!(vertex.normal.dot(vertex.position) > 0.0, "normal {:?} at {:?} points inwards", vertex.normal, vertex.position);
+        }
+    }
+
+    #[test]
+    fn calculated_normals_are_unit_length() {
+        let mut mesh = Mesh::cube(2.0);
+        for vertex in &mut mesh.vertices {
+            vertex.normal = Vector3::new(0.0, 0.0, 0.0);
+        }
+
+        let mesh = mesh.calculate_normals(crate::Handedness::Left);
+        assert_outward_unit_normals(&mesh);
+    }
+
+    #[test]
+    fn cube_and_icosphere_have_outward_normals() {
+        assert_outward_unit_normals(&Mesh::cube(1.0));
+        assert_outward_unit_normals(&Mesh::icosphere(1.0, 2));
+        assert_eq!(Mesh::icosphere(1.0, 2).indices.len(), 20 * 16 * 3);
+    }
+
+    #[test]
+    fn tangents_follow_the_texture_coordinates() {
+        // The cube's faces have u along their right direction, so the tangent is that direction:
+        // for the front face (normal -Z), +X.
+        let cube = Mesh::cube(1.0);
+        let front = cube.vertices.iter().find(|vertex| vertex.normal.z < -0.5).unwrap();
+        assert!((front.tangent - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1e-4, "tangent {:?}", front.tangent);
+    }
+
+    #[test]
+    fn an_obj_without_normals_gets_outward_normals() {
+        // A tetrahedron around the origin, counter-clockwise seen from outside in OBJ's
+        // right-handed space, with no normals or texture coordinates.
+        let obj = "v 0 1 0\nv -1 -1 1\nv 1 -1 1\nv 0 -1 -1\nf 1 2 3\nf 1 3 4\nf 1 4 2\nf 2 4 3\n";
+        let (models, _) = tobj::load_obj_buf(&mut obj.as_bytes(), &tobj::GPU_LOAD_OPTIONS, |_| Ok(Default::default())).unwrap();
+
+        let mesh = Mesh::from(models.into_iter().next().unwrap());
+        assert_eq!(mesh.vertices.len(), 4);
+        assert_eq!(mesh.indices.len(), 12);
+        assert_outward_unit_normals(&mesh);
     }
 }
