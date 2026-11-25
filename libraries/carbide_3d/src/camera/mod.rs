@@ -1,19 +1,14 @@
 mod camera;
-pub mod camera_projection;
-mod simple_camera;
 mod camera_spec;
+mod controller;
+mod orbit_controller;
+mod projection;
 
-#[cfg(feature = "dolly")]
-mod dolly_camera;
-mod orbit_camera;
-
-pub use camera::Camera;
-//pub use simple_camera::SimpleCamera;
-pub use orbit_camera::OrbitCamera;
+pub use camera::{look_at, Camera};
 pub use camera_spec::CameraSpec;
-
-//#[cfg(feature = "dolly")]
-//pub use dolly_camera::DollyCamera;
+pub use controller::CameraController;
+pub use orbit_controller::OrbitController;
+pub use projection::{orthographic_lh, perspective_infinite_reverse_lh, Projection, ORTHOGRAPHIC_DEPTH};
 
 #[cfg(feature = "dolly")]
 pub mod dolly {

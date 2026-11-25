@@ -1,6 +1,5 @@
 //! Rendering of a single lit object.
 
-use carbide_3d::camera::OrbitCamera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::{Object, Scene3d};
@@ -23,7 +22,7 @@ fn cube_scene(material: PbrMaterial) -> impl Widget {
 
     let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 
-    Scene3d::new((cube, light), OrbitCamera::new())
+    Scene3d::new((cube, light))
         .border()
         .color(BLUE)
         .padding(20.0)

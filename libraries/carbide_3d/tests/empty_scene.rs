@@ -1,6 +1,5 @@
 //! Rendering of a scene with no nodes.
 
-use carbide_3d::camera::OrbitCamera;
 use carbide_3d::Scene3d;
 use carbide_core::color::BLUE;
 use carbide_core::draw::Dimension;
@@ -12,7 +11,7 @@ use carbide_testing::Harness;
 /// border marks the widget's bounds, and nothing is drawn inside it.
 #[test]
 fn empty_scene() {
-    let scene = Scene3d::new((), OrbitCamera::new())
+    let scene = Scene3d::new(())
         .border()
         .color(BLUE)
         .padding(20.0);

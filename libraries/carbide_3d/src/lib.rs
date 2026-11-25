@@ -20,3 +20,4 @@ pub use mesh::*;
 pub use object::*;
 pub use scene3d::*;
 pub use vertex::*;
+pub use node3d_sequence::Node3dSequence;

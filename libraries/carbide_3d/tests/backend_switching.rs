@@ -2,7 +2,7 @@
 
 use std::sync::Mutex;
 
-use carbide_3d::camera::{CameraSpec, OrbitCamera};
+use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
 use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, RenderContext3dId};
 use carbide_3d::{InnerImageContext3d, Mesh, NoopImageContext3d, Scene3d};
@@ -81,7 +81,7 @@ fn switching_the_factory_recreates_the_render_context() {
 
     let scene = EnvUpdatingNew2::<_, ContextFactory3d, _>::new(
         factory.clone(),
-        Scene3d::new((), OrbitCamera::new()),
+        Scene3d::new(()),
     );
 
     let mut harness = Harness::new(scene, Dimension::new(200.0, 100.0));
