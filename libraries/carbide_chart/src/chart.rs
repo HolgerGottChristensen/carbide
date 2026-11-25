@@ -172,14 +172,14 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
 
     /// Gives the chart a title, a text or a state of one, drawn centred above everything else.
     pub fn title(mut self, title: impl IntoReadState<String>) -> Chart<C> {
-        self.title = Some(title.into_read_state().as_dyn_read());
+        self.title = Some(title.into_dyn_read_state());
         self
     }
 
     /// The space between the chart's edges and what it draws, an `EdgeInsets` or a number for
     /// every side, or a state of one. Defaults to 30 on every side.
     pub fn padding(mut self, padding: impl IntoReadState<EdgeInsets>) -> Chart<C> {
-        self.padding = padding.into_read_state().as_dyn_read();
+        self.padding = padding.into_dyn_read_state();
         self
     }
 
@@ -187,7 +187,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// each dataset with a name (`DatasetExt::label`), next to a marker in its colour. Defaults to
     /// `LegendPosition::Hidden`.
     pub fn legend(mut self, position: impl IntoReadState<LegendPosition>) -> Chart<C> {
-        self.legend = position.into_read_state().as_dyn_read();
+        self.legend = position.into_dyn_read_state();
         self
     }
 
@@ -200,7 +200,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// next to the data, above it where it fits, and hides during a drag. Its colours come from the
     /// `TooltipStyle` (see `ChartStyleExt::tooltip_style`).
     pub fn tooltip(mut self, tooltip: impl IntoReadState<bool>) -> Chart<C> {
-        self.tooltip = tooltip.into_read_state().as_dyn_read();
+        self.tooltip = tooltip.into_dyn_read_state();
         self
     }
 
@@ -221,7 +221,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// The most rows the tooltip shows with `PickMode::Dataset`, a value or a state of one: 10 by
     /// default. A row after them says how many more there are.
     pub fn tooltip_max_rows(mut self, rows: impl IntoReadState<usize>) -> Chart<C> {
-        self.tooltip_max_rows = rows.into_read_state().as_dyn_read();
+        self.tooltip_max_rows = rows.into_dyn_read_state();
         self
     }
 
@@ -229,7 +229,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// default, the middle of the hovered data, or `TooltipAnchor::Pointer`, following the pointer
     /// as it moves over the chart area. Either way it shows the hovered data.
     pub fn tooltip_anchor(mut self, anchor: impl IntoReadState<TooltipAnchor>) -> Chart<C> {
-        self.tooltip_anchor = anchor.into_read_state().as_dyn_read();
+        self.tooltip_anchor = anchor.into_dyn_read_state();
         self
     }
 
@@ -247,7 +247,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// leading and trailing), then above, below, after and before the anchor, and when nothing
     /// fits, it is moved inside the chart without a caret.
     pub fn tooltip_alignment(mut self, alignment: impl IntoReadState<Alignment>) -> Chart<C> {
-        self.tooltip_alignment = alignment.into_read_state().as_dyn_read();
+        self.tooltip_alignment = alignment.into_dyn_read_state();
         self
     }
 
@@ -259,7 +259,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// isn't `interactive`, the legend ignores clicks, and the app can still show and hide datasets
     /// through their states.
     pub fn legend_toggles(mut self, toggles: impl IntoReadState<bool>) -> Chart<C> {
-        self.legend_toggles = toggles.into_read_state().as_dyn_read();
+        self.legend_toggles = toggles.into_dyn_read_state();
         self
     }
 
@@ -268,7 +268,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// clicked and no gesture zooms or pans it; a hover state is set to `None`, and a drag or box
     /// in progress is dropped. Zoom windows keep what they show, and can still be set from code.
     pub fn interactive(mut self, interactive: impl IntoReadState<bool>) -> Chart<C> {
-        self.interactive = interactive.into_read_state().as_dyn_read();
+        self.interactive = interactive.into_dyn_read_state();
         self
     }
 
@@ -296,7 +296,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// scale, while the pointer is over the chart area, and `None` when it isn't. The chart
     /// outlines the data found.
     pub fn hover(mut self, state: impl IntoState<Option<Pick>>) -> Chart<C> {
-        self.hover = Some(state.into_state().as_dyn());
+        self.hover = Some(state.into_dyn_state());
         self
     }
 
@@ -304,7 +304,7 @@ impl<C: Sequence<dyn DatasetController>> Chart<C> {
     /// `PickMode::Index` by default: every dataset's datum at the category nearest the pointer, as
     /// a shared tooltip shows.
     pub fn hover_mode(mut self, mode: impl IntoReadState<PickMode>) -> Chart<C> {
-        self.hover_mode = mode.into_read_state().as_dyn_read();
+        self.hover_mode = mode.into_dyn_read_state();
         self
     }
 
@@ -1521,7 +1521,7 @@ mod tests {
         const PERCENT: ScaleId = ScaleId::new("percent");
 
         let positions = vec![Position::new(0.0, 10.0), Position::new(1.0, 20.0)].boxed::<dyn ScatterDataSet>();
-        let values = LocalState::new(vec![15.0, 25.0]).boxed::<dyn ScatterDataSet>();
+        let values = LocalState::new(vec![15.0, 25.0]).to_dyn::<dyn ScatterDataSet>();
         let margin = vec![0.2, 0.4].y_scale(PERCENT).boxed();
 
         let chart = fitted(

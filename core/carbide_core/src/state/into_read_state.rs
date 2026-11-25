@@ -8,6 +8,10 @@ pub trait IntoReadState<T>: Clone where T: StateContract {
     type Output: ReadState<T=T> + ReadStateExt<T>;
 
     fn into_read_state(self) -> Self::Output;
+
+    fn into_dyn_read_state(self) -> Box<dyn AnyReadState<T=T>> where Self: Sized {
+        self.into_read_state().as_dyn_read()
+    }
 }
 
 pub trait ConvertIntoRead<T: StateContract>: StateContract {

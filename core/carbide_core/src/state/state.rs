@@ -42,6 +42,10 @@ pub trait AnyState: AnyReadState {
     /// state. If you just change the value using value_mut, it might not be persistent and
     /// update problems might occur.
     fn set_value_dyn(&mut self, value: Self::T);
+
+    fn as_dyn(self) -> Box<dyn AnyState<T=Self::T>> where Self: Sized {
+        Box::new(self)
+    }
 }
 
 impl<T: StateContract> dyn AnyState<T=T> {
@@ -74,6 +78,13 @@ impl<T: StateContract> AnyState for Box<dyn AnyState<T=T>> {
 
     fn set_value_dyn(&mut self, value: Self::T) {
         self.deref_mut().set_value_dyn(value)
+    }
+
+    fn as_dyn(self) -> Box<dyn AnyState<T=Self::T>>
+    where
+        Self: Sized,
+    {
+        self
     }
 }
 

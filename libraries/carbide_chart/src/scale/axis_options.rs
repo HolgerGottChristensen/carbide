@@ -289,40 +289,40 @@ impl AxisOptions {
     /// the chart area, vertical axes left or right of it, or leading or trailing it; any other side is logged and the axis is
     /// drawn on its default side.
     pub fn with_position(mut self, position: impl IntoReadState<AxisPosition>) -> AxisOptions {
-        self.position = position.into_read_state().as_dyn_read();
+        self.position = position.into_dyn_read_state();
         self.checked_position = None;
         self
     }
 
     /// Sets the weight, a value or a state of one (see `weight`).
     pub fn with_weight(mut self, weight: impl IntoReadState<i32>) -> AxisOptions {
-        self.weight = weight.into_read_state().as_dyn_read();
+        self.weight = weight.into_dyn_read_state();
         self
     }
 
     /// Sets whether the axis draws grid lines, a value or a state of one.
     pub fn with_grid_lines(mut self, grid_lines: impl IntoReadState<bool>) -> AxisOptions {
-        self.grid_lines = grid_lines.into_read_state().as_dyn_read();
+        self.grid_lines = grid_lines.into_dyn_read_state();
         self.grid_lines_set = true;
         self
     }
 
     /// Sets whether the axis draws tick marks, a value or a state of one.
     pub fn with_tick_marks(mut self, tick_marks: impl IntoReadState<bool>) -> AxisOptions {
-        self.tick_marks = tick_marks.into_read_state().as_dyn_read();
+        self.tick_marks = tick_marks.into_dyn_read_state();
         self
     }
 
     /// Gives the axis a title, a text or a state of one.
     pub fn with_title(mut self, title: impl IntoReadState<String>) -> AxisOptions {
-        self.title = Some(title.into_read_state().as_dyn_read());
+        self.title = Some(title.into_dyn_read_state());
         self
     }
 
     /// Sets how far the tick labels are turned, a `LabelRotation`, an `Angle` or a number of
     /// degrees for a fixed rotation, or a state of any of them.
     pub fn with_label_rotation(mut self, rotation: impl IntoReadState<LabelRotation>) -> AxisOptions {
-        self.label_rotation = rotation.into_read_state().as_dyn_read();
+        self.label_rotation = rotation.into_dyn_read_state();
         self
     }
 
@@ -330,65 +330,65 @@ impl AxisOptions {
     /// `label_alignment`): an `Alignment`, or a state of an `Option<Alignment>`, where `None` picks
     /// it automatically.
     pub fn with_label_alignment(mut self, alignment: impl IntoReadState<Option<Alignment>>) -> AxisOptions {
-        self.label_alignment = alignment.into_read_state().as_dyn_read();
+        self.label_alignment = alignment.into_dyn_read_state();
         self
     }
 
     /// Sets whether tick labels that don't fit are thinned out, a value or a state of one (see
     /// `label_skip`).
     pub fn with_label_skip(mut self, skip: impl IntoReadState<bool>) -> AxisOptions {
-        self.label_skip = skip.into_read_state().as_dyn_read();
+        self.label_skip = skip.into_dyn_read_state();
         self
     }
 
     /// Sets where an angle scale starts, an `Angle` or a state of one.
     pub fn with_start_angle(mut self, angle: impl IntoReadState<Angle>) -> AxisOptions {
-        self.start_angle = angle.into_read_state().as_dyn_read();
+        self.start_angle = angle.into_dyn_read_state();
         self
     }
 
     /// Sets where an angle scale ends, an `Angle` or a state of one.
     pub fn with_end_angle(mut self, angle: impl IntoReadState<Angle>) -> AxisOptions {
-        self.end_angle = angle.into_read_state().as_dyn_read();
+        self.end_angle = angle.into_dyn_read_state();
         self
     }
 
     /// Sets which way an angle scale runs, a direction or a state of one.
     pub fn with_direction(mut self, direction: impl IntoReadState<AngleDirection>) -> AxisOptions {
-        self.direction = direction.into_read_state().as_dyn_read();
+        self.direction = direction.into_dyn_read_state();
         self
     }
 
     /// Sets how an angle scale's labels around the rim are turned, a `RimOrientation` or a state
     /// of one.
     pub fn with_rim_orientation(mut self, orientation: impl IntoReadState<RimOrientation>) -> AxisOptions {
-        self.rim_orientation = orientation.into_read_state().as_dyn_read();
+        self.rim_orientation = orientation.into_dyn_read_state();
         self
     }
 
     /// Sets a radius scale's hole in the middle, as a share of the radius, a number or a state
     /// of one (see `inner_radius`).
     pub fn with_inner_radius(mut self, ratio: impl IntoReadState<Scalar>) -> AxisOptions {
-        self.inner_radius = ratio.into_read_state().as_dyn_read();
+        self.inner_radius = ratio.into_dyn_read_state();
         self
     }
 
     /// Sets the shape of a radius scale's rings, a shape or a state of one, whatever the
     /// controllers ask for.
     pub fn with_grid_shape(mut self, shape: impl IntoReadState<GridShape>) -> AxisOptions {
-        self.grid_shape = Some(shape.into_read_state().as_dyn_read());
+        self.grid_shape = Some(shape.into_dyn_read_state());
         self
     }
 
     /// Shows only part of the fitted range, a `ZoomWindow` or a state of one (see `zoom`).
     pub fn with_zoom(mut self, window: impl IntoState<ZoomWindow>) -> AxisOptions {
-        self.zoom = Some(window.into_state().as_dyn());
+        self.zoom = Some(window.into_dyn_state());
         self
     }
 
     /// Sets whether the scale fits to the visible data only, a value or a state of one.
     pub fn with_fit_visible(mut self, fit_visible: impl IntoReadState<bool>) -> AxisOptions {
-        self.fit_visible = fit_visible.into_read_state().as_dyn_read();
+        self.fit_visible = fit_visible.into_dyn_read_state();
         self
     }
 }

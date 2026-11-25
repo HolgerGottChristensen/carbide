@@ -29,6 +29,10 @@ pub trait AnyReadState: DynClone + StateSync + Debug + 'static {
     type T: StateContract;
 
     fn value_dyn(&self) -> ValueRef<'_, Self::T>;
+
+    fn as_dyn_read(self) -> Box<dyn AnyReadState<T=Self::T>> where Self: Sized {
+        Box::new(self)
+    }
 }
 
 impl<T: StateContract> dyn AnyReadState<T=T> {
@@ -52,6 +56,10 @@ impl<T: StateContract> AnyReadState for Box<dyn AnyReadState<T=T>> {
 
     fn value_dyn(&self) -> ValueRef<'_, Self::T> {
         self.deref().value_dyn()
+    }
+
+    fn as_dyn_read(self) -> Box<dyn AnyReadState<T=Self::T>> {
+        self
     }
 }
 

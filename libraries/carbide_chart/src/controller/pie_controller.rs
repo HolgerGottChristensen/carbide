@@ -178,7 +178,7 @@ impl<D: Sequence<dyn PieDataSet>> PieController<D> {
     /// legend entry is dimmed. Without it, the controller keeps a state of its own, empty to start
     /// with.
     pub fn hidden_parts(mut self, hidden_parts: impl IntoState<Vec<String>>) -> PieController<D> {
-        self.hidden_parts = hidden_parts.into_state().as_dyn();
+        self.hidden_parts = hidden_parts.into_dyn_state();
         self
     }
 

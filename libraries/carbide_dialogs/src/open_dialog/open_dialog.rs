@@ -47,42 +47,42 @@ impl OpenDialog {
     }
 
     pub fn set_title<T: IntoReadState<Option<String>>>(mut self, title: T) -> OpenDialog {
-        self.title = title.into_read_state().as_dyn_read();
+        self.title = title.into_dyn_read_state();
         self
     }
 
     pub fn set_message<T: IntoReadState<Option<String>>>(mut self, message: T) -> OpenDialog {
-        self.message = message.into_read_state().as_dyn_read();
+        self.message = message.into_dyn_read_state();
         self
     }
 
     pub fn set_prompt<T: IntoReadState<Option<String>>>(mut self, prompt: T) -> OpenDialog {
-        self.prompt = prompt.into_read_state().as_dyn_read();
+        self.prompt = prompt.into_dyn_read_state();
         self
     }
 
     pub fn set_multiple_selection<T: IntoReadState<bool>>(mut self, multiple_selection: T) -> OpenDialog {
-        self.multiple_selection = multiple_selection.into_read_state().as_dyn_read();
+        self.multiple_selection = multiple_selection.into_dyn_read_state();
         self
     }
 
     pub fn set_show_hidden_files<T: IntoReadState<bool>>(mut self, show_hidden_files: T) -> OpenDialog {
-        self.show_hidden_files = show_hidden_files.into_read_state().as_dyn_read();
+        self.show_hidden_files = show_hidden_files.into_dyn_read_state();
         self
     }
 
     pub fn set_selection_type<T: IntoReadState<OpenPanelSelectionType>>(mut self, selection_type: T) -> OpenDialog {
-        self.selection_type = selection_type.into_read_state().as_dyn_read();
+        self.selection_type = selection_type.into_dyn_read_state();
         self
     }
 
     pub fn set_path<T: IntoReadState<Option<PathBuf>>>(mut self, path: T) -> OpenDialog {
-        self.path = path.into_read_state().as_dyn_read();
+        self.path = path.into_dyn_read_state();
         self
     }
 
     pub fn set_file_types<T: IntoReadState<Vec<FileType>>>(mut self, file_types: T) -> OpenDialog {
-        self.file_types = file_types.into_read_state().as_dyn_read();
+        self.file_types = file_types.into_dyn_read_state();
         self
     }
 

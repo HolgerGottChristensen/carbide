@@ -77,21 +77,21 @@ impl Default for PbrMaterial {
 impl PbrMaterial {
     pub fn color<C: IntoReadState<AlbedoComponent>>(self, color: C) -> PbrMaterial {
         PbrMaterial {
-            albedo: color.into_read_state().as_dyn_read(),
+            albedo: color.into_dyn_read_state(),
             ..self
         }
     }
 
     pub fn normal<C: IntoReadState<NormalTexture>>(self, normal: C) -> PbrMaterial {
         PbrMaterial {
-            normal: normal.into_read_state().as_dyn_read(),
+            normal: normal.into_dyn_read_state(),
             ..self
         }
     }
 
     pub fn roughness<R: IntoReadState<Option<f32>>>(self, roughness: R) -> PbrMaterial {
         PbrMaterial {
-            roughness_factor: roughness.into_read_state().as_dyn_read(),
+            roughness_factor: roughness.into_dyn_read_state(),
             ..self
         }
     }

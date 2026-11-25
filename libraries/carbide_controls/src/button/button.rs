@@ -5,7 +5,7 @@ use carbide_core::cursor::MouseCursor;
 use carbide::draw::{AutomaticStyle, Dimension, Position};
 use carbide_core::flags::WidgetFlag;
 use carbide::focus::{FocusManager, Refocus};
-use carbide::state::{IntoState, ReadStateExt, State};
+use carbide::state::{AnyReadState, AnyState, IntoState, ReadStateExt, State, StateExtNew};
 use carbide::CommonWidgetImpl;
 use carbide_core::focus::Focus;
 use carbide_core::state::{LocalState, ReadState};
@@ -18,12 +18,8 @@ use crate::{EnabledState};
 
 #[derive(Clone, Widget)]
 #[carbide_exclude(Accessibility, Sync)]
-pub struct Button<F, A, E, H, P, L> where
-    F: State<T=Focus>,
+pub struct Button<A, L> where
     A: Action + Clone + 'static,
-    E: ReadState<T=bool>,
-    H: State<T=bool>,
-    P: State<T=bool>,
     L: Widget + WidgetProperties<Kind=WidgetKindSimple>,
 {
     #[id] id: WidgetId,
@@ -36,16 +32,16 @@ pub struct Button<F, A, E, H, P, L> where
     action: A,
     label: L,
 
-    #[state] focused: F,
-    #[state] enabled: E,
-    #[state] hovered: H,
-    #[state] pressed: P,
+    #[state] focused: Box<dyn AnyState<T=Focus>>,
+    #[state] enabled: Box<dyn AnyReadState<T=bool>>,
+    #[state] hovered: Box<dyn AnyState<T=bool>>,
+    #[state] pressed: Box<dyn AnyState<T=bool>>,
 
     cursor: MouseCursor,
 }
 
-impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool>, LocalState<bool>, Empty> {
-    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<LocalState<Focus>, A, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> where L::Output: WidgetProperties<Kind=WidgetKindSimple> {
+impl Button<fn(MouseAreaActionContext), Empty> {
+    pub fn new<L: IntoWidget, A: Action + Clone + 'static>(label: L, action: A) -> Button<A, L::Output> where L::Output: WidgetProperties<Kind=WidgetKindSimple> {
         Button {
             id: WidgetId::new(),
             position: Default::default(),
@@ -54,57 +50,33 @@ impl Button<LocalState<Focus>, fn(MouseAreaActionContext), bool, LocalState<bool
             style_id: TypeId::of::<()>(),
             action,
             label: label.into_widget(),
-            focused: LocalState::new(Focus::Unfocused),
-            enabled: EnabledState::new(true),
-            hovered: LocalState::new(false),
-            pressed: LocalState::new(false),
+            focused: LocalState::new(Focus::Unfocused).as_dyn(),
+            enabled: EnabledState::new(true).as_dyn_read(),
+            hovered: LocalState::new(false).as_dyn(),
+            pressed: LocalState::new(false).as_dyn(),
             cursor: MouseCursor::Pointer,
         }
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Button<F, A, E, H, P, L> {
-    pub fn hovered<H2: IntoState<bool>>(self, hovered: H2) -> Button<F, A, E, H2::Output, P, L> {
-        Button {
-            id: self.id,
-            position: self.position,
-            dimension: self.dimension,
-            child: self.child,
-            style_id: self.style_id,
-            action: self.action,
-            label: self.label,
-            focused: self.focused,
-            enabled: self.enabled,
-            hovered: hovered.into_state(),
-            pressed: self.pressed,
-            cursor: self.cursor,
-        }
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Button<A, L> {
+    pub fn hovered<H2: IntoState<bool>>(mut self, hovered: H2) -> Button<A, L> {
+        self.hovered = hovered.into_dyn_state();
+        self
     }
 
-    pub fn pressed<P2: IntoState<bool>>(self, pressed: P2) -> Button<F, A, E, H, P2::Output, L> {
-        Button {
-            id: self.id,
-            position: self.position,
-            dimension: self.dimension,
-            child: self.child,
-            style_id: self.style_id,
-            action: self.action,
-            label: self.label,
-            focused: self.focused,
-            enabled: self.enabled,
-            hovered: self.hovered,
-            pressed: pressed.into_state(),
-            cursor: self.cursor,
-        }
+    pub fn pressed<P2: IntoState<bool>>(mut self, pressed: P2) -> Button<A, L> {
+        self.pressed = pressed.into_dyn_state();
+        self
     }
 
-    pub fn cursor(mut self, cursor: MouseCursor) -> Button<F, A, E, H, P, L> {
+    pub fn cursor(mut self, cursor: MouseCursor) -> Button<A, L> {
         self.cursor = cursor;
         self
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for Button<F, A, E, H, P, L> {
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for Button<A, L> {
     fn sync(&mut self, env: &mut Environment) {
         self.focused.sync(env);
         self.enabled.sync(env);
@@ -118,10 +90,10 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
 
             let inner = style.create(
                 self.label.clone().boxed(),
-                self.focused.as_dyn_read(),
-                self.enabled.as_dyn_read(),
-                self.hovered.as_dyn_read(),
-                self.pressed.as_dyn_read()
+                self.focused.clone().as_dyn_read(),
+                self.enabled.clone().as_dyn_read(),
+                self.hovered.clone().as_dyn_read(),
+                self.pressed.clone().as_dyn_read()
             );
 
             self.child = MouseArea::new(inner)
@@ -143,11 +115,11 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
         }
     }
 }
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for Button<F, A, E, H, P, L> {
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for Button<A, L> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Accessibility for Button<F, A, E, H, P, L> {
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Accessibility for Button<A, L> {
     fn process_accessibility(&mut self, ctx: &mut AccessibilityContext) {
         self.sync(ctx.env);
 
@@ -167,7 +139,7 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
     }
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Debug for Button<F, A, E, H, P, L> {
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> Debug for Button<A, L> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Button")
             .field("id", &self.id)
@@ -181,17 +153,15 @@ impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: St
 }
 
 #[derive(Debug, Clone)]
-struct ButtonAction<A, F, E> where
-    A: Action,
-    F: State<T=Focus>,
-    E: ReadState<T=bool>,
+struct ButtonAction<A> where
+    A: Action
 {
     action: A,
-    focus: F,
-    enabled: E,
+    focus: Box<dyn AnyState<T=Focus>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 }
 
-impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonAction<A, F, E> {
+impl<A: Action + Clone + 'static> MouseAreaAction for ButtonAction<A> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
         self.enabled.sync(ctx.env);
         self.focus.sync(ctx.env);
@@ -210,17 +180,15 @@ impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> Mouse
 }
 
 #[derive(Debug, Clone)]
-struct ButtonOutsideAction<A, F, E> where
-    A: Action,
-    F: State<T=Focus>,
-    E: ReadState<T=bool>,
+struct ButtonOutsideAction<A> where
+    A: Action
 {
     action: A,
-    focus: F,
-    enabled: E,
+    focus: Box<dyn AnyState<T=Focus>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
 }
 
-impl<A: Action + Clone + 'static, F: State<T=Focus>, E: ReadState<T=bool>> MouseAreaAction for ButtonOutsideAction<A, F, E> {
+impl<A: Action + Clone + 'static> MouseAreaAction for ButtonOutsideAction<A> {
     fn call(&mut self, ctx: MouseAreaActionContext) {
         self.focus.sync(ctx.env);
         if *self.focus.value() == Focus::Focused {

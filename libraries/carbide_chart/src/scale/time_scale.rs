@@ -269,7 +269,7 @@ impl TimeScale {
     /// The time zone ticks are placed in and labels shown in, a value or a state of one. Defaults
     /// to the machine's local time zone (`TimeScaleZone::Local`).
     pub fn time_zone(mut self, zone: impl IntoReadState<TimeScaleZone>) -> TimeScale {
-        self.zone = zone.into_read_state().as_dyn_read();
+        self.zone = zone.into_dyn_read_state();
         self
     }
 

@@ -199,7 +199,7 @@ where
     /// Shows or hides the dataset with `visible`, a writable state of a `bool` (see
     /// `DatasetExt::visible`).
     pub fn visible(mut self, visible: impl IntoState<bool>) -> OptionsDataset<T, C, S, F, G, XS, YS, ST, L> {
-        self.visible = visible.into_state().as_dyn();
+        self.visible = visible.into_dyn_state();
         self
     }
 }

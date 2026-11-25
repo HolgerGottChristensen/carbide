@@ -31,7 +31,7 @@ impl<T: StateContract + Animatable<T>> Animation<T> {
             //repeat_count: None,
             animation_curve: linear,
             custom_interpolation: T::interpolate,
-            state: state.into_state().as_dyn(),
+            state: state.into_dyn_state(),
             from,
             to,
         }
@@ -52,7 +52,7 @@ impl<T: StateContract> Animation<T> {
             //repeat_count: None,
             animation_curve: linear,
             custom_interpolation: interpolation,
-            state: state.into_state().as_dyn(),
+            state: state.into_dyn_state(),
             from,
             to,
         }

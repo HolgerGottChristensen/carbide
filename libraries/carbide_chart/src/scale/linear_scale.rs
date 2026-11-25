@@ -51,14 +51,14 @@ impl LinearScale {
     /// This is a builder method: on a `LinearScale` value, it takes the place of `Scale::min`,
     /// which reads where the scale starts after a fit; call that as `Scale::min(&scale)`.
     pub fn min(mut self, min: impl IntoReadState<Scalar>) -> LinearScale {
-        self.fixed_min = Some(min.into_read_state().as_dyn_read());
+        self.fixed_min = Some(min.into_dyn_read_state());
         self
     }
 
     /// Ends the scale at `max`, a number or a state of one, whatever the data, as `min` starts
     /// it. An angle in degrees spans a whole circle with `.min(0.0).max(360.0)`.
     pub fn max(mut self, max: impl IntoReadState<Scalar>) -> LinearScale {
-        self.fixed_max = Some(max.into_read_state().as_dyn_read());
+        self.fixed_max = Some(max.into_dyn_read_state());
         self
     }
 
@@ -66,7 +66,7 @@ impl LinearScale {
     /// instead of a nice step picked for the range: `.step(45.0)` on an angle in degrees. A
     /// step too small for the range, giving more than 1000 ticks, or not above zero, is ignored.
     pub fn step(mut self, step: impl IntoReadState<Scalar>) -> LinearScale {
-        self.fixed_step = Some(step.into_read_state().as_dyn_read());
+        self.fixed_step = Some(step.into_dyn_read_state());
         self
     }
 

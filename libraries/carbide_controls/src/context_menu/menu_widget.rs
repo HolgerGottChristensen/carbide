@@ -8,6 +8,6 @@ pub trait AnyMenuWidget: AnyWidget {
 
 }
 
-impl<F: State<T=Focus>, A: Action + Clone + 'static, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> AnyMenuWidget for Button<F, A, E, H, P, L> {
+impl<A: Action + Clone + 'static, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> AnyMenuWidget for Button<A, L> {
 
 }

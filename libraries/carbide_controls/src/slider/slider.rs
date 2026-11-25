@@ -1,6 +1,7 @@
 use std::any::TypeId;
 use carbide::draw::Rect;
 use carbide::environment::Environment;
+use carbide::state::AnyReadState;
 use carbide::widget::WidgetSync;
 use crate::slider::{SliderStepping, SliderSteppingType, SliderStyle};
 use crate::slider::SliderValue;
@@ -147,9 +148,9 @@ impl<
 
         let style = AutomaticStyle;
 
-        let thumb = style.create_thumb(focus.as_dyn_read(), enabled.as_dyn_read(), percent.as_dyn_read(), stepping_type.as_dyn_read());
-        let track = style.create_track(focus.as_dyn_read(), enabled.as_dyn_read(), percent.as_dyn_read(), stepping_type.as_dyn_read());
-        let background = style.create_background(focus.as_dyn_read(), enabled.as_dyn_read(), percent.as_dyn_read(), stepping_type.as_dyn_read());
+        let thumb = style.create_thumb(focus.clone().as_dyn_read(), enabled.clone().as_dyn_read(), percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
+        let track = style.create_track(focus.clone().as_dyn_read(), enabled.clone().as_dyn_read(), percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
+        let background = style.create_background(focus.clone().as_dyn_read(), enabled.clone().as_dyn_read(), percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
 
         Slider {
             id: WidgetId::new(),
@@ -362,9 +363,9 @@ impl<
                 }
             });
 
-            let thumb = style.create_thumb(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
-            let track = style.create_track(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
-            let background = style.create_background(self.focus.as_dyn_read(), self.enabled.as_dyn_read(), self.percent.as_dyn_read(), stepping_type.as_dyn_read());
+            let thumb = style.create_thumb(self.focus.clone().as_dyn_read(), self.enabled.clone().as_dyn_read(), self.percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
+            let track = style.create_track(self.focus.clone().as_dyn_read(), self.enabled.clone().as_dyn_read(), self.percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
+            let background = style.create_background(self.focus.clone().as_dyn_read(), self.enabled.clone().as_dyn_read(), self.percent.clone().as_dyn_read(), stepping_type.clone().as_dyn_read());
 
             self.thumb = thumb;
             self.track = track;

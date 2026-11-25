@@ -100,7 +100,14 @@ impl<
             );
 
             let selection_type = self.selected.selection_type();
-            self.child = style.create(self.focus.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read(), Box::new(foreach), selection_type);
+
+            self.child = style.create(
+                self.focus.clone().as_dyn(),
+                self.enabled.clone().as_dyn_read(),
+                self.label.clone().as_dyn_read(),
+                Box::new(foreach),
+                selection_type
+            );
         }
     }
 }

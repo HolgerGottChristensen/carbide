@@ -126,7 +126,7 @@ impl CategoryScale {
     /// controllers drawn on it: bar charts ask for grid lines between categories, so the lines
     /// separate the bar groups.
     pub fn grid_offset(mut self, grid_offset: impl IntoReadState<bool>) -> CategoryScale {
-        self.grid_offset = Some(grid_offset.into_read_state().as_dyn_read());
+        self.grid_offset = Some(grid_offset.into_dyn_read_state());
         self
     }
 
@@ -135,7 +135,7 @@ impl CategoryScale {
     /// shows it as asked for, so dragging scrolls smoothly. Either way it shows at least two
     /// categories' bands with an offset, as bars ask for, and one step between categories without.
     pub fn snap_mode(mut self, snap_mode: impl IntoReadState<SnapMode>) -> CategoryScale {
-        self.snap_mode = Some(snap_mode.into_read_state().as_dyn_read());
+        self.snap_mode = Some(snap_mode.into_dyn_read_state());
         self
     }
 

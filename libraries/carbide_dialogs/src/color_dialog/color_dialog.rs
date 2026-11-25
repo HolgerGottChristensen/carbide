@@ -18,8 +18,8 @@ impl ColorDialog {
     pub fn new<C: IntoState<Color>, A: IntoReadState<bool>>(color: C, show_alpha: A) -> ColorDialog {
         ColorDialog {
             id: WidgetId::new(),
-            color: color.into_state().as_dyn(),
-            show_alpha: show_alpha.into_read_state().as_dyn_read(),
+            color: color.into_dyn_state(),
+            show_alpha: show_alpha.into_dyn_read_state(),
         }
     }
 

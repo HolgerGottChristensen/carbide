@@ -173,37 +173,37 @@ impl<Id: ReadState<T=ImageId> + Clone> Layout for Video<Id> {
 
 impl<Id: ReadState<T=ImageId> + Clone> Video<Id> {
     pub fn playing<P: IntoReadState<bool>>(mut self, playing: P) -> Self {
-        self.playing = playing.into_read_state().as_dyn_read();
+        self.playing = playing.into_dyn_read_state();
         self
     }
 
     pub fn rate<P: IntoReadState<f64>>(mut self, rate: P) -> Self {
-        self.rate = rate.into_read_state().as_dyn_read();
+        self.rate = rate.into_dyn_read_state();
         self
     }
 
     pub fn volume<P: IntoReadState<f64>>(mut self, volume: P) -> Self {
-        self.volume = volume.into_read_state().as_dyn_read();
+        self.volume = volume.into_dyn_read_state();
         self
     }
 
     pub fn muted<P: IntoReadState<bool>>(mut self, muted: P) -> Self {
-        self.muted = muted.into_read_state().as_dyn_read();
+        self.muted = muted.into_dyn_read_state();
         self
     }
 
     pub fn duration<P: IntoState<Option<Duration>>>(mut self, duration: P) -> Self {
-        self.duration = duration.into_state().as_dyn();
+        self.duration = duration.into_dyn_state();
         self
     }
 
     pub fn buffering<P: IntoState<bool>>(mut self, buffering: P) -> Self {
-        self.buffering = buffering.into_state().as_dyn();
+        self.buffering = buffering.into_dyn_state();
         self
     }
 
     pub fn current_time<P: IntoState<Duration>>(mut self, current_time: P) -> Self {
-        self.current_time = current_time.into_state().as_dyn();
+        self.current_time = current_time.into_dyn_state();
         self
     }
 

@@ -45,7 +45,7 @@ impl<T: StateContract + Animatable<T>> Keyframes<T> {
     /// `.curve(...)`.
     pub fn new<S: IntoState<T>>(state: S, initial: T) -> Self {
         Keyframes {
-            state: state.into_state().as_dyn(),
+            state: state.into_dyn_state(),
             initial,
             default_curve: linear,
             default_interpolation: T::interpolate,
@@ -67,7 +67,7 @@ impl<T: StateContract> Keyframes<T> {
         default_interpolation: fn(&T, &T, f64) -> T,
     ) -> Self {
         Keyframes {
-            state: state.into_state().as_dyn(),
+            state: state.into_dyn_state(),
             initial,
             default_curve: linear,
             default_interpolation,

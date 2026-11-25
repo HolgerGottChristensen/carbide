@@ -1,10 +1,6 @@
 use crate::state::{AnyReadState, AnyState, IgnoreWritesState, LoggingState, Map1, ReadState, RMap1, State, StateContract};
 
 pub trait StateExtNew<T>: State<T=T> + Sized + Clone + 'static where T: StateContract {
-    fn as_dyn(&self) -> Box<dyn AnyState<T=T>> {
-        Box::new(self.clone())
-    }
-
     fn log_changes(&self) -> LoggingState<T, Self> {
         LoggingState::new(self.clone())
     }
@@ -14,10 +10,6 @@ impl<T: StateContract, S> StateExtNew<T> for S where S: State<T=T> + Sized + Clo
 
 
 pub trait ReadStateExt<T>: ReadState<T=T> + Sized + Clone + 'static where T: StateContract {
-    fn as_dyn_read(&self) -> Box<dyn AnyReadState<T=T>> {
-        Box::new(self.clone())
-    }
-
     fn ignore_writes(&self) -> IgnoreWritesState<T, Self> {
         IgnoreWritesState::new(self.clone())
     }

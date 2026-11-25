@@ -10,7 +10,7 @@ use crate::CommonWidgetImpl;
 use crate::widget::WidgetSync;
 use crate::layout::{Layout, LayoutContext};
 use crate::render::{Render, RenderContext};
-use crate::state::{LocalState, ReadState, State, StateExtNew};
+use crate::state::{AnyState, LocalState, ReadState, State, StateExtNew};
 use crate::widget::{AnyWidget, CommonWidget, Empty, Rectangle, Widget, WidgetExt, WidgetId};
 use crate::widget::properties::WidgetKindSimple;
 use crate::widget::scroll::style::{HorizontalScrollBarStyleKey, VerticalScrollBarStyleKey};
@@ -270,16 +270,16 @@ impl<W: Widget<Kind=WidgetKindSimple>> Layout for Scroll<W> {
         let vertical_style = ctx.env.get::<VerticalScrollBarStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
         if vertical_style.key() != self.vertical_id {
-            self.vertical_thumb = vertical_style.thumb(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
-            self.vertical_background = vertical_style.background(self.vertical_dragging.as_dyn(), self.vertical_background_hovered.as_dyn());
+            self.vertical_thumb = vertical_style.thumb(self.vertical_dragging.clone().as_dyn(), self.vertical_background_hovered.clone().as_dyn());
+            self.vertical_background = vertical_style.background(self.vertical_dragging.clone().as_dyn(), self.vertical_background_hovered.clone().as_dyn());
             self.vertical_id = vertical_style.key();
         }
 
         let horizontal_style = ctx.env.get::<HorizontalScrollBarStyleKey>().map(|a | &**a).unwrap_or(&AutomaticStyle);
 
         if horizontal_style.key() != self.horizontal_id {
-            self.horizontal_thumb = horizontal_style.thumb(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
-            self.horizontal_background = horizontal_style.background(self.horizontal_dragging.as_dyn(), self.horizontal_background_hovered.as_dyn());
+            self.horizontal_thumb = horizontal_style.thumb(self.horizontal_dragging.clone().as_dyn(), self.horizontal_background_hovered.clone().as_dyn());
+            self.horizontal_background = horizontal_style.background(self.horizontal_dragging.clone().as_dyn(), self.horizontal_background_hovered.clone().as_dyn());
             self.horizontal_id = horizontal_style.key();
         }
 

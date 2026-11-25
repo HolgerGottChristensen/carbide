@@ -67,7 +67,7 @@ impl<D: Sequence<dyn DataSet>> LollipopController<D> {
     /// runs down the y scale and its value along x. `false`, upright, by default, as for the
     /// built-in controllers' `horizontal`.
     pub fn horizontal(mut self, horizontal: impl IntoReadState<bool>) -> LollipopController<D> {
-        self.horizontal = horizontal.into_read_state().as_dyn_read();
+        self.horizontal = horizontal.into_dyn_read_state();
         self
     }
 }

@@ -25,8 +25,6 @@ impl Layout for MenuStylePopupBase {
     fn calculate_size(&mut self, _requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
-        
-
         self.child.calculate_size(self.dimension(), ctx)
     }
 }

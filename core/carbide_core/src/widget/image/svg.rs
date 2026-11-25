@@ -106,7 +106,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
     fn fill_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, fill: &Fill) {
         let style = match fill.paint() {
             Paint::CurrentColor => self.color.as_ref()
-                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
+                .map(|a| RenderInstructionValue::Variable(a.clone().as_dyn_read()))
                 .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
             Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
             Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),
@@ -127,7 +127,7 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
     fn stroke_path(&self, description: &mut Vec<RenderInstruction>, path_instructions: &Vec<PathInstruction>, stroke: &Stroke) {
         let style = match stroke.paint() {
             Paint::CurrentColor => self.color.as_ref()
-                .map(|a| RenderInstructionValue::Variable(a.as_dyn_read()))
+                .map(|a| RenderInstructionValue::Variable(a.clone().as_dyn_read()))
                 .unwrap_or(RenderInstructionValue::Constant(Style::Color(BLUE))),
             Paint::Color(c) => RenderInstructionValue::Constant(Style::Color(rgb_bytes(c.red, c.green, c.blue))),
             Paint::LinearGradient(_) => RenderInstructionValue::Constant(Style::Color(BLUE)),

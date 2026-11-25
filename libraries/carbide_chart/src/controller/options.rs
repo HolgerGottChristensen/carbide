@@ -13,7 +13,7 @@ pub(crate) fn constant<T: StateContract>(value: T) -> Opt<T> {
 
 /// An option from `value`, a value or a state of one.
 pub(crate) fn option<T: StateContract>(value: impl IntoReadState<T>) -> Opt<T> {
-    value.into_read_state().as_dyn_read()
+    value.into_dyn_read_state()
 }
 
 /// The option's value, as last synced.

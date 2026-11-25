@@ -1,6 +1,6 @@
 use std::ops::{Range, RangeInclusive};
 use crate::cell::ValueRefMut;
-use crate::state::{AnyReadState, AnyState, ConvertIntoRead, LocalState, Map1, RMap1, RWMap1, RWOMap1, State, StateContract};
+use crate::state::{AnyReadState, AnyState, ConvertIntoRead, LocalState, Map1, RMap1, RWMap1, RWOMap1, State, StateContract, StateExtNew};
 
 // ---------------------------------------------------
 //  Definitions
@@ -10,6 +10,10 @@ pub trait IntoState<T> where T: StateContract {
     type Output: State<T=T>;
 
     fn into_state(self) -> Self::Output;
+
+    fn into_dyn_state(self) -> Box<dyn AnyState<T=T>> where Self: Sized {
+        self.into_state().as_dyn()
+    }
 }
 
 pub trait ConvertInto<T: StateContract>: StateContract {

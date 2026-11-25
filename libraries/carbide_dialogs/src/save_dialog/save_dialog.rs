@@ -38,32 +38,32 @@ impl SaveDialog {
     }
 
     pub fn set_title<T: IntoReadState<Option<String>>>(mut self, title: T) -> SaveDialog {
-        self.title = title.into_read_state().as_dyn_read();
+        self.title = title.into_dyn_read_state();
         self
     }
 
     pub fn set_default_file_name<T: IntoReadState<Option<String>>>(mut self, default_file_name: T) -> SaveDialog {
-        self.default_file_name = default_file_name.into_read_state().as_dyn_read();
+        self.default_file_name = default_file_name.into_dyn_read_state();
         self
     }
 
     pub fn set_message<T: IntoReadState<Option<String>>>(mut self, message: T) -> SaveDialog {
-        self.message = message.into_read_state().as_dyn_read();
+        self.message = message.into_dyn_read_state();
         self
     }
 
     pub fn set_prompt<T: IntoReadState<Option<String>>>(mut self, prompt: T) -> SaveDialog {
-        self.prompt = prompt.into_read_state().as_dyn_read();
+        self.prompt = prompt.into_dyn_read_state();
         self
     }
 
     pub fn set_show_hidden_files<T: IntoReadState<bool>>(mut self, show_hidden_files: T) -> SaveDialog {
-        self.show_hidden_files = show_hidden_files.into_read_state().as_dyn_read();
+        self.show_hidden_files = show_hidden_files.into_dyn_read_state();
         self
     }
 
     pub fn set_path<T: IntoReadState<Option<PathBuf>>>(mut self, path: T) -> SaveDialog {
-        self.path = path.into_read_state().as_dyn_read();
+        self.path = path.into_dyn_read_state();
         self
     }
 
@@ -71,7 +71,7 @@ impl SaveDialog {
     /// The first extension will be the default, and if an extension other than the
     /// allowed are set, the default file extension is appended.
     pub fn set_file_types<T: IntoReadState<Vec<FileType>>>(mut self, file_types: T) -> SaveDialog {
-        self.file_types = file_types.into_read_state().as_dyn_read();
+        self.file_types = file_types.into_dyn_read_state();
         self
     }
 

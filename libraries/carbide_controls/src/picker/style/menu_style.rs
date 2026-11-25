@@ -90,13 +90,13 @@ impl MenuStyle {
                     position: lens!(rect.position).as_dyn_read(),
                     dimension: lens!(rect.dimension).as_dyn_read(),
 
-                    hovered: hovered.as_dyn(),
+                    hovered: hovered.clone().as_dyn(),
                     model: model.clone(),
                     enabled: enabled.clone(),
                     child: VStack::new(ForEach::custom_widget(model.clone(), {
                         let hovered = hovered.clone();
                         move |item: &dyn AnySelectableWidget| {
-                            Self::popup_item(item, event_id, hovered.as_dyn())
+                            Self::popup_item(item, event_id, hovered.clone().as_dyn())
                         }
                     })).spacing(0.0)
                         .padding(2.0)

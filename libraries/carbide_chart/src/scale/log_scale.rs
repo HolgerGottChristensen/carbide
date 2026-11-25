@@ -69,7 +69,7 @@ impl LogScale {
     /// The base whose powers get the labelled ticks, a value or a state of one. Defaults to 10.
     /// A base of 1 or less, which has no powers to tick, is taken as 10.
     pub fn base(mut self, base: impl IntoReadState<Scalar>) -> LogScale {
-        self.base = base.into_read_state().as_dyn_read();
+        self.base = base.into_dyn_read_state();
         self
     }
 

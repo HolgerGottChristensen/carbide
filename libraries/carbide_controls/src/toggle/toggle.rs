@@ -66,7 +66,7 @@ impl<F: State<T=Focus>, V: State<T=ToggleValue>, E: ReadState<T=bool>, L: ReadSt
 
         if style.key() != self.style_id {
             self.style_id = style.key();
-            self.child = style.create(self.focus.as_dyn(), self.value.as_dyn(), self.enabled.as_dyn_read(), self.label.as_dyn_read());
+            self.child = style.create(self.focus.clone().as_dyn(), self.value.clone().as_dyn(), self.enabled.clone().as_dyn_read(), self.label.clone().as_dyn_read());
             self.role = style.toggle_role();
         }
     }

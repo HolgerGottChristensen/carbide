@@ -7,19 +7,15 @@ use carbide::draw::{Color, Dimension, Position};
 use carbide::environment::Environment;
 use carbide::flags::WidgetFlag;
 use carbide::focus::Focus;
-use carbide::state::{IntoState, LocalState, ReadState, ReadStateExt, State, StateExtNew};
+use carbide::state::{AnyReadState, AnyState, IntoState, LocalState, ReadState, ReadStateExt, State, StateExtNew};
 use carbide::widget::{AnyWidget, CommonWidget, Empty, IntoWidget, Rectangle, Widget, WidgetId, WidgetProperties, WidgetSync};
 use carbide::widget::properties::WidgetKindSimple;
 use crate::color_picker::ColorPickerStyleKey;
 
 #[derive(Debug, Clone, Widget)]
 #[carbide_exclude(Sync)]
-pub struct ColorPicker<F, V, E, H, P, L> where
-    F: State<T=Focus>,
+pub struct ColorPicker<V, L> where
     V: State<T=Color>,
-    E: ReadState<T=bool>,
-    H: State<T=bool>,
-    P: State<T=bool>,
     L: Widget + WidgetProperties<Kind=WidgetKindSimple>,
 {
     #[id] id: WidgetId,
@@ -31,14 +27,14 @@ pub struct ColorPicker<F, V, E, H, P, L> where
     state: V,
     label: L,
 
-    focused: F,
-    enabled: E,
-    hovered: H,
-    pressed: P,
+    focused: Box<dyn AnyState<T=Focus>>,
+    enabled: Box<dyn AnyReadState<T=bool>>,
+    hovered: Box<dyn AnyState<T=bool>>,
+    pressed: Box<dyn AnyState<T=bool>>,
 }
 
-impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bool>, Empty> {
-    pub fn new<L: IntoWidget, V: IntoState<Color>>(label: L, value: V) -> ColorPicker<LocalState<Focus>, V::Output, impl ReadState<T=bool>, LocalState<bool>, LocalState<bool>, L::Output> where L::Output:  WidgetProperties<Kind=WidgetKindSimple> {
+impl ColorPicker<Color, Empty> {
+    pub fn new<L: IntoWidget, V: IntoState<Color>>(label: L, value: V) -> ColorPicker<V::Output, L::Output> where L::Output:  WidgetProperties<Kind=WidgetKindSimple> {
         ColorPicker {
             id: WidgetId::new(),
             position: Default::default(),
@@ -47,15 +43,15 @@ impl ColorPicker<LocalState<Focus>, Color, bool, LocalState<bool>, LocalState<bo
             style_id: TypeId::of::<()>(),
             state: value.into_state(),
             label: label.into_widget(),
-            focused: LocalState::new(Focus::Unfocused),
-            enabled: EnabledState::new(true),
-            hovered: LocalState::new(false),
-            pressed: LocalState::new(false),
+            focused: LocalState::new(Focus::Unfocused).as_dyn(),
+            enabled: EnabledState::new(true).as_dyn_read(),
+            hovered: LocalState::new(false).as_dyn(),
+            pressed: LocalState::new(false).as_dyn(),
         }
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for ColorPicker<F, V, E, H, P, L> {
+impl<V: State<T=Color>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> WidgetSync for ColorPicker<V, L> {
     fn sync(&mut self, env: &mut Environment) {
         self.focused.sync(env);
         self.enabled.sync(env);
@@ -66,11 +62,11 @@ impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool
 
         if style.key() != self.style_id {
             self.style_id = style.key();
-            self.child = style.create(self.label.clone().boxed(), self.focused.as_dyn(), self.enabled.as_dyn_read(), self.hovered.as_dyn_read(), self.pressed.as_dyn_read(), self.state.as_dyn());
+            self.child = style.create(self.label.clone().boxed(), self.focused.clone().as_dyn(), self.enabled.clone().as_dyn_read(), self.hovered.clone().as_dyn_read(), self.pressed.clone().as_dyn_read(), self.state.clone().as_dyn());
         }
     }
 }
 
-impl<F: State<T=Focus>, V: State<T=Color>, E: ReadState<T=bool>, H: State<T=bool>, P: State<T=bool>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for ColorPicker<F, V, E, H, P, L> {
+impl<V: State<T=Color>, L: Widget + WidgetProperties<Kind=WidgetKindSimple>> CommonWidget for ColorPicker<V, L> {
     CommonWidgetImpl!(self, child: self.child, position: self.position, dimension: self.dimension, flag: WidgetFlag::FOCUSABLE, flexibility: 10, focus: self.focused);
 }
