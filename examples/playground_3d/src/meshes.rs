@@ -9,7 +9,7 @@ pub fn load_obj(path: &str) -> (Vec<Mesh>, Matrix4<f32>) {
     let meshes = Mesh::load_obj(path)
         .unwrap_or_else(|error| panic!("the OBJ file at {path} to load: {error}"));
 
-    let positions = meshes.iter().flat_map(|mesh| mesh.vertices.iter().map(|vertex| vertex.position));
+    let positions = meshes.iter().flat_map(|mesh| mesh.vertices().iter().map(|vertex| vertex.position));
     let (min, max) = positions.fold(
         (Vector3::new(f32::MAX, f32::MAX, f32::MAX), Vector3::new(f32::MIN, f32::MIN, f32::MIN)),
         |(min, max), p| (

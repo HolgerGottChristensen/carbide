@@ -12,6 +12,7 @@
 //!include pbr/reflectance.wgsl
 //!include pbr/clear_coat.wgsl
 //!include pbr/uniforms.wgsl
+//!include pbr/tonemapping.wgsl
 
 const PI = 3.14159265358979323846;
 const PI_2 = 1.570796327;
@@ -58,7 +59,7 @@ fn main_vs(
     @location(4) texture_coords_1: vec2<f32>,
     @location(5) color_0: vec4<f32>,
     @location(6) color_1: vec4<f32>,
-    @location(7) object_index: u32,
+    @builtin(instance_index) object_index: u32,
 ) -> VertexOutput {
     let object = objects[object_index];
 
@@ -189,7 +190,8 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let ambient = uniforms.ambient * pixel.albedo;
     let shaded = vec4<f32>(color, pixel.albedo.a);
-    return max(ambient, shaded);
+    let lit = max(ambient, shaded);
+    return vec4<f32>(tonemap_pbr_neutral(lit.rgb), lit.a);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);
     //return pixel.albedo;

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, BufferUsages, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PipelineLayout, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, SamplerBindingType, SamplerDescriptor, ShaderModule, ShaderStages, StencilState, StoreOp, Texture, TextureFormat, TextureView, VertexState};
+use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PipelineLayout, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, SamplerBindingType, SamplerDescriptor, ShaderModule, ShaderStages, StencilState, StoreOp, Texture, TextureFormat, TextureView, VertexState};
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
@@ -25,14 +24,19 @@ use crate::preprocess_shader;
 use crate::render_pass_command::RenderPassCommand;
 use crate::storage_buffer::StorageBuffer;
 use crate::uniforms::WgpuUniforms;
+use crate::mesh_cache::MeshCache;
 use crate::vertex::WgpuVertex;
 
 const DEPTH_FORMAT: TextureFormat = TextureFormat::Depth32Float;
 
+/// Samples per pixel when drawing, for anti-aliased edges. The multisampled picture is resolved
+/// into the layer. WebGPU guarantees 4 for the layer's colour format and the depth format.
+const SAMPLE_COUNT: u32 = 4;
+
 /// Renders a `Scene3d` into its layer with wgpu.
 ///
 /// The nodes' calls during a frame build a draw list: the materials, objects (a transform and a
-/// material), vertices, indices and directional lights. [`render`](InnerRenderContext3d::render)
+/// material), the meshes to draw and directional lights. [`render`](InnerRenderContext3d::render)
 /// uploads the list and draws it in one render pass into the layer. Only the GPU state below is
 /// kept between frames; meshes are uploaded again every frame.
 #[derive(Debug)]
@@ -46,8 +50,9 @@ pub struct WgpuRenderContext3d {
 
     directional_lights: Vec<WgpuDirectionalLight>,
 
-    vertices: Vec<WgpuVertex>,
-    indices: Vec<u32>,
+    /// Used when the environment has no shared [`MeshCache`], for example when the context was
+    /// created without the plugin.
+    fallback_mesh_cache: Option<MeshCache>,
 
     commands: Vec<RenderPassCommand>,
 
@@ -73,6 +78,8 @@ struct GpuState {
     sampler: Sampler,
     depth_texture: Option<Texture>,
     depth_view: Option<TextureView>,
+    /// The multisampled colour target, resolved into the layer, with its size and format.
+    multisampled: Option<((u32, u32, TextureFormat), TextureView)>,
     texture_bind_groups: HashMap<WgpuPbrMaterialTextures, BindGroup>,
 }
 
@@ -85,8 +92,7 @@ impl WgpuRenderContext3d {
             transform_stack: vec![Matrix4::identity()],
             objects: vec![],
             directional_lights: vec![],
-            vertices: vec![],
-            indices: vec![],
+            fallback_mesh_cache: None,
             commands: vec![],
             image_context: ImageContext3d,
             gpu: None,
@@ -103,8 +109,6 @@ impl WgpuRenderContext3d {
         self.objects.clear();
         self.directional_lights.clear();
 
-        self.vertices.clear();
-        self.indices.clear();
         self.commands.clear();
     }
 
@@ -221,6 +225,7 @@ impl GpuState {
             sampler,
             depth_texture: None,
             depth_view: None,
+            multisampled: None,
             texture_bind_groups: HashMap::new(),
         }
     }
@@ -239,7 +244,7 @@ impl GpuState {
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
-                sample_count: 1,
+                sample_count: SAMPLE_COUNT,
                 dimension: wgpu::TextureDimension::D2,
                 format: DEPTH_FORMAT,
                 usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -251,6 +256,33 @@ impl GpuState {
         }
 
         self.depth_view.as_ref().unwrap()
+    }
+
+    /// The multisampled colour target the frame is drawn into, recreated when the layer's size or
+    /// format changes.
+    fn multisampled_view(&mut self, device: &Device, width: u32, height: u32, format: TextureFormat) -> &TextureView {
+        let key = (width, height, format);
+
+        if self.multisampled.as_ref().map(|(current, _)| *current) != Some(key) {
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("carbide_3d_multisampled_texture"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: SAMPLE_COUNT,
+                dimension: wgpu::TextureDimension::D2,
+                format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            });
+
+            self.multisampled = Some((key, texture.create_view(&Default::default())));
+        }
+
+        &self.multisampled.as_ref().unwrap().1
     }
 
     /// Create the pipeline for `format` if it doesn't exist yet.
@@ -285,7 +317,11 @@ impl GpuState {
                 stencil: StencilState::default(),
                 bias: DepthBiasState::default(),
             }),
-            multisample: Default::default(),
+            multisample: wgpu::MultisampleState {
+                count: SAMPLE_COUNT,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
             fragment: Some(FragmentState {
                 module: &self.shader,
                 entry_point: Some("main_fs"),
@@ -317,13 +353,27 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         let Some(wgpu_context) = env.get::<WgpuContextNew>() else {
             return;
         };
-        let device = &wgpu_context.device;
-        let queue = &wgpu_context.queue;
+        // Cheap handles, so the environment is free for the mesh cache below.
+        let device = &wgpu_context.device.clone();
+        let queue = &wgpu_context.queue.clone();
+
+        // The meshes' GPU copies, shared by every view; uploaded once, freed once dropped.
+        let meshes = match env.get_mut::<MeshCache>() {
+            Some(cache) => cache,
+            None => self.fallback_mesh_cache.get_or_insert_with(MeshCache::new),
+        };
+        meshes.free_dropped();
+        for command in &self.commands {
+            if let RenderPassCommand::DrawMesh { mesh, .. } = command {
+                meshes.upload(mesh, device);
+            }
+        }
 
         let (width, height) = render_target.dimensions();
 
         let gpu = self.gpu.get_or_insert_with(|| GpuState::new(device));
         gpu.depth_view(device, width, height);
+        gpu.multisampled_view(device, width, height, render_target.texture_format());
         gpu.ensure_pipeline(device, render_target.texture_format());
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -332,10 +382,6 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
         let clear = Operations {
             load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
-            store: StoreOp::Store,
-        };
-        let clear_depth = Operations {
-            load: wgpu::LoadOp::Clear(0.0),
             store: StoreOp::Store,
         };
 
@@ -439,29 +485,24 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             ],
         });
 
-        let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("carbide_3d_vertex_buffer"),
-            contents: bytemuck::cast_slice(&self.vertices),
-            usage: BufferUsages::VERTEX,
-        });
-
-        let index_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("carbide_3d_index_buffer"),
-            contents: bytemuck::cast_slice(&self.indices),
-            usage: BufferUsages::INDEX,
-        });
-
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("carbide_3d_render_pass"),
+                // Drawn multisampled, and resolved into the layer.
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: render_target.view(),
-                    resolve_target: None,
-                    ops: clear,
+                    view: &gpu.multisampled.as_ref().unwrap().1,
+                    resolve_target: Some(render_target.view()),
+                    ops: Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                        store: StoreOp::Discard,
+                    },
                 })],
                 depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                     view: gpu.depth_view.as_ref().unwrap(),
-                    depth_ops: Some(clear_depth),
+                    depth_ops: Some(Operations {
+                        load: wgpu::LoadOp::Clear(0.0),
+                        store: StoreOp::Discard,
+                    }),
                     // The depth format has no stencil aspect.
                     stencil_ops: None,
                 }),
@@ -471,21 +512,22 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
             render_pass.set_pipeline(&gpu.pipeline.as_ref().unwrap().1);
 
-            if vertex_buffer.size() > 0 {
-                render_pass.set_vertex_buffer(0, vertex_buffer.slice(..));
-            }
-
-            if index_buffer.size() > 0 {
-                render_pass.set_index_buffer(index_buffer.slice(..), IndexFormat::Uint32);
-            }
-
             render_pass.set_bind_group(0, &scene_bind_group, &[]);
             render_pass.set_bind_group(1, &lighting_bind_group, &[]);
 
             for command in &self.commands {
                 match command {
-                    RenderPassCommand::DrawIndexed(range) => {
-                        render_pass.draw_indexed(range.clone(), 0, 0..1);
+                    RenderPassCommand::DrawMesh { mesh, object } => {
+                        // A mesh with no triangles has no GPU copy, and nothing to draw.
+                        let Some(cached) = meshes.get(mesh.id()) else {
+                            continue;
+                        };
+
+                        render_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
+                        render_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
+                        // The object is the instance index, which the shader reads its transform
+                        // and material with: objects can share a mesh's buffers.
+                        render_pass.draw_indexed(0..cached.index_count, 0, *object..*object + 1);
                     }
                     RenderPassCommand::SetPbrMaterial(pbr) => {
                         render_pass.set_bind_group(2, &gpu.texture_bind_groups[pbr], &[]);
@@ -506,15 +548,9 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         self.ensure_current_material(&material, &material_tex);
         self.ensure_current_object();
 
-        let index = self.indices.len();
-
-        let object_index = self.objects.len() as u32 - 1;
-
-        let indices_offset = self.vertices.len() as u32;
-        self.vertices.extend(mesh.vertices.iter().map(|v| WgpuVertex::from_vertex(v, object_index)));
-        self.indices.extend(mesh.indices.iter().map(|i| i + indices_offset));
-
-        self.commands.push(RenderPassCommand::DrawIndexed(index as u32..self.indices.len() as u32));
+        // A clone of the handle: it keeps the mesh alive until this frame is drawn.
+        let object = self.objects.len() as u32 - 1;
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {

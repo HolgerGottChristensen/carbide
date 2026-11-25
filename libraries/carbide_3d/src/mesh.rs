@@ -1,29 +1,122 @@
 use std::collections::HashMap;
+use std::fmt::{Debug, Formatter};
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Weak};
+
+use carbide::impl_state_value;
 
 use crate::handedness::Handedness;
 use crate::vertex::Vertex;
 use tobj::Model;
 use carbide::math::{InnerSpace, Vector2, Vector3, Zero};
 
+/// Identifies a [`Mesh`]'s data: clones of a mesh share it, and every new or changed mesh gets a
+/// new one.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct MeshId(u64);
+
+impl MeshId {
+    fn new() -> MeshId {
+        static NEXT: AtomicU64 = AtomicU64::new(1);
+        MeshId(NEXT.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
 /// Triangles, as vertices and indices into them, three per triangle.
 ///
 /// The renderer draws the side a triangle's vertices go round clockwise, seen from that side, in
 /// carbide_3d's left-handed space. Vertex normals point out of that side.
-#[derive(Debug, Clone)]
+///
+/// A mesh is a cheap handle to data that never changes: cloning it shares the data, and a renderer
+/// uploads the data once for every clone, in every view. A changed mesh is a new mesh, with a new
+/// [`MeshId`]: the methods that change one, like [`calculate_normals`](Mesh::calculate_normals),
+/// return a new mesh. To change the geometry of an [`Object`](crate::Object), give it a state of a
+/// mesh and set the state to the new mesh. A renderer frees its copy once every handle to the
+/// data is gone.
+#[derive(Clone)]
 pub struct Mesh {
-    pub handedness: Handedness,
-    pub vertices: Vec<Vertex>,
-    pub indices: Vec<u32>,
+    id: MeshId,
+    data: Arc<MeshData>,
 }
+
+#[derive(Clone)]
+struct MeshData {
+    handedness: Handedness,
+    vertices: Vec<Vertex>,
+    indices: Vec<u32>,
+}
+
+/// A reference to a [`Mesh`]'s data that doesn't keep it alive, for a renderer's cache.
+#[derive(Clone)]
+pub struct WeakMesh(Weak<MeshData>);
+
+impl WeakMesh {
+    /// Whether a handle to the mesh's data still exists.
+    pub fn is_alive(&self) -> bool {
+        self.0.strong_count() > 0
+    }
+}
+
+impl Debug for WeakMesh {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WeakMesh").field("alive", &self.is_alive()).finish()
+    }
+}
+
+impl Debug for Mesh {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Mesh")
+            .field("id", &self.id)
+            .field("vertices", &self.data.vertices.len())
+            .field("indices", &self.data.indices.len())
+            .finish()
+    }
+}
+
+impl_state_value!(Mesh);
 
 impl Mesh {
     pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>) -> Mesh {
-        Mesh {
+        Mesh::from_data(MeshData {
             handedness: Default::default(),
             vertices,
             indices,
+        })
+    }
+
+    fn from_data(data: MeshData) -> Mesh {
+        Mesh {
+            id: MeshId::new(),
+            data: Arc::new(data),
         }
+    }
+
+    /// The data, to change into a new mesh: taken if this is the only handle, copied otherwise.
+    fn into_data(self) -> MeshData {
+        Arc::unwrap_or_clone(self.data)
+    }
+
+    /// Identifies this mesh's data: the same for all its clones.
+    pub fn id(&self) -> MeshId {
+        self.id
+    }
+
+    pub fn vertices(&self) -> &[Vertex] {
+        &self.data.vertices
+    }
+
+    pub fn indices(&self) -> &[u32] {
+        &self.data.indices
+    }
+
+    pub fn handedness(&self) -> Handedness {
+        self.data.handedness
+    }
+
+    /// A reference to the data that doesn't keep it alive.
+    pub fn downgrade(&self) -> WeakMesh {
+        WeakMesh(Arc::downgrade(&self.data))
     }
 
     /// A cube centred on the origin with sides of `size`, with flat normals: four vertices per
@@ -164,51 +257,55 @@ impl Mesh {
 
     /// Calculate each vertex's normal from the triangles it is part of, wound as `handedness`
     /// says, and normalise it. Replaces the normals the vertices had.
-    pub fn calculate_normals(mut self, handedness: Handedness) -> Self {
-        for vertex in &mut self.vertices {
+    pub fn calculate_normals(self, handedness: Handedness) -> Self {
+        let mut data = self.into_data();
+
+        for vertex in &mut data.vertices {
             vertex.normal = Vector3::zero();
         }
 
-        for chunk in self.indices.chunks_exact(3) {
-            let pos0 = self.vertices[chunk[0] as usize].position;
-            let pos1 = self.vertices[chunk[1] as usize].position;
-            let pos2 = self.vertices[chunk[2] as usize].position;
+        for chunk in data.indices.chunks_exact(3) {
+            let pos0 = data.vertices[chunk[0] as usize].position;
+            let pos1 = data.vertices[chunk[1] as usize].position;
+            let pos2 = data.vertices[chunk[2] as usize].position;
 
             let edge1 = pos1 - pos0;
             let edge2 = pos2 - pos0;
 
             let normal = if handedness == Handedness::Left { edge1.cross(edge2) } else { edge2.cross(edge1) };
 
-            self.vertices[chunk[0] as usize].normal += normal;
-            self.vertices[chunk[1] as usize].normal += normal;
-            self.vertices[chunk[2] as usize].normal += normal;
+            data.vertices[chunk[0] as usize].normal += normal;
+            data.vertices[chunk[1] as usize].normal += normal;
+            data.vertices[chunk[2] as usize].normal += normal;
         }
 
-        for vertex in &mut self.vertices {
+        for vertex in &mut data.vertices {
             if vertex.normal.magnitude2() > 0.0 {
                 vertex.normal = vertex.normal.normalize();
             }
         }
 
-        self
+        Mesh::from_data(data)
     }
 
     /// Calculate each vertex's tangent from its triangles' positions and first texture
     /// coordinates, made perpendicular to its normal. Triangles whose texture coordinates don't
     /// span an area add nothing; a vertex with no tangent gets zero.
-    pub fn calculate_tangents(mut self) -> Self {
-        for vertex in &mut self.vertices {
+    pub fn calculate_tangents(self) -> Self {
+        let mut data = self.into_data();
+
+        for vertex in &mut data.vertices {
             vertex.tangent = Vector3::zero();
         }
 
-        for chunk in self.indices.chunks_exact(3) {
-            let pos0 = self.vertices[chunk[0] as usize].position;
-            let pos1 = self.vertices[chunk[1] as usize].position;
-            let pos2 = self.vertices[chunk[2] as usize].position;
+        for chunk in data.indices.chunks_exact(3) {
+            let pos0 = data.vertices[chunk[0] as usize].position;
+            let pos1 = data.vertices[chunk[1] as usize].position;
+            let pos2 = data.vertices[chunk[2] as usize].position;
 
-            let tex0 = self.vertices[chunk[0] as usize].texture_coords_0;
-            let tex1 = self.vertices[chunk[1] as usize].texture_coords_0;
-            let tex2 = self.vertices[chunk[2] as usize].texture_coords_0;
+            let tex0 = data.vertices[chunk[0] as usize].texture_coords_0;
+            let tex1 = data.vertices[chunk[1] as usize].texture_coords_0;
+            let tex2 = data.vertices[chunk[2] as usize].texture_coords_0;
 
             let uv1 = tex1 - tex0;
             let uv2 = tex2 - tex0;
@@ -223,17 +320,17 @@ impl Mesh {
 
             let tangent = (edge1 * uv2.y - edge2 * uv1.y) / determinant;
 
-            self.vertices[chunk[0] as usize].tangent += tangent;
-            self.vertices[chunk[1] as usize].tangent += tangent;
-            self.vertices[chunk[2] as usize].tangent += tangent;
+            data.vertices[chunk[0] as usize].tangent += tangent;
+            data.vertices[chunk[1] as usize].tangent += tangent;
+            data.vertices[chunk[2] as usize].tangent += tangent;
         }
 
-        for vertex in &mut self.vertices {
+        for vertex in &mut data.vertices {
             let t = vertex.tangent - (vertex.normal * vertex.normal.dot(vertex.tangent));
             vertex.tangent = if t.magnitude2() > 0.0 { t.normalize() } else { Vector3::zero() };
         }
 
-        self
+        Mesh::from_data(data)
     }
 }
 
@@ -280,20 +377,37 @@ mod tests {
     /// Every normal of `mesh` has length 1 and points away from the origin, as for a closed
     /// shape around it.
     fn assert_outward_unit_normals(mesh: &Mesh) {
-        for vertex in &mesh.vertices {
+        for vertex in mesh.vertices() {
             assert!((vertex.normal.magnitude() - 1.0).abs() < 1e-4, "normal {:?} is not unit length", vertex.normal);
             assert!(vertex.normal.dot(vertex.position) > 0.0, "normal {:?} at {:?} points inwards", vertex.normal, vertex.position);
         }
     }
 
     #[test]
+    fn clones_share_their_data_and_changes_make_a_new_mesh() {
+        let mesh = Mesh::cube(1.0);
+        let clone = mesh.clone();
+        assert_eq!(mesh.id(), clone.id());
+
+        let weak = mesh.downgrade();
+        let changed = clone.calculate_tangents();
+        assert_ne!(changed.id(), mesh.id());
+
+        // The original is still alive through `mesh`, and gone once that is dropped.
+        assert!(weak.is_alive());
+        drop(mesh);
+        assert!(!weak.is_alive());
+    }
+
+    #[test]
     fn calculated_normals_are_unit_length() {
-        let mut mesh = Mesh::cube(2.0);
-        for vertex in &mut mesh.vertices {
+        let cube = Mesh::cube(2.0);
+        let mut vertices = cube.vertices().to_vec();
+        for vertex in &mut vertices {
             vertex.normal = Vector3::new(0.0, 0.0, 0.0);
         }
 
-        let mesh = mesh.calculate_normals(crate::Handedness::Left);
+        let mesh = Mesh::new(vertices, cube.indices().to_vec()).calculate_normals(crate::Handedness::Left);
         assert_outward_unit_normals(&mesh);
     }
 
@@ -301,7 +415,7 @@ mod tests {
     fn cube_and_icosphere_have_outward_normals() {
         assert_outward_unit_normals(&Mesh::cube(1.0));
         assert_outward_unit_normals(&Mesh::icosphere(1.0, 2));
-        assert_eq!(Mesh::icosphere(1.0, 2).indices.len(), 20 * 16 * 3);
+        assert_eq!(Mesh::icosphere(1.0, 2).indices().len(), 20 * 16 * 3);
     }
 
     #[test]
@@ -309,7 +423,7 @@ mod tests {
         // The cube's faces have u along their right direction, so the tangent is that direction:
         // for the front face (normal -Z), +X.
         let cube = Mesh::cube(1.0);
-        let front = cube.vertices.iter().find(|vertex| vertex.normal.z < -0.5).unwrap();
+        let front = cube.vertices().iter().find(|vertex| vertex.normal.z < -0.5).unwrap();
         assert!((front.tangent - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1e-4, "tangent {:?}", front.tangent);
     }
 
@@ -321,8 +435,8 @@ mod tests {
         let (models, _) = tobj::load_obj_buf(&mut obj.as_bytes(), &tobj::GPU_LOAD_OPTIONS, |_| Ok(Default::default())).unwrap();
 
         let mesh = Mesh::from(models.into_iter().next().unwrap());
-        assert_eq!(mesh.vertices.len(), 4);
-        assert_eq!(mesh.indices.len(), 12);
+        assert_eq!(mesh.vertices().len(), 4);
+        assert_eq!(mesh.indices().len(), 12);
         assert_outward_unit_normals(&mesh);
     }
 }

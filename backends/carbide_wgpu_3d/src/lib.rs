@@ -19,11 +19,13 @@ use carbide_wgpu_core::WgpuContextNew;
 
 pub use image_context_3d::ImageContext3d;
 pub use render_context_3d::WgpuRenderContext3d;
+pub use mesh_cache::{CachedMesh, MeshCache};
 
 mod camera;
 mod directional_light;
 mod image_context_3d;
 mod material;
+mod mesh_cache;
 mod object;
 mod pbr_material;
 mod point_light;
@@ -71,6 +73,9 @@ fn preprocess_shader<S: AsRef<Path>>(path: S) -> ShaderModuleDescriptor<'static>
 
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
     Box::pin(async {
+        // The meshes' GPU copies, shared by every view the renderer draws.
+        env.insert::<MeshCache>(Box::leak(Box::new(MeshCache::new())));
+
         env.insert::<ContextFactory3d>(Box::leak(Box::new(ContextFactory3d {
             id: RenderContext3dId::of::<WgpuRenderContext3d>(),
             render_context: |_env| Box::new(WgpuRenderContext3d::new()),

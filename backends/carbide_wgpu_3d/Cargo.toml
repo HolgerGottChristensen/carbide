@@ -20,5 +20,8 @@ include_dir.workspace = true
 once_cell.workspace = true
 dashmap.workspace = true
 
+[dev-dependencies]
+futures.workspace = true
+
 [lints]
 workspace = true

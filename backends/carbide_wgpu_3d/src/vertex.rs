@@ -13,11 +13,10 @@ pub struct WgpuVertex {
     texture_coords_1: [f32; 2],
     color_0: [f32; 4],
     color_1: [f32; 4],
-    object_index: u32,
 }
 
 impl WgpuVertex {
-    pub fn from_vertex(vertex: &Vertex, index: u32) -> WgpuVertex {
+    pub fn from_vertex(vertex: &Vertex) -> WgpuVertex {
         WgpuVertex {
             position: [vertex.position.x, vertex.position.y, vertex.position.z],
             normal: [vertex.normal.x, vertex.normal.y, vertex.normal.z],
@@ -26,7 +25,6 @@ impl WgpuVertex {
             texture_coords_1: [vertex.texture_coords_1.x, vertex.texture_coords_1.y],
             color_0: [vertex.color_0.red(), vertex.color_0.green(), vertex.color_0.blue(), vertex.color_0.opacity()],
             color_1: [vertex.color_1.red(), vertex.color_1.green(), vertex.color_1.blue(), vertex.color_1.opacity()],
-            object_index: index,
         }
     }
 
@@ -69,11 +67,6 @@ impl WgpuVertex {
                     offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 2]>() + size_of::<[f32; 2]>() + size_of::<[f32; 4]>()) as wgpu::BufferAddress,
                     shader_location: 6,
                     format: VertexFormat::Float32x4,
-                },
-                wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 2]>() + size_of::<[f32; 2]>() + size_of::<[f32; 4]>() + size_of::<[f32; 4]>()) as wgpu::BufferAddress,
-                    shader_location: 7,
-                    format: VertexFormat::Uint32,
                 },
             ],
         }
