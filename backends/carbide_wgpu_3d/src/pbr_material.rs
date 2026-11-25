@@ -37,7 +37,8 @@ impl WgpuPbrMaterial {
     /// The material's values, as the shader reads them. Textures are not loaded yet (see
     /// `ImageContext3d`): the texture flags are set, but the shader doesn't sample them.
     pub(crate) fn from_material(material: &PbrMaterial, _env: &mut Environment) -> Self {
-        let albedo = material.albedo.value().to_value();
+        // Colours are given in sRGB; the shader lights in linear space, as the 2D renderer draws.
+        let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();
 
         Self {
             uv_transform0: material.uv_transform0,
