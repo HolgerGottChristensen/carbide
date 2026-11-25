@@ -2,7 +2,9 @@ use dyn_clone::DynClone;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU32, Ordering};
-use carbide::math::Matrix4;
+use carbide::math::{Matrix4, Vector3};
+use carbide::state::IntoReadState;
+use crate::transform::{Rotation, Scale, Transformed};
 use crate::render::{Render3d, RenderContext3d};
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -75,9 +77,36 @@ mod private {
     impl<T> Sealed for T where T: AnyNode3d {}
 }
 
+/// Methods every node has. The transform methods wrap the node in a [`Transformed`]; called on a
+/// `Transformed`, its own methods set that part of it instead.
 pub trait Node3dExt: AnyNode3d + Clone + Sized {
     fn boxed(self) -> Box<dyn AnyNode3d> {
         Box::new(self)
+    }
+
+    /// Move the node by `position`. See [`Transformed::position`].
+    fn position<P: IntoReadState<Vector3<f32>>>(self, position: P) -> Transformed<Self> {
+        Transformed::new(self).position(position)
+    }
+
+    /// Turn the node. See [`Transformed::rotation`].
+    fn rotation<R: IntoReadState<Rotation>>(self, rotation: R) -> Transformed<Self> {
+        Transformed::new(self).rotation(rotation)
+    }
+
+    /// Scale the node. See [`Transformed::scale`].
+    fn scale<S: IntoReadState<Scale>>(self, scale: S) -> Transformed<Self> {
+        Transformed::new(self).scale(scale)
+    }
+
+    /// The point the node is turned and scaled around. See [`Transformed::pivot`].
+    fn pivot<P: IntoReadState<Vector3<f32>>>(self, pivot: P) -> Transformed<Self> {
+        Transformed::new(self).pivot(pivot)
+    }
+
+    /// Transform the node by a whole matrix. See [`Transformed::transform`].
+    fn transform<M: IntoReadState<Matrix4<f32>>>(self, matrix: M) -> Transformed<Self> {
+        Transformed::new(self).transform(matrix)
     }
 }
 

@@ -9,7 +9,7 @@ use carbide_3d::render::InnerRenderContext3d;
 use carbide_3d::{InnerImageContext3d, Mesh};
 use carbide_core::color::{Color, ColorExt};
 use carbide_core::environment::Environment;
-use carbide_core::math::{Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
+use carbide_core::math::{InnerSpace, Matrix4, SquareMatrix, Vector2, Vector3, Vector4, Zero};
 use carbide_core::render::{InnerLayer, Layer};
 use carbide_core::state::ReadState;
 use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
@@ -545,10 +545,16 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
     }
 
     fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>) {
+        // The direction is in the space of the current transform: turn it into world space.
+        let world = (*self.transform_stack.last().unwrap() * direction.extend(0.0)).truncate();
+        if world.magnitude2() <= f32::EPSILON {
+            return;
+        }
+
         self.directional_lights.push(WgpuDirectionalLight {
             view_proj: Matrix4::identity(),
             color: Vector3::new(color.red(), color.green(), color.blue()) * intensity,
-            direction,
+            direction: world.normalize(),
             inv_resolution: Vector2::zero(),
             atlas_offset: Vector2::zero(),
             atlas_size: Vector2::zero(),

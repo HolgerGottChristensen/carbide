@@ -9,7 +9,7 @@ use crate::render::Style;
 use crate::state::state_sync::StateSync;
 use crate::state::*;
 use crate::widget::{EdgeInsets};
-use crate::math::{Matrix2, Matrix3, Matrix4, Vector1, Vector2, Vector3, Vector4};
+use crate::math::{Deg, Euler, Matrix2, Matrix3, Matrix4, Quaternion, Rad, Vector1, Vector2, Vector3, Vector4};
 use dyn_clone::{clone_box, DynClone};
 use crate::cell::{ValueRef, ValueRefMut};
 use crate::draw::gradient::Gradient;
@@ -213,5 +213,6 @@ macro_rules! impl_state_value_generic {
 impl_state_value_generic!(
     Option<T>, Vec<T>, Matrix4<T>,
     Matrix3<T>, Matrix2<T>, Vector1<T>,
-    Vector2<T>, Vector3<T>, Vector4<T>
+    Vector2<T>, Vector3<T>, Vector4<T>,
+    Quaternion<T>, Euler<T>, Deg<T>, Rad<T>
 );

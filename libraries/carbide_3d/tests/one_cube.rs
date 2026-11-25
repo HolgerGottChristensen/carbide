@@ -2,10 +2,10 @@
 
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::{Object, Scene3d};
+use carbide_3d::{Node3dExt, Object, Scene3d};
 use carbide_core::color::{BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;
-use carbide_core::math::{Deg, Euler, Matrix4, Vector3};
+use carbide_core::math::{Deg, Euler, Vector3};
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{Widget, WidgetExt};
 use carbide_testing::Harness;
@@ -16,9 +16,9 @@ mod common;
 /// above, the left and behind the camera. The camera is at the origin, looking along +Z, and the
 /// cube is in front of it.
 fn cube_scene(material: PbrMaterial) -> impl Widget {
-    let mut cube = Object::new(common::cube(1.0), material);
-    cube.transform = Matrix4::from_translation(Vector3::new(0.0, 0.0, 3.0))
-        * Matrix4::from(Euler::new(Deg(25.0), Deg(35.0), Deg(0.0)));
+    let cube = Object::new(common::cube(1.0), material)
+        .position(Vector3::new(0.0, 0.0, 3.0))
+        .rotation(Euler::new(Deg(25.0), Deg(35.0), Deg(0.0)));
 
     let light = DirectionalLight::new(Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 

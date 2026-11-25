@@ -18,14 +18,14 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
         self.render.render(layer, camera, self.env)
     }
 
-    pub fn transform<R, F: Fn(&mut RenderContext3d)->R>(&mut self, transform: &Matrix4<f32>, f: F) -> R {
+    pub fn transform<R, F: FnOnce(&mut RenderContext3d)->R>(&mut self, transform: &Matrix4<f32>, f: F) -> R {
         self.render.transform(transform);
         let res = f(self);
         self.render.pop_transform();
         res
     }
 
-    pub fn material<R, F: Fn(&mut RenderContext3d)->R>(&mut self, material: &Material, f: F) -> R {
+    pub fn material<R, F: FnOnce(&mut RenderContext3d)->R>(&mut self, material: &Material, f: F) -> R {
         self.render.material(material, self.env);
         let res = f(self);
         self.render.pop_material();

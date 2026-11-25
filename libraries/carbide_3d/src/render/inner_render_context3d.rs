@@ -18,9 +18,13 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     fn material(&mut self, material: &Material, env: &mut Environment);
     fn pop_material(&mut self);
 
+    /// Push `transform`, composed with the current one (`current * transform`). Meshes and lights
+    /// until the matching [`pop_transform`](Self::pop_transform) are in its space.
     fn transform(&mut self, transform: &Matrix4<f32>);
     fn pop_transform(&mut self);
 
+    /// A directional light. `direction` is the way the light shines, in the space of the current
+    /// transform: a light inside a rotated group turns with it.
     fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>);
 
     fn image_context(&mut self) -> &mut dyn InnerImageContext3d;

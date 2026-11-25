@@ -3,10 +3,10 @@
 use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::{Object, Scene3d};
+use carbide_3d::{Node3dExt, Object, Scene3d};
 use carbide_core::color::{BLUE, GREEN, RED};
 use carbide_core::draw::Dimension;
-use carbide_core::math::{Deg, Euler, Matrix4, Point3};
+use carbide_core::math::{Deg, Euler, Point3};
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{HStack, WidgetExt};
 use carbide_testing::Harness;
@@ -22,8 +22,8 @@ mod common;
 fn two_views_of_one_scene() {
     let mut color = LocalState::new(RED);
 
-    let mut cube = Object::new(common::cube(1.0), PbrMaterial::new().color(color.clone()));
-    cube.transform = Matrix4::from(Euler::new(Deg(0.0), Deg(30.0), Deg(0.0)));
+    let cube = Object::new(common::cube(1.0), PbrMaterial::new().color(color.clone()))
+        .rotation(Euler::new(Deg(0.0), Deg(30.0), Deg(0.0)));
     let light = DirectionalLight::new(carbide_core::math::Vector3::new(1.0, -2.0, 1.5)).intensity(5.0);
 
     let scene = Scene3d::new((cube, light))

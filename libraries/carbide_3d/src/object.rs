@@ -5,11 +5,13 @@ use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use carbide::state::StateSync;
 use crate::render::{Render3d, RenderContext3d};
 
+/// A mesh drawn with a material. It sits at its own origin: move, turn or scale it with
+/// `.position()`, `.rotation()`, `.scale()` and the like, which wrap it in a
+/// [`Transformed`](crate::Transformed).
 #[derive(Debug, Clone)]
 pub struct Object {
     id: NodeId,
     mesh: Mesh,
-    pub transform: Matrix4<f32>,
     material: Material,
 }
 
@@ -18,7 +20,6 @@ impl Object {
         Object {
             id: Default::default(),
             mesh,
-            transform: Matrix4::identity(),
             material: material.into(),
         }
     }
@@ -27,13 +28,7 @@ impl Object {
 impl Render3d for Object {
     fn render(&mut self, context: &mut RenderContext3d) {
         self.material.sync(context.env);
-        //self.transform = Matrix4::from(Euler::new(Deg(0.0), Deg(0.5), Deg(0.0))) * self.transform;
-
-        context.material(&self.material, |context| {
-            context.transform(&self.transform, |context| {
-                context.mesh(&self.mesh)
-            })
-        })
+        context.material(&self.material, |context| context.mesh(&self.mesh))
     }
 }
 
@@ -43,7 +38,7 @@ impl CommonNode3d for Object {
     }
 
     fn transform(&self) -> Matrix4<f32> {
-        self.transform
+        Matrix4::identity()
     }
 
     fn visible(&self) -> bool {

@@ -59,6 +59,12 @@ mod tests {
 
         harness.drag(Position::new(300.0, 400.0), Position::new(400.0, 400.0), 5);
         harness.render();
+
+        // Spinning, with time moving on so the animation runs.
+        *options.spin.clone().value_mut() = true;
+        harness.render();
+        harness.advance_time(std::time::Duration::from_secs(1));
+        harness.render();
     }
 
     /// The main view, orthographic, pinched outwards. Pins down that the pinch zooms by changing the

@@ -4,18 +4,20 @@ use carbide::color::{Color, BLUE, GREEN, ORANGE, RED, WHITE};
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::controls::slider::Slider;
+use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::ControlsExt;
 use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
 use carbide::d3::light::DirectionalLight;
 use carbide::d3::material::pbr_material::PbrMaterial;
-use carbide::d3::node3d::{AnyNode3d, Node3dExt};
+use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{Object, Scene3d};
+use carbide::d3::{Group, Node3dExt, Object, Scene3d};
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
-use carbide::math::{Matrix4, Point3, SquareMatrix, Vector3};
-use carbide::state::{LocalState, Map1, Map3, ReadState, State};
+use carbide::math::{Deg, Euler, Matrix4, Point3, SquareMatrix, Vector3};
+use carbide::state::{AnimatedState, LocalState, Map1, Map3, ReadState, State};
+use carbide::time::Duration;
 use carbide::ui;
 use carbide::widget::*;
 
@@ -62,6 +64,11 @@ pub struct Options {
     pub color: LocalState<Color>,
     pub roughness: LocalState<Scalar>,
 
+    /// Whether the model spins on its own, or is turned by `turn`.
+    pub spin: LocalState<bool>,
+    /// How far the model is turned around the vertical axis, in degrees, while it isn't spinning.
+    pub turn: LocalState<Scalar>,
+
     pub light_azimuth: LocalState<Scalar>,
     pub light_elevation: LocalState<Scalar>,
     pub light_intensity: LocalState<Scalar>,
@@ -81,6 +88,8 @@ impl Options {
             renderer: LocalState::new(Renderer::Wgpu),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
+            spin: LocalState::new(false),
+            turn: LocalState::new(0.0),
             light_azimuth: LocalState::new(-35.0),
             light_elevation: LocalState::new(50.0),
             light_intensity: LocalState::new(5.0),
@@ -131,6 +140,20 @@ impl Options {
             .intensity(Map1::read_map(self.light_intensity.clone(), |intensity: &Scalar| *intensity as f32))
     }
 
+    /// The model's rotation around the vertical axis: a full turn every eight seconds while
+    /// spinning, and the side bar's angle otherwise.
+    fn rotation(&self) -> impl ReadState<T=Euler<Deg<f32>>> + Clone + use<> {
+        let spinning = AnimatedState::linear()
+            .duration(Duration::from_secs(8))
+            .repeat()
+            .range(0.0, 360.0);
+
+        Map3::read_map(self.spin.clone(), self.turn.clone(), spinning, |spin: &bool, turn: &Scalar, spinning: &f64| {
+            let angle = if *spin { *spinning } else { *turn };
+            Euler::new(Deg(0.0), Deg(angle as f32), Deg(0.0))
+        })
+    }
+
     fn material(&self) -> PbrMaterial {
         PbrMaterial::new()
             .color(self.color.clone())
@@ -157,35 +180,37 @@ fn default_view() -> Matrix4<f32> {
     look_at(Point3::new(0.0, 1.2, -2.5), Point3::new(0.0, 0.0, 0.0))
 }
 
-/// The nodes of `model`, all with the side bar's material, and the side bar's light.
+/// The nodes of `model`, all with the side bar's material, in a group turned by the side bar, and
+/// the side bar's light, which stays where it is as the model turns.
 fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
-    let mut nodes: Vec<Box<dyn AnyNode3d>> = vec![options.light().boxed()];
+    let mut parts: Vec<Box<dyn AnyNode3d>> = vec![];
 
     match model {
         Model::Cube => {
-            nodes.push(Object::new(meshes::cube(1.0), options.material()).boxed());
+            parts.push(Object::new(meshes::cube(1.0), options.material()).boxed());
         }
         Model::Cubes => {
             for x in -1..=1 {
                 for z in -1..=1 {
-                    let mut cube = Object::new(meshes::cube(0.4), options.material());
-                    cube.transform = Matrix4::from_translation(Vector3::new(x as f32 * 0.6, 0.0, z as f32 * 0.6));
-                    nodes.push(cube.boxed());
+                    let cube = Object::new(meshes::cube(0.4), options.material())
+                        .position(Vector3::new(x as f32 * 0.6, 0.0, z as f32 * 0.6));
+                    parts.push(cube.boxed());
                 }
             }
         }
         Model::RenderBall => {
             let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../libraries/carbide_3d/ressources/renderball.obj");
-            let (meshes, transform) = meshes::load_obj(path);
+            let (meshes, fit) = meshes::load_obj(path);
             for mesh in meshes {
-                let mut object = Object::new(mesh, options.material());
-                object.transform = transform;
-                nodes.push(object.boxed());
+                parts.push(Object::new(mesh, options.material()).transform(fit).boxed());
             }
         }
     }
 
-    nodes
+    vec![
+        options.light().boxed(),
+        Group::new(parts).rotation(options.rotation()).boxed(),
+    ]
 }
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
@@ -242,6 +267,7 @@ pub fn playground(options: Options) -> impl Widget {
             side_bar(&options)
                 .padding(10.0)
                 .picker_style(MenuStyle)
+                .toggle_style(CheckboxStyle)
                 .scroll()
                 .with_scroll_direction(ScrollDirection::Vertical)
                 .clip(),
@@ -279,6 +305,13 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("White").tag(WHITE),
         )),
         slider("Roughness", &options.roughness, 0.0, 1.0, |value| format!("{value:.2}")),
+    )).cross_axis_alignment(CrossAxisAlignment::Start);
+
+    let spin_off = Map1::read_map(options.spin.clone(), |spin: &bool| !*spin);
+    let motion = VStack::new((
+        heading("Motion"),
+        Toggle::new("Spin", options.spin.clone()),
+        shown_when(spin_off, slider("Turn", &options.turn, -180.0, 180.0, degrees)),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let light = VStack::new((
@@ -320,7 +353,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     VStack::new((
         scene,
         shown_when(not_rendering, note("With no renderer, the views draw nothing.")),
-        shown_when(rendering, VStack::new((material, light, camera)).cross_axis_alignment(CrossAxisAlignment::Start)),
+        shown_when(rendering, VStack::new((material, motion, light, camera)).cross_axis_alignment(CrossAxisAlignment::Start)),
         Spacer::new(),
     ))
         .cross_axis_alignment(CrossAxisAlignment::Start)
