@@ -39,12 +39,14 @@ pub struct Surface {
     pub ambient_occlusion: Option<ImageId>,
     pub roughness: Option<ImageId>,
     pub metallic: Option<ImageId>,
+    /// The light the surface gives off, as an image.
+    pub emission: Option<ImageId>,
 }
 
 impl Surface {
     /// No texture: the side bar's colour.
     pub fn none() -> Surface {
-        Surface { name: "None".to_string(), albedo: None, normal: None, ambient_occlusion: None, roughness: None, metallic: None }
+        Surface { name: "None".to_string(), albedo: None, normal: None, ambient_occlusion: None, roughness: None, metallic: None, emission: None }
     }
 
     /// An image as the colour, from `assets/images`.
@@ -54,7 +56,7 @@ impl Surface {
 
     /// Whether it has maps besides the colour.
     pub fn has_maps(&self) -> bool {
-        self.normal.is_some() || self.ambient_occlusion.is_some() || self.roughness.is_some() || self.metallic.is_some()
+        self.normal.is_some() || self.ambient_occlusion.is_some() || self.roughness.is_some() || self.metallic.is_some() || self.emission.is_some()
     }
 
     fn aomr(&self) -> AoMRTextures {
@@ -106,11 +108,11 @@ fn material_folders() -> Vec<Surface> {
     folders.iter().filter_map(|folder| material_folder(folder)).collect()
 }
 
-/// The maps in one material folder, recognised by words in their file names, as material sites
-/// name them: `color`, `albedo`, `basecolor` or `diffuse`; `normal`, with `dx` for DirectX normals;
-/// `ambientocclusion`, `occlusion` or `ao`; `roughness`; and `metal`. Other files, such as height
+/// The maps in one material folder, recognised by words in their file names after the first (the
+/// material's own name), as material sites name them: `color`, `albedo`, `basecolor` or `diffuse`; `normal`, with `dx` for DirectX normals;
+/// `ambientocclusion`, `occlusion` or `ao`; `roughness`; `metal`; and `emission` or `emissive`. Other files, such as height
 /// maps, are left out. A folder with no recognised map gives no surface.
-fn material_folder(folder: &Path) -> Option<Surface> {
+pub(crate) fn material_folder(folder: &Path) -> Option<Surface> {
     let name = folder.file_name()?.to_string_lossy().to_string();
     let mut surface = Surface { name: capitalised(&name), ..Surface::none() };
 
@@ -123,20 +125,27 @@ fn material_folder(folder: &Path) -> Option<Surface> {
             continue;
         }
 
+        // The words of the name, without the first when there are more: material sites start the
+        // name with the material's own, which may contain a map's word itself (`Metal012`).
         let stem = file.file_stem().map(|stem| stem.to_string_lossy().to_lowercase()).unwrap_or_default();
-        let words: Vec<&str> = stem.split(|c: char| !c.is_ascii_alphanumeric()).collect();
+        let all_words: Vec<&str> = stem.split(|c: char| !c.is_ascii_alphanumeric()).filter(|word| !word.is_empty()).collect();
+        let words = if all_words.len() > 1 { &all_words[1..] } else { &all_words[..] };
+        let has = |test: &dyn Fn(&str) -> bool| words.iter().any(|word| test(word));
         let id = ImageId::new(file.clone());
 
-        if stem.contains("normal") {
-            let direction = if stem.contains("dx") { NormalTextureYDirection::Down } else { NormalTextureYDirection::Up };
+        if has(&|word| word.starts_with("normal")) {
+            let directx = has(&|word| word == "dx" || (word.starts_with("normal") && word.ends_with("dx")));
+            let direction = if directx { NormalTextureYDirection::Down } else { NormalTextureYDirection::Up };
             surface.normal = Some((id, direction));
-        } else if stem.contains("roughness") {
+        } else if has(&|word| word.contains("roughness")) {
             surface.roughness = Some(id);
-        } else if stem.contains("occlusion") || words.contains(&"ao") {
+        } else if has(&|word| word.contains("occlusion") || word == "ao") {
             surface.ambient_occlusion = Some(id);
-        } else if stem.contains("metal") {
+        } else if has(&|word| word.starts_with("emissi")) {
+            surface.emission = Some(id);
+        } else if has(&|word| word.starts_with("metal")) {
             surface.metallic = Some(id);
-        } else if stem.contains("color") || stem.contains("albedo") || stem.contains("diffuse") {
+        } else if has(&|word| word.contains("color") || word.contains("albedo") || word.contains("diffuse")) {
             surface.albedo = Some(id);
         }
     }
@@ -261,6 +270,7 @@ pub struct Options {
     pub use_roughness_map: LocalState<bool>,
     pub use_occlusion_map: LocalState<bool>,
     pub use_metallic_map: LocalState<bool>,
+    pub use_emission_map: LocalState<bool>,
     pub roughness: LocalState<Scalar>,
     pub metallic: LocalState<Scalar>,
     pub reflectance: LocalState<Scalar>,
@@ -329,6 +339,7 @@ impl Options {
             use_roughness_map: LocalState::new(true),
             use_occlusion_map: LocalState::new(true),
             use_metallic_map: LocalState::new(true),
+            use_emission_map: LocalState::new(true),
             roughness: LocalState::new(0.5),
             metallic: LocalState::new(0.0),
             reflectance: LocalState::new(0.5),
@@ -471,8 +482,13 @@ impl Options {
 
     /// The chosen surface, without the maps switched off in the side bar.
     fn active_surface(&self) -> impl ReadState<T=Surface> + Clone + use<> {
+        let surface = Map2::read_map(self.surface.clone(), self.use_emission_map.clone(), |surface: &Surface, emission: &bool| Surface {
+            emission: surface.emission.clone().filter(|_| *emission),
+            ..surface.clone()
+        });
+
         Map6::read_map(
-            self.surface.clone(),
+            surface,
             self.use_color_map.clone(),
             self.use_normal_map.clone(),
             self.use_roughness_map.clone(),
@@ -485,6 +501,7 @@ impl Options {
                 roughness: surface.roughness.clone().filter(|_| *roughness),
                 ambient_occlusion: surface.ambient_occlusion.clone().filter(|_| *occlusion),
                 metallic: surface.metallic.clone().filter(|_| *metallic),
+                emission: surface.emission.clone(),
             },
         )
     }
@@ -509,7 +526,12 @@ impl Options {
             .reflectance(f32_of(&self.reflectance))
             .clearcoat(f32_of(&self.clearcoat), f32_of(&self.clearcoat_roughness))
             .ambient_occlusion(f32_of(&self.ambient_occlusion))
-            .emissive(self.emissive.clone())
+            // A surface's emission map glows white while Glow is None, and in the Glow colour
+            // otherwise.
+            .emissive(Map2::read_map(self.emissive.clone(), surface.clone(), |glow: &Color, surface: &Surface| {
+                if surface.emission.is_some() && *glow == BLACK { WHITE } else { *glow }
+            }))
+            .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone()))
             .emissive_strength(f32_of(&self.emissive_strength))
             .normal(Map1::read_map(surface.clone(), |surface: &Surface| surface.normal_texture()))
             .aomr_textures(Map1::read_map(surface, |surface: &Surface| surface.aomr()))
@@ -808,6 +830,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             map_toggle(options, "Roughness map", &options.use_roughness_map, |surface| surface.roughness.is_some()),
             map_toggle(options, "Occlusion map", &options.use_occlusion_map, |surface| surface.ambient_occlusion.is_some()),
             map_toggle(options, "Metallic map", &options.use_metallic_map, |surface| surface.metallic.is_some()),
+            map_toggle(options, "Emission map", &options.use_emission_map, |surface| surface.emission.is_some()),
             shown_when(
                 Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
                 note("The roughness and metallic sliders scale the material's maps."),

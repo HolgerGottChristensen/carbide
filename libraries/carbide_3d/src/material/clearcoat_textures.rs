@@ -1,5 +1,6 @@
 use crate::material::material_flags::MaterialFlags;
 use carbide::draw::ImageId;
+use carbide::impl_state_value;
 
 /// How clearcoat values should be derived.
 #[derive(Debug, Clone)]
@@ -54,3 +55,5 @@ impl ClearcoatTextures {
         }
     }
 }
+
+impl_state_value!(ClearcoatTextures);

@@ -5,6 +5,7 @@ use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::{Mesh, Object, Scene3d};
 use carbide_3d::material::ao_mr_textures::AoMRTextures;
+use carbide_3d::material::clearcoat_textures::ClearcoatTextures;
 use carbide_3d::material::normal_texture::NormalTexture;
 use carbide_3d::material::normal_texture_y_direction::NormalTextureYDirection;
 use carbide_3d::material::sample_type::SampleType;
@@ -286,6 +287,8 @@ enum Lighting {
     Highlight,
     /// Ambient light only, which occlusion darkens.
     Ambient,
+    /// No light at all: only the surface's own light shows.
+    Dark,
 }
 
 /// The brightness of the middle of a grey plane seen from straight above. `maps` stores the
@@ -306,6 +309,7 @@ fn aomr_brightness(lighting: Lighting, roughness: f32, metallic: f32, occlusion:
     let (light, ambient) = match lighting {
         Lighting::Highlight => (3.0, 0.0),
         Lighting::Ambient => (0.0, 1.0),
+        Lighting::Dark => (0.0, 0.0),
     };
     let scene = Scene3d::new((plane, DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(light)))
         .ambient(WHITE, ambient)
@@ -454,4 +458,143 @@ fn roughness_and_occlusion_maps() {
     *occlusion.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: Some(occlusion_stripes), m_texture: None, r_texture: None };
 
     harness.snapshot("stripes");
+}
+
+/// The brightness of the middle of a plane with `material`, seen from straight above, after
+/// `setup` has stored its images and set its states.
+fn material_brightness(lighting: Lighting, material: PbrMaterial, setup: impl FnOnce(&mut Harness)) -> u32 {
+    let (light, ambient) = match lighting {
+        Lighting::Highlight => (3.0, 0.0),
+        Lighting::Ambient => (0.0, 1.0),
+        Lighting::Dark => (0.0, 0.0),
+    };
+    let scene = Scene3d::new((Object::new(Mesh::plane(4.0, 4.0), material), DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(light)))
+        .ambient(WHITE, ambient)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
+    setup(&mut harness);
+    harness.render();
+
+    let pixel = harness.pixels().get_pixel(30, 30).0;
+    pixel[0] as u32 + pixel[1] as u32 + pixel[2] as u32
+}
+
+/// Assert that a clear-coat map of a value renders as the clear coat's factor of that value does
+/// without a map, for a low and a high value that render differently. `factors` gives the clear
+/// coat's (strength, roughness) for a value of the channel under test.
+fn assert_clearcoat_map(name: &str, factors: impl Fn(f32) -> (f32, f32), maps: impl Fn(&mut Harness, u8) -> ClearcoatTextures) {
+    let (low, high) = (64u8, 230u8);
+    let base = |strength: f32, roughness: f32, textures: LocalState<ClearcoatTextures>| {
+        PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).roughness(Some(0.1f32)).clearcoat(strength, roughness).clearcoat_textures(textures)
+    };
+
+    let plain = |byte: u8| {
+        let (strength, roughness) = factors(byte as f32 / 255.0);
+        material_brightness(Lighting::Highlight, base(strength, roughness, LocalState::new(ClearcoatTextures::None)), |_| {})
+    };
+    let mapped = |byte: u8| {
+        let (strength, roughness) = factors(1.0);
+        let textures = LocalState::new(ClearcoatTextures::None);
+        material_brightness(Lighting::Highlight, base(strength, roughness, textures.clone()), |harness| {
+            *textures.clone().value_mut() = maps(harness, byte);
+        })
+    };
+
+    let (plain_low, plain_high) = (plain(low), plain(high));
+    assert!(plain_low.abs_diff(plain_high) > 20, "{name}: the factor makes no difference: {plain_low} and {plain_high}");
+    for byte in [low, high] {
+        let (with_map, without) = (mapped(byte), plain(byte));
+        assert!(with_map.abs_diff(without) <= 6, "{name}: a map of {byte} gives {with_map}, the factor alone {without}");
+    }
+}
+
+/// Clear-coat maps, in each layout `ClearcoatTextures` has, multiply the clear coat's strength and
+/// roughness by the right channel. For now the clear coat only widens the highlight towards its
+/// roughness, so the base is glossy and the coat rough.
+#[test]
+fn clear_coat_maps() {
+    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]));
+    let strength = |v: f32| (v, 0.9);
+    let roughness = |v: f32| (1.0, v);
+
+    // Combined: strength in red, roughness in green of one map.
+    assert_clearcoat_map("combined strength", strength, |h, b| ClearcoatTextures::GltfCombined { texture: image(h, [b, 255, 0]) });
+    assert_clearcoat_map("combined roughness", roughness, |h, b| ClearcoatTextures::GltfCombined { texture: image(h, [255, b, 0]) });
+
+    // glTF's split: strength in its map's red, roughness in its map's green.
+    assert_clearcoat_map("split strength", strength, |h, b| ClearcoatTextures::GltfSplit { clearcoat_texture: image(h, [b, 0, 0]), clearcoat_roughness_texture: None });
+    assert_clearcoat_map("split roughness", roughness, |h, b| ClearcoatTextures::GltfSplit { clearcoat_texture: None, clearcoat_roughness_texture: image(h, [0, b, 0]) });
+
+    // Greyscale: both from red.
+    assert_clearcoat_map("greyscale strength", strength, |h, b| ClearcoatTextures::BWSplit { clearcoat_texture: image(h, [b, b, b]), clearcoat_roughness_texture: None });
+    assert_clearcoat_map("greyscale roughness", roughness, |h, b| ClearcoatTextures::BWSplit { clearcoat_texture: None, clearcoat_roughness_texture: image(h, [b, b, b]) });
+}
+
+/// An emission map multiplies the emissive colour, read as a colour (sRGB): in the dark, a grey
+/// map with a white emissive colour glows as that grey emissive colour does without a map, and
+/// a map without an emissive colour gives off nothing.
+#[test]
+fn an_emission_map() {
+    let black = Color::new_rgba(0, 0, 0, 255);
+    let grey = |byte: u8| Color::new_rgba(byte, byte, byte, 255);
+
+    let plain = |byte: u8| material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(grey(byte)), |_| {});
+    let mapped = |byte: u8, emissive: Color| {
+        let map = LocalState::new(None::<ImageId>);
+        material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(emissive).emissive_map(map.clone()), |harness| {
+            *map.clone().value_mut() = Some(store_flat_image(harness, [byte, byte, byte, 255]));
+        })
+    };
+
+    let (plain_low, plain_high) = (plain(64), plain(230));
+    assert!(plain_high > plain_low + 100, "the emissive colour makes little difference: {plain_low} and {plain_high}");
+    for byte in [64u8, 230] {
+        let (with_map, without) = (mapped(byte, WHITE), plain(byte));
+        assert!(with_map.abs_diff(without) <= 6, "a map of {byte} glows {with_map}, the colour alone {without}");
+    }
+    assert!(mapped(230, black) <= 3, "a map with a black emissive colour glows");
+}
+
+/// Left: a dark sphere with the checker as its emission map and a white emissive colour, in dim
+/// light, so the checker glows by itself. Right: a glossy blue sphere with stripes of rough clear
+/// coat (strength 0 and 1), lit from the front left, so the highlight is sharp between the
+/// stripes and spread on them.
+#[test]
+fn emission_and_clear_coat_maps() {
+    let emission = LocalState::new(None::<ImageId>);
+    let coat = LocalState::new(ClearcoatTextures::None);
+
+    let glowing = Scene3d::new(Object::new(
+        Mesh::icosphere(1.0, 4),
+        PbrMaterial::new().color(Color::new_rgba(30, 30, 30, 255)).roughness(Some(0.8f32)).emissive(WHITE).emissive_map(emission.clone()),
+    ))
+        .ambient(WHITE, 0.1)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let mut coated_material = PbrMaterial::new()
+        .color(Color::new_rgba(40, 90, 200, 255))
+        .roughness(Some(0.2f32))
+        .clearcoat(1.0, 0.8)
+        .clearcoat_textures(coat.clone());
+    coated_material.uv_transform0 = Matrix3::from_nonuniform_scale(3.0, 1.0);
+    let coated = Scene3d::new((
+        Object::new(Mesh::icosphere(1.0, 4), coated_material),
+        DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
+    ))
+        .ambient(WHITE, 0.2)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let mut harness = Harness::new(HStack::new((glowing, coated)).spacing(10.0), Dimension::new(410.0, 200.0));
+
+    let checker_id = ImageId::temp(ImageFormat::Png);
+    store_checker(&mut harness, &checker_id);
+    *emission.clone().value_mut() = Some(checker_id);
+
+    let stripes = store_stripes(&mut harness, 0, 255);
+    *coat.clone().value_mut() = ClearcoatTextures::BWSplit { clearcoat_texture: Some(stripes), clearcoat_roughness_texture: None };
+
+    harness.snapshot("glow_and_coat");
 }

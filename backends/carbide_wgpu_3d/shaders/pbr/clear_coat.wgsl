@@ -1,35 +1,35 @@
+// The clear coat's strength and perceptual roughness, each multiplied by its map when one is
+// loaded, read through the linear view, laid out as the material's `ClearcoatTextures` says:
+// - CC_GLTF_COMBINED: one map, in the clear coat slot: strength in red, roughness in green.
+// - CC_GLTF_SPLIT: strength in its map's red, roughness in its map's green, as glTF's
+//   KHR_materials_clearcoat reads them.
+// - CC_BW_SPLIT: two greyscale maps, each read from red.
+fn get_clear_coat(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
+    var clear_coat = material.clear_coat;
+    var clear_coat_perceptual_roughness = material.clear_coat_roughness;
 
-fn get_clear_coat(material: Material) -> vec3<f32> {
-    var clear_coat: f32;
-    var clear_coat_perceptual_roughness: f32;
-    //if (extract_material_flag(material.flags, FLAGS_CC_GLTF_COMBINED)) {
-    //    if (has_clear_coat_texture(&material)) {
-    //        let texture_read = clear_coat_texture(&material, s, coords, uvdx, uvdy);
-    //        pixel.clear_coat = material.clear_coat * texture_read.r;
-    //        pixel.clear_coat_perceptual_roughness = material.clear_coat_roughness * texture_read.g;
-    //    } else {
-            clear_coat = material.clear_coat;
-            clear_coat_perceptual_roughness = material.clear_coat_roughness;
-    //    }
-    //} else {
-    //    if (has_clear_coat_texture(&material)) {
-    //        pixel.clear_coat = material.clear_coat * clear_coat_texture(&material, s, coords, uvdx, uvdy).r;
-    //    } else {
-    //        pixel.clear_coat = material.clear_coat;
-    //    }
+    let has_strength = (material.texture_enable & 0x20u) != 0u;
+    let has_roughness = (material.texture_enable & 0x40u) != 0u;
 
-    //    if (has_clear_coat_roughness_texture(&material)) {
-    //        let texture_read = clear_coat_roughness_texture(&material, s, coords, uvdx, uvdy);
-
-    //        if (extract_material_flag(material.flags, FLAGS_CC_GLTF_SPLIT)) {
-    //            pixel.clear_coat_perceptual_roughness = material.clear_coat_roughness * texture_read.g;
-    //        } else {
-    //            pixel.clear_coat_perceptual_roughness = material.clear_coat_roughness * texture_read.r;
-    //        }
-    //    } else {
-    //        pixel.clear_coat_perceptual_roughness = material.clear_coat_roughness;
-    //    }
-    //}
+    if ((material.flags & 0x400u) != 0u) {
+        if (has_strength) {
+            let texel = sample_material_texture(clear_coat_tex, material, coords, ddx, ddy);
+            clear_coat *= texel.r;
+            clear_coat_perceptual_roughness *= texel.g;
+        }
+    } else {
+        if (has_strength) {
+            clear_coat *= sample_material_texture(clear_coat_tex, material, coords, ddx, ddy).r;
+        }
+        if (has_roughness) {
+            let texel = sample_material_texture(clear_coat_roughness_tex, material, coords, ddx, ddy);
+            if ((material.flags & 0x800u) != 0u) {
+                clear_coat_perceptual_roughness *= texel.g;
+            } else {
+                clear_coat_perceptual_roughness *= texel.r;
+            }
+        }
+    }
 
     // 0.045 from https://github.com/google/filament/blob/3728f0660395d04d5735d85831a43480501f1c63/shaders/src/common_material.fs#L4
     clear_coat_perceptual_roughness = clamp(clear_coat_perceptual_roughness, 0.045, 1.0);

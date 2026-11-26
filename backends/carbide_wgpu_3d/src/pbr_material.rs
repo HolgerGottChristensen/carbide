@@ -75,7 +75,7 @@ impl WgpuPbrMaterial {
                 let mut flags = material.albedo.value().to_flags();
                 flags |= material.normal.value().to_flags();
                 flags |= material.aomr_textures.value().to_flags();
-                flags |= material.clearcoat_textures.to_flags();
+                flags |= material.clearcoat_textures.value().to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
                 flags.set(
                     MaterialFlags::NEAREST,
@@ -104,6 +104,7 @@ pub struct WgpuPbrMaterialTextures {
     pub(crate) roughness: ImageId,
     pub(crate) clear_coat: ImageId,
     pub(crate) clear_coat_roughness: ImageId,
+    pub(crate) emissive: ImageId,
 }
 
 /// How a slot is read: colours through the texture's sRGB view, data through its linear view.
@@ -118,6 +119,7 @@ impl WgpuPbrMaterialTextures {
     pub(crate) fn from_material(material: &PbrMaterial) -> Self {
         let id = |id: Option<&ImageId>| id.cloned().unwrap_or_default();
         let aomr = material.aomr_textures.value();
+        let clearcoat = material.clearcoat_textures.value();
 
         WgpuPbrMaterialTextures {
             albedo: id(material.albedo.value().to_texture()),
@@ -125,8 +127,9 @@ impl WgpuPbrMaterialTextures {
             ambient_occlusion: id(aomr.to_ao_texture()),
             metallic: id(aomr.to_metallic_texture()),
             roughness: id(aomr.to_roughness_texture()),
-            clear_coat: id(material.clearcoat_textures.to_clearcoat_texture()),
-            clear_coat_roughness: id(material.clearcoat_textures.to_clearcoat_roughness_texture()),
+            clear_coat: id(clearcoat.to_clearcoat_texture()),
+            clear_coat_roughness: id(clearcoat.to_clearcoat_roughness_texture()),
+            emissive: id(material.emissive_texture.value().as_ref()),
         }
     }
 
@@ -140,6 +143,7 @@ impl WgpuPbrMaterialTextures {
             (&self.roughness, SlotKind::Data),
             (&self.clear_coat, SlotKind::Data),
             (&self.clear_coat_roughness, SlotKind::Data),
+            (&self.emissive, SlotKind::Color),
         ]
     }
 
@@ -157,7 +161,7 @@ impl WgpuPbrMaterialTextures {
 }
 
 /// The number of texture slots in the material bind group.
-pub(crate) const SLOT_COUNT: usize = 7;
+pub(crate) const SLOT_COUNT: usize = 8;
 
 pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
     let entries: Vec<BindGroupLayoutEntry> = (0..SLOT_COUNT as u32).map(|binding| BindGroupLayoutEntry {

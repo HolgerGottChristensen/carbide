@@ -70,6 +70,8 @@ var roughness_tex: texture_2d<f32>;
 var clear_coat_tex: texture_2d<f32>;
 @group(2) @binding(6)
 var clear_coat_roughness_tex: texture_2d<f32>;
+@group(2) @binding(7)
+var emissive_tex: texture_2d<f32>;
 
 // Sample `tex` with the material's sampler: nearest when the material asks for it (NEAREST),
 // otherwise linear and anisotropic. The gradients come from the unbranched UVs, so sampling inside
@@ -157,7 +159,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     pixel.f0 = compute_f0(pixel.albedo.rgb, pixel.metallic, reflectance);
 
 
-    let clear_coat = get_clear_coat(material);
+    let clear_coat = get_clear_coat(material, coords, uvdx, uvdy);
     pixel.clear_coat = clear_coat.x;
     pixel.clear_coat_perceptual_roughness = clear_coat.y;
     pixel.clear_coat_roughness = clear_coat.z;
@@ -240,7 +242,13 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // Ambient light adds to the light from the scene's lights, and the surface's own light to
     // both, unshaded.
-    let lit = ambient.rgb + color + material.emissive;
+    // The surface's own light: its colour and strength, times its map when it has one (bit 7),
+    // read through the sRGB view as colours are.
+    var emissive = material.emissive;
+    if ((material.texture_enable & 0x80u) != 0u) {
+        emissive *= sample_material_texture(emissive_tex, material, coords, uvdx, uvdy).rgb;
+    }
+    let lit = ambient.rgb + color + emissive;
     return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), pixel.albedo.a);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);

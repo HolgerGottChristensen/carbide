@@ -152,6 +152,42 @@ mod tests {
         assert!(changed > 10_000, "only {changed} bytes changed: the shadow should show on the floor");
     }
 
+    /// A material folder's maps are recognised by the words material sites put in their file
+    /// names, in either naming style, and files that are not maps are left out.
+    #[test]
+    fn material_maps_are_recognised_by_name() {
+        let folder = std::env::temp_dir().join(format!("carbide_playground_material_{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        for name in [
+            "Metal012_1K-PNG_Color.png",
+            "Metal012_1K-PNG_NormalGL.png",
+            "Metal012_1K-PNG_Roughness.png",
+            "Metal012_1K-PNG_Metalness.png",
+            "Metal012_1K-PNG_AmbientOcclusion.png",
+            "Metal012_1K-PNG_Emission.jpg",
+            "Metal012_1K-PNG_Displacement.png",
+            "Metal012.usdc",
+        ] {
+            std::fs::write(folder.join(name), b"").unwrap();
+        }
+
+        let surface = super::playground::material_folder(&folder).unwrap();
+        std::fs::remove_dir_all(&folder).unwrap();
+
+        let file = |id: &Option<carbide::draw::ImageId>| match id {
+            Some(carbide::draw::ImageId::Local(path, _)) => path.file_name().unwrap().to_string_lossy().to_string(),
+            other => panic!("not a local image: {other:?}"),
+        };
+        assert_eq!(file(&surface.albedo), "Metal012_1K-PNG_Color.png");
+        assert_eq!(file(&surface.roughness), "Metal012_1K-PNG_Roughness.png");
+        assert_eq!(file(&surface.metallic), "Metal012_1K-PNG_Metalness.png");
+        assert_eq!(file(&surface.ambient_occlusion), "Metal012_1K-PNG_AmbientOcclusion.png");
+        assert_eq!(file(&surface.emission), "Metal012_1K-PNG_Emission.jpg");
+        let (normal, direction) = surface.normal.clone().unwrap();
+        assert_eq!(file(&Some(normal)), "Metal012_1K-PNG_NormalGL.png");
+        assert_eq!(direction, carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection::Up);
+    }
+
     /// The surfaces read at startup: the images, and a surface per folder in `assets/materials`,
     /// with its maps recognised by their file names.
     #[test]

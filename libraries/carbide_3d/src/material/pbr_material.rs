@@ -31,7 +31,9 @@ pub struct PbrMaterial {
     /// From 0 (a dielectric, such as plastic) to 1 (a metal). 0 by default.
     pub metallic: Box<dyn AnyReadState<T=f32>>,
     pub roughness_factor: Box<dyn AnyReadState<T=Option<f32>>>,
-    pub clearcoat_textures: ClearcoatTextures,
+    /// The clear coat's strength and roughness maps, and how their channels are laid out. None
+    /// by default.
+    pub clearcoat_textures: Box<dyn AnyReadState<T=ClearcoatTextures>>,
     /// The strength of a clear coat over the surface, from 0 to 1. 0 by default. For now, it only
     /// widens the surface's highlight towards the coat's roughness; there is no separate coat
     /// highlight yet.
@@ -43,6 +45,9 @@ pub struct PbrMaterial {
     /// How bright the emitted light is: at 1, with an exposure of 1, the colour shows at about
     /// its full brightness. 1 by default.
     pub emissive_strength: Box<dyn AnyReadState<T=f32>>,
+    /// An image of the light the surface gives off, in sRGB, multiplied by `emissive` and
+    /// `emissive_strength`. None by default.
+    pub emissive_texture: Box<dyn AnyReadState<T=Option<ImageId>>>,
     /// How much light a dielectric reflects head-on, from 0 to 1, where 0.5 is a reflectance of
     /// 4%, as most dielectrics have. Ignored by metals. 0.5 by default.
     pub reflectance: Box<dyn AnyReadState<T=f32>>,
@@ -60,6 +65,8 @@ impl StateSync for PbrMaterial {
         self.albedo.sync(env)
             | self.normal.sync(env)
             | self.aomr_textures.sync(env)
+            | self.clearcoat_textures.sync(env)
+            | self.emissive_texture.sync(env)
             | self.ambient_occlusion.sync(env)
             | self.metallic.sync(env)
             | self.roughness_factor.sync(env)
@@ -81,11 +88,12 @@ impl PbrMaterial {
             ambient_occlusion: Box::new(1.0f32),
             metallic: Box::new(0.0f32),
             roughness_factor: None.as_dyn_read(),
-            clearcoat_textures: Default::default(),
+            clearcoat_textures: ClearcoatTextures::None.as_dyn_read(),
             clearcoat: Box::new(0.0f32),
             clearcoat_roughness: Box::new(0.0f32),
             emissive: Box::new(BLACK),
             emissive_strength: Box::new(1.0f32),
+            emissive_texture: None.as_dyn_read(),
             reflectance: Box::new(0.5f32),
             anisotropy: Default::default(),
             uv_transform0: Matrix3::identity(),
@@ -109,6 +117,8 @@ impl PbrMaterial {
         let albedo = self.albedo.value().to_texture().cloned();
         let normal = self.normal.value().to_texture().cloned();
         let aomr = self.aomr_textures.value();
+        let clearcoat = self.clearcoat_textures.value();
+        let emissive = self.emissive_texture.value().clone();
 
         let mut textures: Vec<ImageId> = Vec::new();
         for id in [
@@ -117,8 +127,9 @@ impl PbrMaterial {
             aomr.to_ao_texture(),
             aomr.to_metallic_texture(),
             aomr.to_roughness_texture(),
-            self.clearcoat_textures.to_clearcoat_texture(),
-            self.clearcoat_textures.to_clearcoat_roughness_texture(),
+            clearcoat.to_clearcoat_texture(),
+            clearcoat.to_clearcoat_roughness_texture(),
+            emissive.as_ref(),
         ].into_iter().flatten() {
             if *id != ImageId::None && !textures.contains(id) {
                 textures.push(id.clone());
@@ -199,6 +210,25 @@ impl PbrMaterial {
     pub fn emissive<C: IntoReadState<Color>>(mut self, color: C) -> PbrMaterial {
         self.emissive = Box::new(color.into_read_state());
         self
+    }
+
+    /// The clear coat's strength and roughness maps. Each multiplies its value given with
+    /// `clearcoat`.
+    pub fn clearcoat_textures<T: IntoReadState<ClearcoatTextures>>(self, textures: T) -> PbrMaterial {
+        PbrMaterial {
+            clearcoat_textures: textures.into_dyn_read_state(),
+            ..self
+        }
+    }
+
+    /// An image of the light the surface gives off, in sRGB, multiplied by the `emissive` colour
+    /// and strength. The emissive colour is black by default, so set it too, to white to use the
+    /// image as it is.
+    pub fn emissive_map<T: IntoReadState<Option<ImageId>>>(self, image: T) -> PbrMaterial {
+        PbrMaterial {
+            emissive_texture: image.into_dyn_read_state(),
+            ..self
+        }
     }
 
     /// How bright the emitted light is: at 1, the default, with an exposure of 1, the colour shows
