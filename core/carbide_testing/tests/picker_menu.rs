@@ -171,3 +171,28 @@ fn choosing_a_choice_doesnt_click_what_is_under_it() {
     assert!(!*toggled.value(), "the click chose a choice and toggled the toggle under it too");
     harness.snapshot("chosen");
 }
+
+/// One choice much longer than the others, the second of four, hovered: the list is as wide as
+/// it, and every row fills that width, so each choice starts the same distance from the list's
+/// left edge, and the hovered row's highlight spans the list.
+#[test]
+fn a_long_choice_widens_every_row() {
+    let names = ["Short", "A much longer choice than the others", "Medium choice", "Tiny"];
+    let picker = Picker::new(
+        "",
+        LocalState::new(0usize),
+        names.iter().enumerate().map(|(i, name)| Text::new(name.to_string()).tag(i)).collect::<Vec<_>>(),
+    ).picker_style(MenuStyle).frame(120.0, 22.0);
+
+    let mut harness = Harness::new(VStack::new((picker, Spacer::new())).padding(10.0), Dimension::new(300.0, 160.0));
+    harness.render();
+    harness.mouse_move(Position::new(154.0, 21.0));
+    harness.mouse_press(MouseButton::Left);
+    harness.render();
+    harness.mouse_release(MouseButton::Left);
+    harness.render();
+    // Hover the third choice, a short one, to show its highlight's width.
+    harness.mouse_move(Position::new(150.0, 57.0));
+    harness.render();
+    harness.snapshot("aligned");
+}

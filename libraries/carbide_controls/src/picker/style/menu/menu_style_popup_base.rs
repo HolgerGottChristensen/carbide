@@ -28,7 +28,16 @@ impl Layout for MenuStylePopupBase {
     fn calculate_size(&mut self, _requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
-        self.child.calculate_size(self.dimension(), ctx)
+        // The list as wide as the button, unless a choice is longer: then again at the longest
+        // choice's width, so every row fills the list, its choice at the same distance from the
+        // left edge and its highlight across the whole list, not centred at the button's width.
+        let button = self.dimension();
+        let size = self.child.calculate_size(button, ctx);
+        if size.width > button.width {
+            self.child.calculate_size(Dimension::new(size.width, button.height), ctx)
+        } else {
+            size
+        }
     }
 
     /// The list, centred on the picker's button, as before, then moved back inside `bounding_box`,
