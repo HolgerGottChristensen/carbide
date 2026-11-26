@@ -43,6 +43,7 @@ inventory.workspace = true
 
 accesskit.workspace = true
 image.workspace = true
+half.workspace = true
 fxhash.workspace = true
 futures.workspace = true
 oneshot.workspace = true

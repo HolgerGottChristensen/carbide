@@ -16,11 +16,15 @@ use crate::mipmap::{mip_level_count, MipmapGenerator};
 pub struct StoredTexture {
     pub texture: wgpu::Texture,
     /// Reads the texels as sRGB, decoding them to linear: for colours, such as images in 2D and
-    /// albedo and emission in 3D.
+    /// albedo and emission in 3D. For a float texture, which is linear already, the same as
+    /// `linear_view`.
     pub srgb_view: TextureView,
     /// Reads the texels as they are stored: for data, such as normal, metallic-roughness and
     /// occlusion maps in 3D.
     pub linear_view: TextureView,
+    /// Whether the texels are 16-bit floats (`TextureFormat::RGBA16F`): HDR images, whose values
+    /// go above 1.
+    pub float: bool,
     pub width: u32,
     pub height: u32,
     /// The number of mip levels: a full chain down to 1×1, generated when the image is stored.
@@ -31,7 +35,8 @@ pub struct StoredTexture {
 }
 
 /// The raster images uploaded through the image context, by `ImageId`, shared by every wgpu
-/// renderer on the device. Textures are stored with their alpha premultiplied, as loaded.
+/// renderer on the device. 8-bit textures are stored with their alpha premultiplied, as loaded;
+/// float (HDR) textures as they are, linear.
 ///
 /// Every texture gets a full chain of mip levels, generated on the GPU from the image, so images
 /// drawn smaller than their size, in 2D or 3D, are filtered instead of aliasing.
@@ -83,10 +88,15 @@ fn upload(texture: Texture, version: u64, mipmaps: &mut MipmapGenerator, device:
         depth_or_array_layers: 1,
     };
 
+    // The texture's format, read as sRGB, and the same texels read as stored. A float texture
+    // is linear: both are its own format.
     let (srgb_format, linear_format) = match texture.format {
         TextureFormat::RGBA8 => (wgpu::TextureFormat::Rgba8UnormSrgb, wgpu::TextureFormat::Rgba8Unorm),
         TextureFormat::BGRA8 => (wgpu::TextureFormat::Bgra8UnormSrgb, wgpu::TextureFormat::Bgra8Unorm),
+        TextureFormat::RGBA16F => (wgpu::TextureFormat::Rgba16Float, wgpu::TextureFormat::Rgba16Float),
     };
+    let float = srgb_format == linear_format;
+    let linear_formats = [linear_format];
 
     let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("carbide_image"),
@@ -97,7 +107,7 @@ fn upload(texture: Texture, version: u64, mipmaps: &mut MipmapGenerator, device:
         format: srgb_format,
         // Rendered to, to generate the mip levels, and copied from, to read images back.
         usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[linear_format],
+        view_formats: if float { &[] } else { &linear_formats },
     });
 
     queue.write_texture(
@@ -116,7 +126,8 @@ fn upload(texture: Texture, version: u64, mipmaps: &mut MipmapGenerator, device:
         size,
     );
 
-    // Through sRGB views, so the levels are averaged in linear space.
+    // Through sRGB views, so the levels are averaged in linear space; a float texture is linear
+    // already.
     mipmaps.generate(&wgpu_texture, srgb_format, device, queue);
 
     let srgb_view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -133,6 +144,7 @@ fn upload(texture: Texture, version: u64, mipmaps: &mut MipmapGenerator, device:
         texture: wgpu_texture,
         srgb_view,
         linear_view,
+        float,
         version,
     }
 }

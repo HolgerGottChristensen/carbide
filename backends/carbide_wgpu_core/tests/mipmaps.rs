@@ -9,12 +9,14 @@ fn context() -> &'static WgpuContextNew {
     CONTEXT.get_or_init(|| futures::executor::block_on(WgpuContextNew::new()))
 }
 
-/// Read back mip level `level` of `texture`, as RGBA8 bytes, without padding.
+/// Read back mip level `level` of `texture`, as its bytes, without padding: 4 a texel for RGBA8,
+/// 8 for RGBA16F.
 fn read_level(texture: &wgpu::Texture, level: u32) -> Vec<u8> {
     let context = context();
     let width = (texture.width() >> level).max(1);
     let height = (texture.height() >> level).max(1);
-    let padded = (width * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    let texel = if texture.format() == wgpu::TextureFormat::Rgba16Float { 8 } else { 4 };
+    let padded = (width * texel).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
 
     let buffer = context.device.create_buffer(&wgpu::BufferDescriptor {
         label: None,
@@ -42,7 +44,7 @@ fn read_level(texture: &wgpu::Texture, level: u32) -> Vec<u8> {
     let mut bytes = Vec::new();
     for row in 0..height {
         let start = (row * padded) as usize;
-        bytes.extend_from_slice(&data[start..start + (width * 4) as usize]);
+        bytes.extend_from_slice(&data[start..start + (width * texel) as usize]);
     }
     bytes
 }
@@ -96,4 +98,32 @@ fn a_full_chain_of_levels_keeps_a_flat_colour() {
             }
         }
     }
+}
+
+/// A float (HDR) texture keeps values above 1, and its levels are averaged as they are, linear and
+/// unclamped: a 2×2 checker of 4 and 0 averages to 2. Both of its views read the floats as stored.
+#[test]
+fn float_textures_keep_values_above_one() {
+    let mut store = WgpuTextureStore::new();
+    let id = ImageId::temp(carbide_core::draw::ImageFormat::Hdr);
+    let texels: [[f32; 4]; 4] = [[4.0, 4.0, 4.0, 1.0], [0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0], [4.0, 4.0, 4.0, 1.0]];
+    let data: Vec<u8> = texels.iter().flatten().flat_map(|value| half::f16::from_f32(*value).to_le_bytes()).collect();
+
+    let context = context();
+    store.insert(id.clone(), Texture { width: 2, height: 2, bytes_per_row: 16, format: TextureFormat::RGBA16F, data: &data }, &context.device, &context.queue);
+
+    let stored = store.get(&id).unwrap();
+    assert!(stored.float);
+    assert_eq!(stored.texture.format(), wgpu::TextureFormat::Rgba16Float);
+    assert_eq!(stored.mip_level_count, 2);
+
+    let float = |bytes: &[u8]| bytes.chunks_exact(2).map(|pair| half::f16::from_le_bytes([pair[0], pair[1]]).to_f32()).collect::<Vec<f32>>();
+    let level0 = float(&read_level(&stored.texture, 0));
+    assert_eq!(&level0[..4], &[4.0, 4.0, 4.0, 1.0]);
+
+    let level1 = float(&read_level(&stored.texture, 1));
+    for value in &level1[..3] {
+        assert!((value - 2.0).abs() < 0.01, "the level averages to {level1:?}");
+    }
+    assert!((level1[3] - 1.0).abs() < 0.01);
 }

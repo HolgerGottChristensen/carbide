@@ -23,6 +23,7 @@ pub fn create_bind_group(
     let format = match texture.format {
         TextureFormat::RGBA8 => wgpu::TextureFormat::Rgba8UnormSrgb,
         TextureFormat::BGRA8 => wgpu::TextureFormat::Bgra8UnormSrgb,
+        TextureFormat::RGBA16F => wgpu::TextureFormat::Rgba16Float,
     };
 
     let wgpu_texture = device.create_texture(&wgpu::TextureDescriptor {

@@ -15,5 +15,8 @@ futures.workspace = true
 log.workspace = true
 image.workspace = true
 
+[dev-dependencies]
+half.workspace = true
+
 [lints]
 workspace = true

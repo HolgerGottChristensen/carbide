@@ -67,8 +67,14 @@ pub fn load_encoded_raster(id: &ImageId, bytes: &[u8], image: &mut dyn ImageCont
     Ok(true)
 }
 
-/// Upload `decoded` under `id` as premultiplied RGBA8.
+/// Upload `decoded` under `id`: float images (`.hdr`, `.exr` and other 32-bit float images) as
+/// linear RGBA16F, as they are; others as premultiplied RGBA8.
 fn upload_decoded(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn ImageContext, env: &mut Environment) {
+    if matches!(decoded.color(), image::ColorType::Rgb32F | image::ColorType::Rgba32F) {
+        upload_float(id, decoded, image, env);
+        return;
+    }
+
     // One conversion to RGBA8, with no copy when the image already is. Alpha is premultiplied in
     // place, and only when the image has alpha: without it, every alpha is 1 and premultiplying
     // changes nothing.
@@ -84,6 +90,25 @@ fn upload_decoded(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn Im
         height,
         bytes_per_row: width * 4,
         format: TextureFormat::RGBA8,
+        data: &pixels,
+    };
+
+    image.update_texture(id, texture, env);
+}
+
+/// Upload `decoded`, a float image, as linear RGBA16F: values above 1 are kept, and alpha isn't
+/// premultiplied (HDR images usually have none).
+fn upload_float(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn ImageContext, env: &mut Environment) {
+    let (width, height) = (decoded.width(), decoded.height());
+    let pixels: Vec<u8> = decoded.into_rgba32f().into_raw().into_iter()
+        .flat_map(|value| half::f16::from_f32(value).to_le_bytes())
+        .collect();
+
+    let texture = Texture {
+        width,
+        height,
+        bytes_per_row: width * 8,
+        format: TextureFormat::RGBA16F,
         data: &pixels,
     };
 
