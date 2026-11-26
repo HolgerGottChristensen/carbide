@@ -76,6 +76,7 @@ fluent_for_carbide = "0.16.0"
 fontdb = "0.23.0"
 futures = "0.3.21"
 fxhash = "0.2.1"
+gltf = { version = "1.4.1", default-features = false, features = ["import", "utils", "names", "extensions", "KHR_texture_transform", "KHR_materials_unlit", "KHR_lights_punctual", "KHR_materials_emissive_strength", "KHR_materials_ior"] }
 icu = "1.2.0"
 image = "0.25.5"
 imagesize = "0.14.0"

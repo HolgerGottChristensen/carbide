@@ -9,11 +9,30 @@ use crate::material::Material;
 use crate::mesh::Mesh;
 use std::cell::RefCell;
 use std::collections::HashSet;
-use carbide::draw::{load_local_raster, Color, ImageContext, ImageId};
+use carbide::draw::{load_encoded_raster, load_local_raster, Color, ImageContext, ImageId};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use carbide::environment::Environment;
 use carbide::render::Layer;
 use carbide::math::{Deg, Matrix4, Vector3};
 use crate::render::{InnerRenderContext3d, LightShadow, ViewSpec};
+
+/// Encoded images that come as bytes rather than files, such as those inside a glTF file, by their
+/// in-memory ids: decoded the first time a material samples them. Kept for as long as the process
+/// runs, so any image store, in any window or test, can load them; freeing them belongs with
+/// freeing textures (see the design document).
+static ENCODED_IMAGES: Mutex<Option<HashMap<ImageId, Arc<[u8]>>>> = Mutex::new(None);
+
+/// Register `bytes`, an encoded raster image (PNG, JPEG or another format the `image` crate
+/// reads), as the contents of `id`: a material that samples `id` decodes them when first drawn.
+pub fn register_encoded_image(id: &ImageId, bytes: Arc<[u8]>) {
+    ENCODED_IMAGES.lock().unwrap().get_or_insert_with(HashMap::new).insert(id.clone(), bytes);
+}
+
+/// The bytes registered for `id`, if any.
+fn encoded_image(id: &ImageId) -> Option<Arc<[u8]>> {
+    ENCODED_IMAGES.lock().unwrap().as_ref()?.get(id).cloned()
+}
 
 thread_local! {
     /// Images that failed to load, so a missing file is reported once instead of every frame.
@@ -60,7 +79,11 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
                 continue;
             }
 
-            if let Err(error) = load_local_raster(&id, &mut *self.image, self.env) {
+            let loaded = match encoded_image(&id) {
+                Some(bytes) => load_encoded_raster(&id, &bytes, &mut *self.image, self.env),
+                None => load_local_raster(&id, &mut *self.image, self.env),
+            };
+            if let Err(error) = loaded {
                 eprintln!("carbide_3d: {}", error);
                 FAILED_TEXTURES.with(|failed| failed.borrow_mut().insert(id));
             }

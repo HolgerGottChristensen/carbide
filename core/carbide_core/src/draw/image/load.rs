@@ -11,6 +11,8 @@ pub enum ImageLoadError {
     NoAssetsFolder(PathBuf),
     /// The file could not be opened or decoded.
     Decode(PathBuf, image::ImageError),
+    /// Encoded bytes in memory could not be decoded.
+    DecodeBytes(ImageId, image::ImageError),
 }
 
 impl Display for ImageLoadError {
@@ -18,6 +20,7 @@ impl Display for ImageLoadError {
         match self {
             ImageLoadError::NoAssetsFolder(path) => write!(f, "Couldn't load image: {}: no assets folder found", path.display()),
             ImageLoadError::Decode(path, error) => write!(f, "Couldn't load image: {}: {}", path.display(), error),
+            ImageLoadError::DecodeBytes(id, error) => write!(f, "Couldn't decode image {:?}: {}", id, error),
         }
     }
 }
@@ -44,6 +47,28 @@ pub fn load_local_raster(id: &ImageId, image: &mut dyn ImageContext, env: &mut E
     let decoded = image::open(&full_path)
         .map_err(|error| ImageLoadError::Decode(full_path.clone(), error))?;
 
+    upload_decoded(id, decoded, image, env);
+    Ok(true)
+}
+
+/// Decode `bytes`, an encoded raster image (PNG, JPEG or another format the `image` crate reads,
+/// told apart by its contents), into `image` under `id`, unless `id` is there already: for images
+/// that come as bytes, such as those embedded in a glTF file. Decoded, premultiplied and uploaded
+/// as [`load_local_raster`] does. Returns `Ok(true)` when the image was loaded by this call.
+pub fn load_encoded_raster(id: &ImageId, bytes: &[u8], image: &mut dyn ImageContext, env: &mut Environment) -> Result<bool, ImageLoadError> {
+    if image.exist(id, env) {
+        return Ok(false);
+    }
+
+    let decoded = image::load_from_memory(bytes)
+        .map_err(|error| ImageLoadError::DecodeBytes(id.clone(), error))?;
+
+    upload_decoded(id, decoded, image, env);
+    Ok(true)
+}
+
+/// Upload `decoded` under `id` as premultiplied RGBA8.
+fn upload_decoded(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn ImageContext, env: &mut Environment) {
     // One conversion to RGBA8, with no copy when the image already is. Alpha is premultiplied in
     // place, and only when the image has alpha: without it, every alpha is 1 and premultiplying
     // changes nothing.
@@ -63,8 +88,6 @@ pub fn load_local_raster(id: &ImageId, image: &mut dyn ImageContext, env: &mut E
     };
 
     image.update_texture(id, texture, env);
-
-    Ok(true)
 }
 
 /// Resolve `path` against the nearest `assets` folder, unless it is absolute.

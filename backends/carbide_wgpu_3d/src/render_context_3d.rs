@@ -22,7 +22,7 @@ use crate::picking::PickingState;
 use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, FallbackTextures, WgpuPbrMaterial, WgpuPbrMaterialTextures, SLOT_COUNT};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
-use crate::render_pass_command::RenderPassCommand;
+use crate::render_pass_command::{pipeline_variant, RenderPassCommand, PIPELINE_VARIANTS};
 use crate::shadow::{directional_view_proj, layer_size, spot_view_proj, ShadowRequest, ShadowTarget, SHADOW_FORMAT};
 use crate::storage_buffer::StorageBuffer;
 use crate::uniforms::WgpuUniforms;
@@ -81,9 +81,10 @@ struct GpuState {
     /// A material's textures.
     pbr_layout: BindGroupLayout,
     pipeline_layout: PipelineLayout,
-    /// The colour format the pipelines were created for, the pipeline that culls back faces, and
-    /// the one for double-sided materials, which doesn't.
-    pipeline: Option<(TextureFormat, RenderPipeline, RenderPipeline)>,
+    /// The colour format the pipelines were created for, and the pipelines in `pipeline_variant`
+    /// order: culling back faces or not (double-sided), with counter-clockwise or clockwise
+    /// (mirrored) front faces.
+    pipeline: Option<(TextureFormat, [RenderPipeline; 4])>,
     /// Repeating, linear and anisotropic: for textures, and the default for materials.
     sampler: Sampler,
     /// Repeating and nearest: for materials with `SampleType::Nearest`.
@@ -510,17 +511,16 @@ impl GpuState {
 
     /// Create the pipeline for `format` if it doesn't exist yet.
     fn ensure_pipeline(&mut self, device: &Device, format: TextureFormat) {
-        if self.pipeline.as_ref().is_some_and(|(current, _, _)| *current == format) {
+        if self.pipeline.as_ref().is_some_and(|(current, _)| *current == format) {
             return;
         }
 
-        let culled = self.create_pipeline(device, format, Some(Face::Back));
-        let double_sided = self.create_pipeline(device, format, None);
-        self.pipeline = Some((format, culled, double_sided));
+        let pipelines = PIPELINE_VARIANTS.map(|(cull_mode, front_face)| self.create_pipeline(device, format, cull_mode, front_face));
+        self.pipeline = Some((format, pipelines));
     }
 
-    /// The PBR pipeline for `format`, culling `cull_mode`.
-    fn create_pipeline(&self, device: &Device, format: TextureFormat, cull_mode: Option<Face>) -> RenderPipeline {
+    /// The PBR pipeline for `format`, culling `cull_mode`, with `front_face` facing the viewer.
+    fn create_pipeline(&self, device: &Device, format: TextureFormat, cull_mode: Option<Face>, front_face: FrontFace) -> RenderPipeline {
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("carbide_3d_pbr_pipeline"),
             layout: Some(&self.pipeline_layout),
@@ -533,8 +533,9 @@ impl GpuState {
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleList,
                 strip_index_format: None,
-                // Right-handed, as OBJ and glTF: counter-clockwise triangles face the viewer.
-                front_face: FrontFace::Ccw,
+                // Right-handed, as OBJ and glTF: counter-clockwise triangles face the viewer,
+                // unless a mirroring transform turned them clockwise.
+                front_face,
                 cull_mode,
                 unclipped_depth: false,
                 polygon_mode: PolygonMode::Fill,
@@ -887,25 +888,26 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 occlusion_query_set: None,
             });
 
-            let (_, culled, double_sided_pipeline) = gpu.pipeline.as_ref().unwrap();
-            // Which pipeline is set: switched only when a mesh's sidedness differs.
-            let mut double_sided_set = false;
-            render_pass.set_pipeline(culled);
+            let (_, pipelines) = gpu.pipeline.as_ref().unwrap();
+            // Which pipeline is set: switched only when a mesh needs another.
+            let mut variant_set = 0;
+            render_pass.set_pipeline(&pipelines[0]);
 
             render_pass.set_bind_group(0, &scene_bind_group, &[]);
             render_pass.set_bind_group(1, &lighting_bind_group, &[]);
 
             for command in &self.commands {
                 match command {
-                    RenderPassCommand::DrawMesh { mesh, object, double_sided, .. } => {
+                    RenderPassCommand::DrawMesh { mesh, object, double_sided, mirrored, .. } => {
                         // A mesh with no triangles has no GPU copy, and nothing to draw.
                         let Some(cached) = meshes.get(mesh.id()) else {
                             continue;
                         };
 
-                        if *double_sided != double_sided_set {
-                            render_pass.set_pipeline(if *double_sided { double_sided_pipeline } else { culled });
-                            double_sided_set = *double_sided;
+                        let variant = pipeline_variant(*double_sided, *mirrored);
+                        if variant != variant_set {
+                            render_pass.set_pipeline(&pipelines[variant]);
+                            variant_set = variant;
                         }
 
                         render_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
@@ -969,7 +971,8 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         let double_sided = match &material {
             WgpuMaterial::PBR(material) => material.double_sided(),
         };
-        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows, double_sided });
+        let mirrored = self.transform_stack.last().unwrap().determinant() < 0.0;
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows, double_sided, mirrored });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {

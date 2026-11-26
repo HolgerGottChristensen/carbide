@@ -13,6 +13,7 @@ use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use carbide::d3::render::{Render3d, RenderContext3d};
 use std::rc::Rc;
+use std::sync::OnceLock;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
 use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
@@ -187,6 +188,35 @@ pub enum Model {
     /// Five by five spheres: roughness from 0 to 1 left to right, metallic from 0 to 1 top to
     /// bottom, as in the usual PBR material charts.
     MaterialGrid,
+    /// One of Khronos's glTF sample models in `libraries/carbide_3d/ressources/gltf`, by its index
+    /// in [`gltf_models`].
+    Gltf(usize),
+}
+
+/// The glTF sample models: each folder in `libraries/carbide_3d/ressources/gltf`, by name, with
+/// its `.glb` file, or its `.gltf` file if it has no `.glb`. Read once, at startup, so adding a
+/// folder adds a choice.
+pub fn gltf_models() -> &'static [(String, PathBuf)] {
+    static MODELS: OnceLock<Vec<(String, PathBuf)>> = OnceLock::new();
+    MODELS.get_or_init(|| {
+        let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libraries/carbide_3d/ressources/gltf");
+        let Ok(entries) = std::fs::read_dir(&folder) else {
+            return vec![];
+        };
+        let mut models: Vec<(String, PathBuf)> = entries.flatten()
+            .map(|entry| entry.path())
+            .filter(|path| path.is_dir())
+            .filter_map(|path| {
+                let name = path.file_name()?.to_str()?.to_string();
+                let file = [format!("{name}.glb"), format!("{name}.gltf")].into_iter()
+                    .map(|file| path.join(file))
+                    .find(|file| file.exists())?;
+                Some((name, file))
+            })
+            .collect();
+        models.sort();
+        models
+    })
 }
 
 impl Model {
@@ -204,10 +234,18 @@ impl Model {
         }
     }
 
+    /// Whether the model is loaded from a file, OBJ or glTF, with its own materials.
+    pub fn from_file(&self) -> bool {
+        self.obj_file().is_some() || matches!(self, Model::Gltf(_))
+    }
+
     /// The model, loaded and fitted to the view. Mori's knob sits in a studio scene, with a large
     /// backdrop and a light panel, which the fit leaves out.
     pub fn load(&self) -> Option<Rc<meshes::FittedObj>> {
-        self.obj_file().map(|file| meshes::load_obj(file, *self == Model::MoriKnob))
+        match self {
+            Model::Gltf(index) => gltf_models().get(*index).map(|(_, file)| meshes::load_gltf(file)),
+            _ => self.obj_file().map(|file| meshes::load_obj(file, *self == Model::MoriKnob)),
+        }
     }
 }
 
@@ -669,19 +707,19 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
             // The spheres don't shadow each other, as in the charts; they still cast onto the floor.
             parts.push(Group::new(spheres).receives_shadows(false).boxed());
         }
-        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar => {
+        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar | Model::Gltf(_) => {
             // Loaded the first time the model is drawn: the views of every model are built up
             // front, but only the chosen one is drawn.
             let options = options.clone();
             parts.push(LazyObj::new(move || {
                 let loaded = model.load().unwrap();
-                loaded.parts.iter().cloned().map(|(mesh, material)| {
+                loaded.parts.iter().cloned().map(|(mesh, material, transform)| {
                     let object = if file_materials {
                         Object::new(mesh, material)
                     } else {
                         Object::new(meshes::painted(mesh), options.material())
                     };
-                    object.transform(loaded.fit).boxed()
+                    object.transform(loaded.fit * transform).boxed()
                 }).collect()
             }).boxed());
         }
@@ -726,7 +764,7 @@ fn floor(model: Model, options: &Options) -> impl Node3dExt {
     let height = move || match model {
         Model::Empty => 0.0,
         Model::Cube => -0.5,
-        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar => model.load().unwrap().bottom,
+        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar | Model::Gltf(_) => model.load().unwrap().bottom,
         Model::Sphere => -0.6,
         Model::Cubes => -0.2,
         Model::Plane => -0.6,
@@ -864,6 +902,18 @@ fn obj_views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
     ).boxed()
 }
 
+/// The views of the chosen glTF sample model. The models are found at startup, so instead of a
+/// match, each has its views, shown while it is the chosen one.
+fn gltf_views(options: &Options) -> Box<dyn AnyWidget> {
+    (0..gltf_models().len()).rev().fold(Empty::new().boxed(), |others, index| {
+        let chosen = Map1::read_map(options.model.clone(), move |model: &Model| *model == Model::Gltf(index));
+        IfElse::new(chosen)
+            .when_true(obj_views(Model::Gltf(index), options))
+            .when_false(others)
+            .boxed()
+    })
+}
+
 /// The playground: the views on the left, the options on the right.
 pub fn playground(options: Options) -> impl Widget {
     let o = options.clone();
@@ -881,6 +931,7 @@ pub fn playground(options: Options) -> impl Widget {
             Model::MoriKnob => obj_views(Model::MoriKnob, &o),
             Model::SportsCar => obj_views(Model::SportsCar, &o),
             Model::MaterialGrid => hover_views(Model::MaterialGrid, false, &o),
+            Model::Gltf(_) => gltf_views(&o),
         }
     );
 
@@ -906,23 +957,36 @@ pub fn playground(options: Options) -> impl Widget {
     ).relative_to_end(300.0)
 }
 
+/// The Model picker's choices, with their labels: the built-in models, the OBJ models, then the
+/// glTF samples.
+fn model_choices() -> Vec<(String, Model)> {
+    let mut choices: Vec<(String, Model)> = [
+        ("Empty", Model::Empty),
+        ("A cube", Model::Cube),
+        ("A sphere", Model::Sphere),
+        ("A grid of cubes", Model::Cubes),
+        ("An upright plane", Model::Plane),
+        ("The render ball (OBJ)", Model::RenderBall),
+        ("A wolf (OBJ, textured)", Model::Wolf),
+        ("Mori's material knob (OBJ)", Model::MoriKnob),
+        ("A sports car (OBJ)", Model::SportsCar),
+        ("PBR grid: roughness × metallic", Model::MaterialGrid),
+    ].into_iter().map(|(label, model)| (label.to_string(), model)).collect();
+    choices.extend(gltf_models().iter().enumerate().map(|(index, (name, _))| (format!("{name} (glTF)"), Model::Gltf(index))));
+
+    choices
+}
+
 fn side_bar(options: &Options) -> impl Widget + use<> {
     let reset = options.view.clone();
 
     let scene = VStack::new((
         heading("Scene"),
-        Picker::new("Model", options.model.clone(), (
-            Text::new("Empty").tag(Model::Empty),
-            Text::new("A cube").tag(Model::Cube),
-            Text::new("A sphere").tag(Model::Sphere),
-            Text::new("A grid of cubes").tag(Model::Cubes),
-            Text::new("An upright plane").tag(Model::Plane),
-            Text::new("The render ball (OBJ)").tag(Model::RenderBall),
-            Text::new("A wolf (OBJ, textured)").tag(Model::Wolf),
-            Text::new("Mori's material knob (OBJ)").tag(Model::MoriKnob),
-            Text::new("A sports car (OBJ)").tag(Model::SportsCar),
-            Text::new("PBR grid: roughness × metallic").tag(Model::MaterialGrid),
-        )),
+        Picker::new(
+            "Model",
+            options.model.clone(),
+            model_choices().into_iter().map(|(label, model)| Text::new(label).tag(model)).collect::<Vec<_>>(),
+        ),
         Picker::new("Views", options.views.clone(), (
             Text::new("One").tag(Views::One),
             Text::new("Two: orbit and front").tag(Views::Two),
@@ -951,14 +1015,14 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);
-    let render_ball = Map1::read_map(options.model.clone(), |model: &Model| model.obj_file().is_some());
+    let render_ball = Map1::read_map(options.model.clone(), |model: &Model| model.from_file());
     let using_file = Map2::read_map(options.model.clone(), options.file_materials.clone(), |model: &Model, file: &bool| {
-        model.obj_file().is_some() && *file
+        model.from_file() && *file
     });
     let material = VStack::new((
         heading("Material"),
         shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
-        shown_when(using_file, note("The model uses its MTL file's materials and maps; the values below apply to the other models.")),
+        shown_when(using_file, note("The model uses its file's materials and maps; the values below apply to the other models.")),
         Picker::new(
             "Texture",
             options.surface.clone(),

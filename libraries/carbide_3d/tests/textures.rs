@@ -843,7 +843,8 @@ fn a_map_on_the_second_texture_coordinates() {
 
 /// `images/landscape.png` on three planes, seen from above. Left: as it is. Middle: its own
 /// transform scales it by 2, turns it 90° and offsets it by half, as `KHR_texture_transform` does:
-/// turned copies, shifted by half a copy, with the sky on the left, since glTF's v points down. Right: on the second texture coordinates, which mirror the first left to
+/// turned copies, shifted by half a copy, each image turned a quarter clockwise (the sky on the
+/// right), as Khronos's sample viewer turns TextureTransformTest's arrows. Right: on the second texture coordinates, which mirror the first left to
 /// right, while its occlusion map, on the first set, darkens the plane's far half. Lit by ambient
 /// light only, which occlusion darkens.
 #[test]

@@ -1,20 +1,22 @@
-//! Loading the playground's OBJ models, and painting meshes with vertex colours.
+//! Loading the playground's OBJ and glTF models, and painting meshes with vertex colours.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::path::Path;
 use std::rc::Rc;
 
 use carbide::color::rgba;
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::{Mesh, Vertex};
-use carbide::math::{Matrix4, Vector3};
+use carbide::math::{Matrix4, SquareMatrix, Vector3};
 
-/// An OBJ model, fitted to the playground: its meshes with their materials from the MTL library,
-/// a transform that centres it on the origin and scales it to fit in a unit cube, and the height
-/// of its bottom after that transform, for the floor.
+/// An OBJ or glTF model, fitted to the playground: its meshes with their materials from the file
+/// and their transforms within the model (the identity for OBJ, the nodes' for glTF), a transform
+/// that centres it on the origin and scales it to fit in a unit cube, and the height of its bottom
+/// after that transform, for the floor.
 #[derive(Clone)]
 pub struct FittedObj {
-    pub parts: Vec<(Mesh, PbrMaterial)>,
+    pub parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>,
     pub fit: Matrix4<f32>,
     pub bottom: f32,
 }
@@ -25,9 +27,9 @@ thread_local! {
     static LOADED: RefCell<HashMap<String, Rc<FittedObj>>> = RefCell::new(HashMap::new());
 }
 
-/// The bounds of `mesh`'s vertices: the smallest and largest x, y and z.
-fn bounds(mesh: &Mesh) -> (Vector3<f32>, Vector3<f32>) {
-    mesh.vertices().iter().map(|vertex| vertex.position).fold(
+/// The bounds of `mesh`'s vertices, moved by `transform`: the smallest and largest x, y and z.
+fn bounds(mesh: &Mesh, transform: Matrix4<f32>) -> (Vector3<f32>, Vector3<f32>) {
+    mesh.vertices().iter().map(|vertex| (transform * vertex.position.extend(1.0)).truncate()).fold(
         (Vector3::new(f32::MAX, f32::MAX, f32::MAX), Vector3::new(f32::MIN, f32::MIN, f32::MIN)),
         |(min, max), p| (
             Vector3::new(min.x.min(p.x), min.y.min(p.y), min.z.min(p.z)),
@@ -53,9 +55,39 @@ pub fn load_obj(path: &str, fit_without_studio: bool) -> Rc<FittedObj> {
     }
 
     let parts = Mesh::load_obj_with_materials(path)
-        .unwrap_or_else(|error| panic!("the OBJ file at {path} to load: {error}"));
+        .unwrap_or_else(|error| panic!("the OBJ file at {path} to load: {error}"))
+        .into_iter()
+        .map(|(mesh, material)| (mesh, material, Matrix4::identity()))
+        .collect();
 
-    let mut part_bounds: Vec<_> = parts.iter().map(|(mesh, _)| bounds(mesh)).filter(|(min, max)| min.x <= max.x).collect();
+    let fitted = Rc::new(fit(parts, fit_without_studio));
+    LOADED.with(|loaded| loaded.borrow_mut().insert(path.to_string(), fitted.clone()));
+    fitted
+}
+
+/// The default scene of the glTF file at `path`, its nodes flattened into parts with their
+/// transforms, loaded the first time and cached after. Its lights are left out: the playground
+/// lights every model with its own.
+pub fn load_gltf(path: &Path) -> Rc<FittedObj> {
+    let key = path.display().to_string();
+    if let Some(loaded) = LOADED.with(|loaded| loaded.borrow().get(&key).cloned()) {
+        return loaded;
+    }
+
+    let scene = carbide::d3::gltf::load_gltf(path)
+        .unwrap_or_else(|error| panic!("the glTF file at {key} to load: {error}"));
+    let parts = scene.primitives().into_iter()
+        .map(|(mesh, material, transform)| (mesh.clone(), material.clone(), transform))
+        .collect();
+
+    let fitted = Rc::new(fit(parts, false));
+    LOADED.with(|loaded| loaded.borrow_mut().insert(key, fitted.clone()));
+    fitted
+}
+
+/// `parts` fitted to the playground. With `fit_without_studio`, see [`load_obj`].
+fn fit(parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>, fit_without_studio: bool) -> FittedObj {
+    let mut part_bounds: Vec<_> = parts.iter().map(|(mesh, _, transform)| bounds(mesh, *transform)).filter(|(min, max)| min.x <= max.x).collect();
     if fit_without_studio && !part_bounds.is_empty() {
         let mut extents: Vec<f32> = part_bounds.iter().map(extent).collect();
         extents.sort_by(f32::total_cmp);
@@ -73,13 +105,11 @@ pub fn load_obj(path: &str, fit_without_studio: bool) -> Rc<FittedObj> {
     let center = (min + max) / 2.0;
     let size = (max - min).x.max((max - min).y).max((max - min).z).max(f32::EPSILON);
 
-    let fitted = Rc::new(FittedObj {
+    FittedObj {
         parts,
         fit: Matrix4::from_scale(1.0 / size) * Matrix4::from_translation(-center),
         bottom: (min.y - center.y) / size,
-    });
-    LOADED.with(|loaded| loaded.borrow_mut().insert(path.to_string(), fitted.clone()));
-    fitted
+    }
 }
 
 /// `mesh` with its vertices coloured by where they are in its bounds: red along X, green along Y

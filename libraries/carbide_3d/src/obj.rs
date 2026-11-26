@@ -51,13 +51,13 @@ use crate::render::{Render3d, RenderContext3d};
 use crate::{Mesh, Object};
 
 /// A linear colour component converted to sRGB, with the exact sRGB curve.
-fn linear_to_srgb(value: f32) -> f32 {
+pub(crate) fn linear_to_srgb(value: f32) -> f32 {
     let value = value.clamp(0.0, 1.0);
     if value <= 0.0031308 { value * 12.92 } else { 1.055 * value.powf(1.0 / 2.4) - 0.055 }
 }
 
 /// A linear MTL colour as a carbide colour, with `alpha`.
-fn color(linear: [f32; 3], alpha: f32) -> Color {
+pub(crate) fn color(linear: [f32; 3], alpha: f32) -> Color {
     rgba(linear_to_srgb(linear[0]), linear_to_srgb(linear[1]), linear_to_srgb(linear[2]), alpha.clamp(0.0, 1.0))
 }
 

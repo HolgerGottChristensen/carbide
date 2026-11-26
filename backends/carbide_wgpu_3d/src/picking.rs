@@ -12,7 +12,7 @@ use wgpu::{BindGroupLayout, Buffer, CommandEncoder, CompareFunction, DepthStenci
 
 use crate::mesh_cache::MeshCache;
 use crate::preprocess_shader;
-use crate::render_pass_command::RenderPassCommand;
+use crate::render_pass_command::{pipeline_variant, RenderPassCommand, PIPELINE_VARIANTS};
 use crate::vertex::WgpuVertex;
 
 /// Per pixel: the pick id, and the depth's bits.
@@ -35,9 +35,8 @@ struct PickFrame {
 
 #[derive(Debug)]
 pub(crate) struct PickingState {
-    /// The pipeline that culls back faces, and the one for double-sided materials, which doesn't.
-    pipeline: RenderPipeline,
-    double_sided_pipeline: RenderPipeline,
+    /// The pipelines in `pipeline_variant` order, as the main pass has them.
+    pipelines: [RenderPipeline; 4],
     /// The ids and the depth, with their size.
     targets: Option<((u32, u32), Texture, TextureView, TextureView)>,
     /// Where a tile is copied to and read from.
@@ -82,7 +81,7 @@ impl PickingState {
             push_constant_ranges: &[],
         });
 
-        let create = |cull_mode: Option<Face>| device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let create = |(cull_mode, front_face): (Option<Face>, FrontFace)| device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("carbide_3d_picking"),
             layout: Some(&layout),
             vertex: VertexState {
@@ -93,7 +92,7 @@ impl PickingState {
             },
             // As the main pass: what is picked is what is seen.
             primitive: PrimitiveState {
-                front_face: FrontFace::Ccw,
+                front_face,
                 cull_mode,
                 ..Default::default()
             },
@@ -114,7 +113,7 @@ impl PickingState {
             multiview: None,
             cache: None,
         });
-        let (pipeline, double_sided_pipeline) = (create(Some(Face::Back)), create(None));
+        let pipelines = PIPELINE_VARIANTS.map(create);
 
         let staging = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("carbide_3d_picking_tile"),
@@ -123,7 +122,7 @@ impl PickingState {
             mapped_at_creation: false,
         });
 
-        PickingState { pipeline, double_sided_pipeline, targets: None, staging, frame: None, tile: None }
+        PickingState { pipelines, targets: None, staging, frame: None, tile: None }
     }
 
     /// Forget the last frame's buffer: nothing can be picked until a frame renders one.
@@ -189,20 +188,21 @@ impl PickingState {
             occlusion_query_set: None,
         });
 
-        pass.set_pipeline(&self.pipeline);
-        let mut double_sided_set = false;
+        pass.set_pipeline(&self.pipelines[0]);
+        let mut variant_set = 0;
         pass.set_bind_group(0, scene_bind_group, &[]);
 
         // Every mesh: those that aren't pickable still hide what is behind them.
         for command in commands {
-            if let RenderPassCommand::DrawMesh { mesh, object, double_sided, .. } = command {
+            if let RenderPassCommand::DrawMesh { mesh, object, double_sided, mirrored, .. } = command {
                 let Some(cached) = meshes.get(mesh.id()) else {
                     continue;
                 };
 
-                if *double_sided != double_sided_set {
-                    pass.set_pipeline(if *double_sided { &self.double_sided_pipeline } else { &self.pipeline });
-                    double_sided_set = *double_sided;
+                let variant = pipeline_variant(*double_sided, *mirrored);
+                if variant != variant_set {
+                    pass.set_pipeline(&self.pipelines[variant]);
+                    variant_set = variant;
                 }
 
                 pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));

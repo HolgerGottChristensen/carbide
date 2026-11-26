@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
+    use super::playground::{gltf_models, playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -43,7 +43,8 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::Plane, Model::RenderBall, Model::MaterialGrid] {
+        let box_textured = gltf_models().iter().position(|(name, _)| name == "BoxTextured").unwrap();
+        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::Plane, Model::RenderBall, Model::MaterialGrid, Model::Gltf(box_textured)] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
                     for renderer in [Renderer::Wgpu, Renderer::None] {
@@ -366,7 +367,7 @@ mod tests {
     #[ignore = "slow: about 40 s in a debug build, parsing the large OBJ files; run with --ignored"]
     fn each_obj_model_loads_and_draws() {
         let wolf = Model::Wolf.load().unwrap();
-        let (_, material) = &wolf.parts[0];
+        let (_, material, _) = &wolf.parts[0];
         assert!(material.albedo.value().to_texture().is_some(), "the wolf has no colour map");
         assert!(material.normal.value().to_texture().is_some(), "the wolf has no normal map");
         let maps = material.aomr_textures.value();
@@ -389,6 +390,55 @@ mod tests {
             let drawn = view(&mut harness);
             let changed = empty.iter().zip(&drawn).filter(|(a, b)| a != b).count();
             assert!(changed > 10_000, "{model:?} changes only {changed} bytes of the empty view");
+        }
+    }
+
+    /// Every folder in `ressources/gltf` is a glTF model to pick, by its name, with its `.glb` or
+    /// `.gltf` file.
+    #[test]
+    fn the_gltf_samples_are_models() {
+        let models = gltf_models();
+        assert_eq!(models.len(), 20, "{models:?}");
+        for name in ["BoxTextured", "DamagedHelmet", "TextureTransformTest", "TwoSidedPlane"] {
+            assert!(models.iter().any(|(model, file)| model == name && file.exists()), "{name} is missing");
+        }
+        // The two that only come as .gltf.
+        let transform_test = &models.iter().find(|(name, _)| name == "TextureTransformTest").unwrap().1;
+        assert_eq!(transform_test.extension().unwrap(), "gltf");
+    }
+
+    /// glTF models draw in the playground, with their files' materials and with the side bar's,
+    /// placed by their nodes' transforms: OrientationTest's arrows are parts placed by their nodes,
+    /// so its fitted parts have transforms other than the identity, and the model fits the view.
+    #[test]
+    fn gltf_models_draw() {
+        let index = |name: &str| gltf_models().iter().position(|(model, _)| model == name).unwrap();
+
+        let orientation = Model::Gltf(index("OrientationTest")).load().unwrap();
+        assert!(orientation.parts.iter().any(|(_, _, transform)| *transform != carbide::math::Matrix4::from_scale(1.0)));
+        assert!(orientation.bottom < 0.0 && orientation.bottom >= -0.5, "bottom {}", orientation.bottom);
+
+        let options = Options::new();
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            harness.render();
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+
+        *options.model.clone().value_mut() = Model::Empty;
+        let empty = view(&mut harness);
+
+        for name in ["BoxTextured", "OrientationTest", "TextureCoordinateTest"] {
+            *options.model.clone().value_mut() = Model::Gltf(index(name));
+            *options.file_materials.clone().value_mut() = true;
+            let from_file = view(&mut harness);
+            assert!(changed(&empty, &from_file) > 10_000, "{name} changes only {} bytes of the empty view", changed(&empty, &from_file));
+
+            *options.file_materials.clone().value_mut() = false;
+            let side_bar = view(&mut harness);
+            assert!(changed(&from_file, &side_bar) > 1_000, "{name} with the side bar's material changes only {} bytes", changed(&from_file, &side_bar));
         }
     }
 
