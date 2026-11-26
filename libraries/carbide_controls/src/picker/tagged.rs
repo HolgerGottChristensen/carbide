@@ -15,7 +15,11 @@ impl Tagged<u32, u32, Empty> {
     pub fn new<S: ReadState<T=T>, T: StateContract + PartialEq, W: IntoWidget>(child: W, tag: S) -> Tagged<T, S, W::Output>{
         Tagged {
             tag,
-            child: child.into_widget(),
+            child: {
+                let child = child.into_widget();
+                carbide::widget::properties::warn_if_proxy("tag", &child);
+                child
+            },
         }
     }
 }

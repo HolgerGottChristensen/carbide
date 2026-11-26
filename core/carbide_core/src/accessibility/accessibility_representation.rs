@@ -15,7 +15,11 @@ impl AccessibilityRepresentation<Empty, Empty> {
     pub fn new<C: IntoWidget, S: IntoWidget>(child: C, label: S) -> AccessibilityRepresentation<C::Output, S::Output> {
         AccessibilityRepresentation {
             representation: label.into_widget(),
-            child: child.into_widget(),
+            child: {
+                let child = child.into_widget();
+                crate::widget::properties::warn_if_proxy("accessibility_representation", &child);
+                child
+            },
         }
     }
 }

@@ -14,7 +14,9 @@ pub mod properties {
         WidgetKindProxy,
         WidgetKindDynamic,
         Kind,
-        WidgetKind
+        WidgetKind,
+        SingleWidgetKind,
+        warn_if_proxy,
     };
 }
 

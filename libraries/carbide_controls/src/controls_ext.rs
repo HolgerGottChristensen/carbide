@@ -1,3 +1,4 @@
+use carbide::widget::properties::SingleWidgetKind;
 use carbide::environment::{EnvironmentKey, Shared};
 use carbide::state::{ReadState, StateContract, ValueState};
 use carbide::widget::{EnvUpdatingNew, EnvUpdatingNew2, Widget};
@@ -59,11 +60,11 @@ pub trait ControlsExt: WidgetExt {
         EnvUpdatingNew::<Self, ListStyleKey>::new(Box::new(value) as Box<dyn ListStyle>, self)
     }
 
-    fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> {
+    fn tag<T: StateContract + PartialEq>(self, tag: T) -> Tagged<T, impl ReadState<T=T>, Self> where Self::Kind: SingleWidgetKind {
         Tagged::new(self, ValueState::new(tag))
     }
 
-    fn tag_state<T: StateContract + PartialEq, S: ReadState<T=T>>(self, tag: S) -> Tagged<T, S, Self> {
+    fn tag_state<T: StateContract + PartialEq, S: ReadState<T=T>>(self, tag: S) -> Tagged<T, S, Self> where Self::Kind: SingleWidgetKind {
         Tagged::new(self, tag)
     }
 }

@@ -16,7 +16,11 @@ impl AccessibilityLabel<Empty, String> {
     pub fn new<C: IntoWidget, S: IntoReadState<String>>(child: C, label: S) -> AccessibilityLabel<C::Output, S::Output> {
         AccessibilityLabel {
             label: label.into_read_state(),
-            child: child.into_widget(),
+            child: {
+                let child = child.into_widget();
+                crate::widget::properties::warn_if_proxy("accessibility_label", &child);
+                child
+            },
         }
     }
 }
