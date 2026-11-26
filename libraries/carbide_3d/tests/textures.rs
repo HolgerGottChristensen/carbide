@@ -172,8 +172,13 @@ fn store_flat_image(harness: &mut Harness, rgba: [u8; 4]) -> ImageId {
 /// (a constant normal, as RGB) read with `direction`, lit by a light travelling along `light`.
 /// `None` is the plane without a normal map.
 fn plane_brightness(map: Option<([u8; 3], NormalTextureYDirection)>, light: Vector3<f32>) -> u32 {
+    mesh_brightness(Mesh::plane(4.0, 4.0), map, light)
+}
+
+/// [`plane_brightness`] for any `mesh` lying on the ground and facing up.
+fn mesh_brightness(mesh: Mesh, map: Option<([u8; 3], NormalTextureYDirection)>, light: Vector3<f32>) -> u32 {
     let normal = LocalState::new(NormalTexture::None);
-    let plane = Object::new(Mesh::plane(4.0, 4.0), PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()));
+    let plane = Object::new(mesh, PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()));
     let scene = Scene3d::new((plane, DirectionalLight::new(light).intensity(3.0)))
         .ambient(WHITE, 0.0)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
@@ -278,6 +283,53 @@ fn a_normal_mapped_plane_and_sphere() {
     let id = store_dome_normal_map(&mut harness);
     *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
     harness.snapshot("domes");
+}
+
+/// `mesh` with its texture mirrored left to right (u becomes 1 - u), and its tangents calculated
+/// again.
+fn mirrored(mesh: Mesh) -> Mesh {
+    let mut vertices = mesh.vertices().to_vec();
+    for vertex in &mut vertices {
+        vertex.texture_coords_0.x = 1.0 - vertex.texture_coords_0.x;
+    }
+    Mesh::new(vertices, mesh.indices().to_vec()).calculate_tangents()
+}
+
+/// A plane whose texture is mirrored left to right has its tangent pointing the other way, and
+/// the tangent's sign keeps the image's top at the far edge: a map tilted towards the image's top
+/// is lit by a light from the far edge as on the plane that isn't mirrored. Without the sign, the
+/// mirrored plane would tilt towards the near edge and be darker.
+#[test]
+fn a_mirrored_texture_keeps_its_normal_map_the_right_way_up() {
+    const UP: NormalTextureYDirection = NormalTextureYDirection::Up;
+    let towards_top = [128, 191, 238];
+    let from_far = Vector3::new(0.0, -1.0, 1.0);
+
+    let flat = plane_brightness(None, from_far);
+    let plain = plane_brightness(Some((towards_top, UP)), from_far);
+    let mirrored = mesh_brightness(mirrored(Mesh::plane(4.0, 4.0)), Some((towards_top, UP)), from_far);
+    assert!(plain > flat + 20, "tilted towards the light, but not brighter: {plain} against {flat}");
+    assert!(mirrored.abs_diff(plain) <= 6, "the mirrored plane differs: {mirrored} against {plain}");
+}
+
+/// The dome normal map on two planes side by side, the right one with its texture mirrored, lit
+/// from the far edge: every dome is lit on its far side, on both planes.
+#[test]
+fn a_normal_map_on_a_mirrored_texture() {
+    let normal = LocalState::new(NormalTexture::None);
+    let material = || PbrMaterial::new().color(WHITE).roughness(Some(0.7f32)).normal(normal.clone());
+
+    let scene = Scene3d::new((
+        Object::new(Mesh::plane(1.0, 1.0), material()).position(Vector3::new(-0.52, 0.0, 0.0)),
+        Object::new(mirrored(Mesh::plane(1.0, 1.0)), material()).position(Vector3::new(0.52, 0.0, 0.0)),
+        DirectionalLight::new(Vector3::new(0.0, -1.0, 1.0)).intensity(4.0),
+    ))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 2.0, 0.6), Point3::new(0.0, 0.0, 0.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(300.0, 160.0));
+    let id = store_dome_normal_map(&mut harness);
+    *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
+    harness.snapshot("domes_mirrored");
 }
 
 /// How a test plane is lit.

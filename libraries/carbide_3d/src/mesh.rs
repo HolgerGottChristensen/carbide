@@ -9,7 +9,7 @@ use carbide::impl_state_value;
 
 use crate::vertex::Vertex;
 use tobj::Model;
-use carbide::math::{InnerSpace, Vector2, Vector3, Zero};
+use carbide::math::{InnerSpace, Vector2, Vector3, Vector4, Zero};
 
 /// Identifies a [`Mesh`]'s data: clones of a mesh share it, and every new or changed mesh gets a
 /// new one.
@@ -306,7 +306,7 @@ impl Mesh {
         // Tangents along increasing u: east, around the vertical axis.
         for vertex in &mut vertices {
             let longitude = (vertex.texture_coords_0.x - 0.5) * TAU;
-            vertex.tangent = Vector3::new(longitude.cos(), 0.0, -longitude.sin());
+            vertex.tangent = Vector4::new(longitude.cos(), 0.0, -longitude.sin(), 1.0);
         }
 
         Mesh::new(vertices, indices)
@@ -366,49 +366,81 @@ impl Mesh {
         Mesh::from_data(data)
     }
 
-    /// Calculate each vertex's tangent from its triangles' positions and first texture
-    /// coordinates, made perpendicular to its normal. Triangles whose texture coordinates don't
-    /// span an area add nothing; a vertex with no tangent gets zero.
+    /// Calculate each vertex's tangent with MikkTSpace, from its triangles' positions, normals
+    /// and first texture coordinates, as glTF requires for meshes without tangents, so normal maps
+    /// baked by other tools light the same here. The tangent points along increasing u, and its w
+    /// is the sign that makes `cross(normal, tangent) · w` the image's up, so mirrored halves of a
+    /// texture light the right way. Vertices whose triangles' texture coordinates don't span an
+    /// area get a zero tangent, which draws them with their vertex normal.
     pub fn calculate_tangents(self) -> Self {
         let mut data = self.into_data();
 
-        for vertex in &mut data.vertices {
-            vertex.tangent = Vector3::zero();
-        }
-
-        for chunk in data.indices.chunks_exact(3) {
-            let pos0 = data.vertices[chunk[0] as usize].position;
-            let pos1 = data.vertices[chunk[1] as usize].position;
-            let pos2 = data.vertices[chunk[2] as usize].position;
-
-            let tex0 = data.vertices[chunk[0] as usize].texture_coords_0;
-            let tex1 = data.vertices[chunk[1] as usize].texture_coords_0;
-            let tex2 = data.vertices[chunk[2] as usize].texture_coords_0;
-
-            let uv1 = tex1 - tex0;
-            let uv2 = tex2 - tex0;
-
-            let edge1 = pos1 - pos0;
-            let edge2 = pos2 - pos0;
-
-            let determinant = uv1.x * uv2.y - uv1.y * uv2.x;
-            if determinant.abs() <= f32::EPSILON {
-                continue;
+        let mut geometry = TangentGeometry {
+            vertices: &data.vertices,
+            indices: &data.indices,
+            tangents: vec![Vector4::new(0.0, 0.0, 0.0, 1.0); data.vertices.len()],
+        };
+        // The error type has no variants yet; on one, the mesh keeps no tangents.
+        let generated = bevy_mikktspace::generate_tangents(&mut geometry).is_ok();
+        let tangents = geometry.tangents;
+        if generated {
+            for (vertex, tangent) in data.vertices.iter_mut().zip(tangents) {
+                vertex.tangent = tangent;
             }
-
-            let tangent = (edge1 * uv2.y - edge2 * uv1.y) / determinant;
-
-            data.vertices[chunk[0] as usize].tangent += tangent;
-            data.vertices[chunk[1] as usize].tangent += tangent;
-            data.vertices[chunk[2] as usize].tangent += tangent;
-        }
-
-        for vertex in &mut data.vertices {
-            let t = vertex.tangent - (vertex.normal * vertex.normal.dot(vertex.tangent));
-            vertex.tangent = if t.magnitude2() > 0.0 { t.normalize() } else { Vector3::zero() };
         }
 
         Mesh::from_data(data)
+    }
+}
+
+/// A mesh as MikkTSpace reads it: triangles of indexed vertices. MikkTSpace gives one tangent
+/// per triangle corner, which for an indexed mesh agree on every corner that shares a vertex,
+/// unless the vertex is shared across a texture seam, where the last one wins.
+struct TangentGeometry<'a> {
+    vertices: &'a [Vertex],
+    indices: &'a [u32],
+    tangents: Vec<Vector4<f32>>,
+}
+
+impl TangentGeometry<'_> {
+    fn vertex(&self, face: usize, vert: usize) -> &Vertex {
+        &self.vertices[self.indices[face * 3 + vert] as usize]
+    }
+}
+
+impl bevy_mikktspace::Geometry for TangentGeometry<'_> {
+    fn num_faces(&self) -> usize {
+        self.indices.len() / 3
+    }
+
+    fn num_vertices_of_face(&self, _face: usize) -> usize {
+        3
+    }
+
+    fn position(&self, face: usize, vert: usize) -> [f32; 3] {
+        self.vertex(face, vert).position.into()
+    }
+
+    fn normal(&self, face: usize, vert: usize) -> [f32; 3] {
+        self.vertex(face, vert).normal.into()
+    }
+
+    fn tex_coord(&self, face: usize, vert: usize) -> [f32; 2] {
+        self.vertex(face, vert).texture_coords_0.into()
+    }
+
+    fn set_tangent(&mut self, tangent_space: Option<bevy_mikktspace::TangentSpace>, face: usize, vert: usize) {
+        let index = self.indices[face * 3 + vert] as usize;
+        self.tangents[index] = match tangent_space {
+            // MikkTSpace's bitangent follows increasing v, which is down the image in carbide's
+            // (and glTF's) texture coordinates, so the sign is flipped to point up the image, as
+            // Bevy does (`bevy_mesh/src/mikktspace.rs`).
+            Some(space) => {
+                let [x, y, z, w] = space.tangent_encoded();
+                Vector4::new(x, y, z, -w)
+            }
+            None => Vector4::new(0.0, 0.0, 0.0, 1.0),
+        };
     }
 }
 
@@ -450,8 +482,8 @@ impl From<Model> for Mesh {
 
 #[cfg(test)]
 mod tests {
-    use carbide::math::{InnerSpace, Vector3};
-    use crate::Mesh;
+    use carbide::math::{InnerSpace, Vector2, Vector3, Vector4};
+    use crate::{Mesh, Vertex};
 
     /// Every normal of `mesh` has length 1 and points away from the origin, as for a closed
     /// shape around it.
@@ -472,8 +504,9 @@ mod tests {
         for vertex in vertices {
             let uv = vertex.texture_coords_0;
             assert!((0.0..=2.0).contains(&uv.x) && (0.0..=1.0).contains(&uv.y), "{uv:?} out of range");
-            assert!((vertex.tangent.magnitude() - 1.0).abs() < 1e-4);
-            assert!(vertex.tangent.dot(vertex.normal).abs() < 1e-4, "tangent not along the surface");
+            assert!((vertex.tangent.truncate().magnitude() - 1.0).abs() < 1e-4);
+            assert!(vertex.tangent.truncate().dot(vertex.normal).abs() < 1e-4, "tangent not along the surface");
+            assert_eq!(vertex.tangent.w, 1.0);
         }
 
         for triangle in mesh.indices().chunks_exact(3) {
@@ -485,7 +518,7 @@ mod tests {
             let (a, b) = (vertices[triangle[0] as usize], vertices[triangle[1] as usize]);
             let du = b.texture_coords_0.x - a.texture_coords_0.x;
             if du.abs() > 1e-3 && a.normal.y.abs() < 0.9 {
-                assert!((b.position - a.position).dot(a.tangent) * du > 0.0, "tangent points against u");
+                assert!((b.position - a.position).dot(a.tangent.truncate()) * du > 0.0, "tangent points against u");
             }
         }
 
@@ -537,7 +570,53 @@ mod tests {
         // for the front face (normal +Z, facing the default camera), +X.
         let cube = Mesh::cube(1.0);
         let front = cube.vertices().iter().find(|vertex| vertex.normal.z > 0.5).unwrap();
-        assert!((front.tangent - Vector3::new(1.0, 0.0, 0.0)).magnitude() < 1e-4, "tangent {:?}", front.tangent);
+        assert!((front.tangent - Vector4::new(1.0, 0.0, 0.0, 1.0)).magnitude() < 1e-4, "tangent {:?}", front.tangent);
+
+        // Every built-in mesh has the image's up at cross(normal, tangent), so w is 1.
+        for mesh in [Mesh::cube(1.0), Mesh::plane(1.0, 1.0)] {
+            assert!(mesh.vertices().iter().all(|vertex| vertex.tangent.w == 1.0));
+        }
+    }
+
+    /// Two quads side by side facing +Z, the right one with its texture mirrored: u runs right on
+    /// the left quad and left on the right one, v down on both. The tangent follows u, so it points
+    /// left on the mirrored quad, and w turns to -1 so that `cross(normal, tangent) · w` still points
+    /// up the image, +Y.
+    #[test]
+    fn a_mirrored_texture_flips_the_tangent_sign() {
+        let normal = Vector3::unit_z();
+        let quad = |x0: f32, u0: f32, u1: f32| [
+            Vertex::new(Vector3::new(x0, 1.0, 0.0)).normal(normal).texture_coords_0(Vector2::new(u0, 0.0)),
+            Vertex::new(Vector3::new(x0, 0.0, 0.0)).normal(normal).texture_coords_0(Vector2::new(u0, 1.0)),
+            Vertex::new(Vector3::new(x0 + 1.0, 0.0, 0.0)).normal(normal).texture_coords_0(Vector2::new(u1, 1.0)),
+            Vertex::new(Vector3::new(x0 + 1.0, 1.0, 0.0)).normal(normal).texture_coords_0(Vector2::new(u1, 0.0)),
+        ];
+        let vertices = [quad(-1.0, 0.0, 1.0), quad(0.0, 1.0, 0.0)].concat();
+        let indices = vec![0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7];
+        let mesh = Mesh::new(vertices, indices).calculate_tangents();
+
+        for (index, vertex) in mesh.vertices().iter().enumerate() {
+            let (expected, sign) = if index < 4 { (Vector3::unit_x(), 1.0) } else { (-Vector3::unit_x(), -1.0) };
+            assert!((vertex.tangent.truncate() - expected).magnitude() < 1e-4, "vertex {index}: tangent {:?}", vertex.tangent);
+            assert_eq!(vertex.tangent.w, sign, "vertex {index}");
+            let image_up = vertex.normal.cross(vertex.tangent.truncate()) * vertex.tangent.w;
+            assert!((image_up - Vector3::unit_y()).magnitude() < 1e-4, "vertex {index}: image up {image_up:?}");
+        }
+    }
+
+    /// A mesh without texture coordinates has no tangents: zero, so it is drawn with its vertex
+    /// normals.
+    #[test]
+    fn no_texture_coordinates_give_no_tangents() {
+        let cube = Mesh::cube(1.0);
+        let mut vertices = cube.vertices().to_vec();
+        for vertex in &mut vertices {
+            vertex.texture_coords_0 = Vector2::new(0.0, 0.0);
+        }
+        let mesh = Mesh::new(vertices, cube.indices().to_vec()).calculate_tangents();
+        for vertex in mesh.vertices() {
+            assert_eq!(vertex.tangent.truncate().magnitude(), 0.0, "tangent {:?}", vertex.tangent);
+        }
     }
 
     #[test]

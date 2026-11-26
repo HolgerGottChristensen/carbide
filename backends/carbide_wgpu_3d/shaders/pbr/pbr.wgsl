@@ -21,7 +21,7 @@ const PI_2 = 1.570796327;
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) normal: vec3<f32>,
-    @location(1) tangent: vec3<f32>,
+    @location(1) tangent: vec4<f32>,
     @location(2) texture_coords_0: vec2<f32>,
     @location(3) texture_coords_1: vec2<f32>,
     @location(4) color_0: vec4<f32>,
@@ -87,7 +87,7 @@ fn sample_material_texture(tex: texture_2d<f32>, material: Material, coords: vec
 fn main_vs(
     @location(0) position: vec3<f32>,
     @location(1) normal: vec3<f32>,
-    @location(2) tangent: vec3<f32>,
+    @location(2) tangent: vec4<f32>,
     @location(3) texture_coords_0: vec2<f32>,
     @location(4) texture_coords_1: vec2<f32>,
     @location(5) color_0: vec4<f32>,
@@ -107,13 +107,12 @@ fn main_vs(
     out.position = model_view_proj * vec4<f32>(position, 1.0);
     out.view_position = model_view * vec4<f32>(position, 1.0);
     out.normal = normalize(mv_mat3 * (inv_scale_sq * normal));
-    out.tangent = normalize(mv_mat3 * (inv_scale_sq * tangent));
-    //out.normal = normalize((inv_scale_sq * normal));
-    //out.tangent = normalize((inv_scale_sq * tangent));
-    //out.normal = normalize((mv_mat3 * normal));
-    //out.tangent = normalize((mv_mat3 * tangent));
-    //out.normal = normalize(normal);
-    //out.tangent = normalize(tangent);
+    // A tangent is a direction along the surface, so it turns and stretches with the model, unlike
+    // the normal. A mirroring transform (negative determinant) mirrors the bitangent too. A mesh
+    // without tangents keeps a zero one, which the fragment stage checks for.
+    let tangent_xyz = mv_mat3 * tangent.xyz;
+    let mirrored = select(1.0, -1.0, determinant(mv_mat3) < 0.0);
+    out.tangent = vec4<f32>(select(vec3<f32>(0.0), normalize(tangent_xyz), dot(tangent_xyz, tangent_xyz) > 1e-12), tangent.w * mirrored);
     out.texture_coords_0 = texture_coords_0;
     out.texture_coords_1 = texture_coords_1;
     out.color_0 = color_0;

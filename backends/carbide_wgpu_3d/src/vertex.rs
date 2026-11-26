@@ -8,7 +8,7 @@ use carbide_core::color::ColorExt;
 pub struct WgpuVertex {
     position: [f32; 3],
     normal: [f32; 3],
-    tangent: [f32; 3],
+    tangent: [f32; 4],
     texture_coords_0: [f32; 2],
     texture_coords_1: [f32; 2],
     color_0: [f32; 4],
@@ -20,7 +20,7 @@ impl WgpuVertex {
         WgpuVertex {
             position: [vertex.position.x, vertex.position.y, vertex.position.z],
             normal: [vertex.normal.x, vertex.normal.y, vertex.normal.z],
-            tangent: [vertex.tangent.x, vertex.tangent.y, vertex.tangent.z],
+            tangent: [vertex.tangent.x, vertex.tangent.y, vertex.tangent.z, vertex.tangent.w],
             texture_coords_0: [vertex.texture_coords_0.x, vertex.texture_coords_0.y],
             texture_coords_1: [vertex.texture_coords_1.x, vertex.texture_coords_1.y],
             color_0: [vertex.color_0.red(), vertex.color_0.green(), vertex.color_0.blue(), vertex.color_0.opacity()],
@@ -32,6 +32,7 @@ impl WgpuVertex {
         wgpu::VertexBufferLayout {
             array_stride: size_of::<WgpuVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
+            // Byte offsets of WgpuVertex's fields, in order.
             attributes: &[
                 wgpu::VertexAttribute {
                     offset: 0,
@@ -39,32 +40,32 @@ impl WgpuVertex {
                     format: VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    offset: 12,
                     shader_location: 1,
                     format: VertexFormat::Float32x3,
                 },
                 wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>()) as wgpu::BufferAddress,
+                    offset: 24,
                     shader_location: 2,
-                    format: VertexFormat::Float32x3,
+                    format: VertexFormat::Float32x4,
                 },
                 wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>()) as wgpu::BufferAddress,
+                    offset: 40,
                     shader_location: 3,
                     format: VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 2]>()) as wgpu::BufferAddress,
+                    offset: 48,
                     shader_location: 4,
                     format: VertexFormat::Float32x2,
                 },
                 wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 2]>() + size_of::<[f32; 2]>()) as wgpu::BufferAddress,
+                    offset: 56,
                     shader_location: 5,
                     format: VertexFormat::Float32x4,
                 },
                 wgpu::VertexAttribute {
-                    offset: (size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 3]>() + size_of::<[f32; 2]>() + size_of::<[f32; 2]>() + size_of::<[f32; 4]>()) as wgpu::BufferAddress,
+                    offset: 72,
                     shader_location: 6,
                     format: VertexFormat::Float32x4,
                 },

@@ -16,6 +16,7 @@ dolly = ["dep:dolly"]
 carbide_core.workspace = true
 dashmap.workspace = true
 once_cell.workspace = true
+bevy_mikktspace.workspace = true
 bitflags.workspace = true
 dyn-clone.workspace = true
 tobj.workspace = true

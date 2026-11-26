@@ -2,14 +2,15 @@
 // has one loaded.
 //
 // Normal maps are in tangent space: x along the tangent (increasing u), y along "up" in the image
-// (decreasing v), z out of the surface. With carbide's texture coordinates, image-up is
-// cross(normal, tangent), as glTF's bitangent is, for maps whose green points up (OpenGL). Maps
-// whose green points down (DirectX, YDOWN_NORMAL) have y flipped.
+// (decreasing v), z out of the surface. Image-up is cross(normal, tangent) · w, glTF's bitangent,
+// where w is the tangent's sign: -1 on the mirrored half of a model whose texture is mirrored.
+// That is y for maps whose green points up (OpenGL); maps whose green points down (DirectX,
+// YDOWN_NORMAL) have y flipped.
 fn get_normal(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
     let normal = normalize(vs_out.normal);
 
     // No normal map loaded (bit 1), or a mesh without tangents: the vertex normal.
-    if ((material.texture_enable & 0x2u) == 0u || dot(vs_out.tangent, vs_out.tangent) < 1e-8) {
+    if ((material.texture_enable & 0x2u) == 0u || dot(vs_out.tangent.xyz, vs_out.tangent.xyz) < 1e-8) {
         return normal;
     }
 
@@ -34,8 +35,8 @@ fn get_normal(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: 
     }
 
     // The tangent, made perpendicular to the interpolated normal again.
-    let tangent = normalize(vs_out.tangent - normal * dot(normal, vs_out.tangent));
-    let image_up = cross(normal, tangent);
+    let tangent = normalize(vs_out.tangent.xyz - normal * dot(normal, vs_out.tangent.xyz));
+    let image_up = cross(normal, tangent) * select(1.0, -1.0, vs_out.tangent.w < 0.0);
 
     return normalize(tangent * tangent_space.x + image_up * tangent_space.y + normal * tangent_space.z);
 }
