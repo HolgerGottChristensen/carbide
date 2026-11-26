@@ -3,7 +3,7 @@ use std::f32::consts::{PI, TAU};
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, OnceLock, Weak};
 
 use carbide::impl_state_value;
 
@@ -45,6 +45,8 @@ pub struct Mesh {
 struct MeshData {
     vertices: Vec<Vertex>,
     indices: Vec<u32>,
+    /// The vertices' bounds, worked out the first time they are asked for.
+    bounds: OnceLock<Option<(Vector3<f32>, Vector3<f32>)>>,
 }
 
 /// A reference to a [`Mesh`]'s data that doesn't keep it alive, for a renderer's cache.
@@ -81,10 +83,13 @@ impl Mesh {
         Mesh::from_data(MeshData {
             vertices,
             indices,
+            bounds: OnceLock::new(),
         })
     }
 
-    fn from_data(data: MeshData) -> Mesh {
+    fn from_data(mut data: MeshData) -> Mesh {
+        // The data may have changed since its bounds were worked out.
+        data.bounds = OnceLock::new();
         Mesh {
             id: MeshId::new(),
             data: Arc::new(data),
@@ -94,6 +99,24 @@ impl Mesh {
     /// The data, to change into a new mesh: taken if this is the only handle, copied otherwise.
     fn into_data(self) -> MeshData {
         Arc::unwrap_or_clone(self.data)
+    }
+
+    /// The smallest box around the vertices: its least and greatest corners, or None for a mesh
+    /// without vertices. Worked out once per mesh.
+    pub fn bounds(&self) -> Option<(Vector3<f32>, Vector3<f32>)> {
+        *self.data.bounds.get_or_init(|| {
+            let mut vertices = self.data.vertices.iter().map(|vertex| vertex.position);
+            let first = vertices.next()?;
+            Some(vertices.fold((first, first), |(min, max), p| (
+                Vector3::new(min.x.min(p.x), min.y.min(p.y), min.z.min(p.z)),
+                Vector3::new(max.x.max(p.x), max.y.max(p.y), max.z.max(p.z)),
+            )))
+        })
+    }
+
+    /// The centre of [`bounds`](Mesh::bounds), or the origin for a mesh without vertices.
+    pub fn centre(&self) -> Vector3<f32> {
+        self.bounds().map_or(Vector3::zero(), |(min, max)| (min + max) / 2.0)
     }
 
     /// Identifies this mesh's data: the same for all its clones.

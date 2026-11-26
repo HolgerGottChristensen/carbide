@@ -180,7 +180,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
 
     // Unlit materials show their colour as it is: no lighting, exposure or tone mapping.
     if ((material.flags & 0x2000u) != 0u) {
-        return vec4<f32>(pixel.albedo.rgb, alpha);
+        return vec4<f32>(pixel.albedo.rgb * alpha, alpha);
     }
     pixel.normal = get_normal(material, in, uv);
     // The back of a double-sided material (the only back faces not culled) is lit as a surface
@@ -294,7 +294,9 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
         emissive *= sample_material_texture(emissive_tex, material, SLOT_EMISSIVE, uv).rgb;
     }
     let lit = ambient.rgb + color + emissive;
-    return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), alpha);
+    // Premultiplied, as the pipeline blends: a blended surface fades as a whole, highlights too,
+    // as glTF's "over" operator. Opaque and cutout surfaces have an alpha of 1.
+    return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping) * alpha, alpha);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);
     //return pixel.albedo;

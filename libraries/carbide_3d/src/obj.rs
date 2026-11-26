@@ -5,6 +5,10 @@
 //! - **Colour:** `Kd`, the diffuse colour, with `d`, the dissolve, as its opacity. Colours in MTL
 //!   files are linear, as Blender and most renderers read them, so they are converted to sRGB,
 //!   as carbide's colours are.
+//! - **Glass:** a material with a glass or refraction illumination model (`illum` 4, 6, 7 or 9)
+//!   and a transmission filter `Tf`, and no `d` below 1, has an opacity of 1 minus `Tf`'s mean,
+//!   as exporters such as 3ds Max write glass (`Tf 0.4 0.4 0.4` with `d 1`). `Tf`'s colour isn't
+//!   used: tinting the light behind takes another blend mode.
 //! - **Roughness:** `Pr` when the file has the PBR extension. Otherwise from `Ns`, the Phong
 //!   exponent: a Blinn-Phong highlight of exponent `n` is about as wide as a GGX highlight of
 //!   alpha `√(2 / (n + 2))`, and roughness is the square root of alpha.
@@ -31,7 +35,7 @@
 //! Not used: `Ka`, since ambient light is the scene's; `Tr`, which exporters disagree on (some
 //! write transparency, others opacity); `Ni`; and `map_Ka`, `map_Ks`, `map_Ns` and `map_d`,
 //! which have no physically based counterpart, or no slot yet. An opacity below 1 sets
-//! [`Transparency::Blend`], which the renderer doesn't blend yet.
+//! [`Transparency::Blend`].
 
 use std::path::{Path, PathBuf};
 
@@ -70,6 +74,20 @@ fn extension(material: &tobj::Material, key: &str) -> Option<f32> {
 fn extension_color(material: &tobj::Material, key: &str) -> Option<[f32; 3]> {
     let mut values = material.unknown_param.get(key)?.split_whitespace().map(|value| value.parse::<f32>().ok());
     Some([values.next()??, values.next()??, values.next()??])
+}
+
+/// The illumination models the MTL specification calls glass (4, 9) and refraction (6, 7).
+const GLASS_ILLUMINATION_MODELS: [u8; 4] = [4, 6, 7, 9];
+
+/// A material's opacity: `d`, or for glass without a `d` below 1, 1 minus the mean of its
+/// transmission filter `Tf`.
+fn opacity(material: &tobj::Material) -> f32 {
+    let dissolve = material.dissolve.unwrap_or(1.0);
+    let glass = material.illumination_model.is_some_and(|model| GLASS_ILLUMINATION_MODELS.contains(&model));
+    match extension_color(material, "Tf") {
+        Some([r, g, b]) if glass && dissolve >= 1.0 => (1.0 - (r + g + b) / 3.0).clamp(0.0, 1.0),
+        _ => dissolve,
+    }
 }
 
 /// The roughness whose GGX highlight is about as wide as a Blinn-Phong highlight of `exponent`.
@@ -156,7 +174,7 @@ pub fn material_from_mtl(material: &tobj::Material) -> PbrMaterial {
 /// [`material_from_mtl`], with the texture maps, their paths resolved against `folder`, the MTL
 /// file's folder.
 pub fn material_from_mtl_in(material: &tobj::Material, folder: Option<&Path>) -> PbrMaterial {
-    let opacity = material.dissolve.unwrap_or(1.0);
+    let opacity = opacity(material);
     let diffuse = material.diffuse.unwrap_or([0.8, 0.8, 0.8]);
 
     let roughness = extension(material, "Pr")
@@ -202,7 +220,7 @@ fn with_maps(mut pbr: PbrMaterial, material: &tobj::Material, folder: &Path) -> 
 
     if let Some(colour) = map(material.diffuse_texture.as_ref()) {
         let diffuse = material.diffuse.unwrap_or([1.0, 1.0, 1.0]);
-        let opacity = material.dissolve.unwrap_or(1.0);
+        let opacity = opacity(material);
         pbr = pbr
             .color(crate::material::albedo_component::AlbedoComponent::TextureValue { texture: colour.texture(folder), value: color(diffuse, opacity) });
     }
@@ -388,6 +406,31 @@ mod tests {
         assert!((roughness_from_phong_exponent(0.0) - 1.0).abs() < 1e-6);
         assert!(roughness_from_phong_exponent(96.0) < roughness_from_phong_exponent(64.0));
         assert!(roughness_from_phong_exponent(10_000.0) < 0.15);
+    }
+
+    /// Glass as 3ds Max writes it, `illum 4` with `Tf 0.4 0.4 0.4` and `d 1`, is blended at an
+    /// opacity of 0.6. The same filter with a model that isn't glass leaves the material opaque,
+    /// and a `d` below 1 wins over the filter.
+    #[test]
+    fn glass_takes_its_opacity_from_the_transmission_filter() {
+        let material = |illum: u8, dissolve: f32| {
+            let mut mtl = tobj::Material::default();
+            mtl.illumination_model = Some(illum);
+            mtl.dissolve = Some(dissolve);
+            mtl.unknown_param.insert("Tf".to_string(), "0.4 0.4 0.4".to_string());
+            material_from_mtl(&mtl)
+        };
+
+        let glass = material(4, 1.0);
+        assert!((glass.albedo.value().to_value().opacity() - 0.6).abs() < 1e-6);
+        assert!(matches!(glass.transparency, Transparency::Blend));
+
+        let plastic = material(2, 1.0);
+        assert_eq!(plastic.albedo.value().to_value().opacity(), 1.0);
+        assert!(matches!(plastic.transparency, Transparency::Opaque));
+
+        let dissolved = material(4, 0.25);
+        assert!((dissolved.albedo.value().to_value().opacity() - 0.25).abs() < 1e-6);
     }
 
     #[test]

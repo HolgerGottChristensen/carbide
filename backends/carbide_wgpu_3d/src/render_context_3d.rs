@@ -22,7 +22,7 @@ use crate::picking::PickingState;
 use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, FallbackTextures, WgpuPbrMaterial, WgpuPbrMaterialTextures, SLOT_COUNT};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
-use crate::render_pass_command::{pipeline_variant, RenderPassCommand, PIPELINE_VARIANTS};
+use crate::render_pass_command::{blend_variant, pipeline_variant, RenderPassCommand, BLEND_VARIANTS, PIPELINE_VARIANTS};
 use crate::shadow::{directional_view_proj, layer_size, spot_view_proj, ShadowRequest, ShadowTarget, SHADOW_FORMAT};
 use crate::storage_buffer::StorageBuffer;
 use crate::uniforms::WgpuUniforms;
@@ -85,6 +85,9 @@ struct GpuState {
     /// order: culling back faces or not (double-sided), with counter-clockwise or clockwise
     /// (mirrored) front faces.
     pipeline: Option<(TextureFormat, [RenderPipeline; 4])>,
+    /// The blending pipelines, for blended materials, in `blend_variant` order: they don't write
+    /// depth.
+    blend_pipelines: Option<(TextureFormat, [RenderPipeline; 4])>,
     /// Repeating, linear and anisotropic: for textures, and the default for materials.
     sampler: Sampler,
     /// Repeating and nearest: for materials with `SampleType::Nearest`.
@@ -335,14 +338,30 @@ impl GpuState {
             ..storage(binding)
         };
 
+        let fragment_sampler = |binding: u32| BindGroupLayoutEntry {
+            binding,
+            visibility: ShaderStages::FRAGMENT,
+            ty: BindingType::Sampler(SamplerBindingType::Filtering),
+            count: None,
+        };
+
+        // Objects and the light, for placing meshes; materials and samplers, for alpha-testing
+        // cutout and blended materials.
         let shadow_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("carbide_3d_shadow_layout"),
-            entries: &[vertex_storage(0), vertex_storage(1)],
+            entries: &[
+                vertex_storage(0),
+                vertex_storage(1),
+                BindGroupLayoutEntry { visibility: ShaderStages::FRAGMENT, ..storage(2) },
+                fragment_sampler(3),
+                fragment_sampler(4),
+            ],
         });
 
         let shadow_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("carbide_3d_shadow_pipeline_layout"),
-            bind_group_layouts: &[&shadow_layout],
+            // The material textures as the main pass binds them, for the albedo's alpha.
+            bind_group_layouts: &[&shadow_layout, &pbr_layout],
             push_constant_ranges: &[],
         });
 
@@ -379,7 +398,13 @@ impl GpuState {
                 },
             }),
             multisample: wgpu::MultisampleState::default(),
-            fragment: None,
+            // Depth only; the fragment stage discards what alpha-testing leaves out.
+            fragment: Some(FragmentState {
+                module: &shadow_shader,
+                entry_point: Some("shadow_fs"),
+                compilation_options: Default::default(),
+                targets: &[],
+            }),
             multiview: None,
             cache: None,
         });
@@ -412,6 +437,7 @@ impl GpuState {
             pbr_layout,
             pipeline_layout,
             pipeline: None,
+            blend_pipelines: None,
             sampler,
             depth_texture: None,
             depth_view: None,
@@ -515,12 +541,24 @@ impl GpuState {
             return;
         }
 
-        let pipelines = PIPELINE_VARIANTS.map(|(cull_mode, front_face)| self.create_pipeline(device, format, cull_mode, front_face));
+        let pipelines = PIPELINE_VARIANTS.map(|(cull_mode, front_face)| self.create_pipeline(device, format, cull_mode, front_face, true));
         self.pipeline = Some((format, pipelines));
     }
 
-    /// The PBR pipeline for `format`, culling `cull_mode`, with `front_face` facing the viewer.
-    fn create_pipeline(&self, device: &Device, format: TextureFormat, cull_mode: Option<Face>, front_face: FrontFace) -> RenderPipeline {
+    /// Create the blending pipelines for `format` if they don't exist yet: only once a blended
+    /// mesh is drawn.
+    fn ensure_blend_pipelines(&mut self, device: &Device, format: TextureFormat) {
+        if self.blend_pipelines.as_ref().is_some_and(|(current, _)| *current == format) {
+            return;
+        }
+
+        let pipelines = BLEND_VARIANTS.map(|(cull_mode, front_face)| self.create_pipeline(device, format, cull_mode, front_face, false));
+        self.blend_pipelines = Some((format, pipelines));
+    }
+
+    /// The PBR pipeline for `format`, culling `cull_mode`, with `front_face` facing the viewer,
+    /// and writing depth or not.
+    fn create_pipeline(&self, device: &Device, format: TextureFormat, cull_mode: Option<Face>, front_face: FrontFace, depth_write: bool) -> RenderPipeline {
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("carbide_3d_pbr_pipeline"),
             layout: Some(&self.pipeline_layout),
@@ -544,7 +582,7 @@ impl GpuState {
             // Reverse-Z: depth is cleared to 0, and nearer fragments have greater depth.
             depth_stencil: Some(DepthStencilState {
                 format: DEPTH_FORMAT,
-                depth_write_enabled: true,
+                depth_write_enabled: depth_write,
                 depth_compare: CompareFunction::GreaterEqual,
                 stencil: StencilState::default(),
                 bias: DepthBiasState::default(),
@@ -629,6 +667,9 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         gpu.depth_view(device, width, height);
         gpu.multisampled_view(device, width, height, render_target.texture_format());
         gpu.ensure_pipeline(device, render_target.texture_format());
+        if self.commands.iter().any(|command| matches!(command, RenderPassCommand::DrawMesh { blended: true, .. })) {
+            gpu.ensure_blend_pipelines(device, render_target.texture_format());
+        }
         gpu.shadow_maps(device, layer_size(&self.shadow_requests), self.shadow_requests.len().max(1) as u32);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -818,6 +859,18 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                         binding: 1,
                         resource: view_proj_buffer.binding().unwrap(),
                     },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: materials_buffer.binding().unwrap(),
+                    },
+                    BindGroupEntry {
+                        binding: 3,
+                        resource: BindingResource::Sampler(&gpu.sampler),
+                    },
+                    BindGroupEntry {
+                        binding: 4,
+                        resource: BindingResource::Sampler(&gpu.nearest_sampler),
+                    },
                 ],
             });
 
@@ -851,14 +904,20 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             shadow_pass.set_viewport(0.0, 0.0, *resolution as f32, *resolution as f32, 0.0, 1.0);
 
             for command in &self.commands {
-                if let RenderPassCommand::DrawMesh { mesh, object, casts_shadows: true, .. } = command {
-                    let Some(cached) = meshes.get(mesh.id()) else {
-                        continue;
-                    };
+                match command {
+                    RenderPassCommand::DrawMesh { mesh, object, casts_shadows: true, .. } => {
+                        let Some(cached) = meshes.get(mesh.id()) else {
+                            continue;
+                        };
 
-                    shadow_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
-                    shadow_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
-                    shadow_pass.draw_indexed(0..cached.index_count, 0, *object..*object + 1);
+                        shadow_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
+                        shadow_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
+                        shadow_pass.draw_indexed(0..cached.index_count, 0, *object..*object + 1);
+                    }
+                    RenderPassCommand::SetPbrMaterial(pbr) => {
+                        shadow_pass.set_bind_group(1, &gpu.texture_bind_groups[pbr].1, &[]);
+                    }
+                    RenderPassCommand::DrawMesh { .. } => {}
                 }
             }
         }
@@ -889,6 +948,10 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             });
 
             let (_, pipelines) = gpu.pipeline.as_ref().unwrap();
+            // The blended draws, with their view depth and the material textures set before them,
+            // drawn after the others.
+            let mut blended_draws = vec![];
+            let mut current_textures: Option<&WgpuPbrMaterialTextures> = None;
             // Which pipeline is set: switched only when a mesh needs another.
             let mut variant_set = 0;
             render_pass.set_pipeline(&pipelines[0]);
@@ -898,11 +961,18 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
             for command in &self.commands {
                 match command {
-                    RenderPassCommand::DrawMesh { mesh, object, double_sided, mirrored, .. } => {
+                    RenderPassCommand::DrawMesh { mesh, object, double_sided, mirrored, blended, centre, .. } => {
                         // A mesh with no triangles has no GPU copy, and nothing to draw.
                         let Some(cached) = meshes.get(mesh.id()) else {
                             continue;
                         };
+
+                        // Blended meshes are drawn after the others, sorted.
+                        if *blended {
+                            let depth = (camera.view * centre.extend(1.0)).z;
+                            blended_draws.push((depth, current_textures.clone(), cached, *object, *double_sided, *mirrored));
+                            continue;
+                        }
 
                         let variant = pipeline_variant(*double_sided, *mirrored);
                         if variant != variant_set {
@@ -918,7 +988,28 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     }
                     RenderPassCommand::SetPbrMaterial(pbr) => {
                         render_pass.set_bind_group(2, &gpu.texture_bind_groups[pbr].1, &[]);
+                        current_textures = Some(pbr);
                     }
+                }
+            }
+
+            // Then the blended meshes, farthest first: view-space depth is negative in front of
+            // the camera, so the most negative is the farthest. They test against the depth of
+            // the others but don't write it. A double-sided one draws its far side, its back
+            // faces, first, then its front faces.
+            blended_draws.sort_by(|a, b| a.0.total_cmp(&b.0));
+            for (_, textures, cached, object, double_sided, mirrored) in blended_draws {
+                if let Some(textures) = textures {
+                    render_pass.set_bind_group(2, &gpu.texture_bind_groups[textures].1, &[]);
+                }
+                render_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
+                render_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
+
+                let (_, blend_pipelines) = gpu.blend_pipelines.as_ref().unwrap();
+                let sides: &[bool] = if double_sided { &[true, false] } else { &[false] };
+                for back in sides {
+                    render_pass.set_pipeline(&blend_pipelines[blend_variant(*back, mirrored)]);
+                    render_pass.draw_indexed(0..cached.index_count, 0, object..object + 1);
                 }
             }
         }
@@ -968,11 +1059,13 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
         // A clone of the handle: it keeps the mesh alive until this frame is drawn.
         let object = self.objects.len() as u32 - 1;
-        let double_sided = match &material {
-            WgpuMaterial::PBR(material) => material.double_sided(),
+        let (double_sided, blended) = match &material {
+            WgpuMaterial::PBR(material) => (material.double_sided(), material.blended()),
         };
-        let mirrored = self.transform_stack.last().unwrap().determinant() < 0.0;
-        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows, double_sided, mirrored });
+        let transform = *self.transform_stack.last().unwrap();
+        let mirrored = transform.determinant() < 0.0;
+        let centre = (transform * mesh.centre().extend(1.0)).truncate();
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows, double_sided, mirrored, blended, centre });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {

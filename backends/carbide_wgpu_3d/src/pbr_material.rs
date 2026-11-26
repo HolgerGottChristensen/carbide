@@ -42,6 +42,11 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
+    /// Whether the material blends with what is behind it (`Transparency::Blend`).
+    pub(crate) fn blended(&self) -> bool {
+        MaterialFlags::from_bits_truncate(self.material_flags).contains(MaterialFlags::ALPHA_BLEND)
+    }
+
     /// Whether both sides of the material's triangles are drawn.
     pub(crate) fn double_sided(&self) -> bool {
         MaterialFlags::from_bits_truncate(self.material_flags).contains(MaterialFlags::DOUBLE_SIDED)

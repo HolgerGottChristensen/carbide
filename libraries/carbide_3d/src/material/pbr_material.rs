@@ -188,6 +188,14 @@ impl PbrMaterial {
         }
     }
 
+    /// How the material's alpha is used: ignored (`Opaque`, the default), as a cutoff below which
+    /// the surface is cut away (`Cutout`), or blended with what is behind it (`Blend`), drawn after
+    /// the opaque meshes, farthest first, and casting shadows where its alpha is at least 0.5.
+    pub fn transparency(mut self, transparency: Transparency) -> PbrMaterial {
+        self.transparency = transparency;
+        self
+    }
+
     /// Draw the back of the material's triangles too, lit as a surface facing the other way: for
     /// leaves, cloth, paper and other thin surfaces seen from both sides, as glTF's `doubleSided`.
     /// Off by default, which skips back faces, as for closed shapes.
