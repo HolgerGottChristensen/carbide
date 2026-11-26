@@ -56,8 +56,9 @@ impl ConvertIntoRead<NormalTexture> for ImageId {
     type Output<G: AnyReadState<T=ImageId> + Clone> = RMap1<fn(&ImageId)->NormalTexture, ImageId, NormalTexture, G>;
 
     fn convert<F: AnyReadState<T=ImageId> + Clone>(f: F) -> Self::Output<F> {
+        // Green up (OpenGL), as glTF's normal maps are, and the type's default.
         Map1::read_map(f, |id| {
-            NormalTexture::Tricomponent(id.clone(), NormalTextureYDirection::Down)
+            NormalTexture::Tricomponent(id.clone(), NormalTextureYDirection::Up)
         })
     }
 }

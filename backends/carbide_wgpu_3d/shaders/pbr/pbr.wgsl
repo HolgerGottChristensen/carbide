@@ -142,7 +142,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     if ((material.flags & 0x2000u) != 0u) {
         return pixel.albedo;
     }
-    pixel.normal = get_normal(material, primary_sampler, in, coords, uvdx, uvdy);
+    pixel.normal = get_normal(material, in, coords, uvdx, uvdy);
 
     let aomr = get_aomr(material);
     pixel.ambient_occlusion = aomr.x;

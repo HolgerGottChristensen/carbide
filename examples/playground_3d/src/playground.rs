@@ -771,7 +771,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         ),
         shown_when(
             Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
-            note("Only the colour map is drawn so far. The normal, roughness, occlusion and metallic maps are loaded, and show once the renderer samples them."),
+            note("The colour and normal maps are drawn. The roughness, occlusion and metallic maps are loaded, and show once the renderer samples them."),
         ),
         // A colour map takes the colour's place, so the colour picker gives way while one is used.
         shown_when(

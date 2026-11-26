@@ -4,8 +4,12 @@ use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::{Mesh, Object, Scene3d};
+use carbide_3d::material::normal_texture::NormalTexture;
+use carbide_3d::material::normal_texture_y_direction::NormalTextureYDirection;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::Node3dExt;
+use carbide_core::color::WHITE;
+use carbide_core::state::{LocalState, State};
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
 use carbide_core::math::{Deg, Euler, Matrix3, Point3, Vector3};
 use carbide_core::widget::{HStack, Image, WidgetExt};
@@ -148,4 +152,126 @@ fn a_textured_icosphere() {
     let mut harness = Harness::new(widget, Dimension::new(410.0, 200.0));
     store_checker(&mut harness, &checker_id);
     harness.snapshot("front_and_back");
+}
+
+/// A 4×4 image of one colour, stored under a new in-memory id.
+fn store_flat_image(harness: &mut Harness, rgba: [u8; 4]) -> ImageId {
+    let id = ImageId::temp(ImageFormat::Png);
+    let data: Vec<u8> = rgba.iter().copied().cycle().take(4 * 4 * 4).collect();
+    let texture = Texture { width: 4, height: 4, bytes_per_row: 16, format: TextureFormat::RGBA8, data: &data };
+    WgpuImageContext.update_texture(&id, texture, harness.environment_mut());
+    id
+}
+
+/// The brightness of the middle of a plane seen from straight above, with the normal map `map`
+/// (a constant normal, as RGB) read with `direction`, lit by a light travelling along `light`.
+/// `None` is the plane without a normal map.
+fn plane_brightness(map: Option<([u8; 3], NormalTextureYDirection)>, light: Vector3<f32>) -> u32 {
+    let normal = LocalState::new(NormalTexture::None);
+    let plane = Object::new(Mesh::plane(4.0, 4.0), PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()));
+    let scene = Scene3d::new((plane, DirectionalLight::new(light).intensity(3.0)))
+        .ambient(WHITE, 0.0)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
+    if let Some((rgb, direction)) = map {
+        let id = store_flat_image(&mut harness, [rgb[0], rgb[1], rgb[2], 255]);
+        *normal.clone().value_mut() = NormalTexture::Tricomponent(id, direction);
+    }
+    harness.render();
+
+    let pixel = harness.pixels().get_pixel(30, 30).0;
+    pixel[0] as u32 + pixel[1] as u32 + pixel[2] as u32
+}
+
+/// Normal maps bend the normal the way their colours say: red along the texture's right (+u),
+/// green towards the image's top, which on the plane is the far edge (-Z), and the other way for
+/// DirectX maps. A map tilted towards the light makes the surface brighter than a flat one, and
+/// tilted away, darker.
+#[test]
+fn a_normal_map_bends_the_normal() {
+    const UP: NormalTextureYDirection = NormalTextureYDirection::Up;
+    const DOWN: NormalTextureYDirection = NormalTextureYDirection::Down;
+    // Tilted 30° towards the image's top (green), and towards its right (red).
+    let towards_top = [128, 191, 238];
+    let towards_right = [191, 128, 238];
+
+    // Light from the far edge (travelling towards +Z), and from the right (towards -X).
+    let from_far = Vector3::new(0.0, -1.0, 1.0);
+    let from_right = Vector3::new(-1.0, -1.0, 0.0);
+
+    let flat = plane_brightness(None, from_far);
+    let flat_map = plane_brightness(Some(([128, 128, 255], UP)), from_far);
+    assert!(flat_map.abs_diff(flat) <= 6, "a flat normal map changes the plane: {flat_map} against {flat}");
+
+    let top_opengl = plane_brightness(Some((towards_top, UP)), from_far);
+    let top_directx = plane_brightness(Some((towards_top, DOWN)), from_far);
+    assert!(top_opengl > flat + 20, "tilted towards the light, but not brighter: {top_opengl} against {flat}");
+    assert!(top_directx + 20 < flat, "a DirectX map tilted away from the light, but not darker: {top_directx} against {flat}");
+
+    let flat = plane_brightness(None, from_right);
+    let right = plane_brightness(Some((towards_right, UP)), from_right);
+    let right_directx = plane_brightness(Some((towards_right, DOWN)), from_right);
+    assert!(right > flat + 20, "tilted towards the light, but not brighter: {right} against {flat}");
+    assert!(right.abs_diff(right_directx) <= 6, "the DirectX flag changes red: {right} against {right_directx}");
+}
+
+/// A 64×64 normal map of 4×4 domes, green up (OpenGL): each dome's normal tilts outwards from its
+/// centre, and the space between them is flat.
+fn store_dome_normal_map(harness: &mut Harness) -> ImageId {
+    let mut data = Vec::with_capacity(64 * 64 * 4);
+    for row in 0..64 {
+        for column in 0..64 {
+            // Position in the cell, -1 to 1, with y towards the image's top.
+            let x = ((column % 16) as f32 + 0.5) / 8.0 - 1.0;
+            let y = 1.0 - ((row % 16) as f32 + 0.5) / 8.0;
+            let r2 = x * x + y * y;
+
+            let normal = if r2 < 0.64 {
+                // A sphere cap: the normal is the direction from the dome's centre.
+                let (nx, ny) = (x / 0.8 * 0.7, y / 0.8 * 0.7);
+                Vector3::new(nx, ny, (1.0 - nx * nx - ny * ny).sqrt())
+            } else {
+                Vector3::new(0.0, 0.0, 1.0)
+            };
+
+            let encode = |value: f32| ((value * 0.5 + 0.5) * 255.0).round() as u8;
+            data.extend_from_slice(&[encode(normal.x), encode(normal.y), encode(normal.z), 255]);
+        }
+    }
+
+    let id = ImageId::temp(ImageFormat::Png);
+    let texture = Texture { width: 64, height: 64, bytes_per_row: 64 * 4, format: TextureFormat::RGBA8, data: &data };
+    WgpuImageContext.update_texture(&id, texture, harness.environment_mut());
+    id
+}
+
+/// The dome normal map on a plane, lit from the far left, and repeated 8 × 4 times around an
+/// icosphere, lit from the front left. Each dome is lit on its side towards the light and shaded on
+/// the other, on the flat plane and around the sphere.
+#[test]
+fn a_normal_mapped_plane_and_sphere() {
+    let normal = LocalState::new(NormalTexture::None);
+    let material = || PbrMaterial::new().color(WHITE).roughness(Some(0.7f32)).normal(normal.clone());
+
+    let plane = Scene3d::new((
+        Object::new(Mesh::plane(2.0, 2.0), material()),
+        DirectionalLight::new(Vector3::new(1.0, -1.0, 1.0)).intensity(4.0),
+    ))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 2.2, 0.8), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let mut sphere_material = material();
+    sphere_material.uv_transform0 = Matrix3::from_nonuniform_scale(8.0, 4.0);
+    let sphere = Scene3d::new((
+        Object::new(Mesh::icosphere(1.0, 4), sphere_material),
+        DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
+    ))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.5, 3.2), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let mut harness = Harness::new(HStack::new((plane, sphere)).spacing(10.0), Dimension::new(410.0, 200.0));
+    let id = store_dome_normal_map(&mut harness);
+    *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
+    harness.snapshot("domes");
 }

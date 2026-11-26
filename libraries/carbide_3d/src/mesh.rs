@@ -161,12 +161,14 @@ impl Mesh {
         let (x, z) = (width / 2.0, depth / 2.0);
         let up = Vector3::unit_y();
 
-        // Counter-clockwise seen from above, with +X right and +Z towards the viewer.
+        // Counter-clockwise seen from above, with +X right and +Z towards the viewer. The image's
+        // top edge (v = 0) is the far edge (-Z), as the cube's top face has it, so the image reads
+        // the right way round from the front.
         let vertices = vec![
-            Vertex::new(Vector3::new(-x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(0.0, 0.0)),
-            Vertex::new(Vector3::new(x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(1.0, 0.0)),
-            Vertex::new(Vector3::new(x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(1.0, 1.0)),
-            Vertex::new(Vector3::new(-x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(0.0, 1.0)),
+            Vertex::new(Vector3::new(-x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(0.0, 1.0)),
+            Vertex::new(Vector3::new(x, 0.0, z)).normal(up).texture_coords_0(Vector2::new(1.0, 1.0)),
+            Vertex::new(Vector3::new(x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(1.0, 0.0)),
+            Vertex::new(Vector3::new(-x, 0.0, -z)).normal(up).texture_coords_0(Vector2::new(0.0, 0.0)),
         ];
 
         Mesh::new(vertices, vec![0, 1, 2, 0, 2, 3]).calculate_tangents()
