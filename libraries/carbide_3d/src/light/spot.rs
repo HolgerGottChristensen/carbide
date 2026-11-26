@@ -89,6 +89,10 @@ impl StateSync for SpotLight {
 impl Render3d for SpotLight {
     fn render(&mut self, context: &mut RenderContext3d) {
         self.sync(context.env);
+        // A light that gives no light costs nothing: no lighting, and no shadow map.
+        if *self.intensity.value() <= 0.0 {
+            return;
+        }
         context.spot(*self.color.value(), *self.intensity.value(), *self.range.value(), *self.inner.value(), *self.outer.value(), self.shadow.spec(context.env));
     }
 }

@@ -33,12 +33,23 @@ fn scene<N: carbide_3d::Node3dSequence>(nodes: N) -> Scene3d<N> {
 
 fn rendered(widget: impl Widget) -> Harness {
     let mut harness = Harness::new(widget, Dimension::new(200.0, 200.0));
-    // The first frame renders the picking buffer that pointer events read.
+    harness.render();
+    // A view renders its picking buffer only while the pointer is inside it: move in, off the
+    // cube, and render the frame that pointer events then read, as entering a view asks for.
+    harness.mouse_move(OUTSIDE);
     harness.render();
     harness
 }
 
 const CENTRE: Position = Position::new(100.0, 100.0);
+/// Move the pointer to `position` and render a frame: hover is picked once a frame, in the
+/// update, not on each move.
+fn hover(harness: &mut Harness, position: Position) {
+    harness.mouse_move(position);
+    harness.render();
+}
+
+/// Inside the view, but off everything in these scenes.
 const OUTSIDE: Position = Position::new(10.0, 10.0);
 
 /// A cube whose `.hovered(..)` state follows the pointer. Pins down hover: true over the cube,
@@ -48,10 +59,10 @@ fn hovered_follows_the_pointer() {
     let hovered = LocalState::new(false);
     let mut harness = rendered(scene((cube().hovered(hovered.clone()), light())));
 
-    harness.mouse_move(CENTRE);
+    hover(&mut harness, CENTRE);
     assert!(*hovered.value(), "over the cube");
 
-    harness.mouse_move(OUTSIDE);
+    hover(&mut harness, OUTSIDE);
     assert!(!*hovered.value(), "off the cube");
 }
 
@@ -141,10 +152,10 @@ fn unpickable_meshes_hide_and_are_excluded() {
         .hovered(hovered.clone());
     let mut harness = rendered(scene((sphere, cube(), light())));
 
-    harness.mouse_move(CENTRE);
+    hover(&mut harness, CENTRE);
     assert!(!*hovered.value(), "the cube in front hides the sphere");
     // Beside the cube, the sphere shows.
-    harness.mouse_move(Position::new(100.0, 170.0));
+    hover(&mut harness, Position::new(100.0, 170.0));
     assert!(*hovered.value(), "the sphere below the cube");
 
     let hovered = LocalState::new(false);
@@ -154,9 +165,9 @@ fn unpickable_meshes_hide_and_are_excluded() {
     )).hovered(hovered.clone());
     let mut harness = rendered(scene((group, light())));
 
-    harness.mouse_move(Position::new(40.0, 100.0));
+    hover(&mut harness, Position::new(40.0, 100.0));
     assert!(!*hovered.value(), "the unpickable cube");
-    harness.mouse_move(Position::new(160.0, 100.0));
+    hover(&mut harness, Position::new(160.0, 100.0));
     assert!(*hovered.value(), "the pickable one");
 }
 
@@ -169,12 +180,12 @@ fn the_tolerance_reaches_beside_an_edge() {
 
     let hovered = LocalState::new(false);
     let mut harness = rendered(scene((cube().hovered(hovered.clone()), light())));
-    harness.mouse_move(beside);
+    hover(&mut harness, beside);
     assert!(*hovered.value(), "within the default 2 pixels");
 
     let hovered = LocalState::new(false);
     let mut harness = rendered(scene((cube().hovered(hovered.clone()), light())).pick_tolerance(0.0));
-    harness.mouse_move(beside);
+    hover(&mut harness, beside);
     assert!(!*hovered.value(), "with no tolerance");
 }
 
@@ -188,7 +199,7 @@ fn hover_follows_the_scene_under_a_still_pointer() {
     let mut harness = rendered(scene((cube().position(position.clone()).hovered(hovered.clone()), light())));
 
     // The pointer stays at the centre; the cube starts off to the left.
-    harness.mouse_move(CENTRE);
+    hover(&mut harness, CENTRE);
     assert!(!*hovered.value());
 
     // The cube moves under the pointer: the next frame renders it, and the one after picks it.
@@ -216,13 +227,15 @@ fn picking_on_a_scaled_display() {
         carbide_testing::WgpuMsaa::X1,
     );
     harness.render();
+    harness.mouse_move(OUTSIDE);
+    harness.render();
 
-    harness.mouse_move(Position::new(120.0, 80.0));
+    hover(&mut harness, Position::new(120.0, 80.0));
     assert!(*hovered.value(), "over the cube");
 
-    harness.mouse_move(Position::new(170.0, 100.0));
+    hover(&mut harness, Position::new(170.0, 100.0));
     assert!(!*hovered.value(), "beside the cube");
 
-    harness.mouse_move(Position::new(60.0, 140.0));
+    hover(&mut harness, Position::new(60.0, 140.0));
     assert!(*hovered.value(), "over the cube's other corner");
 }

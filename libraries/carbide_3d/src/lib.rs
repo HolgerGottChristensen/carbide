@@ -13,6 +13,7 @@ pub mod obj;
 pub mod shadows;
 pub mod outline;
 pub mod picking;
+pub mod profile;
 pub mod environment_node;
 pub mod light;
 pub mod node3d;

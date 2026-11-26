@@ -95,7 +95,8 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> R
         //let new_direction = (Matrix4::from(Euler::new(Deg(0.0), Deg(0.0), Deg(1.0))) * Vector4::new(self.direction.x, self.direction.y, self.direction.z, 1.0));
 
         //self.direction = Vector3::new(new_direction.x, new_direction.y, new_direction.z);
-        if !self.direction.value().is_zero() {
+        // A light that gives no light costs nothing: no lighting, and no shadow map.
+        if !self.direction.value().is_zero() && *self.intensity.value() > 0.0 {
             let color = *self.color.value();//.with_opacity(1.0);
             let intensity = *self.intensity.value();
             let direction = self.direction.value().normalize();

@@ -164,7 +164,11 @@ mod tests {
         // The middle of the main view, where the cube is.
         let centre = Position::new(450.0, 400.0);
 
+        // Entering the view asks for a frame with a picking buffer; the update after it picks
+        // hover from that buffer.
         harness.mouse_move(centre);
+        harness.render();
+        harness.render();
         assert!(*options.hovered.value(), "the pointer is over the cube");
 
         harness.click(centre);
@@ -175,7 +179,9 @@ mod tests {
         harness.click(centre);
         assert!(!*options.outlined.value(), "a second click deselects it");
 
+        // Still inside the view, off the cube: hover is picked again in the next frame.
         harness.mouse_move(Position::new(20.0, 20.0));
+        harness.render();
         assert!(!*options.hovered.value(), "off the cube");
     }
 

@@ -15,6 +15,7 @@ use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use carbide_core::CommonWidgetImpl;
 
 use crate::camera::{Camera, CameraController};
+use crate::profile;
 use crate::camera::controller::contains;
 use crate::node3d::{AnyNode3d, NodeId};
 use crate::picking::{PickHit, PickRecorder, PickTolerance, PointerEvent3d};
@@ -80,6 +81,8 @@ pub struct Scene3d<N> where N: Node3dSequence {
     /// Whether the frame rendering now is the extra frame asked for to check hover against the
     /// frame before it.
     hover_check: bool,
+    /// When the view last rendered, for the profile's frame interval.
+    last_render: Option<std::time::Instant>,
 }
 
 /// What the views of one scene share: its nodes, and its ambient light.
@@ -118,6 +121,7 @@ impl<N: Node3dSequence> Scene3d<N> {
             pressed: None,
             pointer: None,
             hover_check: false,
+            last_render: None,
         }
     }
 
@@ -224,6 +228,7 @@ impl<N: Node3dSequence> Clone for Scene3d<N> {
             pressed: None,
             pointer: None,
             hover_check: false,
+            last_render: None,
         }
     }
 }
@@ -239,7 +244,9 @@ impl<N: Node3dSequence> Update for Scene3d<N> {
         // look again next frame.
         if let Some(pointer) = self.pointer {
             if self.picking.listeners > 0 {
-                let hit = self.pick_at(pointer, ctx.env);
+                profile::set_scope(format!("view {:?}", self.id));
+                let hit = profile::time("hover pick (update)", || self.pick_at(pointer, ctx.env));
+                profile::set_scope("");
                 if self.set_hovered(hit, ctx.env) {
                     request_frame(ctx.env);
                 }
@@ -350,10 +357,35 @@ impl<N: Node3dSequence> Scene3d<N> {
 
         match event {
             MouseEvent::Move { to, .. } => {
+                profile::record_value("pointer moves", 1.0);
                 let inside = contains(Rect::new(self.position, self.dimension), *to);
-                self.pointer = inside.then_some(*to);
-                let hit = self.pick_at(*to, env);
-                self.set_hovered(hit, env);
+                if profile::enabled() {
+                    // Where the pointer is, against where the view thinks it is, in logical pixels.
+                    profile::set_scope(format!("view {:?}", self.id));
+                    profile::record_value("pointer x", to.x);
+                    profile::record_value("pointer y", to.y);
+                    profile::record_value("view left", self.position.x);
+                    profile::record_value("view top", self.position.y);
+                    profile::record_value("view width", self.dimension.width);
+                    profile::record_value("view height", self.dimension.height);
+                    profile::record_value("pointer inside (1 = yes)", inside as u8 as f64);
+                    profile::set_scope("");
+                }
+                if inside {
+                    // Hover is picked at most once a frame, by the next update, not on every move:
+                    // each pick waits for the GPU. Ask for that frame. On entering, it also renders
+                    // the picking buffer the view doesn't have yet.
+                    if self.pointer != Some(*to) {
+                        request_frame(env);
+                    }
+                    self.pointer = Some(*to);
+                } else {
+                    // Leaving needs no pick.
+                    self.pointer = None;
+                    if !self.hovered.is_empty() {
+                        self.set_hovered(None, env);
+                    }
+                }
             }
             MouseEvent::Press { button: MouseButton::Left, position, .. } => {
                 self.pressed = self.pick_at(*position, env).map(|hit| hit.node);
@@ -388,6 +420,12 @@ impl<N: Node3dSequence> MouseEventHandler for Scene3d<N> {
 
 impl<N: Node3dSequence> Render for Scene3d<N> {
     fn render(&mut self, ctx: &mut RenderContext) {
+        let render_start = std::time::Instant::now();
+        profile::set_scope(format!("view {:?}", self.id));
+        if let Some(last) = self.last_render.replace(render_start) {
+            profile::record("frame interval", render_start - last);
+        }
+
         self.recreate_render_context_if_factory_changed(ctx.env);
         self.camera.sync(ctx.env);
         self.background.sync(ctx.env);
@@ -413,6 +451,7 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
             content.ambient_intensity.sync(env);
             self.render_context.hemisphere(*content.sky.value(), *content.ground.value(), *content.ambient_intensity.value());
 
+            let nodes_start = std::time::Instant::now();
             self.picking.clear();
             content.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
@@ -422,13 +461,18 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
                 });
             });
 
-            // A picking buffer only when something can use it.
-            view.picking = self.picking.listeners > 0 || self.pick_requested;
+            profile::record("nodes", nodes_start.elapsed());
+            profile::record_value("pointer handlers", self.picking.listeners as f64);
+            profile::record_value("pointer inside view (1 = yes)", self.pointer.is_some() as u8 as f64);
+
+            // A picking buffer only when something can use it: handlers and the pointer inside
+            // this view (it is in at most one), or the app picking by itself.
+            view.picking = (self.picking.listeners > 0 && self.pointer.is_some()) || self.pick_requested;
 
             let (width, height) = layer.dimensions();
             let aspect_ratio = width as f32 / height.max(1) as f32;
 
-            self.render_context.render(layer, self.camera.spec(aspect_ratio), view, env);
+            profile::time("backend render (CPU)", || self.render_context.render(layer, self.camera.spec(aspect_ratio), view, env));
         });
 
         // With the pointer inside, this frame's picking buffer is checked for hover on the next
@@ -440,5 +484,9 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
         } else {
             self.hover_check = false;
         }
+
+        profile::record("render", render_start.elapsed());
+        profile::set_scope("");
+        profile::report_if_due();
     }
 }

@@ -42,6 +42,30 @@ pub(crate) struct PickingState {
     staging: Buffer,
     /// The frame in `targets`, if the last frame rendered one.
     frame: Option<PickFrame>,
+    /// The tile last read from `frame`'s buffer: picks it covers, until the next frame, are
+    /// answered from it without another copy and wait.
+    tile: Option<ReadTile>,
+}
+
+/// A tile read from the picking buffer: its place, and each pixel's pick id and depth.
+#[derive(Debug)]
+struct ReadTile {
+    x0: u32,
+    y0: u32,
+    width: u32,
+    height: u32,
+    pixels: Vec<(u32, f32)>,
+}
+
+impl ReadTile {
+    /// Whether the tile holds every pixel a pick at `(x, y)` reads: within `radius`, and one more
+    /// for the normal, clamped to the buffer.
+    fn covers(&self, x: u32, y: u32, radius: u32, frame: &PickFrame) -> bool {
+        let reach = radius + 1;
+        let (left, top) = (x.saturating_sub(reach), y.saturating_sub(reach));
+        let (right, bottom) = ((x + reach).min(frame.width - 1), (y + reach).min(frame.height - 1));
+        left >= self.x0 && top >= self.y0 && right < self.x0 + self.width && bottom < self.y0 + self.height
+    }
 }
 
 impl PickingState {
@@ -96,12 +120,13 @@ impl PickingState {
             mapped_at_creation: false,
         });
 
-        PickingState { pipeline, targets: None, staging, frame: None }
+        PickingState { pipeline, targets: None, staging, frame: None, tile: None }
     }
 
     /// Forget the last frame's buffer: nothing can be picked until a frame renders one.
     pub(crate) fn clear(&mut self) {
         self.frame = None;
+        self.tile = None;
     }
 
     fn ensure_targets(&mut self, device: &Device, width: u32, height: u32) {
@@ -178,6 +203,8 @@ impl PickingState {
         }
 
         let inv_view = view.invert().unwrap_or(Matrix4::identity());
+        // A new frame: the tile read from the last one no longer holds.
+        self.tile = None;
         self.frame = Some(PickFrame {
             inv_view_proj: view_proj.invert().unwrap_or(Matrix4::identity()),
             camera_position: inv_view.w.truncate(),
@@ -189,52 +216,21 @@ impl PickingState {
     /// The nearest pickable pixel within `radius` of `(x, y)` in the last frame's buffer.
     pub(crate) fn pick(&mut self, device: &Device, queue: &Queue, (x, y): (u32, u32), radius: u32) -> Option<PickSample> {
         let frame = self.frame?;
-        let (_, ids, _, _) = self.targets.as_ref()?;
+        self.targets.as_ref()?;
         if x >= frame.width || y >= frame.height {
             return None;
         }
 
-        // The tile around the pointer, clamped to the buffer.
-        let (tile_width, tile_height) = (TILE.min(frame.width), TILE.min(frame.height));
-        let x0 = x.saturating_sub(TILE / 2).min(frame.width - tile_width);
-        let y0 = y.saturating_sub(TILE / 2).min(frame.height - tile_height);
-
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("carbide_3d_pick") });
-        encoder.copy_texture_to_buffer(
-            wgpu::TexelCopyTextureInfo {
-                texture: ids,
-                mip_level: 0,
-                origin: wgpu::Origin3d { x: x0, y: y0, z: 0 },
-                aspect: wgpu::TextureAspect::All,
-            },
-            wgpu::TexelCopyBufferInfo {
-                buffer: &self.staging,
-                layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(ROW_PITCH), rows_per_image: Some(tile_height) },
-            },
-            wgpu::Extent3d { width: tile_width, height: tile_height, depth_or_array_layers: 1 },
-        );
-        queue.submit(std::iter::once(encoder.finish()));
-
-        let slice = self.staging.slice(..);
-        slice.map_async(wgpu::MapMode::Read, |_| {});
-        // Blocks until the copy, and the frame before it, are done.
-        device.poll(wgpu::PollType::Wait).ok()?;
-
-        // The tile's ids and depths, row by row.
-        let tile = {
-            let data = slice.get_mapped_range();
-            let mut tile = vec![(0u32, 0.0f32); (tile_width * tile_height) as usize];
-            for row in 0..tile_height {
-                for column in 0..tile_width {
-                    let at = (row * ROW_PITCH + column * BYTES_PER_PIXEL) as usize;
-                    let id = u32::from_le_bytes(data[at..at + 4].try_into().unwrap());
-                    let depth = f32::from_bits(u32::from_le_bytes(data[at + 4..at + 8].try_into().unwrap()));
-                    tile[(row * tile_width + column) as usize] = (id, depth);
-                }
-            }
-            tile
-        };
-        self.staging.unmap();
+        // The tile read earlier this frame, if it holds what this pick reads; otherwise read the
+        // tile around the position.
+        if self.tile.as_ref().is_some_and(|tile| tile.covers(x, y, radius, &frame)) {
+            carbide_3d::profile::record_value("pick: tile reused (1 = yes)", 1.0);
+        } else {
+            carbide_3d::profile::record_value("pick: tile reused (1 = yes)", 0.0);
+            self.tile = Some(self.read_tile(device, queue, (x, y), &frame)?);
+        }
+        let ReadTile { x0, y0, width: tile_width, height: tile_height, pixels: tile } = self.tile.as_ref()?;
+        let (x0, y0, tile_width, tile_height) = (*x0, *y0, *tile_width, *tile_height);
 
         let at = |column: i32, row: i32| -> Option<(u32, f32)> {
             if column < 0 || row < 0 || column >= tile_width as i32 || row >= tile_height as i32 {
@@ -308,5 +304,52 @@ impl PickingState {
             normal,
             distance: (position - frame.camera_position).magnitude(),
         })
+    }
+
+    /// Copy the tile around `(x, y)`, clamped to the buffer, and wait for it.
+    fn read_tile(&self, device: &Device, queue: &Queue, (x, y): (u32, u32), frame: &PickFrame) -> Option<ReadTile> {
+        let (_, ids, _, _) = self.targets.as_ref()?;
+        let (tile_width, tile_height) = (TILE.min(frame.width), TILE.min(frame.height));
+        let x0 = x.saturating_sub(TILE / 2).min(frame.width - tile_width);
+        let y0 = y.saturating_sub(TILE / 2).min(frame.height - tile_height);
+
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("carbide_3d_pick") });
+        encoder.copy_texture_to_buffer(
+            wgpu::TexelCopyTextureInfo {
+                texture: ids,
+                mip_level: 0,
+                origin: wgpu::Origin3d { x: x0, y: y0, z: 0 },
+                aspect: wgpu::TextureAspect::All,
+            },
+            wgpu::TexelCopyBufferInfo {
+                buffer: &self.staging,
+                layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(ROW_PITCH), rows_per_image: Some(tile_height) },
+            },
+            wgpu::Extent3d { width: tile_width, height: tile_height, depth_or_array_layers: 1 },
+        );
+        queue.submit(std::iter::once(encoder.finish()));
+
+        let slice = self.staging.slice(..);
+        slice.map_async(wgpu::MapMode::Read, |_| {});
+        // Blocks until the copy, and the frame before it, are done.
+        carbide_3d::profile::time("pick: GPU wait", || device.poll(wgpu::PollType::Wait)).ok()?;
+
+        // The tile's ids and depths, row by row.
+        let tile = {
+            let data = slice.get_mapped_range();
+            let mut tile = vec![(0u32, 0.0f32); (tile_width * tile_height) as usize];
+            for row in 0..tile_height {
+                for column in 0..tile_width {
+                    let at = (row * ROW_PITCH + column * BYTES_PER_PIXEL) as usize;
+                    let id = u32::from_le_bytes(data[at..at + 4].try_into().unwrap());
+                    let depth = f32::from_bits(u32::from_le_bytes(data[at + 4..at + 8].try_into().unwrap()));
+                    tile[(row * tile_width + column) as usize] = (id, depth);
+                }
+            }
+            tile
+        };
+        self.staging.unmap();
+
+        Some(ReadTile { x0, y0, width: tile_width, height: tile_height, pixels: tile })
     }
 }

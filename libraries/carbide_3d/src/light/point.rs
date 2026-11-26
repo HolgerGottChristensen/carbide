@@ -66,6 +66,10 @@ impl StateSync for PointLight {
 impl Render3d for PointLight {
     fn render(&mut self, context: &mut RenderContext3d) {
         self.sync(context.env);
+        // A light that gives no light costs nothing.
+        if *self.intensity.value() <= 0.0 {
+            return;
+        }
         context.point(*self.color.value(), *self.intensity.value(), *self.range.value());
     }
 }
