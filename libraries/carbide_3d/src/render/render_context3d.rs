@@ -178,7 +178,7 @@ mod tests {
         let material = Material::PBR(
             PbrMaterial::new()
                 .color(rust.clone())
-                .normal(NormalTexture::Tricomponent(rust.clone(), NormalTextureYDirection::Up)),
+                .normal(NormalTexture::Tricomponent(rust.clone().into(), NormalTextureYDirection::Up)),
         );
 
         render_material(&material, &mut images, &mut env);

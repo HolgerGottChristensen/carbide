@@ -4,7 +4,7 @@
 // - CC_GLTF_SPLIT: strength in its map's red, roughness in its map's green, as glTF's
 //   KHR_materials_clearcoat reads them.
 // - CC_BW_SPLIT: two greyscale maps, each read from red.
-fn get_clear_coat(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
+fn get_clear_coat(material: Material, uv: TexCoords) -> vec3<f32> {
     var clear_coat = material.clear_coat;
     var clear_coat_perceptual_roughness = material.clear_coat_roughness;
 
@@ -13,16 +13,16 @@ fn get_clear_coat(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: ve
 
     if ((material.flags & 0x400u) != 0u) {
         if (has_strength) {
-            let texel = sample_material_texture(clear_coat_tex, material, coords, ddx, ddy);
+            let texel = sample_material_texture(clear_coat_tex, material, SLOT_CLEAR_COAT, uv);
             clear_coat *= texel.r;
             clear_coat_perceptual_roughness *= texel.g;
         }
     } else {
         if (has_strength) {
-            clear_coat *= sample_material_texture(clear_coat_tex, material, coords, ddx, ddy).r;
+            clear_coat *= sample_material_texture(clear_coat_tex, material, SLOT_CLEAR_COAT, uv).r;
         }
         if (has_roughness) {
-            let texel = sample_material_texture(clear_coat_roughness_tex, material, coords, ddx, ddy);
+            let texel = sample_material_texture(clear_coat_roughness_tex, material, SLOT_CLEAR_COAT_ROUGHNESS, uv);
             if ((material.flags & 0x800u) != 0u) {
                 clear_coat_perceptual_roughness *= texel.g;
             } else {

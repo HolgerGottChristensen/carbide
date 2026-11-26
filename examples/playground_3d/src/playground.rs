@@ -18,6 +18,7 @@ use carbide::d3::wgpu::WgpuRenderContext3d;
 use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
 use carbide::draw::{resolve_asset_path, ImageId, Scalar};
 use carbide::d3::material::ao_mr_textures::AoMRTextures;
+use carbide::d3::material::material_texture::MaterialTexture;
 use carbide::d3::material::normal_texture::NormalTexture;
 use carbide::d3::material::sample_type::SampleType;
 use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
@@ -69,15 +70,15 @@ impl Surface {
 
         // Separate greyscale maps, each in its red channel.
         AoMRTextures::BWSplit {
-            ao_texture: self.ambient_occlusion.clone(),
-            m_texture: self.metallic.clone(),
-            r_texture: self.roughness.clone(),
+            ao_texture: self.ambient_occlusion.clone().map(MaterialTexture::new),
+            m_texture: self.metallic.clone().map(MaterialTexture::new),
+            r_texture: self.roughness.clone().map(MaterialTexture::new),
         }
     }
 
     fn normal_texture(&self) -> NormalTexture {
         match &self.normal {
-            Some((id, direction)) => NormalTexture::Tricomponent(id.clone(), *direction),
+            Some((id, direction)) => NormalTexture::Tricomponent(MaterialTexture::new(id.clone()), *direction),
             None => NormalTexture::None,
         }
     }
@@ -562,7 +563,7 @@ impl Options {
         let f32_of = |state: &LocalState<Scalar>| Map1::read_map(state.clone(), |value: &Scalar| *value as f32);
         // The surface's colour map or the colour, alone or times the vertex colours.
         let albedo = Map3::read_map(self.color.clone(), surface.clone(), self.vertex_colors.clone(), |color: &Color, surface: &Surface, vertex: &bool| {
-            match (surface.albedo.clone(), *vertex) {
+            match (surface.albedo.clone().map(MaterialTexture::new), *vertex) {
                 (Some(texture), true) => AlbedoComponent::TextureVertex { texture, srgb: true },
                 (Some(texture), false) => AlbedoComponent::Texture(texture),
                 (None, true) => AlbedoComponent::ValueVertex { value: *color, srgb: true },
@@ -584,7 +585,7 @@ impl Options {
             .emissive(Map2::read_map(self.emissive.clone(), surface.clone(), |glow: &Color, surface: &Surface| {
                 if surface.emission.is_some() && *glow == BLACK { WHITE } else { *glow }
             }))
-            .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone()))
+            .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone().map(MaterialTexture::new)))
             .tiling(Map1::read_map(self.tiling.clone(), |tiling: &Scalar| Vector2::new(*tiling as f32, *tiling as f32)))
             .sample_type(self.sampling.clone())
             .double_sided(self.double_sided.clone())

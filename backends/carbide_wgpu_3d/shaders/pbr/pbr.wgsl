@@ -73,14 +73,45 @@ var clear_coat_roughness_tex: texture_2d<f32>;
 @group(2) @binding(7)
 var emissive_tex: texture_2d<f32>;
 
-// Sample `tex` with the material's sampler: nearest when the material asks for it (NEAREST),
-// otherwise linear and anisotropic. The gradients come from the unbranched UVs, so sampling inside
-// a branch picks the right mip level.
-fn sample_material_texture(tex: texture_2d<f32>, material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec4<f32> {
+// The material bind group's slots, in binding order, as `map_transforms` and `uv_sets` index them.
+const SLOT_ALBEDO = 0u;
+const SLOT_NORMAL = 1u;
+const SLOT_OCCLUSION = 2u;
+const SLOT_METALLIC = 3u;
+const SLOT_ROUGHNESS = 4u;
+const SLOT_CLEAR_COAT = 5u;
+const SLOT_CLEAR_COAT_ROUGHNESS = 6u;
+const SLOT_EMISSIVE = 7u;
+
+// Both texture coordinate sets, with their screen-space derivatives, taken once in uniform control
+// flow, before any branch, so sampling inside a branch still picks the right mip level.
+struct TexCoords {
+    uv0: vec2<f32>,
+    uv0_dx: vec2<f32>,
+    uv0_dy: vec2<f32>,
+    uv1: vec2<f32>,
+    uv1_dx: vec2<f32>,
+    uv1_dy: vec2<f32>,
+}
+
+// Sample `tex`, the map in `slot`, at its coordinate set transformed by its transform, with the
+// material's sampler: nearest when the material asks for it (NEAREST), otherwise linear and
+// anisotropic. The transform is affine, so the derivatives transform with its linear part.
+fn sample_material_texture(tex: texture_2d<f32>, material: Material, slot: u32, uv: TexCoords) -> vec4<f32> {
+    let second = ((material.uv_sets >> slot) & 1u) != 0u;
+    let coords = select(uv.uv0, uv.uv1, second);
+    let ddx = select(uv.uv0_dx, uv.uv1_dx, second);
+    let ddy = select(uv.uv0_dy, uv.uv1_dy, second);
+
+    let transform = material.map_transforms[slot];
+    let transformed = (transform * vec3<f32>(coords, 1.0)).xy;
+    let transformed_dx = (transform * vec3<f32>(ddx, 0.0)).xy;
+    let transformed_dy = (transform * vec3<f32>(ddy, 0.0)).xy;
+
     if ((material.flags & 0x4000u) != 0u) {
-        return textureSampleGrad(tex, nearest_sampler, coords, ddx, ddy);
+        return textureSampleGrad(tex, nearest_sampler, transformed, transformed_dx, transformed_dy);
     }
-    return textureSampleGrad(tex, primary_sampler, coords, ddx, ddy);
+    return textureSampleGrad(tex, primary_sampler, transformed, transformed_dx, transformed_dy);
 }
 
 @vertex
@@ -129,11 +160,15 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     let material = materials[in.material];
     var pixel: PixelData;
 
-    let coords = (material.uv_transform0 * vec3<f32>(in.texture_coords_0, 1.0)).xy;
-    let uvdx = dpdx(coords);
-    let uvdy = dpdy(coords);
+    var uv: TexCoords;
+    uv.uv0 = in.texture_coords_0;
+    uv.uv0_dx = dpdx(in.texture_coords_0);
+    uv.uv0_dy = dpdy(in.texture_coords_0);
+    uv.uv1 = in.texture_coords_1;
+    uv.uv1_dx = dpdx(in.texture_coords_1);
+    uv.uv1_dy = dpdy(in.texture_coords_1);
 
-    pixel.albedo = get_albedo(material, in, coords, uvdx, uvdy);
+    pixel.albedo = get_albedo(material, in, uv);
 
     if (pixel.albedo.a < material.alpha_cutout) {
         discard;
@@ -147,7 +182,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     if ((material.flags & 0x2000u) != 0u) {
         return vec4<f32>(pixel.albedo.rgb, alpha);
     }
-    pixel.normal = get_normal(material, in, coords, uvdx, uvdy);
+    pixel.normal = get_normal(material, in, uv);
     // The back of a double-sided material (the only back faces not culled) is lit as a surface
     // facing the other way, as glTF requires. Reversing the normal map's whole frame, as the glTF
     // sample viewer does, reverses the mapped normal.
@@ -155,7 +190,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
         pixel.normal = -pixel.normal;
     }
 
-    let aomr = get_aomr(material, coords, uvdx, uvdy);
+    let aomr = get_aomr(material, uv);
     pixel.ambient_occlusion = aomr.x;
     pixel.metallic = aomr.y;
 
@@ -168,7 +203,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     pixel.f0 = compute_f0(pixel.albedo.rgb, pixel.metallic, reflectance);
 
 
-    let clear_coat = get_clear_coat(material, coords, uvdx, uvdy);
+    let clear_coat = get_clear_coat(material, uv);
     pixel.clear_coat = clear_coat.x;
     pixel.clear_coat_perceptual_roughness = clear_coat.y;
     pixel.clear_coat_roughness = clear_coat.z;
@@ -256,7 +291,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     // read through the sRGB view as colours are.
     var emissive = material.emissive;
     if ((material.texture_enable & 0x80u) != 0u) {
-        emissive *= sample_material_texture(emissive_tex, material, coords, uvdx, uvdy).rgb;
+        emissive *= sample_material_texture(emissive_tex, material, SLOT_EMISSIVE, uv).rgb;
     }
     let lit = ambient.rgb + color + emissive;
     return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), alpha);

@@ -6,7 +6,7 @@
 // where w is the tangent's sign: -1 on the mirrored half of a model whose texture is mirrored.
 // That is y for maps whose green points up (OpenGL); maps whose green points down (DirectX,
 // YDOWN_NORMAL) have y flipped.
-fn get_normal(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
+fn get_normal(material: Material, vs_out: VertexOutput, uv: TexCoords) -> vec3<f32> {
     let normal = normalize(vs_out.normal);
 
     // No normal map loaded (bit 1), or a mesh without tangents: the vertex normal.
@@ -14,7 +14,7 @@ fn get_normal(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: 
         return normal;
     }
 
-    let texel = sample_material_texture(normal_tex, material, coords, ddx, ddy);
+    let texel = sample_material_texture(normal_tex, material, SLOT_NORMAL, uv);
 
     var tangent_space: vec3<f32>;
     if ((material.flags & 0x8u) != 0u) {

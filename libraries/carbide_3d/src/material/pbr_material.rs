@@ -7,6 +7,7 @@ use crate::material::normal_texture::NormalTexture;
 use crate::material::sample_type::SampleType;
 use crate::material::transparency::Transparency;
 use crate::material::Material;
+use crate::material::material_texture::MaterialTexture;
 use carbide::color::{BLACK, WHITE};
 use carbide::environment::Environment;
 use carbide::draw::Color;
@@ -54,17 +55,16 @@ pub struct PbrMaterial {
     pub emissive_strength: Box<dyn AnyReadState<T=f32>>,
     /// An image of the light the surface gives off, in sRGB, multiplied by `emissive` and
     /// `emissive_strength`. None by default.
-    pub emissive_texture: Box<dyn AnyReadState<T=Option<ImageId>>>,
+    pub emissive_texture: Box<dyn AnyReadState<T=Option<MaterialTexture>>>,
     /// How much light a dielectric reflects head-on, from 0 to 1, where 0.5 is a reflectance of
     /// 4%, as most dielectrics have. Ignored by metals. 0.5 by default.
     pub reflectance: Box<dyn AnyReadState<T=f32>>,
     /// Not used by the renderer yet.
     pub anisotropy: MaterialComponent<f32>,
-    /// Transforms the first texture coordinates before every map is sampled: a 2D affine
-    /// transform, for tiling, offsetting or turning the maps. The identity by default.
-    pub uv_transform0: Box<dyn AnyReadState<T=Matrix3<f32>>>,
-    /// The same for the second texture coordinates. Not read by the renderer yet.
-    pub uv_transform1: Box<dyn AnyReadState<T=Matrix3<f32>>>,
+    /// Transforms the texture coordinates of every map, after the map's own transform
+    /// ([`MaterialTexture::transform`]): a 2D affine transform, for tiling, offsetting or turning
+    /// all the maps together. The identity by default.
+    pub uv_transform: Box<dyn AnyReadState<T=Matrix3<f32>>>,
     // TODO: Make unlit a different shader entirely.
     pub unlit: bool,
     /// Whether the back of the material's triangles is drawn too, lit as a surface facing the
@@ -83,8 +83,7 @@ impl StateSync for PbrMaterial {
             | self.aomr_textures.sync(env)
             | self.clearcoat_textures.sync(env)
             | self.emissive_texture.sync(env)
-            | self.uv_transform0.sync(env)
-            | self.uv_transform1.sync(env)
+            | self.uv_transform.sync(env)
             | self.sample_type.sync(env)
             | self.ambient_occlusion.sync(env)
             | self.occlusion_strength.sync(env)
@@ -120,8 +119,7 @@ impl PbrMaterial {
             emissive_texture: None.as_dyn_read(),
             reflectance: Box::new(0.5f32),
             anisotropy: Default::default(),
-            uv_transform0: Box::new(Matrix3::<f32>::identity()),
-            uv_transform1: Box::new(Matrix3::<f32>::identity()),
+            uv_transform: Box::new(Matrix3::<f32>::identity()),
             unlit: false,
             double_sided: Box::new(false),
             sample_type: SampleType::Linear.as_dyn_read(),
@@ -144,17 +142,20 @@ impl PbrMaterial {
         let aomr = self.aomr_textures.value();
         let clearcoat = self.clearcoat_textures.value();
         let emissive = self.emissive_texture.value().clone();
+        fn images(texture: Option<&MaterialTexture>) -> Option<&ImageId> {
+            texture.map(|texture| &texture.image)
+        }
 
         let mut textures: Vec<ImageId> = Vec::new();
         for id in [
-            albedo.as_ref(),
-            normal.as_ref(),
-            aomr.to_ao_texture(),
-            aomr.to_metallic_texture(),
-            aomr.to_roughness_texture(),
-            clearcoat.to_clearcoat_texture(),
-            clearcoat.to_clearcoat_roughness_texture(),
-            emissive.as_ref(),
+            images(albedo.as_ref()),
+            images(normal.as_ref()),
+            images(aomr.to_ao_texture()),
+            images(aomr.to_metallic_texture()),
+            images(aomr.to_roughness_texture()),
+            images(clearcoat.to_clearcoat_texture()),
+            images(clearcoat.to_clearcoat_roughness_texture()),
+            images(emissive.as_ref()),
         ].into_iter().flatten() {
             if *id != ImageId::None && !textures.contains(id) {
                 textures.push(id.clone());
@@ -272,18 +273,19 @@ impl PbrMaterial {
     /// An image of the light the surface gives off, in sRGB, multiplied by the `emissive` colour
     /// and strength. The emissive colour is black by default, so set it too, to white to use the
     /// image as it is.
-    pub fn emissive_map<T: IntoReadState<Option<ImageId>>>(self, image: T) -> PbrMaterial {
+    pub fn emissive_map<T: IntoReadState<Option<MaterialTexture>>>(self, image: T) -> PbrMaterial {
         PbrMaterial {
             emissive_texture: image.into_dyn_read_state(),
             ..self
         }
     }
 
-    /// The transform of the first texture coordinates, applied before every map is sampled: a 2D
-    /// affine transform as a 3×3 matrix, such as `Matrix3::from_nonuniform_scale(2.0, 2.0)`.
+    /// The transform of every map's texture coordinates, applied after the map's own
+    /// ([`MaterialTexture::transform`]): a 2D affine transform as a 3×3 matrix, such as
+    /// `Matrix3::from_nonuniform_scale(2.0, 2.0)`.
     pub fn uv_transform<T: IntoReadState<Matrix3<f32>>>(self, transform: T) -> PbrMaterial {
         PbrMaterial {
-            uv_transform0: transform.into_dyn_read_state(),
+            uv_transform: transform.into_dyn_read_state(),
             ..self
         }
     }

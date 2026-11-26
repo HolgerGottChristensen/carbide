@@ -1,6 +1,7 @@
 use crate::material::material_flags::MaterialFlags;
 use carbide::color::WHITE;
 use carbide::draw::{Color, ImageId};
+use crate::material::material_texture::MaterialTexture;
 use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
@@ -27,22 +28,22 @@ pub enum AlbedoComponent {
         srgb: bool,
     },
     /// Albedo color is loaded from the given texture.
-    Texture(ImageId),
+    Texture(MaterialTexture),
     /// Albedo color is loaded from the given texture, then multiplied
     /// by the vertex color.
     TextureVertex {
-        texture: ImageId,
+        texture: MaterialTexture,
         /// Vertex should be converted from srgb -> linear before
         /// multiplication.
         srgb: bool,
     },
     /// Albedo color is loaded from given texture, then multiplied
     /// by the given value.
-    TextureValue { texture: ImageId, value: Color },
+    TextureValue { texture: MaterialTexture, value: Color },
     /// Albedo color is loaded from the given texture, then multiplied
     /// by the vertex color and the given value.
     TextureVertexValue {
-        texture: ImageId,
+        texture: MaterialTexture,
         /// Vertex should be converted from srgb -> linear before
         /// multiplication.
         srgb: bool,
@@ -102,7 +103,7 @@ impl AlbedoComponent {
         )
     }
 
-    pub fn to_texture(&self) -> Option<&ImageId> {
+    pub fn to_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::None | Self::Vertex { .. } | Self::Value(_) | Self::ValueVertex { .. } => None,
             Self::Texture(ref texture)
@@ -131,7 +132,16 @@ impl ConvertIntoRead<AlbedoComponent> for ImageId {
 
     fn convert<F: AnyReadState<T=ImageId> + Clone>(f: F) -> Self::Output<F> {
         Map1::read_map(f, |id| {
-            AlbedoComponent::Texture(id.clone())
+            AlbedoComponent::Texture(MaterialTexture::new(id.clone()))
+        })
+    }
+}
+impl ConvertIntoRead<AlbedoComponent> for MaterialTexture {
+    type Output<G: AnyReadState<T=MaterialTexture> + Clone> = RMap1<fn(&MaterialTexture)->AlbedoComponent, MaterialTexture, AlbedoComponent, G>;
+
+    fn convert<F: AnyReadState<T=MaterialTexture> + Clone>(f: F) -> Self::Output<F> {
+        Map1::read_map(f, |texture| {
+            AlbedoComponent::Texture(texture.clone())
         })
     }
 }

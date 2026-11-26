@@ -25,8 +25,8 @@
 //!   - `map_Pr`, `map_Pm` (PBR extension): roughness and metallic maps, read from red. Without
 //!     `Pr` or `Pm`, the map is used as it is (a factor of 1).
 //!   - `map_Ke`: an emission map, multiplied by `Ke`, or by white without one.
-//!   - `-s` and `-o` on `map_Kd` (scale and offset) become the material's texture-coordinate
-//!     transform, for all its maps. Other options are skipped.
+//!   - `-s` and `-o` on a map (scale and offset) become that map's own transform
+//!     ([`MaterialTexture::transform`]). Other options are skipped.
 //!
 //! Not used: `Ka`, since ambient light is the scene's; `Tr`, which exporters disagree on (some
 //! write transparency, others opacity); `Ni`; and `map_Ka`, `map_Ks`, `map_Ns` and `map_d`,
@@ -40,6 +40,7 @@ use carbide::draw::ImageId;
 use carbide::math::{Matrix3, Matrix4, SquareMatrix};
 
 use crate::material::ao_mr_textures::AoMRTextures;
+use crate::material::material_texture::MaterialTexture;
 use crate::material::normal_texture::NormalTexture;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
 
@@ -130,6 +131,11 @@ impl MtlMap {
         ImageId::new(if path.is_absolute() { path } else { folder.join(path) })
     }
 
+    /// The image as a material's map, with the map's own scale and offset.
+    pub fn texture(&self, folder: &Path) -> MaterialTexture {
+        MaterialTexture::new(self.image(folder)).transform(self.uv_transform())
+    }
+
     /// The scale and offset as a transform of carbide's texture coordinates. MTL's apply to OBJ's
     /// coordinates, whose v points up; carbide's v is `1 - v`, so the offset in v becomes
     /// `1 - scale - offset`.
@@ -198,12 +204,11 @@ fn with_maps(mut pbr: PbrMaterial, material: &tobj::Material, folder: &Path) -> 
         let diffuse = material.diffuse.unwrap_or([1.0, 1.0, 1.0]);
         let opacity = material.dissolve.unwrap_or(1.0);
         pbr = pbr
-            .color(crate::material::albedo_component::AlbedoComponent::TextureValue { texture: colour.image(folder), value: color(diffuse, opacity) })
-            .uv_transform(colour.uv_transform());
+            .color(crate::material::albedo_component::AlbedoComponent::TextureValue { texture: colour.texture(folder), value: color(diffuse, opacity) });
     }
 
     if let Some(normal) = unknown("norm").or_else(|| map(material.normal_texture.as_ref())) {
-        pbr = pbr.normal(NormalTexture::Tricomponent(normal.image(folder), NormalTextureYDirection::Up));
+        pbr = pbr.normal(NormalTexture::Tricomponent(normal.texture(folder), NormalTextureYDirection::Up));
     }
 
     let roughness = unknown("map_Pr");
@@ -217,8 +222,8 @@ fn with_maps(mut pbr: PbrMaterial, material: &tobj::Material, folder: &Path) -> 
         }
         pbr = pbr.aomr_textures(AoMRTextures::BWSplit {
             ao_texture: None,
-            m_texture: metallic.map(|map| map.image(folder)),
-            r_texture: roughness.map(|map| map.image(folder)),
+            m_texture: metallic.map(|map| map.texture(folder)),
+            r_texture: roughness.map(|map| map.texture(folder)),
         });
     }
 
@@ -226,7 +231,7 @@ fn with_maps(mut pbr: PbrMaterial, material: &tobj::Material, folder: &Path) -> 
         if extension_color(material, "Ke").is_none() {
             pbr = pbr.emissive(WHITE);
         }
-        pbr = pbr.emissive_map(Some(emission.image(folder)));
+        pbr = pbr.emissive_map(Some(emission.texture(folder)));
     }
 
     pbr
@@ -366,11 +371,12 @@ mod tests {
         let pbr = material_from_mtl_in(&mtl, Some(folder));
         let image = |name: &str| ImageId::new(folder.join(name));
 
-        assert_eq!(pbr.albedo.value().to_texture(), Some(&image("colour.png")));
-        assert_eq!(pbr.normal.value().to_texture(), Some(&image("normal.png")));
-        assert_eq!(pbr.aomr_textures.value().to_roughness_texture(), Some(&image("rough.png")));
+        let image_of = |texture: Option<&MaterialTexture>| texture.map(|texture| texture.image.clone());
+        assert_eq!(image_of(pbr.albedo.value().to_texture()), Some(image("colour.png")));
+        assert_eq!(image_of(pbr.normal.value().to_texture()), Some(image("normal.png")));
+        assert_eq!(image_of(pbr.aomr_textures.value().to_roughness_texture()), Some(image("rough.png")));
         assert_eq!(*pbr.roughness_factor.value(), None, "a roughness map without Pr is used as it is");
-        assert_eq!(*pbr.emissive_texture.value(), Some(image("glow.png")));
+        assert_eq!(image_of(pbr.emissive_texture.value().as_ref()), Some(image("glow.png")));
 
         // Without the folder, as `material_from_mtl` is called, there are no maps.
         let plain = material_from_mtl(&mtl);

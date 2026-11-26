@@ -1,6 +1,7 @@
 use crate::material::material_flags::MaterialFlags;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
 use carbide::draw::ImageId;
+use crate::material::material_texture::MaterialTexture;
 use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
@@ -12,17 +13,17 @@ pub enum NormalTexture {
     #[default]
     None,
     /// Normal stored in RGB values.
-    Tricomponent(ImageId, NormalTextureYDirection),
+    Tricomponent(MaterialTexture, NormalTextureYDirection),
     /// Normal stored in RG values, third value should be reconstructed.
-    Bicomponent(ImageId, NormalTextureYDirection),
+    Bicomponent(MaterialTexture, NormalTextureYDirection),
     /// Normal stored in Green and Alpha values, third value should be
     /// reconstructed. This is useful for storing in BC3 or BC7 compressed
     /// textures.
-    BicomponentSwizzled(ImageId, NormalTextureYDirection),
+    BicomponentSwizzled(MaterialTexture, NormalTextureYDirection),
 }
 
 impl NormalTexture {
-    pub fn to_texture(&self) -> Option<&ImageId> {
+    pub fn to_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::None => None,
             Self::Tricomponent(ref texture, _)
@@ -58,7 +59,17 @@ impl ConvertIntoRead<NormalTexture> for ImageId {
     fn convert<F: AnyReadState<T=ImageId> + Clone>(f: F) -> Self::Output<F> {
         // Green up (OpenGL), as glTF's normal maps are, and the type's default.
         Map1::read_map(f, |id| {
-            NormalTexture::Tricomponent(id.clone(), NormalTextureYDirection::Up)
+            NormalTexture::Tricomponent(MaterialTexture::new(id.clone()), NormalTextureYDirection::Up)
+        })
+    }
+}
+impl ConvertIntoRead<NormalTexture> for MaterialTexture {
+    type Output<G: AnyReadState<T=MaterialTexture> + Clone> = RMap1<fn(&MaterialTexture)->NormalTexture, MaterialTexture, NormalTexture, G>;
+
+    fn convert<F: AnyReadState<T=MaterialTexture> + Clone>(f: F) -> Self::Output<F> {
+        // Green up (OpenGL), as an `ImageId`'s.
+        Map1::read_map(f, |texture| {
+            NormalTexture::Tricomponent(texture.clone(), NormalTextureYDirection::Up)
         })
     }
 }

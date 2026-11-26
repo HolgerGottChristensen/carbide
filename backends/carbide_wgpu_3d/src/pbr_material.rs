@@ -3,19 +3,21 @@ use wgpu::util::{DeviceExt, TextureDataOrder};
 use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Device, Extent3d, Queue, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension};
 use carbide_wgpu_core::WgpuTextureStore;
 use carbide_3d::material::material_flags::MaterialFlags;
+use carbide_3d::material::material_texture::MaterialTexture;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
-use carbide_core::math::{Matrix3, Vector3, Vector4};
+use carbide_core::math::{Matrix3, SquareMatrix, Vector3, Vector4};
 use carbide_core::state::ReadState;
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
 pub struct WgpuPbrMaterial {
-    uv_transform0: Matrix3<f32>,
-    uv_transform1: Matrix3<f32>,
+    /// Each slot's texture-coordinate transform, in binding order: the map's own, then the
+    /// material's `uv_transform`.
+    map_transforms: [Matrix3<f32>; SLOT_COUNT],
 
     albedo: Vector4<f32>,
     emissive: Vector3<f32>,
@@ -32,6 +34,8 @@ pub struct WgpuPbrMaterial {
     texture_enable: u32,
     occlusion_strength: f32,
     normal_scale: f32,
+    /// A bit per slot, in binding order, set when the map reads the second texture coordinates.
+    uv_sets: u32,
 }
 
 unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
@@ -54,9 +58,14 @@ impl WgpuPbrMaterial {
         // Colours are given in sRGB; the shader lights in linear space, as the 2D renderer draws.
         let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();
 
+        let uv_transform = *material.uv_transform.value();
+        let maps = slot_textures(material);
+
         Self {
-            uv_transform0: *material.uv_transform0.value(),
-            uv_transform1: *material.uv_transform1.value(),
+            map_transforms: maps.each_ref().map(|map| uv_transform * map.as_ref().map_or(Matrix3::identity(), |map| map.transform)),
+            uv_sets: maps.iter().enumerate().fold(0, |bits, (slot, map)| {
+                bits | ((map.as_ref().is_some_and(|map| map.uv_set == 1) as u32) << slot)
+            }),
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
             // Unset, the roughness is the map's when there is one (a factor of 1, as glTF's
             // default), and 0 without one.
@@ -128,20 +137,10 @@ enum SlotKind {
 
 impl WgpuPbrMaterialTextures {
     pub(crate) fn from_material(material: &PbrMaterial) -> Self {
-        let id = |id: Option<&ImageId>| id.cloned().unwrap_or_default();
-        let aomr = material.aomr_textures.value();
-        let clearcoat = material.clearcoat_textures.value();
+        let [albedo, normal, ambient_occlusion, metallic, roughness, clear_coat, clear_coat_roughness, emissive] =
+            slot_textures(material).map(|map| map.map(|map| map.image).unwrap_or_default());
 
-        WgpuPbrMaterialTextures {
-            albedo: id(material.albedo.value().to_texture()),
-            normal: id(material.normal.value().to_texture()),
-            ambient_occlusion: id(aomr.to_ao_texture()),
-            metallic: id(aomr.to_metallic_texture()),
-            roughness: id(aomr.to_roughness_texture()),
-            clear_coat: id(clearcoat.to_clearcoat_texture()),
-            clear_coat_roughness: id(clearcoat.to_clearcoat_roughness_texture()),
-            emissive: id(material.emissive_texture.value().as_ref()),
-        }
+        WgpuPbrMaterialTextures { albedo, normal, ambient_occlusion, metallic, roughness, clear_coat, clear_coat_roughness, emissive }
     }
 
     /// The slots in binding order, with how each is read.
@@ -169,6 +168,23 @@ impl WgpuPbrMaterialTextures {
     pub(crate) fn enabled(&self, store: Option<&WgpuTextureStore>) -> u32 {
         self.versions(store).iter().enumerate().fold(0, |bits, (slot, version)| bits | ((*version != 0) as u32) << slot)
     }
+}
+
+/// The map in each slot of the material bind group, in binding order: albedo, normal, occlusion,
+/// metallic, roughness, clear coat, clear-coat roughness and emission.
+fn slot_textures(material: &PbrMaterial) -> [Option<MaterialTexture>; SLOT_COUNT] {
+    let aomr = material.aomr_textures.value();
+    let clearcoat = material.clearcoat_textures.value();
+    [
+        material.albedo.value().to_texture().cloned(),
+        material.normal.value().to_texture().cloned(),
+        aomr.to_ao_texture().cloned(),
+        aomr.to_metallic_texture().cloned(),
+        aomr.to_roughness_texture().cloned(),
+        clearcoat.to_clearcoat_texture().cloned(),
+        clearcoat.to_clearcoat_roughness_texture().cloned(),
+        material.emissive_texture.value().clone(),
+    ]
 }
 
 /// The number of texture slots in the material bind group.

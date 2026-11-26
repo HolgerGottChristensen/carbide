@@ -1,5 +1,5 @@
 use crate::material::material_flags::MaterialFlags;
-use carbide::draw::ImageId;
+use crate::material::material_texture::MaterialTexture;
 use carbide::impl_state_value;
 
 /// How the Ambient Occlusion, Metalic, and Roughness values should be
@@ -12,32 +12,32 @@ pub enum AoMRTextures {
     Combined {
         /// Texture with Ambient Occlusion in R, Roughness in G, and Metallic in
         /// B
-        texture: Option<ImageId>,
+        texture: Option<MaterialTexture>,
     },
     SwizzledSplit {
         /// Texture with Ambient Occlusion in R
-        ao_texture: Option<ImageId>,
+        ao_texture: Option<MaterialTexture>,
         /// Texture with Roughness in G and Metallic in B
-        mr_texture: Option<ImageId>,
+        mr_texture: Option<MaterialTexture>,
     },
     Split {
         /// Texture with Ambient Occlusion in R
-        ao_texture: Option<ImageId>,
+        ao_texture: Option<MaterialTexture>,
         /// Texture with Roughness in R and Metallic in G
-        mr_texture: Option<ImageId>,
+        mr_texture: Option<MaterialTexture>,
     },
     BWSplit {
         /// Texture with Ambient Occlusion in R
-        ao_texture: Option<ImageId>,
+        ao_texture: Option<MaterialTexture>,
         /// Texture with Metallic in R
-        m_texture: Option<ImageId>,
+        m_texture: Option<MaterialTexture>,
         /// Texture with Roughness in R
-        r_texture: Option<ImageId>,
+        r_texture: Option<MaterialTexture>,
     },
 }
 
 impl AoMRTextures {
-    pub fn to_roughness_texture(&self) -> Option<&ImageId> {
+    pub fn to_roughness_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::Combined { texture: Some(ref texture) } => Some(texture),
             Self::SwizzledSplit { mr_texture: Some(ref texture), .. } => Some(texture),
@@ -47,7 +47,7 @@ impl AoMRTextures {
         }
     }
 
-    pub fn to_metallic_texture(&self) -> Option<&ImageId> {
+    pub fn to_metallic_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::Combined { .. } => None,
             Self::SwizzledSplit { .. } => None,
@@ -57,7 +57,7 @@ impl AoMRTextures {
         }
     }
 
-    pub fn to_ao_texture(&self) -> Option<&ImageId> {
+    pub fn to_ao_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::Combined { .. } => None,
             Self::SwizzledSplit { ao_texture: Some(ref texture), .. } => Some(texture),

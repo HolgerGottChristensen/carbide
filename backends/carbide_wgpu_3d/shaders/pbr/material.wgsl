@@ -1,9 +1,8 @@
 
 struct Material {
-    uv_transform0: mat3x3<f32>,
-    // -- 16 --
-    uv_transform1: mat3x3<f32>,
-    // -- 16 --
+    // Each slot's texture-coordinate transform, in binding order (see SLOT_* in pbr.wgsl): the
+    // map's own, then the material's.
+    map_transforms: array<mat3x3<f32>, 8>,
     albedo: vec4<f32>, // Base Color
     // -- 16 --
     emissive: vec3<f32>,
@@ -28,4 +27,6 @@ struct Material {
     occlusion_strength: f32,
     // Scales the normal map's x and y, as glTF's normalTexture.scale.
     normal_scale: f32,
+    // A bit per slot, set when the map reads the second texture coordinates.
+    uv_sets: u32,
 }

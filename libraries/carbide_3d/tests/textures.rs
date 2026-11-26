@@ -6,15 +6,16 @@ use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::{Mesh, Object, Scene3d};
 use carbide_3d::material::ao_mr_textures::AoMRTextures;
 use carbide_3d::material::clearcoat_textures::ClearcoatTextures;
+use carbide_3d::material::material_texture::MaterialTexture;
 use carbide_3d::material::normal_texture::NormalTexture;
 use carbide_3d::material::normal_texture_y_direction::NormalTextureYDirection;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::Node3dExt;
 use carbide_core::color::WHITE;
 use carbide_core::draw::Color;
-use carbide_core::state::{LocalState, State};
+use carbide_core::state::{LocalState, Map1, State};
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
-use carbide_core::math::{Deg, Euler, Point3, Vector2, Vector3};
+use carbide_core::math::{Deg, Euler, Point3, Rad, Vector2, Vector3};
 use carbide_core::widget::{HStack, Image, Rectangle, WidgetExt};
 use carbide_testing::Harness;
 use carbide_wgpu_core::{WgpuImageContext, WgpuTextureStore};
@@ -187,7 +188,7 @@ fn mesh_brightness(mesh: Mesh, map: Option<([u8; 3], NormalTextureYDirection)>, 
     let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
     if let Some((rgb, direction)) = map {
         let id = store_flat_image(&mut harness, [rgb[0], rgb[1], rgb[2], 255]);
-        *normal.clone().value_mut() = NormalTexture::Tricomponent(id, direction);
+        *normal.clone().value_mut() = NormalTexture::Tricomponent(id.into(), direction);
     }
     harness.render();
 
@@ -282,7 +283,7 @@ fn a_normal_mapped_plane_and_sphere() {
 
     let mut harness = Harness::new(HStack::new((plane, sphere)).spacing(10.0), Dimension::new(410.0, 200.0));
     let id = store_dome_normal_map(&mut harness);
-    *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
+    *normal.clone().value_mut() = NormalTexture::Tricomponent(id.into(), NormalTextureYDirection::Up);
     harness.snapshot("domes");
 }
 
@@ -354,7 +355,7 @@ fn a_normal_map_on_a_mirrored_texture() {
 
     let mut harness = Harness::new(scene, Dimension::new(300.0, 160.0));
     let id = store_dome_normal_map(&mut harness);
-    *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
+    *normal.clone().value_mut() = NormalTexture::Tricomponent(id.into(), NormalTextureYDirection::Up);
     harness.snapshot("domes_mirrored");
 }
 
@@ -442,7 +443,7 @@ fn occlusion_metallic_and_roughness_maps() {
     let metallic = |v: f32| (0.5, v, 1.0);
     let occlusion = |v: f32| (0.5, 0.0, v);
 
-    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]));
+    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]).into());
 
     // Combined: occlusion, roughness and metallic in red, green and blue of one map.
     assert_map_matches_factor("combined roughness", Highlight, roughness, |h, b| AoMRTextures::Combined { texture: image(h, [255, b, 255]) });
@@ -470,7 +471,7 @@ fn occlusion_metallic_and_roughness_maps() {
 #[test]
 fn the_occlusion_strength_weakens_the_map() {
     let map = |byte: u8| move |harness: &mut Harness| AoMRTextures::BWSplit {
-        ao_texture: Some(store_flat_image(harness, [byte, byte, byte, 255])),
+        ao_texture: Some(store_flat_image(harness, [byte, byte, byte, 255]).into()),
         m_texture: None,
         r_texture: None,
     };
@@ -507,7 +508,7 @@ fn an_unset_roughness_uses_the_map() {
         let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
         if let Some(byte) = map {
             let id = store_flat_image(&mut harness, [byte, byte, byte, 255]);
-            *textures.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(id) };
+            *textures.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(id.into()) };
         }
         harness.render();
         let pixel = harness.pixels().get_pixel(30, 30).0;
@@ -565,10 +566,10 @@ fn roughness_and_occlusion_maps() {
     let mut harness = Harness::new(HStack::new((sphere, plane)).spacing(10.0), Dimension::new(410.0, 200.0));
 
     let roughness_stripes = store_stripes(&mut harness, 77, 230);
-    *roughness.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(roughness_stripes) };
+    *roughness.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(roughness_stripes.into()) };
 
     let occlusion_stripes = store_stripes(&mut harness, 64, 255);
-    *occlusion.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: Some(occlusion_stripes), m_texture: None, r_texture: None };
+    *occlusion.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: Some(occlusion_stripes.into()), m_texture: None, r_texture: None };
 
     harness.snapshot("stripes");
 }
@@ -627,7 +628,7 @@ fn assert_clearcoat_map(name: &str, factors: impl Fn(f32) -> (f32, f32), maps: i
 /// roughness, so the base is glossy and the coat rough.
 #[test]
 fn clear_coat_maps() {
-    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]));
+    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]).into());
     let strength = |v: f32| (v, 0.9);
     let roughness = |v: f32| (1.0, v);
 
@@ -654,9 +655,9 @@ fn an_emission_map() {
 
     let plain = |byte: u8| material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(grey(byte)), |_| {});
     let mapped = |byte: u8, emissive: Color| {
-        let map = LocalState::new(None::<ImageId>);
+        let map = LocalState::new(None::<MaterialTexture>);
         material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(emissive).emissive_map(map.clone()), |harness| {
-            *map.clone().value_mut() = Some(store_flat_image(harness, [byte, byte, byte, 255]));
+            *map.clone().value_mut() = Some(store_flat_image(harness, [byte, byte, byte, 255]).into());
         })
     };
 
@@ -675,7 +676,7 @@ fn an_emission_map() {
 /// stripes and spread on them.
 #[test]
 fn emission_and_clear_coat_maps() {
-    let emission = LocalState::new(None::<ImageId>);
+    let emission = LocalState::new(None::<MaterialTexture>);
     let coat = LocalState::new(ClearcoatTextures::None);
 
     let glowing = Scene3d::new(Object::new(
@@ -704,10 +705,10 @@ fn emission_and_clear_coat_maps() {
 
     let checker_id = ImageId::temp(ImageFormat::Png);
     store_checker(&mut harness, &checker_id);
-    *emission.clone().value_mut() = Some(checker_id);
+    *emission.clone().value_mut() = Some(checker_id.into());
 
     let stripes = store_stripes(&mut harness, 0, 255);
-    *coat.clone().value_mut() = ClearcoatTextures::BWSplit { clearcoat_texture: Some(stripes), clearcoat_roughness_texture: None };
+    *coat.clone().value_mut() = ClearcoatTextures::BWSplit { clearcoat_texture: Some(stripes.into()), clearcoat_roughness_texture: None };
 
     harness.snapshot("glow_and_coat");
 }
@@ -776,4 +777,117 @@ fn an_image_shared_with_2d_and_a_missing_one() {
 
     let textures = harness.environment().get::<WgpuTextureStore>().unwrap();
     assert_eq!(textures.len(), 1, "the shared image is stored once, and the missing one not at all");
+}
+
+/// The checker on an unlit plane seen from straight above, so colours are exact: the plane's
+/// material is `material` of the checker's id. Returns the picture's bytes.
+fn checker_plane(mesh: Mesh, material: impl FnOnce(ImageId) -> PbrMaterial) -> Vec<u8> {
+    let checker_id = ImageId::temp(ImageFormat::Png);
+    let scene = Scene3d::new(Object::new(mesh, material(checker_id.clone()).unlit()))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 2.5, 0.001), Point3::new(0.0, 0.0, 0.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(120.0, 120.0));
+    store_checker(&mut harness, &checker_id);
+    harness.render();
+    harness.pixels().as_raw().to_vec()
+}
+
+/// A map's own transform tiles it as the material's does, and the material's applies after it:
+/// a map tiled 4 times renders exactly as the material tiled 4 times, and a map tiled twice in a
+/// material tiled twice as a map tiled 4 times.
+#[test]
+fn a_maps_own_transform() {
+    let plane = || Mesh::plane(2.0, 2.0);
+    let tiled = |n: f32| Vector2::new(n, n);
+
+    let material_tiled = checker_plane(plane(), |id| PbrMaterial::new().color(id).tiling(tiled(4.0)));
+    let map_tiled = checker_plane(plane(), |id| PbrMaterial::new().color(MaterialTexture::new(id).tiling(tiled(4.0))));
+    let both = checker_plane(plane(), |id| PbrMaterial::new().color(MaterialTexture::new(id).tiling(tiled(2.0))).tiling(tiled(2.0)));
+    let once = checker_plane(plane(), |id| PbrMaterial::new().color(id));
+
+    assert!(material_tiled != once, "tiling changes nothing");
+    assert!(map_tiled == material_tiled, "the map tiled 4 times differs from the material tiled 4 times");
+    assert!(both == material_tiled, "the map tiled twice in a material tiled twice differs from tiling 4 times");
+}
+
+/// The plane with its second texture coordinates set to `second` of its first.
+fn with_second_coordinates(mesh: Mesh, second: impl Fn(Vector2<f32>) -> Vector2<f32>) -> Mesh {
+    let mut vertices = mesh.vertices().to_vec();
+    for vertex in &mut vertices {
+        vertex.texture_coords_1 = second(vertex.texture_coords_0);
+    }
+    Mesh::new(vertices, mesh.indices().to_vec())
+}
+
+/// The bytes of `a` and `b` that differ by more than 2, as a share of all bytes.
+fn share_different(a: &[u8], b: &[u8]) -> f32 {
+    a.iter().zip(b).filter(|(x, y)| x.abs_diff(**y) > 2).count() as f32 / a.len() as f32
+}
+
+/// A map on the second texture coordinates reads them, and the other maps keep the first: on a
+/// plane whose second coordinates are its first scaled 4 times, a map on set 1 renders as a map
+/// tiled 4 times on set 0, and a map on set 0 as the untiled checker.
+#[test]
+fn a_map_on_the_second_texture_coordinates() {
+    let plane = || with_second_coordinates(Mesh::plane(2.0, 2.0), |uv| uv * 4.0);
+
+    let second = checker_plane(plane(), |id| PbrMaterial::new().color(MaterialTexture::new(id).uv_set(1)));
+    let tiled = checker_plane(plane(), |id| PbrMaterial::new().color(MaterialTexture::new(id).tiling(Vector2::new(4.0, 4.0))));
+    let first = checker_plane(plane(), |id| PbrMaterial::new().color(MaterialTexture::new(id)));
+    let plain = checker_plane(Mesh::plane(2.0, 2.0), |id| PbrMaterial::new().color(id));
+
+    assert!(share_different(&second, &first) > 0.1, "set 1 renders as set 0");
+    assert!(share_different(&second, &tiled) < 0.005, "set 1 differs from set 0 tiled 4 times: {}", share_different(&second, &tiled));
+    assert!(first == plain, "set 0 differs from the plain checker");
+}
+
+/// `images/landscape.png` on three planes, seen from above. Left: as it is. Middle: its own
+/// transform scales it by 2, turns it 90° and offsets it by half, as `KHR_texture_transform` does:
+/// turned copies, shifted by half a copy, with the sky on the left, since glTF's v points down. Right: on the second texture coordinates, which mirror the first left to
+/// right, while its occlusion map, on the first set, darkens the plane's far half. Lit by ambient
+/// light only, which occlusion darkens.
+#[test]
+fn map_transforms_and_coordinate_sets() {
+    let landscape = ImageId::new("images/landscape.png");
+    let half = LocalState::new(None::<ImageId>);
+
+    let view = |material: PbrMaterial, mesh: Mesh| {
+        // Ambient light only, which the occlusion map darkens.
+        Scene3d::new(Object::new(mesh, material))
+            .ambient(WHITE, 3.0)
+            .camera(Camera::perspective().look_at(Point3::new(0.0, 2.6, 0.001), Point3::new(0.0, 0.0, 0.0)))
+            .frame(150.0, 150.0)
+    };
+    let plain = view(PbrMaterial::new().color(landscape.clone()).roughness(Some(1.0f32)), Mesh::plane(2.0, 2.0));
+    let turned = view(
+        PbrMaterial::new()
+            .color(MaterialTexture::new(landscape.clone()).offset_rotation_scale(Vector2::new(0.5, 0.0), Rad(std::f32::consts::FRAC_PI_2), Vector2::new(2.0, 2.0)))
+            .roughness(Some(1.0f32)),
+        Mesh::plane(2.0, 2.0),
+    );
+    let occlusion = Map1::read_map(half.clone(), |id: &Option<ImageId>| match id {
+        Some(id) => AoMRTextures::BWSplit { ao_texture: Some(id.into()), m_texture: None, r_texture: None },
+        None => AoMRTextures::None,
+    });
+    let mirrored = view(
+        PbrMaterial::new()
+            .color(MaterialTexture::new(landscape.clone()).uv_set(1))
+            .aomr_textures(occlusion)
+            .roughness(Some(1.0f32)),
+        with_second_coordinates(Mesh::plane(2.0, 2.0), |uv| Vector2::new(1.0 - uv.x, uv.y)),
+    );
+
+    let mut harness = Harness::new(HStack::new((plain, turned, mirrored)).spacing(10.0), Dimension::new(470.0, 150.0));
+    // An occlusion map dark in its top half, the plane's far half.
+    let mut data = Vec::with_capacity(16 * 16 * 4);
+    for row in 0..16 {
+        let value = if row < 8 { 60 } else { 255 };
+        for _ in 0..16 {
+            data.extend_from_slice(&[value, value, value, 255]);
+        }
+    }
+    let id = ImageId::temp(ImageFormat::Png);
+    WgpuImageContext.update_texture(&id, Texture { width: 16, height: 16, bytes_per_row: 64, format: TextureFormat::RGBA8, data: &data }, harness.environment_mut());
+    *half.clone().value_mut() = Some(id);
+    harness.snapshot("map_transforms");
 }

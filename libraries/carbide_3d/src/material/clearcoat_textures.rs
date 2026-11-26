@@ -1,5 +1,5 @@
 use crate::material::material_flags::MaterialFlags;
-use carbide::draw::ImageId;
+use crate::material::material_texture::MaterialTexture;
 use carbide::impl_state_value;
 
 /// How clearcoat values should be derived.
@@ -8,26 +8,26 @@ use carbide::impl_state_value;
 pub enum ClearcoatTextures {
     GltfCombined {
         /// Texture with Clearcoat in R, and Clearcoat Roughness in G
-        texture: Option<ImageId>,
+        texture: Option<MaterialTexture>,
     },
     GltfSplit {
         /// Texture with Clearcoat in R
-        clearcoat_texture: Option<ImageId>,
+        clearcoat_texture: Option<MaterialTexture>,
         /// Texture with Clearcoat Roughness in G
-        clearcoat_roughness_texture: Option<ImageId>,
+        clearcoat_roughness_texture: Option<MaterialTexture>,
     },
     BWSplit {
         /// Texture with Clearcoat in R
-        clearcoat_texture: Option<ImageId>,
+        clearcoat_texture: Option<MaterialTexture>,
         /// Texture with Clearcoat Roughness in R
-        clearcoat_roughness_texture: Option<ImageId>,
+        clearcoat_roughness_texture: Option<MaterialTexture>,
     },
     #[default]
     None,
 }
 
 impl ClearcoatTextures {
-    pub fn to_clearcoat_texture(&self) -> Option<&ImageId> {
+    pub fn to_clearcoat_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::GltfCombined { texture: Some(ref texture) } => Some(texture),
             Self::GltfSplit { clearcoat_texture: Some(ref texture), .. } => Some(texture),
@@ -36,7 +36,7 @@ impl ClearcoatTextures {
         }
     }
 
-    pub fn to_clearcoat_roughness_texture(&self) -> Option<&ImageId> {
+    pub fn to_clearcoat_roughness_texture(&self) -> Option<&MaterialTexture> {
         match *self {
             Self::GltfCombined { .. } => None,
             Self::GltfSplit { clearcoat_roughness_texture: Some(ref texture), .. } => Some(texture),
