@@ -5,12 +5,20 @@ use carbide::environment::Environment;
 use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
-use crate::render::{LightShadow, ViewSpec, MeshSettings};
+use crate::render::{LightShadow, ViewSpec, MeshSettings, PickSample};
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh};
 
 pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     fn start(&mut self);
+
+    /// What the last frame rendered with [`ViewSpec::picking`] shows at `position`, in physical
+    /// pixels in the layer: the nearest pickable pixel within `radius` pixels of it. `None` if
+    /// nothing pickable is there, or the renderer can't pick. Called between frames, and
+    /// expected to answer at once.
+    fn pick(&mut self, _position: (u32, u32), _radius: u32, _env: &mut Environment) -> Option<PickSample> {
+        None
+    }
 
     /// Draw what the calls since [`start`](Self::start) described into `layer`, through `camera`,
     /// looking as `view` says.

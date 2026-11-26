@@ -1243,9 +1243,11 @@ impl InnerRenderContext for WGPURenderContext {
         self.targets.free(mask);
     }
 
+    /// A layer `requested_size` logical pixels big, in physical pixels: the requested size times
+    /// the scale factor, so what is rendered into it is as sharp as the rest of the window.
     fn layer(&mut self, layer_id: LayerId, requested_size: Dimension, env: &mut Environment) -> Layer<'_> {
-        let width = requested_size.width.floor().max(1.0) as u32;
-        let height = requested_size.height.floor().max(1.0) as u32;
+        let width = (requested_size.width * self.scale_factor).floor().max(1.0) as u32;
+        let height = (requested_size.height * self.scale_factor).floor().max(1.0) as u32;
 
         if self.layers.contains_key(&layer_id) {
             let target = self.layers.get_mut(&layer_id).unwrap();

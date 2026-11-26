@@ -15,6 +15,12 @@ use carbide_core::widget::{CommonWidget, Widget, WidgetId};
 use carbide_core::CommonWidgetImpl;
 
 use crate::camera::{Camera, CameraController};
+use crate::camera::controller::contains;
+use crate::node3d::{AnyNode3d, NodeId};
+use crate::picking::{PickHit, PickRecorder, PickTolerance, PointerEvent3d};
+use carbide::event::MouseButton;
+use carbide_core::animation::AnimationManager;
+use carbide_core::scene::SceneManager;
 use crate::node3d_sequence::Node3dSequence;
 use crate::render::{ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId, Tonemapping, ViewSpec};
 
@@ -58,6 +64,22 @@ pub struct Scene3d<N> where N: Node3dSequence {
     /// The id of the factory that created `render_context`, or `None` while it is the no-op
     /// context the view starts with.
     render_context_id: Option<RenderContext3dId>,
+
+    /// What the last frame recorded for picking: the path of nodes behind each pick id.
+    picking: PickRecorder,
+    /// Whether the app has called [`pick`](Scene3d::pick): the picking buffer is then rendered
+    /// with every frame, as it is when a node has a pointer handler.
+    pick_requested: bool,
+    /// The path under the pointer, for hover enter and leave.
+    hovered: Vec<NodeId>,
+    /// The node the left button was pressed on, for clicks.
+    pressed: Option<NodeId>,
+    /// Where the pointer is, while it is inside the view: hover is picked again there each
+    /// update, so it follows the scene moving under a still pointer.
+    pointer: Option<Position>,
+    /// Whether the frame rendering now is the extra frame asked for to check hover against the
+    /// frame before it.
+    hover_check: bool,
 }
 
 /// What the views of one scene share: its nodes, and its ambient light.
@@ -90,6 +112,12 @@ impl<N: Node3dSequence> Scene3d<N> {
             layer: LayerId::new(),
             render_context: Box::new(NoopRenderContext3d),
             render_context_id: None,
+            picking: PickRecorder::default(),
+            pick_requested: false,
+            hovered: vec![],
+            pressed: None,
+            pointer: None,
+            hover_check: false,
         }
     }
 
@@ -190,6 +218,12 @@ impl<N: Node3dSequence> Clone for Scene3d<N> {
             layer: LayerId::new(),
             render_context: Box::new(NoopRenderContext3d),
             render_context_id: None,
+            picking: PickRecorder::default(),
+            pick_requested: false,
+            hovered: vec![],
+            pressed: None,
+            pointer: None,
+            hover_check: false,
         }
     }
 }
@@ -200,9 +234,28 @@ impl<N: Node3dSequence> CommonWidget for Scene3d<N> {
 
 impl<N: Node3dSequence> Update for Scene3d<N> {
     fn update(&mut self, ctx: &mut UpdateContext) {
+        // Hover under a still pointer: pick again against the last frame, which the GPU has
+        // usually finished by now. If hover changed, a handler may have changed the scene, so
+        // look again next frame.
+        if let Some(pointer) = self.pointer {
+            if self.picking.listeners > 0 {
+                let hit = self.pick_at(pointer, ctx.env);
+                if self.set_hovered(hit, ctx.env) {
+                    request_frame(ctx.env);
+                }
+            }
+        }
+
         if let Some(controller) = &mut self.controller {
             controller.update(&mut self.camera, ctx);
         }
+    }
+}
+
+/// Ask for another frame, as animations do.
+fn request_frame(env: &mut Environment) {
+    if let Some(manager) = env.get_mut::<AnimationManager>() {
+        manager.request_animation_frame();
     }
 }
 
@@ -214,8 +267,119 @@ impl<N: Node3dSequence> KeyboardEventHandler for Scene3d<N> {
     }
 }
 
+impl<N: Node3dSequence> Scene3d<N> {
+    /// The node under `position`, a position in the window as mouse events give them, as the
+    /// last rendered frame shows it. `None` outside the view, where nothing pickable is, or with a
+    /// renderer that can't pick. Calling it makes the view render a picking buffer with each
+    /// frame from then on, so the first call may find nothing. See [`picking`](crate::picking).
+    pub fn pick(&mut self, position: Position, env: &mut Environment) -> Option<PickHit> {
+        self.pick_requested = true;
+        self.pick_at(position, env)
+    }
+
+    fn pick_at(&mut self, position: Position, env: &mut Environment) -> Option<PickHit> {
+        if !contains(Rect::new(self.position, self.dimension), position) {
+            return None;
+        }
+
+        // Physical pixels in the layer, which starts at the view's position: layers are the
+        // view's logical size times the scale factor.
+        let scale = env.get_mut::<SceneManager>().map(|manager| manager.scale_factor()).unwrap_or(1.0);
+        let x = ((position.x - self.position.x) * scale).floor().max(0.0) as u32;
+        let y = ((position.y - self.position.y) * scale).floor().max(0.0) as u32;
+        let tolerance = env.get::<PickTolerance>().copied().unwrap_or(2.0).max(0.0) as f64;
+        let radius = ((tolerance * scale).round() as u32).min(7);
+
+        let sample = self.render_context.pick((x, y), radius, env)?;
+        let path = self.picking.path(sample.pick_id)?.clone();
+
+        Some(PickHit {
+            node: *path.last()?,
+            path,
+            position: sample.position,
+            normal: sample.normal,
+            distance: sample.distance,
+        })
+    }
+
+    /// Deliver `event` to the node `id`, wherever it is in the scene.
+    fn deliver(&mut self, id: NodeId, event: &PointerEvent3d, env: &mut Environment) {
+        fn visit(node: &mut dyn AnyNode3d, id: NodeId, event: &PointerEvent3d, env: &mut Environment, done: &mut bool) {
+            if *done {
+                return;
+            }
+            if node.id() == id {
+                node.process_pointer_event(event, env);
+                *done = true;
+                return;
+            }
+            node.foreach_child_mut(&mut |child| visit(child, id, event, env, done));
+        }
+
+        let mut done = false;
+        let mut content = self.content.borrow_mut();
+        content.nodes.foreach_mut(&mut |node| visit(node, id, event, env, &mut done));
+    }
+
+    /// Hover enter and leave: the nodes on the new path and not the old hear `Enter`, outermost
+    /// first; those on the old path and not the new hear `Leave`, innermost first.
+    /// Returns whether the hovered path changed.
+    fn set_hovered(&mut self, hit: Option<PickHit>, env: &mut Environment) -> bool {
+        let new_path = hit.as_ref().map(|hit| hit.path.clone()).unwrap_or_default();
+        let old_path = std::mem::replace(&mut self.hovered, new_path.clone());
+        let changed = old_path != new_path;
+
+        for id in old_path.iter().rev().filter(|id| !new_path.contains(id)) {
+            self.deliver(*id, &PointerEvent3d::Leave, env);
+        }
+
+        if let Some(hit) = hit {
+            for id in new_path.iter().filter(|id| !old_path.contains(id)) {
+                self.deliver(*id, &PointerEvent3d::Enter(hit.clone()), env);
+            }
+        }
+
+        changed
+    }
+
+    /// Hover and clicks for the nodes with pointer handlers. Only while something listens.
+    fn handle_pointer(&mut self, event: &MouseEvent, env: &mut Environment) {
+        if self.picking.listeners == 0 {
+            return;
+        }
+
+        match event {
+            MouseEvent::Move { to, .. } => {
+                let inside = contains(Rect::new(self.position, self.dimension), *to);
+                self.pointer = inside.then_some(*to);
+                let hit = self.pick_at(*to, env);
+                self.set_hovered(hit, env);
+            }
+            MouseEvent::Press { button: MouseButton::Left, position, .. } => {
+                self.pressed = self.pick_at(*position, env).map(|hit| hit.node);
+            }
+            // A quick second click at the same place arrives as an `NClick`; each is a click.
+            MouseEvent::Click(MouseButton::Left, position, _) | MouseEvent::NClick(MouseButton::Left, position, _, _) => {
+                let Some(hit) = self.pick_at(*position, env) else {
+                    return;
+                };
+                if self.pressed != Some(hit.node) {
+                    return;
+                }
+                // Bubbling: innermost first.
+                for id in hit.path.iter().rev() {
+                    self.deliver(*id, &PointerEvent3d::Click(hit.clone()), env);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
 impl<N: Node3dSequence> MouseEventHandler for Scene3d<N> {
     fn handle_mouse_event(&mut self, event: &MouseEvent, ctx: &mut MouseEventContext) {
+        self.handle_pointer(event, ctx.env);
+
         if let Some(controller) = &mut self.controller {
             controller.handle_mouse_event(event, Rect::new(self.position, self.dimension), &mut self.camera, ctx);
         }
@@ -230,10 +394,11 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
         self.exposure.sync(ctx.env);
         self.tonemapping.sync(ctx.env);
 
-        let view = ViewSpec {
+        let mut view = ViewSpec {
             background: *self.background.value(),
             exposure: *self.exposure.value(),
             tonemapping: *self.tonemapping.value(),
+            picking: false,
         };
 
         ctx.layer(self.layer, Rect::new(self.position, self.dimension), |layer, env| {
@@ -248,17 +413,32 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
             content.ambient_intensity.sync(env);
             self.render_context.hemisphere(*content.sky.value(), *content.ground.value(), *content.ambient_intensity.value());
 
+            self.picking.clear();
             content.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
                     render: &mut *self.render_context,
                     env,
+                    picking: &mut self.picking,
                 });
             });
+
+            // A picking buffer only when something can use it.
+            view.picking = self.picking.listeners > 0 || self.pick_requested;
 
             let (width, height) = layer.dimensions();
             let aspect_ratio = width as f32 / height.max(1) as f32;
 
             self.render_context.render(layer, self.camera.spec(aspect_ratio), view, env);
-        })
+        });
+
+        // With the pointer inside, this frame's picking buffer is checked for hover on the next
+        // update. If no other frame would come, ask for one; but not after the frame that was
+        // itself only asked for that, or a still scene would never stop.
+        if self.pointer.is_some() && self.picking.listeners > 0 && !self.hover_check {
+            request_frame(ctx.env);
+            self.hover_check = true;
+        } else {
+            self.hover_check = false;
+        }
     }
 }

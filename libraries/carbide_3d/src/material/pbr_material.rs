@@ -10,7 +10,7 @@ use carbide::color::{BLACK, WHITE};
 use carbide::environment::Environment;
 use carbide::draw::Color;
 use carbide::math::{Matrix3, SquareMatrix};
-use carbide::state::{AnyReadState, IntoReadState, Map1, ReadStateExt, StateSync};
+use carbide::state::{AnyReadState, IntoReadState, Map1, StateSync};
 
 // Consider:
 //

@@ -10,6 +10,9 @@ use crate::environment_node::WithEnvironment;
 use crate::outline::{OutlineColor, OutlineThickness, Outlined};
 use crate::shadows::{CastsShadows, ReceivesShadows};
 use crate::render::{Render3d, RenderContext3d};
+use crate::picking::{ClickHandler, HoverHandler, HoveredState, PickHit, Pickable, PointerEvent3d, WithPointerHandler};
+use carbide::environment::Environment;
+use carbide::state::AnyState;
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct NodeId(u32);
@@ -64,6 +67,10 @@ impl CommonNode3d for Box<dyn AnyNode3d> {
 
     fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d)) {
         self.deref_mut().foreach_child_rev(f)
+    }
+
+    fn process_pointer_event(&mut self, event: &PointerEvent3d, env: &mut Environment) {
+        self.deref_mut().process_pointer_event(event, env)
     }
 }
 
@@ -120,6 +127,30 @@ pub trait Node3dExt: AnyNode3d + Clone + Sized {
         WithEnvironment::new(self, receives)
     }
 
+    /// Whether the meshes in this node can be picked. Picking is opt-in; pointer handlers make
+    /// their subtree pickable by themselves. See [`picking`](crate::picking).
+    fn pickable<S: IntoReadState<bool>>(self, pickable: S) -> WithEnvironment<Self, Pickable> {
+        WithEnvironment::new(self, pickable)
+    }
+
+    /// Call `f` with the hit when this node's subtree is clicked: pressed and released on the
+    /// same node without dragging. Makes the subtree pickable.
+    fn on_click<F: FnMut(&PickHit, &mut Environment) + Clone + 'static>(self, f: F) -> WithPointerHandler<Self, ClickHandler<F>> {
+        WithPointerHandler::new(self, ClickHandler(f))
+    }
+
+    /// Call `f` when the pointer moves onto this node's subtree, with the hit, and off it, with
+    /// `None`. Makes the subtree pickable.
+    fn on_hover<F: FnMut(Option<&PickHit>, &mut Environment) + Clone + 'static>(self, f: F) -> WithPointerHandler<Self, HoverHandler<F>> {
+        WithPointerHandler::new(self, HoverHandler(f))
+    }
+
+    /// Set `hovered` to whether the pointer is over this node's subtree. Makes the subtree
+    /// pickable.
+    fn hovered<S: AnyState<T=bool> + Clone + 'static>(self, hovered: S) -> WithPointerHandler<Self, HoveredState> {
+        WithPointerHandler::new(self, HoveredState(hovered.as_dyn()))
+    }
+
     /// Whether this node and everything inside it are outlined: a band around their silhouette,
     /// drawn on top of the scene. Inherited, like a style; see [`outline`](crate::outline).
     fn outlined<S: IntoReadState<bool>>(self, outlined: S) -> WithEnvironment<Self, Outlined> {
@@ -154,4 +185,8 @@ pub trait CommonNode3d {
     fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyNode3d));
     fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d));
     fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d));
+
+    /// Handle a pointer event whose path goes through this node. Only pointer handlers do
+    /// anything with them; see [`picking`](crate::picking).
+    fn process_pointer_event(&mut self, _event: &PointerEvent3d, _env: &mut Environment) {}
 }

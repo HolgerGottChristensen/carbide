@@ -69,6 +69,16 @@ mod tests {
             harness.render();
         }
 
+        // Hovering and clicking the model selects it; clicking again deselects it.
+        *options.model.clone().value_mut() = Model::Cube;
+        *options.projection.clone().value_mut() = ProjectionKind::Perspective;
+        *options.views.clone().value_mut() = Views::One;
+        harness.render();
+        harness.click(Position::new(445.0, 400.0));
+        harness.render();
+        harness.click(Position::new(445.0, 400.0));
+        harness.render();
+
         // Outlined, thick, then not.
         *options.outlined.clone().value_mut() = true;
         *options.outline_thickness.clone().value_mut() = 8.0;
@@ -140,6 +150,33 @@ mod tests {
 
         let changed = off.iter().zip(&on).filter(|(a, b)| a != b).count();
         assert!(changed > 10_000, "only {changed} bytes changed: the shadow should show on the floor");
+    }
+
+    /// The cube in the main view, hovered and then clicked twice. Pins down picking in the
+    /// playground: the pointer over the cube sets the hovered state, a click selects it and records
+    /// where it hit, and a second click deselects it.
+    #[test]
+    fn clicking_the_model_selects_it() {
+        let options = Options::new();
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+
+        // The middle of the main view, where the cube is.
+        let centre = Position::new(450.0, 400.0);
+
+        harness.mouse_move(centre);
+        assert!(*options.hovered.value(), "the pointer is over the cube");
+
+        harness.click(centre);
+        assert!(*options.outlined.value(), "a click selects the cube");
+        assert!(options.last_hit.value().is_some(), "and records where it hit");
+
+        harness.render();
+        harness.click(centre);
+        assert!(!*options.outlined.value(), "a second click deselects it");
+
+        harness.mouse_move(Position::new(20.0, 20.0));
+        assert!(!*options.hovered.value(), "off the cube");
     }
 
     /// The main view, orthographic, pinched outwards. Pins down that the pinch zooms by changing the

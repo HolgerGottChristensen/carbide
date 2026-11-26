@@ -34,7 +34,8 @@ impl Render3d for Object {
         self.material.sync(context.env);
         self.mesh.sync(context.env);
         let mesh = self.mesh.value().clone();
-        context.material(&self.material, |context| context.mesh(&mesh))
+        let material = &self.material;
+        context.pick_node(self.id, |context| context.material(material, |context| context.mesh(&mesh)))
     }
 }
 

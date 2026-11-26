@@ -1,6 +1,6 @@
 mod camera;
 mod camera_spec;
-mod controller;
+pub(crate) mod controller;
 mod orbit_controller;
 mod projection;
 

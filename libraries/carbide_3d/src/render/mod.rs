@@ -14,4 +14,4 @@ pub use inner_render_context3d::*;
 pub use render_context3d::*;
 pub use view_spec::{Tonemapping, ViewSpec};
 pub use light_shadow::LightShadow;
-pub use mesh_settings::{MeshSettings, Outline};
+pub use mesh_settings::{MeshSettings, Outline, PickSample};

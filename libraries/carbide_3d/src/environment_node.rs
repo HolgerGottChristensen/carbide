@@ -37,11 +37,8 @@ impl<N: AnyNode3d + Clone, K: EnvironmentKey<Access=Shared> + Clone + Debug> Ren
         self.value.sync(context.env);
         let value = self.value.value().clone();
 
-        let render = &mut *context.render;
         let child = &mut self.child;
-        context.env.with::<K>(&value, |env| {
-            child.render(&mut RenderContext3d { render, env });
-        });
+        context.with_env::<K, _>(&value, |context| child.render(context));
     }
 }
 

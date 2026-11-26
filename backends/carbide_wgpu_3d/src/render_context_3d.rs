@@ -4,7 +4,7 @@ use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGrou
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, Tonemapping, ViewSpec};
+use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
@@ -20,6 +20,7 @@ use crate::image_context_3d::ImageContext3d;
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
 use crate::outline::OutlineState;
+use crate::picking::PickingState;
 use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, WgpuPbrMaterial, WgpuPbrMaterialTextures};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
@@ -104,6 +105,9 @@ struct GpuState {
 
     /// The outline passes, created on the first frame with something outlined.
     outline: Option<OutlineState>,
+    /// The picking pass and the last frame's picking buffer, created on the first frame that
+    /// asks for one.
+    picking: Option<PickingState>,
 }
 
 impl WgpuRenderContext3d {
@@ -140,11 +144,12 @@ impl WgpuRenderContext3d {
         self.commands.clear();
     }
 
-    fn ensure_current_object(&mut self, receives_shadows: bool, outline: Vector4<f32>) {
+    fn ensure_current_object(&mut self, receives_shadows: bool, outline: Vector4<f32>, pick_id: u32) {
         let object = WgpuObject {
             transform: *self.transform_stack.last().unwrap(),
             material_index: self.current_material.as_ref().unwrap().2 as u32,
             receives_shadows: receives_shadows as u32,
+            pick_id,
             outline,
         };
 
@@ -378,6 +383,7 @@ impl GpuState {
             shadow_sampler,
             shadow_maps: None,
             outline: None,
+            picking: None,
             shader,
             scene_layout,
             lighting_layout,
@@ -590,6 +596,10 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
         // Nothing to draw: only clear the layer, so an empty scene is transparent.
         if self.commands.is_empty() {
+            if let Some(picking) = &mut gpu.picking {
+                picking.clear();
+            }
+
             encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("carbide_3d_clear"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -856,6 +866,15 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             }
         }
 
+        // The picking buffer, kept until the next frame for `pick`.
+        if view.picking {
+            let scene_layout = &gpu.scene_layout;
+            let picking = gpu.picking.get_or_insert_with(|| PickingState::new(device, scene_layout));
+            picking.draw(device, &mut encoder, (width, height), &scene_bind_group, &self.commands, meshes, camera.view_projection, camera.view);
+        } else if let Some(picking) = &mut gpu.picking {
+            picking.clear();
+        }
+
         // Outlines, on top of the scene, from the outlined objects' silhouettes.
         if max_outline > 0.0 {
             let format = render_target.texture_format();
@@ -870,6 +889,12 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         queue.submit(std::iter::once(encoder.finish()));
     }
 
+    fn pick(&mut self, position: (u32, u32), radius: u32, env: &mut Environment) -> Option<PickSample> {
+        let wgpu_context = env.get::<WgpuContextNew>()?;
+        let (device, queue) = (wgpu_context.device.clone(), wgpu_context.queue.clone());
+        self.gpu.as_mut()?.picking.as_mut()?.pick(&device, &queue, position, radius)
+    }
+
     fn mesh(&mut self, mesh: &Mesh, settings: MeshSettings) {
         let Some((material, material_tex)) = self.material_stack.last().cloned() else {
             // A mesh outside any material has nothing to be shaded with.
@@ -882,7 +907,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             Some(outline) if outline.thickness > 0.0 => linear(outline.color).extend(outline.thickness),
             _ => Vector4::new(0.0, 0.0, 0.0, 0.0),
         };
-        self.ensure_current_object(settings.receives_shadows, outline);
+        self.ensure_current_object(settings.receives_shadows, outline, settings.pick_id);
 
         // A clone of the handle: it keeps the mesh alive until this frame is drawn.
         let object = self.objects.len() as u32 - 1;

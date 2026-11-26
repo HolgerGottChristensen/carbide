@@ -13,9 +13,9 @@ use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
+use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
 use carbide::draw::Scalar;
-use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
+use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
 use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, ReadState, State};
 use carbide::time::Duration;
@@ -108,8 +108,12 @@ pub struct Options {
     pub axes: LocalState<bool>,
     /// Whether a floor is shown under the model, to catch its shadow.
     pub floor: LocalState<bool>,
-    /// Whether the model is outlined, as if selected.
+    /// Whether the model is selected, and so outlined: toggled by clicking it.
     pub outlined: LocalState<bool>,
+    /// Whether the pointer is over the model.
+    pub hovered: LocalState<bool>,
+    /// Where the last click hit the model, in world space.
+    pub last_hit: LocalState<Option<Vector3<f32>>>,
     /// The outline's thickness, in logical pixels.
     pub outline_thickness: LocalState<Scalar>,
 
@@ -169,6 +173,8 @@ impl Options {
             axes: LocalState::new(false),
             floor: LocalState::new(false),
             outlined: LocalState::new(false),
+            hovered: LocalState::new(false),
+            last_hit: LocalState::new(None),
             outline_thickness: LocalState::new(2.0),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
@@ -413,12 +419,27 @@ fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn A
     }
 
     let mut nodes = options.lights();
-    // The model, outlined when the side bar says so: the floor and the axes never are.
-    let thickness = Map1::read_map(options.outline_thickness.clone(), |thickness: &Scalar| *thickness as f32);
+
+    // The model: clicking it selects or deselects it. Selected, it has the side bar's outline;
+    // hovered, a thin one. The selection is the app's own state, as the library leaves it.
+    let outlined = Map2::read_map(options.outlined.clone(), options.hovered.clone(), |selected: &bool, hovered: &bool| *selected || *hovered);
+    let thickness = Map2::read_map(options.outlined.clone(), options.outline_thickness.clone(), |selected: &bool, thickness: &Scalar| {
+        if *selected { *thickness as f32 } else { 1.0 }
+    });
+    let select = {
+        let (selected, last_hit) = (options.outlined.clone(), options.last_hit.clone());
+        move |hit: &PickHit, _: &mut Environment| {
+            let now = !*selected.value();
+            selected.clone().set_value(now);
+            last_hit.clone().set_value(Some(hit.position));
+        }
+    };
     nodes.push(
         Group::new(parts)
             .rotation(options.rotation())
-            .outlined(options.outlined.clone())
+            .on_click(select)
+            .hovered(options.hovered.clone())
+            .outlined(outlined)
             .outline_thickness(thickness)
             .boxed()
     );
@@ -555,8 +576,15 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         )),
         Toggle::new("Show axes", options.axes.clone()),
         Toggle::new("Floor", options.floor.clone()),
-        Toggle::new("Outline model", options.outlined.clone()),
+        Toggle::new("Selected (click the model)", options.outlined.clone()),
         shown_when(options.outlined.clone(), slider("Outline width", &options.outline_thickness, 1.0, 10.0, |value| format!("{value:.0} px"))),
+        Text::new(Map2::read_map(options.hovered.clone(), options.last_hit.clone(), |hovered: &bool, hit: &Option<Vector3<f32>>| {
+            let over = if *hovered { "over the model" } else { "off the model" };
+            match hit {
+                Some(hit) => format!("Pointer {over}; last click at ({:.2}, {:.2}, {:.2})", hit.x, hit.y, hit.z),
+                None => format!("Pointer {over}"),
+            }
+        })).font_size(EnvironmentFontSize::Footnote),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);

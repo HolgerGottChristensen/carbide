@@ -26,6 +26,9 @@ pub struct ViewSpec {
     /// What lit colours are multiplied by before tone mapping.
     pub exposure: f32,
     pub tonemapping: Tonemapping,
+    /// Whether to render a picking buffer with the frame, for [`pick`](crate::render::InnerRenderContext3d::pick)
+    /// to read until the next frame.
+    pub picking: bool,
 }
 
 impl Default for ViewSpec {
@@ -34,6 +37,7 @@ impl Default for ViewSpec {
             background: TRANSPARENT,
             exposure: 1.0,
             tonemapping: Tonemapping::default(),
+            picking: false,
         }
     }
 }
