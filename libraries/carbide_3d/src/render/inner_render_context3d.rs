@@ -5,7 +5,7 @@ use carbide::environment::Environment;
 use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
-use crate::render::{LightShadow, ViewSpec};
+use crate::render::{LightShadow, ViewSpec, MeshSettings};
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh};
 
@@ -18,7 +18,7 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
 
     /// Draw `mesh` with the current material and transform. `casts_shadows` says whether it
     /// casts shadows from lights that cast them, and `receives_shadows` whether shadows fall on it.
-    fn mesh(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool);
+    fn mesh(&mut self, mesh: &Mesh, settings: MeshSettings);
 
     fn material(&mut self, material: &Material, env: &mut Environment);
     fn pop_material(&mut self);

@@ -6,7 +6,7 @@ use carbide::state::{AnyReadState, IntoReadState, ReadState, StateSync};
 use crate::material::pbr_material::PbrMaterial;
 use crate::material::Material;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
-use crate::render::{Render3d, RenderContext3d};
+use crate::render::{MeshSettings, Render3d, RenderContext3d};
 use crate::Mesh;
 
 /// Lines along the axes of the space it is in, from its origin: red along +X, green along +Y and
@@ -87,7 +87,7 @@ impl Render3d for AxisHelper {
             let transform = self.line_transform(axis);
             let line = &self.line;
             context.material(&self.materials[axis], |context| {
-                context.transform(&transform, |context| context.mesh_with_shadows(line, false, false))
+                context.transform(&transform, |context| context.mesh_with(line, MeshSettings::PLAIN))
             });
         }
     }

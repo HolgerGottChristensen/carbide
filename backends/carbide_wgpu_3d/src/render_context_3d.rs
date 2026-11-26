@@ -4,12 +4,13 @@ use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGrou
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{InnerRenderContext3d, LightShadow, Tonemapping, ViewSpec};
+use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
 use carbide_core::render::{InnerLayer, Layer};
+use carbide_core::scene::SceneManager;
 use carbide_core::state::ReadState;
 use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
 
@@ -18,6 +19,7 @@ use crate::directional_light::{WgpuDirectionalLight, WgpuDirectionalLightBuffer}
 use crate::image_context_3d::ImageContext3d;
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
+use crate::outline::OutlineState;
 use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, WgpuPbrMaterial, WgpuPbrMaterialTextures};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
@@ -99,6 +101,9 @@ struct GpuState {
     /// The shadow maps, one layer per light, with their size and layer count: a single texel when
     /// no light casts shadows, since the main pass always binds them.
     shadow_maps: Option<((u32, u32), Texture, TextureView)>,
+
+    /// The outline passes, created on the first frame with something outlined.
+    outline: Option<OutlineState>,
 }
 
 impl WgpuRenderContext3d {
@@ -135,11 +140,12 @@ impl WgpuRenderContext3d {
         self.commands.clear();
     }
 
-    fn ensure_current_object(&mut self, receives_shadows: bool) {
+    fn ensure_current_object(&mut self, receives_shadows: bool, outline: Vector4<f32>) {
         let object = WgpuObject {
             transform: *self.transform_stack.last().unwrap(),
             material_index: self.current_material.as_ref().unwrap().2 as u32,
             receives_shadows: receives_shadows as u32,
+            outline,
         };
 
         if self.objects.last() != Some(&object) {
@@ -371,6 +377,7 @@ impl GpuState {
             shadow_pipeline,
             shadow_sampler,
             shadow_maps: None,
+            outline: None,
             shader,
             scene_layout,
             lighting_layout,
@@ -545,6 +552,9 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         let device = &wgpu_context.device.clone();
         let queue = &wgpu_context.queue.clone();
 
+        // Outline thicknesses are in logical pixels; the layer is in physical ones.
+        let scale_factor = env.get_mut::<SceneManager>().map(|manager| manager.scale_factor()).unwrap_or(1.0) as f32;
+
         // The meshes' GPU copies, shared by every view; uploaded once, freed once dropped.
         let meshes = match env.get_mut::<MeshCache>() {
             Some(cache) => cache,
@@ -607,7 +617,13 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             .collect::<Vec<_>>();
 
         let mut materials_buffer = StorageBuffer::from(pbr_materials);
-        let mut objects_buffer = StorageBuffer::from(self.objects.clone());
+        // Outline thicknesses in physical pixels, and which objects are outlined.
+        let objects = self.objects.iter()
+            .map(|object| WgpuObject { outline: object.outline.truncate().extend(object.outline.w * scale_factor), ..*object })
+            .collect::<Vec<_>>();
+        let outlined = objects.iter().map(|object| object.outline.w > 0.0).collect::<Vec<_>>();
+        let max_outline = objects.iter().map(|object| object.outline.w).fold(0.0f32, f32::max);
+        let mut objects_buffer = StorageBuffer::from(objects);
 
         let aspect_ratio = width as f32 / height as f32;
         let inv_view = camera.view.invert().unwrap_or(Matrix4::identity());
@@ -840,21 +856,37 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             }
         }
 
+        // Outlines, on top of the scene, from the outlined objects' silhouettes.
+        if max_outline > 0.0 {
+            let format = render_target.texture_format();
+            let scene_layout = &gpu.scene_layout;
+            let outline = gpu.outline.get_or_insert_with(|| OutlineState::new(device, scene_layout));
+            outline.draw(
+                device, queue, &mut encoder, render_target.view(), format, (width, height),
+                &scene_bind_group, &self.commands, &outlined, meshes, max_outline,
+            );
+        }
+
         queue.submit(std::iter::once(encoder.finish()));
     }
 
-    fn mesh(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool) {
+    fn mesh(&mut self, mesh: &Mesh, settings: MeshSettings) {
         let Some((material, material_tex)) = self.material_stack.last().cloned() else {
             // A mesh outside any material has nothing to be shaded with.
             return;
         };
 
         self.ensure_current_material(&material, &material_tex);
-        self.ensure_current_object(receives_shadows);
+        // Linear, with the thickness still in logical pixels: it is scaled when rendering.
+        let outline = match settings.outline {
+            Some(outline) if outline.thickness > 0.0 => linear(outline.color).extend(outline.thickness),
+            _ => Vector4::new(0.0, 0.0, 0.0, 0.0),
+        };
+        self.ensure_current_object(settings.receives_shadows, outline);
 
         // A clone of the handle: it keeps the mesh alive until this frame is drawn.
         let object = self.objects.len() as u32 - 1;
-        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows });
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {

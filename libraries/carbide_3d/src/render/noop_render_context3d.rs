@@ -5,7 +5,7 @@ use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh, NoopImageContext3d};
-use crate::render::{InnerRenderContext3d, LightShadow, ViewSpec};
+use crate::render::{InnerRenderContext3d, LightShadow, MeshSettings, ViewSpec};
 
 /// The render context of a scene without a 3D renderer, used until a
 /// [`ContextFactory3d`](crate::render::ContextFactory3d) is found in the environment. It draws
@@ -20,7 +20,7 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     fn render(&mut self, _layer: Layer, _camera: CameraSpec, _view: ViewSpec, _env: &mut Environment) {
     }
 
-    fn mesh(&mut self, _mesh: &Mesh, _casts_shadows: bool, _receives_shadows: bool) {
+    fn mesh(&mut self, _mesh: &Mesh, _settings: MeshSettings) {
     }
 
     fn material(&mut self, _material: &Material, _env: &mut Environment) {

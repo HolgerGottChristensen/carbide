@@ -27,6 +27,7 @@ mod image_context_3d;
 mod material;
 mod mesh_cache;
 mod object;
+mod outline;
 mod pbr_material;
 mod point_light;
 mod render_context_3d;

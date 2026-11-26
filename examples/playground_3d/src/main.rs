@@ -69,6 +69,13 @@ mod tests {
             harness.render();
         }
 
+        // Outlined, thick, then not.
+        *options.outlined.clone().value_mut() = true;
+        *options.outline_thickness.clone().value_mut() = 8.0;
+        harness.render();
+        *options.outlined.clone().value_mut() = false;
+        harness.render();
+
         // The render ball with the side bar's materials, then its file's again.
         *options.model.clone().value_mut() = Model::RenderBall;
         *options.file_materials.clone().value_mut() = false;

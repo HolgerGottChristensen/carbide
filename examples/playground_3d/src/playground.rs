@@ -108,6 +108,10 @@ pub struct Options {
     pub axes: LocalState<bool>,
     /// Whether a floor is shown under the model, to catch its shadow.
     pub floor: LocalState<bool>,
+    /// Whether the model is outlined, as if selected.
+    pub outlined: LocalState<bool>,
+    /// The outline's thickness, in logical pixels.
+    pub outline_thickness: LocalState<Scalar>,
 
     pub color: LocalState<Color>,
     pub roughness: LocalState<Scalar>,
@@ -164,6 +168,8 @@ impl Options {
             renderer: LocalState::new(Renderer::Wgpu),
             axes: LocalState::new(false),
             floor: LocalState::new(false),
+            outlined: LocalState::new(false),
+            outline_thickness: LocalState::new(2.0),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
             metallic: LocalState::new(0.0),
@@ -407,7 +413,15 @@ fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn A
     }
 
     let mut nodes = options.lights();
-    nodes.push(Group::new(parts).rotation(options.rotation()).boxed());
+    // The model, outlined when the side bar says so: the floor and the axes never are.
+    let thickness = Map1::read_map(options.outline_thickness.clone(), |thickness: &Scalar| *thickness as f32);
+    nodes.push(
+        Group::new(parts)
+            .rotation(options.rotation())
+            .outlined(options.outlined.clone())
+            .outline_thickness(thickness)
+            .boxed()
+    );
     nodes.push(floor(model, options).boxed());
     // The scene's axes, which don't turn with the model.
     nodes.push(AxisHelper::new(1.0).shown(options.axes.clone()).boxed());
@@ -541,6 +555,8 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         )),
         Toggle::new("Show axes", options.axes.clone()),
         Toggle::new("Floor", options.floor.clone()),
+        Toggle::new("Outline model", options.outlined.clone()),
+        shown_when(options.outlined.clone(), slider("Outline width", &options.outline_thickness, 1.0, 10.0, |value| format!("{value:.0} px"))),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);

@@ -11,15 +11,9 @@
 //! the scene; on a light, it saves that light's shadow pass; on a group, it stops the objects in it
 //! from casting.
 
-use std::marker::PhantomData;
-
 use carbide::environment::{EnvironmentKey, Shared};
-use carbide::math::{Matrix4, SquareMatrix};
-use carbide::state::{AnyReadState, IntoReadState, ReadState, StateSync};
+use carbide::state::IntoReadState;
 use carbide::widget::{EnvUpdatingNew2, Widget};
-
-use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
-use crate::render::{Render3d, RenderContext3d};
 
 /// Whether lights cast shadows, and objects cast them, in this part of the tree.
 #[derive(Debug, Copy, Clone)]
@@ -37,66 +31,6 @@ pub struct ReceivesShadows;
 impl EnvironmentKey for ReceivesShadows {
     type Value = bool;
     type Access = Shared;
-}
-
-/// A node with a shadow setting for itself and everything inside it: what `.casts_shadows(..)`
-/// and `.receives_shadows(..)` wrap a node in.
-#[derive(Debug, Clone)]
-pub struct WithShadowSetting<N, K> where N: AnyNode3d + Clone, K: EnvironmentKey<Value=bool, Access=Shared> + Clone + std::fmt::Debug {
-    id: NodeId,
-    child: N,
-    value: Box<dyn AnyReadState<T=bool>>,
-    key: PhantomData<K>,
-}
-
-impl<N: AnyNode3d + Clone, K: EnvironmentKey<Value=bool, Access=Shared> + Clone + std::fmt::Debug> WithShadowSetting<N, K> {
-    pub fn new<S: IntoReadState<bool>>(child: N, value: S) -> WithShadowSetting<N, K> {
-        WithShadowSetting {
-            id: NodeId::new(),
-            child,
-            value: Box::new(value.into_read_state()),
-            key: PhantomData,
-        }
-    }
-}
-
-impl<N: AnyNode3d + Clone, K: EnvironmentKey<Value=bool, Access=Shared> + Clone + std::fmt::Debug> Render3d for WithShadowSetting<N, K> {
-    fn render(&mut self, context: &mut RenderContext3d) {
-        self.value.sync(context.env);
-        let value = *self.value.value();
-
-        let render = &mut *context.render;
-        let child = &mut self.child;
-        context.env.with::<K>(&value, |env| {
-            child.render(&mut RenderContext3d { render, env });
-        });
-    }
-}
-
-impl<N: AnyNode3d + Clone, K: EnvironmentKey<Value=bool, Access=Shared> + Clone + std::fmt::Debug> CommonNode3d for WithShadowSetting<N, K> {
-    fn id(&self) -> NodeId {
-        self.id
-    }
-
-    fn transform(&self) -> Matrix4<f32> {
-        Matrix4::identity()
-    }
-
-    fn visible(&self) -> bool {
-        true
-    }
-
-    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyNode3d)) {
-        f(&self.child)
-    }
-
-    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d)) {
-        f(&mut self.child)
-    }
-
-    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d)) {
-        f(&mut self.child)
-    }
 }
 
 /// Shadow settings on widgets, for every 3D scene inside them.

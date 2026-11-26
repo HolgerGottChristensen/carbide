@@ -43,7 +43,7 @@ impl InnerRenderContext3d for RecordingContext {
         EVENTS.lock().unwrap().push(format!("render {}", self.name));
     }
 
-    fn mesh(&mut self, _mesh: &Mesh, _casts_shadows: bool, _receives_shadows: bool) {}
+    fn mesh(&mut self, _mesh: &Mesh, _settings: carbide_3d::render::MeshSettings) {}
 
     fn material(&mut self, _material: &Material, _env: &mut Environment) {}
 

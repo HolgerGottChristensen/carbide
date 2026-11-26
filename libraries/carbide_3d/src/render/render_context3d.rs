@@ -1,3 +1,6 @@
+use crate::outline::outline_in;
+use crate::render::MeshSettings;
+use crate::shadows::{CastsShadows, ReceivesShadows};
 use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::mesh::Mesh;
@@ -32,14 +35,22 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
         res
     }
 
-    /// Draw `mesh`, casting and receiving shadows.
+    /// Draw `mesh` with the settings in the environment: it casts and receives shadows unless
+    /// [`CastsShadows`](crate::CastsShadows) or [`ReceivesShadows`](crate::ReceivesShadows) say
+    /// otherwise, and is outlined where [`Outlined`](crate::outline::Outlined) is set.
     pub fn mesh(&mut self, mesh: &Mesh) {
-        self.render.mesh(mesh, true, true)
+        let settings = MeshSettings {
+            casts_shadows: self.env.get::<CastsShadows>().copied().unwrap_or(true),
+            receives_shadows: self.env.get::<ReceivesShadows>().copied().unwrap_or(true),
+            outline: outline_in(self.env),
+        };
+
+        self.render.mesh(mesh, settings)
     }
 
-    /// Draw `mesh`, casting and receiving shadows as given.
-    pub fn mesh_with_shadows(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool) {
-        self.render.mesh(mesh, casts_shadows, receives_shadows)
+    /// Draw `mesh` with `settings`, whatever the environment says.
+    pub fn mesh_with(&mut self, mesh: &Mesh, settings: MeshSettings) {
+        self.render.mesh(mesh, settings)
     }
 
     pub fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>, shadow: Option<LightShadow>) {

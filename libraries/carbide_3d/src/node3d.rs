@@ -1,3 +1,4 @@
+use carbide::color::Color;
 use dyn_clone::DynClone;
 use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
@@ -5,7 +6,9 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use carbide::math::{Matrix4, Vector3};
 use carbide::state::IntoReadState;
 use crate::transform::{Rotation, Scale, Transformed};
-use crate::shadows::{CastsShadows, ReceivesShadows, WithShadowSetting};
+use crate::environment_node::WithEnvironment;
+use crate::outline::{OutlineColor, OutlineThickness, Outlined};
+use crate::shadows::{CastsShadows, ReceivesShadows};
 use crate::render::{Render3d, RenderContext3d};
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -107,14 +110,30 @@ pub trait Node3dExt: AnyNode3d + Clone + Sized {
 
     /// Whether this node and everything inside it cast shadows: lights from their shadow maps,
     /// objects into them. Inherited, like a style; see [`shadows`](crate::shadows).
-    fn casts_shadows<S: IntoReadState<bool>>(self, casts: S) -> WithShadowSetting<Self, CastsShadows> {
-        WithShadowSetting::new(self, casts)
+    fn casts_shadows<S: IntoReadState<bool>>(self, casts: S) -> WithEnvironment<Self, CastsShadows> {
+        WithEnvironment::new(self, casts)
     }
 
     /// Whether shadows fall on the objects in this node. Inherited, like a style; see
     /// [`shadows`](crate::shadows).
-    fn receives_shadows<S: IntoReadState<bool>>(self, receives: S) -> WithShadowSetting<Self, ReceivesShadows> {
-        WithShadowSetting::new(self, receives)
+    fn receives_shadows<S: IntoReadState<bool>>(self, receives: S) -> WithEnvironment<Self, ReceivesShadows> {
+        WithEnvironment::new(self, receives)
+    }
+
+    /// Whether this node and everything inside it are outlined: a band around their silhouette,
+    /// drawn on top of the scene. Inherited, like a style; see [`outline`](crate::outline).
+    fn outlined<S: IntoReadState<bool>>(self, outlined: S) -> WithEnvironment<Self, Outlined> {
+        WithEnvironment::new(self, outlined)
+    }
+
+    /// The colour of outlines in this node. The environment's accent colour by default.
+    fn outline_color<S: IntoReadState<Color>>(self, color: S) -> WithEnvironment<Self, OutlineColor> {
+        WithEnvironment::new(self, color)
+    }
+
+    /// The thickness of outlines in this node, in logical pixels. 2 by default.
+    fn outline_thickness<S: IntoReadState<f32>>(self, thickness: S) -> WithEnvironment<Self, OutlineThickness> {
+        WithEnvironment::new(self, thickness)
     }
 
     /// Transform the node by a whole matrix. See [`Transformed::transform`].
