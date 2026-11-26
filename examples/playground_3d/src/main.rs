@@ -179,10 +179,82 @@ mod tests {
         harness.click(centre);
         assert!(!*options.outlined.value(), "a second click deselects it");
 
+        // Selected again, then a click beside the cube, on nothing: deselected.
+        harness.render();
+        harness.click(centre);
+        assert!(*options.outlined.value());
+        harness.render();
+        harness.click(Position::new(100.0, 100.0));
+        assert!(!*options.outlined.value(), "a click on nothing deselects it");
+
         // Still inside the view, off the cube: hover is picked again in the next frame.
         harness.mouse_move(Position::new(20.0, 20.0));
         harness.render();
         assert!(!*options.hovered.value(), "off the cube");
+    }
+
+    /// The red cube rendered with wgpu, then with the renderer set to None. Pins down that the
+    /// side bar's renderer reaches the views: with none, they draw nothing, so the view's centre is
+    /// no longer the cube's red; with wgpu again, the cube is back.
+    #[test]
+    fn choosing_no_renderer_draws_nothing() {
+        let options = Options::new();
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+
+        let red = |harness: &mut Harness| {
+            let [r, g, b, _] = harness.pixels().get_pixel(450, 400).0;
+            r > 120 && g < 60 && b < 60
+        };
+        assert!(red(&mut harness), "the cube, rendered with wgpu");
+
+        *options.renderer.clone().value_mut() = Renderer::None;
+        harness.render();
+        harness.render();
+        assert!(!red(&mut harness), "no renderer: the cube is gone");
+
+        *options.renderer.clone().value_mut() = Renderer::Wgpu;
+        harness.render();
+        harness.render();
+        assert!(red(&mut harness), "wgpu again: the cube is back");
+    }
+
+    /// The cube with the side bar's "Hover highlight" off, hovered and clicked. Pins down that the
+    /// toggle removes hover: the hovered state stays false, while a click still selects the cube.
+    #[test]
+    fn turning_off_hover_keeps_clicks() {
+        let options = Options::new();
+        *options.hover.clone().value_mut() = false;
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+
+        let centre = Position::new(450.0, 400.0);
+        harness.mouse_move(centre);
+        harness.render();
+        harness.render();
+        assert!(!*options.hovered.value(), "hover isn't tracked");
+
+        harness.click(centre);
+        assert!(*options.outlined.value(), "a click still selects the cube");
+    }
+
+    /// The cube with the side bar's "Interactive" off, hovered and clicked. Pins down that the
+    /// toggle reaches the views: nothing is hovered or selected.
+    #[test]
+    fn turning_off_interactivity_ignores_clicks() {
+        let options = Options::new();
+        *options.interactive.clone().value_mut() = false;
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+
+        let centre = Position::new(450.0, 400.0);
+        harness.mouse_move(centre);
+        harness.render();
+        harness.render();
+        harness.click(centre);
+
+        assert!(!*options.hovered.value(), "nothing is hovered");
+        assert!(!*options.outlined.value(), "nothing is selected");
     }
 
     /// The main view, orthographic, pinched outwards. Pins down that the pinch zooms by changing the

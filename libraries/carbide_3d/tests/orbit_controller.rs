@@ -107,3 +107,37 @@ fn clones_have_their_own_camera() {
     harness.drag(Position::new(150.0, 150.0), Position::new(250.0, 150.0), 5);
     harness.snapshot("left_dragged");
 }
+
+/// A view with an orbit controller whose `interactive` state is switched off, dragged and
+/// scrolled; then switched on and dragged. Pins down that a view that isn't interactive ignores
+/// the pointer: its camera stays put until it is interactive again.
+#[test]
+fn a_view_that_isnt_interactive_keeps_its_camera() {
+    use carbide_3d::camera::look_at;
+    use carbide_core::math::Matrix4;
+    use carbide_core::state::{LocalState, ReadState, State};
+
+    let start = look_at(Point3::new(0.0, 0.5, 3.0), Point3::new(0.0, 0.0, 0.0));
+    let view = LocalState::new(start);
+    let interactive = LocalState::new(false);
+    let scene = cube_scene()
+        .camera(Camera::perspective().view(view.clone()))
+        .controller(OrbitController::new())
+        .interactive(interactive.clone());
+
+    let mut harness = Harness::new(scene, Dimension::new(400.0, 300.0));
+    harness.render();
+
+    harness.drag(Position::new(200.0, 150.0), Position::new(300.0, 150.0), 5);
+    harness.mouse_move(Position::new(200.0, 150.0));
+    harness.scroll(40.0, 20.0);
+    harness.render();
+    let unchanged: Matrix4<f32> = *view.value();
+    assert_eq!(unchanged, start, "the camera moved while the view wasn't interactive");
+
+    interactive.clone().set_value(true);
+    harness.render();
+    harness.drag(Position::new(200.0, 150.0), Position::new(300.0, 150.0), 5);
+    harness.render();
+    assert_ne!(*view.value(), start, "a drag orbits once the view is interactive");
+}

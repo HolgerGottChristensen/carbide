@@ -108,8 +108,13 @@ pub struct Options {
     pub axes: LocalState<bool>,
     /// Whether a floor is shown under the model, to catch its shadow.
     pub floor: LocalState<bool>,
+    /// Whether the views respond to the pointer and keyboard: orbiting, hover and clicks.
+    pub interactive: LocalState<bool>,
     /// Whether the model is selected, and so outlined: toggled by clicking it.
     pub outlined: LocalState<bool>,
+    /// Whether the model reacts to the pointer over it: a thin outline, and the side bar's read-out.
+    /// Off, the model has no hover handler, so the views don't pick as the pointer moves.
+    pub hover: LocalState<bool>,
     /// Whether the pointer is over the model.
     pub hovered: LocalState<bool>,
     /// Where the last click hit the model, in world space.
@@ -172,7 +177,9 @@ impl Options {
             renderer: LocalState::new(Renderer::Wgpu),
             axes: LocalState::new(false),
             floor: LocalState::new(false),
+            interactive: LocalState::new(true),
             outlined: LocalState::new(false),
+            hover: LocalState::new(true),
             hovered: LocalState::new(false),
             last_hit: LocalState::new(None),
             outline_thickness: LocalState::new(2.0),
@@ -339,9 +346,13 @@ impl Options {
             .emissive_strength(f32_of(&self.emissive_strength))
     }
 
-    /// `view` with the side bar's background, exposure and tone mapping.
+    /// `view` with the side bar's background, interactivity, exposure and tone mapping. A click on
+    /// nothing in it clears the selection.
     fn look<N: Node3dSequence>(&self, view: Scene3d<N>) -> Scene3d<N> {
+        let selected = self.outlined.clone();
         view.background(self.background.clone())
+            .interactive(self.interactive.clone())
+            .on_missed_click(move |_: &mut Environment| selected.clone().set_value(false))
             .exposure(Map1::read_map(self.exposure.clone(), |exposure: &Scalar| *exposure as f32))
             .tonemapping(self.tonemapping.clone())
     }
@@ -370,7 +381,7 @@ fn default_view() -> Matrix4<f32> {
 
 /// The nodes of `model`, all with the side bar's material, in a group turned by the side bar, and
 /// the side bar's light, which stays where it is as the model turns.
-fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
+fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
     let mut parts: Vec<Box<dyn AnyNode3d>> = vec![];
 
     match model {
@@ -421,8 +432,9 @@ fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn A
     let mut nodes = options.lights();
 
     // The model: clicking it selects or deselects it. Selected, it has the side bar's outline;
-    // hovered, a thin one. The selection is the app's own state, as the library leaves it.
-    let outlined = Map2::read_map(options.outlined.clone(), options.hovered.clone(), |selected: &bool, hovered: &bool| *selected || *hovered);
+    // hovered, a thin one, when hover is on. The selection is the app's own state, as the library
+    // leaves it.
+    let outlined = Map2::read_map(options.outlined.clone(), options.hovered.clone(), move |selected: &bool, hovered: &bool| *selected || (hover && *hovered));
     let thickness = Map2::read_map(options.outlined.clone(), options.outline_thickness.clone(), |selected: &bool, thickness: &Scalar| {
         if *selected { *thickness as f32 } else { 1.0 }
     });
@@ -434,15 +446,14 @@ fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn A
             last_hit.clone().set_value(Some(hit.position));
         }
     };
-    nodes.push(
-        Group::new(parts)
-            .rotation(options.rotation())
-            .on_click(select)
-            .hovered(options.hovered.clone())
-            .outlined(outlined)
-            .outline_thickness(thickness)
-            .boxed()
-    );
+    let group = Group::new(parts).rotation(options.rotation()).on_click(select);
+    // Without hover, no hover handler: the views then pick only on clicks.
+    let group: Box<dyn AnyNode3d> = if hover {
+        group.hovered(options.hovered.clone()).outlined(outlined).outline_thickness(thickness).boxed()
+    } else {
+        group.outlined(outlined).outline_thickness(thickness).boxed()
+    };
+    nodes.push(group);
     nodes.push(floor(model, options).boxed());
     // The scene's axes, which don't turn with the model.
     nodes.push(AxisHelper::new(1.0).shown(options.axes.clone()).boxed());
@@ -469,9 +480,9 @@ fn floor(model: Model, options: &Options) -> impl Node3dExt {
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
 /// orthographic view of the same scene, a clone with its own camera and controller.
-fn views(model: Model, file_materials: bool, options: &Options) -> Box<dyn AnyWidget> {
+fn views(model: Model, file_materials: bool, hover: bool, options: &Options) -> Box<dyn AnyWidget> {
     // The ambient light is the scene's, shared by both views.
-    let scene = Scene3d::new(nodes(model, file_materials, options))
+    let scene = Scene3d::new(nodes(model, file_materials, hover, options))
         .hemisphere(WHITE, options.ground.clone(), Map1::read_map(options.ambient.clone(), |ambient: &Scalar| *ambient as f32));
 
     // The height limits match the side bar's slider, so a pinch stays within what it shows.
@@ -501,6 +512,20 @@ fn views(model: Model, file_materials: bool, options: &Options) -> Box<dyn AnyWi
     ).boxed()
 }
 
+/// The views of `model`, rebuilt when the hover toggle changes: with or without a hover handler on
+/// the model.
+fn hover_views(model: Model, file_materials: bool, options: &Options) -> Box<dyn AnyWidget> {
+    let o = options.clone();
+    let hover = options.hover.clone();
+
+    ui!(
+        match hover {
+            true => views(model, file_materials, true, &o),
+            false => views(model, file_materials, false, &o),
+        }
+    ).boxed()
+}
+
 /// The views of the render ball, rebuilt when the toggle changes, with its file's materials or the
 /// side bar's.
 fn render_ball_views(options: &Options) -> Box<dyn AnyWidget> {
@@ -509,8 +534,8 @@ fn render_ball_views(options: &Options) -> Box<dyn AnyWidget> {
 
     ui!(
         match file_materials {
-            true => views(Model::RenderBall, true, &o),
-            false => views(Model::RenderBall, false, &o),
+            true => hover_views(Model::RenderBall, true, &o),
+            false => hover_views(Model::RenderBall, false, &o),
         }
     ).boxed()
 }
@@ -522,21 +547,21 @@ pub fn playground(options: Options) -> impl Widget {
 
     let scene = ui!(
         match model {
-            Model::Empty => views(Model::Empty, false, &o),
-            Model::Cube => views(Model::Cube, false, &o),
-            Model::Sphere => views(Model::Sphere, false, &o),
-            Model::Cubes => views(Model::Cubes, false, &o),
+            Model::Empty => hover_views(Model::Empty, false, &o),
+            Model::Cube => hover_views(Model::Cube, false, &o),
+            Model::Sphere => hover_views(Model::Sphere, false, &o),
+            Model::Cubes => hover_views(Model::Cubes, false, &o),
             Model::RenderBall => render_ball_views(&o),
-            Model::MaterialGrid => views(Model::MaterialGrid, false, &o),
+            Model::MaterialGrid => hover_views(Model::MaterialGrid, false, &o),
         }
     );
 
-    let scene = EnvUpdatingNew2::<_, ContextFactory3d, _>::new(options.factory(), scene);
-
-    // Shadows are inherited, like styles: set here, they reach every node of every view. Set on a
-    // simple widget: a `ui!` match is a proxy that its parent sees through, which would skip the
-    // modifier.
-    let scene = scene.padding(10.0).casts_shadows(options.shadows.clone());
+    // The renderer's factory and the shadows are inherited, like styles: set here, they reach every
+    // view. Set on a simple widget, the padding: a `ui!` match is a proxy that its parent sees
+    // through, which would skip the modifiers.
+    let scene = scene.padding(10.0);
+    let scene = EnvUpdatingNew2::<_, ContextFactory3d, _>::new(options.factory(), scene)
+        .casts_shadows(options.shadows.clone());
 
     HSplit::new(
         scene,
@@ -576,10 +601,16 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         )),
         Toggle::new("Show axes", options.axes.clone()),
         Toggle::new("Floor", options.floor.clone()),
+        Toggle::new("Interactive", options.interactive.clone()),
+        Toggle::new("Hover highlight", options.hover.clone()),
         Toggle::new("Selected (click the model)", options.outlined.clone()),
         shown_when(options.outlined.clone(), slider("Outline width", &options.outline_thickness, 1.0, 10.0, |value| format!("{value:.0} px"))),
-        Text::new(Map2::read_map(options.hovered.clone(), options.last_hit.clone(), |hovered: &bool, hit: &Option<Vector3<f32>>| {
-            let over = if *hovered { "over the model" } else { "off the model" };
+        Text::new(Map3::read_map(options.hover.clone(), options.hovered.clone(), options.last_hit.clone(), |hover: &bool, hovered: &bool, hit: &Option<Vector3<f32>>| {
+            let over = match (*hover, *hovered) {
+                (false, _) => "not tracked",
+                (true, true) => "over the model",
+                (true, false) => "off the model",
+            };
             match hit {
                 Some(hit) => format!("Pointer {over}; last click at ({:.2}, {:.2}, {:.2})", hit.x, hit.y, hit.z),
                 None => format!("Pointer {over}"),

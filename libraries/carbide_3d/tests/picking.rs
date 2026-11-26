@@ -239,3 +239,75 @@ fn picking_on_a_scaled_display() {
     hover(&mut harness, Position::new(60.0, 140.0));
     assert!(*hovered.value(), "over the cube's other corner");
 }
+
+/// A hovered cube in a view whose `interactive` state is switched off, then on. Pins down that a
+/// view that isn't interactive lets go of the pointer, so hover ends, and then ignores it: no
+/// hover and no clicks, until it is interactive again.
+#[test]
+fn a_view_that_isnt_interactive_ignores_the_pointer() {
+    let hovered = LocalState::new(false);
+    let clicks = LocalState::new(0);
+    let interactive = LocalState::new(true);
+    let on_click = {
+        let clicks = clicks.clone();
+        move |_: &PickHit, _: &mut carbide_core::environment::Environment| {
+            let count = *clicks.value();
+            clicks.clone().set_value(count + 1);
+        }
+    };
+    let mut harness = rendered(scene((cube().hovered(hovered.clone()).on_click(on_click), light())).interactive(interactive.clone()));
+
+    hover(&mut harness, CENTRE);
+    assert!(*hovered.value(), "hovered while interactive");
+
+    interactive.clone().set_value(false);
+    harness.render();
+    assert!(!*hovered.value(), "hover ends when the view stops being interactive");
+
+    hover(&mut harness, Position::new(110.0, 100.0));
+    harness.click(CENTRE);
+    assert!(!*hovered.value(), "no hover");
+    assert_eq!(*clicks.value(), 0, "no clicks");
+
+    interactive.clone().set_value(true);
+    harness.render();
+    hover(&mut harness, Position::new(105.0, 100.0));
+    harness.render();
+    assert!(*hovered.value(), "hovered again once interactive");
+}
+
+/// Clicks on the background, on the cube, a drag across the background, and a press on the cube
+/// released on the background, in a view with a missed-click handler. Pins down `on_missed_click`:
+/// only a click pressed and released on nothing pickable counts, and a click on the cube goes to
+/// the cube.
+#[test]
+fn a_click_on_nothing_is_a_missed_click() {
+    let missed = LocalState::new(0);
+    let clicks = LocalState::new(0);
+    let count = |state: &LocalState<i32>| {
+        let state = state.clone();
+        move || {
+            let count = *state.value();
+            state.clone().set_value(count + 1);
+        }
+    };
+    let (on_missed, on_cube) = (count(&missed), count(&clicks));
+    let scene = scene((cube().on_click(move |_: &PickHit, _: &mut carbide_core::environment::Environment| on_cube()), light()))
+        .on_missed_click(move |_: &mut carbide_core::environment::Environment| on_missed());
+    let mut harness = rendered(scene);
+
+    harness.click(OUTSIDE);
+    assert_eq!((*missed.value(), *clicks.value()), (1, 0), "a click on the background");
+
+    harness.click(CENTRE);
+    assert_eq!((*missed.value(), *clicks.value()), (1, 1), "a click on the cube");
+
+    harness.drag(Position::new(20.0, 20.0), Position::new(40.0, 20.0), 3);
+    assert_eq!(*missed.value(), 1, "a drag isn't a click");
+
+    hover(&mut harness, CENTRE);
+    harness.mouse_press(MouseButton::Left);
+    harness.mouse_move(OUTSIDE);
+    harness.mouse_release(MouseButton::Left);
+    assert_eq!(*missed.value(), 1, "pressed on the cube, released on the background");
+}

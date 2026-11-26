@@ -83,6 +83,9 @@ pub struct PickRecorder {
     stack: Vec<NodeId>,
     /// How many pointer handlers rendered this frame.
     pub(crate) listeners: usize,
+    /// How many of them listen for hover: without any, the view doesn't pick on pointer moves or
+    /// each frame, only on presses and clicks.
+    pub(crate) hover_listeners: usize,
 }
 
 impl PickRecorder {
@@ -90,6 +93,7 @@ impl PickRecorder {
         self.paths.clear();
         self.stack.clear();
         self.listeners = 0;
+        self.hover_listeners = 0;
     }
 
     pub(crate) fn push(&mut self, node: NodeId) {
@@ -128,6 +132,9 @@ impl<W: Widget> PickingExt for W {}
 /// What a pointer handler node does with the events that reach it.
 pub trait PointerHandler: Clone + 'static {
     fn handle(&mut self, event: &PointerEvent3d, env: &mut Environment);
+
+    /// Whether the handler listens for hover: only then does the view pick as the pointer moves.
+    fn hears_hover(&self) -> bool;
 }
 
 /// Calls a closure with each click's hit.
@@ -139,6 +146,10 @@ impl<F: FnMut(&PickHit, &mut Environment) + Clone + 'static> PointerHandler for 
         if let PointerEvent3d::Click(hit) = event {
             (self.0)(hit, env);
         }
+    }
+
+    fn hears_hover(&self) -> bool {
+        false
     }
 }
 
@@ -153,6 +164,10 @@ impl<F: FnMut(Option<&PickHit>, &mut Environment) + Clone + 'static> PointerHand
             PointerEvent3d::Leave => (self.0)(None, env),
             PointerEvent3d::Click(_) => {}
         }
+    }
+
+    fn hears_hover(&self) -> bool {
+        true
     }
 }
 
@@ -173,6 +188,10 @@ impl PointerHandler for HoveredState {
             }
             PointerEvent3d::Click(_) => {}
         }
+    }
+
+    fn hears_hover(&self) -> bool {
+        true
     }
 }
 
@@ -212,6 +231,9 @@ impl<N: AnyNode3d + Clone, H: PointerHandler + Debug> WithPointerHandler<N, H> {
 impl<N: AnyNode3d + Clone, H: PointerHandler + Debug> Render3d for WithPointerHandler<N, H> {
     fn render(&mut self, context: &mut RenderContext3d) {
         context.picking.listeners += 1;
+        if self.handler.hears_hover() {
+            context.picking.hover_listeners += 1;
+        }
         let child = &mut self.child;
         context.pick_node(self.id, |context| {
             // A handler makes its subtree pickable, unless something inside says otherwise.
