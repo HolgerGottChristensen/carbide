@@ -6,6 +6,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 use carbide::color::rgba;
+use carbide::d3::gltf::GltfLight;
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::{Mesh, Vertex};
 use carbide::math::{Matrix4, SquareMatrix, Vector3};
@@ -17,7 +18,12 @@ use carbide::math::{Matrix4, SquareMatrix, Vector3};
 #[derive(Clone)]
 pub struct FittedObj {
     pub parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>,
+    /// The file's lights, with their transforms within the model: a glTF file's
+    /// `KHR_lights_punctual` lights; none for OBJ.
+    pub lights: Vec<(GltfLight, Matrix4<f32>)>,
     pub fit: Matrix4<f32>,
+    /// The scale in `fit`.
+    pub scale: f32,
     pub bottom: f32,
 }
 
@@ -60,14 +66,13 @@ pub fn load_obj(path: &str, fit_without_studio: bool) -> Rc<FittedObj> {
         .map(|(mesh, material)| (mesh, material, Matrix4::identity()))
         .collect();
 
-    let fitted = Rc::new(fit(parts, fit_without_studio));
+    let fitted = Rc::new(fit(parts, vec![], fit_without_studio));
     LOADED.with(|loaded| loaded.borrow_mut().insert(path.to_string(), fitted.clone()));
     fitted
 }
 
-/// The default scene of the glTF file at `path`, its nodes flattened into parts with their
-/// transforms, loaded the first time and cached after. Its lights are left out: the playground
-/// lights every model with its own.
+/// The default scene of the glTF file at `path`, its nodes flattened into parts and lights with
+/// their transforms, loaded the first time and cached after.
 pub fn load_gltf(path: &Path) -> Rc<FittedObj> {
     let key = path.display().to_string();
     if let Some(loaded) = LOADED.with(|loaded| loaded.borrow().get(&key).cloned()) {
@@ -79,14 +84,15 @@ pub fn load_gltf(path: &Path) -> Rc<FittedObj> {
     let parts = scene.primitives().into_iter()
         .map(|(mesh, material, transform)| (mesh.clone(), material.clone(), transform))
         .collect();
+    let lights = scene.lights().into_iter().map(|(light, transform)| (light.clone(), transform)).collect();
 
-    let fitted = Rc::new(fit(parts, false));
+    let fitted = Rc::new(fit(parts, lights, false));
     LOADED.with(|loaded| loaded.borrow_mut().insert(key, fitted.clone()));
     fitted
 }
 
-/// `parts` fitted to the playground. With `fit_without_studio`, see [`load_obj`].
-fn fit(parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>, fit_without_studio: bool) -> FittedObj {
+/// `parts` and `lights` fitted to the playground. With `fit_without_studio`, see [`load_obj`].
+fn fit(parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>, lights: Vec<(GltfLight, Matrix4<f32>)>, fit_without_studio: bool) -> FittedObj {
     let mut part_bounds: Vec<_> = parts.iter().map(|(mesh, _, transform)| bounds(mesh, *transform)).filter(|(min, max)| min.x <= max.x).collect();
     if fit_without_studio && !part_bounds.is_empty() {
         let mut extents: Vec<f32> = part_bounds.iter().map(extent).collect();
@@ -107,7 +113,9 @@ fn fit(parts: Vec<(Mesh, PbrMaterial, Matrix4<f32>)>, fit_without_studio: bool) 
 
     FittedObj {
         parts,
+        lights,
         fit: Matrix4::from_scale(1.0 / size) * Matrix4::from_translation(-center),
+        scale: 1.0 / size,
         bottom: (min.y - center.y) / size,
     }
 }

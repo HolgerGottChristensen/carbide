@@ -43,7 +43,7 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        let box_textured = gltf_models().iter().position(|(name, _)| name == "BoxTextured").unwrap();
+        let box_textured = gltf_models().iter().position(|sample| sample.name == "BoxTextured").unwrap();
         for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::Plane, Model::RenderBall, Model::MaterialGrid, Model::Gltf(box_textured)] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
@@ -140,6 +140,9 @@ mod tests {
         let options = Options::new();
         *options.floor.clone().value_mut() = true;
         *options.shadows.clone().value_mut() = false;
+        // A light from the front left, so the shadow falls on the floor in view, whatever the
+        // default light direction is.
+        *options.light_azimuth.clone().value_mut() = -35.0;
 
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
@@ -400,10 +403,10 @@ mod tests {
         let models = gltf_models();
         assert_eq!(models.len(), 20, "{models:?}");
         for name in ["BoxTextured", "DamagedHelmet", "TextureTransformTest", "TwoSidedPlane"] {
-            assert!(models.iter().any(|(model, file)| model == name && file.exists()), "{name} is missing");
+            assert!(models.iter().any(|sample| sample.name == name && sample.file.exists()), "{name} is missing");
         }
         // The two that only come as .gltf.
-        let transform_test = &models.iter().find(|(name, _)| name == "TextureTransformTest").unwrap().1;
+        let transform_test = &models.iter().find(|sample| sample.name == "TextureTransformTest").unwrap().file;
         assert_eq!(transform_test.extension().unwrap(), "gltf");
     }
 
@@ -412,7 +415,7 @@ mod tests {
     /// so its fitted parts have transforms other than the identity, and the model fits the view.
     #[test]
     fn gltf_models_draw() {
-        let index = |name: &str| gltf_models().iter().position(|(model, _)| model == name).unwrap();
+        let index = |name: &str| gltf_models().iter().position(|sample| sample.name == name).unwrap();
 
         let orientation = Model::Gltf(index("OrientationTest")).load().unwrap();
         assert!(orientation.parts.iter().any(|(_, _, transform)| *transform != carbide::math::Matrix4::from_scale(1.0)));
@@ -440,6 +443,40 @@ mod tests {
             let side_bar = view(&mut harness);
             assert!(changed(&from_file, &side_bar) > 1_000, "{name} with the side bar's material changes only {} bytes", changed(&from_file, &side_bar));
         }
+    }
+
+    /// The lamp is the sample with lights of its own (`KHR_lights_punctual`). With "Lights from
+    /// file" on, the default, its five point lights light it and the side bar's light is off, so
+    /// the side bar's intensity changes nothing; switched off, the side bar's light lights it
+    /// again, and its intensity shows.
+    #[test]
+    fn the_file_lights_toggle_lights_the_lamp() {
+        let lamp = gltf_models().iter().position(|sample| sample.name == "LightsPunctualLamp").unwrap();
+        assert!(gltf_models()[lamp].has_lights);
+        assert!(!gltf_models().iter().any(|sample| sample.name == "BoxTextured" && sample.has_lights));
+        assert!(Model::Gltf(lamp).has_file_lights() && !Model::Cube.has_file_lights());
+        assert_eq!(Model::Gltf(lamp).load().unwrap().lights.len(), 5);
+
+        let options = Options::new();
+        *options.model.clone().value_mut() = Model::Gltf(lamp);
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            harness.render();
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+
+        let own = view(&mut harness);
+        let intensity = *options.light_intensity.value();
+        *options.light_intensity.clone().value_mut() = intensity * 3.0;
+        assert_eq!(changed(&own, &view(&mut harness)), 0, "the side bar's light shows while the file's lights are on");
+
+        *options.file_lights.clone().value_mut() = false;
+        let side_bar = view(&mut harness);
+        assert!(changed(&own, &side_bar) > 10_000, "switching the file's lights off changes only {} bytes", changed(&own, &side_bar));
+        *options.light_intensity.clone().value_mut() = intensity;
+        assert!(changed(&side_bar, &view(&mut harness)) > 1_000, "the side bar's intensity changes nothing with the file's lights off");
     }
 
     /// The cube in the main view, hovered and then clicked twice. Pins down picking in the

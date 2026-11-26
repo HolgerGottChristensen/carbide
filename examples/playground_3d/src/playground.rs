@@ -9,6 +9,7 @@ use carbide::controls::ControlsExt;
 use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
 use carbide::d3::light::{DirectionalLight, PointLight, SpotLight};
 use carbide::d3::material::albedo_component::AlbedoComponent;
+use carbide::d3::gltf::GltfLight;
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use carbide::d3::render::{Render3d, RenderContext3d};
@@ -193,17 +194,43 @@ pub enum Model {
     Gltf(usize),
 }
 
+/// A glTF sample model.
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
+pub struct GltfSample {
+    /// The folder's name.
+    pub name: String,
+    /// The `.glb` file, or the `.gltf` file if there is no `.glb`.
+    pub file: PathBuf,
+    /// Whether the file uses `KHR_lights_punctual`, read from its JSON at startup.
+    pub has_lights: bool,
+}
+
+/// Whether the glTF file at `file` uses `KHR_lights_punctual`: its JSON, the whole of a `.gltf`
+/// or the first chunk of a `.glb`, names the extension.
+fn uses_lights(file: &Path) -> bool {
+    let Ok(bytes) = std::fs::read(file) else {
+        return false;
+    };
+    let json = if bytes.starts_with(b"glTF") && bytes.len() >= 20 {
+        let length = u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]) as usize;
+        &bytes[20..(20 + length).min(bytes.len())]
+    } else {
+        &bytes[..]
+    };
+    json.windows(b"KHR_lights_punctual".len()).any(|window| window == b"KHR_lights_punctual")
+}
+
 /// The glTF sample models: each folder in `libraries/carbide_3d/ressources/gltf`, by name, with
 /// its `.glb` file, or its `.gltf` file if it has no `.glb`. Read once, at startup, so adding a
 /// folder adds a choice.
-pub fn gltf_models() -> &'static [(String, PathBuf)] {
-    static MODELS: OnceLock<Vec<(String, PathBuf)>> = OnceLock::new();
+pub fn gltf_models() -> &'static [GltfSample] {
+    static MODELS: OnceLock<Vec<GltfSample>> = OnceLock::new();
     MODELS.get_or_init(|| {
         let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libraries/carbide_3d/ressources/gltf");
         let Ok(entries) = std::fs::read_dir(&folder) else {
             return vec![];
         };
-        let mut models: Vec<(String, PathBuf)> = entries.flatten()
+        let mut models: Vec<GltfSample> = entries.flatten()
             .map(|entry| entry.path())
             .filter(|path| path.is_dir())
             .filter_map(|path| {
@@ -211,10 +238,10 @@ pub fn gltf_models() -> &'static [(String, PathBuf)] {
                 let file = [format!("{name}.glb"), format!("{name}.gltf")].into_iter()
                     .map(|file| path.join(file))
                     .find(|file| file.exists())?;
-                Some((name, file))
+                Some(GltfSample { name, has_lights: uses_lights(&file), file })
             })
             .collect();
-        models.sort();
+        models.sort_by(|a, b| a.name.cmp(&b.name));
         models
     })
 }
@@ -234,6 +261,14 @@ impl Model {
         }
     }
 
+    /// Whether the model is a glTF file with lights of its own (`KHR_lights_punctual`).
+    pub fn has_file_lights(&self) -> bool {
+        match self {
+            Model::Gltf(index) => gltf_models().get(*index).is_some_and(|sample| sample.has_lights),
+            _ => false,
+        }
+    }
+
     /// Whether the model is loaded from a file, OBJ or glTF, with its own materials.
     pub fn from_file(&self) -> bool {
         self.obj_file().is_some() || matches!(self, Model::Gltf(_))
@@ -243,7 +278,7 @@ impl Model {
     /// backdrop and a light panel, which the fit leaves out.
     pub fn load(&self) -> Option<Rc<meshes::FittedObj>> {
         match self {
-            Model::Gltf(index) => gltf_models().get(*index).map(|(_, file)| meshes::load_gltf(file)),
+            Model::Gltf(index) => gltf_models().get(*index).map(|sample| meshes::load_gltf(&sample.file)),
             _ => self.obj_file().map(|file| meshes::load_obj(file, *self == Model::MoriKnob)),
         }
     }
@@ -367,8 +402,11 @@ pub struct Options {
     pub vertex_colors: LocalState<bool>,
     /// Whether the back of the material's triangles is drawn too (`PbrMaterial::double_sided`).
     pub double_sided: LocalState<bool>,
-    /// Whether the render ball has the materials of its MTL file, instead of the side bar's.
+    /// Whether a model from a file has its file's materials, instead of the side bar's.
     pub file_materials: LocalState<bool>,
+    /// Whether a glTF model with lights of its own is lit by them, instead of the side bar's
+    /// light. On by default.
+    pub file_lights: LocalState<bool>,
 
     /// Whether the model spins on its own, or is turned by `turn`.
     pub spin: LocalState<bool>,
@@ -440,9 +478,10 @@ impl Options {
             vertex_colors: LocalState::new(false),
             double_sided: LocalState::new(false),
             file_materials: LocalState::new(true),
+            file_lights: LocalState::new(true),
             spin: LocalState::new(false),
             turn: LocalState::new(0.0),
-            light_azimuth: LocalState::new(25.0),
+            light_azimuth: LocalState::new(10.0),
             light_elevation: LocalState::new(50.0),
             light_intensity: LocalState::new(5.0),
             light_kind: LocalState::new(LightKind::Directional),
@@ -501,9 +540,11 @@ impl Options {
     /// The side bar's intensity for a light of `kind`, and none for the others. The side bar
     /// gives the illuminance at the model in lux, so point and spot lights get it times the
     /// distance squared, in candela: switching kinds keeps the model as bright.
-    fn intensity_for(&self, kind: LightKind) -> impl ReadState<T=f32> + Clone + use<> {
-        Map2::read_map(self.light_kind.clone(), self.light_intensity.clone(), move |current: &LightKind, lux: &Scalar| {
-            match (*current == kind, kind) {
+    /// The side bar light's intensity for `kind`: 0 unless it is the chosen kind, and 0 while
+    /// `muted` and the file's lights are on, for a model with lights of its own.
+    fn intensity_for(&self, kind: LightKind, muted: bool) -> impl ReadState<T=f32> + Clone + use<> {
+        Map3::read_map(self.light_kind.clone(), self.light_intensity.clone(), self.file_lights.clone(), move |current: &LightKind, lux: &Scalar, file_lights: &bool| {
+            match (*current == kind && !(muted && *file_lights), kind) {
                 (false, _) => 0.0,
                 (true, LightKind::Directional) => *lux as f32,
                 (true, _) => *lux as f32 * LIGHT_DISTANCE * LIGHT_DISTANCE,
@@ -526,8 +567,9 @@ impl Options {
         })
     }
 
-    /// The three lights, of which only the side bar's kind shines.
-    fn lights(&self) -> Vec<Box<dyn AnyNode3d>> {
+    /// The side bar's light, of each kind, all but the chosen one off. With `muted`, for a model
+    /// with lights of its own, it is off while the file's lights are on.
+    fn lights(&self, muted: bool) -> Vec<Box<dyn AnyNode3d>> {
         let from = self.light_from();
         let position = Map1::read_map(from.clone(), |from: &Vector3<f32>| from * LIGHT_DISTANCE);
         // The spot light shines along its -Z: turn -Z to point back at the model.
@@ -538,16 +580,16 @@ impl Options {
         vec![
             DirectionalLight::new(Map1::read_map(from, |from: &Vector3<f32>| -*from))
                 .color(self.light_color())
-                .intensity(self.intensity_for(LightKind::Directional))
+                .intensity(self.intensity_for(LightKind::Directional, muted))
                 .boxed(),
             PointLight::new()
                 .color(self.light_color())
-                .intensity(self.intensity_for(LightKind::Point))
+                .intensity(self.intensity_for(LightKind::Point, muted))
                 .position(position.clone())
                 .boxed(),
             SpotLight::new(inner, outer)
                 .color(self.light_color())
-                .intensity(self.intensity_for(LightKind::Spot))
+                .intensity(self.intensity_for(LightKind::Spot, muted))
                 .rotation(aim)
                 .position(position)
                 .boxed(),
@@ -713,19 +755,24 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
             let options = options.clone();
             parts.push(LazyObj::new(move || {
                 let loaded = model.load().unwrap();
-                loaded.parts.iter().cloned().map(|(mesh, material, transform)| {
+                let mut parts: Vec<Box<dyn AnyNode3d>> = loaded.parts.iter().cloned().map(|(mesh, material, transform)| {
                     let object = if file_materials {
                         Object::new(mesh, material)
                     } else {
                         Object::new(meshes::painted(mesh), options.material())
                     };
                     object.transform(loaded.fit * transform).boxed()
-                }).collect()
+                }).collect();
+                for (light, transform) in &loaded.lights {
+                    let node = file_light(light, loaded.scale, options.file_lights.clone());
+                    parts.push(node.transform(loaded.fit * transform).boxed());
+                }
+                parts
             }).boxed());
         }
     }
 
-    let mut nodes = options.lights();
+    let mut nodes = options.lights(model.has_file_lights());
 
     // The model: clicking it selects or deselects it. Selected, it has the side bar's outline;
     // hovered, a thin one, when hover is on. The selection is the app's own state, as the library
@@ -754,6 +801,32 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
     // The scene's axes, which don't turn with the model.
     nodes.push(AxisHelper::new(1.0).shown(options.axes.clone()).boxed());
     nodes
+}
+
+/// A glTF file's light, on while `on` is, in a model scaled by `scale` to fit the view. Point and
+/// spot lights fall off with the square of the distance, which the fit scales too, so their
+/// intensities and ranges are scaled to light the model as they would at its own size.
+fn file_light(light: &GltfLight, scale: f32, on: LocalState<bool>) -> Box<dyn AnyNode3d> {
+    let intensity_while_on = |intensity: f32| Map1::read_map(on.clone(), move |on: &bool| if *on { intensity } else { 0.0 });
+    match light.clone() {
+        GltfLight::Directional { color, intensity } => {
+            DirectionalLight::new(Vector3::new(0.0, 0.0, -1.0)).color(color).intensity(intensity_while_on(intensity)).boxed()
+        }
+        GltfLight::Point { color, intensity, range } => {
+            let light = PointLight::new().color(color).intensity(intensity_while_on(intensity * scale * scale));
+            match range {
+                Some(range) => light.range(range * scale).boxed(),
+                None => light.boxed(),
+            }
+        }
+        GltfLight::Spot { color, intensity, range, inner, outer } => {
+            let light = SpotLight::new(inner, outer).color(color).intensity(intensity_while_on(intensity * scale * scale));
+            match range {
+                Some(range) => light.range(range * scale).boxed(),
+                None => light.boxed(),
+            }
+        }
+    }
 }
 
 /// A floor 6 metres square just under `model`, shown when the side bar says so: an empty mesh
@@ -972,7 +1045,7 @@ fn model_choices() -> Vec<(String, Model)> {
         ("A sports car (OBJ)", Model::SportsCar),
         ("PBR grid: roughness × metallic", Model::MaterialGrid),
     ].into_iter().map(|(label, model)| (label.to_string(), model)).collect();
-    choices.extend(gltf_models().iter().enumerate().map(|(index, (name, _))| (format!("{name} (glTF)"), Model::Gltf(index))));
+    choices.extend(gltf_models().iter().enumerate().map(|(index, sample)| (format!("{} (glTF)", sample.name), Model::Gltf(index))));
 
     choices
 }
@@ -1022,6 +1095,10 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     let material = VStack::new((
         heading("Material"),
         shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
+        shown_when(
+            Map1::read_map(options.model.clone(), |model: &Model| model.has_file_lights()),
+            Toggle::new("Lights from file", options.file_lights.clone()),
+        ),
         shown_when(using_file, note("The model uses its file's materials and maps; the values below apply to the other models.")),
         Picker::new(
             "Texture",
