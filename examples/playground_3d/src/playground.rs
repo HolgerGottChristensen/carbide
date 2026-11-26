@@ -172,6 +172,9 @@ pub enum Model {
     Cube,
     Sphere,
     Cubes,
+    /// An upright square facing the default camera (+Z): one-sided, so its back shows only
+    /// with Double-sided on.
+    Plane,
     /// The OBJ models in `libraries/carbide_3d/ressources`, with their MTL materials.
     RenderBall,
     /// A wolf, with colour, metallic, roughness and normal maps (CC0, Grab3D; AI-assisted).
@@ -323,6 +326,8 @@ pub struct Options {
     pub emissive_strength: LocalState<Scalar>,
     /// Whether the model's colour is multiplied by its vertex colours, which paint it by position.
     pub vertex_colors: LocalState<bool>,
+    /// Whether the back of the material's triangles is drawn too (`PbrMaterial::double_sided`).
+    pub double_sided: LocalState<bool>,
     /// Whether the render ball has the materials of its MTL file, instead of the side bar's.
     pub file_materials: LocalState<bool>,
 
@@ -394,6 +399,7 @@ impl Options {
             emissive: LocalState::new(BLACK),
             emissive_strength: LocalState::new(1.0),
             vertex_colors: LocalState::new(false),
+            double_sided: LocalState::new(false),
             file_materials: LocalState::new(true),
             spin: LocalState::new(false),
             turn: LocalState::new(0.0),
@@ -581,6 +587,7 @@ impl Options {
             .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone()))
             .tiling(Map1::read_map(self.tiling.clone(), |tiling: &Scalar| Vector2::new(*tiling as f32, *tiling as f32)))
             .sample_type(self.sampling.clone())
+            .double_sided(self.double_sided.clone())
             .emissive_strength(f32_of(&self.emissive_strength))
             .normal(Map1::read_map(surface.clone(), |surface: &Surface| surface.normal_texture()))
             .aomr_textures(Map1::read_map(surface, |surface: &Surface| surface.aomr()))
@@ -631,6 +638,12 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
         }
         Model::Sphere => {
             parts.push(Object::new(meshes::painted(Mesh::icosphere(0.6, 3)), options.material()).boxed());
+        }
+        Model::Plane => {
+            // The plane faces up; turned a quarter around X, it faces +Z.
+            let plane = Object::new(meshes::painted(Mesh::plane(1.2, 1.2)), options.material())
+                .rotation(Euler::new(Deg(90.0), Deg(0.0), Deg(0.0)));
+            parts.push(plane.boxed());
         }
         Model::Cubes => {
             for x in -1..=1 {
@@ -715,6 +728,7 @@ fn floor(model: Model, options: &Options) -> impl Node3dExt {
         Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar => model.load().unwrap().bottom,
         Model::Sphere => -0.6,
         Model::Cubes => -0.2,
+        Model::Plane => -0.6,
         Model::MaterialGrid => -2.0 * GRID_SPACING - GRID_RADIUS - 0.05,
     };
     let position = Map1::read_map(options.floor.clone(), move |_: &bool| Vector3::new(0.0, height(), 0.0));
@@ -860,6 +874,7 @@ pub fn playground(options: Options) -> impl Widget {
             Model::Cube => hover_views(Model::Cube, false, &o),
             Model::Sphere => hover_views(Model::Sphere, false, &o),
             Model::Cubes => hover_views(Model::Cubes, false, &o),
+            Model::Plane => hover_views(Model::Plane, false, &o),
             Model::RenderBall => obj_views(Model::RenderBall, &o),
             Model::Wolf => obj_views(Model::Wolf, &o),
             Model::MoriKnob => obj_views(Model::MoriKnob, &o),
@@ -900,6 +915,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("A cube").tag(Model::Cube),
             Text::new("A sphere").tag(Model::Sphere),
             Text::new("A grid of cubes").tag(Model::Cubes),
+            Text::new("An upright plane").tag(Model::Plane),
             Text::new("The render ball (OBJ)").tag(Model::RenderBall),
             Text::new("A wolf (OBJ, textured)").tag(Model::Wolf),
             Text::new("Mori's material knob (OBJ)").tag(Model::MoriKnob),
@@ -1012,6 +1028,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             slider("Glow strength", &options.emissive_strength, 0.0, 5.0, two_places),
         ),
         Toggle::new("Vertex colours", options.vertex_colors.clone()),
+        Toggle::new("Double-sided", options.double_sided.clone()),
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 

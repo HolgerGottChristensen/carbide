@@ -22,5 +22,7 @@ bitflags::bitflags! {
         /// The material blends with what is behind it (`Transparency::Blend`). Otherwise its
         /// alpha is ignored, and it covers what is behind it.
         const ALPHA_BLEND =         0b1000_0000_0000_0000;
+        /// Both sides of the material's triangles are drawn, the back with its normal reversed.
+        const DOUBLE_SIDED =   0b0001_0000_0000_0000_0000;
     }
 }

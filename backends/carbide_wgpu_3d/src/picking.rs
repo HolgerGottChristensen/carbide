@@ -35,7 +35,9 @@ struct PickFrame {
 
 #[derive(Debug)]
 pub(crate) struct PickingState {
+    /// The pipeline that culls back faces, and the one for double-sided materials, which doesn't.
     pipeline: RenderPipeline,
+    double_sided_pipeline: RenderPipeline,
     /// The ids and the depth, with their size.
     targets: Option<((u32, u32), Texture, TextureView, TextureView)>,
     /// Where a tile is copied to and read from.
@@ -80,7 +82,7 @@ impl PickingState {
             push_constant_ranges: &[],
         });
 
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let create = |cull_mode: Option<Face>| device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("carbide_3d_picking"),
             layout: Some(&layout),
             vertex: VertexState {
@@ -92,7 +94,7 @@ impl PickingState {
             // As the main pass: what is picked is what is seen.
             primitive: PrimitiveState {
                 front_face: FrontFace::Ccw,
-                cull_mode: Some(Face::Back),
+                cull_mode,
                 ..Default::default()
             },
             depth_stencil: Some(DepthStencilState {
@@ -112,6 +114,7 @@ impl PickingState {
             multiview: None,
             cache: None,
         });
+        let (pipeline, double_sided_pipeline) = (create(Some(Face::Back)), create(None));
 
         let staging = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("carbide_3d_picking_tile"),
@@ -120,7 +123,7 @@ impl PickingState {
             mapped_at_creation: false,
         });
 
-        PickingState { pipeline, targets: None, staging, frame: None, tile: None }
+        PickingState { pipeline, double_sided_pipeline, targets: None, staging, frame: None, tile: None }
     }
 
     /// Forget the last frame's buffer: nothing can be picked until a frame renders one.
@@ -187,14 +190,20 @@ impl PickingState {
         });
 
         pass.set_pipeline(&self.pipeline);
+        let mut double_sided_set = false;
         pass.set_bind_group(0, scene_bind_group, &[]);
 
         // Every mesh: those that aren't pickable still hide what is behind them.
         for command in commands {
-            if let RenderPassCommand::DrawMesh { mesh, object, .. } = command {
+            if let RenderPassCommand::DrawMesh { mesh, object, double_sided, .. } = command {
                 let Some(cached) = meshes.get(mesh.id()) else {
                     continue;
                 };
+
+                if *double_sided != double_sided_set {
+                    pass.set_pipeline(if *double_sided { &self.double_sided_pipeline } else { &self.pipeline });
+                    double_sided_set = *double_sided;
+                }
 
                 pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
                 pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);

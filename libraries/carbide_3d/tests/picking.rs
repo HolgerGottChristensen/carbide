@@ -10,7 +10,7 @@ use carbide_3d::{Group, Mesh, Node3d, Node3dExt, Object, PickHit, PickingExt, Sc
 use carbide_core::color::WHITE;
 use carbide_core::draw::{Dimension, Position};
 use carbide_testing::MouseButton;
-use carbide_core::math::{InnerSpace, Point3, Vector3};
+use carbide_core::math::{Deg, Euler, InnerSpace, Point3, Vector3};
 use carbide_core::state::{LocalState, ReadState, State};
 use carbide_core::widget::Widget;
 use carbide_testing::Harness;
@@ -310,4 +310,21 @@ fn a_click_on_nothing_is_a_missed_click() {
     harness.mouse_move(OUTSIDE);
     harness.mouse_release(MouseButton::Left);
     assert_eq!(*missed.value(), 1, "pressed on the cube, released on the background");
+}
+
+/// A plane with its back to the camera is picked only when its material is double-sided: what is
+/// picked is what is seen.
+#[test]
+fn a_double_sided_back_is_picked() {
+    for double_sided in [false, true] {
+        let hovered = LocalState::new(false);
+        let plane = Object::new(Mesh::plane(1.0, 1.0), PbrMaterial::new().color(WHITE).double_sided(double_sided))
+            // Turned to face away from the camera, along -Z.
+            .rotation(Euler::new(Deg(-90.0), Deg(0.0), Deg(0.0)))
+            .hovered(hovered.clone());
+        let mut harness = rendered(scene((plane, light())));
+
+        hover(&mut harness, CENTRE);
+        assert_eq!(*hovered.value(), double_sided, "double-sided: {double_sided}");
+    }
 }

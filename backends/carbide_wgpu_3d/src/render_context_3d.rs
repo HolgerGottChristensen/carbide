@@ -81,8 +81,9 @@ struct GpuState {
     /// A material's textures.
     pbr_layout: BindGroupLayout,
     pipeline_layout: PipelineLayout,
-    /// The pipeline, and the colour format it was created for.
-    pipeline: Option<(TextureFormat, RenderPipeline)>,
+    /// The colour format the pipelines were created for, the pipeline that culls back faces, and
+    /// the one for double-sided materials, which doesn't.
+    pipeline: Option<(TextureFormat, RenderPipeline, RenderPipeline)>,
     /// Repeating, linear and anisotropic: for textures, and the default for materials.
     sampler: Sampler,
     /// Repeating and nearest: for materials with `SampleType::Nearest`.
@@ -509,11 +510,18 @@ impl GpuState {
 
     /// Create the pipeline for `format` if it doesn't exist yet.
     fn ensure_pipeline(&mut self, device: &Device, format: TextureFormat) {
-        if self.pipeline.as_ref().is_some_and(|(current, _)| *current == format) {
+        if self.pipeline.as_ref().is_some_and(|(current, _, _)| *current == format) {
             return;
         }
 
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        let culled = self.create_pipeline(device, format, Some(Face::Back));
+        let double_sided = self.create_pipeline(device, format, None);
+        self.pipeline = Some((format, culled, double_sided));
+    }
+
+    /// The PBR pipeline for `format`, culling `cull_mode`.
+    fn create_pipeline(&self, device: &Device, format: TextureFormat, cull_mode: Option<Face>) -> RenderPipeline {
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("carbide_3d_pbr_pipeline"),
             layout: Some(&self.pipeline_layout),
             vertex: VertexState {
@@ -527,7 +535,7 @@ impl GpuState {
                 strip_index_format: None,
                 // Right-handed, as OBJ and glTF: counter-clockwise triangles face the viewer.
                 front_face: FrontFace::Ccw,
-                cull_mode: Some(Face::Back),
+                cull_mode,
                 unclipped_depth: false,
                 polygon_mode: PolygonMode::Fill,
                 conservative: false,
@@ -557,9 +565,7 @@ impl GpuState {
             }),
             multiview: None,
             cache: None,
-        });
-
-        self.pipeline = Some((format, pipeline));
+        })
     }
 }
 
@@ -844,7 +850,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             shadow_pass.set_viewport(0.0, 0.0, *resolution as f32, *resolution as f32, 0.0, 1.0);
 
             for command in &self.commands {
-                if let RenderPassCommand::DrawMesh { mesh, object, casts_shadows: true } = command {
+                if let RenderPassCommand::DrawMesh { mesh, object, casts_shadows: true, .. } = command {
                     let Some(cached) = meshes.get(mesh.id()) else {
                         continue;
                     };
@@ -881,18 +887,26 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 occlusion_query_set: None,
             });
 
-            render_pass.set_pipeline(&gpu.pipeline.as_ref().unwrap().1);
+            let (_, culled, double_sided_pipeline) = gpu.pipeline.as_ref().unwrap();
+            // Which pipeline is set: switched only when a mesh's sidedness differs.
+            let mut double_sided_set = false;
+            render_pass.set_pipeline(culled);
 
             render_pass.set_bind_group(0, &scene_bind_group, &[]);
             render_pass.set_bind_group(1, &lighting_bind_group, &[]);
 
             for command in &self.commands {
                 match command {
-                    RenderPassCommand::DrawMesh { mesh, object, .. } => {
+                    RenderPassCommand::DrawMesh { mesh, object, double_sided, .. } => {
                         // A mesh with no triangles has no GPU copy, and nothing to draw.
                         let Some(cached) = meshes.get(mesh.id()) else {
                             continue;
                         };
+
+                        if *double_sided != double_sided_set {
+                            render_pass.set_pipeline(if *double_sided { double_sided_pipeline } else { culled });
+                            double_sided_set = *double_sided;
+                        }
 
                         render_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
                         render_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
@@ -952,7 +966,10 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
         // A clone of the handle: it keeps the mesh alive until this frame is drawn.
         let object = self.objects.len() as u32 - 1;
-        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows });
+        let double_sided = match &material {
+            WgpuMaterial::PBR(material) => material.double_sided(),
+        };
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows: settings.casts_shadows, double_sided });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {

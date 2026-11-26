@@ -38,6 +38,11 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
+    /// Whether both sides of the material's triangles are drawn.
+    pub(crate) fn double_sided(&self) -> bool {
+        MaterialFlags::from_bits_truncate(self.material_flags).contains(MaterialFlags::DOUBLE_SIDED)
+    }
+
     /// The same values, with `texture_enable` set to the slots whose images are loaded.
     pub(crate) fn with_texture_enable(self, texture_enable: u32) -> Self {
         WgpuPbrMaterial { texture_enable, ..self }
@@ -80,6 +85,7 @@ impl WgpuPbrMaterial {
                 flags |= material.clearcoat_textures.value().to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
                 flags.set(MaterialFlags::ALPHA_BLEND, matches!(material.transparency, Transparency::Blend));
+                flags.set(MaterialFlags::DOUBLE_SIDED, *material.double_sided.value());
                 flags.set(
                     MaterialFlags::NEAREST,
                     match *material.sample_type.value() {

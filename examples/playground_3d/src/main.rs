@@ -43,7 +43,7 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall, Model::MaterialGrid] {
+        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::Plane, Model::RenderBall, Model::MaterialGrid] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
                     for renderer in [Renderer::Wgpu, Renderer::None] {
@@ -328,6 +328,36 @@ mod tests {
         *options.occlusion_strength.clone().value_mut() = 1.0;
         harness.render();
         assert_eq!(changed(&full, &view(&mut harness)), 0, "setting the strengths back doesn't restore the view");
+    }
+
+    /// The upright plane turned to show its back: hidden while one-sided, drawn once Double-sided
+    /// is on, and hidden again when it is switched off.
+    #[test]
+    fn the_double_sided_toggle_shows_the_planes_back() {
+        let options = Options::new();
+        *options.model.clone().value_mut() = Model::Plane;
+        *options.turn.clone().value_mut() = 180.0;
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            harness.render();
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+
+        let one_sided = view(&mut harness);
+        *options.model.clone().value_mut() = Model::Empty;
+        let empty = view(&mut harness);
+        assert_eq!(changed(&one_sided, &empty), 0, "the one-sided plane's back is drawn");
+
+        *options.model.clone().value_mut() = Model::Plane;
+        *options.double_sided.clone().value_mut() = true;
+        let double_sided = view(&mut harness);
+        assert!(changed(&one_sided, &double_sided) > 10_000, "the double-sided back changes only {} bytes", changed(&one_sided, &double_sided));
+
+        *options.double_sided.clone().value_mut() = false;
+        assert_eq!(changed(&one_sided, &view(&mut harness)), 0, "switching Double-sided off doesn't hide the back again");
     }
 
     /// Each OBJ model in the library's ressources loads with its MTL materials and draws. The

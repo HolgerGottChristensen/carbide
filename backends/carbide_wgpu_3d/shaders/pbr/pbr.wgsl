@@ -125,7 +125,7 @@ fn main_vs(
 }
 
 @fragment
-fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
+fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @location(0) vec4<f32> {
     let material = materials[in.material];
     var pixel: PixelData;
 
@@ -148,6 +148,12 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         return vec4<f32>(pixel.albedo.rgb, alpha);
     }
     pixel.normal = get_normal(material, in, coords, uvdx, uvdy);
+    // The back of a double-sided material (the only back faces not culled) is lit as a surface
+    // facing the other way, as glTF requires. Reversing the normal map's whole frame, as the glTF
+    // sample viewer does, reverses the mapped normal.
+    if (!front_facing) {
+        pixel.normal = -pixel.normal;
+    }
 
     let aomr = get_aomr(material, coords, uvdx, uvdy);
     pixel.ambient_occlusion = aomr.x;
@@ -193,7 +199,8 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // For the shadow lookups: the surface's geometric normal in world space, and whether shadows
     // fall on it.
-    let world_normal = normalize((camera.inv_view * vec4<f32>(in.normal, 0.0)).xyz);
+    // Reversed on the back of a double-sided material, as the shading normal.
+    let world_normal = normalize((camera.inv_view * vec4<f32>(select(-in.normal, in.normal, front_facing), 0.0)).xyz);
     let receives = in.receives_shadows != 0u;
 
 

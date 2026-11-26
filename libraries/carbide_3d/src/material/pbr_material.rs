@@ -67,6 +67,10 @@ pub struct PbrMaterial {
     pub uv_transform1: Box<dyn AnyReadState<T=Matrix3<f32>>>,
     // TODO: Make unlit a different shader entirely.
     pub unlit: bool,
+    /// Whether the back of the material's triangles is drawn too, lit as a surface facing the
+    /// other way: for leaves, cloth, paper and other thin surfaces seen from both sides, as glTF's
+    /// `doubleSided`. False by default: the back faces are skipped, as for closed shapes.
+    pub double_sided: Box<dyn AnyReadState<T=bool>>,
     /// Whether maps are sampled linearly (smooth, with mipmaps and anisotropic filtering), the
     /// default, or nearest (pixelated).
     pub sample_type: Box<dyn AnyReadState<T=SampleType>>,
@@ -92,6 +96,7 @@ impl StateSync for PbrMaterial {
             | self.emissive.sync(env)
             | self.emissive_strength.sync(env)
             | self.reflectance.sync(env)
+            | self.double_sided.sync(env)
     }
 }
 
@@ -118,6 +123,7 @@ impl PbrMaterial {
             uv_transform0: Box::new(Matrix3::<f32>::identity()),
             uv_transform1: Box::new(Matrix3::<f32>::identity()),
             unlit: false,
+            double_sided: Box::new(false),
             sample_type: SampleType::Linear.as_dyn_read(),
         }
     }
@@ -179,6 +185,14 @@ impl PbrMaterial {
             normal: normal.into_dyn_read_state(),
             ..self
         }
+    }
+
+    /// Draw the back of the material's triangles too, lit as a surface facing the other way: for
+    /// leaves, cloth, paper and other thin surfaces seen from both sides, as glTF's `doubleSided`.
+    /// Off by default, which skips back faces, as for closed shapes.
+    pub fn double_sided<D: IntoReadState<bool>>(mut self, double_sided: D) -> PbrMaterial {
+        self.double_sided = Box::new(double_sided.into_read_state());
+        self
     }
 
     /// Show the material's colour as it is, unaffected by lights, exposure and tone mapping: for
