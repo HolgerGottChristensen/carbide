@@ -81,7 +81,8 @@ pub fn create_bind_group_from_view(view: &TextureView, width: u32, height: u32, 
         address_mode_w: wgpu::AddressMode::ClampToEdge,
         mag_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
         min_filter: wgpu::FilterMode::Linear, // Change to nearest for pixel images
-        mipmap_filter: wgpu::FilterMode::Nearest,
+        // Blends between mip levels, for images drawn smaller than their size.
+        mipmap_filter: wgpu::FilterMode::Linear,
         ..Default::default()
     });
 
