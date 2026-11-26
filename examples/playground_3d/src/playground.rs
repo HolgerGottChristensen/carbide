@@ -121,6 +121,8 @@ pub struct Options {
     pub emissive_strength: LocalState<Scalar>,
     /// Whether the model's colour is multiplied by its vertex colours, which paint it by position.
     pub vertex_colors: LocalState<bool>,
+    /// Whether the render ball has the materials of its MTL file, instead of the side bar's.
+    pub file_materials: LocalState<bool>,
 
     /// Whether the model spins on its own, or is turned by `turn`.
     pub spin: LocalState<bool>,
@@ -172,6 +174,7 @@ impl Options {
             emissive: LocalState::new(BLACK),
             emissive_strength: LocalState::new(1.0),
             vertex_colors: LocalState::new(false),
+            file_materials: LocalState::new(true),
             spin: LocalState::new(false),
             turn: LocalState::new(0.0),
             light_azimuth: LocalState::new(-35.0),
@@ -355,7 +358,7 @@ fn default_view() -> Matrix4<f32> {
 
 /// The nodes of `model`, all with the side bar's material, in a group turned by the side bar, and
 /// the side bar's light, which stays where it is as the model turns.
-fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
+fn nodes(model: Model, file_materials: bool, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
     let mut parts: Vec<Box<dyn AnyNode3d>> = vec![];
 
     match model {
@@ -392,8 +395,13 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
         Model::RenderBall => {
             let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../libraries/carbide_3d/ressources/renderball.obj");
             let (meshes, fit) = meshes::load_obj(path);
-            for mesh in meshes {
-                parts.push(Object::new(meshes::painted(mesh), options.material()).transform(fit).boxed());
+            for (mesh, material) in meshes {
+                let object = if file_materials {
+                    Object::new(mesh, material)
+                } else {
+                    Object::new(meshes::painted(mesh), options.material())
+                };
+                parts.push(object.transform(fit).boxed());
             }
         }
     }
@@ -426,9 +434,9 @@ fn floor(model: Model, options: &Options) -> impl Node3dExt {
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
 /// orthographic view of the same scene, a clone with its own camera and controller.
-fn views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
+fn views(model: Model, file_materials: bool, options: &Options) -> Box<dyn AnyWidget> {
     // The ambient light is the scene's, shared by both views.
-    let scene = Scene3d::new(nodes(model, options))
+    let scene = Scene3d::new(nodes(model, file_materials, options))
         .hemisphere(WHITE, options.ground.clone(), Map1::read_map(options.ambient.clone(), |ambient: &Scalar| *ambient as f32));
 
     // The height limits match the side bar's slider, so a pinch stays within what it shows.
@@ -458,6 +466,20 @@ fn views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
     ).boxed()
 }
 
+/// The views of the render ball, rebuilt when the toggle changes, with its file's materials or the
+/// side bar's.
+fn render_ball_views(options: &Options) -> Box<dyn AnyWidget> {
+    let o = options.clone();
+    let file_materials = options.file_materials.clone();
+
+    ui!(
+        match file_materials {
+            true => views(Model::RenderBall, true, &o),
+            false => views(Model::RenderBall, false, &o),
+        }
+    ).boxed()
+}
+
 /// The playground: the views on the left, the options on the right.
 pub fn playground(options: Options) -> impl Widget {
     let o = options.clone();
@@ -465,12 +487,12 @@ pub fn playground(options: Options) -> impl Widget {
 
     let scene = ui!(
         match model {
-            Model::Empty => views(Model::Empty, &o),
-            Model::Cube => views(Model::Cube, &o),
-            Model::Sphere => views(Model::Sphere, &o),
-            Model::Cubes => views(Model::Cubes, &o),
-            Model::RenderBall => views(Model::RenderBall, &o),
-            Model::MaterialGrid => views(Model::MaterialGrid, &o),
+            Model::Empty => views(Model::Empty, false, &o),
+            Model::Cube => views(Model::Cube, false, &o),
+            Model::Sphere => views(Model::Sphere, false, &o),
+            Model::Cubes => views(Model::Cubes, false, &o),
+            Model::RenderBall => render_ball_views(&o),
+            Model::MaterialGrid => views(Model::MaterialGrid, false, &o),
         }
     );
 
@@ -522,8 +544,14 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);
+    let render_ball = Map1::read_map(options.model.clone(), |model: &Model| *model == Model::RenderBall);
+    let using_file = Map2::read_map(options.model.clone(), options.file_materials.clone(), |model: &Model, file: &bool| {
+        *model == Model::RenderBall && *file
+    });
     let material = VStack::new((
         heading("Material"),
+        shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
+        shown_when(using_file, note("The render ball uses its MTL file's materials; the values below apply to the other models.")),
         Picker::new("Colour", options.color.clone(), (
             Text::new("Red").tag(RED),
             Text::new("Orange").tag(ORANGE),
@@ -538,6 +566,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Map1::read_map(not_grid, |not_grid: &bool| !*not_grid),
             note("The grid: roughness 0 to 1 from left to right, metallic 0 to 1 from top to bottom."),
         ),
+        VStack::new((
         slider("Reflectance", &options.reflectance, 0.0, 1.0, two_places),
         slider("Clear coat", &options.clearcoat, 0.0, 1.0, two_places),
         shown_when(
@@ -558,6 +587,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             slider("Glow strength", &options.emissive_strength, 0.0, 5.0, two_places),
         ),
         Toggle::new("Vertex colours", options.vertex_colors.clone()),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let spin_off = Map1::read_map(options.spin.clone(), |spin: &bool| !*spin);

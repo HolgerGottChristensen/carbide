@@ -1,16 +1,17 @@
 //! Loading the playground's OBJ model, and painting meshes with vertex colours.
 
 use carbide::color::rgba;
+use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::{Mesh, Vertex};
 use carbide::math::{Matrix4, Vector3};
 
-/// The meshes of the OBJ file at `path`, and a transform that centres them on the origin and
-/// scales them to fit in a unit cube.
-pub fn load_obj(path: &str) -> (Vec<Mesh>, Matrix4<f32>) {
-    let meshes = Mesh::load_obj(path)
+/// The meshes of the OBJ file at `path`, each with its material from the file's MTL library, and a
+/// transform that centres them on the origin and scales them to fit in a unit cube.
+pub fn load_obj(path: &str) -> (Vec<(Mesh, PbrMaterial)>, Matrix4<f32>) {
+    let parts = Mesh::load_obj_with_materials(path)
         .unwrap_or_else(|error| panic!("the OBJ file at {path} to load: {error}"));
 
-    let positions = meshes.iter().flat_map(|mesh| mesh.vertices().iter().map(|vertex| vertex.position));
+    let positions = parts.iter().flat_map(|(mesh, _)| mesh.vertices().iter().map(|vertex| vertex.position));
     let (min, max) = positions.fold(
         (Vector3::new(f32::MAX, f32::MAX, f32::MAX), Vector3::new(f32::MIN, f32::MIN, f32::MIN)),
         |(min, max), p| (
@@ -22,7 +23,7 @@ pub fn load_obj(path: &str) -> (Vec<Mesh>, Matrix4<f32>) {
     let center = (min + max) / 2.0;
     let size = (max - min).x.max((max - min).y).max((max - min).z).max(f32::EPSILON);
 
-    (meshes, Matrix4::from_scale(1.0 / size) * Matrix4::from_translation(-center))
+    (parts, Matrix4::from_scale(1.0 / size) * Matrix4::from_translation(-center))
 }
 
 /// `mesh` with its vertices coloured by where they are in its bounds: red along X, green along Y

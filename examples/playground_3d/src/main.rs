@@ -69,6 +69,13 @@ mod tests {
             harness.render();
         }
 
+        // The render ball with the side bar's materials, then its file's again.
+        *options.model.clone().value_mut() = Model::RenderBall;
+        *options.file_materials.clone().value_mut() = false;
+        harness.render();
+        *options.file_materials.clone().value_mut() = true;
+        harness.render();
+
         // Every material value at once, then back.
         *options.metallic.clone().value_mut() = 1.0;
         *options.reflectance.clone().value_mut() = 1.0;
