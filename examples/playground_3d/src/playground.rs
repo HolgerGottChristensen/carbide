@@ -1,6 +1,6 @@
 //! The playground: the scene, shown in one or two views, with its options in a side bar.
 
-use carbide::color::{rgba_bytes, Color, BLUE, GREEN, ORANGE, RED, TRANSPARENT, WHITE};
+use carbide::color::{rgba_bytes, Color, BLACK, BLUE, GREEN, ORANGE, RED, TRANSPARENT, WHITE};
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::controls::slider::Slider;
@@ -8,6 +8,7 @@ use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::ControlsExt;
 use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
 use carbide::d3::light::{DirectionalLight, PointLight, SpotLight};
+use carbide::d3::material::albedo_component::AlbedoComponent;
 use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
@@ -32,7 +33,19 @@ pub enum Model {
     Sphere,
     Cubes,
     RenderBall,
+    /// Five by five spheres: roughness from 0 to 1 left to right, metallic from 0 to 1 top to
+    /// bottom, as in the usual PBR material charts.
+    MaterialGrid,
 }
+
+/// The steps of the material grid, for both roughness and metallic.
+const GRID_STEPS: [f32; 5] = [0.0, 0.25, 0.5, 0.75, 1.0];
+
+/// How far apart the material grid's spheres are, centre to centre, in metres.
+const GRID_SPACING: f32 = 0.28;
+
+/// The radius of the material grid's spheres, in metres.
+const GRID_RADIUS: f32 = 0.1;
 
 /// How many views of the scene to show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -98,6 +111,16 @@ pub struct Options {
 
     pub color: LocalState<Color>,
     pub roughness: LocalState<Scalar>,
+    pub metallic: LocalState<Scalar>,
+    pub reflectance: LocalState<Scalar>,
+    pub clearcoat: LocalState<Scalar>,
+    pub clearcoat_roughness: LocalState<Scalar>,
+    pub ambient_occlusion: LocalState<Scalar>,
+    /// The colour the model glows in; black for none.
+    pub emissive: LocalState<Color>,
+    pub emissive_strength: LocalState<Scalar>,
+    /// Whether the model's colour is multiplied by its vertex colours, which paint it by position.
+    pub vertex_colors: LocalState<bool>,
 
     /// Whether the model spins on its own, or is turned by `turn`.
     pub spin: LocalState<bool>,
@@ -141,6 +164,14 @@ impl Options {
             floor: LocalState::new(false),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
+            metallic: LocalState::new(0.0),
+            reflectance: LocalState::new(0.5),
+            clearcoat: LocalState::new(0.0),
+            clearcoat_roughness: LocalState::new(0.1),
+            ambient_occlusion: LocalState::new(1.0),
+            emissive: LocalState::new(BLACK),
+            emissive_strength: LocalState::new(1.0),
+            vertex_colors: LocalState::new(false),
             spin: LocalState::new(false),
             turn: LocalState::new(0.0),
             light_azimuth: LocalState::new(-35.0),
@@ -272,9 +303,25 @@ impl Options {
     }
 
     fn material(&self) -> PbrMaterial {
+        let f32_of = |state: &LocalState<Scalar>| Map1::read_map(state.clone(), |value: &Scalar| *value as f32);
+        // The colour alone, or times the vertex colours.
+        let albedo = Map2::read_map(self.color.clone(), self.vertex_colors.clone(), |color: &Color, vertex: &bool| {
+            if *vertex {
+                AlbedoComponent::ValueVertex { value: *color, srgb: true }
+            } else {
+                AlbedoComponent::Value(*color)
+            }
+        });
+
         PbrMaterial::new()
-            .color(self.color.clone())
+            .color(albedo)
             .roughness(Map1::read_map(self.roughness.clone(), |roughness: &Scalar| Some(*roughness as f32)))
+            .metallic(f32_of(&self.metallic))
+            .reflectance(f32_of(&self.reflectance))
+            .clearcoat(f32_of(&self.clearcoat), f32_of(&self.clearcoat_roughness))
+            .ambient_occlusion(f32_of(&self.ambient_occlusion))
+            .emissive(self.emissive.clone())
+            .emissive_strength(f32_of(&self.emissive_strength))
     }
 
     /// `view` with the side bar's background, exposure and tone mapping.
@@ -314,25 +361,39 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
     match model {
         Model::Empty => {}
         Model::Cube => {
-            parts.push(Object::new(Mesh::cube(1.0), options.material()).boxed());
+            parts.push(Object::new(meshes::painted(Mesh::cube(1.0)), options.material()).boxed());
         }
         Model::Sphere => {
-            parts.push(Object::new(Mesh::icosphere(0.6, 3), options.material()).boxed());
+            parts.push(Object::new(meshes::painted(Mesh::icosphere(0.6, 3)), options.material()).boxed());
         }
         Model::Cubes => {
             for x in -1..=1 {
                 for z in -1..=1 {
-                    let cube = Object::new(Mesh::cube(0.4), options.material())
+                    let cube = Object::new(meshes::painted(Mesh::cube(0.4)), options.material())
                         .position(Vector3::new(x as f32 * 0.6, 0.0, z as f32 * 0.6));
                     parts.push(cube.boxed());
                 }
             }
         }
+        Model::MaterialGrid => {
+            // Facing +Z, centred on the origin: columns along X, rows down Y.
+            let sphere = meshes::painted(Mesh::icosphere(GRID_RADIUS, 3));
+            let mut spheres: Vec<Box<dyn AnyNode3d>> = vec![];
+            for (row, metallic) in GRID_STEPS.iter().enumerate() {
+                for (column, roughness) in GRID_STEPS.iter().enumerate() {
+                    let material = options.material().roughness(Some(*roughness)).metallic(*metallic);
+                    let position = Vector3::new((column as f32 - 2.0) * GRID_SPACING, (2.0 - row as f32) * GRID_SPACING, 0.0);
+                    spheres.push(Object::new(sphere.clone(), material).position(position).boxed());
+                }
+            }
+            // The spheres don't shadow each other, as in the charts; they still cast onto the floor.
+            parts.push(Group::new(spheres).receives_shadows(false).boxed());
+        }
         Model::RenderBall => {
             let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../libraries/carbide_3d/ressources/renderball.obj");
             let (meshes, fit) = meshes::load_obj(path);
             for mesh in meshes {
-                parts.push(Object::new(mesh, options.material()).transform(fit).boxed());
+                parts.push(Object::new(meshes::painted(mesh), options.material()).transform(fit).boxed());
             }
         }
     }
@@ -353,6 +414,7 @@ fn floor(model: Model, options: &Options) -> impl Node3dExt {
         Model::Cube | Model::RenderBall => -0.5,
         Model::Sphere => -0.6,
         Model::Cubes => -0.2,
+        Model::MaterialGrid => -2.0 * GRID_SPACING - GRID_RADIUS - 0.05,
     };
 
     let (plane, empty) = (Mesh::plane(6.0, 6.0), Mesh::new(vec![], vec![]));
@@ -408,6 +470,7 @@ pub fn playground(options: Options) -> impl Widget {
             Model::Sphere => views(Model::Sphere, &o),
             Model::Cubes => views(Model::Cubes, &o),
             Model::RenderBall => views(Model::RenderBall, &o),
+            Model::MaterialGrid => views(Model::MaterialGrid, &o),
         }
     );
 
@@ -444,6 +507,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("A sphere").tag(Model::Sphere),
             Text::new("A grid of cubes").tag(Model::Cubes),
             Text::new("The render ball (OBJ)").tag(Model::RenderBall),
+            Text::new("PBR grid: roughness × metallic").tag(Model::MaterialGrid),
         )),
         Picker::new("Views", options.views.clone(), (
             Text::new("One").tag(Views::One),
@@ -457,6 +521,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         Toggle::new("Floor", options.floor.clone()),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
+    let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);
     let material = VStack::new((
         heading("Material"),
         Picker::new("Colour", options.color.clone(), (
@@ -466,7 +531,33 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("Blue").tag(BLUE),
             Text::new("White").tag(WHITE),
         )),
-        slider("Roughness", &options.roughness, 0.0, 1.0, |value| format!("{value:.2}")),
+        // The grid sets its own roughness and metallic, so their sliders give way to a note.
+        shown_when(not_grid.clone(), slider("Roughness", &options.roughness, 0.0, 1.0, two_places)),
+        shown_when(not_grid.clone(), slider("Metallic", &options.metallic, 0.0, 1.0, two_places)),
+        shown_when(
+            Map1::read_map(not_grid, |not_grid: &bool| !*not_grid),
+            note("The grid: roughness 0 to 1 from left to right, metallic 0 to 1 from top to bottom."),
+        ),
+        slider("Reflectance", &options.reflectance, 0.0, 1.0, two_places),
+        slider("Clear coat", &options.clearcoat, 0.0, 1.0, two_places),
+        shown_when(
+            Map1::read_map(options.clearcoat.clone(), |coat: &Scalar| *coat > 0.0),
+            slider("Coat roughness", &options.clearcoat_roughness, 0.0, 1.0, two_places),
+        ),
+        slider("Ambient occl.", &options.ambient_occlusion, 0.0, 1.0, two_places),
+        Picker::new("Glow", options.emissive.clone(), (
+            Text::new("None").tag(BLACK),
+            Text::new("Red").tag(RED),
+            Text::new("Orange").tag(ORANGE),
+            Text::new("Green").tag(GREEN),
+            Text::new("Blue").tag(BLUE),
+            Text::new("White").tag(WHITE),
+        )),
+        shown_when(
+            Map1::read_map(options.emissive.clone(), |color: &Color| *color != BLACK),
+            slider("Glow strength", &options.emissive_strength, 0.0, 5.0, two_places),
+        ),
+        Toggle::new("Vertex colours", options.vertex_colors.clone()),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let spin_off = Map1::read_map(options.spin.clone(), |spin: &bool| !*spin);
@@ -597,6 +688,10 @@ fn slider(label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, for
         Slider::new(value.clone(), min, max),
         Text::new(Map1::read_map(value.clone(), format)).frame_fixed_width(50.0),
     )).frame_fixed_height(26.0)
+}
+
+fn two_places(value: &Scalar) -> String {
+    format!("{value:.2}")
 }
 
 fn degrees(degrees: &Scalar) -> String {

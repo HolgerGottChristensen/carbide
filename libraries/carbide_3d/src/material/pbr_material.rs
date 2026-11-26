@@ -6,10 +6,11 @@ use crate::material::normal_texture::NormalTexture;
 use crate::material::sample_type::SampleType;
 use crate::material::transparency::Transparency;
 use crate::material::Material;
-use carbide::color::WHITE;
+use carbide::color::{BLACK, WHITE};
 use carbide::environment::Environment;
-use carbide::math::{Matrix3, SquareMatrix, Vector3};
-use carbide::state::{AnyReadState, IntoReadState, ReadStateExt, StateSync};
+use carbide::draw::Color;
+use carbide::math::{Matrix3, SquareMatrix};
+use carbide::state::{AnyReadState, IntoReadState, Map1, ReadStateExt, StateSync};
 
 // Consider:
 //
@@ -22,14 +23,27 @@ pub struct PbrMaterial {
     pub transparency: Transparency,
     pub normal: Box<dyn AnyReadState<T=NormalTexture>>,
     pub aomr_textures: AoMRTextures,
-    pub ao_factor: Option<f32>,
-    pub metallic_factor: Option<f32>,
+    /// How much ambient light reaches the surface, from 0 (none) to 1 (all). 1 by default.
+    pub ambient_occlusion: Box<dyn AnyReadState<T=f32>>,
+    /// From 0 (a dielectric, such as plastic) to 1 (a metal). 0 by default.
+    pub metallic: Box<dyn AnyReadState<T=f32>>,
     pub roughness_factor: Box<dyn AnyReadState<T=Option<f32>>>,
     pub clearcoat_textures: ClearcoatTextures,
-    pub clearcoat_factor: Option<f32>,
-    pub clearcoat_roughness_factor: Option<f32>,
-    pub emissive: MaterialComponent<Vector3<f32>>,
-    pub reflectance: MaterialComponent<f32>,
+    /// The strength of a clear coat over the surface, from 0 to 1. 0 by default. For now, it only
+    /// widens the surface's highlight towards the coat's roughness; there is no separate coat
+    /// highlight yet.
+    pub clearcoat: Box<dyn AnyReadState<T=f32>>,
+    /// The clear coat's roughness, from 0 to 1. 0 by default.
+    pub clearcoat_roughness: Box<dyn AnyReadState<T=f32>>,
+    /// The colour of light the surface gives off itself, in sRGB. Black (none) by default.
+    pub emissive: Box<dyn AnyReadState<T=Color>>,
+    /// How bright the emitted light is: at 1, with an exposure of 1, the colour shows at about
+    /// its full brightness. 1 by default.
+    pub emissive_strength: Box<dyn AnyReadState<T=f32>>,
+    /// How much light a dielectric reflects head-on, from 0 to 1, where 0.5 is a reflectance of
+    /// 4%, as most dielectrics have. Ignored by metals. 0.5 by default.
+    pub reflectance: Box<dyn AnyReadState<T=f32>>,
+    /// Not used by the renderer yet.
     pub anisotropy: MaterialComponent<f32>,
     pub uv_transform0: Matrix3<f32>,
     pub uv_transform1: Matrix3<f32>,
@@ -41,6 +55,15 @@ pub struct PbrMaterial {
 impl StateSync for PbrMaterial {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.albedo.sync(env)
+            | self.normal.sync(env)
+            | self.ambient_occlusion.sync(env)
+            | self.metallic.sync(env)
+            | self.roughness_factor.sync(env)
+            | self.clearcoat.sync(env)
+            | self.clearcoat_roughness.sync(env)
+            | self.emissive.sync(env)
+            | self.emissive_strength.sync(env)
+            | self.reflectance.sync(env)
     }
 }
 
@@ -51,14 +74,15 @@ impl PbrMaterial {
             transparency: Default::default(),
             normal: NormalTexture::None.as_dyn_read(),
             aomr_textures: Default::default(),
-            ao_factor: None,
-            metallic_factor: None,
+            ambient_occlusion: Box::new(1.0f32),
+            metallic: Box::new(0.0f32),
             roughness_factor: None.as_dyn_read(),
             clearcoat_textures: Default::default(),
-            clearcoat_factor: None,
-            clearcoat_roughness_factor: None,
-            emissive: Default::default(),
-            reflectance: Default::default(),
+            clearcoat: Box::new(0.0f32),
+            clearcoat_roughness: Box::new(0.0f32),
+            emissive: Box::new(BLACK),
+            emissive_strength: Box::new(1.0f32),
+            reflectance: Box::new(0.5f32),
             anisotropy: Default::default(),
             uv_transform0: Matrix3::identity(),
             uv_transform1: Matrix3::identity(),
@@ -99,6 +123,59 @@ impl PbrMaterial {
     pub fn roughness<R: IntoReadState<Option<f32>>>(self, roughness: R) -> PbrMaterial {
         PbrMaterial {
             roughness_factor: roughness.into_dyn_read_state(),
+            ..self
+        }
+    }
+
+    /// From 0 (a dielectric, such as plastic) to 1 (a metal). 0 by default.
+    pub fn metallic<M: IntoReadState<f32>>(mut self, metallic: M) -> PbrMaterial {
+        self.metallic = Box::new(metallic.into_read_state());
+        self
+    }
+
+    /// How much light a dielectric reflects head-on, from 0 to 1: 0.5, the default, is the 4% of
+    /// most dielectrics, and 1 is 16%, as of gemstones. Ignored by metals.
+    pub fn reflectance<R: IntoReadState<f32>>(mut self, reflectance: R) -> PbrMaterial {
+        self.reflectance = Box::new(reflectance.into_read_state());
+        self
+    }
+
+    /// How much ambient light reaches the surface, from 0 (none) to 1 (all, the default). Light
+    /// from the scene's lights is not affected.
+    pub fn ambient_occlusion<A: IntoReadState<f32>>(mut self, ambient_occlusion: A) -> PbrMaterial {
+        self.ambient_occlusion = Box::new(ambient_occlusion.into_read_state());
+        self
+    }
+
+    /// A clear coat of `strength`, from 0 to 1, with `roughness`, from 0 to 1. For now, it only
+    /// widens the surface's highlight towards the coat's roughness; there is no separate coat
+    /// highlight yet.
+    pub fn clearcoat<S: IntoReadState<f32>, R: IntoReadState<f32>>(mut self, strength: S, roughness: R) -> PbrMaterial {
+        self.clearcoat = Box::new(strength.into_read_state());
+        self.clearcoat_roughness = Box::new(roughness.into_read_state());
+        self
+    }
+
+    /// Light the surface gives off itself, in a colour: added to the light it reflects, with no
+    /// shading and no shadows. It doesn't light other objects. Black, none, by default.
+    pub fn emissive<C: IntoReadState<Color>>(mut self, color: C) -> PbrMaterial {
+        self.emissive = Box::new(color.into_read_state());
+        self
+    }
+
+    /// How bright the emitted light is: at 1, the default, with an exposure of 1, the colour shows
+    /// at about its full brightness.
+    pub fn emissive_strength<S: IntoReadState<f32>>(mut self, strength: S) -> PbrMaterial {
+        self.emissive_strength = Box::new(strength.into_read_state());
+        self
+    }
+
+    /// Multiply the albedo by the mesh's vertex colours, which are sRGB, as carbide's colours are.
+    /// Vertices are white unless given a colour, so a mesh without vertex colours is unchanged.
+    pub fn vertex_colors(self) -> PbrMaterial {
+        let albedo = Map1::read_map(self.albedo.clone(), |albedo: &AlbedoComponent| albedo.with_vertex_colors());
+        PbrMaterial {
+            albedo: Box::new(albedo),
             ..self
         }
     }

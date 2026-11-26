@@ -43,7 +43,7 @@ mod tests {
         let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
         harness.render();
 
-        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall] {
+        for model in [Model::Empty, Model::Cube, Model::Sphere, Model::Cubes, Model::RenderBall, Model::MaterialGrid] {
             for views in [Views::One, Views::Two] {
                 for projection in [ProjectionKind::Perspective, ProjectionKind::Orthographic] {
                     for renderer in [Renderer::Wgpu, Renderer::None] {
@@ -68,6 +68,20 @@ mod tests {
             *options.light_kind.clone().value_mut() = kind;
             harness.render();
         }
+
+        // Every material value at once, then back.
+        *options.metallic.clone().value_mut() = 1.0;
+        *options.reflectance.clone().value_mut() = 1.0;
+        *options.clearcoat.clone().value_mut() = 0.8;
+        *options.ambient_occlusion.clone().value_mut() = 0.2;
+        *options.emissive.clone().value_mut() = carbide::color::GREEN;
+        *options.emissive_strength.clone().value_mut() = 2.0;
+        *options.vertex_colors.clone().value_mut() = true;
+        harness.render();
+        *options.metallic.clone().value_mut() = 0.0;
+        *options.emissive.clone().value_mut() = carbide::color::BLACK;
+        *options.vertex_colors.clone().value_mut() = false;
+        harness.render();
 
         // Each light colour, and a temperature.
         for color in [LightColor::Warm, LightColor::Blue, LightColor::Temperature, LightColor::White] {

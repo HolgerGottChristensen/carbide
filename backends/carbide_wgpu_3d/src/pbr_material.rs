@@ -7,7 +7,7 @@ use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
-use carbide_core::math::{Matrix3, Vector3, Vector4, Zero};
+use carbide_core::math::{Matrix3, Vector3, Vector4};
 use carbide_core::state::ReadState;
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
@@ -45,13 +45,17 @@ impl WgpuPbrMaterial {
             uv_transform1: material.uv_transform1,
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
             roughness: material.roughness_factor.value().unwrap_or(0.0),
-            metallic: material.metallic_factor.unwrap_or(0.0),
-            reflectance: material.reflectance.to_value(0.5),
-            clear_coat: material.clearcoat_factor.unwrap_or(0.0),
-            clear_coat_roughness: material.clearcoat_roughness_factor.unwrap_or(0.0),
-            emissive: material.emissive.to_value(Vector3::<f32>::zero()),
+            metallic: *material.metallic.value(),
+            reflectance: *material.reflectance.value(),
+            clear_coat: *material.clearcoat.value(),
+            clear_coat_roughness: *material.clearcoat_roughness.value(),
+            // Linear, times the strength, as the shader adds it to the light leaving the surface.
+            emissive: {
+                let emissive = material.emissive.value().gamma_srgb_to_linear();
+                Vector3::new(emissive.red(), emissive.green(), emissive.blue()) * *material.emissive_strength.value()
+            },
             anisotropy: material.anisotropy.to_value(0.0),
-            ambient_occlusion: material.ao_factor.unwrap_or(1.0),
+            ambient_occlusion: *material.ambient_occlusion.value(),
             alpha_cutout: match material.transparency {
                 Transparency::Cutout { cutout } => cutout,
                 _ => 0.0,

@@ -182,7 +182,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         // vector (a vec3 followed by a scalar is packed), which can't be multiplied by a matrix.
         let l = -normalize(view_mat3 * light.direction);
 
-        color += surface_shading(l, light.color, pixel, v, shadow_value * pixel.ambient_occlusion);
+        color += surface_shading(l, light.color, pixel, v, shadow_value);
     }
 
     // Hemisphere ambient light: the sky's light on surfaces facing up, the ground's on surfaces
@@ -190,7 +190,9 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let up = normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0));
     let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
     let ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up);
-    let ambient = vec4<f32>(ambient_light * pixel.albedo.rgb, pixel.albedo.a);
+    // Ambient occlusion darkens only the ambient light: it stands for the surroundings blocking
+    // light from the sky, not for the scene's lights, whose shadows are separate.
+    let ambient = vec4<f32>(ambient_light * pixel.albedo.rgb * pixel.ambient_occlusion, pixel.albedo.a);
 
     // Point and spot lights, in view space like everything else here.
     for (var i = 0; i < i32(punctual_lights.count); i += 1) {
@@ -209,11 +211,12 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
             shadow_value = shadow_visibility(light.view_proj, light.shadow_layer, light.shadow_bias, light.shadow_scale, in.world_position, world_normal);
         }
 
-        color += surface_shading(l, light.color * attenuation, pixel, v, shadow_value * pixel.ambient_occlusion);
+        color += surface_shading(l, light.color * attenuation, pixel, v, shadow_value);
     }
 
-    // Ambient light adds to the light from the scene's lights.
-    let lit = ambient.rgb + color;
+    // Ambient light adds to the light from the scene's lights, and the surface's own light to
+    // both, unshaded.
+    let lit = ambient.rgb + color + material.emissive;
     return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), pixel.albedo.a);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);

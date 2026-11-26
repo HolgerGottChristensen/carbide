@@ -80,6 +80,18 @@ impl AlbedoComponent {
         }
     }
 
+    /// The same albedo, multiplied by the vertex colours too, treated as sRGB. Unchanged if it
+    /// already uses them.
+    pub fn with_vertex_colors(&self) -> AlbedoComponent {
+        match self.clone() {
+            Self::None => Self::Vertex { srgb: true },
+            Self::Value(value) => Self::ValueVertex { value, srgb: true },
+            Self::Texture(texture) => Self::TextureVertex { texture, srgb: true },
+            Self::TextureValue { texture, value } => Self::TextureVertexValue { texture, srgb: true, value },
+            other => other,
+        }
+    }
+
     pub fn is_texture(&self) -> bool {
         matches!(
             *self,
