@@ -1,6 +1,8 @@
 // A point or spot light. A point light is a spot light whose cone lets all light through: a cone
 // scale of 0 and an offset of 1.
 struct PunctualLight {
+    /// From world space to the light's shadow map, when it casts shadows.
+    view_proj: mat4x4<f32>,
     /// The light's position in world space.
     position: vec4<f32>,
     /// The way a spot light shines in world space.
@@ -11,6 +13,10 @@ struct PunctualLight {
     range: f32,
     cone_scale: f32,
     cone_offset: f32,
+    /// The light's layer in the shadow maps, or -1 when it casts none.
+    shadow_layer: i32,
+    shadow_bias: f32,
+    shadow_scale: f32,
 }
 
 struct PunctualLights {

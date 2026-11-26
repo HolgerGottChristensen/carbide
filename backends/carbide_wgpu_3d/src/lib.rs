@@ -31,6 +31,7 @@ mod pbr_material;
 mod point_light;
 mod render_context_3d;
 mod render_pass_command;
+mod shadow;
 mod storage_buffer;
 mod uniforms;
 mod vertex;

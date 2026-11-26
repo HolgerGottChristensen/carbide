@@ -13,6 +13,7 @@
 //!include pbr/clear_coat.wgsl
 //!include pbr/uniforms.wgsl
 //!include pbr/tonemapping.wgsl
+//!include pbr/shadow_lookup.wgsl
 
 const PI = 3.14159265358979323846;
 const PI_2 = 1.570796327;
@@ -27,6 +28,8 @@ struct VertexOutput {
     @location(5) color_1: vec4<f32>,
     @location(6) @interpolate(flat) material: u32,
     @location(7) view_position: vec4<f32>,
+    @location(8) world_position: vec3<f32>,
+    @location(9) @interpolate(flat) receives_shadows: u32,
 }
 
 @group(0) @binding(0)
@@ -44,6 +47,10 @@ var<storage> punctual_lights: PunctualLights;
 var primary_sampler: sampler;
 @group(1) @binding(3)
 var<storage> uniforms: Uniforms;
+@group(1) @binding(4)
+var shadow_maps: texture_depth_2d_array;
+@group(1) @binding(5)
+var shadow_sampler: sampler_comparison;
 
 /*@group(2) @binding(0)
 var albedo_tex: texture_2d<f32>;
@@ -86,6 +93,8 @@ fn main_vs(
     out.color_0 = color_0;
     out.color_1 = color_1;
     out.material = object.material_index;
+    out.world_position = (object.transform * vec4<f32>(position, 1.0)).xyz;
+    out.receives_shadows = object.receives_shadows;
 
     return out;
 }
@@ -153,44 +162,27 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let view_mat3 = mat3x3<f32>(camera.view[0].xyz, camera.view[1].xyz, camera.view[2].xyz);
 
+    // For the shadow lookups: the surface's geometric normal in world space, and whether shadows
+    // fall on it.
+    let world_normal = normalize((camera.inv_view * vec4<f32>(in.normal, 0.0)).xyz);
+    let receives = in.receives_shadows != 0u;
+
 
 
     for (var i = 0; i < i32(directional_lights.count); i += 1) {
         let light = directional_lights.data[i];
 
-        // Get the shadow ndc coordinates, then convert to texture sample coordinates
-        //let shadow_ndc = (light.view_proj * uniforms.inv_view * vs_out.view_position).xyz;
-        //let shadow_flipped = (shadow_ndc.xy * 0.5) + 0.5;
-        //let shadow_local_coords = vec2<f32>(shadow_flipped.x, 1.0 - shadow_flipped.y);
-
-        // Texture sample coordinates of
-        //var top_left = light.offset;
-        //var top_right = top_left + light.size;
-        //let shadow_coords = mix(top_left, top_right, shadow_local_coords);
-
-        // The shadow is stored in an atlas, so we need to make sure we don't linear blend
-        // across atlasses. We move our conditional borders in a half a pixel for standard
-        // linear blending (so we're hitting texel centers on the edge). We move it an additional
-        // pixel in so that our pcf5 offsets don't move off the edge of the atlasses.
-        //let shadow_border = light.inv_resolution * 1.5;
-        //top_left += shadow_border;
-        //top_right -= shadow_border;
-
         var shadow_value = 1.0;
-        //if (
-        //    any(shadow_flipped >= top_left) && // XY lower
-        //    any(shadow_flipped <= top_right) && // XY upper
-        //    shadow_ndc.z >= 0.0 && // Z lower
-        //    shadow_ndc.z <= 1.0 // Z upper
-        //) {
-        //    shadow_value = shadow_sample_pcf5(shadows, comparison_sampler, shadow_coords, shadow_ndc.z);
-        //}
+        if (receives) {
+            shadow_value = shadow_visibility(light.view_proj, light.shadow_layer, light.shadow_bias, light.shadow_scale, in.world_position, world_normal);
+        }
 
         // Calculate light source vector
-        let l = normalize(view_mat3 * -light.direction);
+        // Negated after the multiply: naga's Metal backend leaves `-light.direction` a packed
+        // vector (a vec3 followed by a scalar is packed), which can't be multiplied by a matrix.
+        let l = -normalize(view_mat3 * light.direction);
 
         color += surface_shading(l, light.color, pixel, v, shadow_value * pixel.ambient_occlusion);
-        //color = vec3<f32>(1.0, 0.0, 0.0);
     }
 
     // Hemisphere ambient light: the sky's light on surfaces facing up, the ground's on surfaces
@@ -212,7 +204,12 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         let attenuation = distance_attenuation(distance, light.range)
             * cone_attenuation(dot(-l, axis), light.cone_scale, light.cone_offset);
 
-        color += surface_shading(l, light.color * attenuation, pixel, v, pixel.ambient_occlusion);
+        var shadow_value = 1.0;
+        if (receives) {
+            shadow_value = shadow_visibility(light.view_proj, light.shadow_layer, light.shadow_bias, light.shadow_scale, in.world_position, world_normal);
+        }
+
+        color += surface_shading(l, light.color * attenuation, pixel, v, shadow_value * pixel.ambient_occlusion);
     }
 
     // Ambient light adds to the light from the scene's lights.

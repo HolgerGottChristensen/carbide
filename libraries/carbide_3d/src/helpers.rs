@@ -87,7 +87,7 @@ impl Render3d for AxisHelper {
             let transform = self.line_transform(axis);
             let line = &self.line;
             context.material(&self.materials[axis], |context| {
-                context.transform(&transform, |context| context.mesh(line))
+                context.transform(&transform, |context| context.mesh_with_shadows(line, false, false))
             });
         }
     }

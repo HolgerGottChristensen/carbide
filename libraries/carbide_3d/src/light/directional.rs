@@ -3,9 +3,16 @@ use carbide::color::{Color, WHITE};
 use carbide::environment::Environment;
 use carbide::math::{InnerSpace, Matrix4, SquareMatrix, Vector3, Zero};
 use carbide::state::{IntoReadState, ReadState, StateSync};
+use crate::light::shadow::ShadowSettings;
 use crate::render::{Render3d, RenderContext3d};
 
-#[derive(Clone, Copy, Debug)]
+/// A light shining in one direction everywhere, like the sun: its direction is the way it shines,
+/// in the space of the node, so a light in a turned group turns with it. Its intensity is in lux.
+///
+/// It casts shadows unless [`CastsShadows`](crate::CastsShadows) is set to false around it, for
+/// example with `.casts_shadows(false)` on it, a group around it, or the `Scene3d`. Its shadow map
+/// covers a distance in front of the view's camera.
+#[derive(Clone, Debug)]
 pub struct DirectionalLight<D, C, I>
     where
         D: ReadState<T=Vector3<f32>>,
@@ -15,14 +22,11 @@ pub struct DirectionalLight<D, C, I>
     id: NodeId,
     /// Color of the light. The alpha component is not used.
     color: C,
-    /// Resolution of the shadow map cascades (in pix)
-    resolution: u16,
     /// Constant multiplier for the light.
     intensity: I,
     /// Direction of the sun.
     direction: D,
-    /// Distance from the camera that shadows should be calculated.
-    distance: f32,
+    shadow: ShadowSettings,
 }
 
 impl DirectionalLight<Vector3<f32>, Color, f32> {
@@ -30,10 +34,9 @@ impl DirectionalLight<Vector3<f32>, Color, f32> {
         DirectionalLight {
             id: Default::default(),
             color: WHITE,
-            resolution: 0,
             intensity: 10.0,
             direction: direction.into_read_state(),
-            distance: 0.0,
+            shadow: ShadowSettings::new(),
         }
     }
 }
@@ -43,10 +46,9 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> D
         DirectionalLight {
             id: self.id,
             color: color.into_read_state(),
-            resolution: self.resolution,
             intensity: self.intensity,
             direction: self.direction,
-            distance: self.distance,
+            shadow: self.shadow,
         }
     }
 
@@ -54,11 +56,30 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> D
         DirectionalLight {
             id: self.id,
             color: self.color,
-            resolution: self.resolution,
             intensity: intensity.into_read_state(),
             direction: self.direction,
-            distance: self.distance,
+            shadow: self.shadow,
         }
+    }
+
+    /// The shadow map's width and height in texels. 2048 by default.
+    pub fn shadow_resolution(mut self, resolution: u32) -> Self {
+        self.shadow.resolution = resolution;
+        self
+    }
+
+    /// How far, in metres, surfaces are moved towards the light before being tested, so they
+    /// don't shadow themselves. 2 cm by default.
+    pub fn shadow_bias(mut self, bias: f32) -> Self {
+        self.shadow.bias = bias;
+        self
+    }
+
+    /// The distance in front of the view's camera, in metres, that the shadow map covers. 10 m by
+    /// default.
+    pub fn shadow_distance(mut self, distance: f32) -> Self {
+        self.shadow.distance = distance;
+        self
     }
 }
 
@@ -78,7 +99,8 @@ impl<D: ReadState<T=Vector3<f32>>, C: ReadState<T=Color>, I: ReadState<T=f32>> R
             let color = *self.color.value();//.with_opacity(1.0);
             let intensity = *self.intensity.value();
             let direction = self.direction.value().normalize();
-            context.directional(color, intensity, direction)
+            let shadow = self.shadow.spec(context.env);
+            context.directional(color, intensity, direction, shadow)
         }
     }
 }

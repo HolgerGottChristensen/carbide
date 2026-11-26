@@ -4,13 +4,15 @@ use crate::mesh::Mesh;
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use carbide::state::{AnyReadState, IntoReadState, ReadState, StateSync};
 use crate::render::{Render3d, RenderContext3d};
+use crate::shadows::{CastsShadows, ReceivesShadows};
 
 /// A mesh drawn with a material. It sits at its own origin: move, turn or scale it with
 /// `.position()`, `.rotation()`, `.scale()` and the like, which wrap it in a
 /// [`Transformed`](crate::Transformed).
 ///
 /// The mesh can be a state of a [`Mesh`]: setting the state to another mesh changes the object's
-/// geometry.
+/// geometry. It casts and receives shadows unless [`CastsShadows`] or [`ReceivesShadows`] around
+/// it say otherwise.
 #[derive(Debug, Clone)]
 pub struct Object {
     id: NodeId,
@@ -32,9 +34,12 @@ impl Render3d for Object {
     fn render(&mut self, context: &mut RenderContext3d) {
         self.material.sync(context.env);
         self.mesh.sync(context.env);
+        // Inherited, like a style: cast and receive unless something around the object says not to.
+        let casts = context.env.get::<CastsShadows>().copied().unwrap_or(true);
+        let receives = context.env.get::<ReceivesShadows>().copied().unwrap_or(true);
 
         let mesh = self.mesh.value().clone();
-        context.material(&self.material, |context| context.mesh(&mesh))
+        context.material(&self.material, |context| context.mesh_with_shadows(&mesh, casts, receives))
     }
 }
 

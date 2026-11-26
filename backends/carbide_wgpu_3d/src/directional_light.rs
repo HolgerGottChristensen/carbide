@@ -1,5 +1,5 @@
 use encase::ShaderType;
-use carbide_core::math::{Matrix4, SquareMatrix, Vector2, Vector3, Zero};
+use carbide_core::math::{Matrix4, SquareMatrix, Vector3, Zero};
 
 #[derive(Debug, Clone, ShaderType)]
 pub struct WgpuDirectionalLightBuffer {
@@ -19,10 +19,10 @@ impl WgpuDirectionalLightBuffer {
             lights.push(WgpuDirectionalLight {
                 view_proj: Matrix4::identity(),
                 color: Vector3::zero(),
+                shadow_layer: -1,
                 direction: Vector3::zero(),
-                inv_resolution: Vector2::zero(),
-                atlas_offset: Vector2::zero(),
-                atlas_size: Vector2::zero(),
+                shadow_bias: 0.0,
+                shadow_scale: 1.0,
             });
         }
 
@@ -32,17 +32,17 @@ impl WgpuDirectionalLightBuffer {
 
 #[derive(Debug, Copy, Clone, ShaderType)]
 pub struct WgpuDirectionalLight {
-    /// View/Projection of directional light. Shadow rendering uses viewports
-    /// so this always outputs [-1, 1] no matter where in the atlast the shadow is.
+    /// From world space to the light's shadow map, when it casts shadows.
     pub view_proj: Matrix4<f32>,
-    /// Color/intensity of the light
+    /// The light's linear colour times its intensity in lux.
     pub color: Vector3<f32>,
-    /// Direction of the light
+    /// The light's layer in the shadow maps, or -1 when it casts none.
+    pub shadow_layer: i32,
+    /// The way the light shines, in world space.
     pub direction: Vector3<f32>,
-    /// 1 / resolution of whole shadow map
-    pub inv_resolution: Vector2<f32>,
-    /// [0, 1] offset of the shadow map in the atlas.
-    pub atlas_offset: Vector2<f32>,
-    /// [0, 1] size of the shadow map in the atlas.
-    pub atlas_size: Vector2<f32>,
+    /// How far surfaces are moved towards the light along their normal before the shadow test.
+    pub shadow_bias: f32,
+    /// The part of its layer the light's map fills, across and down: its resolution over the
+    /// layer's.
+    pub shadow_scale: f32,
 }

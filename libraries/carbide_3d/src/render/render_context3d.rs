@@ -5,7 +5,7 @@ use carbide::draw::Color;
 use carbide::environment::Environment;
 use carbide::render::Layer;
 use carbide::math::{Deg, Matrix4, Vector3};
-use crate::render::{InnerRenderContext3d, ViewSpec};
+use crate::render::{InnerRenderContext3d, LightShadow, ViewSpec};
 
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
@@ -32,20 +32,26 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
         res
     }
 
+    /// Draw `mesh`, casting and receiving shadows.
     pub fn mesh(&mut self, mesh: &Mesh) {
-        self.render.mesh(mesh)
+        self.render.mesh(mesh, true, true)
     }
 
-    pub fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>) {
-        self.render.directional(color, intensity, direction)
+    /// Draw `mesh`, casting and receiving shadows as given.
+    pub fn mesh_with_shadows(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool) {
+        self.render.mesh(mesh, casts_shadows, receives_shadows)
+    }
+
+    pub fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>, shadow: Option<LightShadow>) {
+        self.render.directional(color, intensity, direction, shadow)
     }
 
     pub fn point(&mut self, color: Color, intensity: f32, range: Option<f32>) {
         self.render.point(color, intensity, range)
     }
 
-    pub fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>) {
-        self.render.spot(color, intensity, range, inner, outer)
+    pub fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>, shadow: Option<LightShadow>) {
+        self.render.spot(color, intensity, range, inner, outer, shadow)
     }
 }
 

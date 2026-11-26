@@ -12,7 +12,7 @@ use carbide::d3::material::pbr_material::PbrMaterial;
 use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
-use carbide::d3::{AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d};
+use carbide::d3::{AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
 use carbide::draw::Scalar;
 use carbide::environment::{EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
@@ -78,6 +78,8 @@ pub struct Options {
     pub renderer: LocalState<Renderer>,
     /// Whether the axes are drawn at the origin.
     pub axes: LocalState<bool>,
+    /// Whether a floor is shown under the model, to catch its shadow.
+    pub floor: LocalState<bool>,
 
     pub color: LocalState<Color>,
     pub roughness: LocalState<Scalar>,
@@ -93,6 +95,8 @@ pub struct Options {
     pub light_kind: LocalState<LightKind>,
     /// The spot light's outer cone angle, in degrees; the inner angle is 60% of it.
     pub spot_angle: LocalState<Scalar>,
+    /// Whether the directional and spot lights cast shadows.
+    pub shadows: LocalState<bool>,
 
     /// The views' background.
     pub background: LocalState<Color>,
@@ -116,6 +120,7 @@ impl Options {
             views: LocalState::new(Views::One),
             renderer: LocalState::new(Renderer::Wgpu),
             axes: LocalState::new(false),
+            floor: LocalState::new(false),
             color: LocalState::new(RED),
             roughness: LocalState::new(0.5),
             spin: LocalState::new(false),
@@ -125,6 +130,7 @@ impl Options {
             light_intensity: LocalState::new(5.0),
             light_kind: LocalState::new(LightKind::Directional),
             spot_angle: LocalState::new(20.0),
+            shadows: LocalState::new(true),
             background: LocalState::new(TRANSPARENT),
             ground: LocalState::new(WHITE),
             ambient: LocalState::new(0.1),
@@ -295,9 +301,27 @@ fn nodes(model: Model, options: &Options) -> Vec<Box<dyn AnyNode3d>> {
 
     let mut nodes = options.lights();
     nodes.push(Group::new(parts).rotation(options.rotation()).boxed());
+    nodes.push(floor(model, options).boxed());
     // The scene's axes, which don't turn with the model.
     nodes.push(AxisHelper::new(1.0).shown(options.axes.clone()).boxed());
     nodes
+}
+
+/// A floor 6 metres square just under `model`, shown when the side bar says so: an empty mesh
+/// otherwise. It doesn't turn with the model.
+fn floor(model: Model, options: &Options) -> impl Node3dExt {
+    let height = match model {
+        Model::Empty => 0.0,
+        Model::Cube | Model::RenderBall => -0.5,
+        Model::Sphere => -0.6,
+        Model::Cubes => -0.2,
+    };
+
+    let (plane, empty) = (Mesh::plane(6.0, 6.0), Mesh::new(vec![], vec![]));
+    let mesh = Map1::read_map(options.floor.clone(), move |shown: &bool| if *shown { plane.clone() } else { empty.clone() });
+
+    Object::new(mesh, PbrMaterial::new().color(rgba_bytes(200, 200, 200, 1.0)).roughness(Some(0.9f32)))
+        .position(Vector3::new(0.0, height, 0.0))
 }
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
@@ -351,8 +375,13 @@ pub fn playground(options: Options) -> impl Widget {
 
     let scene = EnvUpdatingNew2::<_, ContextFactory3d, _>::new(options.factory(), scene);
 
+    // Shadows are inherited, like styles: set here, they reach every node of every view. Set on a
+    // simple widget: a `ui!` match is a proxy that its parent sees through, which would skip the
+    // modifier.
+    let scene = scene.padding(10.0).casts_shadows(options.shadows.clone());
+
     HSplit::new(
-        scene.padding(10.0),
+        scene,
         ZStack::new((
             Rectangle::new().fill(EnvironmentColor::TertiarySystemFill),
             side_bar(&options)
@@ -387,6 +416,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("None").tag(Renderer::None),
         )),
         Toggle::new("Show axes", options.axes.clone()),
+        Toggle::new("Floor", options.floor.clone()),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let material = VStack::new((
@@ -442,6 +472,11 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         shown_when(
             Map1::read_map(options.light_kind.clone(), |kind: &LightKind| *kind == LightKind::Spot),
             slider("Spot cone", &options.spot_angle, 5.0, 60.0, degrees),
+        ),
+        // Point lights don't cast shadows yet.
+        shown_when(
+            Map1::read_map(options.light_kind.clone(), |kind: &LightKind| *kind != LightKind::Point),
+            Toggle::new("Shadows", options.shadows.clone()),
         ),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 

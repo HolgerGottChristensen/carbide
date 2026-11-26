@@ -5,7 +5,6 @@ use carbide_core::math::Matrix4;
 pub struct WgpuObject {
     pub transform: Matrix4<f32>,
     pub material_index: u32,
+    /// 1 when shadows fall on the object, 0 when not.
+    pub receives_shadows: u32,
 }
-
-unsafe impl bytemuck::Zeroable for WgpuObject {}
-unsafe impl bytemuck::Pod for WgpuObject {}

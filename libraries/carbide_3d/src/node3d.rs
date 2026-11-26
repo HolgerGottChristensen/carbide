@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use carbide::math::{Matrix4, Vector3};
 use carbide::state::IntoReadState;
 use crate::transform::{Rotation, Scale, Transformed};
+use crate::shadows::{CastsShadows, ReceivesShadows, WithShadowSetting};
 use crate::render::{Render3d, RenderContext3d};
 
 #[derive(Clone, Debug, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -102,6 +103,18 @@ pub trait Node3dExt: AnyNode3d + Clone + Sized {
     /// The point the node is turned and scaled around. See [`Transformed::pivot`].
     fn pivot<P: IntoReadState<Vector3<f32>>>(self, pivot: P) -> Transformed<Self> {
         Transformed::new(self).pivot(pivot)
+    }
+
+    /// Whether this node and everything inside it cast shadows: lights from their shadow maps,
+    /// objects into them. Inherited, like a style; see [`shadows`](crate::shadows).
+    fn casts_shadows<S: IntoReadState<bool>>(self, casts: S) -> WithShadowSetting<Self, CastsShadows> {
+        WithShadowSetting::new(self, casts)
+    }
+
+    /// Whether shadows fall on the objects in this node. Inherited, like a style; see
+    /// [`shadows`](crate::shadows).
+    fn receives_shadows<S: IntoReadState<bool>>(self, receives: S) -> WithShadowSetting<Self, ReceivesShadows> {
+        WithShadowSetting::new(self, receives)
     }
 
     /// Transform the node by a whole matrix. See [`Transformed::transform`].

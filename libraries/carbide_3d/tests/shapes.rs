@@ -22,7 +22,8 @@ fn shapes_on_a_plane() {
         .position(Vector3::new(-0.8, 0.6, 0.0));
     let cube = Object::new(Mesh::cube(1.0), PbrMaterial::new().color(ORANGE))
         .position(Vector3::new(0.8, 0.5, 0.0));
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.0)).intensity(5.0);
+    // Without shadows, as when the golden was made: shadows are pinned down in `shadows.rs`.
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.0)).intensity(5.0).casts_shadows(false);
 
     let scene = Scene3d::new((floor, sphere, cube, light))
         .camera(Camera::perspective().look_at(Point3::new(0.0, 2.5, 4.0), Point3::new(0.0, 0.3, 0.0)))
@@ -46,7 +47,8 @@ fn an_obj_file() {
 
     // The render ball is 1 unit across, standing on the origin.
     let ball = Group::new(parts);
-    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.0)).intensity(5.0);
+    // Without shadows, as when the golden was made: shadows are pinned down in `shadows.rs`.
+    let light = DirectionalLight::new(Vector3::new(1.0, -2.0, -1.0)).intensity(5.0).casts_shadows(false);
 
     let scene = Scene3d::new((ball, light))
         .camera(Camera::perspective().look_at(Point3::new(0.0, 1.2, 1.8), Point3::new(0.0, 0.5, 0.0)))

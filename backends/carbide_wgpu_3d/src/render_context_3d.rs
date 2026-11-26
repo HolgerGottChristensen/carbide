@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
-use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, ColorTargetState, CompareFunction, DepthBiasState, DepthStencilState, Device, Face, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PipelineLayout, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, SamplerBindingType, SamplerDescriptor, ShaderModule, ShaderStages, StencilState, StoreOp, Texture, TextureFormat, TextureView, VertexState};
+use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, BufferBindingType, ColorTargetState, CompareFunction, DepthBiasState, Extent3d, TextureDimension, TextureUsages, TextureViewDescriptor, TextureViewDimension, DepthStencilState, Device, Face, FilterMode, FragmentState, FrontFace, IndexFormat, Operations, PipelineLayout, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPassDepthStencilAttachment, RenderPipeline, Sampler, SamplerBindingType, SamplerDescriptor, ShaderModule, ShaderStages, StencilState, StoreOp, Texture, TextureFormat, TextureView, VertexState};
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{InnerRenderContext3d, Tonemapping, ViewSpec};
+use carbide_3d::render::{InnerRenderContext3d, LightShadow, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
-use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector2, Vector3, Vector4, Zero};
+use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
 use carbide_core::render::{InnerLayer, Layer};
 use carbide_core::state::ReadState;
 use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
@@ -22,6 +22,7 @@ use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, W
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
 use crate::render_pass_command::RenderPassCommand;
+use crate::shadow::{directional_view_proj, layer_size, spot_view_proj, ShadowRequest, ShadowTarget, SHADOW_FORMAT};
 use crate::storage_buffer::StorageBuffer;
 use crate::uniforms::WgpuUniforms;
 use crate::mesh_cache::MeshCache;
@@ -35,10 +36,11 @@ const SAMPLE_COUNT: u32 = 4;
 
 /// Renders a `Scene3d` into its layer with wgpu.
 ///
-/// The nodes' calls during a frame build a draw list: the materials, objects (a transform and a
-/// material), the meshes to draw and directional lights. [`render`](InnerRenderContext3d::render)
-/// uploads the list and draws it in one render pass into the layer. Only the GPU state below is
-/// kept between frames; meshes are uploaded again every frame.
+/// The nodes' calls during a frame build a draw list: the materials, objects (a transform, a
+/// material and whether shadows fall on it), the meshes to draw, the lights and the shadow maps
+/// they ask for. [`render`](InnerRenderContext3d::render) uploads the list, draws a depth-only
+/// pass into each shadow map, and then draws the scene in one render pass into the layer. Meshes'
+/// GPU copies live in the shared [`MeshCache`]; the GPU state below is kept between frames.
 #[derive(Debug)]
 pub struct WgpuRenderContext3d {
     material_stack: Vec<(WgpuMaterial, WgpuPbrMaterialTextures)>,
@@ -53,6 +55,8 @@ pub struct WgpuRenderContext3d {
     punctual_lights: Vec<WgpuPunctualLight>,
     /// The scene's hemisphere light: sky, ground and intensity, as last given.
     hemisphere: (Color, Color, f32),
+    /// The shadow maps to draw, one per light that casts shadows, in layer order.
+    shadow_requests: Vec<ShadowRequest>,
 
     /// Used when the environment has no shared [`MeshCache`], for example when the context was
     /// created without the plugin.
@@ -85,6 +89,16 @@ struct GpuState {
     /// The multisampled colour target, resolved into the layer, with its size and format.
     multisampled: Option<((u32, u32, TextureFormat), TextureView)>,
     texture_bind_groups: HashMap<WgpuPbrMaterialTextures, BindGroup>,
+
+    /// The objects and a light's view-projection, for the shadow pass.
+    shadow_layout: BindGroupLayout,
+    /// Draws casting meshes' depth into a shadow map.
+    shadow_pipeline: RenderPipeline,
+    /// Compares depths in the shadow maps, `GreaterEqual` for reverse-Z.
+    shadow_sampler: Sampler,
+    /// The shadow maps, one layer per light, with their size and layer count: a single texel when
+    /// no light casts shadows, since the main pass always binds them.
+    shadow_maps: Option<((u32, u32), Texture, TextureView)>,
 }
 
 impl WgpuRenderContext3d {
@@ -98,6 +112,7 @@ impl WgpuRenderContext3d {
             directional_lights: vec![],
             punctual_lights: vec![],
             hemisphere: (WHITE, WHITE, 0.1),
+            shadow_requests: vec![],
             fallback_mesh_cache: None,
             commands: vec![],
             image_context: ImageContext3d,
@@ -115,24 +130,21 @@ impl WgpuRenderContext3d {
         self.objects.clear();
         self.directional_lights.clear();
         self.punctual_lights.clear();
+        self.shadow_requests.clear();
 
         self.commands.clear();
     }
 
-    fn ensure_current_object(&mut self) {
-        let material_index = self.current_material.as_ref().unwrap().2 as u32;
-        let transform = *self.transform_stack.last().unwrap();
+    fn ensure_current_object(&mut self, receives_shadows: bool) {
+        let object = WgpuObject {
+            transform: *self.transform_stack.last().unwrap(),
+            material_index: self.current_material.as_ref().unwrap().2 as u32,
+            receives_shadows: receives_shadows as u32,
+        };
 
-        if let Some(object) = self.objects.last() {
-            if object.material_index == material_index && object.transform == transform {
-                return;
-            }
+        if self.objects.last() != Some(&object) {
+            self.objects.push(object);
         }
-
-        self.objects.push(WgpuObject {
-            transform,
-            material_index,
-        })
     }
 
     fn ensure_current_material(&mut self, material: &WgpuMaterial, tex: &WgpuPbrMaterialTextures) {
@@ -151,20 +163,41 @@ impl WgpuRenderContext3d {
 }
 
 impl WgpuRenderContext3d {
-    /// A point or spot light at the origin of the current transform, shining along its -Z.
-    fn punctual(&mut self, color: Color, intensity: f32, range: Option<f32>, cone_scale: f32, cone_offset: f32) {
+    /// A point or spot light at the origin of the current transform, shining along its -Z. A spot
+    /// light that casts shadows gives its outer angle with its shadow settings.
+    fn punctual(&mut self, color: Color, intensity: f32, range: Option<f32>, cone_scale: f32, cone_offset: f32, shadow: Option<(LightShadow, Deg<f32>)>) {
         let transform = *self.transform_stack.last().unwrap();
+        let position = transform * Vector4::new(0.0, 0.0, 0.0, 1.0);
         let direction = (transform * Vector4::new(0.0, 0.0, -1.0, 0.0)).truncate();
         let direction = if direction.magnitude2() > f32::EPSILON { direction.normalize() } else { -Vector3::unit_z() };
 
+        let (view_proj, shadow_layer, shadow_bias) = match shadow {
+            Some((settings, outer)) => {
+                let layer = self.request_shadow(ShadowTarget::Punctual { index: self.punctual_lights.len() }, settings);
+                (spot_view_proj(position.truncate(), direction, outer), layer, settings.bias)
+            }
+            None => (Matrix4::identity(), -1, 0.0),
+        };
+
         self.punctual_lights.push(WgpuPunctualLight {
-            position: transform * Vector4::new(0.0, 0.0, 0.0, 1.0),
+            view_proj,
+            position,
             direction: direction.extend(0.0),
             color: linear(color) * intensity,
             range: range.unwrap_or(0.0).max(0.0),
             cone_scale,
             cone_offset,
+            shadow_layer,
+            shadow_bias,
+            // Set when rendering, once the layer size is known.
+            shadow_scale: 1.0,
         });
+    }
+
+    /// Ask for a shadow map for a light, and return its layer.
+    fn request_shadow(&mut self, target: ShadowTarget, settings: LightShadow) -> i32 {
+        self.shadow_requests.push(ShadowRequest { target, settings });
+        self.shadow_requests.len() as i32 - 1
     }
 }
 
@@ -220,6 +253,22 @@ impl GpuState {
                     count: None,
                 },
                 storage(3),
+                BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Depth,
+                        view_dimension: TextureViewDimension::D2Array,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Comparison),
+                    count: None,
+                },
             ],
         });
 
@@ -246,7 +295,82 @@ impl GpuState {
             border_color: None,
         });
 
+        let shadow_shader = device.create_shader_module(preprocess_shader("pbr/shadow.wgsl"));
+
+        let vertex_storage = |binding: u32| BindGroupLayoutEntry {
+            visibility: ShaderStages::VERTEX,
+            ..storage(binding)
+        };
+
+        let shadow_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("carbide_3d_shadow_layout"),
+            entries: &[vertex_storage(0), vertex_storage(1)],
+        });
+
+        let shadow_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("carbide_3d_shadow_pipeline_layout"),
+            bind_group_layouts: &[&shadow_layout],
+            push_constant_ranges: &[],
+        });
+
+        let shadow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("carbide_3d_shadow_pipeline"),
+            layout: Some(&shadow_pipeline_layout),
+            vertex: VertexState {
+                module: &shadow_shader,
+                entry_point: Some("shadow_vs"),
+                compilation_options: Default::default(),
+                buffers: &[WgpuVertex::desc()],
+            },
+            primitive: PrimitiveState {
+                topology: PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: FrontFace::Ccw,
+                // Both sides, so open meshes such as planes cast shadows from either side.
+                cull_mode: None,
+                unclipped_depth: false,
+                polygon_mode: PolygonMode::Fill,
+                conservative: false,
+            },
+            depth_stencil: Some(DepthStencilState {
+                format: SHADOW_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: CompareFunction::GreaterEqual,
+                stencil: StencilState::default(),
+                // Pushed away from the light (smaller, in reverse-Z) on slopes, against acne on
+                // surfaces at grazing angles. The normal offset in the lookup does the rest.
+                bias: DepthBiasState {
+                    constant: 0,
+                    slope_scale: -1.5,
+                    clamp: 0.0,
+                },
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            fragment: None,
+            multiview: None,
+            cache: None,
+        });
+
+        let shadow_sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("carbide_3d_shadow_sampler"),
+            address_mode_u: AddressMode::ClampToEdge,
+            address_mode_v: AddressMode::ClampToEdge,
+            address_mode_w: AddressMode::ClampToEdge,
+            mag_filter: FilterMode::Linear,
+            min_filter: FilterMode::Linear,
+            mipmap_filter: FilterMode::Nearest,
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 0.0,
+            compare: Some(CompareFunction::GreaterEqual),
+            anisotropy_clamp: 1,
+            border_color: None,
+        });
+
         GpuState {
+            shadow_layout,
+            shadow_pipeline,
+            shadow_sampler,
+            shadow_maps: None,
             shader,
             scene_layout,
             lighting_layout,
@@ -314,6 +438,38 @@ impl GpuState {
         }
 
         &self.multisampled.as_ref().unwrap().1
+    }
+
+    /// The shadow maps, recreated when the layer size or count changes: `layers` layers of `size`
+    /// by `size` texels.
+    fn shadow_maps(&mut self, device: &Device, size: u32, layers: u32) -> &Texture {
+        if self.shadow_maps.as_ref().map(|(key, _, _)| *key) != Some((size, layers)) {
+            let texture = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("carbide_3d_shadow_maps"),
+                size: Extent3d {
+                    width: size,
+                    height: size,
+                    depth_or_array_layers: layers,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: TextureDimension::D2,
+                format: SHADOW_FORMAT,
+                usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+
+            // An array view even with one layer, as the shader reads an array.
+            let view = texture.create_view(&TextureViewDescriptor {
+                label: Some("carbide_3d_shadow_maps_view"),
+                dimension: Some(TextureViewDimension::D2Array),
+                ..Default::default()
+            });
+
+            self.shadow_maps = Some(((size, layers), texture, view));
+        }
+
+        &self.shadow_maps.as_ref().unwrap().1
     }
 
     /// Create the pipeline for `format` if it doesn't exist yet.
@@ -407,6 +563,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         gpu.depth_view(device, width, height);
         gpu.multisampled_view(device, width, height, render_target.texture_format());
         gpu.ensure_pipeline(device, render_target.texture_format());
+        gpu.shadow_maps(device, layer_size(&self.shadow_requests), self.shadow_requests.len().max(1) as u32);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("carbide_3d_encoder"),
@@ -453,6 +610,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         let mut objects_buffer = StorageBuffer::from(self.objects.clone());
 
         let aspect_ratio = width as f32 / height as f32;
+        let inv_view = camera.view.invert().unwrap_or(Matrix4::identity());
         let mut camera_buffer = StorageBuffer::from(WgpuCamera {
             view: camera.view,
             view_proj: camera.view_projection,
@@ -462,7 +620,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 camera.view.z,
                 Vector4::unit_w(),
             ),
-            inv_view: camera.view.invert().unwrap_or(Matrix4::identity()),
+            inv_view,
             aspect_ratio,
         });
         let (sky, ground, intensity) = self.hemisphere;
@@ -481,8 +639,35 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             },
         });
 
-        let mut directional_lights = StorageBuffer::from(WgpuDirectionalLightBuffer::new(self.directional_lights.clone()));
-        let mut point_lights = StorageBuffer::from(WgpuPunctualLightBuffer::new(self.punctual_lights.clone()));
+        // Each shadow map's view-projection, and the part of its layer it fills. Directional maps
+        // follow the camera, so they are placed now.
+        let shadow_size = layer_size(&self.shadow_requests);
+        let mut directional = self.directional_lights.clone();
+        let mut punctual = self.punctual_lights.clone();
+        let mut shadow_view_projs = Vec::with_capacity(self.shadow_requests.len());
+
+        for request in &self.shadow_requests {
+            let resolution = request.settings.resolution.clamp(1, shadow_size);
+            let scale = resolution as f32 / shadow_size as f32;
+
+            let view_proj = match request.target {
+                ShadowTarget::Directional { index, direction } => {
+                    let view_proj = directional_view_proj(direction, inv_view, &request.settings);
+                    directional[index].view_proj = view_proj;
+                    directional[index].shadow_scale = scale;
+                    view_proj
+                }
+                ShadowTarget::Punctual { index } => {
+                    punctual[index].shadow_scale = scale;
+                    punctual[index].view_proj
+                }
+            };
+
+            shadow_view_projs.push((view_proj, resolution));
+        }
+
+        let mut directional_lights = StorageBuffer::from(WgpuDirectionalLightBuffer::new(directional));
+        let mut point_lights = StorageBuffer::from(WgpuPunctualLightBuffer::new(punctual));
 
         materials_buffer.write_buffer(device, queue);
         objects_buffer.write_buffer(device, queue);
@@ -530,8 +715,79 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     binding: 3,
                     resource: uniforms.binding().unwrap(),
                 },
+                BindGroupEntry {
+                    binding: 4,
+                    resource: BindingResource::TextureView(&gpu.shadow_maps.as_ref().unwrap().2),
+                },
+                BindGroupEntry {
+                    binding: 5,
+                    resource: BindingResource::Sampler(&gpu.shadow_sampler),
+                },
             ],
         });
+
+        // A depth-only pass per shadow map, drawing the meshes that cast shadows from the light.
+        let shadow_texture = gpu.shadow_maps.as_ref().unwrap().1.clone();
+        for (layer, (view_proj, resolution)) in shadow_view_projs.iter().enumerate() {
+            let mut view_proj_buffer = StorageBuffer::from(*view_proj);
+            view_proj_buffer.write_buffer(device, queue);
+
+            let shadow_bind_group = device.create_bind_group(&BindGroupDescriptor {
+                label: Some("carbide_3d_shadow_bind_group"),
+                layout: &gpu.shadow_layout,
+                entries: &[
+                    BindGroupEntry {
+                        binding: 0,
+                        resource: objects_buffer.binding().unwrap(),
+                    },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: view_proj_buffer.binding().unwrap(),
+                    },
+                ],
+            });
+
+            let layer_view = shadow_texture.create_view(&TextureViewDescriptor {
+                label: Some("carbide_3d_shadow_layer"),
+                dimension: Some(TextureViewDimension::D2),
+                base_array_layer: layer as u32,
+                array_layer_count: Some(1),
+                ..Default::default()
+            });
+
+            let mut shadow_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("carbide_3d_shadow_pass"),
+                color_attachments: &[],
+                depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                    view: &layer_view,
+                    // Cleared to the far plane: where nothing is drawn, nothing is shadowed.
+                    depth_ops: Some(Operations {
+                        load: wgpu::LoadOp::Clear(0.0),
+                        store: StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+
+            shadow_pass.set_pipeline(&gpu.shadow_pipeline);
+            shadow_pass.set_bind_group(0, &shadow_bind_group, &[]);
+            // A smaller map fills the layer's top-left corner.
+            shadow_pass.set_viewport(0.0, 0.0, *resolution as f32, *resolution as f32, 0.0, 1.0);
+
+            for command in &self.commands {
+                if let RenderPassCommand::DrawMesh { mesh, object, casts_shadows: true } = command {
+                    let Some(cached) = meshes.get(mesh.id()) else {
+                        continue;
+                    };
+
+                    shadow_pass.set_vertex_buffer(0, cached.vertex_buffer.slice(..));
+                    shadow_pass.set_index_buffer(cached.index_buffer.slice(..), IndexFormat::Uint32);
+                    shadow_pass.draw_indexed(0..cached.index_count, 0, *object..*object + 1);
+                }
+            }
+        }
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -565,7 +821,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
             for command in &self.commands {
                 match command {
-                    RenderPassCommand::DrawMesh { mesh, object } => {
+                    RenderPassCommand::DrawMesh { mesh, object, .. } => {
                         // A mesh with no triangles has no GPU copy, and nothing to draw.
                         let Some(cached) = meshes.get(mesh.id()) else {
                             continue;
@@ -587,18 +843,18 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         queue.submit(std::iter::once(encoder.finish()));
     }
 
-    fn mesh(&mut self, mesh: &Mesh) {
+    fn mesh(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool) {
         let Some((material, material_tex)) = self.material_stack.last().cloned() else {
             // A mesh outside any material has nothing to be shaded with.
             return;
         };
 
         self.ensure_current_material(&material, &material_tex);
-        self.ensure_current_object();
+        self.ensure_current_object(receives_shadows);
 
         // A clone of the handle: it keeps the mesh alive until this frame is drawn.
         let object = self.objects.len() as u32 - 1;
-        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object });
+        self.commands.push(RenderPassCommand::DrawMesh { mesh: mesh.clone(), object, casts_shadows });
     }
 
     fn material(&mut self, material: &Material, env: &mut Environment) {
@@ -628,31 +884,43 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         self.transform_stack.pop();
     }
 
-    fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>) {
+    fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>, shadow: Option<LightShadow>) {
         // The direction is in the space of the current transform: turn it into world space.
         let world = (*self.transform_stack.last().unwrap() * direction.extend(0.0)).truncate();
         if world.magnitude2() <= f32::EPSILON {
             return;
         }
 
+        let direction = world.normalize();
+
+        // The map follows the view's camera, so its view-projection is set when rendering.
+        let (shadow_layer, shadow_bias) = match shadow {
+            Some(settings) => {
+                let target = ShadowTarget::Directional { index: self.directional_lights.len(), direction };
+                (self.request_shadow(target, settings), settings.bias)
+            }
+            None => (-1, 0.0),
+        };
+
         self.directional_lights.push(WgpuDirectionalLight {
             view_proj: Matrix4::identity(),
             color: linear(color) * intensity,
-            direction: world.normalize(),
-            inv_resolution: Vector2::zero(),
-            atlas_offset: Vector2::zero(),
-            atlas_size: Vector2::zero(),
+            shadow_layer,
+            direction,
+            shadow_bias,
+            shadow_scale: 1.0,
         })
     }
 
     fn point(&mut self, color: Color, intensity: f32, range: Option<f32>) {
-        self.punctual(color, intensity, range, 0.0, 1.0);
+        // Point lights don't cast shadows yet: they need cube maps.
+        self.punctual(color, intensity, range, 0.0, 1.0, None);
     }
 
-    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>) {
+    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>, shadow: Option<LightShadow>) {
         let (cos_inner, cos_outer) = (Rad::from(inner).0.cos(), Rad::from(outer).0.cos());
         let scale = 1.0 / (cos_inner - cos_outer).max(0.001);
-        self.punctual(color, intensity, range, scale, -cos_outer * scale);
+        self.punctual(color, intensity, range, scale, -cos_outer * scale, shadow.map(|shadow| (shadow, outer)));
     }
 
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32) {

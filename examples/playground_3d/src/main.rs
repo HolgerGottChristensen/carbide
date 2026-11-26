@@ -69,11 +69,39 @@ mod tests {
             harness.render();
         }
 
+        // Shadows on a floor, from the directional and the spot light.
+        *options.floor.clone().value_mut() = true;
+        *options.shadows.clone().value_mut() = true;
+        for kind in [LightKind::Spot, LightKind::Directional] {
+            *options.light_kind.clone().value_mut() = kind;
+            harness.render();
+        }
+
         // Spinning, with time moving on so the animation runs.
         *options.spin.clone().value_mut() = true;
         harness.render();
         harness.advance_time(std::time::Duration::from_secs(1));
         harness.render();
+    }
+
+    /// The cube on the floor, with the side bar's shadows toggle off and on. Pins down that the
+    /// toggle reaches the views: turning it on changes many pixels, not just the checkbox.
+    #[test]
+    fn the_shadows_toggle_reaches_the_views() {
+        let options = Options::new();
+        *options.floor.clone().value_mut() = true;
+        *options.shadows.clone().value_mut() = false;
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let off = harness.pixels().as_raw().to_vec();
+
+        *options.shadows.clone().value_mut() = true;
+        harness.render();
+        let on = harness.pixels().as_raw().to_vec();
+
+        let changed = off.iter().zip(&on).filter(|(a, b)| a != b).count();
+        assert!(changed > 10_000, "only {changed} bytes changed: the shadow should show on the floor");
     }
 
     /// The main view, orthographic, pinched outwards. Pins down that the pinch zooms by changing the
@@ -94,3 +122,4 @@ mod tests {
         assert!((height - 2.0 * (-0.5f64).exp()).abs() < 1e-3, "the height slider shows {height}");
     }
 }
+

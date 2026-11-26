@@ -4,6 +4,7 @@ use carbide::math::{Deg, Matrix4, SquareMatrix};
 use carbide::state::{AnyReadState, IntoReadState, Map1, ReadState, StateSync};
 
 use crate::node3d::{AnyNode3d, CommonNode3d, NodeId};
+use crate::light::shadow::ShadowSettings;
 use crate::render::{Render3d, RenderContext3d};
 
 /// A light shining from a point in a cone, at its node's origin, along its node's -Z (forward, where
@@ -21,6 +22,7 @@ pub struct SpotLight {
     range: Box<dyn AnyReadState<T=Option<f32>>>,
     inner: Box<dyn AnyReadState<T=Deg<f32>>>,
     outer: Box<dyn AnyReadState<T=Deg<f32>>>,
+    shadow: ShadowSettings,
 }
 
 impl SpotLight {
@@ -34,6 +36,7 @@ impl SpotLight {
             range: Box::new(None::<f32>),
             inner: Box::new(inner.into_read_state()),
             outer: Box::new(outer.into_read_state()),
+            shadow: ShadowSettings::new(),
         }
     }
 
@@ -56,6 +59,19 @@ impl SpotLight {
         self
     }
 
+    /// The shadow map's width and height in texels. 2048 by default.
+    pub fn shadow_resolution(mut self, resolution: u32) -> SpotLight {
+        self.shadow.resolution = resolution;
+        self
+    }
+
+    /// How far, in metres, surfaces are moved towards the light before being tested, so they
+    /// don't shadow themselves. 2 cm by default.
+    pub fn shadow_bias(mut self, bias: f32) -> SpotLight {
+        self.shadow.bias = bias;
+        self
+    }
+
     /// The angles from the light's axis: full brightness within `inner`, dark beyond `outer`.
     pub fn angles<I: IntoReadState<Deg<f32>>, O: IntoReadState<Deg<f32>>>(mut self, inner: I, outer: O) -> SpotLight {
         self.inner = Box::new(inner.into_read_state());
@@ -73,7 +89,7 @@ impl StateSync for SpotLight {
 impl Render3d for SpotLight {
     fn render(&mut self, context: &mut RenderContext3d) {
         self.sync(context.env);
-        context.spot(*self.color.value(), *self.intensity.value(), *self.range.value(), *self.inner.value(), *self.outer.value());
+        context.spot(*self.color.value(), *self.intensity.value(), *self.range.value(), *self.inner.value(), *self.outer.value(), self.shadow.spec(context.env));
     }
 }
 

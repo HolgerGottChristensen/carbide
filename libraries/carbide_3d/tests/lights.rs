@@ -74,7 +74,7 @@ fn a_range_ends_a_light() {
 }
 
 /// A spot light 1.5 metres above the floor's centre, turned to shine straight down, with a cone
-/// of 15° inside and 25° outside. Pins down that a spot light shines along its node's +Z, aimed
+/// of 15° inside and 25° outside. Pins down that a spot light shines along its node's -Z, aimed
 /// with `.rotation()`: a bright disc under it with a soft edge, and darkness outside the cone.
 #[test]
 fn a_spot_light_lights_a_cone() {

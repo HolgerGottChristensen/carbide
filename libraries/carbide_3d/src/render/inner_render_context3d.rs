@@ -5,7 +5,7 @@ use carbide::environment::Environment;
 use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
-use crate::render::ViewSpec;
+use crate::render::{LightShadow, ViewSpec};
 use crate::material::Material;
 use crate::{InnerImageContext3d, Mesh};
 
@@ -16,7 +16,9 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     /// looking as `view` says.
     fn render(&mut self, layer: Layer, camera: CameraSpec, view: ViewSpec, env: &mut Environment);
 
-    fn mesh(&mut self, mesh: &Mesh);
+    /// Draw `mesh` with the current material and transform. `casts_shadows` says whether it
+    /// casts shadows from lights that cast them, and `receives_shadows` whether shadows fall on it.
+    fn mesh(&mut self, mesh: &Mesh, casts_shadows: bool, receives_shadows: bool);
 
     fn material(&mut self, material: &Material, env: &mut Environment);
     fn pop_material(&mut self);
@@ -27,8 +29,9 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     fn pop_transform(&mut self);
 
     /// A directional light. `direction` is the way the light shines, in the space of the current
-    /// transform: a light inside a rotated group turns with it.
-    fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>);
+    /// transform: a light inside a rotated group turns with it. `intensity` is in lux. With
+    /// `shadow`, it casts shadows.
+    fn directional(&mut self, color: Color, intensity: f32, direction: Vector3<f32>, shadow: Option<LightShadow>);
 
     /// A point light at the origin of the current transform. `intensity` is in candela, `range`
     /// (in metres) is where it has faded to nothing, and `color` is in sRGB.
@@ -36,7 +39,7 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
 
     /// A spot light at the origin of the current transform, shining along its -Z: full brightness
     /// within `inner` of its axis, dark beyond `outer`. Otherwise as [`point`](Self::point).
-    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>);
+    fn spot(&mut self, color: Color, intensity: f32, range: Option<f32>, inner: Deg<f32>, outer: Deg<f32>, shadow: Option<LightShadow>);
 
     /// The scene's ambient light: `sky` lights surfaces facing up, `ground` surfaces facing down,
     /// blended by each surface's normal, both times `intensity`. Colours are in sRGB.

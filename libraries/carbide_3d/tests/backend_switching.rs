@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, RenderContext3dId, ViewSpec};
+use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, LightShadow, RenderContext3dId, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh, NoopImageContext3d, Scene3d};
 use carbide_core::color::Color;
 use carbide_core::draw::Dimension;
@@ -43,7 +43,7 @@ impl InnerRenderContext3d for RecordingContext {
         EVENTS.lock().unwrap().push(format!("render {}", self.name));
     }
 
-    fn mesh(&mut self, _mesh: &Mesh) {}
+    fn mesh(&mut self, _mesh: &Mesh, _casts_shadows: bool, _receives_shadows: bool) {}
 
     fn material(&mut self, _material: &Material, _env: &mut Environment) {}
 
@@ -53,11 +53,11 @@ impl InnerRenderContext3d for RecordingContext {
 
     fn pop_transform(&mut self) {}
 
-    fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>) {}
+    fn directional(&mut self, _color: Color, _intensity: f32, _direction: Vector3<f32>, _shadow: Option<LightShadow>) {}
 
     fn point(&mut self, _color: Color, _intensity: f32, _range: Option<f32>) {}
 
-    fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>) {}
+    fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>, _shadow: Option<LightShadow>) {}
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {}
 
