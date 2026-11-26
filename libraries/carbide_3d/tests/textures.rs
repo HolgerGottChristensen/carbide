@@ -4,11 +4,13 @@ use carbide_3d::camera::Camera;
 use carbide_3d::light::DirectionalLight;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::{Mesh, Object, Scene3d};
+use carbide_3d::material::ao_mr_textures::AoMRTextures;
 use carbide_3d::material::normal_texture::NormalTexture;
 use carbide_3d::material::normal_texture_y_direction::NormalTextureYDirection;
 use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::Node3dExt;
 use carbide_core::color::WHITE;
+use carbide_core::draw::Color;
 use carbide_core::state::{LocalState, State};
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
 use carbide_core::math::{Deg, Euler, Matrix3, Point3, Vector3};
@@ -274,4 +276,182 @@ fn a_normal_mapped_plane_and_sphere() {
     let id = store_dome_normal_map(&mut harness);
     *normal.clone().value_mut() = NormalTexture::Tricomponent(id, NormalTextureYDirection::Up);
     harness.snapshot("domes");
+}
+
+/// How a test plane is lit.
+#[derive(Clone, Copy)]
+enum Lighting {
+    /// A light straight down onto the plane, seen from straight above: the highlight is in the
+    /// middle, where roughness and metallic show. No ambient light.
+    Highlight,
+    /// Ambient light only, which occlusion darkens.
+    Ambient,
+}
+
+/// The brightness of the middle of a grey plane seen from straight above. `maps` stores the
+/// images it needs and gives the material's maps; `roughness` and `metallic` are the material's
+/// factors.
+fn aomr_brightness(lighting: Lighting, roughness: f32, metallic: f32, occlusion: f32, maps: impl FnOnce(&mut Harness) -> AoMRTextures) -> u32 {
+    let textures = LocalState::new(AoMRTextures::None);
+    let material = PbrMaterial::new()
+        .color(Color::new_rgba(120, 120, 120, 255))
+        .roughness(Some(roughness))
+        .metallic(metallic)
+        .ambient_occlusion(occlusion)
+        .aomr_textures(textures.clone());
+
+    let plane = Object::new(Mesh::plane(4.0, 4.0), material);
+    let camera = Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0));
+    // The light, off for ambient lighting, and the ambient light, off for the highlight.
+    let (light, ambient) = match lighting {
+        Lighting::Highlight => (3.0, 0.0),
+        Lighting::Ambient => (0.0, 1.0),
+    };
+    let scene = Scene3d::new((plane, DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(light)))
+        .ambient(WHITE, ambient)
+        .camera(camera);
+
+    let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
+    *textures.clone().value_mut() = maps(&mut harness);
+    harness.render();
+
+    let pixel = harness.pixels().get_pixel(30, 30).0;
+    pixel[0] as u32 + pixel[1] as u32 + pixel[2] as u32
+}
+
+/// Assert that a map of `low` and `high` (as bytes) renders as the factors `low / 255` and
+/// `high / 255` do without a map, and that the two differ.
+fn assert_map_matches_factor(name: &str, lighting: Lighting, value: impl Fn(f32) -> (f32, f32, f32), maps: impl Fn(&mut Harness, u8) -> AoMRTextures) {
+    let (low, high) = (64u8, 230u8);
+    let factor = |byte: u8| byte as f32 / 255.0;
+
+    let plain = |byte: u8| {
+        let (roughness, metallic, occlusion) = value(factor(byte));
+        aomr_brightness(lighting, roughness, metallic, occlusion, |_| AoMRTextures::None)
+    };
+    let mapped = |byte: u8| {
+        let (roughness, metallic, occlusion) = value(1.0);
+        aomr_brightness(lighting, roughness, metallic, occlusion, |harness| maps(harness, byte))
+    };
+
+    let (plain_low, plain_high) = (plain(low), plain(high));
+    assert!(plain_low.abs_diff(plain_high) > 20, "{name}: the factor makes no difference: {plain_low} and {plain_high}");
+
+    for byte in [low, high] {
+        let (with_map, without) = (mapped(byte), plain(byte));
+        assert!(with_map.abs_diff(without) <= 6, "{name}: a map of {byte} gives {with_map}, the factor alone {without}");
+    }
+}
+
+/// Roughness, metallic and occlusion maps, in each of the layouts `AoMRTextures` has, multiply the
+/// material's factors by the right channel: a map of a value renders as that factor does.
+#[test]
+fn occlusion_metallic_and_roughness_maps() {
+    use Lighting::{Ambient, Highlight};
+    // The material's (roughness, metallic, occlusion) for a value of the channel under test.
+    let roughness = |v: f32| (v, 0.0, 1.0);
+    let metallic = |v: f32| (0.5, v, 1.0);
+    let occlusion = |v: f32| (0.5, 0.0, v);
+
+    let image = |harness: &mut Harness, rgb: [u8; 3]| Some(store_flat_image(harness, [rgb[0], rgb[1], rgb[2], 255]));
+
+    // Combined: occlusion, roughness and metallic in red, green and blue of one map.
+    assert_map_matches_factor("combined roughness", Highlight, roughness, |h, b| AoMRTextures::Combined { texture: image(h, [255, b, 255]) });
+    assert_map_matches_factor("combined metallic", Highlight, metallic, |h, b| AoMRTextures::Combined { texture: image(h, [255, 255, b]) });
+    assert_map_matches_factor("combined occlusion", Ambient, occlusion, |h, b| AoMRTextures::Combined { texture: image(h, [b, 255, 255]) });
+
+    // Split: roughness and metallic in red and green; occlusion in its own map's red.
+    assert_map_matches_factor("split roughness", Highlight, roughness, |h, b| AoMRTextures::Split { ao_texture: None, mr_texture: image(h, [b, 255, 0]) });
+    assert_map_matches_factor("split metallic", Highlight, metallic, |h, b| AoMRTextures::Split { ao_texture: None, mr_texture: image(h, [255, b, 0]) });
+    assert_map_matches_factor("split occlusion", Ambient, occlusion, |h, b| AoMRTextures::Split { ao_texture: image(h, [b, 0, 0]), mr_texture: None });
+
+    // Swizzled split: roughness and metallic in green and blue.
+    assert_map_matches_factor("swizzled roughness", Highlight, roughness, |h, b| AoMRTextures::SwizzledSplit { ao_texture: None, mr_texture: image(h, [0, b, 255]) });
+    assert_map_matches_factor("swizzled metallic", Highlight, metallic, |h, b| AoMRTextures::SwizzledSplit { ao_texture: None, mr_texture: image(h, [0, 255, b]) });
+
+    // Greyscale maps, each read from red.
+    assert_map_matches_factor("greyscale roughness", Highlight, roughness, |h, b| AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: image(h, [b, b, b]) });
+    assert_map_matches_factor("greyscale metallic", Highlight, metallic, |h, b| AoMRTextures::BWSplit { ao_texture: None, m_texture: image(h, [b, b, b]), r_texture: None });
+    assert_map_matches_factor("greyscale occlusion", Ambient, occlusion, |h, b| AoMRTextures::BWSplit { ao_texture: image(h, [b, b, b]), m_texture: None, r_texture: None });
+}
+
+/// A roughness map with the material's roughness unset is used as it is, as glTF's factor of 1,
+/// not multiplied by the default of 0, which would make it a mirror.
+#[test]
+fn an_unset_roughness_uses_the_map() {
+    let render = |roughness: Option<f32>, map: Option<u8>| {
+        let textures = LocalState::new(AoMRTextures::None);
+        let mut material = PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).aomr_textures(textures.clone());
+        if let Some(roughness) = roughness {
+            material = material.roughness(Some(roughness));
+        }
+        let scene = Scene3d::new((Object::new(Mesh::plane(4.0, 4.0), material), DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(3.0)))
+            .ambient(WHITE, 0.0)
+            .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
+
+        let mut harness = Harness::new(scene, Dimension::new(60.0, 60.0));
+        if let Some(byte) = map {
+            let id = store_flat_image(&mut harness, [byte, byte, byte, 255]);
+            *textures.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(id) };
+        }
+        harness.render();
+        let pixel = harness.pixels().get_pixel(30, 30).0;
+        pixel[0] as u32 + pixel[1] as u32 + pixel[2] as u32
+    };
+
+    let unset_with_map = render(None, Some(204));
+    let set_to_map_value = render(Some(0.8), None);
+    let mirror = render(Some(0.0), None);
+    assert!(unset_with_map.abs_diff(set_to_map_value) <= 6, "unset roughness with a map of 0.8: {unset_with_map}, roughness 0.8: {set_to_map_value}");
+    assert!(unset_with_map.abs_diff(mirror) > 20, "looks like a mirror: {unset_with_map} against {mirror}");
+}
+
+/// A 64×64 image of eight vertical stripes, alternating between `a` and `b` in every channel.
+fn store_stripes(harness: &mut Harness, a: u8, b: u8) -> ImageId {
+    let mut data = Vec::with_capacity(64 * 64 * 4);
+    for _row in 0..64 {
+        for column in 0..64 {
+            let value = if (column / 8) % 2 == 0 { a } else { b };
+            data.extend_from_slice(&[value, value, value, 255]);
+        }
+    }
+    let id = ImageId::temp(ImageFormat::Png);
+    let texture = Texture { width: 64, height: 64, bytes_per_row: 64 * 4, format: TextureFormat::RGBA8, data: &data };
+    WgpuImageContext.update_texture(&id, texture, harness.environment_mut());
+    id
+}
+
+/// Left: a sphere with a roughness map of glossy (0.3) and matte (0.9) stripes running from pole
+/// to pole, 24 around, lit from the front left: the highlight shows on the glossy stripes and
+/// fades on the matte ones. Right: a plane under ambient light only, with stripes of 0.25 and 1 as
+/// its occlusion map: the occluded stripes are darker.
+#[test]
+fn roughness_and_occlusion_maps() {
+    let roughness = LocalState::new(AoMRTextures::None);
+    let occlusion = LocalState::new(AoMRTextures::None);
+
+    let mut sphere_material = PbrMaterial::new().color(Color::new_rgba(40, 90, 200, 255)).aomr_textures(roughness.clone());
+    sphere_material.uv_transform0 = Matrix3::from_nonuniform_scale(3.0, 1.0);
+    let sphere = Scene3d::new((
+        Object::new(Mesh::icosphere(1.0, 4), sphere_material),
+        DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
+    ))
+        .ambient(WHITE, 0.2)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let plane = Scene3d::new(Object::new(Mesh::plane(2.0, 2.0), PbrMaterial::new().color(Color::new_rgba(200, 200, 200, 255)).aomr_textures(occlusion.clone())))
+        .ambient(WHITE, 1.0)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 2.2, 0.8), Point3::new(0.0, 0.0, 0.0)))
+        .frame(200.0, 200.0);
+
+    let mut harness = Harness::new(HStack::new((sphere, plane)).spacing(10.0), Dimension::new(410.0, 200.0));
+
+    let roughness_stripes = store_stripes(&mut harness, 77, 230);
+    *roughness.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: Some(roughness_stripes) };
+
+    let occlusion_stripes = store_stripes(&mut harness, 64, 255);
+    *occlusion.clone().value_mut() = AoMRTextures::BWSplit { ao_texture: Some(occlusion_stripes), m_texture: None, r_texture: None };
+
+    harness.snapshot("stripes");
 }

@@ -21,7 +21,7 @@ use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
 use std::path::{Path, PathBuf};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
-use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, ReadState, State};
+use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, Map6, ReadState, State};
 use carbide::time::Duration;
 use carbide::ui;
 use carbide::widget::*;
@@ -255,6 +255,12 @@ pub struct Options {
     pub surface: LocalState<Surface>,
     /// The surfaces to pick from, read at startup (`surfaces`).
     pub surfaces: Vec<Surface>,
+    /// Whether each of the surface's maps is used, to compare the model with and without it.
+    pub use_color_map: LocalState<bool>,
+    pub use_normal_map: LocalState<bool>,
+    pub use_roughness_map: LocalState<bool>,
+    pub use_occlusion_map: LocalState<bool>,
+    pub use_metallic_map: LocalState<bool>,
     pub roughness: LocalState<Scalar>,
     pub metallic: LocalState<Scalar>,
     pub reflectance: LocalState<Scalar>,
@@ -318,6 +324,11 @@ impl Options {
             color: LocalState::new(RED),
             surface: LocalState::new(Surface::none()),
             surfaces: surfaces(),
+            use_color_map: LocalState::new(true),
+            use_normal_map: LocalState::new(true),
+            use_roughness_map: LocalState::new(true),
+            use_occlusion_map: LocalState::new(true),
+            use_metallic_map: LocalState::new(true),
             roughness: LocalState::new(0.5),
             metallic: LocalState::new(0.0),
             reflectance: LocalState::new(0.5),
@@ -458,10 +469,31 @@ impl Options {
         })
     }
 
+    /// The chosen surface, without the maps switched off in the side bar.
+    fn active_surface(&self) -> impl ReadState<T=Surface> + Clone + use<> {
+        Map6::read_map(
+            self.surface.clone(),
+            self.use_color_map.clone(),
+            self.use_normal_map.clone(),
+            self.use_roughness_map.clone(),
+            self.use_occlusion_map.clone(),
+            self.use_metallic_map.clone(),
+            |surface: &Surface, color: &bool, normal: &bool, roughness: &bool, occlusion: &bool, metallic: &bool| Surface {
+                name: surface.name.clone(),
+                albedo: surface.albedo.clone().filter(|_| *color),
+                normal: surface.normal.clone().filter(|_| *normal),
+                roughness: surface.roughness.clone().filter(|_| *roughness),
+                ambient_occlusion: surface.ambient_occlusion.clone().filter(|_| *occlusion),
+                metallic: surface.metallic.clone().filter(|_| *metallic),
+            },
+        )
+    }
+
     fn material(&self) -> PbrMaterial {
+        let surface = self.active_surface();
         let f32_of = |state: &LocalState<Scalar>| Map1::read_map(state.clone(), |value: &Scalar| *value as f32);
         // The surface's colour map or the colour, alone or times the vertex colours.
-        let albedo = Map3::read_map(self.color.clone(), self.surface.clone(), self.vertex_colors.clone(), |color: &Color, surface: &Surface, vertex: &bool| {
+        let albedo = Map3::read_map(self.color.clone(), surface.clone(), self.vertex_colors.clone(), |color: &Color, surface: &Surface, vertex: &bool| {
             match (surface.albedo.clone(), *vertex) {
                 (Some(texture), true) => AlbedoComponent::TextureVertex { texture, srgb: true },
                 (Some(texture), false) => AlbedoComponent::Texture(texture),
@@ -479,8 +511,8 @@ impl Options {
             .ambient_occlusion(f32_of(&self.ambient_occlusion))
             .emissive(self.emissive.clone())
             .emissive_strength(f32_of(&self.emissive_strength))
-            .normal(Map1::read_map(self.surface.clone(), |surface: &Surface| surface.normal_texture()))
-            .aomr_textures(Map1::read_map(self.surface.clone(), |surface: &Surface| surface.aomr()))
+            .normal(Map1::read_map(surface.clone(), |surface: &Surface| surface.normal_texture()))
+            .aomr_textures(Map1::read_map(surface, |surface: &Surface| surface.aomr()))
     }
 
     /// `view` with the side bar's background, interactivity, exposure and tone mapping. A click on
@@ -769,13 +801,21 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             options.surface.clone(),
             options.surfaces.iter().map(|surface| Text::new(surface.name.clone()).tag(surface.clone())).collect::<Vec<_>>(),
         ),
-        shown_when(
-            Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
-            note("The colour and normal maps are drawn. The roughness, occlusion and metallic maps are loaded, and show once the renderer samples them."),
-        ),
+        // A checkbox for each map the surface has, to see the model with and without it.
+        VStack::new((
+            map_toggle(options, "Colour map", &options.use_color_map, |surface| surface.albedo.is_some()),
+            map_toggle(options, "Normal map", &options.use_normal_map, |surface| surface.normal.is_some()),
+            map_toggle(options, "Roughness map", &options.use_roughness_map, |surface| surface.roughness.is_some()),
+            map_toggle(options, "Occlusion map", &options.use_occlusion_map, |surface| surface.ambient_occlusion.is_some()),
+            map_toggle(options, "Metallic map", &options.use_metallic_map, |surface| surface.metallic.is_some()),
+            shown_when(
+                Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
+                note("The roughness and metallic sliders scale the material's maps."),
+            ),
+        )).cross_axis_alignment(CrossAxisAlignment::Start),
         // A colour map takes the colour's place, so the colour picker gives way while one is used.
         shown_when(
-            Map1::read_map(options.surface.clone(), |surface: &Surface| surface.albedo.is_none()),
+            Map1::read_map(options.active_surface(), |surface: &Surface| surface.albedo.is_none()),
             Picker::new("Colour", options.color.clone(), (
                 Text::new("Red").tag(RED),
                 Text::new("Orange").tag(ORANGE),
@@ -917,6 +957,14 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
 
 /// `widget`, shown only while `condition` holds: an option that can't apply while other options
 /// are as they are is left out of the side bar, taking no room.
+/// A checkbox for one of the surface's maps, shown only when the chosen surface has it.
+fn map_toggle(options: &Options, label: &str, used: &LocalState<bool>, has: fn(&Surface) -> bool) -> impl Widget + use<> {
+    shown_when(
+        Map1::read_map(options.surface.clone(), move |surface: &Surface| has(surface)),
+        Toggle::new(label.to_string(), used.clone()),
+    )
+}
+
 fn shown_when(condition: impl ReadState<T=bool> + Clone + 'static, widget: impl Widget) -> impl Widget {
     IfElse::new(condition).when_true(widget)
 }

@@ -197,6 +197,43 @@ mod tests {
         harness.render();
     }
 
+    /// Each of a material folder's maps can be switched off and on from the side bar: off, the
+    /// model changes; on again, it is as it was.
+    #[test]
+    fn each_map_can_be_switched_off() {
+        let options = Options::new();
+        *options.surface.clone().value_mut() = options.surfaces.iter().find(|surface| surface.name == "Ground068").unwrap().clone();
+        // Rough enough that the roughness map shows, at its own values.
+        *options.roughness.clone().value_mut() = 1.0;
+
+        // The 3D view only: the side bar's checkboxes change too.
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let all_maps = view(&mut harness);
+
+        for (name, toggle) in [
+            ("colour", &options.use_color_map),
+            ("normal", &options.use_normal_map),
+            ("roughness", &options.use_roughness_map),
+            ("occlusion", &options.use_occlusion_map),
+        ] {
+            *toggle.clone().value_mut() = false;
+            harness.render();
+            let without = view(&mut harness);
+            let changed = all_maps.iter().zip(&without).filter(|(a, b)| a != b).count();
+            assert!(changed > 1_000, "the {name} map off changes only {changed} bytes of the view");
+
+            *toggle.clone().value_mut() = true;
+            harness.render();
+            assert!(view(&mut harness) == all_maps, "the {name} map on again doesn't restore the model");
+        }
+    }
+
     /// The cube in the main view, hovered and then clicked twice. Pins down picking in the
     /// playground: the pointer over the cube sets the hovered state, a click selects it and records
     /// where it hit, and a second click deselects it.

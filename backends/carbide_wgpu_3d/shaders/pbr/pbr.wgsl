@@ -144,7 +144,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     }
     pixel.normal = get_normal(material, in, coords, uvdx, uvdy);
 
-    let aomr = get_aomr(material);
+    let aomr = get_aomr(material, coords, uvdx, uvdy);
     pixel.ambient_occlusion = aomr.x;
     pixel.metallic = aomr.y;
 

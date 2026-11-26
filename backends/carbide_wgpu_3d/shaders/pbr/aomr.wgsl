@@ -1,82 +1,54 @@
+// --- Ambient occlusion, metallic and roughness ---
+//
+// The material's values, each multiplied by its map when one is loaded. The maps are data, read
+// through their linear views, and laid out as the material's `AoMRTextures` says:
+// - AOMR_COMBINED: one map, in the roughness slot: occlusion in red, roughness in green, metallic
+//   in blue, as glTF packs them.
+// - AOMR_SPLIT: occlusion in the occlusion map's red; roughness and metallic in the roughness
+//   map's red and green.
+// - AOMR_SWIZZLED_SPLIT: as split, with roughness and metallic in green and blue.
+// - AOMR_BW_SPLIT: three greyscale maps, each read from red.
+// Returns occlusion, metallic and perceptual roughness.
+fn get_aomr(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
+    var ambient_occlusion = material.ambient_occlusion;
+    var metallic = material.metallic;
+    var perceptual_roughness = material.roughness;
 
-// --- AO, Metallic, and Roughness ---
-fn get_aomr(material: Material) -> vec3<f32> {
-    var ambient_occlusion: f32;
-    var metallic: f32;
-    var perceptual_roughness: f32;
+    let has_ao = (material.texture_enable & 0x4u) != 0u;
+    let has_metallic = (material.texture_enable & 0x8u) != 0u;
+    let has_roughness = (material.texture_enable & 0x10u) != 0u;
 
-    //if (extract_material_flag(material.flags, FLAGS_AOMR_COMBINED)) {
-        // In roughness texture:
-        // Red: AO
-        // Green: Roughness
-        // Blue: Metallic
-        //if (has_roughness_texture(&material)) {
-            //let aomr = roughness_texture(&material, s, coords, uvdx, uvdy);
-            //pixel.ambient_occlusion = material.ambient_occlusion * aomr[0];
-            //pixel.perceptual_roughness = material.roughness * aomr[1];
-            //pixel.metallic = material.metallic * aomr[2];
-        //} else {
-            ambient_occlusion = material.ambient_occlusion;
-            perceptual_roughness = material.roughness;
-            metallic = material.metallic;
-        //}
-    //} else if (extract_material_flag(material.flags, FLAGS_AOMR_BW_SPLIT)) {
-        // In ao texture:
-        // Red: AO
-        // In metallic texture:
-        // Red: Metallic
-        // In roughness texture:
-        // Red: Roughness
-        //if (has_roughness_texture(&material)) {
-            //pixel.perceptual_roughness = material.roughness * roughness_texture(&material, s, coords, uvdx, uvdy).r;
-        //} else {
-            //pixel.perceptual_roughness = material.roughness;
-        //}
-
-        //if (has_metallic_texture(&material)) {
-            //pixel.metallic = material.metallic * metallic_texture(&material, s, coords, uvdx, uvdy).r;
-        //} else {
-            //pixel.metallic = material.metallic;
-        //}
-
-        //if (has_ambient_occlusion_texture(&material)) {
-            //pixel.ambient_occlusion = material.ambient_occlusion * ambient_occlusion_texture(&material, s, coords, uvdx, uvdy).r;
-        //} else {
-            //pixel.ambient_occlusion = material.ambient_occlusion;
-        //}
-    //} else {
-        // In ao texture:
-        // Red: AO
-        //
-        // In roughness texture (FLAGS_AOMR_SPLIT):
-        // Red: Roughness
-        // Green: Metallic
-        //
-        // In roughness texture (FLAGS_AOMR_SWIZZLED_SPLIT):
-        // Green: Roughness
-        // Blue: Metallic
-        //if (has_roughness_texture(&material)) {
-            //let texture_read = roughness_texture(&material, s, coords, uvdx, uvdy);
-            //var rm: vec2<f32>;
-            //if (extract_material_flag(material.flags, FLAGS_AOMR_SWIZZLED_SPLIT)) {
-                //rm = texture_read.gb;
-            //} else {
-                //rm = texture_read.rg;
-            //}
-            //pixel.perceptual_roughness = material.roughness * rm[0];
-            //pixel.metallic = material.metallic * rm[1];
-        //} else {
-            //pixel.perceptual_roughness = material.roughness;
-            //pixel.metallic = material.metallic;
-        //}
-
-        //if (has_ambient_occlusion_texture(&material)) {
-            //let texture_read = ambient_occlusion_texture(&material, s, coords, uvdx, uvdy);
-            //pixel.ambient_occlusion = material.ambient_occlusion * texture_read.r;
-        //} else {
-            //pixel.ambient_occlusion = material.ambient_occlusion;
-        //}
-    //}
+    if ((material.flags & 0x40u) != 0u) {
+        if (has_roughness) {
+            let orm = sample_material_texture(roughness_tex, material, coords, ddx, ddy);
+            ambient_occlusion *= orm.r;
+            perceptual_roughness *= orm.g;
+            metallic *= orm.b;
+        }
+    } else if ((material.flags & 0x200u) != 0u) {
+        if (has_ao) {
+            ambient_occlusion *= sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r;
+        }
+        if (has_metallic) {
+            metallic *= sample_material_texture(metallic_tex, material, coords, ddx, ddy).r;
+        }
+        if (has_roughness) {
+            perceptual_roughness *= sample_material_texture(roughness_tex, material, coords, ddx, ddy).r;
+        }
+    } else {
+        if (has_ao) {
+            ambient_occlusion *= sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r;
+        }
+        if (has_roughness) {
+            let texel = sample_material_texture(roughness_tex, material, coords, ddx, ddy);
+            var roughness_metallic = texel.rg;
+            if ((material.flags & 0x80u) != 0u) {
+                roughness_metallic = texel.gb;
+            }
+            perceptual_roughness *= roughness_metallic.x;
+            metallic *= roughness_metallic.y;
+        }
+    }
 
     return vec3<f32>(ambient_occlusion, metallic, perceptual_roughness);
 }

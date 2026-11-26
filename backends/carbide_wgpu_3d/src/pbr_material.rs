@@ -51,7 +51,11 @@ impl WgpuPbrMaterial {
             uv_transform0: material.uv_transform0,
             uv_transform1: material.uv_transform1,
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
-            roughness: material.roughness_factor.value().unwrap_or(0.0),
+            // Unset, the roughness is the map's when there is one (a factor of 1, as glTF's
+            // default), and 0 without one.
+            roughness: material.roughness_factor.value().unwrap_or(
+                if material.aomr_textures.value().to_roughness_texture().is_some() { 1.0 } else { 0.0 }
+            ),
             metallic: *material.metallic.value(),
             reflectance: *material.reflectance.value(),
             clear_coat: *material.clearcoat.value(),
