@@ -17,13 +17,11 @@ use carbide_core::plugin::Plugin;
 use carbide_core::register;
 use carbide_wgpu_core::WgpuContextNew;
 
-pub use image_context_3d::ImageContext3d;
 pub use render_context_3d::WgpuRenderContext3d;
 pub use mesh_cache::{CachedMesh, MeshCache};
 
 mod camera;
 mod directional_light;
-mod image_context_3d;
 mod material;
 mod mesh_cache;
 mod object;

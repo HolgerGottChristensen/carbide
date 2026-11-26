@@ -11,7 +11,7 @@ use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_core::widget::AnyWidget;
 use carbide_wgpu_core::WgpuContextNew;
 
-pub use crate::image_context::WGPUImageContext;
+pub use crate::image_context::WgpuImageContext;
 pub use crate::wgpu_msaa::WgpuMsaa;
 use crate::offscreen_renderer::{OffscreenRenderer, TargetSize};
 

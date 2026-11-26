@@ -7,7 +7,7 @@ use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::render::{LightShadow, ViewSpec, MeshSettings, PickSample};
 use crate::material::Material;
-use crate::{InnerImageContext3d, Mesh};
+use crate::Mesh;
 
 pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     fn start(&mut self);
@@ -52,8 +52,6 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     /// The scene's ambient light: `sky` lights surfaces facing up, `ground` surfaces facing down,
     /// blended by each surface's normal, both times `intensity`. Colours are in sRGB.
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32);
-
-    fn image_context(&mut self) -> &mut dyn InnerImageContext3d;
 }
 
 dyn_clone::clone_trait_object!(InnerRenderContext3d);

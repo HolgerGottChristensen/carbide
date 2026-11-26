@@ -491,7 +491,7 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
             picking: false,
         };
 
-        ctx.layer(self.layer, Rect::new(self.position, self.dimension), |layer, env| {
+        ctx.layer(self.layer, Rect::new(self.position, self.dimension), |layer, image, env| {
             self.render_context.start();
 
             // Borrowed only while the nodes render. Nodes must not reach back into their own
@@ -507,6 +507,7 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
             content.nodes.foreach_mut(&mut |node| {
                 node.render(&mut RenderContext3d {
                     render: &mut *self.render_context,
+                    image: &mut *image,
                     env,
                     picking: &mut self.picking,
                 });

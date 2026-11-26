@@ -4,7 +4,7 @@ use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
 use crate::camera::CameraSpec;
 use crate::material::Material;
-use crate::{InnerImageContext3d, Mesh, NoopImageContext3d};
+use crate::Mesh;
 use crate::render::{InnerRenderContext3d, LightShadow, MeshSettings, ViewSpec};
 
 /// The render context of a scene without a 3D renderer, used until a
@@ -45,28 +45,5 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     }
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {
-    }
-
-    fn image_context(&mut self) -> &mut dyn InnerImageContext3d {
-        // `NoopImageContext3d` is zero-sized, so leaking a box of it allocates nothing.
-        Box::leak(Box::new(NoopImageContext3d))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use carbide::draw::ImageId;
-    use carbide::environment::Environment;
-    use crate::render::{InnerRenderContext3d, NoopRenderContext3d};
-
-    #[test]
-    fn image_context_has_no_textures() {
-        let mut env = Environment::new();
-        let mut context = NoopRenderContext3d;
-        let image_context = context.image_context();
-        let id = ImageId::new("missing.png");
-
-        assert!(!image_context.texture_exist(&id, &mut env));
-        assert_eq!(image_context.texture_dimensions(&id, &mut env), None);
     }
 }

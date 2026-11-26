@@ -5,8 +5,8 @@ mod svg;
 
 use crate::accessibility::Accessibility;
 use crate::accessibility::AccessibilityContext;
-use crate::draw::pre_multiply::PreMultiply;
-use crate::draw::{Dimension, ImageId, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar, Texture, TextureFormat};
+use crate::draw::load_local_raster;
+use crate::draw::{Dimension, ImageId, ImageMetrics, ImageMode, ImageOptions, Position, Rect, Scalar};
 #[cfg(feature = "svg")]
 use crate::draw::SystemImageManager;
 use crate::environment::EnvironmentColor;
@@ -23,8 +23,6 @@ use accesskit::{Node, Point, Role, Size};
 use std::fs::File;
 #[cfg(feature = "svg")]
 use std::io::{BufReader, Read};
-use std::path::PathBuf;
-use std::sync::Arc;
 use url::Url;
 use carbide::draw::ImageFormat;
 
@@ -207,31 +205,9 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Layout for Image<Id, C> {
                 if !ctx.image.exist(image_id, ctx.env) => {
                     Self::svg_unsupported(ctx, image_id);
                 }
-            (ImageId::Local(path, ..), _) => {
-                if !ctx.image.exist(image_id, ctx.env) {
-                    let full_path = if path.is_relative() {
-                        let assets = crate::locate_folder::Search::KidsThenParents(3, 5)
-                            .for_folder("assets")
-                            .unwrap();
-
-                        assets.join(&**path)
-                    } else {
-                        path.to_path_buf()
-                    };
-
-                    let image = image::open(&full_path)
-                        .unwrap_or_else(|_| panic!("Couldn't load image: {}", full_path.display()))
-                        .pre_multiplied();
-
-                    let texture = Texture {
-                        width: image.width(),
-                        height: image.height(),
-                        bytes_per_row: image.width() * 4,
-                        format: TextureFormat::RGBA8,
-                        data: &image.to_rgba8().into_raw(),
-                    };
-
-                    ctx.image.update_texture(image_id, texture, ctx.env);
+            (ImageId::Local(..), _) => {
+                if let Err(error) = load_local_raster(image_id, ctx.image, ctx.env) {
+                    panic!("{}", error);
                 }
             }
             (ImageId::Remote(url, ..), _) => {
@@ -309,10 +285,6 @@ impl<Id: ReadState<T=ImageId>, C: ReadState<T=Style>> Image<Id, C> {
 
     fn load_remote_raster(_ctx: &mut LayoutContext, url: &Url) {
         todo!("Load image from url: {}", url);
-    }
-
-    fn load_local_raster(_ctx: &mut LayoutContext, _path: &Arc<PathBuf>) {
-
     }
 }
 

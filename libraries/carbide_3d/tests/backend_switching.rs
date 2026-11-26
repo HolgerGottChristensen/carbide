@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
 use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, LightShadow, RenderContext3dId, ViewSpec};
-use carbide_3d::{InnerImageContext3d, Mesh, NoopImageContext3d, Scene3d};
+use carbide_3d::{Mesh, Scene3d};
 use carbide_core::color::Color;
 use carbide_core::draw::Dimension;
 use carbide_core::environment::Environment;
@@ -26,13 +26,12 @@ fn take_events() -> Vec<String> {
 #[derive(Debug, Clone)]
 struct RecordingContext {
     name: &'static str,
-    image_context: NoopImageContext3d,
 }
 
 impl RecordingContext {
     fn create(name: &'static str) -> Box<dyn InnerRenderContext3d> {
         EVENTS.lock().unwrap().push(format!("create {name}"));
-        Box::new(RecordingContext { name, image_context: NoopImageContext3d })
+        Box::new(RecordingContext { name })
     }
 }
 
@@ -60,10 +59,6 @@ impl InnerRenderContext3d for RecordingContext {
     fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>, _shadow: Option<LightShadow>) {}
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {}
-
-    fn image_context(&mut self) -> &mut dyn InnerImageContext3d {
-        &mut self.image_context
-    }
 }
 
 struct BackendA;

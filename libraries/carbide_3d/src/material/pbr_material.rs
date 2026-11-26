@@ -1,3 +1,4 @@
+use carbide::draw::ImageId;
 use crate::material::albedo_component::AlbedoComponent;
 use crate::material::ao_mr_textures::AoMRTextures;
 use crate::material::clearcoat_textures::ClearcoatTextures;
@@ -10,7 +11,7 @@ use carbide::color::{BLACK, WHITE};
 use carbide::environment::Environment;
 use carbide::draw::Color;
 use carbide::math::{Matrix3, SquareMatrix};
-use carbide::state::{AnyReadState, IntoReadState, Map1, StateSync};
+use carbide::state::{AnyReadState, IntoReadState, Map1, StateSync, ReadState};
 
 // Consider:
 //
@@ -99,6 +100,30 @@ impl Default for PbrMaterial {
 }
 
 impl PbrMaterial {
+    /// Every image the material samples, each once: albedo, normal, occlusion, metallic,
+    /// roughness and clear coat. Read from the current values, so sync the material first.
+    pub fn textures(&self) -> Vec<ImageId> {
+        let albedo = self.albedo.value().to_texture().cloned();
+        let normal = self.normal.value().to_texture().cloned();
+
+        let mut textures: Vec<ImageId> = Vec::new();
+        for id in [
+            albedo.as_ref(),
+            normal.as_ref(),
+            self.aomr_textures.to_ao_texture(),
+            self.aomr_textures.to_metallic_texture(),
+            self.aomr_textures.to_roughness_texture(),
+            self.clearcoat_textures.to_clearcoat_texture(),
+            self.clearcoat_textures.to_clearcoat_roughness_texture(),
+        ].into_iter().flatten() {
+            if *id != ImageId::None && !textures.contains(id) {
+                textures.push(id.clone());
+            }
+        }
+
+        textures
+    }
+
     pub fn color<C: IntoReadState<AlbedoComponent>>(self, color: C) -> PbrMaterial {
         PbrMaterial {
             albedo: color.into_dyn_read_state(),

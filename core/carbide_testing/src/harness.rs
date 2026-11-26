@@ -25,7 +25,7 @@ use carbide_winit::window::WindowId;
 use carbide_winit::{update_scale_factor, NewEventHandler};
 
 use carbide_core::plugin::register_plugins;
-use carbide_wgpu::testing::{HeadlessRenderer, WGPUImageContext, WgpuMsaa};
+use carbide_wgpu::testing::{HeadlessRenderer, WgpuImageContext, WgpuMsaa};
 
 use crate::snapshot::{self, SnapshotOptions};
 use crate::test_scene::TestScene;
@@ -324,6 +324,19 @@ impl Harness {
         result.unwrap()
     }
 
+    /// The harness's environment, to read what the widgets and plugins keep there, such as a
+    /// renderer's resources. Render first (`render`, `snapshot` or `pixels`) to see the state after
+    /// a frame.
+    pub fn environment(&self) -> &Environment<'static> {
+        &self.env
+    }
+
+    /// The harness's environment, to change it between frames, or to read keys with exclusive
+    /// access.
+    pub fn environment_mut(&mut self) -> &mut Environment<'static> {
+        &mut self.env
+    }
+
     /// Keeps whatever `scale_factor`/`msaa` this `Harness` was constructed with (see
     /// `new_with_options`) — only the logical dimension changes.
     pub fn resize(&mut self, dimension: Dimension) {
@@ -335,7 +348,7 @@ impl Harness {
             renderer.resize(physical.0, physical.1, scale_factor, env);
 
             scenes[0].process_window_event(&WindowEvent::Resize(dimension), &mut WindowEventContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
                 is_current: &false,
                 window_id: &0,
@@ -370,7 +383,7 @@ impl Harness {
         let physical = PhysicalPosition::new(position.x * scale_factor, position.y * scale_factor);
 
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.cursor_moved(physical, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.cursor_moved(physical, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -378,7 +391,7 @@ impl Harness {
     pub fn mouse_press(&mut self, button: MouseButton) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.mouse_input(button, ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.mouse_input(button, ElementState::Pressed, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -386,7 +399,7 @@ impl Harness {
     pub fn mouse_release(&mut self, button: MouseButton) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.mouse_input(button, ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.mouse_input(button, ElementState::Released, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -409,7 +422,7 @@ impl Harness {
         let physical = PhysicalPosition::new(delta_x * scale_factor, delta_y * scale_factor);
 
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.mouse_wheel(MouseScrollDelta::PixelDelta(physical), window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.mouse_wheel(MouseScrollDelta::PixelDelta(physical), window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -424,7 +437,7 @@ impl Harness {
     pub fn pinch(&mut self, delta: f64) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.pinch(delta, carbide_core::event::TouchPhase::Move, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.pinch(delta, carbide_core::event::TouchPhase::Move, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -445,7 +458,7 @@ impl Harness {
     pub fn smart_scale(&mut self) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.smart_scale(window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.smart_scale(window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -459,7 +472,7 @@ impl Harness {
     pub fn key_press(&mut self, key: Key) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.keyboard(key.clone(), key.clone(), ElementState::Pressed, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.keyboard(key.clone(), key.clone(), ElementState::Pressed, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -467,7 +480,7 @@ impl Harness {
     pub fn key_release(&mut self, key: Key) {
         let window_id = self.window_id;
         self.with_env_scope(|env, scenes, event_handler, _renderer| {
-            event_handler.keyboard(key.clone(), key.clone(), ElementState::Released, window_id, scenes, &mut WGPUImageContext, env);
+            event_handler.keyboard(key.clone(), key.clone(), ElementState::Released, window_id, scenes, &mut WgpuImageContext, env);
         });
         self.refocus();
     }
@@ -493,7 +506,7 @@ impl Harness {
     /// widget's own polling (typically inside its `Render::render()`) picks up the result.
     pub fn run_async_tasks(&mut self) {
         let mut ctx = AsyncContext {
-            image: &mut WGPUImageContext,
+            image: &mut WgpuImageContext,
             env: &mut self.env,
         };
         check_tasks(&mut ctx);
@@ -529,12 +542,12 @@ impl Harness {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
@@ -542,7 +555,7 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
@@ -647,12 +660,12 @@ impl Harness {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
@@ -660,11 +673,11 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
-            renderer.render(scene, dimension, scale_factor, &mut WGPUImageContext, env);
+            renderer.render(scene, dimension, scale_factor, &mut WgpuImageContext, env);
         });
     }
 
@@ -685,12 +698,12 @@ impl Harness {
             let scene = &mut scenes[0];
 
             scene.process_update(&mut UpdateContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
             scene.calculate_size(dimension, &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
@@ -698,11 +711,11 @@ impl Harness {
             scene.set_position(Alignment::Center.position(Position::new(0.0, 0.0), dimension, child_dimension));
 
             scene.position_children(Rect::new(Position::new(0.0, 0.0), dimension), &mut LayoutContext {
-                image: &mut WGPUImageContext,
+                image: &mut WgpuImageContext,
                 env,
             });
 
-            renderer.render_instructions_json(scene, dimension, scale_factor, &mut WGPUImageContext, env)
+            renderer.render_instructions_json(scene, dimension, scale_factor, &mut WgpuImageContext, env)
         })
     }
 

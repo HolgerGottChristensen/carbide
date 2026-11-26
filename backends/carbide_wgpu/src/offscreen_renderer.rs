@@ -12,10 +12,10 @@ use carbide_core::math::Matrix4;
 use carbide_core::render::RenderContext;
 use carbide_core::text::{TextContext, TextContextKey};
 use carbide_core::widget::{AnyWidget, FilterId};
-use carbide_wgpu_core::WgpuContextNew;
+use carbide_wgpu_core::{WgpuContextNew, WgpuTextureStore};
 
 use crate::bind_groups::{filter_buffer_bind_group, gradient_dashes_bind_group, size_to_uniform_bind_group, uniforms_to_bind_group};
-use crate::image_context::BindGroupExtended;
+use crate::image_context::{create_bind_group_from_view, BindGroupExtended};
 use crate::pipeline::{create_pipelines, RenderPipelines};
 use crate::render_context::{Uniform, WGPURenderContext};
 use crate::render_pass_command::{RenderPass, RenderPassCommand, WGPUBindGroup};
@@ -209,9 +209,12 @@ impl OffscreenRenderer {
         text: &mut dyn TextContext,
         wgpu_context: &mut WgpuContext,
         wgpu_context_new: &WgpuContextNew,
+        textures: &WgpuTextureStore,
         encoder: &mut CommandEncoder,
     ) {
         let mut uniform_bind_groups = vec![];
+
+        Self::ensure_image_bind_groups(&render_passes, textures, &wgpu_context_new.device, wgpu_context);
 
         Self::ensure_vertices_in_buffer(&wgpu_context_new.device, &wgpu_context_new.queue, self.render_context.vertices(), &mut self.vertex_buffer.0, &mut self.vertex_buffer.1);
         Self::ensure_uniforms_in_buffer(&wgpu_context_new.device, &self.carbide_to_wgpu_matrix, self.render_context.uniforms(), &wgpu_context.uniform_bind_group_layout, &mut uniform_bind_groups);
@@ -242,8 +245,8 @@ impl OffscreenRenderer {
     pub(crate) fn render_child(&mut self, child: &mut dyn AnyWidget, dimensions: Dimension, scale_factor: Scalar, ctx: &mut RenderContext, encoder: &mut CommandEncoder) {
         let render_passes = self.build_render_passes(child, dimensions, scale_factor, ctx);
 
-        let (wgpu_context, wgpu_context_new, text_context) = ctx.env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey)>().unwrap();
-        self.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, encoder);
+        let (wgpu_context, wgpu_context_new, text_context, textures) = ctx.env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey, WgpuTextureStore)>().unwrap();
+        self.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, textures, encoder);
     }
 
     pub(crate) fn resize(&mut self, new_size: TargetSize, scale_factor: Scalar, env: &mut Environment) {
@@ -351,6 +354,35 @@ impl OffscreenRenderer {
             });
             *vertex_buffer = new_vertex_buffer;
             *buffer_size = vertices.len();
+        }
+    }
+
+    /// Make the 2D bind groups for the images the render passes draw, from the shared texture
+    /// store: the first time an image is drawn, and again when the image under its id was
+    /// replaced. Images that are not in the store are left out, as before.
+    fn ensure_image_bind_groups(render_passes: &[RenderPass], textures: &WgpuTextureStore, device: &Device, wgpu_context: &mut WgpuContext) {
+        for pass in render_passes {
+            let RenderPass::Normal { commands, .. } = pass else {
+                continue;
+            };
+
+            for command in commands {
+                let (RenderPassCommand::SetBindGroup { bind_group: WGPUBindGroup::Image(id) }
+                | RenderPassCommand::SetMaskBindGroup { bind_group: WGPUBindGroup::Image(id) }) = command else {
+                    continue;
+                };
+
+                let Some(stored) = textures.get(id) else {
+                    continue;
+                };
+
+                let current = wgpu_context.bind_groups.get(id).is_some_and(|group| group.version == stored.version);
+
+                if !current {
+                    let group = create_bind_group_from_view(&stored.srgb_view, stored.width, stored.height, stored.version, device, &wgpu_context.texture_bind_group_layout);
+                    wgpu_context.bind_groups.insert(id.clone(), group);
+                }
+            }
         }
     }
 

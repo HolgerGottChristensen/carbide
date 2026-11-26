@@ -7,15 +7,24 @@ use crate::shadows::{CastsShadows, ReceivesShadows};
 use crate::camera::CameraSpec;
 use crate::material::Material;
 use crate::mesh::Mesh;
-use carbide::draw::Color;
+use std::cell::RefCell;
+use std::collections::HashSet;
+use carbide::draw::{load_local_raster, Color, ImageContext, ImageId};
 use carbide::environment::Environment;
 use carbide::render::Layer;
 use carbide::math::{Deg, Matrix4, Vector3};
 use crate::render::{InnerRenderContext3d, LightShadow, ViewSpec};
 
+thread_local! {
+    /// Images that failed to load, so a missing file is reported once instead of every frame.
+    static FAILED_TEXTURES: RefCell<HashSet<ImageId>> = RefCell::new(HashSet::new());
+}
+
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
-    //pub(crate) image: &'a mut dyn InnerImageContext3d,
+    /// The image context of the window or harness, shared with 2D: materials load their textures
+    /// through it, into the same store 2D images are in.
+    pub image: &'a mut dyn ImageContext,
     pub env: &'a mut Environment<'b>,
     /// What this frame records for picking.
     pub(crate) picking: &'a mut PickRecorder,
@@ -34,10 +43,28 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
     }
 
     pub fn material<R, F: FnOnce(&mut RenderContext3d)->R>(&mut self, material: &Material, f: F) -> R {
+        self.load_textures(material);
         self.render.material(material, self.env);
         let res = f(self);
         self.render.pop_material();
         res
+    }
+
+    /// Load the images `material` samples into the image context, the store 2D images are in, unless
+    /// they are there already. An image that fails to load is reported once and not tried again.
+    fn load_textures(&mut self, material: &Material) {
+        let Material::PBR(pbr) = material;
+
+        for id in pbr.textures() {
+            if FAILED_TEXTURES.with(|failed| failed.borrow().contains(&id)) {
+                continue;
+            }
+
+            if let Err(error) = load_local_raster(&id, &mut *self.image, self.env) {
+                eprintln!("carbide_3d: {}", error);
+                FAILED_TEXTURES.with(|failed| failed.borrow_mut().insert(id));
+            }
+        }
     }
 
     /// Render `f` as part of the node `id`, for picking: meshes drawn in it record it in their
@@ -52,10 +79,11 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
     /// Render `f` with the environment key `K` set to `value`.
     pub fn with_env<K: EnvironmentKey<Access=Shared>, R>(&mut self, value: &K::Value, f: impl FnOnce(&mut RenderContext3d) -> R) -> R where K::Value: Clone {
         let render = &mut *self.render;
+        let image = &mut *self.image;
         let picking = &mut *self.picking;
         let mut result = None;
         self.env.with::<K>(value, |env| {
-            result = Some(f(&mut RenderContext3d { render, env, picking }));
+            result = Some(f(&mut RenderContext3d { render, image, env, picking }));
         });
         result.unwrap()
     }
@@ -93,3 +121,93 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
 }
 
 
+
+#[cfg(test)]
+mod tests {
+    use carbide::color::WHITE;
+    use carbide::draw::{Dimension, ImageContext, ImageId, ImageMetrics, Texture};
+    use carbide::environment::Environment;
+    use carbide::render::RenderInstruction;
+    use crate::material::normal_texture::NormalTexture;
+    use crate::material::normal_texture_y_direction::NormalTextureYDirection;
+    use crate::material::pbr_material::PbrMaterial;
+    use crate::material::Material;
+    use crate::picking::PickRecorder;
+    use crate::render::NoopRenderContext3d;
+    use super::RenderContext3d;
+
+    /// An image context that records which images were uploaded.
+    #[derive(Default)]
+    struct RecordingImages {
+        uploaded: Vec<(ImageId, u32, u32)>,
+    }
+
+    impl ImageContext for RecordingImages {
+        fn exist(&self, id: &ImageId, _env: &mut Environment) -> bool {
+            self.uploaded.iter().any(|(uploaded, ..)| uploaded == id)
+        }
+
+        fn metrics(&self, _id: &ImageId, _env: &mut Environment) -> ImageMetrics {
+            ImageMetrics::Unknown
+        }
+
+        fn update_texture(&mut self, id: &ImageId, texture: Texture, _env: &mut Environment) -> bool {
+            self.uploaded.push((id.clone(), texture.width, texture.height));
+            true
+        }
+
+        fn update_vector(&mut self, _id: &ImageId, _description: Vec<RenderInstruction>, _size: Dimension, _env: &mut Environment) -> bool {
+            false
+        }
+    }
+
+    fn render_material(material: &Material, images: &mut RecordingImages, env: &mut Environment) {
+        let mut render = NoopRenderContext3d;
+        let mut picking = PickRecorder::default();
+        let mut ctx = RenderContext3d { render: &mut render, image: images, env, picking: &mut picking };
+        ctx.material(material, |_| {});
+    }
+
+    #[test]
+    fn a_material_loads_its_textures_once() {
+        let mut env = Environment::new();
+        let mut images = RecordingImages::default();
+        let rust = ImageId::new("images/rust.png");
+
+        // The same image as albedo and normal map is loaded once.
+        let material = Material::PBR(
+            PbrMaterial::new()
+                .color(rust.clone())
+                .normal(NormalTexture::Tricomponent(rust.clone(), NormalTextureYDirection::Up)),
+        );
+
+        render_material(&material, &mut images, &mut env);
+        render_material(&material, &mut images, &mut env);
+
+        assert_eq!(images.uploaded.len(), 1);
+        assert_eq!(images.uploaded[0].0, rust);
+        assert!(images.uploaded[0].1 > 0 && images.uploaded[0].2 > 0);
+    }
+
+    #[test]
+    fn a_material_without_textures_loads_nothing() {
+        let mut env = Environment::new();
+        let mut images = RecordingImages::default();
+
+        render_material(&Material::PBR(PbrMaterial::new().color(WHITE)), &mut images, &mut env);
+
+        assert!(images.uploaded.is_empty());
+    }
+
+    #[test]
+    fn a_missing_texture_does_not_panic() {
+        let mut env = Environment::new();
+        let mut images = RecordingImages::default();
+        let material = Material::PBR(PbrMaterial::new().color(ImageId::new("images/does_not_exist.png")));
+
+        render_material(&material, &mut images, &mut env);
+        render_material(&material, &mut images, &mut env);
+
+        assert!(images.uploaded.is_empty());
+    }
+}

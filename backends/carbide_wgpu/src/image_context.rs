@@ -1,70 +1,10 @@
-use std::rc::Rc;
-use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, ImageMetrics, Texture, TextureFormat};
-use wgpu::{BindGroup, BindGroupLayout, Device, Queue};
-use carbide_core::environment::Environment;
-use carbide_core::render::{RenderInstruction, RenderInstructionCache};
-use carbide_wgpu_core::WgpuContextNew;
-use crate::wgpu_context::WgpuContext;
+use carbide_core::draw::{Texture, TextureFormat};
+use wgpu::{BindGroup, BindGroupLayout, Device, Queue, TextureView};
 
-pub struct WGPUImageContext;
+pub use carbide_wgpu_core::WgpuImageContext;
 
-impl ImageContext for WGPUImageContext {
-    fn exist(&self, id: &ImageId, env: &mut Environment) -> bool {
-        match id.format() {
-            ImageFormat::Unknown => false,
-            ImageFormat::Svg => {
-                let cache = env.get::<RenderInstructionCache>().unwrap();
-                cache.contains_key(id)
-            }
-            _ => {
-                let wgpu_context = env.get::<WgpuContext>().unwrap();
-                wgpu_context.bind_groups.contains_key(id)
-            }
-        }
-    }
-
-    fn metrics(&self, id: &ImageId, env: &mut Environment) -> ImageMetrics {
-        match id.format() {
-            ImageFormat::Unknown => ImageMetrics::Unknown,
-            ImageFormat::Svg => {
-                let cache = env.get::<RenderInstructionCache>().unwrap();
-                cache
-                    .get(id)
-                    .map(|vector| ImageMetrics::Vector { dimension: vector.0 })
-                    .unwrap_or(ImageMetrics::Unknown)
-            }
-            _ => {
-                let wgpu_context = env.get::<WgpuContext>().unwrap();
-                wgpu_context.bind_groups.get(id)
-                    .map(|group| {
-                        ImageMetrics::Raster { width: group.width, height: group.height}
-                    }).unwrap_or(ImageMetrics::Unknown)
-            }
-        }
-    }
-
-    fn update_texture(&mut self, id: &ImageId, texture: Texture, env: &mut Environment) -> bool {
-        let wgpu_context_new = env.get::<WgpuContextNew>().unwrap();
-        let device = wgpu_context_new.device.clone();
-        let queue = wgpu_context_new.queue.clone();
-
-        let wgpu_context = env.get_mut::<WgpuContext>().unwrap();
-
-        let bind_group = create_bind_group(&device, &queue, texture, &wgpu_context.texture_bind_group_layout);
-        wgpu_context.bind_groups.insert(id.clone(), bind_group);
-
-        true
-    }
-
-    fn update_vector(&mut self, id: &ImageId, description: Vec<RenderInstruction>, size: Dimension, env: &mut Environment) -> bool {
-        let cache = env.get_mut::<RenderInstructionCache>().unwrap();
-
-        cache.insert(id.clone(), Rc::new((size, description)));
-
-        true
-    }
-}
-
+/// Upload `texture` and make a 2D bind group for it. Only used for the renderer's own default
+/// texture; images go through the shared `WgpuTextureStore` store.
 pub fn create_bind_group(
     device: &Device,
     queue: &Queue,
@@ -118,7 +58,9 @@ pub fn create_bind_group(
         size,
     );
 
-    create_bind_group_from_wgpu_texture(&wgpu_texture, device, main_texture_bind_group_layout)
+    let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+    create_bind_group_from_view(&view, wgpu_texture.width(), wgpu_texture.height(), 0, device, main_texture_bind_group_layout)
 }
 
 #[derive(Debug)]
@@ -126,10 +68,12 @@ pub struct BindGroupExtended {
     pub bind_group: BindGroup,
     pub width: u32,
     pub height: u32,
+    /// The `StoredTexture::version` the bind group was made from, or 0 for the default texture.
+    pub version: u64,
 }
 
-pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture, device: &Device, main_texture_bind_group_layout: &BindGroupLayout) -> BindGroupExtended {
-    let view = wgpu_texture.create_view(&wgpu::TextureViewDescriptor::default());
+/// Make a 2D bind group for `view`: the texture and a clamping, linear sampler.
+pub fn create_bind_group_from_view(view: &TextureView, width: u32, height: u32, version: u64, device: &Device, main_texture_bind_group_layout: &BindGroupLayout) -> BindGroupExtended {
 
     let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
         address_mode_u: wgpu::AddressMode::ClampToEdge,
@@ -146,7 +90,7 @@ pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture, device:
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::TextureView(&view),
+                resource: wgpu::BindingResource::TextureView(view),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
@@ -158,7 +102,8 @@ pub fn create_bind_group_from_wgpu_texture(wgpu_texture: &wgpu::Texture, device:
 
     BindGroupExtended {
         bind_group,
-        width: wgpu_texture.width(),
-        height: wgpu_texture.height(),
+        width,
+        height,
+        version,
     }
 }

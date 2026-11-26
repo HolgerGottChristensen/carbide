@@ -169,9 +169,12 @@ impl<'a, 'b: 'a> RenderContext<'a, 'b> {
         self.render.text_old(text, self.env);
     }
 
-    pub fn layer<R, F: FnOnce(Layer, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
+    /// Render into the layer `layer_id`, sized to `bounding_box`, and draw the layer there. `f` gets
+    /// the layer, the image context and the environment, to draw into the layer with another
+    /// renderer, such as a 3D one.
+    pub fn layer<R, F: FnOnce(Layer, &mut dyn ImageContext, &mut Environment) -> R>(&mut self, layer_id: LayerId, bounding_box: Rect, f: F) -> R {
         let layer = self.render.layer(layer_id, bounding_box.dimension, self.env);
-        let res = f(layer, self.env);
+        let res = f(layer, &mut *self.image, self.env);
         self.render.render_layer(layer_id, bounding_box);
 
         res

@@ -5,7 +5,7 @@ use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGrou
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
 use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
-use carbide_3d::{InnerImageContext3d, Mesh};
+use carbide_3d::Mesh;
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
@@ -16,7 +16,6 @@ use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
 
 use crate::camera::WgpuCamera;
 use crate::directional_light::{WgpuDirectionalLight, WgpuDirectionalLightBuffer};
-use crate::image_context_3d::ImageContext3d;
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
 use crate::outline::OutlineState;
@@ -67,7 +66,6 @@ pub struct WgpuRenderContext3d {
 
     commands: Vec<RenderPassCommand>,
 
-    image_context: ImageContext3d,
 
     /// Created on the first render, when the device is available.
     gpu: Option<GpuState>,
@@ -124,8 +122,7 @@ impl WgpuRenderContext3d {
             shadow_requests: vec![],
             fallback_mesh_cache: None,
             commands: vec![],
-            image_context: ImageContext3d,
-            gpu: None,
+                    gpu: None,
         }
     }
 
@@ -983,9 +980,5 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32) {
         self.hemisphere = (sky, ground, intensity);
-    }
-
-    fn image_context(&mut self) -> &mut dyn InnerImageContext3d {
-        &mut self.image_context
     }
 }

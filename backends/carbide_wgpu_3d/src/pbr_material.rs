@@ -34,8 +34,8 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
-    /// The material's values, as the shader reads them. Textures are not loaded yet (see
-    /// `ImageContext3d`): the texture flags are set, but the shader doesn't sample them.
+    /// The material's values, as the shader reads them. Textures are not sampled yet: the
+    /// texture flags are set, but the material bind group is empty.
     pub(crate) fn from_material(material: &PbrMaterial, _env: &mut Environment) -> Self {
         // Colours are given in sRGB; the shader lights in linear space, as the 2D renderer draws.
         let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();

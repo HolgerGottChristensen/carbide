@@ -17,10 +17,8 @@ pub mod environment_node;
 pub mod light;
 pub mod node3d;
 mod node3d_sequence;
-mod image_context3d;
 pub mod render;
 
-pub use image_context3d::*;
 pub use mesh::*;
 pub use object::*;
 pub use scene3d::*;

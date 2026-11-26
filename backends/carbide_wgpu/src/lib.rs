@@ -17,7 +17,7 @@ extern crate carbide_icons;
 
 pub use carbide_wgpu_core::WgpuRenderTarget;
 
-pub use crate::image_context::create_bind_group_from_wgpu_texture;
+pub use crate::image_context::create_bind_group_from_view;
 
 pub use wgpu_context::*;
 

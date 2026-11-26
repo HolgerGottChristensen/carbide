@@ -14,9 +14,9 @@ use carbide_core::render::{NoopRenderContext, RenderContext};
 use carbide_windowing::{PhysicalSize, SurfaceTarget, WindowRenderError, WindowRendererBackend, WindowRendererFactory, WindowRendererId};
 use carbide_core::text::TextContextKey;
 use carbide_core::widget::AnyWidget;
-use carbide_wgpu_core::WgpuContextNew;
+use carbide_wgpu_core::{WgpuContextNew, WgpuTextureStore};
 
-use crate::image_context::WGPUImageContext;
+use crate::image_context::WgpuImageContext;
 use crate::offscreen_renderer::{OffscreenRenderer, TargetSize};
 use crate::pipeline::create_final_render_pipeline;
 use crate::wgpu_context::WgpuContext;
@@ -123,7 +123,7 @@ impl WindowRendererBackend for WgpuWindowRendererBackend {
             env,
         });
 
-        let (wgpu_context, wgpu_context_new, text_context) = env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey)>().unwrap();
+        let (wgpu_context, wgpu_context_new, text_context, textures) = env.get_many::<(WgpuContext, WgpuContextNew, TextContextKey, WgpuTextureStore)>().unwrap();
 
         let mut encoder = wgpu_context_new.device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -144,7 +144,7 @@ impl WindowRendererBackend for WgpuWindowRendererBackend {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.offscreen.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, &mut encoder);
+        self.offscreen.execute_render_passes(render_passes, scale_factor, &mut **text_context, wgpu_context, wgpu_context_new, textures, &mut encoder);
 
         // Render from the texture to the swap chain
         self.render_final_texture_to_swapchain(
@@ -176,7 +176,7 @@ fn create(target: Arc<dyn SurfaceTarget>, size: PhysicalSize, scale_factor: Scal
 }
 
 fn image_context() -> Box<dyn ImageContext> {
-    Box::new(WGPUImageContext)
+    Box::new(WgpuImageContext)
 }
 
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
