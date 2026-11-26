@@ -19,5 +19,8 @@ bitflags::bitflags! {
         const CC_BW_SPLIT =         0b0001_0000_0000_0000;
         const UNLIT =               0b0010_0000_0000_0000;
         const NEAREST =             0b0100_0000_0000_0000;
+        /// The material blends with what is behind it (`Transparency::Blend`). Otherwise its
+        /// alpha is ignored, and it covers what is behind it.
+        const ALPHA_BLEND =         0b1000_0000_0000_0000;
     }
 }

@@ -270,6 +270,33 @@ mod tests {
         }
     }
 
+    /// The tiling slider and the sampling picker reach the material: each changes the model, on a
+    /// material folder's surface.
+    #[test]
+    fn tiling_and_sampling_reach_the_model() {
+        let options = Options::new();
+        *options.surface.clone().value_mut() = options.surfaces.iter().find(|surface| surface.name == "Plaster").unwrap().clone();
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+        let once = view(&mut harness);
+
+        *options.tiling.clone().value_mut() = 4.0;
+        harness.render();
+        let tiled = view(&mut harness);
+        assert!(changed(&once, &tiled) > 1_000, "tiling changes only {} bytes of the view", changed(&once, &tiled));
+
+        *options.sampling.clone().value_mut() = carbide::d3::material::sample_type::SampleType::Nearest;
+        harness.render();
+        let nearest = view(&mut harness);
+        assert!(changed(&tiled, &nearest) > 1_000, "nearest sampling changes only {} bytes of the view", changed(&tiled, &nearest));
+    }
+
     /// The cube in the main view, hovered and then clicked twice. Pins down picking in the
     /// playground: the pointer over the cube sets the hovered state, a click selects it and records
     /// where it hit, and a second click deselects it.

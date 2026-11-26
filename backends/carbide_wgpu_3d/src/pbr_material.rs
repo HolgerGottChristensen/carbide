@@ -48,8 +48,8 @@ impl WgpuPbrMaterial {
         let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();
 
         Self {
-            uv_transform0: material.uv_transform0,
-            uv_transform1: material.uv_transform1,
+            uv_transform0: *material.uv_transform0.value(),
+            uv_transform1: *material.uv_transform1.value(),
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
             // Unset, the roughness is the map's when there is one (a factor of 1, as glTF's
             // default), and 0 without one.
@@ -77,9 +77,10 @@ impl WgpuPbrMaterial {
                 flags |= material.aomr_textures.value().to_flags();
                 flags |= material.clearcoat_textures.value().to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
+                flags.set(MaterialFlags::ALPHA_BLEND, matches!(material.transparency, Transparency::Blend));
                 flags.set(
                     MaterialFlags::NEAREST,
-                    match material.sample_type {
+                    match *material.sample_type.value() {
                         SampleType::Nearest => true,
                         SampleType::Linear => false,
                     },

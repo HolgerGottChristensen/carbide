@@ -14,8 +14,8 @@ use carbide_core::color::WHITE;
 use carbide_core::draw::Color;
 use carbide_core::state::{LocalState, State};
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
-use carbide_core::math::{Deg, Euler, Matrix3, Point3, Vector3};
-use carbide_core::widget::{HStack, Image, WidgetExt};
+use carbide_core::math::{Deg, Euler, Point3, Vector2, Vector3};
+use carbide_core::widget::{HStack, Image, Rectangle, WidgetExt};
 use carbide_testing::Harness;
 use carbide_wgpu_core::{WgpuImageContext, WgpuTextureStore};
 
@@ -115,9 +115,11 @@ fn a_repeated_texture_in_the_distance() {
     let checker_id = ImageId::temp(ImageFormat::Png);
 
     let plane = |sample_type: SampleType| {
-        let mut material = PbrMaterial::new().color(checker_id.clone()).roughness(Some(0.8f32));
-        material.uv_transform0 = Matrix3::from_scale(16.0);
-        material.sample_type = sample_type;
+        let material = PbrMaterial::new()
+            .color(checker_id.clone())
+            .roughness(Some(0.8f32))
+            .tiling(Vector2::new(16.0, 16.0))
+            .sample_type(sample_type);
 
         let light = DirectionalLight::new(Vector3::new(0.3, -1.0, -0.4)).intensity(4.0);
         Scene3d::new((Object::new(Mesh::plane(20.0, 20.0), material), light))
@@ -264,8 +266,7 @@ fn a_normal_mapped_plane_and_sphere() {
         .camera(Camera::perspective().look_at(Point3::new(0.0, 2.2, 0.8), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
 
-    let mut sphere_material = material();
-    sphere_material.uv_transform0 = Matrix3::from_nonuniform_scale(8.0, 4.0);
+    let sphere_material = material().tiling(Vector2::new(8.0, 4.0));
     let sphere = Scene3d::new((
         Object::new(Mesh::icosphere(1.0, 4), sphere_material),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
@@ -434,8 +435,10 @@ fn roughness_and_occlusion_maps() {
     let roughness = LocalState::new(AoMRTextures::None);
     let occlusion = LocalState::new(AoMRTextures::None);
 
-    let mut sphere_material = PbrMaterial::new().color(Color::new_rgba(40, 90, 200, 255)).aomr_textures(roughness.clone());
-    sphere_material.uv_transform0 = Matrix3::from_nonuniform_scale(3.0, 1.0);
+    let sphere_material = PbrMaterial::new()
+        .color(Color::new_rgba(40, 90, 200, 255))
+        .aomr_textures(roughness.clone())
+        .tiling(Vector2::new(3.0, 1.0));
     let sphere = Scene3d::new((
         Object::new(Mesh::icosphere(1.0, 4), sphere_material),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
@@ -573,12 +576,12 @@ fn emission_and_clear_coat_maps() {
         .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
 
-    let mut coated_material = PbrMaterial::new()
+    let coated_material = PbrMaterial::new()
         .color(Color::new_rgba(40, 90, 200, 255))
         .roughness(Some(0.2f32))
         .clearcoat(1.0, 0.8)
-        .clearcoat_textures(coat.clone());
-    coated_material.uv_transform0 = Matrix3::from_nonuniform_scale(3.0, 1.0);
+        .clearcoat_textures(coat.clone())
+        .tiling(Vector2::new(3.0, 1.0));
     let coated = Scene3d::new((
         Object::new(Mesh::icosphere(1.0, 4), coated_material),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
@@ -597,4 +600,70 @@ fn emission_and_clear_coat_maps() {
     *coat.clone().value_mut() = ClearcoatTextures::BWSplit { clearcoat_texture: Some(stripes), clearcoat_roughness_texture: None };
 
     harness.snapshot("glow_and_coat");
+}
+
+/// Tiling and sampling are states: changing them redraws the material, and changing them back
+/// gives the same picture again.
+#[test]
+fn tiling_and_sampling_follow_their_states() {
+    let checker_id = ImageId::temp(ImageFormat::Png);
+    let tiling = LocalState::new(Vector2::new(1.0f32, 1.0));
+    let sampling = LocalState::new(SampleType::Linear);
+
+    let material = PbrMaterial::new().color(checker_id.clone()).tiling(tiling.clone()).sample_type(sampling.clone());
+    let scene = Scene3d::new((Object::new(Mesh::plane(20.0, 20.0), material), DirectionalLight::new(Vector3::new(0.3, -1.0, -0.4)).intensity(4.0)))
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.6, 3.0), Point3::new(0.0, 0.0, -2.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(200.0, 150.0));
+    store_checker(&mut harness, &checker_id);
+    harness.render();
+    let once = harness.pixels().as_raw().to_vec();
+
+    let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+
+    *tiling.clone().value_mut() = Vector2::new(16.0, 16.0);
+    harness.render();
+    let tiled = harness.pixels().as_raw().to_vec();
+    assert!(changed(&once, &tiled) > 10_000, "tiling 16 times changes only {} bytes", changed(&once, &tiled));
+
+    *sampling.clone().value_mut() = SampleType::Nearest;
+    harness.render();
+    let nearest = harness.pixels().as_raw().to_vec();
+    assert!(changed(&tiled, &nearest) > 1_000, "nearest sampling changes only {} bytes", changed(&tiled, &nearest));
+
+    *sampling.clone().value_mut() = SampleType::Linear;
+    *tiling.clone().value_mut() = Vector2::new(1.0, 1.0);
+    harness.render();
+    assert!(harness.pixels().as_raw() == &once[..], "back to one tile, linear, the picture differs");
+}
+
+/// One image shared by 2D and 3D, and a missing one, on a light background. Left:
+/// `images/landscape.png` in an `Image`, scaled to fit. Middle: a cube with the same image as its
+/// colour, from the same stored texture. Right: a cube whose image doesn't exist, drawn white with
+/// the fallback texture, without a panic.
+#[test]
+fn an_image_shared_with_2d_and_a_missing_one() {
+    let landscape = ImageId::new("images/landscape.png");
+
+    let cube = |image: ImageId| {
+        Scene3d::new((
+            Object::new(Mesh::cube(1.0), PbrMaterial::new().color(image).roughness(Some(0.6f32)))
+                .rotation(Euler::new(Deg(0.0), Deg(-30.0), Deg(0.0))),
+            DirectionalLight::new(Vector3::new(1.0, -2.0, -1.5)).intensity(4.0),
+        ))
+            .camera(Camera::perspective().look_at(Point3::new(-1.2, 1.2, 2.0), Point3::new(0.0, 0.0, 0.0)))
+            .frame(150.0, 150.0)
+    };
+
+    let widget = HStack::new((
+        Image::new(landscape.clone()).resizeable().scaled_to_fit().frame(150.0, 150.0),
+        cube(landscape.clone()),
+        cube(ImageId::new("images/does_not_exist.png")),
+    )).spacing(10.0).background(Rectangle::new().fill(Color::new_rgba(230, 230, 230, 255)));
+
+    let mut harness = Harness::new(widget, Dimension::new(490.0, 170.0));
+    harness.snapshot("shared_and_missing");
+
+    let textures = harness.environment().get::<WgpuTextureStore>().unwrap();
+    assert_eq!(textures.len(), 1, "the shared image is stored once, and the missing one not at all");
 }

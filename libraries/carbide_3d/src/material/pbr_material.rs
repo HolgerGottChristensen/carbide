@@ -10,7 +10,7 @@ use crate::material::Material;
 use carbide::color::{BLACK, WHITE};
 use carbide::environment::Environment;
 use carbide::draw::Color;
-use carbide::math::{Matrix3, SquareMatrix};
+use carbide::math::{Matrix3, SquareMatrix, Vector2};
 use carbide::state::{AnyReadState, IntoReadState, Map1, StateSync, ReadState};
 
 // Consider:
@@ -53,11 +53,16 @@ pub struct PbrMaterial {
     pub reflectance: Box<dyn AnyReadState<T=f32>>,
     /// Not used by the renderer yet.
     pub anisotropy: MaterialComponent<f32>,
-    pub uv_transform0: Matrix3<f32>,
-    pub uv_transform1: Matrix3<f32>,
+    /// Transforms the first texture coordinates before every map is sampled: a 2D affine
+    /// transform, for tiling, offsetting or turning the maps. The identity by default.
+    pub uv_transform0: Box<dyn AnyReadState<T=Matrix3<f32>>>,
+    /// The same for the second texture coordinates. Not read by the renderer yet.
+    pub uv_transform1: Box<dyn AnyReadState<T=Matrix3<f32>>>,
     // TODO: Make unlit a different shader entirely.
     pub unlit: bool,
-    pub sample_type: SampleType,
+    /// Whether maps are sampled linearly (smooth, with mipmaps and anisotropic filtering), the
+    /// default, or nearest (pixelated).
+    pub sample_type: Box<dyn AnyReadState<T=SampleType>>,
 }
 
 impl StateSync for PbrMaterial {
@@ -67,6 +72,9 @@ impl StateSync for PbrMaterial {
             | self.aomr_textures.sync(env)
             | self.clearcoat_textures.sync(env)
             | self.emissive_texture.sync(env)
+            | self.uv_transform0.sync(env)
+            | self.uv_transform1.sync(env)
+            | self.sample_type.sync(env)
             | self.ambient_occlusion.sync(env)
             | self.metallic.sync(env)
             | self.roughness_factor.sync(env)
@@ -96,10 +104,10 @@ impl PbrMaterial {
             emissive_texture: None.as_dyn_read(),
             reflectance: Box::new(0.5f32),
             anisotropy: Default::default(),
-            uv_transform0: Matrix3::identity(),
-            uv_transform1: Matrix3::identity(),
+            uv_transform0: Box::new(Matrix3::<f32>::identity()),
+            uv_transform1: Box::new(Matrix3::<f32>::identity()),
             unlit: false,
-            sample_type: Default::default(),
+            sample_type: SampleType::Linear.as_dyn_read(),
         }
     }
 }
@@ -227,6 +235,31 @@ impl PbrMaterial {
     pub fn emissive_map<T: IntoReadState<Option<ImageId>>>(self, image: T) -> PbrMaterial {
         PbrMaterial {
             emissive_texture: image.into_dyn_read_state(),
+            ..self
+        }
+    }
+
+    /// The transform of the first texture coordinates, applied before every map is sampled: a 2D
+    /// affine transform as a 3×3 matrix, such as `Matrix3::from_nonuniform_scale(2.0, 2.0)`.
+    pub fn uv_transform<T: IntoReadState<Matrix3<f32>>>(self, transform: T) -> PbrMaterial {
+        PbrMaterial {
+            uv_transform0: transform.into_dyn_read_state(),
+            ..self
+        }
+    }
+
+    /// Repeat the maps `tiling.x` times across and `tiling.y` times down: a `uv_transform` that
+    /// scales the texture coordinates. Textures repeat, so 2 shows each map twice in each
+    /// direction.
+    pub fn tiling<T: IntoReadState<Vector2<f32>>>(self, tiling: T) -> PbrMaterial {
+        let transform = Map1::read_map(tiling.into_read_state(), |tiling: &Vector2<f32>| Matrix3::from_nonuniform_scale(tiling.x, tiling.y));
+        self.uv_transform(transform)
+    }
+
+    /// Whether maps are sampled linearly, the default, or nearest, which shows their pixels.
+    pub fn sample_type<T: IntoReadState<SampleType>>(self, sample_type: T) -> PbrMaterial {
+        PbrMaterial {
+            sample_type: sample_type.into_dyn_read_state(),
             ..self
         }
     }

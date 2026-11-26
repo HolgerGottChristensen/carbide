@@ -140,9 +140,13 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         discard;
     }
 
+    // Opaque and cutout materials cover what is behind them, whatever their alpha (a cut-out
+    // pixel was discarded above). Only blended materials (ALPHA_BLEND) keep it.
+    let alpha = select(1.0, pixel.albedo.a, (material.flags & 0x8000u) != 0u);
+
     // Unlit materials show their colour as it is: no lighting, exposure or tone mapping.
     if ((material.flags & 0x2000u) != 0u) {
-        return pixel.albedo;
+        return vec4<f32>(pixel.albedo.rgb, alpha);
     }
     pixel.normal = get_normal(material, in, coords, uvdx, uvdy);
 
@@ -249,7 +253,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
         emissive *= sample_material_texture(emissive_tex, material, coords, uvdx, uvdy).rgb;
     }
     let lit = ambient.rgb + color + emissive;
-    return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), pixel.albedo.a);
+    return vec4<f32>(tonemap(lit * uniforms.exposure, uniforms.tonemapping), alpha);
     //return vec4<f32>((pixel.normal + 1.0) / 2.0, 1.0);
     //return vec4<f32>(pixel.metallic, 0.0, 0.0, 1.0);
     //return pixel.albedo;

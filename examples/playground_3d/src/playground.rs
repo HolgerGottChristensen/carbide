@@ -17,10 +17,11 @@ use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, O
 use carbide::draw::{resolve_asset_path, ImageId, Scalar};
 use carbide::d3::material::ao_mr_textures::AoMRTextures;
 use carbide::d3::material::normal_texture::NormalTexture;
+use carbide::d3::material::sample_type::SampleType;
 use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
 use std::path::{Path, PathBuf};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
-use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
+use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector2, Vector3};
 use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, Map6, ReadState, State};
 use carbide::time::Duration;
 use carbide::ui;
@@ -271,6 +272,10 @@ pub struct Options {
     pub use_occlusion_map: LocalState<bool>,
     pub use_metallic_map: LocalState<bool>,
     pub use_emission_map: LocalState<bool>,
+    /// How many times the surface's maps repeat across each side or around the model.
+    pub tiling: LocalState<Scalar>,
+    /// Whether the maps are sampled smoothly or show their pixels.
+    pub sampling: LocalState<SampleType>,
     pub roughness: LocalState<Scalar>,
     pub metallic: LocalState<Scalar>,
     pub reflectance: LocalState<Scalar>,
@@ -340,6 +345,8 @@ impl Options {
             use_occlusion_map: LocalState::new(true),
             use_metallic_map: LocalState::new(true),
             use_emission_map: LocalState::new(true),
+            tiling: LocalState::new(1.0),
+            sampling: LocalState::new(SampleType::Linear),
             roughness: LocalState::new(0.5),
             metallic: LocalState::new(0.0),
             reflectance: LocalState::new(0.5),
@@ -532,6 +539,8 @@ impl Options {
                 if surface.emission.is_some() && *glow == BLACK { WHITE } else { *glow }
             }))
             .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone()))
+            .tiling(Map1::read_map(self.tiling.clone(), |tiling: &Scalar| Vector2::new(*tiling as f32, *tiling as f32)))
+            .sample_type(self.sampling.clone())
             .emissive_strength(f32_of(&self.emissive_strength))
             .normal(Map1::read_map(surface.clone(), |surface: &Surface| surface.normal_texture()))
             .aomr_textures(Map1::read_map(surface, |surface: &Surface| surface.aomr()))
@@ -831,6 +840,17 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             map_toggle(options, "Occlusion map", &options.use_occlusion_map, |surface| surface.ambient_occlusion.is_some()),
             map_toggle(options, "Metallic map", &options.use_metallic_map, |surface| surface.metallic.is_some()),
             map_toggle(options, "Emission map", &options.use_emission_map, |surface| surface.emission.is_some()),
+            // How the maps are laid out and filtered, for any surface with an image.
+            shown_when(
+                Map1::read_map(options.surface.clone(), |surface: &Surface| surface.albedo.is_some() || surface.has_maps()),
+                VStack::new((
+                    slider("Tiling", &options.tiling, 1.0, 8.0, two_places),
+                    Picker::new("Sampling", options.sampling.clone(), (
+                        Text::new("Smooth (linear)").tag(SampleType::Linear),
+                        Text::new("Pixels (nearest)").tag(SampleType::Nearest),
+                    )),
+                )).cross_axis_alignment(CrossAxisAlignment::Start),
+            ),
             shown_when(
                 Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
                 note("The roughness and metallic sliders scale the material's maps."),
