@@ -172,13 +172,14 @@ fn store_flat_image(harness: &mut Harness, rgba: [u8; 4]) -> ImageId {
 /// (a constant normal, as RGB) read with `direction`, lit by a light travelling along `light`.
 /// `None` is the plane without a normal map.
 fn plane_brightness(map: Option<([u8; 3], NormalTextureYDirection)>, light: Vector3<f32>) -> u32 {
-    mesh_brightness(Mesh::plane(4.0, 4.0), map, light)
+    mesh_brightness(Mesh::plane(4.0, 4.0), map, 1.0, light)
 }
 
-/// [`plane_brightness`] for any `mesh` lying on the ground and facing up.
-fn mesh_brightness(mesh: Mesh, map: Option<([u8; 3], NormalTextureYDirection)>, light: Vector3<f32>) -> u32 {
+/// [`plane_brightness`] for any `mesh` lying on the ground and facing up, with the material's
+/// normal scale `scale`.
+fn mesh_brightness(mesh: Mesh, map: Option<([u8; 3], NormalTextureYDirection)>, scale: f32, light: Vector3<f32>) -> u32 {
     let normal = LocalState::new(NormalTexture::None);
-    let plane = Object::new(mesh, PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()));
+    let plane = Object::new(mesh, PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()).normal_scale(scale));
     let scene = Scene3d::new((plane, DirectionalLight::new(light).intensity(3.0)))
         .ambient(WHITE, 0.0)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
@@ -307,9 +308,34 @@ fn a_mirrored_texture_keeps_its_normal_map_the_right_way_up() {
 
     let flat = plane_brightness(None, from_far);
     let plain = plane_brightness(Some((towards_top, UP)), from_far);
-    let mirrored = mesh_brightness(mirrored(Mesh::plane(4.0, 4.0)), Some((towards_top, UP)), from_far);
+    let mirrored = mesh_brightness(mirrored(Mesh::plane(4.0, 4.0)), Some((towards_top, UP)), 1.0, from_far);
     assert!(plain > flat + 20, "tilted towards the light, but not brighter: {plain} against {flat}");
     assert!(mirrored.abs_diff(plain) <= 6, "the mirrored plane differs: {mirrored} against {plain}");
+}
+
+/// The normal scale multiplies the map's sideways components before normalising, as glTF's
+/// `normalTexture.scale`: a map tilted 30° away from the light, at a scale of 0.5, renders as a
+/// map tilted atan(0.5 · tan 30°) ≈ 16°; at 0 it is flat; at 2 (49°) it is darker than at 1.
+#[test]
+fn the_normal_scale_steepens_or_flattens_the_map() {
+    const UP: NormalTextureYDirection = NormalTextureYDirection::Up;
+    let plane = || Mesh::plane(4.0, 4.0);
+    // Tilted towards the image's bottom, the near edge, away from a light from the far edge.
+    let away_30 = [128, 64, 238];
+    let away_16 = [128, 93, 245];
+    let from_far = Vector3::new(0.0, -1.0, 1.0);
+
+    let flat = plane_brightness(None, from_far);
+    let full = mesh_brightness(plane(), Some((away_30, UP)), 1.0, from_far);
+    let half = mesh_brightness(plane(), Some((away_30, UP)), 0.5, from_far);
+    let none = mesh_brightness(plane(), Some((away_30, UP)), 0.0, from_far);
+    let double = mesh_brightness(plane(), Some((away_30, UP)), 2.0, from_far);
+    let shallower_map = plane_brightness(Some((away_16, UP)), from_far);
+
+    assert!(full + 20 < flat, "tilted away from the light, but not darker: {full} against {flat}");
+    assert!(none.abs_diff(flat) <= 6, "a scale of 0 isn't flat: {none} against {flat}");
+    assert!(half.abs_diff(shallower_map) <= 6, "a scale of 0.5: {half}, the 16° map: {shallower_map}");
+    assert!(double + 20 < full, "a scale of 2 isn't steeper: {double} against {full}");
 }
 
 /// The dome normal map on two planes side by side, the right one with its texture mirrored, lit
@@ -348,8 +374,14 @@ enum Lighting {
 /// images it needs and gives the material's maps; `roughness` and `metallic` are the material's
 /// factors.
 fn aomr_brightness(lighting: Lighting, roughness: f32, metallic: f32, occlusion: f32, maps: impl FnOnce(&mut Harness) -> AoMRTextures) -> u32 {
+    aomr_brightness_with(lighting, roughness, metallic, occlusion, 1.0, maps)
+}
+
+/// [`aomr_brightness`] with the material's occlusion strength `strength`.
+fn aomr_brightness_with(lighting: Lighting, roughness: f32, metallic: f32, occlusion: f32, strength: f32, maps: impl FnOnce(&mut Harness) -> AoMRTextures) -> u32 {
     let textures = LocalState::new(AoMRTextures::None);
     let material = PbrMaterial::new()
+        .occlusion_strength(strength)
         .color(Color::new_rgba(120, 120, 120, 255))
         .roughness(Some(roughness))
         .metallic(metallic)
@@ -430,6 +462,32 @@ fn occlusion_metallic_and_roughness_maps() {
     assert_map_matches_factor("greyscale roughness", Highlight, roughness, |h, b| AoMRTextures::BWSplit { ao_texture: None, m_texture: None, r_texture: image(h, [b, b, b]) });
     assert_map_matches_factor("greyscale metallic", Highlight, metallic, |h, b| AoMRTextures::BWSplit { ao_texture: None, m_texture: image(h, [b, b, b]), r_texture: None });
     assert_map_matches_factor("greyscale occlusion", Ambient, occlusion, |h, b| AoMRTextures::BWSplit { ao_texture: image(h, [b, b, b]), m_texture: None, r_texture: None });
+}
+
+/// The occlusion strength weakens the occlusion map, as glTF's `occlusionTexture.strength`: a map of
+/// 0.25 at a strength of 0.5 renders as an occlusion of 1 + 0.5 · (0.25 − 1) = 0.625, and at 0 as no
+/// occlusion. It doesn't weaken the material's own `ambient_occlusion`.
+#[test]
+fn the_occlusion_strength_weakens_the_map() {
+    let map = |byte: u8| move |harness: &mut Harness| AoMRTextures::BWSplit {
+        ao_texture: Some(store_flat_image(harness, [byte, byte, byte, 255])),
+        m_texture: None,
+        r_texture: None,
+    };
+    let none = |_: &mut Harness| AoMRTextures::None;
+
+    let half = aomr_brightness_with(Lighting::Ambient, 0.5, 0.0, 1.0, 0.5, map(64));
+    let factor = aomr_brightness(Lighting::Ambient, 0.5, 0.0, 1.0 + 0.5 * (64.0 / 255.0 - 1.0), none);
+    let full = aomr_brightness(Lighting::Ambient, 0.5, 0.0, 1.0, map(64));
+    let off = aomr_brightness_with(Lighting::Ambient, 0.5, 0.0, 1.0, 0.0, map(64));
+    let unoccluded = aomr_brightness(Lighting::Ambient, 0.5, 0.0, 1.0, none);
+    let factor_only = aomr_brightness_with(Lighting::Ambient, 0.5, 0.0, 0.25, 0.0, none);
+    let factor_quarter = aomr_brightness(Lighting::Ambient, 0.5, 0.0, 0.25, none);
+
+    assert!(full + 20 < half, "a strength of 0.5 doesn't weaken the map: {half} against {full}");
+    assert!(half.abs_diff(factor) <= 6, "a strength of 0.5: {half}, the factor 0.625: {factor}");
+    assert!(off.abs_diff(unoccluded) <= 6, "a strength of 0 still occludes: {off} against {unoccluded}");
+    assert_eq!(factor_only, factor_quarter, "the strength changes the material's own occlusion");
 }
 
 /// A roughness map with the material's roughness unset is used as it is, as glTF's factor of 1,

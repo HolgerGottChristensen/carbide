@@ -30,6 +30,8 @@ pub struct WgpuPbrMaterial {
 
     material_flags: u32,
     texture_enable: u32,
+    occlusion_strength: f32,
+    normal_scale: f32,
 }
 
 unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
@@ -90,6 +92,8 @@ impl WgpuPbrMaterial {
             },
             // Set per frame from the texture store (`WgpuPbrMaterialTextures::enabled`).
             texture_enable: 0,
+            occlusion_strength: *material.occlusion_strength.value(),
+            normal_scale: *material.normal_scale.value(),
         }
     }
 }

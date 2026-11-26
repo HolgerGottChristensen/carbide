@@ -28,6 +28,13 @@ pub struct PbrMaterial {
     pub aomr_textures: Box<dyn AnyReadState<T=AoMRTextures>>,
     /// How much ambient light reaches the surface, from 0 (none) to 1 (all). 1 by default.
     pub ambient_occlusion: Box<dyn AnyReadState<T=f32>>,
+    /// How much the occlusion map darkens, from 0 (not at all) to 1 (as the map says): the map's
+    /// value becomes `1 + strength · (value − 1)`, as glTF's `occlusionTexture.strength`. 1 by
+    /// default.
+    pub occlusion_strength: Box<dyn AnyReadState<T=f32>>,
+    /// Scales the normal map's sideways components: below 1 flattens the bumps, above 1 deepens
+    /// them, as glTF's `normalTexture.scale`. 1 by default.
+    pub normal_scale: Box<dyn AnyReadState<T=f32>>,
     /// From 0 (a dielectric, such as plastic) to 1 (a metal). 0 by default.
     pub metallic: Box<dyn AnyReadState<T=f32>>,
     pub roughness_factor: Box<dyn AnyReadState<T=Option<f32>>>,
@@ -76,6 +83,8 @@ impl StateSync for PbrMaterial {
             | self.uv_transform1.sync(env)
             | self.sample_type.sync(env)
             | self.ambient_occlusion.sync(env)
+            | self.occlusion_strength.sync(env)
+            | self.normal_scale.sync(env)
             | self.metallic.sync(env)
             | self.roughness_factor.sync(env)
             | self.clearcoat.sync(env)
@@ -94,6 +103,8 @@ impl PbrMaterial {
             normal: NormalTexture::None.as_dyn_read(),
             aomr_textures: AoMRTextures::None.as_dyn_read(),
             ambient_occlusion: Box::new(1.0f32),
+            occlusion_strength: Box::new(1.0f32),
+            normal_scale: Box::new(1.0f32),
             metallic: Box::new(0.0f32),
             roughness_factor: None.as_dyn_read(),
             clearcoat_textures: ClearcoatTextures::None.as_dyn_read(),
@@ -201,6 +212,21 @@ impl PbrMaterial {
     /// from the scene's lights is not affected.
     pub fn ambient_occlusion<A: IntoReadState<f32>>(mut self, ambient_occlusion: A) -> PbrMaterial {
         self.ambient_occlusion = Box::new(ambient_occlusion.into_read_state());
+        self
+    }
+
+    /// How much the occlusion map darkens, from 0 (not at all) to 1 (as the map says, the
+    /// default): the map's value becomes `1 + strength · (value − 1)`, as glTF's
+    /// `occlusionTexture.strength`.
+    pub fn occlusion_strength<S: IntoReadState<f32>>(mut self, strength: S) -> PbrMaterial {
+        self.occlusion_strength = Box::new(strength.into_read_state());
+        self
+    }
+
+    /// Scales the normal map's sideways components: below 1 flattens the bumps, 0 removes them,
+    /// and above 1 deepens them, as glTF's `normalTexture.scale`. 1 by default.
+    pub fn normal_scale<S: IntoReadState<f32>>(mut self, scale: S) -> PbrMaterial {
+        self.normal_scale = Box::new(scale.into_read_state());
         self
     }
 

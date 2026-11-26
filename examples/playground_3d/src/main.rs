@@ -297,6 +297,39 @@ mod tests {
         assert!(changed(&tiled, &nearest) > 1_000, "nearest sampling changes only {} bytes of the view", changed(&tiled, &nearest));
     }
 
+    /// The normal and occlusion strength sliders reach the model: with Ground068, which has both
+    /// maps, flattening the normal map and switching off occlusion each change the view, and
+    /// setting them back restores it.
+    #[test]
+    fn map_strengths_reach_the_model() {
+        let options = Options::new();
+        *options.surface.clone().value_mut() = options.surfaces.iter().find(|surface| surface.name == "Ground068").unwrap().clone();
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
+        let full = view(&mut harness);
+
+        *options.normal_scale.clone().value_mut() = 0.0;
+        harness.render();
+        let flat = view(&mut harness);
+        assert!(changed(&full, &flat) > 1_000, "a normal strength of 0 changes only {} bytes of the view", changed(&full, &flat));
+
+        *options.normal_scale.clone().value_mut() = 1.0;
+        *options.occlusion_strength.clone().value_mut() = 0.0;
+        harness.render();
+        let unoccluded = view(&mut harness);
+        assert!(changed(&full, &unoccluded) > 1_000, "an occlusion strength of 0 changes only {} bytes of the view", changed(&full, &unoccluded));
+
+        *options.occlusion_strength.clone().value_mut() = 1.0;
+        harness.render();
+        assert_eq!(changed(&full, &view(&mut harness)), 0, "setting the strengths back doesn't restore the view");
+    }
+
     /// Each OBJ model in the library's ressources loads with its MTL materials and draws. The
     /// wolf's material has its four maps: colour, normal (`map_Bump`), roughness and metallic.
     #[test]

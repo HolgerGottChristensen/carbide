@@ -34,6 +34,10 @@ fn get_normal(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: 
         tangent_space.y = -tangent_space.y;
     }
 
+    // The material's normal scale steepens or flattens the map (glTF, `normalTexture.scale`); the
+    // result is normalised below.
+    tangent_space = vec3<f32>(tangent_space.xy * material.normal_scale, tangent_space.z);
+
     // The tangent, made perpendicular to the interpolated normal again.
     let tangent = normalize(vs_out.tangent.xyz - normal * dot(normal, vs_out.tangent.xyz));
     let image_up = cross(normal, tangent) * select(1.0, -1.0, vs_out.tangent.w < 0.0);

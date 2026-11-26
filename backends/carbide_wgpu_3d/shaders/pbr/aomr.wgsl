@@ -8,7 +8,14 @@
 //   map's red and green.
 // - AOMR_SWIZZLED_SPLIT: as split, with roughness and metallic in green and blue.
 // - AOMR_BW_SPLIT: three greyscale maps, each read from red.
+// The occlusion map is weakened by the material's occlusion strength first.
 // Returns occlusion, metallic and perceptual roughness.
+// An occlusion map's value with the material's strength: 1 + strength · (texel − 1), so 0 gives no
+// occlusion and 1 the map as it is (glTF, `occlusionTexture.strength`).
+fn occlusion_with_strength(material: Material, texel: f32) -> f32 {
+    return 1.0 + material.occlusion_strength * (texel - 1.0);
+}
+
 fn get_aomr(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec3<f32> {
     var ambient_occlusion = material.ambient_occlusion;
     var metallic = material.metallic;
@@ -21,13 +28,13 @@ fn get_aomr(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32
     if ((material.flags & 0x40u) != 0u) {
         if (has_roughness) {
             let orm = sample_material_texture(roughness_tex, material, coords, ddx, ddy);
-            ambient_occlusion *= orm.r;
+            ambient_occlusion *= occlusion_with_strength(material, orm.r);
             perceptual_roughness *= orm.g;
             metallic *= orm.b;
         }
     } else if ((material.flags & 0x200u) != 0u) {
         if (has_ao) {
-            ambient_occlusion *= sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r;
+            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r);
         }
         if (has_metallic) {
             metallic *= sample_material_texture(metallic_tex, material, coords, ddx, ddy).r;
@@ -37,7 +44,7 @@ fn get_aomr(material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32
         }
     } else {
         if (has_ao) {
-            ambient_occlusion *= sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r;
+            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, material, coords, ddx, ddy).r);
         }
         if (has_roughness) {
             let texel = sample_material_texture(roughness_tex, material, coords, ddx, ddy);

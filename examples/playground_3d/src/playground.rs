@@ -303,6 +303,11 @@ pub struct Options {
     pub use_occlusion_map: LocalState<bool>,
     pub use_metallic_map: LocalState<bool>,
     pub use_emission_map: LocalState<bool>,
+    /// How strongly the normal map bends the surface (`PbrMaterial::normal_scale`): 0 is flat,
+    /// 1 as the map is, 2 twice as steep.
+    pub normal_scale: LocalState<Scalar>,
+    /// How much the occlusion map darkens (`PbrMaterial::occlusion_strength`), from 0 to 1.
+    pub occlusion_strength: LocalState<Scalar>,
     /// How many times the surface's maps repeat across each side or around the model.
     pub tiling: LocalState<Scalar>,
     /// Whether the maps are sampled smoothly or show their pixels.
@@ -376,6 +381,8 @@ impl Options {
             use_occlusion_map: LocalState::new(true),
             use_metallic_map: LocalState::new(true),
             use_emission_map: LocalState::new(true),
+            normal_scale: LocalState::new(1.0),
+            occlusion_strength: LocalState::new(1.0),
             tiling: LocalState::new(1.0),
             sampling: LocalState::new(SampleType::Linear),
             roughness: LocalState::new(0.5),
@@ -564,6 +571,8 @@ impl Options {
             .reflectance(f32_of(&self.reflectance))
             .clearcoat(f32_of(&self.clearcoat), f32_of(&self.clearcoat_roughness))
             .ambient_occlusion(f32_of(&self.ambient_occlusion))
+            .occlusion_strength(f32_of(&self.occlusion_strength))
+            .normal_scale(f32_of(&self.normal_scale))
             // A surface's emission map glows white while Glow is None, and in the Glow colour
             // otherwise.
             .emissive(Map2::read_map(self.emissive.clone(), surface.clone(), |glow: &Color, surface: &Surface| {
@@ -942,8 +951,10 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         VStack::new((
             map_toggle(options, "Colour map", &options.use_color_map, |surface| surface.albedo.is_some()),
             map_toggle(options, "Normal map", &options.use_normal_map, |surface| surface.normal.is_some()),
+            map_slider(options, "Strength", &options.normal_scale, 0.0, 2.0, |surface| surface.normal.is_some()),
             map_toggle(options, "Roughness map", &options.use_roughness_map, |surface| surface.roughness.is_some()),
             map_toggle(options, "Occlusion map", &options.use_occlusion_map, |surface| surface.ambient_occlusion.is_some()),
+            map_slider(options, "Strength", &options.occlusion_strength, 0.0, 1.0, |surface| surface.ambient_occlusion.is_some()),
             map_toggle(options, "Metallic map", &options.use_metallic_map, |surface| surface.metallic.is_some()),
             map_toggle(options, "Emission map", &options.use_emission_map, |surface| surface.emission.is_some()),
             // How the maps are laid out and filtered, for any surface with an image.
@@ -1104,8 +1115,6 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         .cross_axis_alignment(CrossAxisAlignment::Start)
 }
 
-/// `widget`, shown only while `condition` holds: an option that can't apply while other options
-/// are as they are is left out of the side bar, taking no room.
 /// A checkbox for one of the surface's maps, shown only when the chosen surface has it.
 fn map_toggle(options: &Options, label: &str, used: &LocalState<bool>, has: fn(&Surface) -> bool) -> impl Widget + use<> {
     shown_when(
@@ -1114,6 +1123,17 @@ fn map_toggle(options: &Options, label: &str, used: &LocalState<bool>, has: fn(&
     )
 }
 
+/// A slider for one of the surface's maps, indented under its checkbox, shown only while the map
+/// is used: the chosen surface has it, and its checkbox is on.
+fn map_slider(options: &Options, label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, has: fn(&Surface) -> bool) -> impl Widget + use<> {
+    shown_when(
+        Map1::read_map(options.active_surface(), move |surface: &Surface| has(surface)),
+        slider(label, value, min, max, two_places).padding(EdgeInsets::single(0.0, 0.0, 24.0, 0.0)),
+    )
+}
+
+/// `widget`, shown only while `condition` holds: an option that can't apply while other options
+/// are as they are is left out of the side bar, taking no room.
 fn shown_when(condition: impl ReadState<T=bool> + Clone + 'static, widget: impl Widget) -> impl Widget {
     IfElse::new(condition).when_true(widget)
 }

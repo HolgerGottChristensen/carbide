@@ -23,4 +23,9 @@ struct Material {
     flags: u32,
     // -- 16 --
     texture_enable: u32,
+    // How much the occlusion map darkens: 1 + strength · (texel − 1), as glTF's
+    // occlusionTexture.strength.
+    occlusion_strength: f32,
+    // Scales the normal map's x and y, as glTF's normalTexture.scale.
+    normal_scale: f32,
 }
