@@ -223,10 +223,7 @@ impl PickingState {
 
         // The tile read earlier this frame, if it holds what this pick reads; otherwise read the
         // tile around the position.
-        if self.tile.as_ref().is_some_and(|tile| tile.covers(x, y, radius, &frame)) {
-            carbide_3d::profile::record_value("pick: tile reused (1 = yes)", 1.0);
-        } else {
-            carbide_3d::profile::record_value("pick: tile reused (1 = yes)", 0.0);
+        if !self.tile.as_ref().is_some_and(|tile| tile.covers(x, y, radius, &frame)) {
             self.tile = Some(self.read_tile(device, queue, (x, y), &frame)?);
         }
         let ReadTile { x0, y0, width: tile_width, height: tile_height, pixels: tile } = self.tile.as_ref()?;
@@ -332,7 +329,7 @@ impl PickingState {
         let slice = self.staging.slice(..);
         slice.map_async(wgpu::MapMode::Read, |_| {});
         // Blocks until the copy, and the frame before it, are done.
-        carbide_3d::profile::time("pick: GPU wait", || device.poll(wgpu::PollType::Wait)).ok()?;
+        device.poll(wgpu::PollType::Wait).ok()?;
 
         // The tile's ids and depths, row by row.
         let tile = {

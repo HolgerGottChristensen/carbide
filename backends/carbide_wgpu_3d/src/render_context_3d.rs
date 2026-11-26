@@ -6,7 +6,6 @@ use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
 use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
 use carbide_3d::{InnerImageContext3d, Mesh};
-use carbide_3d::profile;
 use carbide_core::color::{Color, ColorExt, WHITE};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
@@ -557,8 +556,6 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         };
         // Cheap handles, so the environment is free for the mesh cache below.
         let device = &wgpu_context.device.clone();
-        // Read now, while the environment is borrowed for the context, for the profile.
-        let adapter_info = profile::enabled().then(|| wgpu_context.adapter.get_info());
         let queue = &wgpu_context.queue.clone();
 
         // Outline thicknesses are in logical pixels; the layer is in physical ones.
@@ -569,31 +566,13 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             Some(cache) => cache,
             None => self.fallback_mesh_cache.get_or_insert_with(MeshCache::new),
         };
-        let upload_start = std::time::Instant::now();
         meshes.free_dropped();
         for command in &self.commands {
             if let RenderPassCommand::DrawMesh { mesh, .. } = command {
                 meshes.upload(mesh, device);
             }
         }
-        profile::record("backend: mesh upload", upload_start.elapsed());
-        let encode_start = std::time::Instant::now();
 
-        if let Some(info) = &adapter_info {
-            profile::note_once("adapter", || format!("adapter {} ({:?}, {:?})", info.name, info.backend, info.device_type));
-        }
-        if profile::enabled() {
-            let (draws, triangles) = self.commands.iter().fold((0, 0), |(draws, triangles), command| match command {
-                RenderPassCommand::DrawMesh { mesh, .. } => (draws + 1, triangles + mesh.indices().len() / 3),
-                _ => (draws, triangles),
-            });
-            profile::record_value("draws", draws as f64);
-            profile::record_value("triangles", triangles as f64);
-            profile::record_value("shadow maps", self.shadow_requests.len() as f64);
-            profile::record_value("picking pass (1 = on)", view.picking as u8 as f64);
-            profile::record_value("outlined objects", self.objects.iter().filter(|object| object.outline.w > 0.0).count() as f64);
-            profile::record_value("layer pixels (thousands)", (render_target.dimensions().0 * render_target.dimensions().1) as f64 / 1000.0);
-        }
 
         let (width, height) = render_target.dimensions();
 
@@ -908,15 +887,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             );
         }
 
-        let submit_start = std::time::Instant::now();
         queue.submit(std::iter::once(encoder.finish()));
-        profile::record("backend: submit", submit_start.elapsed());
-        profile::record("backend: encode", encode_start.elapsed());
-
-        // Measuring the GPU: wait for it to finish this view's frame.
-        if profile::mode() == profile::Mode::Gpu {
-            profile::time("backend: GPU frame (waited)", || device.poll(wgpu::PollType::Wait).ok());
-        }
     }
 
     fn pick(&mut self, position: (u32, u32), radius: u32, env: &mut Environment) -> Option<PickSample> {
