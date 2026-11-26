@@ -43,7 +43,7 @@ impl TesselatorKey {
     /// Insert the tesselator into the environment, making it the tesselator retrieved by [TesselatorKey::get].
     pub fn insert(env: &mut Environment<'static>, tesselator: impl Tesselator) {
         let value: Rc<dyn Tesselator> = Rc::new(tesselator);
-        env.insert::<TesselatorKey>(Box::leak(Box::new(value)));
+        env.insert_owned::<TesselatorKey>(value);
     }
 
     /// Get a handle to the tesselator registered in the environment, if any.

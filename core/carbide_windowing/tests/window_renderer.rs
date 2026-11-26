@@ -135,7 +135,7 @@ mod support {
 
     pub fn environment_with(factory: WindowRendererFactory) -> Environment<'static> {
         let mut env: Environment<'static> = Environment::new();
-        env.insert::<WindowRendererFactory>(Box::leak(Box::new(factory)));
+        env.insert_owned::<WindowRendererFactory>(factory);
         env
     }
 

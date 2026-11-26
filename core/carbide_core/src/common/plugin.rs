@@ -23,7 +23,9 @@ pub struct Plugin {
 pub use inventory::submit;
 
 /// Runs every registered plugin. A plugin only runs once every type in its `dependencies` has
-/// been registered by an earlier plugin.
+/// been registered by an earlier plugin. A plugin whose type is in the environment already is
+/// skipped, so an application or a test can provide its own value: a test harness shares one GPU
+/// device between its harnesses this way.
 ///
 /// Panics if some plugins can never run, because a dependency is registered by no plugin or the
 /// dependencies form a cycle.
@@ -47,7 +49,9 @@ pub async fn register_plugins(env: &mut Environment<'static>) {
         };
 
         let plugin = pending.remove(index);
-        (plugin.register)(env).await;
+        if !env.contains_type(plugin.registers) {
+            (plugin.register)(env).await;
+        }
         registered.push(plugin.registers);
     }
 }

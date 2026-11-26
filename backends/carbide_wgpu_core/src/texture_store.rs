@@ -144,7 +144,7 @@ impl EnvironmentKey for WgpuTextureStore {
 
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
     Box::pin(async {
-        env.insert::<WgpuTextureStore>(Box::leak(Box::new(WgpuTextureStore::new())))
+        env.insert_owned::<WgpuTextureStore>(WgpuTextureStore::new())
     })
 }
 

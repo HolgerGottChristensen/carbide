@@ -69,7 +69,7 @@ fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=
     Box::pin(async {
         let context = WgpuContextNew::new().await;
 
-        env.insert::<WgpuContextNew>(Box::leak(Box::new(context)))
+        env.insert_owned::<WgpuContextNew>(context)
     })
 }
 

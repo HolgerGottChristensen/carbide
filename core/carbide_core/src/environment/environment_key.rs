@@ -52,10 +52,16 @@ mod sealed {
 
         fn wrap<'a, T: AnyDebug + 'a>(name: &'static str, v: Self::Ref<'a, T>) -> InternalEnvironmentValue<'a>;
         fn extract<'a, 'e, T: AnyDebug>(v: &'a mut InternalEnvironmentValue<'e>) -> Option<Self::Ref<'a, T>>;
+        /// The reference this access hands out, from an exclusive one.
+        fn from_mut<'a, T: ?Sized + 'a>(v: &'a mut T) -> Self::Ref<'a, T>;
     }
 
     impl Sealed for Shared {
         type Ref<'a, T: ?Sized + 'a> = &'a T;
+
+        fn from_mut<'a, T: ?Sized + 'a>(v: &'a mut T) -> &'a T {
+            v
+        }
 
         fn wrap<'a, T: AnyDebug + 'a>(name: &'static str, v: &'a T) -> InternalEnvironmentValue<'a> {
             InternalEnvironmentValue::Value(name, v)
@@ -71,6 +77,10 @@ mod sealed {
     }
     impl Sealed for Exclusive {
         type Ref<'a, T: ?Sized + 'a> = &'a mut T;
+
+        fn from_mut<'a, T: ?Sized + 'a>(v: &'a mut T) -> &'a mut T {
+            v
+        }
 
         fn wrap<'a, T: AnyDebug + 'a>(name: &'static str, v: &'a mut T) -> InternalEnvironmentValue<'a> {
             InternalEnvironmentValue::ValueMut(name, v)
@@ -99,6 +109,11 @@ impl Access for Exclusive {}
 
 /// `&Value` or `&mut Value`, depending on the key.
 pub type EnvironmentValue<'a, K> = <<K as EnvironmentKey>::Access as sealed::Sealed>::Ref<'a, <K as EnvironmentKey>::Value>;
+
+/// A value as `K`'s access hands it out, from an exclusive reference.
+pub(super) fn reference_from_mut<'a, K: EnvironmentKey + ?Sized>(v: &'a mut K::Value) -> EnvironmentValue<'a, K> {
+    <K::Access as sealed::Sealed>::from_mut(v)
+}
 
 pub(super) fn extract_value<'a, 'e, K: EnvironmentKey + ?Sized>(
     v: &'a mut InternalEnvironmentValue<'e>,

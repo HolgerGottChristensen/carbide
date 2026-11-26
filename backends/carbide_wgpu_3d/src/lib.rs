@@ -75,12 +75,12 @@ fn preprocess_shader<S: AsRef<Path>>(path: S) -> ShaderModuleDescriptor<'static>
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
     Box::pin(async {
         // The meshes' GPU copies, shared by every view the renderer draws.
-        env.insert::<MeshCache>(Box::leak(Box::new(MeshCache::new())));
+        env.insert_owned::<MeshCache>(MeshCache::new());
 
-        env.insert::<ContextFactory3d>(Box::leak(Box::new(ContextFactory3d {
+        env.insert_owned::<ContextFactory3d>(ContextFactory3d {
             id: RenderContext3dId::of::<WgpuRenderContext3d>(),
             render_context: |_env| Box::new(WgpuRenderContext3d::new()),
-        })))
+        })
     })
 }
 

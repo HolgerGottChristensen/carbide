@@ -25,14 +25,22 @@ use carbide_winit::window::WindowId;
 use carbide_winit::{update_scale_factor, NewEventHandler};
 
 use carbide_core::plugin::register_plugins;
+use carbide_wgpu_core::WgpuContextNew;
+use std::sync::OnceLock;
 use carbide_wgpu::testing::{HeadlessRenderer, WgpuImageContext, WgpuMsaa};
 
 use crate::snapshot::{self, SnapshotOptions};
 use crate::test_scene::TestScene;
 
-/// Registers every plugin into a `Harness`'s own, fresh environment: the shared
-/// `WgpuContextNew` (instance/adapter/device/queue), the `WgpuContext` renderer state built on
-/// top of it, the text context and the tesselator. Same setup as `Application::launch_inner`.
+/// Registers every plugin into a `Harness`'s own, fresh environment: the `WgpuContext` renderer
+/// state, the text context, the tesselator and the rest, as `Application::launch_inner` does.
+/// The plugins' values are owned by the environment (`Environment::insert_owned`), so they are
+/// freed with the harness.
+///
+/// The GPU device (`WgpuContextNew`: instance, adapter, device and queue) is the one exception:
+/// one per process, shared by every harness (`shared_gpu`), inserted before the plugins run, so
+/// its plugin is skipped. A device per harness cost about 65 MB on llvmpipe each, and harnesses
+/// add up: a suite of a hundred reached 13 GB before values were owned.
 ///
 /// Each `Harness` gets its own `WgpuContext` and text context this way, deliberately *not*
 /// shared across instances. Sharing the `WgpuContext` was the original design here, for speed,
@@ -45,7 +53,14 @@ use crate::test_scene::TestScene;
 /// constructed while a first one (rendering the same icon) was still alive. The two must always
 /// be created together. Correctness over speed: register fresh every time.
 fn register_harness_plugins(env: &mut Environment<'static>) {
+    env.insert::<WgpuContextNew>(shared_gpu());
     futures::executor::block_on(register_plugins(env));
+}
+
+/// The GPU device every harness in the process uses, created by the first.
+fn shared_gpu() -> &'static WgpuContextNew {
+    static GPU: OnceLock<WgpuContextNew> = OnceLock::new();
+    GPU.get_or_init(|| futures::executor::block_on(WgpuContextNew::new()))
 }
 
 /// Held by every live `Harness`, so harnesses on different threads never exist at the same time.
@@ -359,11 +374,9 @@ impl Harness {
     /// Sets the theme (`Theme::Light`/`Theme::Dark`) the root `ThemeManager` — added to every
     /// `Harness`'s widget tree in `new_with_options`, mirroring `Window::new` — resolves
     /// `EnvironmentColor` values against. Persists across `render()` calls until changed again,
-    /// same as `resize`. Uses the same leaked-`Box` pattern as `Application::add_environment_owned`
-    /// (`Environment<'static>::insert` requires a `&'static` reference) — harmless for a test
-    /// process, since each call leaks one `Theme`-sized allocation.
+    /// same as `resize`. The environment owns the theme, so it is freed with the harness.
     pub fn set_theme(&mut self, theme: Theme) {
-        self.env.insert::<Theme>(Box::leak(Box::new(theme)));
+        self.env.insert_owned::<Theme>(theme);
     }
 
     /// `position` is in logical units (the same space `find_by_label`'s bounds and `dimension`

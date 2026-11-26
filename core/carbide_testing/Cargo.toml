@@ -25,6 +25,7 @@ carbide_winit = { path = "../../backends/carbide_winit", version = "0.72.0", def
 # harness renders offscreen and never needs a window renderer.
 carbide_wgpu = { path = "../../backends/carbide_wgpu", version = "0.72.0", default-features = false, features = ["lyon", "cosmic_text", "testing"] }
 carbide_controls = { workspace = true, optional = true }
+carbide_wgpu_core.workspace = true
 accesskit = { workspace = true, features = ["serde"] }
 futures.workspace = true
 image.workspace = true

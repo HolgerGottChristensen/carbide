@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::mem::transmute;
 use crate::common::any_debug::AnyDebug;
 use crate::environment::{EnvironmentKey, EnvironmentValue, Exclusive};
-use crate::environment::environment_key::{extract_value, wrap_value};
+use crate::environment::environment_key::{extract_value, reference_from_mut, wrap_value};
 
 pub trait EnvironmentKeyable: Debug + 'static {
     type Output: Any + Debug + 'static;
@@ -56,7 +56,23 @@ pub trait EnvironmentKeyable: Debug + 'static {
 /// algorithm, collisions should never occur.
 pub struct Environment<'a> {
     data: HashMap<TypeId, InternalEnvironmentValue<'a>, BuildTypeIdHasher>,
+    /// Values the environment owns (`insert_owned`), freed when it is dropped. Declared after
+    /// `data`, so the references to them in `data` are dropped first.
+    owned: Vec<OwnedValue>,
     _marker: PhantomData<*const ()>, // Ensures the type is not Send and not Sync
+}
+
+/// A value an environment owns, boxed: freed when dropped. Held as a raw pointer, so the
+/// reference to it in the environment's `data` is the only one in use.
+struct OwnedValue(*mut dyn Any);
+
+impl Drop for OwnedValue {
+    #[allow(unsafe_code)]
+    fn drop(&mut self) {
+        // SAFETY: the pointer came from `Box::into_raw` in `insert_owned`, and is dropped once,
+        // here.
+        drop(unsafe { Box::from_raw(self.0) });
+    }
 }
 
 #[doc(hidden)]
@@ -87,6 +103,7 @@ impl<'a> Environment<'a> {
     pub fn new() -> Self {
         Environment {
             data: HashMap::with_hasher(BuildTypeIdHasher::default()),
+            owned: Vec::new(),
             _marker: Default::default(),
         }
     }
@@ -183,6 +200,28 @@ impl Environment<'static> {
         let id = TypeId::of::<K>();
 
         self.data.insert(id, wrap_value::<K>(v));
+    }
+
+    /// Insert `value` under `K`, owned by the environment and freed when it is dropped, unlike
+    /// [`insert`](Environment::insert), which takes a reference that outlives it. For values a
+    /// plugin creates: an application's environment lives as long as the application, but a test
+    /// harness creates one per harness, and leaked values would add up.
+    #[allow(unsafe_code)]
+    pub fn insert_owned<K: EnvironmentKey + ?Sized>(&mut self, value: K::Value) {
+        let pointer: *mut K::Value = Box::into_raw(Box::new(value));
+        self.owned.push(OwnedValue(pointer));
+
+        // SAFETY: the value lives until the environment drops `owned`, which happens after
+        // `data`, and the environment hands it out only borrowed from itself (`get` and
+        // `get_mut` tie the reference to the environment's borrow). This is the only reference
+        // made from the pointer until `OwnedValue` frees it.
+        let reference: &'static mut K::Value = unsafe { &mut *pointer };
+        self.insert::<K>(reference_from_mut::<K>(reference));
+    }
+
+    /// Whether a value is stored under the key with `id`.
+    pub(crate) fn contains_type(&self, id: TypeId) -> bool {
+        self.data.contains_key(&id)
     }
 }
 
@@ -355,6 +394,112 @@ mod tests {
 
         let get = map.get::<TestKey>();
         println!("{:?}", get);
+    }
+
+    /// A value that counts its drops in a shared counter.
+    #[derive(Debug)]
+    struct Counted(std::rc::Rc<std::cell::Cell<u32>>, u64);
+
+    impl Drop for Counted {
+        fn drop(&mut self) {
+            self.0.set(self.0.get() + 1);
+        }
+    }
+
+    #[derive(Debug)]
+    struct CountedKey;
+
+    impl EnvironmentKey for CountedKey { type Value = Counted; type Access = Shared; }
+
+    #[derive(Debug)]
+    struct CountedExclusiveKey;
+
+    impl EnvironmentKey for CountedExclusiveKey { type Value = Counted; type Access = Exclusive; }
+
+    fn counter() -> std::rc::Rc<std::cell::Cell<u32>> {
+        std::rc::Rc::new(std::cell::Cell::new(0))
+    }
+
+    /// An owned value is readable while the environment lives, and dropped exactly once, when
+    /// the environment is.
+    #[test]
+    fn owned_values_are_dropped_with_the_environment() {
+        let drops = counter();
+        let mut env = Environment::new();
+        env.insert_owned::<CountedKey>(Counted(drops.clone(), 7));
+
+        assert_eq!(env.get::<CountedKey>().map(|value| value.1), Some(7));
+        assert_eq!(drops.get(), 0);
+
+        drop(env);
+        assert_eq!(drops.get(), 1);
+    }
+
+    /// An exclusive owned value can be changed through `get_mut`, and the change is what `get`
+    /// reads; it is still dropped once.
+    #[test]
+    fn exclusive_owned_values_can_be_changed() {
+        let drops = counter();
+        let mut env = Environment::new();
+        env.insert_owned::<CountedExclusiveKey>(Counted(drops.clone(), 1));
+
+        env.get_mut::<CountedExclusiveKey>().unwrap().1 = 2;
+        assert_eq!(env.get::<CountedExclusiveKey>().map(|value| value.1), Some(2));
+
+        drop(env);
+        assert_eq!(drops.get(), 1);
+    }
+
+    /// A value replaced by another under the same key is kept until the environment drops, so no
+    /// reference to it can dangle, and then both are dropped once each.
+    #[test]
+    fn replaced_owned_values_are_dropped_once() {
+        let drops = counter();
+        let mut env = Environment::new();
+        env.insert_owned::<CountedKey>(Counted(drops.clone(), 1));
+        env.insert_owned::<CountedKey>(Counted(drops.clone(), 2));
+
+        assert_eq!(env.get::<CountedKey>().map(|value| value.1), Some(2));
+        assert_eq!(drops.get(), 0);
+
+        drop(env);
+        assert_eq!(drops.get(), 2);
+    }
+
+    /// An owned value shadowed by `with` is hidden inside the scope, readable again after it,
+    /// and dropped once.
+    #[test]
+    fn owned_values_can_be_shadowed() {
+        let drops = counter();
+        let shadow_drops = counter();
+        let mut env = Environment::new();
+        env.insert_owned::<CountedKey>(Counted(drops.clone(), 1));
+
+        let shadow = Counted(shadow_drops.clone(), 2);
+        env.with::<CountedKey>(&shadow, |inner| {
+            assert_eq!(inner.get::<CountedKey>().map(|value| value.1), Some(2));
+        });
+        assert_eq!(env.get::<CountedKey>().map(|value| value.1), Some(1));
+
+        drop(env);
+        assert_eq!(drops.get(), 1);
+        assert_eq!(shadow_drops.get(), 0, "the environment dropped a value it doesn't own");
+        drop(shadow);
+        assert_eq!(shadow_drops.get(), 1);
+    }
+
+    /// Moving the environment, as a harness does when it is built, keeps its owned values where
+    /// they are: the map points at their boxes, not into the environment.
+    #[test]
+    fn owned_values_survive_moving_the_environment() {
+        let drops = counter();
+        let mut env = Environment::new();
+        env.insert_owned::<CountedKey>(Counted(drops.clone(), 5));
+
+        let moved = Box::new(env);
+        assert_eq!(moved.get::<CountedKey>().map(|value| value.1), Some(5));
+        drop(moved);
+        assert_eq!(drops.get(), 1);
     }
 
     #[test]

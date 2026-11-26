@@ -28,7 +28,7 @@ impl SystemImageManager {
     /// [SystemImageManager::get].
     pub fn insert(env: &mut Environment<'static>, provider: impl SystemImageProvider) {
         let value: Rc<dyn SystemImageProvider> = Rc::new(provider);
-        env.insert::<SystemImageManager>(Box::leak(Box::new(value)));
+        env.insert_owned::<SystemImageManager>(value);
     }
 
     /// Get a handle to the provider registered in the environment, if any.

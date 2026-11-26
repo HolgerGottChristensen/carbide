@@ -81,7 +81,7 @@ impl TextContextKey {
     /// [TextContextKey::get] and [TextContextKey::get_mut].
     pub fn insert(env: &mut Environment<'static>, text_context: impl TextContext) {
         let value: Box<dyn TextContext> = Box::new(text_context);
-        env.insert::<TextContextKey>(Box::leak(Box::new(value)));
+        env.insert_owned::<TextContextKey>(value);
     }
 
     /// Get the text context registered in the environment.

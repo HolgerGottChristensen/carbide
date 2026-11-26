@@ -181,11 +181,11 @@ fn image_context() -> Box<dyn ImageContext> {
 
 fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=()> + 'a>> {
     Box::pin(async {
-        env.insert::<WindowRendererFactory>(Box::leak(Box::new(WindowRendererFactory {
+        env.insert_owned::<WindowRendererFactory>(WindowRendererFactory {
             id: WindowRendererId::of::<WgpuWindowRendererBackend>(),
             create,
             image_context,
-        })))
+        })
     })
 }
 
