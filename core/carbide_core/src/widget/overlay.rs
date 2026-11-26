@@ -52,6 +52,20 @@ pub struct Overlay<K, C> where C: Widget, K: EnvironmentKey<Value=OverlayManager
 
     overlay: Option<Box<dyn AnyWidget>>,
     steal_events_when_some: bool,
+    /// Where a mouse press that began over an overlay is: its release and click belong to the
+    /// overlay too, even if the overlay closed in between.
+    gesture: OverlayGesture,
+}
+
+/// A mouse gesture that began while an overlay was shown and stealing events.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+enum OverlayGesture {
+    #[default]
+    None,
+    /// The button was pressed over the overlay and is held.
+    Pressed,
+    /// The button was released: the click that may follow the release is the overlay's.
+    Released,
 }
 
 impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widget> Overlay<K, C> {
@@ -64,6 +78,7 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
             key: Default::default(),
             overlay: None,
             steal_events_when_some: false,
+            gesture: OverlayGesture::None,
         }
     }
 }
@@ -140,11 +155,29 @@ impl<K: EnvironmentKey<Value=OverlayManager, Access=Exclusive> + Clone, C: Widge
                 env,
             };
 
+            // A press while the overlay steals events starts a gesture that is the overlay's to
+            // its end: choosing in a popup closes it on the release, and the click that follows
+            // the release must not reach the widget under the popup.
+            let gesture = inner.gesture;
+            inner.gesture = match (event, gesture) {
+                (MouseEvent::Press { .. }, _) if inner.overlay.is_some() && inner.steal_events_when_some => OverlayGesture::Pressed,
+                (MouseEvent::Press { .. }, _) => OverlayGesture::None,
+                (MouseEvent::Release { .. }, OverlayGesture::Pressed) => OverlayGesture::Released,
+                (MouseEvent::Drag { .. } | MouseEvent::Move { .. }, OverlayGesture::Pressed) => OverlayGesture::Pressed,
+                (MouseEvent::Click(..) | MouseEvent::NClick(..), OverlayGesture::Released) => OverlayGesture::Released,
+                _ => OverlayGesture::None,
+            };
+            let overlays_gesture = inner.gesture != OverlayGesture::None;
+
             if let Some(overlay) = &mut inner.overlay {
                 overlay.process_mouse_event(event, inner_ctx);
                 if inner.steal_events_when_some {
                     return;
                 }
+            }
+
+            if overlays_gesture {
+                return;
             }
 
             inner.child.process_mouse_event(event, inner_ctx);

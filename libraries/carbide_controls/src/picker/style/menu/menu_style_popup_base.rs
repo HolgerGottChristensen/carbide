@@ -1,6 +1,6 @@
 use dyn_clone::clone_box;
 use carbide::CommonWidgetImpl;
-use carbide::draw::{Dimension, Position};
+use carbide::draw::{Dimension, Position, Rect, Scalar};
 use carbide::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::layout::{Layout, LayoutContext};
 use carbide::state::{AnyReadState, AnyState, ReadState};
@@ -21,11 +21,35 @@ pub struct MenuStylePopupBase {
     pub child: Box<dyn AnyWidget>,
 }
 
+/// How far a list moved inside the window keeps from its edges, in points.
+const EDGE_MARGIN: Scalar = 2.0;
+
 impl Layout for MenuStylePopupBase {
     fn calculate_size(&mut self, _requested_size: Dimension, ctx: &mut LayoutContext) -> Dimension {
         self.sync(ctx.env);
 
         self.child.calculate_size(self.dimension(), ctx)
+    }
+
+    /// The list, centred on the picker's button, as before, then moved back inside `bounding_box`,
+    /// the visible area the overlay is laid out in (the window), less a margin of `EDGE_MARGIN`,
+    /// along each axis where it fits, so a long list near an edge opens on screen. Where it doesn't
+    /// fit, it stays centred on the button, until the list can scroll.
+    fn position_children(&mut self, bounding_box: Rect, ctx: &mut LayoutContext) {
+        let centred = self.alignment().position(self.position(), self.dimension(), self.child.dimension());
+        let size = self.child.dimension();
+
+        let keep_inside = |position: Scalar, size: Scalar, start: Scalar, length: Scalar| {
+            let (start, length) = (start + EDGE_MARGIN, length - 2.0 * EDGE_MARGIN);
+            if size <= length { position.clamp(start, start + length - size) } else { position }
+        };
+        let position = Position::new(
+            keep_inside(centred.x, size.width, bounding_box.position.x, bounding_box.dimension.width),
+            keep_inside(centred.y, size.height, bounding_box.position.y, bounding_box.dimension.height),
+        );
+
+        self.child.set_position(position);
+        self.child.position_children(bounding_box, ctx);
     }
 }
 

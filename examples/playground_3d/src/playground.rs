@@ -442,7 +442,7 @@ impl Options {
             file_materials: LocalState::new(true),
             spin: LocalState::new(false),
             turn: LocalState::new(0.0),
-            light_azimuth: LocalState::new(-35.0),
+            light_azimuth: LocalState::new(25.0),
             light_elevation: LocalState::new(50.0),
             light_intensity: LocalState::new(5.0),
             light_kind: LocalState::new(LightKind::Directional),

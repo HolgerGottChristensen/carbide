@@ -99,6 +99,9 @@ impl MenuStyle {
                             Self::popup_item(item, event_id, hovered.clone().as_dyn())
                         }
                     })).spacing(0.0)
+                        // A choice on one line, as on the button: a long one widens the list
+                        // instead of wrapping onto the next row's space.
+                        .text_wrap(Wrap::None)
                         .padding(2.0)
                         .background(RoundedRectangle::new(4.0).fill(EnvironmentColor::SecondarySystemBackground).stroke(EnvironmentColor::OpaqueSeparator).stroke_style(1.0))
                         .environment(EnvironmentColor::Accent, color)
@@ -137,7 +140,9 @@ impl MenuStyle {
                 .boxed()
                 .frame_fixed_height(22.0)
                 .fit_width()
-                .padding(EdgeInsets::single(0.0, 0.0, 4.0, 0.0)),
+                // On both sides: the longest choice sets the list's width, and would otherwise
+                // end against its right edge.
+                .padding(EdgeInsets::single(0.0, 0.0, 4.0, 4.0)),
             Spacer::new()
         )).background(RoundedRectangle::new(4.0).fill(background_color))
             .boxed();
