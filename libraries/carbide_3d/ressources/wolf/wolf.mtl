@@ -1,0 +1,18 @@
+# Blender 5.2.0 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl Material_0
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
+map_Kd Image_0.jpg
+map_Pm Image_1_metallic.jpg
+map_Pr Image_1_roughness.jpg
+map_Bump -bm 1.000000 Image_2.jpg

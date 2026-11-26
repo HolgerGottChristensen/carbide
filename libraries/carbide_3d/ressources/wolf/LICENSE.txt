@@ -1,0 +1,14 @@
+CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+
+To the extent possible under law, Grab3D has waived all copyright and related or neighboring rights to the
+3D models, textures and images in this package. This work is published from: Germany.
+
+https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+Origin / AI disclosure
+----------------------
+Method: AI-assisted (contains AI-generated content)
+Base mesh and textures generated with an AI image-to-3D tool (Meshy), then cleaned up, scaled, textured and
+checked in Blender.
+If your platform requires disclosure of AI-generated content (for example Steam), this asset counts as
+AI-assisted.

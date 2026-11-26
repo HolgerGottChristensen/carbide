@@ -26,6 +26,7 @@ dolly = { workspace = true, optional = true }
 carbide_testing.workspace = true
 carbide_wgpu_3d.workspace = true
 carbide_wgpu_core.workspace = true
+image.workspace = true
 
 [lints]
 workspace = true

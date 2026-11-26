@@ -10,7 +10,9 @@ use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
 use carbide::d3::light::{DirectionalLight, PointLight, SpotLight};
 use carbide::d3::material::albedo_component::AlbedoComponent;
 use carbide::d3::material::pbr_material::PbrMaterial;
-use carbide::d3::node3d::AnyNode3d;
+use carbide::d3::node3d::{AnyNode3d, CommonNode3d, NodeId};
+use carbide::d3::render::{Render3d, RenderContext3d};
+use std::rc::Rc;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
 use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
@@ -170,10 +172,39 @@ pub enum Model {
     Cube,
     Sphere,
     Cubes,
+    /// The OBJ models in `libraries/carbide_3d/ressources`, with their MTL materials.
     RenderBall,
+    /// A wolf, with colour, metallic, roughness and normal maps (CC0, Grab3D; AI-assisted).
+    Wolf,
+    /// Yasutoshi Mori's material test object (CC BY 4.0).
+    MoriKnob,
+    /// A sports car with many materials, glowing lights and glass.
+    SportsCar,
     /// Five by five spheres: roughness from 0 to 1 left to right, metallic from 0 to 1 top to
     /// bottom, as in the usual PBR material charts.
     MaterialGrid,
+}
+
+impl Model {
+    /// The OBJ file of a model loaded from one, relative to the workspace.
+    pub fn obj_file(&self) -> Option<&'static str> {
+        macro_rules! ressource {
+            ($file:literal) => { concat!(env!("CARGO_MANIFEST_DIR"), "/../../libraries/carbide_3d/ressources/", $file) };
+        }
+        match self {
+            Model::RenderBall => Some(ressource!("renderball.obj")),
+            Model::Wolf => Some(ressource!("wolf/wolf.obj")),
+            Model::MoriKnob => Some(ressource!("mori_knob/testObj.obj")),
+            Model::SportsCar => Some(ressource!("sportscar/sportsCar.obj")),
+            _ => None,
+        }
+    }
+
+    /// The model, loaded and fitted to the view. Mori's knob sits in a studio scene, with a large
+    /// backdrop and a light panel, which the fit leaves out.
+    pub fn load(&self) -> Option<Rc<meshes::FittedObj>> {
+        self.obj_file().map(|file| meshes::load_obj(file, *self == Model::MoriKnob))
+    }
 }
 
 /// The steps of the material grid, for both roughness and metallic.
@@ -615,17 +646,21 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
             // The spheres don't shadow each other, as in the charts; they still cast onto the floor.
             parts.push(Group::new(spheres).receives_shadows(false).boxed());
         }
-        Model::RenderBall => {
-            let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../libraries/carbide_3d/ressources/renderball.obj");
-            let (meshes, fit) = meshes::load_obj(path);
-            for (mesh, material) in meshes {
-                let object = if file_materials {
-                    Object::new(mesh, material)
-                } else {
-                    Object::new(meshes::painted(mesh), options.material())
-                };
-                parts.push(object.transform(fit).boxed());
-            }
+        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar => {
+            // Loaded the first time the model is drawn: the views of every model are built up
+            // front, but only the chosen one is drawn.
+            let options = options.clone();
+            parts.push(LazyObj::new(move || {
+                let loaded = model.load().unwrap();
+                loaded.parts.iter().cloned().map(|(mesh, material)| {
+                    let object = if file_materials {
+                        Object::new(mesh, material)
+                    } else {
+                        Object::new(meshes::painted(mesh), options.material())
+                    };
+                    object.transform(loaded.fit).boxed()
+                }).collect()
+            }).boxed());
         }
     }
 
@@ -663,19 +698,84 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
 /// A floor 6 metres square just under `model`, shown when the side bar says so: an empty mesh
 /// otherwise. It doesn't turn with the model.
 fn floor(model: Model, options: &Options) -> impl Node3dExt {
-    let height = match model {
+    // A model's height, read when the floor is drawn: for an OBJ model, its bottom, which loads it,
+    // so only once the model is shown.
+    let height = move || match model {
         Model::Empty => 0.0,
-        Model::Cube | Model::RenderBall => -0.5,
+        Model::Cube => -0.5,
+        Model::RenderBall | Model::Wolf | Model::MoriKnob | Model::SportsCar => model.load().unwrap().bottom,
         Model::Sphere => -0.6,
         Model::Cubes => -0.2,
         Model::MaterialGrid => -2.0 * GRID_SPACING - GRID_RADIUS - 0.05,
     };
+    let position = Map1::read_map(options.floor.clone(), move |_: &bool| Vector3::new(0.0, height(), 0.0));
 
     let (plane, empty) = (Mesh::plane(6.0, 6.0), Mesh::new(vec![], vec![]));
     let mesh = Map1::read_map(options.floor.clone(), move |shown: &bool| if *shown { plane.clone() } else { empty.clone() });
 
     Object::new(mesh, PbrMaterial::new().color(rgba_bytes(200, 200, 200, 1.0)).roughness(Some(0.9f32)))
-        .position(Vector3::new(0.0, height, 0.0))
+        .position(position)
+}
+
+/// An OBJ model's parts, built by `build` the first time they are drawn, then kept.
+#[derive(Clone)]
+struct LazyObj {
+    id: NodeId,
+    build: Rc<dyn Fn() -> Vec<Box<dyn AnyNode3d>>>,
+    parts: Option<Vec<Box<dyn AnyNode3d>>>,
+}
+
+impl LazyObj {
+    fn new(build: impl Fn() -> Vec<Box<dyn AnyNode3d>> + 'static) -> LazyObj {
+        LazyObj { id: NodeId::new(), build: Rc::new(build), parts: None }
+    }
+}
+
+impl std::fmt::Debug for LazyObj {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LazyObj").field("loaded", &self.parts.is_some()).finish()
+    }
+}
+
+impl Render3d for LazyObj {
+    fn render(&mut self, context: &mut RenderContext3d) {
+        let parts = self.parts.get_or_insert_with(|| (self.build)());
+        for part in parts {
+            part.render(context);
+        }
+    }
+}
+
+impl CommonNode3d for LazyObj {
+    fn id(&self) -> NodeId {
+        self.id
+    }
+
+    fn transform(&self) -> Matrix4<f32> {
+        Matrix4::identity()
+    }
+
+    fn visible(&self) -> bool {
+        true
+    }
+
+    fn foreach_child<'a>(&'a self, f: &mut dyn FnMut(&'a dyn AnyNode3d)) {
+        for part in self.parts.iter().flatten() {
+            f(part);
+        }
+    }
+
+    fn foreach_child_mut<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d)) {
+        for part in self.parts.iter_mut().flatten() {
+            f(part);
+        }
+    }
+
+    fn foreach_child_rev<'a>(&'a mut self, f: &mut dyn FnMut(&'a mut dyn AnyNode3d)) {
+        for part in self.parts.iter_mut().flatten().rev() {
+            f(part);
+        }
+    }
 }
 
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
@@ -726,16 +826,16 @@ fn hover_views(model: Model, file_materials: bool, options: &Options) -> Box<dyn
     ).boxed()
 }
 
-/// The views of the render ball, rebuilt when the toggle changes, with its file's materials or the
+/// The views of an OBJ model, rebuilt when the toggle changes, with its file's materials or the
 /// side bar's.
-fn render_ball_views(options: &Options) -> Box<dyn AnyWidget> {
+fn obj_views(model: Model, options: &Options) -> Box<dyn AnyWidget> {
     let o = options.clone();
     let file_materials = options.file_materials.clone();
 
     ui!(
         match file_materials {
-            true => hover_views(Model::RenderBall, true, &o),
-            false => hover_views(Model::RenderBall, false, &o),
+            true => hover_views(model, true, &o),
+            false => hover_views(model, false, &o),
         }
     ).boxed()
 }
@@ -751,7 +851,10 @@ pub fn playground(options: Options) -> impl Widget {
             Model::Cube => hover_views(Model::Cube, false, &o),
             Model::Sphere => hover_views(Model::Sphere, false, &o),
             Model::Cubes => hover_views(Model::Cubes, false, &o),
-            Model::RenderBall => render_ball_views(&o),
+            Model::RenderBall => obj_views(Model::RenderBall, &o),
+            Model::Wolf => obj_views(Model::Wolf, &o),
+            Model::MoriKnob => obj_views(Model::MoriKnob, &o),
+            Model::SportsCar => obj_views(Model::SportsCar, &o),
             Model::MaterialGrid => hover_views(Model::MaterialGrid, false, &o),
         }
     );
@@ -789,6 +892,9 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("A sphere").tag(Model::Sphere),
             Text::new("A grid of cubes").tag(Model::Cubes),
             Text::new("The render ball (OBJ)").tag(Model::RenderBall),
+            Text::new("A wolf (OBJ, textured)").tag(Model::Wolf),
+            Text::new("Mori's material knob (OBJ)").tag(Model::MoriKnob),
+            Text::new("A sports car (OBJ)").tag(Model::SportsCar),
             Text::new("PBR grid: roughness × metallic").tag(Model::MaterialGrid),
         )),
         Picker::new("Views", options.views.clone(), (
@@ -819,14 +925,14 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
     let not_grid = Map1::read_map(options.model.clone(), |model: &Model| *model != Model::MaterialGrid);
-    let render_ball = Map1::read_map(options.model.clone(), |model: &Model| *model == Model::RenderBall);
+    let render_ball = Map1::read_map(options.model.clone(), |model: &Model| model.obj_file().is_some());
     let using_file = Map2::read_map(options.model.clone(), options.file_materials.clone(), |model: &Model, file: &bool| {
-        *model == Model::RenderBall && *file
+        model.obj_file().is_some() && *file
     });
     let material = VStack::new((
         heading("Material"),
         shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
-        shown_when(using_file, note("The render ball uses its MTL file's materials; the values below apply to the other models.")),
+        shown_when(using_file, note("The model uses its MTL file's materials and maps; the values below apply to the other models.")),
         Picker::new(
             "Texture",
             options.surface.clone(),

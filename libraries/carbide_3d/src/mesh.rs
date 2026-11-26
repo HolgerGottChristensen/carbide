@@ -414,7 +414,7 @@ impl Mesh {
 
 /// A mesh from a model loaded with tobj's `GPU_LOAD_OPTIONS` (triangulated, one index per
 /// vertex). Normals the model doesn't have are calculated, and texture coordinates it doesn't
-/// have are zero.
+/// have are zero. v is flipped, from OBJ's convention (up) to carbide's (down).
 impl From<Model> for Mesh {
     fn from(value: Model) -> Self {
         let mesh = value.mesh;
@@ -430,8 +430,10 @@ impl From<Model> for Mesh {
                 vertex = vertex.normal(Vector3::new(mesh.normals[3 * i], mesh.normals[3 * i + 1], mesh.normals[3 * i + 2]));
             }
 
+            // OBJ's v points up, from the image's bottom row; carbide's points down, from its top
+            // row, as glTF's and the images' own rows do.
             if has_coords {
-                vertex = vertex.texture_coords_0(Vector2::new(mesh.texcoords[2 * i], mesh.texcoords[2 * i + 1]));
+                vertex = vertex.texture_coords_0(Vector2::new(mesh.texcoords[2 * i], 1.0 - mesh.texcoords[2 * i + 1]));
             }
 
             vertex

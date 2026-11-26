@@ -1,0 +1,5 @@
+Triangles: 300957
+Vertices: 285673
+Updated: 2015-07-10
+License: CC BY 4.0
+© 2015 Yasutoshi Mori

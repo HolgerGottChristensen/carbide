@@ -17,14 +17,31 @@
 //! - **Illumination models:** `illum 0` (a constant colour) makes the material unlit, and
 //!   `illum 1` (no specular) gives it no reflectance.
 //!
+//! - **Maps,** with paths relative to the MTL file:
+//!   - `map_Kd`: the colour map, multiplied by `Kd`, as MTL defines it.
+//!   - `norm` (PBR extension), or else `map_Bump` / `bump`: a normal map, with green up (OpenGL).
+//!     Classic MTL meant `map_Bump` as a height map, but exporters such as Blender's write normal
+//!     maps there, so it is read as one.
+//!   - `map_Pr`, `map_Pm` (PBR extension): roughness and metallic maps, read from red. Without
+//!     `Pr` or `Pm`, the map is used as it is (a factor of 1).
+//!   - `map_Ke`: an emission map, multiplied by `Ke`, or by white without one.
+//!   - `-s` and `-o` on `map_Kd` (scale and offset) become the material's texture-coordinate
+//!     transform, for all its maps. Other options are skipped.
+//!
 //! Not used: `Ka`, since ambient light is the scene's; `Tr`, which exporters disagree on (some
-//! write transparency, others opacity); `Ni`; and textures, which carbide_3d doesn't sample yet.
-//! An opacity below 1 sets [`Transparency::Blend`], which the renderer doesn't blend yet.
+//! write transparency, others opacity); `Ni`; and `map_Ka`, `map_Ks`, `map_Ns` and `map_d`,
+//! which have no physically based counterpart, or no slot yet. An opacity below 1 sets
+//! [`Transparency::Blend`], which the renderer doesn't blend yet.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use carbide::color::{rgba, Color};
-use carbide::math::{Matrix4, SquareMatrix};
+use carbide::color::{rgba, Color, WHITE};
+use carbide::draw::ImageId;
+use carbide::math::{Matrix3, Matrix4, SquareMatrix};
+
+use crate::material::ao_mr_textures::AoMRTextures;
+use crate::material::normal_texture::NormalTexture;
+use crate::material::normal_texture_y_direction::NormalTextureYDirection;
 
 use crate::material::pbr_material::PbrMaterial;
 use crate::material::transparency::Transparency;
@@ -60,9 +77,79 @@ pub fn roughness_from_phong_exponent(exponent: f32) -> f32 {
     alpha.sqrt().clamp(0.0, 1.0)
 }
 
+/// A texture map entry of an MTL file: its file, and the options before it that carbide uses.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MtlMap {
+    /// The file, as written: relative to the MTL file, or absolute.
+    pub file: String,
+    /// `-s`: the texture coordinates' scale, (1, 1) by default.
+    pub scale: [f32; 2],
+    /// `-o`: the texture coordinates' offset, (0, 0) by default.
+    pub offset: [f32; 2],
+}
+
+impl MtlMap {
+    /// Parse the text after a map keyword: options, each a `-name` followed by its values, then
+    /// the file name, which may contain spaces. Returns `None` when there is no file name.
+    pub fn parse(text: &str) -> Option<MtlMap> {
+        let tokens: Vec<&str> = text.split_whitespace().collect();
+        let mut map = MtlMap { file: String::new(), scale: [1.0, 1.0], offset: [0.0, 0.0] };
+        let mut i = 0;
+
+        while i < tokens.len() && tokens[i].starts_with('-') && tokens[i].len() > 1 {
+            let option = tokens[i];
+            i += 1;
+
+            // How many values the option takes: up to three numbers for -o, -s and -t, two for -mm,
+            // one for the others.
+            let numbers = |i: usize, max: usize| tokens[i..].iter().take(max).take_while(|token| token.parse::<f32>().is_ok()).map(|token| token.parse::<f32>().unwrap()).collect::<Vec<f32>>();
+            match option {
+                "-s" | "-o" | "-t" => {
+                    let values = numbers(i, 3);
+                    i += values.len();
+                    let u = values.first().copied();
+                    let v = values.get(1).copied().or(u);
+                    match (option, u, v) {
+                        ("-s", Some(u), Some(v)) => map.scale = [u, v],
+                        ("-o", Some(u), Some(v)) => map.offset = [u, v],
+                        _ => {}
+                    }
+                }
+                "-mm" => i += 2,
+                _ => i += 1,
+            }
+        }
+
+        map.file = tokens.get(i..)?.join(" ");
+        (!map.file.is_empty()).then_some(map)
+    }
+
+    /// The image, with its path resolved against `folder`, the MTL file's folder.
+    pub fn image(&self, folder: &Path) -> ImageId {
+        let path = PathBuf::from(&self.file);
+        ImageId::new(if path.is_absolute() { path } else { folder.join(path) })
+    }
+
+    /// The scale and offset as a transform of carbide's texture coordinates. MTL's apply to OBJ's
+    /// coordinates, whose v points up; carbide's v is `1 - v`, so the offset in v becomes
+    /// `1 - scale - offset`.
+    pub fn uv_transform(&self) -> Matrix3<f32> {
+        let [su, sv] = self.scale;
+        let [ou, ov] = self.offset;
+        // Columns: x, y and the translation of the 2D affine transform.
+        Matrix3::new(su, 0.0, 0.0, 0.0, sv, 0.0, ou, 1.0 - sv - ov, 1.0)
+    }
+}
+
 /// The physically based material closest to an MTL material. See the [module](self) for how each
-/// value is mapped.
+/// value is mapped. Without `folder`, the MTL file's folder, texture maps are left out.
 pub fn material_from_mtl(material: &tobj::Material) -> PbrMaterial {
+    material_from_mtl_in(material, None)
+}
+
+/// [`material_from_mtl`], with the texture maps, their paths resolved against `folder`, the MTL
+/// file's folder.
+pub fn material_from_mtl_in(material: &tobj::Material, folder: Option<&Path>) -> PbrMaterial {
     let opacity = material.dissolve.unwrap_or(1.0);
     let diffuse = material.diffuse.unwrap_or([0.8, 0.8, 0.8]);
 
@@ -87,6 +174,10 @@ pub fn material_from_mtl(material: &tobj::Material) -> PbrMaterial {
         pbr = pbr.emissive(color(emissive, 1.0));
     }
 
+    if let Some(folder) = folder {
+        pbr = with_maps(pbr, material, folder);
+    }
+
     if opacity < 1.0 {
         pbr.transparency = Transparency::Blend;
     }
@@ -98,14 +189,59 @@ pub fn material_from_mtl(material: &tobj::Material) -> PbrMaterial {
     pbr
 }
 
+/// `pbr` with the texture maps of `material`, resolved against `folder`.
+fn with_maps(mut pbr: PbrMaterial, material: &tobj::Material, folder: &Path) -> PbrMaterial {
+    let map = |text: Option<&String>| text.and_then(|text| MtlMap::parse(text));
+    let unknown = |key: &str| map(material.unknown_param.get(key));
+
+    if let Some(colour) = map(material.diffuse_texture.as_ref()) {
+        let diffuse = material.diffuse.unwrap_or([1.0, 1.0, 1.0]);
+        let opacity = material.dissolve.unwrap_or(1.0);
+        pbr = pbr
+            .color(crate::material::albedo_component::AlbedoComponent::TextureValue { texture: colour.image(folder), value: color(diffuse, opacity) })
+            .uv_transform(colour.uv_transform());
+    }
+
+    if let Some(normal) = unknown("norm").or_else(|| map(material.normal_texture.as_ref())) {
+        pbr = pbr.normal(NormalTexture::Tricomponent(normal.image(folder), NormalTextureYDirection::Up));
+    }
+
+    let roughness = unknown("map_Pr");
+    let metallic = unknown("map_Pm");
+    if roughness.is_some() || metallic.is_some() {
+        if roughness.is_some() && extension(material, "Pr").is_none() {
+            pbr = pbr.roughness(None::<f32>);
+        }
+        if metallic.is_some() && extension(material, "Pm").is_none() {
+            pbr = pbr.metallic(1.0);
+        }
+        pbr = pbr.aomr_textures(AoMRTextures::BWSplit {
+            ao_texture: None,
+            m_texture: metallic.map(|map| map.image(folder)),
+            r_texture: roughness.map(|map| map.image(folder)),
+        });
+    }
+
+    if let Some(emission) = unknown("map_Ke") {
+        if extension_color(material, "Ke").is_none() {
+            pbr = pbr.emissive(WHITE);
+        }
+        pbr = pbr.emissive_map(Some(emission.image(folder)));
+    }
+
+    pbr
+}
+
 impl Mesh {
     /// The meshes of the OBJ file at `path`, as [`load_obj`](Mesh::load_obj) loads them, each with
     /// its material from the file's MTL library, mapped as described in [`obj`](crate::obj). A mesh
     /// without a material gets [`PbrMaterial::new`]. Fails if the OBJ file or its MTL library can't
-    /// be loaded. Textures are not loaded.
+    /// be loaded. Texture maps are resolved against the OBJ file's folder, where tobj looks for the
+    /// MTL file too, and load when the model is first drawn.
     pub fn load_obj_with_materials<P: AsRef<Path>>(path: P) -> Result<Vec<(Mesh, PbrMaterial)>, tobj::LoadError> {
         let (models, materials) = tobj::load_obj(path.as_ref(), &tobj::GPU_LOAD_OPTIONS)?;
-        let materials = materials?.iter().map(material_from_mtl).collect::<Vec<_>>();
+        let folder = path.as_ref().parent().map(Path::to_path_buf).unwrap_or_default();
+        let materials = materials?.iter().map(|material| material_from_mtl_in(material, Some(&folder))).collect::<Vec<_>>();
 
         Ok(models.into_iter().map(|model| {
             let material = model.mesh.material_id
@@ -186,6 +322,60 @@ mod tests {
     use carbide::state::ReadState;
 
     use super::*;
+
+    #[test]
+    fn map_entries_skip_options_and_keep_spaces() {
+        assert_eq!(MtlMap::parse("wood.png").unwrap().file, "wood.png");
+        assert_eq!(MtlMap::parse("this diffuse texture has spaces.jpg").unwrap().file, "this diffuse texture has spaces.jpg");
+
+        let map = MtlMap::parse("-bm 0.5 -s 2 3 1 -o 0.25 0 0 -clamp on -mm 0 1 textures/brick.png").unwrap();
+        assert_eq!(map.file, "textures/brick.png");
+        assert_eq!(map.scale, [2.0, 3.0]);
+        assert_eq!(map.offset, [0.25, 0.0]);
+
+        // One value for -s scales u and v alike.
+        assert_eq!(MtlMap::parse("-s 4 a.png").unwrap().scale, [4.0, 4.0]);
+        assert!(MtlMap::parse("-bm 1.0").is_none());
+        assert!(MtlMap::parse("").is_none());
+    }
+
+    #[test]
+    fn map_scale_and_offset_follow_the_flipped_v() {
+        use carbide::math::Vector3;
+        let map = MtlMap::parse("-s 2 2 1 -o 0.5 0.25 a.png").unwrap();
+        let transform = map.uv_transform();
+
+        // An OBJ coordinate (u, v) is (u, 1 - v) in carbide. MTL maps it to (2u + 0.5, 2v + 0.25)
+        // in OBJ terms, which in carbide is (2u + 0.5, 1 - (2v + 0.25)).
+        for (u, v) in [(0.0f32, 0.0f32), (0.3, 0.7), (1.0, 1.0)] {
+            let carbide = transform * Vector3::new(u, 1.0 - v, 1.0);
+            assert!((carbide.x - (2.0 * u + 0.5)).abs() < 1e-5);
+            assert!((carbide.y - (1.0 - (2.0 * v + 0.25))).abs() < 1e-5);
+        }
+    }
+
+    #[test]
+    fn mtl_maps_set_the_material_maps() {
+        let mut mtl = tobj::Material::default();
+        mtl.diffuse_texture = Some("colour.png".to_string());
+        mtl.normal_texture = Some("-bm 1.0 normal.png".to_string());
+        mtl.unknown_param.insert("map_Pr".to_string(), "rough.png".to_string());
+        mtl.unknown_param.insert("map_Ke".to_string(), "glow.png".to_string());
+
+        let folder = Path::new("/models/chair");
+        let pbr = material_from_mtl_in(&mtl, Some(folder));
+        let image = |name: &str| ImageId::new(folder.join(name));
+
+        assert_eq!(pbr.albedo.value().to_texture(), Some(&image("colour.png")));
+        assert_eq!(pbr.normal.value().to_texture(), Some(&image("normal.png")));
+        assert_eq!(pbr.aomr_textures.value().to_roughness_texture(), Some(&image("rough.png")));
+        assert_eq!(*pbr.roughness_factor.value(), None, "a roughness map without Pr is used as it is");
+        assert_eq!(*pbr.emissive_texture.value(), Some(image("glow.png")));
+
+        // Without the folder, as `material_from_mtl` is called, there are no maps.
+        let plain = material_from_mtl(&mtl);
+        assert!(plain.albedo.value().to_texture().is_none());
+    }
 
     #[test]
     fn phong_exponents_map_to_roughness() {

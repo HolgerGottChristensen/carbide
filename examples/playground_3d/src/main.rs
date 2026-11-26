@@ -297,6 +297,38 @@ mod tests {
         assert!(changed(&tiled, &nearest) > 1_000, "nearest sampling changes only {} bytes of the view", changed(&tiled, &nearest));
     }
 
+    /// Each OBJ model in the library's ressources loads with its MTL materials and draws. The
+    /// wolf's material has its four maps: colour, normal (`map_Bump`), roughness and metallic.
+    #[test]
+    #[ignore = "slow: about 40 s in a debug build, parsing the large OBJ files; run with --ignored"]
+    fn each_obj_model_loads_and_draws() {
+        let wolf = Model::Wolf.load().unwrap();
+        let (_, material) = &wolf.parts[0];
+        assert!(material.albedo.value().to_texture().is_some(), "the wolf has no colour map");
+        assert!(material.normal.value().to_texture().is_some(), "the wolf has no normal map");
+        let maps = material.aomr_textures.value();
+        assert!(maps.to_roughness_texture().is_some() && maps.to_metallic_texture().is_some(), "the wolf has no roughness or metallic map");
+
+        let options = Options::new();
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+
+        *options.model.clone().value_mut() = Model::Empty;
+        harness.render();
+        let empty = view(&mut harness);
+
+        for model in [Model::RenderBall, Model::Wolf, Model::MoriKnob, Model::SportsCar] {
+            *options.model.clone().value_mut() = model;
+            harness.render();
+            let drawn = view(&mut harness);
+            let changed = empty.iter().zip(&drawn).filter(|(a, b)| a != b).count();
+            assert!(changed > 10_000, "{model:?} changes only {changed} bytes of the empty view");
+        }
+    }
+
     /// The cube in the main view, hovered and then clicked twice. Pins down picking in the
     /// playground: the pointer over the cube sets the hovered state, a click selects it and records
     /// where it hit, and a second click deselects it.

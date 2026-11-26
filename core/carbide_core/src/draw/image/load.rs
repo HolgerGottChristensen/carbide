@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::path::{Path, PathBuf};
-use crate::draw::image::pre_multiply::PreMultiply;
+use crate::draw::image::pre_multiply::pre_multiply_rgba8;
 use crate::draw::{ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
 use crate::environment::Environment;
 
@@ -42,15 +42,24 @@ pub fn load_local_raster(id: &ImageId, image: &mut dyn ImageContext, env: &mut E
     let full_path = resolve_asset_path(path)?;
 
     let decoded = image::open(&full_path)
-        .map_err(|error| ImageLoadError::Decode(full_path.clone(), error))?
-        .pre_multiplied();
+        .map_err(|error| ImageLoadError::Decode(full_path.clone(), error))?;
+
+    // One conversion to RGBA8, with no copy when the image already is. Alpha is premultiplied in
+    // place, and only when the image has alpha: without it, every alpha is 1 and premultiplying
+    // changes nothing.
+    let has_alpha = decoded.color().has_alpha();
+    let (width, height) = (decoded.width(), decoded.height());
+    let mut pixels = decoded.into_rgba8().into_raw();
+    if has_alpha {
+        pre_multiply_rgba8(&mut pixels);
+    }
 
     let texture = Texture {
-        width: decoded.width(),
-        height: decoded.height(),
-        bytes_per_row: decoded.width() * 4,
+        width,
+        height,
+        bytes_per_row: width * 4,
         format: TextureFormat::RGBA8,
-        data: &decoded.to_rgba8().into_raw(),
+        data: &pixels,
     };
 
     image.update_texture(id, texture, env);

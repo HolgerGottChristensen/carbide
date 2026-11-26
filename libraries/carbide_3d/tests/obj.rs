@@ -53,3 +53,82 @@ fn the_render_ball_with_its_materials() {
     let mut harness = Harness::new(scene, Dimension::new(400.0, 300.0));
     harness.snapshot("render_ball");
 }
+
+/// Write a quad facing +Z, two metres across, with texture coordinates in OBJ's convention ((0, 0)
+/// at the bottom left), an unlit material (`illum 0`) using `map_Kd`, and a 32×32 image whose
+/// quadrants are red (top left), green (top right), blue (bottom left) and white (bottom right).
+/// `map_options` go before the image's name. Returns the OBJ file's path.
+fn write_marker_quad(name: &str, map_options: &str) -> std::path::PathBuf {
+    let folder = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
+    std::fs::create_dir_all(&folder).unwrap();
+
+    let image = image::RgbaImage::from_fn(32, 32, |x, y| match (x < 16, y < 16) {
+        (true, true) => image::Rgba([255, 0, 0, 255]),
+        (false, true) => image::Rgba([0, 255, 0, 255]),
+        (true, false) => image::Rgba([0, 0, 255, 255]),
+        (false, false) => image::Rgba([255, 255, 255, 255]),
+    });
+    image.save(folder.join("marker.png")).unwrap();
+
+    std::fs::write(folder.join("quad.mtl"), format!("newmtl marker\nKd 1 1 1\nillum 0\nmap_Kd {map_options} marker.png\n")).unwrap();
+    std::fs::write(folder.join("quad.obj"), "mtllib quad.mtl\n\
+        v -1 -1 0\nv 1 -1 0\nv 1 1 0\nv -1 1 0\n\
+        vt 0 0\nvt 1 0\nvt 1 1\nvt 0 1\n\
+        vn 0 0 1\n\
+        usemtl marker\n\
+        f 1/1/1 2/2/1 3/3/1 4/4/1\n").unwrap();
+
+    folder.join("quad.obj")
+}
+
+/// The marker quad, seen straight on and filling the middle of a 200×200 view.
+fn render_marker_quad(obj: &std::path::Path) -> Harness {
+    let scene = Scene3d::new(ObjModel::load(obj).unwrap())
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 3.0), Point3::new(0.0, 0.0, 0.0)));
+    let mut harness = Harness::new(scene, Dimension::new(200.0, 200.0));
+    harness.render();
+    harness
+}
+
+/// The colour at (x, y), as the nearest of red, green, blue and white.
+fn quadrant_colour(harness: &mut Harness, x: u32, y: u32) -> &'static str {
+    let [r, g, b, _] = harness.pixels().get_pixel(x, y).0;
+    match (r > 128, g > 128, b > 128) {
+        (true, false, false) => "red",
+        (false, true, false) => "green",
+        (false, false, true) => "blue",
+        (true, true, true) => "white",
+        _ => "other",
+    }
+}
+
+/// An OBJ file's `map_Kd` texture shows the right way up and the right way round: OBJ's texture
+/// coordinates have v pointing up, and are flipped on loading. The image's top-left quadrant is
+/// at the quad's top left, as it would be in any image viewer.
+#[test]
+fn an_obj_colour_map_reads_the_right_way_round() {
+    let obj = write_marker_quad("marker_quad", "");
+    let mut harness = render_marker_quad(&obj);
+
+    // The quad spans roughly 60 to 140 in both directions; sample each quadrant's middle.
+    assert_eq!(quadrant_colour(&mut harness, 80, 80), "red");
+    assert_eq!(quadrant_colour(&mut harness, 120, 80), "green");
+    assert_eq!(quadrant_colour(&mut harness, 80, 120), "blue");
+    assert_eq!(quadrant_colour(&mut harness, 120, 120), "white");
+
+    harness.snapshot("marker");
+}
+
+/// `-s` on `map_Kd` tiles the texture: at a scale of 2, each quarter of the quad shows the whole
+/// image, so its top-left quarter has all four colours, still the right way round.
+#[test]
+fn an_obj_map_scale_tiles_the_texture() {
+    let obj = write_marker_quad("marker_quad_tiled", "-s 2 2 1");
+    let mut harness = render_marker_quad(&obj);
+
+    // The quad's top-left quarter spans roughly 60 to 100; sample its own quadrants.
+    assert_eq!(quadrant_colour(&mut harness, 70, 70), "red");
+    assert_eq!(quadrant_colour(&mut harness, 90, 70), "green");
+    assert_eq!(quadrant_colour(&mut harness, 70, 90), "blue");
+    assert_eq!(quadrant_colour(&mut harness, 90, 90), "white");
+}
