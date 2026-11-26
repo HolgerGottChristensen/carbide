@@ -1,5 +1,7 @@
 use encase::ShaderType;
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupLayout, BindGroupLayoutDescriptor, Device};
+use wgpu::util::{DeviceExt, TextureDataOrder};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Device, Extent3d, Queue, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension};
+use carbide_wgpu_core::WgpuTextureStore;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::pbr_material::PbrMaterial;
 use carbide_3d::material::sample_type::SampleType;
@@ -34,8 +36,13 @@ unsafe impl bytemuck::Zeroable for WgpuPbrMaterial {}
 unsafe impl bytemuck::Pod for WgpuPbrMaterial {}
 
 impl WgpuPbrMaterial {
-    /// The material's values, as the shader reads them. Textures are not sampled yet: the
-    /// texture flags are set, but the material bind group is empty.
+    /// The same values, with `texture_enable` set to the slots whose images are loaded.
+    pub(crate) fn with_texture_enable(self, texture_enable: u32) -> Self {
+        WgpuPbrMaterial { texture_enable, ..self }
+    }
+
+    /// The material's values, as the shader reads them. `texture_enable` is left at 0: it depends
+    /// on which images have loaded, and is set when the frame is drawn.
     pub(crate) fn from_material(material: &PbrMaterial, _env: &mut Environment) -> Self {
         // Colours are given in sRGB; the shader lights in linear space, as the 2D renderer draws.
         let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();
@@ -63,7 +70,7 @@ impl WgpuPbrMaterial {
             material_flags: {
                 let mut flags = material.albedo.value().to_flags();
                 flags |= material.normal.value().to_flags();
-                flags |= material.aomr_textures.to_flags();
+                flags |= material.aomr_textures.value().to_flags();
                 flags |= material.clearcoat_textures.to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
                 flags.set(
@@ -76,62 +83,144 @@ impl WgpuPbrMaterial {
                 //println!("{:#?}", flags);
                 flags.bits()
             },
-            texture_enable: {
-                let list = &[
-                    material.albedo.value().is_texture(),
-                    material.normal.value().to_texture().is_some(),
-                ];
-                let mut bits = 0x0;
-                for t in list.into_iter().rev() {
-                    // Shift must happen first, if it happens second, the last bit will also be shifted
-                    bits <<= 1;
-                    bits |= *t as u32;
-                }
-                bits
-            }
+            // Set per frame from the texture store (`WgpuPbrMaterialTextures::enabled`).
+            texture_enable: 0,
         }
     }
 }
 
+/// The images a material samples, one per slot of the material bind group. `ImageId::None` is an
+/// empty slot, which gets a fallback texture.
 #[derive(Debug, Clone, PartialEq, Hash, Eq, Default)]
 pub struct WgpuPbrMaterialTextures {
     pub(crate) albedo: ImageId,
     pub(crate) normal: ImageId,
+    pub(crate) ambient_occlusion: ImageId,
+    pub(crate) metallic: ImageId,
+    pub(crate) roughness: ImageId,
+    pub(crate) clear_coat: ImageId,
+    pub(crate) clear_coat_roughness: ImageId,
 }
 
+/// How a slot is read: colours through the texture's sRGB view, data through its linear view.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SlotKind {
+    Color,
+    Data,
+    Normal,
+}
+
+impl WgpuPbrMaterialTextures {
+    pub(crate) fn from_material(material: &PbrMaterial) -> Self {
+        let id = |id: Option<&ImageId>| id.cloned().unwrap_or_default();
+        let aomr = material.aomr_textures.value();
+
+        WgpuPbrMaterialTextures {
+            albedo: id(material.albedo.value().to_texture()),
+            normal: id(material.normal.value().to_texture()),
+            ambient_occlusion: id(aomr.to_ao_texture()),
+            metallic: id(aomr.to_metallic_texture()),
+            roughness: id(aomr.to_roughness_texture()),
+            clear_coat: id(material.clearcoat_textures.to_clearcoat_texture()),
+            clear_coat_roughness: id(material.clearcoat_textures.to_clearcoat_roughness_texture()),
+        }
+    }
+
+    /// The slots in binding order, with how each is read.
+    fn slots(&self) -> [(&ImageId, SlotKind); SLOT_COUNT] {
+        [
+            (&self.albedo, SlotKind::Color),
+            (&self.normal, SlotKind::Normal),
+            (&self.ambient_occlusion, SlotKind::Data),
+            (&self.metallic, SlotKind::Data),
+            (&self.roughness, SlotKind::Data),
+            (&self.clear_coat, SlotKind::Data),
+            (&self.clear_coat_roughness, SlotKind::Data),
+        ]
+    }
+
+    /// The stored version of each slot's image, 0 for an empty slot or an image not loaded yet.
+    /// A bind group made for other versions is out of date.
+    pub(crate) fn versions(&self, store: Option<&WgpuTextureStore>) -> [u64; SLOT_COUNT] {
+        self.slots().map(|(id, _)| store.and_then(|store| store.get(id)).map_or(0, |stored| stored.version))
+    }
+
+    /// A bit per slot whose image is loaded, in binding order: the shader samples those, and uses
+    /// the material's values alone for the others.
+    pub(crate) fn enabled(&self, store: Option<&WgpuTextureStore>) -> u32 {
+        self.versions(store).iter().enumerate().fold(0, |bits, (slot, version)| bits | ((*version != 0) as u32) << slot)
+    }
+}
+
+/// The number of texture slots in the material bind group.
+pub(crate) const SLOT_COUNT: usize = 7;
+
 pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
+    let entries: Vec<BindGroupLayoutEntry> = (0..SLOT_COUNT as u32).map(|binding| BindGroupLayoutEntry {
+        binding,
+        visibility: ShaderStages::FRAGMENT,
+        ty: BindingType::Texture {
+            sample_type: TextureSampleType::Float { filterable: true },
+            view_dimension: TextureViewDimension::D2,
+            multisampled: false,
+        },
+        count: None,
+    }).collect();
+
     device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        label: None,
-        entries: &[
-            /*BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Texture {
-                    sample_type: TextureSampleType::Float { filterable: true },
-                    view_dimension: TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            },
-            BindGroupLayoutEntry {
-                binding: 1,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Texture {
-                    sample_type: TextureSampleType::Float { filterable: true },
-                    view_dimension: TextureViewDimension::D2,
-                    multisampled: false,
-                },
-                count: None,
-            },*/
-        ],
+        label: Some("carbide_3d_pbr_textures_layout"),
+        entries: &entries,
     })
 }
 
-pub(crate) fn create_pbr_bind_group(_textures: &WgpuPbrMaterialTextures, layout: &BindGroupLayout, device: &Device) -> BindGroup {
-    // Textures are not loaded yet, so the layout has no entries, and neither has the bind group.
+/// 1×1 textures for empty slots and images that have not loaded: white for colours and data, so
+/// the material's values are used as they are, and a normal pointing straight out of the surface.
+#[derive(Debug)]
+pub(crate) struct FallbackTextures {
+    white: TextureView,
+    flat_normal: TextureView,
+}
+
+impl FallbackTextures {
+    pub(crate) fn new(device: &Device, queue: &Queue) -> Self {
+        let texel = |label: &str, rgba: [u8; 4]| {
+            device.create_texture_with_data(queue, &TextureDescriptor {
+                label: Some(label),
+                size: Extent3d { width: 1, height: 1, depth_or_array_layers: 1 },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: TextureDimension::D2,
+                format: TextureFormat::Rgba8Unorm,
+                usage: TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            }, TextureDataOrder::LayerMajor, &rgba).create_view(&TextureViewDescriptor::default())
+        };
+
+        FallbackTextures {
+            white: texel("carbide_3d_fallback_white", [255, 255, 255, 255]),
+            flat_normal: texel("carbide_3d_fallback_normal", [128, 128, 255, 255]),
+        }
+    }
+}
+
+pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, store: Option<&WgpuTextureStore>, fallback: &FallbackTextures, layout: &BindGroupLayout, device: &Device) -> BindGroup {
+    let views: Vec<&TextureView> = textures.slots().iter().map(|(id, kind)| {
+        match (store.and_then(|store| store.get(id)), kind) {
+            (Some(stored), SlotKind::Color) => &stored.srgb_view,
+            (Some(stored), _) => &stored.linear_view,
+            (None, SlotKind::Normal) => &fallback.flat_normal,
+            (None, _) => &fallback.white,
+        }
+    }).collect();
+
+    let entries: Vec<BindGroupEntry> = views.iter().enumerate().map(|(binding, view)| BindGroupEntry {
+        binding: binding as u32,
+        resource: BindingResource::TextureView(view),
+    }).collect();
+
     device.create_bind_group(&BindGroupDescriptor {
         label: Some("carbide_3d_pbr_textures"),
         layout,
-        entries: &[],
+        entries: &entries,
     })
 }

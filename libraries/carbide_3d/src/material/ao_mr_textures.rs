@@ -1,5 +1,6 @@
 use crate::material::material_flags::MaterialFlags;
 use carbide::draw::ImageId;
+use carbide::impl_state_value;
 
 /// How the Ambient Occlusion, Metalic, and Roughness values should be
 /// determined.
@@ -77,3 +78,5 @@ impl AoMRTextures {
         }
     }
 }
+
+impl_state_value!(AoMRTextures);

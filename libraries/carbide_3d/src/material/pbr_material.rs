@@ -23,7 +23,9 @@ pub struct PbrMaterial {
     pub albedo: Box<dyn AnyReadState<T=AlbedoComponent>>,
     pub transparency: Transparency,
     pub normal: Box<dyn AnyReadState<T=NormalTexture>>,
-    pub aomr_textures: AoMRTextures,
+    /// The occlusion, metallic and roughness maps, and how their channels are laid out. None by
+    /// default.
+    pub aomr_textures: Box<dyn AnyReadState<T=AoMRTextures>>,
     /// How much ambient light reaches the surface, from 0 (none) to 1 (all). 1 by default.
     pub ambient_occlusion: Box<dyn AnyReadState<T=f32>>,
     /// From 0 (a dielectric, such as plastic) to 1 (a metal). 0 by default.
@@ -57,6 +59,7 @@ impl StateSync for PbrMaterial {
     fn sync(&mut self, env: &mut Environment) -> bool {
         self.albedo.sync(env)
             | self.normal.sync(env)
+            | self.aomr_textures.sync(env)
             | self.ambient_occlusion.sync(env)
             | self.metallic.sync(env)
             | self.roughness_factor.sync(env)
@@ -74,7 +77,7 @@ impl PbrMaterial {
             albedo: AlbedoComponent::Value(WHITE).as_dyn_read(),
             transparency: Default::default(),
             normal: NormalTexture::None.as_dyn_read(),
-            aomr_textures: Default::default(),
+            aomr_textures: AoMRTextures::None.as_dyn_read(),
             ambient_occlusion: Box::new(1.0f32),
             metallic: Box::new(0.0f32),
             roughness_factor: None.as_dyn_read(),
@@ -105,14 +108,15 @@ impl PbrMaterial {
     pub fn textures(&self) -> Vec<ImageId> {
         let albedo = self.albedo.value().to_texture().cloned();
         let normal = self.normal.value().to_texture().cloned();
+        let aomr = self.aomr_textures.value();
 
         let mut textures: Vec<ImageId> = Vec::new();
         for id in [
             albedo.as_ref(),
             normal.as_ref(),
-            self.aomr_textures.to_ao_texture(),
-            self.aomr_textures.to_metallic_texture(),
-            self.aomr_textures.to_roughness_texture(),
+            aomr.to_ao_texture(),
+            aomr.to_metallic_texture(),
+            aomr.to_roughness_texture(),
             self.clearcoat_textures.to_clearcoat_texture(),
             self.clearcoat_textures.to_clearcoat_roughness_texture(),
         ].into_iter().flatten() {
@@ -127,6 +131,15 @@ impl PbrMaterial {
     pub fn color<C: IntoReadState<AlbedoComponent>>(self, color: C) -> PbrMaterial {
         PbrMaterial {
             albedo: color.into_dyn_read_state(),
+            ..self
+        }
+    }
+
+    /// The occlusion, metallic and roughness maps. Each is a state, so a material can change maps
+    /// while it is shown.
+    pub fn aomr_textures<T: IntoReadState<AoMRTextures>>(self, textures: T) -> PbrMaterial {
+        PbrMaterial {
+            aomr_textures: textures.into_dyn_read_state(),
             ..self
         }
     }

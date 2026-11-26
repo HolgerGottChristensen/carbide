@@ -11,8 +11,7 @@ use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
 use carbide_core::render::{InnerLayer, Layer};
 use carbide_core::scene::SceneManager;
-use carbide_core::state::ReadState;
-use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget};
+use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget, WgpuTextureStore};
 
 use crate::camera::WgpuCamera;
 use crate::directional_light::{WgpuDirectionalLight, WgpuDirectionalLightBuffer};
@@ -20,7 +19,7 @@ use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
 use crate::outline::OutlineState;
 use crate::picking::PickingState;
-use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, WgpuPbrMaterial, WgpuPbrMaterialTextures};
+use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, FallbackTextures, WgpuPbrMaterial, WgpuPbrMaterialTextures, SLOT_COUNT};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
 use crate::render_pass_command::RenderPassCommand;
@@ -84,12 +83,19 @@ struct GpuState {
     pipeline_layout: PipelineLayout,
     /// The pipeline, and the colour format it was created for.
     pipeline: Option<(TextureFormat, RenderPipeline)>,
+    /// Repeating, linear and anisotropic: for textures, and the default for materials.
     sampler: Sampler,
+    /// Repeating and nearest: for materials with `SampleType::Nearest`.
+    nearest_sampler: Sampler,
     depth_texture: Option<Texture>,
     depth_view: Option<TextureView>,
     /// The multisampled colour target, resolved into the layer, with its size and format.
     multisampled: Option<((u32, u32, TextureFormat), TextureView)>,
-    texture_bind_groups: HashMap<WgpuPbrMaterialTextures, BindGroup>,
+    /// A bind group per set of material images, with the stored versions of the images it was made
+    /// from: it is made again when an image loads or is replaced.
+    texture_bind_groups: HashMap<WgpuPbrMaterialTextures, ([u64; SLOT_COUNT], BindGroup)>,
+    /// Created on the first frame, with the queue.
+    fallback_textures: Option<FallbackTextures>,
 
     /// The objects and a light's view-projection, for the shadow pass.
     shadow_layout: BindGroupLayout,
@@ -277,6 +283,12 @@ impl GpuState {
                     ty: BindingType::Sampler(SamplerBindingType::Comparison),
                     count: None,
                 },
+                BindGroupLayoutEntry {
+                    binding: 6,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None,
+                },
             ],
         });
 
@@ -299,8 +311,19 @@ impl GpuState {
             lod_min_clamp: 0.0,
             lod_max_clamp: 100.0,
             compare: None,
-            anisotropy_clamp: 1,
+            anisotropy_clamp: 16,
             border_color: None,
+        });
+
+        let nearest_sampler = device.create_sampler(&SamplerDescriptor {
+            label: Some("carbide_3d_nearest_sampler"),
+            address_mode_u: AddressMode::Repeat,
+            address_mode_v: AddressMode::Repeat,
+            address_mode_w: AddressMode::Repeat,
+            mag_filter: FilterMode::Nearest,
+            min_filter: FilterMode::Nearest,
+            mipmap_filter: FilterMode::Nearest,
+            ..Default::default()
         });
 
         let shadow_shader = device.create_shader_module(preprocess_shader("pbr/shadow.wgsl"));
@@ -392,6 +415,8 @@ impl GpuState {
             depth_view: None,
             multisampled: None,
             texture_bind_groups: HashMap::new(),
+            fallback_textures: None,
+            nearest_sampler,
         }
     }
 
@@ -558,6 +583,26 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         // Outline thicknesses are in logical pixels; the layer is in physical ones.
         let scale_factor = env.get_mut::<SceneManager>().map(|manager| manager.scale_factor()).unwrap_or(1.0) as f32;
 
+        // The materials' textures, from the store shared with 2D. A bind group is made for each set
+        // of images, and made again when one of them loads or is replaced. Slots without a loaded
+        // image get fallback textures, and are not sampled.
+        let texture_enable = {
+            let store = env.get::<WgpuTextureStore>();
+            let gpu = self.gpu.get_or_insert_with(|| GpuState::new(device));
+            let fallback = gpu.fallback_textures.get_or_insert_with(|| FallbackTextures::new(device, queue));
+
+            for (_, textures) in &self.materials {
+                let versions = textures.versions(store);
+                let current = gpu.texture_bind_groups.get(textures).is_some_and(|(made_from, _)| *made_from == versions);
+                if !current {
+                    let bind_group = create_pbr_bind_group(textures, store, fallback, &gpu.pbr_layout, device);
+                    gpu.texture_bind_groups.insert(textures.clone(), (versions, bind_group));
+                }
+            }
+
+            self.materials.iter().map(|(_, textures)| textures.enabled(store)).collect::<Vec<_>>()
+        };
+
         // The meshes' GPU copies, shared by every view; uploaded once, freed once dropped.
         let meshes = match env.get_mut::<MeshCache>() {
             Some(cache) => cache,
@@ -614,14 +659,8 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             return;
         }
 
-        for (_, tex) in &self.materials {
-            if !gpu.texture_bind_groups.contains_key(tex) {
-                gpu.texture_bind_groups.insert(tex.clone(), create_pbr_bind_group(tex, &gpu.pbr_layout, device));
-            }
-        }
-
-        let pbr_materials = self.materials.iter()
-            .map(|(material, _)| match material { WgpuMaterial::PBR(material) => *material })
+        let pbr_materials = self.materials.iter().zip(&texture_enable)
+            .map(|((material, _), enabled)| match material { WgpuMaterial::PBR(material) => material.with_texture_enable(*enabled) })
             .collect::<Vec<_>>();
 
         let mut materials_buffer = StorageBuffer::from(pbr_materials);
@@ -747,6 +786,10 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     binding: 5,
                     resource: BindingResource::Sampler(&gpu.shadow_sampler),
                 },
+                BindGroupEntry {
+                    binding: 6,
+                    resource: BindingResource::Sampler(&gpu.nearest_sampler),
+                },
             ],
         });
 
@@ -858,7 +901,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                         render_pass.draw_indexed(0..cached.index_count, 0, *object..*object + 1);
                     }
                     RenderPassCommand::SetPbrMaterial(pbr) => {
-                        render_pass.set_bind_group(2, &gpu.texture_bind_groups[pbr], &[]);
+                        render_pass.set_bind_group(2, &gpu.texture_bind_groups[pbr].1, &[]);
                     }
                 }
             }
@@ -917,10 +960,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             Material::PBR(material) => {
                 (
                     WgpuMaterial::PBR(WgpuPbrMaterial::from_material(material, env)),
-                    WgpuPbrMaterialTextures {
-                        albedo: material.albedo.value().to_texture().cloned().unwrap_or_default(),
-                        normal: material.normal.value().to_texture().cloned().unwrap_or_default(),
-                    }
+                    WgpuPbrMaterialTextures::from_material(material)
                 )
             }
         });

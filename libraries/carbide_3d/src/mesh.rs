@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::f32::consts::{PI, TAU};
 use std::fmt::{Debug, Formatter};
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -237,14 +238,74 @@ impl Mesh {
         }
 
         // Shared vertices, with the exact normals of a sphere: the direction from the centre.
-        let vertices = positions.iter()
+        // Texture coordinates are longitude and latitude, as an equirectangular image wraps a
+        // globe: u runs once around, from the back (-Z) through the front (+Z, the image's
+        // centre), reading left to right from outside; v runs from the top pole (0) to the bottom
+        // pole (1).
+        let is_pole = |p: Vector3<f32>| p.x.abs() < 1e-6 && p.z.abs() < 1e-6;
+        let coords = |p: Vector3<f32>| {
+            // Exactly 0 or 1 at the poles, where rounding in y would otherwise show in acos.
+            let v = if is_pole(p) { if p.y > 0.0 { 0.0 } else { 1.0 } } else { p.y.clamp(-1.0, 1.0).acos() / PI };
+            Vector2::new(0.5 + p.x.atan2(p.z) / TAU, v)
+        };
+
+        let mut vertices = positions.iter()
             .map(|position| {
-                let mut vertex = Vertex::new(position * radius);
+                let mut vertex = Vertex::new(position * radius).texture_coords_0(coords(*position));
                 vertex.normal = *position;
                 vertex
             })
             .collect::<Vec<_>>();
-        let indices = triangles.into_iter().flatten().collect::<Vec<u32>>();
+
+        // Copies of vertices on the low side of the seam, with u + 1, made once per vertex.
+        let mut seam_copies: HashMap<u32, u32> = HashMap::new();
+        let mut indices = Vec::with_capacity(triangles.len() * 3);
+
+        for triangle in triangles {
+            let mut corners = triangle;
+
+            // A triangle across the seam has corners near u = 1 and near u = 0. Its low corners
+            // use copies past 1, so it covers the narrow strip, not the whole texture backwards.
+            // Poles have no longitude, so they don't count.
+            let us = triangle.iter()
+                .filter(|index| !is_pole(positions[**index as usize]))
+                .map(|index| vertices[*index as usize].texture_coords_0.x)
+                .collect::<Vec<_>>();
+            let spread = us.iter().cloned().fold(f32::MIN, f32::max) - us.iter().cloned().fold(f32::MAX, f32::min);
+
+            if spread > 0.5 {
+                for corner in &mut corners {
+                    if !is_pole(positions[*corner as usize]) && vertices[*corner as usize].texture_coords_0.x < 0.5 {
+                        *corner = *seam_copies.entry(*corner).or_insert_with(|| {
+                            let mut copy = vertices[*corner as usize];
+                            copy.texture_coords_0.x += 1.0;
+                            vertices.push(copy);
+                            vertices.len() as u32 - 1
+                        });
+                    }
+                }
+            }
+
+            // A pole gets a copy per triangle, with u between the triangle's other two corners,
+            // so the texture meets at the pole instead of twisting around it.
+            for i in 0..3 {
+                if is_pole(positions[triangle[i] as usize]) {
+                    let others = [corners[(i + 1) % 3], corners[(i + 2) % 3]];
+                    let mut copy = vertices[triangle[i] as usize];
+                    copy.texture_coords_0.x = (vertices[others[0] as usize].texture_coords_0.x + vertices[others[1] as usize].texture_coords_0.x) / 2.0;
+                    vertices.push(copy);
+                    corners[i] = vertices.len() as u32 - 1;
+                }
+            }
+
+            indices.extend(corners);
+        }
+
+        // Tangents along increasing u: east, around the vertical axis.
+        for vertex in &mut vertices {
+            let longitude = (vertex.texture_coords_0.x - 0.5) * TAU;
+            vertex.tangent = Vector3::new(longitude.cos(), 0.0, -longitude.sin());
+        }
 
         Mesh::new(vertices, indices)
     }
@@ -395,6 +456,40 @@ mod tests {
             assert!((vertex.normal.magnitude() - 1.0).abs() < 1e-4, "normal {:?} is not unit length", vertex.normal);
             assert!(vertex.normal.dot(vertex.position) > 0.0, "normal {:?} at {:?} points inwards", vertex.normal, vertex.position);
         }
+    }
+
+    /// The icosphere's texture coordinates: in range, no triangle stretched across the seam or
+    /// twisted at a pole, and tangents along the surface, pointing the way u increases.
+    #[test]
+    fn icosphere_texture_coordinates() {
+        let mesh = Mesh::icosphere(1.0, 3);
+        let vertices = mesh.vertices();
+
+        for vertex in vertices {
+            let uv = vertex.texture_coords_0;
+            assert!((0.0..=2.0).contains(&uv.x) && (0.0..=1.0).contains(&uv.y), "{uv:?} out of range");
+            assert!((vertex.tangent.magnitude() - 1.0).abs() < 1e-4);
+            assert!(vertex.tangent.dot(vertex.normal).abs() < 1e-4, "tangent not along the surface");
+        }
+
+        for triangle in mesh.indices().chunks_exact(3) {
+            let us = triangle.iter().map(|index| vertices[*index as usize].texture_coords_0.x).collect::<Vec<_>>();
+            let spread = us.iter().cloned().fold(f32::MIN, f32::max) - us.iter().cloned().fold(f32::MAX, f32::min);
+            assert!(spread < 0.25, "a triangle spans {spread} of the texture: {us:?}");
+
+            // Moving from corner 0 towards a corner with larger u moves east, along the tangent.
+            let (a, b) = (vertices[triangle[0] as usize], vertices[triangle[1] as usize]);
+            let du = b.texture_coords_0.x - a.texture_coords_0.x;
+            if du.abs() > 1e-3 && a.normal.y.abs() < 0.9 {
+                assert!((b.position - a.position).dot(a.tangent) * du > 0.0, "tangent points against u");
+            }
+        }
+
+        // The front of the sphere is the middle of the image, its top the top row.
+        let front = vertices.iter().find(|v| (v.normal - Vector3::unit_z()).magnitude() < 1e-4).unwrap();
+        assert!((front.texture_coords_0.x - 0.5).abs() < 1e-4 && (front.texture_coords_0.y - 0.5).abs() < 1e-4);
+        let top = vertices.iter().find(|v| (v.normal - Vector3::unit_y()).magnitude() < 1e-4).unwrap();
+        assert!(top.texture_coords_0.y.abs() < 1e-4);
     }
 
     #[test]

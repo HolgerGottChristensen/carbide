@@ -51,11 +51,35 @@ var<storage> uniforms: Uniforms;
 var shadow_maps: texture_depth_2d_array;
 @group(1) @binding(5)
 var shadow_sampler: sampler_comparison;
+@group(1) @binding(6)
+var nearest_sampler: sampler;
 
-/*@group(2) @binding(0)
+// The material's textures, one per slot. A slot whose bit in `texture_enable` is not set holds a
+// fallback texture, and is not sampled.
+@group(2) @binding(0)
 var albedo_tex: texture_2d<f32>;
 @group(2) @binding(1)
-var normal_tex: texture_2d<f32>;*/
+var normal_tex: texture_2d<f32>;
+@group(2) @binding(2)
+var ambient_occlusion_tex: texture_2d<f32>;
+@group(2) @binding(3)
+var metallic_tex: texture_2d<f32>;
+@group(2) @binding(4)
+var roughness_tex: texture_2d<f32>;
+@group(2) @binding(5)
+var clear_coat_tex: texture_2d<f32>;
+@group(2) @binding(6)
+var clear_coat_roughness_tex: texture_2d<f32>;
+
+// Sample `tex` with the material's sampler: nearest when the material asks for it (NEAREST),
+// otherwise linear and anisotropic. The gradients come from the unbranched UVs, so sampling inside
+// a branch picks the right mip level.
+fn sample_material_texture(tex: texture_2d<f32>, material: Material, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec4<f32> {
+    if ((material.flags & 0x4000u) != 0u) {
+        return textureSampleGrad(tex, nearest_sampler, coords, ddx, ddy);
+    }
+    return textureSampleGrad(tex, primary_sampler, coords, ddx, ddy);
+}
 
 @vertex
 fn main_vs(
@@ -108,7 +132,7 @@ fn main_fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let uvdx = dpdx(coords);
     let uvdy = dpdy(coords);
 
-    pixel.albedo = get_albedo(material, primary_sampler, in, coords, uvdx, uvdy);
+    pixel.albedo = get_albedo(material, in, coords, uvdx, uvdy);
 
     if (pixel.albedo.a < material.alpha_cutout) {
         discard;

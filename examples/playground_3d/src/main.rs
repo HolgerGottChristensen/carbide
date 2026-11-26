@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Views};
+    use super::playground::{playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -150,6 +150,51 @@ mod tests {
 
         let changed = off.iter().zip(&on).filter(|(a, b)| a != b).count();
         assert!(changed > 10_000, "only {changed} bytes changed: the shadow should show on the floor");
+    }
+
+    /// The surfaces read at startup: the images, and a surface per folder in `assets/materials`,
+    /// with its maps recognised by their file names.
+    #[test]
+    fn the_material_folders_become_surfaces() {
+        let options = Options::new();
+        let names: Vec<&str> = options.surfaces.iter().map(|surface| surface.name.as_str()).collect();
+        assert_eq!(&names[..4], &["None", "Landscape", "Pixel grid", "Rust logo"]);
+
+        for name in ["Ground068", "Plaster"] {
+            let surface = options.surfaces.iter().find(|surface| surface.name == name).unwrap_or_else(|| panic!("no {name} in {names:?}"));
+            assert!(surface.albedo.is_some(), "{name}: no colour map");
+            assert!(surface.normal.is_some(), "{name}: no normal map");
+            assert!(surface.roughness.is_some(), "{name}: no roughness map");
+        }
+
+        let ground = options.surfaces.iter().find(|surface| surface.name == "Ground068").unwrap();
+        assert!(ground.ambient_occlusion.is_some());
+    }
+
+    /// The cube with each surface from the side bar, alone and times the vertex colours. Pins down
+    /// that the picker reaches the material, and that the images load from `assets`: each surface
+    /// changes many pixels from the one before it.
+    #[test]
+    fn each_surface_reaches_the_model() {
+        let options = Options::new();
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let mut previous = harness.pixels().as_raw().to_vec();
+
+        for surface in options.surfaces.iter().skip(1) {
+            *options.surface.clone().value_mut() = surface.clone();
+            harness.render();
+            let pixels = harness.pixels().as_raw().to_vec();
+
+            let changed = previous.iter().zip(&pixels).filter(|(a, b)| a != b).count();
+            assert!(changed > 10_000, "{}: only {changed} bytes changed", surface.name);
+            previous = pixels;
+        }
+
+        *options.vertex_colors.clone().value_mut() = true;
+        harness.render();
+        *options.surface.clone().value_mut() = Surface::none();
+        harness.render();
     }
 
     /// The cube in the main view, hovered and then clicked twice. Pins down picking in the

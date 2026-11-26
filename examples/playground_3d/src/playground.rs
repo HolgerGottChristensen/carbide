@@ -14,7 +14,11 @@ use carbide::d3::node3d::AnyNode3d;
 use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
 use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
-use carbide::draw::Scalar;
+use carbide::draw::{resolve_asset_path, ImageId, Scalar};
+use carbide::d3::material::ao_mr_textures::AoMRTextures;
+use carbide::d3::material::normal_texture::NormalTexture;
+use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
+use std::path::{Path, PathBuf};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector3};
 use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, ReadState, State};
@@ -23,6 +27,130 @@ use carbide::ui;
 use carbide::widget::*;
 
 use crate::meshes;
+
+/// What covers the model: its colour alone, an image as its colour, or a set of material maps.
+/// The choices are the images listed in `surfaces`, and every folder in `assets/materials`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Surface {
+    pub name: String,
+    pub albedo: Option<ImageId>,
+    /// The normal map, and whether its green channel points up (OpenGL) or down (DirectX).
+    pub normal: Option<(ImageId, NormalTextureYDirection)>,
+    pub ambient_occlusion: Option<ImageId>,
+    pub roughness: Option<ImageId>,
+    pub metallic: Option<ImageId>,
+}
+
+impl Surface {
+    /// No texture: the side bar's colour.
+    pub fn none() -> Surface {
+        Surface { name: "None".to_string(), albedo: None, normal: None, ambient_occlusion: None, roughness: None, metallic: None }
+    }
+
+    /// An image as the colour, from `assets/images`.
+    pub fn image(name: &str, path: &'static str) -> Surface {
+        Surface { name: name.to_string(), albedo: Some(ImageId::new(path)), ..Surface::none() }
+    }
+
+    /// Whether it has maps besides the colour.
+    pub fn has_maps(&self) -> bool {
+        self.normal.is_some() || self.ambient_occlusion.is_some() || self.roughness.is_some() || self.metallic.is_some()
+    }
+
+    fn aomr(&self) -> AoMRTextures {
+        if self.ambient_occlusion.is_none() && self.roughness.is_none() && self.metallic.is_none() {
+            return AoMRTextures::None;
+        }
+
+        // Separate greyscale maps, each in its red channel.
+        AoMRTextures::BWSplit {
+            ao_texture: self.ambient_occlusion.clone(),
+            m_texture: self.metallic.clone(),
+            r_texture: self.roughness.clone(),
+        }
+    }
+
+    fn normal_texture(&self) -> NormalTexture {
+        match &self.normal {
+            Some((id, direction)) => NormalTexture::Tricomponent(id.clone(), *direction),
+            None => NormalTexture::None,
+        }
+    }
+}
+
+/// The surfaces to pick from: none, a few images, then one per folder in `assets/materials`, read
+/// at startup, so adding a folder adds a choice.
+pub fn surfaces() -> Vec<Surface> {
+    let mut surfaces = vec![
+        Surface::none(),
+        Surface::image("Landscape", "images/landscape.png"),
+        Surface::image("Pixel grid", "images/pixelgrid.png"),
+        Surface::image("Rust logo", "images/rust.png"),
+    ];
+    surfaces.extend(material_folders());
+    surfaces
+}
+
+/// A surface for each folder in `assets/materials`, by name.
+fn material_folders() -> Vec<Surface> {
+    let Ok(folder) = resolve_asset_path(Path::new("materials")) else {
+        return vec![];
+    };
+    let Ok(entries) = std::fs::read_dir(&folder) else {
+        return vec![];
+    };
+
+    let mut folders: Vec<PathBuf> = entries.flatten().map(|entry| entry.path()).filter(|path| path.is_dir()).collect();
+    folders.sort();
+
+    folders.iter().filter_map(|folder| material_folder(folder)).collect()
+}
+
+/// The maps in one material folder, recognised by words in their file names, as material sites
+/// name them: `color`, `albedo`, `basecolor` or `diffuse`; `normal`, with `dx` for DirectX normals;
+/// `ambientocclusion`, `occlusion` or `ao`; `roughness`; and `metal`. Other files, such as height
+/// maps, are left out. A folder with no recognised map gives no surface.
+fn material_folder(folder: &Path) -> Option<Surface> {
+    let name = folder.file_name()?.to_string_lossy().to_string();
+    let mut surface = Surface { name: capitalised(&name), ..Surface::none() };
+
+    let mut files: Vec<PathBuf> = std::fs::read_dir(folder).ok()?.flatten().map(|entry| entry.path()).collect();
+    files.sort();
+
+    for file in files {
+        let extension = file.extension().map(|ext| ext.to_string_lossy().to_lowercase()).unwrap_or_default();
+        if !matches!(extension.as_str(), "png" | "jpg" | "jpeg") {
+            continue;
+        }
+
+        let stem = file.file_stem().map(|stem| stem.to_string_lossy().to_lowercase()).unwrap_or_default();
+        let words: Vec<&str> = stem.split(|c: char| !c.is_ascii_alphanumeric()).collect();
+        let id = ImageId::new(file.clone());
+
+        if stem.contains("normal") {
+            let direction = if stem.contains("dx") { NormalTextureYDirection::Down } else { NormalTextureYDirection::Up };
+            surface.normal = Some((id, direction));
+        } else if stem.contains("roughness") {
+            surface.roughness = Some(id);
+        } else if stem.contains("occlusion") || words.contains(&"ao") {
+            surface.ambient_occlusion = Some(id);
+        } else if stem.contains("metal") {
+            surface.metallic = Some(id);
+        } else if stem.contains("color") || stem.contains("albedo") || stem.contains("diffuse") {
+            surface.albedo = Some(id);
+        }
+    }
+
+    (surface.albedo.is_some() || surface.has_maps()).then_some(surface)
+}
+
+fn capitalised(name: &str) -> String {
+    let mut chars = name.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => String::new(),
+    }
+}
 
 /// The models to show.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -123,6 +251,10 @@ pub struct Options {
     pub outline_thickness: LocalState<Scalar>,
 
     pub color: LocalState<Color>,
+    /// What covers the model: the colour, an image in its place, or a set of material maps.
+    pub surface: LocalState<Surface>,
+    /// The surfaces to pick from, read at startup (`surfaces`).
+    pub surfaces: Vec<Surface>,
     pub roughness: LocalState<Scalar>,
     pub metallic: LocalState<Scalar>,
     pub reflectance: LocalState<Scalar>,
@@ -184,6 +316,8 @@ impl Options {
             last_hit: LocalState::new(None),
             outline_thickness: LocalState::new(2.0),
             color: LocalState::new(RED),
+            surface: LocalState::new(Surface::none()),
+            surfaces: surfaces(),
             roughness: LocalState::new(0.5),
             metallic: LocalState::new(0.0),
             reflectance: LocalState::new(0.5),
@@ -326,12 +460,13 @@ impl Options {
 
     fn material(&self) -> PbrMaterial {
         let f32_of = |state: &LocalState<Scalar>| Map1::read_map(state.clone(), |value: &Scalar| *value as f32);
-        // The colour alone, or times the vertex colours.
-        let albedo = Map2::read_map(self.color.clone(), self.vertex_colors.clone(), |color: &Color, vertex: &bool| {
-            if *vertex {
-                AlbedoComponent::ValueVertex { value: *color, srgb: true }
-            } else {
-                AlbedoComponent::Value(*color)
+        // The surface's colour map or the colour, alone or times the vertex colours.
+        let albedo = Map3::read_map(self.color.clone(), self.surface.clone(), self.vertex_colors.clone(), |color: &Color, surface: &Surface, vertex: &bool| {
+            match (surface.albedo.clone(), *vertex) {
+                (Some(texture), true) => AlbedoComponent::TextureVertex { texture, srgb: true },
+                (Some(texture), false) => AlbedoComponent::Texture(texture),
+                (None, true) => AlbedoComponent::ValueVertex { value: *color, srgb: true },
+                (None, false) => AlbedoComponent::Value(*color),
             }
         });
 
@@ -344,6 +479,8 @@ impl Options {
             .ambient_occlusion(f32_of(&self.ambient_occlusion))
             .emissive(self.emissive.clone())
             .emissive_strength(f32_of(&self.emissive_strength))
+            .normal(Map1::read_map(self.surface.clone(), |surface: &Surface| surface.normal_texture()))
+            .aomr_textures(Map1::read_map(self.surface.clone(), |surface: &Surface| surface.aomr()))
     }
 
     /// `view` with the side bar's background, interactivity, exposure and tone mapping. A click on
@@ -627,13 +764,26 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         heading("Material"),
         shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
         shown_when(using_file, note("The render ball uses its MTL file's materials; the values below apply to the other models.")),
-        Picker::new("Colour", options.color.clone(), (
-            Text::new("Red").tag(RED),
-            Text::new("Orange").tag(ORANGE),
-            Text::new("Green").tag(GREEN),
-            Text::new("Blue").tag(BLUE),
-            Text::new("White").tag(WHITE),
-        )),
+        Picker::new(
+            "Texture",
+            options.surface.clone(),
+            options.surfaces.iter().map(|surface| Text::new(surface.name.clone()).tag(surface.clone())).collect::<Vec<_>>(),
+        ),
+        shown_when(
+            Map1::read_map(options.surface.clone(), |surface: &Surface| surface.has_maps()),
+            note("Only the colour map is drawn so far. The normal, roughness, occlusion and metallic maps are loaded, and show once the renderer samples them."),
+        ),
+        // A colour map takes the colour's place, so the colour picker gives way while one is used.
+        shown_when(
+            Map1::read_map(options.surface.clone(), |surface: &Surface| surface.albedo.is_none()),
+            Picker::new("Colour", options.color.clone(), (
+                Text::new("Red").tag(RED),
+                Text::new("Orange").tag(ORANGE),
+                Text::new("Green").tag(GREEN),
+                Text::new("Blue").tag(BLUE),
+                Text::new("White").tag(WHITE),
+            )),
+        ),
         // The grid sets its own roughness and metallic, so their sliders give way to a note.
         shown_when(not_grid.clone(), slider("Roughness", &options.roughness, 0.0, 1.0, two_places)),
         shown_when(not_grid.clone(), slider("Metallic", &options.metallic, 0.0, 1.0, two_places)),

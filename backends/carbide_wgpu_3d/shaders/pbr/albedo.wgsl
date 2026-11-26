@@ -1,13 +1,14 @@
 
-fn get_albedo(material: Material, s: sampler, vs_out: VertexOutput, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec4<f32> {
-    var albedo: vec4<f32>;
-    //let albedo_has_texture_enabled = bool((material.texture_enable >> 0u) & 0x1u);
-    // if (extract_material_flag(material.flags, FLAGS_ALBEDO_ACTIVE)) {
-    //if (albedo_has_texture_enabled) {
-    //    albedo = textureSampleGrad(albedo_tex, s, coords, ddx, ddy);
-    //} else {
-        albedo = vec4<f32>(1.0);
-    //}
+fn get_albedo(material: Material, vs_out: VertexOutput, coords: vec2<f32>, ddx: vec2<f32>, ddy: vec2<f32>) -> vec4<f32> {
+    var albedo = vec4<f32>(1.0);
+
+    // The albedo texture, when it is loaded. Images are stored with premultiplied alpha, so the
+    // colour is divided by alpha to light the surface's own colour. Read through the sRGB view, it
+    // is already linear.
+    if ((material.texture_enable & 0x1u) != 0u) {
+        let texel = sample_material_texture(albedo_tex, material, coords, ddx, ddy);
+        albedo = vec4<f32>(select(vec3<f32>(0.0), texel.rgb / texel.a, texel.a > 0.0), texel.a);
+    }
 
     // Vertex colours, when the material uses them (ALBEDO_BLEND), converted from sRGB when they
     // are in it (ALBEDO_VERTEX_SRGB).
