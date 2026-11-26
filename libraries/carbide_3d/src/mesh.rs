@@ -172,8 +172,9 @@ impl Mesh {
     }
 
     /// A sphere centred on the origin with the given `radius`, made by splitting each triangle of
-    /// an icosahedron into four `subdivisions` times: 20 triangles at 0, 20 · 4ⁿ at n. Each
-    /// triangle has vertices and a normal of its own, so it is shaded flat.
+    /// an icosahedron into four `subdivisions` times: 20 triangles at 0, 20 · 4ⁿ at n. Triangles
+    /// share their vertices, whose normals point straight out from the centre, so it is shaded
+    /// smooth, as a round sphere. Use [`flat`](Mesh::flat) to shade each triangle flat.
     ///
     /// After <https://schneide.blog/2016/07/15/generating-an-icosphere-in-c/>.
     pub fn icosphere(radius: f32, subdivisions: u32) -> Mesh {
@@ -235,14 +236,17 @@ impl Mesh {
             triangles = split;
         }
 
-        // Three vertices of its own for each triangle, so the normals are flat.
-        let vertices = triangles.iter()
-            .flatten()
-            .map(|index| Vertex::new(positions[*index as usize] * radius))
+        // Shared vertices, with the exact normals of a sphere: the direction from the centre.
+        let vertices = positions.iter()
+            .map(|position| {
+                let mut vertex = Vertex::new(position * radius);
+                vertex.normal = *position;
+                vertex
+            })
             .collect::<Vec<_>>();
-        let indices = (0..vertices.len() as u32).collect::<Vec<u32>>();
+        let indices = triangles.into_iter().flatten().collect::<Vec<u32>>();
 
-        Mesh::new(vertices, indices).calculate_normals()
+        Mesh::new(vertices, indices)
     }
 
     /// The meshes of the OBJ file at `path`, one per object or group in it, triangulated with one
@@ -251,6 +255,19 @@ impl Mesh {
     pub fn load_obj<P: AsRef<Path>>(path: P) -> Result<Vec<Mesh>, tobj::LoadError> {
         let (models, _materials) = tobj::load_obj(path.as_ref(), &tobj::GPU_LOAD_OPTIONS)?;
         Ok(models.into_iter().map(Mesh::from).collect())
+    }
+
+    /// The same triangles, each with three vertices of its own and its own normal, so each is
+    /// shaded flat. Other vertex data is kept.
+    pub fn flat(self) -> Mesh {
+        let data = self.into_data();
+
+        let vertices = data.indices.iter()
+            .map(|index| data.vertices[*index as usize])
+            .collect::<Vec<_>>();
+        let indices = (0..vertices.len() as u32).collect::<Vec<u32>>();
+
+        Mesh::new(vertices, indices).calculate_normals()
     }
 
     /// Calculate each vertex's normal from the triangles it is part of, pointing out of the side

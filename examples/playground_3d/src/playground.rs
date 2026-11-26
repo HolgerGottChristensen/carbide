@@ -59,6 +59,21 @@ pub enum LightKind {
     Spot,
 }
 
+/// The colour of the light.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LightColor {
+    White,
+    /// A warm white, as an incandescent bulb: 2700 K.
+    Warm,
+    /// A cool white, as an overcast sky: 8000 K.
+    Cool,
+    Red,
+    Green,
+    Blue,
+    /// A black body's colour at the side bar's temperature.
+    Temperature,
+}
+
 /// How far point and spot lights are from the model, in metres.
 const LIGHT_DISTANCE: f32 = 2.5;
 
@@ -95,6 +110,9 @@ pub struct Options {
     pub light_kind: LocalState<LightKind>,
     /// The spot light's outer cone angle, in degrees; the inner angle is 60% of it.
     pub spot_angle: LocalState<Scalar>,
+    pub light_color: LocalState<LightColor>,
+    /// The light's colour temperature in kelvin, used when the colour is `Temperature`.
+    pub light_temperature: LocalState<Scalar>,
     /// Whether the directional and spot lights cast shadows.
     pub shadows: LocalState<bool>,
 
@@ -131,6 +149,8 @@ impl Options {
             light_kind: LocalState::new(LightKind::Directional),
             spot_angle: LocalState::new(20.0),
             shadows: LocalState::new(true),
+            light_color: LocalState::new(LightColor::White),
+            light_temperature: LocalState::new(6500.0),
             background: LocalState::new(TRANSPARENT),
             ground: LocalState::new(WHITE),
             ambient: LocalState::new(0.1),
@@ -192,6 +212,21 @@ impl Options {
         })
     }
 
+    /// The side bar's light colour: a fixed colour, or one from the temperature.
+    fn light_color(&self) -> impl ReadState<T=Color> + Clone + use<> {
+        Map2::read_map(self.light_color.clone(), self.light_temperature.clone(), |color: &LightColor, kelvin: &Scalar| {
+            match color {
+                LightColor::White => WHITE,
+                LightColor::Warm => Color::temperature(2700.0),
+                LightColor::Cool => Color::temperature(8000.0),
+                LightColor::Red => RED,
+                LightColor::Green => GREEN,
+                LightColor::Blue => BLUE,
+                LightColor::Temperature => Color::temperature(*kelvin),
+            }
+        })
+    }
+
     /// The three lights, of which only the side bar's kind shines.
     fn lights(&self) -> Vec<Box<dyn AnyNode3d>> {
         let from = self.light_from();
@@ -203,13 +238,16 @@ impl Options {
 
         vec![
             DirectionalLight::new(Map1::read_map(from, |from: &Vector3<f32>| -*from))
+                .color(self.light_color())
                 .intensity(self.intensity_for(LightKind::Directional))
                 .boxed(),
             PointLight::new()
+                .color(self.light_color())
                 .intensity(self.intensity_for(LightKind::Point))
                 .position(position.clone())
                 .boxed(),
             SpotLight::new(inner, outer)
+                .color(self.light_color())
                 .intensity(self.intensity_for(LightKind::Spot))
                 .rotation(aim)
                 .position(position)
@@ -469,6 +507,19 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         slider("From", &options.light_azimuth, -180.0, 180.0, degrees),
         slider("Height", &options.light_elevation, -90.0, 90.0, degrees),
         slider("Lux at model", &options.light_intensity, 0.0, 20.0, |value| format!("{value:.1}")),
+        Picker::new("Colour", options.light_color.clone(), (
+            Text::new("White").tag(LightColor::White),
+            Text::new("Warm white, 2700 K").tag(LightColor::Warm),
+            Text::new("Cool white, 8000 K").tag(LightColor::Cool),
+            Text::new("Red").tag(LightColor::Red),
+            Text::new("Green").tag(LightColor::Green),
+            Text::new("Blue").tag(LightColor::Blue),
+            Text::new("Temperature").tag(LightColor::Temperature),
+        )),
+        shown_when(
+            Map1::read_map(options.light_color.clone(), |color: &LightColor| *color == LightColor::Temperature),
+            slider("Temperature", &options.light_temperature, 1000.0, 12000.0, |kelvin| format!("{kelvin:.0} K")),
+        ),
         shown_when(
             Map1::read_map(options.light_kind.clone(), |kind: &LightKind| *kind == LightKind::Spot),
             slider("Spot cone", &options.spot_angle, 5.0, 60.0, degrees),

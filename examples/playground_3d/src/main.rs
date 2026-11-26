@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{playground, LightKind, Model, Options, ProjectionKind, Renderer, Views};
+    use super::playground::{playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -68,6 +68,16 @@ mod tests {
             *options.light_kind.clone().value_mut() = kind;
             harness.render();
         }
+
+        // Each light colour, and a temperature.
+        for color in [LightColor::Warm, LightColor::Blue, LightColor::Temperature, LightColor::White] {
+            *options.light_color.clone().value_mut() = color;
+            harness.render();
+        }
+        *options.light_color.clone().value_mut() = LightColor::Temperature;
+        *options.light_temperature.clone().value_mut() = 2000.0;
+        harness.render();
+        *options.light_color.clone().value_mut() = LightColor::White;
 
         // Shadows on a floor, from the directional and the spot light.
         *options.floor.clone().value_mut() = true;
