@@ -39,6 +39,24 @@ thread_local! {
     static FAILED_TEXTURES: RefCell<HashSet<ImageId>> = RefCell::new(HashSet::new());
 }
 
+/// Load the image `id` into the image context, the store 2D images are in, unless it is there
+/// already: from bytes registered with [`register_encoded_image`], or from its file. An image that
+/// fails to load is reported once and not tried again.
+pub(crate) fn load_image(id: &ImageId, image: &mut dyn ImageContext, env: &mut Environment) {
+    if FAILED_TEXTURES.with(|failed| failed.borrow().contains(id)) {
+        return;
+    }
+
+    let loaded = match encoded_image(id) {
+        Some(bytes) => load_encoded_raster(id, &bytes, image, env),
+        None => load_local_raster(id, image, env),
+    };
+    if let Err(error) = loaded {
+        eprintln!("carbide_3d: {}", error);
+        FAILED_TEXTURES.with(|failed| failed.borrow_mut().insert(id.clone()));
+    }
+}
+
 pub struct RenderContext3d<'a, 'b: 'a> {
     pub(crate) render: &'a mut dyn InnerRenderContext3d,
     /// The image context of the window or harness, shared with 2D: materials load their textures
@@ -75,18 +93,7 @@ impl<'a, 'b: 'a> RenderContext3d<'a, 'b> {
         let Material::PBR(pbr) = material;
 
         for id in pbr.textures() {
-            if FAILED_TEXTURES.with(|failed| failed.borrow().contains(&id)) {
-                continue;
-            }
-
-            let loaded = match encoded_image(&id) {
-                Some(bytes) => load_encoded_raster(&id, &bytes, &mut *self.image, self.env),
-                None => load_local_raster(&id, &mut *self.image, self.env),
-            };
-            if let Err(error) = loaded {
-                eprintln!("carbide_3d: {}", error);
-                FAILED_TEXTURES.with(|failed| failed.borrow_mut().insert(id));
-            }
+            load_image(&id, &mut *self.image, self.env);
         }
     }
 

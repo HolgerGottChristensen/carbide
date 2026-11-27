@@ -30,6 +30,7 @@ carbide_testing.workspace = true
 carbide_wgpu_3d.workspace = true
 carbide_wgpu_core.workspace = true
 image.workspace = true
+half.workspace = true
 
 [lints]
 workspace = true

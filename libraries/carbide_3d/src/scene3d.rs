@@ -2,12 +2,13 @@ use std::cell::RefCell;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-use carbide::draw::Rect;
+use carbide::draw::{ImageId, Rect};
 use carbide::environment::Environment;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::render::{LayerId, RenderContext};
 use carbide::color::{Color, TRANSPARENT, WHITE};
+use carbide::math::Deg;
 use carbide::state::{AnyReadState, IntoReadState, ReadState, StateSync};
 use carbide_core::draw::{Dimension, Position};
 use carbide_core::render::Render;
@@ -22,7 +23,7 @@ use carbide::event::MouseButton;
 use carbide_core::animation::AnimationManager;
 use carbide_core::scene::SceneManager;
 use crate::node3d_sequence::Node3dSequence;
-use crate::render::{ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId, Tonemapping, ViewSpec};
+use crate::render::{load_image, ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId, Tonemapping, ViewSpec};
 
 /// A view of a 3D scene: a widget that renders its nodes through its camera into a layer.
 ///
@@ -87,13 +88,17 @@ pub struct Scene3d<N> where N: Node3dSequence {
     hover_check: bool,
 }
 
-/// What the views of one scene share: its nodes, and its ambient light.
+/// What the views of one scene share: its nodes, its ambient light and its environment.
 #[derive(Debug)]
 struct Scene3dContent<N> where N: Node3dSequence {
     nodes: N,
     sky: Box<dyn AnyReadState<T=Color>>,
     ground: Box<dyn AnyReadState<T=Color>>,
     ambient_intensity: Box<dyn AnyReadState<T=f32>>,
+    environment: Box<dyn AnyReadState<T=Option<ImageId>>>,
+    environment_intensity: Box<dyn AnyReadState<T=f32>>,
+    /// In degrees.
+    environment_rotation: Box<dyn AnyReadState<T=f32>>,
 }
 
 impl<N: Node3dSequence> Scene3d<N> {
@@ -108,6 +113,9 @@ impl<N: Node3dSequence> Scene3d<N> {
                 sky: Box::new(WHITE),
                 ground: Box::new(WHITE),
                 ambient_intensity: Box::new(0.1f32),
+                environment: Box::new(None::<ImageId>),
+                environment_intensity: Box::new(1.0f32),
+                environment_rotation: Box::new(0.0f32),
             })),
             camera: Camera::default(),
             controller: None,
@@ -219,6 +227,30 @@ impl<N: Node3dSequence> Scene3d<N> {
     pub fn ambient<C: IntoReadState<Color>, I: IntoReadState<f32>>(self, color: C, intensity: I) -> Scene3d<N> {
         let color = color.into_read_state();
         self.hemisphere(color.clone(), color, intensity)
+    }
+
+    /// Light the scene from all around with `image`, an HDR panorama (equirectangular, such as a
+    /// `.hdr` or `.exr` file), in place of the hemisphere: diffuse light, and reflections that
+    /// blur with roughness. The hemisphere lights the scene while `image` is `None`, and until the
+    /// image is loaded. This is the scene's, not the view's: it changes every view of the scene.
+    /// The image's middle column is +X, a quarter to its right +Z, and its top +Y.
+    pub fn environment<I: IntoReadState<Option<ImageId>>>(self, image: I) -> Scene3d<N> {
+        self.content.borrow_mut().environment = Box::new(image.into_read_state());
+        self
+    }
+
+    /// Multiply the environment's light by `intensity`. 1 by default. Changes every view of the
+    /// scene.
+    pub fn environment_intensity<I: IntoReadState<f32>>(self, intensity: I) -> Scene3d<N> {
+        self.content.borrow_mut().environment_intensity = Box::new(intensity.into_read_state());
+        self
+    }
+
+    /// Turn the environment `degrees` around the vertical axis, counter-clockwise seen from above.
+    /// 0 by default. Changes every view of the scene.
+    pub fn environment_rotation<R: IntoReadState<f32>>(self, degrees: R) -> Scene3d<N> {
+        self.content.borrow_mut().environment_rotation = Box::new(degrees.into_read_state());
+        self
     }
 
     /// Recreate the render context if the factory in the environment is not the one that created
@@ -502,6 +534,15 @@ impl<N: Node3dSequence> Render for Scene3d<N> {
             content.ground.sync(env);
             content.ambient_intensity.sync(env);
             self.render_context.hemisphere(*content.sky.value(), *content.ground.value(), *content.ambient_intensity.value());
+
+            content.environment.sync(env);
+            content.environment_intensity.sync(env);
+            content.environment_rotation.sync(env);
+            let environment = content.environment.value().clone();
+            if let Some(id) = &environment {
+                load_image(id, &mut *image, env);
+            }
+            self.render_context.environment(environment.as_ref(), *content.environment_intensity.value(), Deg(*content.environment_rotation.value()));
 
             self.picking.clear();
             content.nodes.foreach_mut(&mut |node| {
