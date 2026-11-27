@@ -13,10 +13,12 @@ use carbide_3d::material::sample_type::SampleType;
 use carbide_3d::Node3dExt;
 use carbide_core::color::WHITE;
 use carbide_core::draw::Color;
-use carbide_core::state::{LocalState, Map1, State};
+use carbide_core::lens;
+use carbide_core::state::{IntoReadState, LocalState, Map1, Map2, State};
+use carbide_3d::material::Material;
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
 use carbide_core::math::{Deg, Euler, Point3, Rad, Vector2, Vector3};
-use carbide_core::widget::{HStack, Image, Rectangle, WidgetExt};
+use carbide_core::widget::{HStack, Image, Rectangle, Widget, WidgetExt};
 use carbide_testing::Harness;
 use carbide_wgpu_core::{WgpuImageContext, WgpuTextureStore};
 
@@ -179,8 +181,9 @@ fn plane_brightness(map: Option<([u8; 3], NormalTextureYDirection)>, light: Vect
 /// [`plane_brightness`] for any `mesh` lying on the ground and facing up, with the material's
 /// normal scale `scale`.
 fn mesh_brightness(mesh: Mesh, map: Option<([u8; 3], NormalTextureYDirection)>, scale: f32, light: Vector3<f32>) -> u32 {
-    let normal = LocalState::new(NormalTexture::None);
-    let plane = Object::new(mesh, PbrMaterial::new().color(WHITE).roughness(Some(1.0f32)).normal(normal.clone()).normal_scale(scale));
+    let material = LocalState::new(PbrMaterial::new().color(WHITE).roughness(1.0).normal_scale(scale));
+    let normal = lens!(material.normal);
+    let plane = Object::new(mesh, material.clone());
     let scene = Scene3d::new((plane, DirectionalLight::new(light).intensity(3.0)))
         .ambient(WHITE, 0.0)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
@@ -263,8 +266,12 @@ fn store_dome_normal_map(harness: &mut Harness) -> ImageId {
 /// the other, on the flat plane and around the sphere.
 #[test]
 fn a_normal_mapped_plane_and_sphere() {
+    // One normal map, set once the image is stored, shared by every material made here.
     let normal = LocalState::new(NormalTexture::None);
-    let material = || PbrMaterial::new().color(WHITE).roughness(Some(0.7f32)).normal(normal.clone());
+    let tiled = |tiling: Vector2<f32>| Map1::read_map(normal.clone(), move |normal: &NormalTexture| {
+        PbrMaterial::new().color(WHITE).roughness(0.7).normal(normal.clone()).tiling(tiling)
+    });
+    let material = || tiled(Vector2::new(1.0, 1.0));
 
     let plane = Scene3d::new((
         Object::new(Mesh::plane(2.0, 2.0), material()),
@@ -273,7 +280,7 @@ fn a_normal_mapped_plane_and_sphere() {
         .camera(Camera::perspective().look_at(Point3::new(0.0, 2.2, 0.8), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
 
-    let sphere_material = material().tiling(Vector2::new(8.0, 4.0));
+    let sphere_material = tiled(Vector2::new(8.0, 4.0));
     let sphere = Scene3d::new((
         Object::new(Mesh::icosphere(1.0, 4), sphere_material),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
@@ -343,8 +350,12 @@ fn the_normal_scale_steepens_or_flattens_the_map() {
 /// from the far edge: every dome is lit on its far side, on both planes.
 #[test]
 fn a_normal_map_on_a_mirrored_texture() {
+    // One normal map, set once the image is stored, shared by every material made here.
     let normal = LocalState::new(NormalTexture::None);
-    let material = || PbrMaterial::new().color(WHITE).roughness(Some(0.7f32)).normal(normal.clone());
+    let tiled = |tiling: Vector2<f32>| Map1::read_map(normal.clone(), move |normal: &NormalTexture| {
+        PbrMaterial::new().color(WHITE).roughness(0.7).normal(normal.clone()).tiling(tiling)
+    });
+    let material = || tiled(Vector2::new(1.0, 1.0));
 
     let scene = Scene3d::new((
         Object::new(Mesh::plane(1.0, 1.0), material()).position(Vector3::new(-0.52, 0.0, 0.0)),
@@ -380,16 +391,15 @@ fn aomr_brightness(lighting: Lighting, roughness: f32, metallic: f32, occlusion:
 
 /// [`aomr_brightness`] with the material's occlusion strength `strength`.
 fn aomr_brightness_with(lighting: Lighting, roughness: f32, metallic: f32, occlusion: f32, strength: f32, maps: impl FnOnce(&mut Harness) -> AoMRTextures) -> u32 {
-    let textures = LocalState::new(AoMRTextures::None);
-    let material = PbrMaterial::new()
+    let material = LocalState::new(PbrMaterial::new()
         .occlusion_strength(strength)
         .color(Color::new_rgba(120, 120, 120, 255))
-        .roughness(Some(roughness))
+        .roughness(roughness)
         .metallic(metallic)
-        .ambient_occlusion(occlusion)
-        .aomr_textures(textures.clone());
+        .ambient_occlusion(occlusion));
+    let textures = lens!(material.aomr_textures);
 
-    let plane = Object::new(Mesh::plane(4.0, 4.0), material);
+    let plane = Object::new(Mesh::plane(4.0, 4.0), material.clone());
     let camera = Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0));
     // The light, off for ambient lighting, and the ambient light, off for the highlight.
     let (light, ambient) = match lighting {
@@ -496,12 +506,9 @@ fn the_occlusion_strength_weakens_the_map() {
 #[test]
 fn an_unset_roughness_uses_the_map() {
     let render = |roughness: Option<f32>, map: Option<u8>| {
-        let textures = LocalState::new(AoMRTextures::None);
-        let mut material = PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).aomr_textures(textures.clone());
-        if let Some(roughness) = roughness {
-            material = material.roughness(Some(roughness));
-        }
-        let scene = Scene3d::new((Object::new(Mesh::plane(4.0, 4.0), material), DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(3.0)))
+        let material = LocalState::new(PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).roughness(roughness));
+        let textures = lens!(material.aomr_textures);
+        let scene = Scene3d::new((Object::new(Mesh::plane(4.0, 4.0), material.clone()), DirectionalLight::new(Vector3::new(0.0, -1.0, 0.0)).intensity(3.0)))
             .ambient(WHITE, 0.0)
             .camera(Camera::perspective().look_at(Point3::new(0.0, 3.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
 
@@ -543,22 +550,22 @@ fn store_stripes(harness: &mut Harness, a: u8, b: u8) -> ImageId {
 /// its occlusion map: the occluded stripes are darker.
 #[test]
 fn roughness_and_occlusion_maps() {
-    let roughness = LocalState::new(AoMRTextures::None);
-    let occlusion = LocalState::new(AoMRTextures::None);
-
-    let sphere_material = PbrMaterial::new()
+    let sphere_material = LocalState::new(PbrMaterial::new()
         .color(Color::new_rgba(40, 90, 200, 255))
-        .aomr_textures(roughness.clone())
-        .tiling(Vector2::new(3.0, 1.0));
+        .tiling(Vector2::new(3.0, 1.0)));
+    let roughness = lens!(sphere_material.aomr_textures);
+    let plane_material = LocalState::new(PbrMaterial::new().color(Color::new_rgba(200, 200, 200, 255)));
+    let occlusion = lens!(plane_material.aomr_textures);
+
     let sphere = Scene3d::new((
-        Object::new(Mesh::icosphere(1.0, 4), sphere_material),
+        Object::new(Mesh::icosphere(1.0, 4), sphere_material.clone()),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
     ))
         .ambient(WHITE, 0.2)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
 
-    let plane = Scene3d::new(Object::new(Mesh::plane(2.0, 2.0), PbrMaterial::new().color(Color::new_rgba(200, 200, 200, 255)).aomr_textures(occlusion.clone())))
+    let plane = Scene3d::new(Object::new(Mesh::plane(2.0, 2.0), plane_material.clone()))
         .ambient(WHITE, 1.0)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 2.2, 0.8), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
@@ -576,7 +583,7 @@ fn roughness_and_occlusion_maps() {
 
 /// The brightness of the middle of a plane with `material`, seen from straight above, after
 /// `setup` has stored its images and set its states.
-fn material_brightness(lighting: Lighting, material: PbrMaterial, setup: impl FnOnce(&mut Harness)) -> u32 {
+fn material_brightness(lighting: Lighting, material: impl IntoReadState<Material>, setup: impl FnOnce(&mut Harness)) -> u32 {
     let (light, ambient) = match lighting {
         Lighting::Highlight => (3.0, 0.0),
         Lighting::Ambient => (0.0, 1.0),
@@ -599,19 +606,19 @@ fn material_brightness(lighting: Lighting, material: PbrMaterial, setup: impl Fn
 /// coat's (strength, roughness) for a value of the channel under test.
 fn assert_clearcoat_map(name: &str, factors: impl Fn(f32) -> (f32, f32), maps: impl Fn(&mut Harness, u8) -> ClearcoatTextures) {
     let (low, high) = (64u8, 230u8);
-    let base = |strength: f32, roughness: f32, textures: LocalState<ClearcoatTextures>| {
-        PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).roughness(Some(0.1f32)).clearcoat(strength, roughness).clearcoat_textures(textures)
+    let base = |strength: f32, roughness: f32| {
+        PbrMaterial::new().color(Color::new_rgba(120, 120, 120, 255)).roughness(0.1).clearcoat(strength, roughness)
     };
 
     let plain = |byte: u8| {
         let (strength, roughness) = factors(byte as f32 / 255.0);
-        material_brightness(Lighting::Highlight, base(strength, roughness, LocalState::new(ClearcoatTextures::None)), |_| {})
+        material_brightness(Lighting::Highlight, base(strength, roughness), |_| {})
     };
     let mapped = |byte: u8| {
         let (strength, roughness) = factors(1.0);
-        let textures = LocalState::new(ClearcoatTextures::None);
-        material_brightness(Lighting::Highlight, base(strength, roughness, textures.clone()), |harness| {
-            *textures.clone().value_mut() = maps(harness, byte);
+        let material = LocalState::new(base(strength, roughness));
+        material_brightness(Lighting::Highlight, material.clone(), |harness| {
+            lens!(material.clearcoat_textures).set_value(maps(harness, byte));
         })
     };
 
@@ -655,9 +662,9 @@ fn an_emission_map() {
 
     let plain = |byte: u8| material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(grey(byte)), |_| {});
     let mapped = |byte: u8, emissive: Color| {
-        let map = LocalState::new(None::<MaterialTexture>);
-        material_brightness(Lighting::Dark, PbrMaterial::new().color(black).emissive(emissive).emissive_map(map.clone()), |harness| {
-            *map.clone().value_mut() = Some(store_flat_image(harness, [byte, byte, byte, 255]).into());
+        let material = LocalState::new(PbrMaterial::new().color(black).emissive(emissive));
+        material_brightness(Lighting::Dark, material.clone(), |harness| {
+            lens!(material.emissive_texture).set_value(Some(store_flat_image(harness, [byte, byte, byte, 255]).into()));
         })
     };
 
@@ -676,25 +683,22 @@ fn an_emission_map() {
 /// stripes and spread on them.
 #[test]
 fn emission_and_clear_coat_maps() {
-    let emission = LocalState::new(None::<MaterialTexture>);
-    let coat = LocalState::new(ClearcoatTextures::None);
+    let glowing_material = LocalState::new(PbrMaterial::new().color(Color::new_rgba(30, 30, 30, 255)).roughness(0.8).emissive(WHITE));
+    let emission = lens!(glowing_material.emissive_texture);
+    let coated_material = LocalState::new(PbrMaterial::new()
+        .color(Color::new_rgba(40, 90, 200, 255))
+        .roughness(0.2)
+        .clearcoat(1.0, 0.8)
+        .tiling(Vector2::new(3.0, 1.0)));
+    let coat = lens!(coated_material.clearcoat_textures);
 
-    let glowing = Scene3d::new(Object::new(
-        Mesh::icosphere(1.0, 4),
-        PbrMaterial::new().color(Color::new_rgba(30, 30, 30, 255)).roughness(Some(0.8f32)).emissive(WHITE).emissive_map(emission.clone()),
-    ))
+    let glowing = Scene3d::new(Object::new(Mesh::icosphere(1.0, 4), glowing_material.clone()))
         .ambient(WHITE, 0.1)
         .camera(Camera::perspective().look_at(Point3::new(0.0, 0.3, 3.2), Point3::new(0.0, 0.0, 0.0)))
         .frame(200.0, 200.0);
 
-    let coated_material = PbrMaterial::new()
-        .color(Color::new_rgba(40, 90, 200, 255))
-        .roughness(Some(0.2f32))
-        .clearcoat(1.0, 0.8)
-        .clearcoat_textures(coat.clone())
-        .tiling(Vector2::new(3.0, 1.0));
     let coated = Scene3d::new((
-        Object::new(Mesh::icosphere(1.0, 4), coated_material),
+        Object::new(Mesh::icosphere(1.0, 4), coated_material.clone()),
         DirectionalLight::new(Vector3::new(1.0, -1.0, -1.0)).intensity(4.0),
     ))
         .ambient(WHITE, 0.2)
@@ -713,15 +717,20 @@ fn emission_and_clear_coat_maps() {
     harness.snapshot("glow_and_coat");
 }
 
-/// Tiling and sampling are states: changing them redraws the material, and changing them back
-/// gives the same picture again.
+/// Tiling and sampling are states the material is made from: changing them redraws the material,
+/// and changing them back gives the same picture again.
 #[test]
 fn tiling_and_sampling_follow_their_states() {
     let checker_id = ImageId::temp(ImageFormat::Png);
     let tiling = LocalState::new(Vector2::new(1.0f32, 1.0));
     let sampling = LocalState::new(SampleType::Linear);
 
-    let material = PbrMaterial::new().color(checker_id.clone()).tiling(tiling.clone()).sample_type(sampling.clone());
+    let material = {
+        let checker_id = checker_id.clone();
+        Map2::read_map(tiling.clone(), sampling.clone(), move |tiling: &Vector2<f32>, sampling: &SampleType| {
+            PbrMaterial::new().color(checker_id.clone()).tiling(*tiling).sample_type(*sampling)
+        })
+    };
     let scene = Scene3d::new((Object::new(Mesh::plane(20.0, 20.0), material), DirectionalLight::new(Vector3::new(0.3, -1.0, -0.4)).intensity(4.0)))
         .camera(Camera::perspective().look_at(Point3::new(0.0, 0.6, 3.0), Point3::new(0.0, 0.0, -2.0)));
 
@@ -852,13 +861,13 @@ fn map_transforms_and_coordinate_sets() {
     let landscape = ImageId::new("images/landscape.png");
     let half = LocalState::new(None::<ImageId>);
 
-    let view = |material: PbrMaterial, mesh: Mesh| {
+    fn view(material: impl IntoReadState<Material>, mesh: Mesh) -> impl Widget {
         // Ambient light only, which the occlusion map darkens.
         Scene3d::new(Object::new(mesh, material))
             .ambient(WHITE, 3.0)
             .camera(Camera::perspective().look_at(Point3::new(0.0, 2.6, 0.001), Point3::new(0.0, 0.0, 0.0)))
             .frame(150.0, 150.0)
-    };
+    }
     let plain = view(PbrMaterial::new().color(landscape.clone()).roughness(Some(1.0f32)), Mesh::plane(2.0, 2.0));
     let turned = view(
         PbrMaterial::new()
@@ -866,15 +875,18 @@ fn map_transforms_and_coordinate_sets() {
             .roughness(Some(1.0f32)),
         Mesh::plane(2.0, 2.0),
     );
-    let occlusion = Map1::read_map(half.clone(), |id: &Option<ImageId>| match id {
-        Some(id) => AoMRTextures::BWSplit { ao_texture: Some(id.into()), m_texture: None, r_texture: None },
-        None => AoMRTextures::None,
-    });
+    let mirrored_landscape = landscape.clone();
     let mirrored = view(
-        PbrMaterial::new()
-            .color(MaterialTexture::new(landscape.clone()).uv_set(1))
-            .aomr_textures(occlusion)
-            .roughness(Some(1.0f32)),
+        Map1::read_map(half.clone(), move |id: &Option<ImageId>| {
+            let occlusion = match id {
+                Some(id) => AoMRTextures::BWSplit { ao_texture: Some(id.into()), m_texture: None, r_texture: None },
+                None => AoMRTextures::None,
+            };
+            PbrMaterial::new()
+                .color(MaterialTexture::new(mirrored_landscape.clone()).uv_set(1))
+                .aomr_textures(occlusion)
+                .roughness(1.0)
+        }),
         with_second_coordinates(Mesh::plane(2.0, 2.0), |uv| Vector2::new(1.0 - uv.x, uv.y)),
     );
 

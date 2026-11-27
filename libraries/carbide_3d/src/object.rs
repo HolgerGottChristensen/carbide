@@ -10,21 +10,24 @@ use crate::render::{Render3d, RenderContext3d};
 /// [`Transformed`](crate::Transformed).
 ///
 /// The mesh can be a state of a [`Mesh`]: setting the state to another mesh changes the object's
-/// geometry. It casts and receives shadows unless [`CastsShadows`] or [`ReceivesShadows`] around
+/// geometry. The material, too, can be a state, of a [`Material`] or a
+/// [`PbrMaterial`](crate::material::pbr_material::PbrMaterial): a material is a plain value, so to
+/// change one while it is shown, give the object a `LocalState` of it, whose fields `lens!` hands
+/// out to controls, or a map that builds it from other states. It casts and receives shadows unless [`CastsShadows`] or [`ReceivesShadows`] around
 /// it say otherwise.
 #[derive(Debug, Clone)]
 pub struct Object {
     id: NodeId,
     mesh: Box<dyn AnyReadState<T=Mesh>>,
-    material: Material,
+    material: Box<dyn AnyReadState<T=Material>>,
 }
 
 impl Object {
-    pub fn new<M: IntoReadState<Mesh>>(mesh: M, material: impl Into<Material>) -> Object {
+    pub fn new<M: IntoReadState<Mesh>, A: IntoReadState<Material>>(mesh: M, material: A) -> Object {
         Object {
             id: Default::default(),
             mesh: Box::new(mesh.into_read_state()),
-            material: material.into(),
+            material: material.into_dyn_read_state(),
         }
     }
 }
@@ -34,8 +37,8 @@ impl Render3d for Object {
         self.material.sync(context.env);
         self.mesh.sync(context.env);
         let mesh = self.mesh.value().clone();
-        let material = &self.material;
-        context.pick_node(self.id, |context| context.material(material, |context| context.mesh(&mesh)))
+        let material = self.material.value();
+        context.pick_node(self.id, |context| context.material(&material, |context| context.mesh(&mesh)))
     }
 }
 

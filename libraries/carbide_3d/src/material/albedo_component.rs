@@ -6,7 +6,7 @@ use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// How the albedo color should be determined.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Default)]
 pub enum AlbedoComponent {
     /// No albedo color.
@@ -115,6 +115,24 @@ impl AlbedoComponent {
 }
 
 impl_state_value!(AlbedoComponent);
+
+impl From<Color> for AlbedoComponent {
+    fn from(color: Color) -> Self {
+        AlbedoComponent::Value(color)
+    }
+}
+
+impl From<ImageId> for AlbedoComponent {
+    fn from(id: ImageId) -> Self {
+        AlbedoComponent::Texture(MaterialTexture::new(id))
+    }
+}
+
+impl From<MaterialTexture> for AlbedoComponent {
+    fn from(texture: MaterialTexture) -> Self {
+        AlbedoComponent::Texture(texture)
+    }
+}
 
 impl ConvertIntoRead<AlbedoComponent> for Color {
     type Output<G: AnyReadState<T=Color> + Clone> = RMap1<fn(&Color)->AlbedoComponent, Color, AlbedoComponent, G>;

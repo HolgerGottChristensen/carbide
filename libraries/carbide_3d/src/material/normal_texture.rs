@@ -6,7 +6,7 @@ use carbide::impl_state_value;
 use carbide::state::{AnyReadState, ConvertIntoRead, Map1, RMap1};
 
 /// How normals should be derived
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Default)]
 pub enum NormalTexture {
     /// No normal texture.

@@ -1,16 +1,10 @@
 use crate::material::pbr_material::PbrMaterial;
-use carbide::environment::Environment;
-use carbide::state::StateSync;
+use carbide::impl_state_value;
 
-#[derive(Debug, Clone)]
+/// A material, as a plain value: how a mesh's surface interacts with light.
+#[derive(Debug, Clone, PartialEq)]
 pub enum Material {
     PBR(PbrMaterial)
 }
 
-impl StateSync for Material {
-    fn sync(&mut self, env: &mut Environment) -> bool {
-        match self {
-            Material::PBR(p) => p.sync(env)
-        }
-    }
-}
+impl_state_value!(Material);

@@ -2,7 +2,7 @@ use carbide::draw::ImageId;
 
 /// Generic container for a component of a material that could either be from a
 /// texture or a fixed value.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Default)]
 pub enum MaterialComponent<T> {
     #[default]

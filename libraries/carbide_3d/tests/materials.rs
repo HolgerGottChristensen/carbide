@@ -9,6 +9,7 @@ use carbide_3d::{Mesh, Node3dExt, Object, Scene3d};
 use carbide_core::color::{rgba, rgba_bytes, BLACK, BLUE, ORANGE, RED, WHITE};
 use carbide_core::draw::Dimension;
 use carbide_core::math::{Deg, Euler, Point3, Vector3};
+use carbide_core::lens;
 use carbide_core::state::{LocalState, State};
 use carbide_core::widget::{Widget, WidgetExt};
 use carbide_testing::Harness;
@@ -129,13 +130,14 @@ fn vertex_colours() {
     harness.snapshot("painted_cube");
 }
 
-/// A sphere whose metallic value is a state, set from 0 to 1 between renders. Pins down that the
-/// material's values are synced, not only its colour: the picture changes.
+/// A sphere whose material is a state, its metallic value set from 0 to 1 between renders through
+/// the field's state (`lens!`). Pins down that the object follows its material's values, not only
+/// its colour: the picture changes.
 #[test]
 fn material_values_follow_their_states() {
-    let metallic = LocalState::new(0.0f32);
-    let material = PbrMaterial::new().color(RED).roughness(Some(0.4f32)).metallic(metallic.clone());
-    let scene = Scene3d::new((Object::new(Mesh::icosphere(1.0, 3), material), light())).camera(camera());
+    let material = LocalState::new(PbrMaterial::new().color(RED).roughness(0.4).metallic(0.0));
+    let metallic = lens!(material.metallic);
+    let scene = Scene3d::new((Object::new(Mesh::icosphere(1.0, 3), material.clone()), light())).camera(camera());
 
     let mut harness = Harness::new(scene, Dimension::new(200.0, 200.0));
     harness.render();

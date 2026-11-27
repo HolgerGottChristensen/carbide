@@ -4,7 +4,7 @@ use carbide::impl_state_value;
 
 /// How the Ambient Occlusion, Metalic, and Roughness values should be
 /// determined.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Default)]
 pub enum AoMRTextures {
     #[default]

@@ -13,7 +13,6 @@ use carbide_core::color::ColorExt;
 use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::math::{Matrix3, SquareMatrix, Vector3, Vector4};
-use carbide_core::state::ReadState;
 
 #[derive(Debug, Copy, Clone, ShaderType, PartialEq)]
 pub struct WgpuPbrMaterial {
@@ -63,9 +62,9 @@ impl WgpuPbrMaterial {
     /// on which images have loaded, and is set when the frame is drawn.
     pub(crate) fn from_material(material: &PbrMaterial, _env: &mut Environment) -> Self {
         // Colours are given in sRGB; the shader lights in linear space, as the 2D renderer draws.
-        let albedo = material.albedo.value().to_value().gamma_srgb_to_linear();
+        let albedo = material.albedo.to_value().gamma_srgb_to_linear();
 
-        let uv_transform = *material.uv_transform.value();
+        let uv_transform = material.uv_transform;
         let maps = slot_textures(material);
 
         Self {
@@ -76,38 +75,38 @@ impl WgpuPbrMaterial {
             albedo: Vector4::new(albedo.red(), albedo.green(), albedo.blue(), albedo.opacity()),
             // Unset, the roughness is the map's when there is one (a factor of 1, as glTF's
             // default), and 0 without one.
-            roughness: material.roughness_factor.value().unwrap_or(
-                if material.aomr_textures.value().to_roughness_texture().is_some() { 1.0 } else { 0.0 }
+            roughness: material.roughness_factor.unwrap_or(
+                if material.aomr_textures.to_roughness_texture().is_some() { 1.0 } else { 0.0 }
             ),
-            metallic: *material.metallic.value(),
-            reflectance: *material.reflectance.value(),
-            clear_coat: *material.clearcoat.value(),
-            clear_coat_roughness: *material.clearcoat_roughness.value(),
+            metallic: material.metallic,
+            reflectance: material.reflectance,
+            clear_coat: material.clearcoat,
+            clear_coat_roughness: material.clearcoat_roughness,
             // Linear, times the strength, as the shader adds it to the light leaving the surface.
             emissive: {
-                let emissive = material.emissive.value().gamma_srgb_to_linear();
-                Vector3::new(emissive.red(), emissive.green(), emissive.blue()) * *material.emissive_strength.value()
+                let emissive = material.emissive.gamma_srgb_to_linear();
+                Vector3::new(emissive.red(), emissive.green(), emissive.blue()) * material.emissive_strength
             },
             anisotropy: material.anisotropy.to_value(0.0),
-            ambient_occlusion: *material.ambient_occlusion.value(),
+            ambient_occlusion: material.ambient_occlusion,
             alpha_cutout: match material.transparency {
                 Transparency::Cutout { cutout } => cutout,
                 _ => 0.0,
             },
             material_flags: {
-                let mut flags = material.albedo.value().to_flags();
-                flags |= material.normal.value().to_flags();
-                flags |= material.aomr_textures.value().to_flags();
-                flags |= material.clearcoat_textures.value().to_flags();
+                let mut flags = material.albedo.to_flags();
+                flags |= material.normal.to_flags();
+                flags |= material.aomr_textures.to_flags();
+                flags |= material.clearcoat_textures.to_flags();
                 flags.set(MaterialFlags::UNLIT, material.unlit);
                 flags.set(MaterialFlags::ALPHA_BLEND, matches!(material.transparency, Transparency::Blend));
-                flags.set(MaterialFlags::DOUBLE_SIDED, *material.double_sided.value());
+                flags.set(MaterialFlags::DOUBLE_SIDED, material.double_sided);
                 flags.bits()
             },
             // Set per frame from the texture store (`WgpuPbrMaterialTextures::enabled`).
             texture_enable: 0,
-            occlusion_strength: *material.occlusion_strength.value(),
-            normal_scale: *material.normal_scale.value(),
+            occlusion_strength: material.occlusion_strength,
+            normal_scale: material.normal_scale,
         }
     }
 }
@@ -140,7 +139,7 @@ enum SlotKind {
 impl WgpuPbrMaterialTextures {
     pub(crate) fn from_material(material: &PbrMaterial) -> Self {
         let maps = slot_textures(material);
-        let default = Filtering::from(*material.sample_type.value());
+        let default = Filtering::from(material.sample_type);
         let samplers = maps.each_ref().map(|map| match map {
             Some(map) => map.sampler(default),
             None => TextureSampler { filtering: default, ..TextureSampler::default() },
@@ -181,17 +180,17 @@ impl WgpuPbrMaterialTextures {
 /// The map in each slot of the material bind group, in binding order: albedo, normal, occlusion,
 /// metallic, roughness, clear coat, clear-coat roughness and emission.
 fn slot_textures(material: &PbrMaterial) -> [Option<MaterialTexture>; SLOT_COUNT] {
-    let aomr = material.aomr_textures.value();
-    let clearcoat = material.clearcoat_textures.value();
+    let aomr = &material.aomr_textures;
+    let clearcoat = &material.clearcoat_textures;
     [
-        material.albedo.value().to_texture().cloned(),
-        material.normal.value().to_texture().cloned(),
+        material.albedo.to_texture().cloned(),
+        material.normal.to_texture().cloned(),
         aomr.to_ao_texture().cloned(),
         aomr.to_metallic_texture().cloned(),
         aomr.to_roughness_texture().cloned(),
         clearcoat.to_clearcoat_texture().cloned(),
         clearcoat.to_clearcoat_roughness_texture().cloned(),
-        material.emissive_texture.value().clone(),
+        material.emissive_texture.clone(),
     ]
 }
 

@@ -4,7 +4,7 @@ use carbide::color::{rgba_bytes, Color, BLACK, BLUE, GREEN, ORANGE, RED, TRANSPA
 use carbide::controls::button::{BorderedProminentStyle, Button};
 use carbide::controls::color_picker::ColorPicker;
 use carbide::controls::picker::{MenuStyle, Picker};
-use carbide::controls::slider::Slider;
+use carbide::controls::slider::{Slider, SliderValue};
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
 use carbide::controls::ControlsExt;
 use carbide::d3::camera::{look_at, Camera, OrbitController, Projection};
@@ -28,9 +28,10 @@ use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
 use std::path::{Path, PathBuf};
 use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector2, Vector3};
-use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, Map6, ReadState, State};
+use carbide::state::{AnimatedState, AnyReadState, LocalState, Map1, Map2, Map3, Map5, Map6, ReadState, State};
 use carbide::time::Duration;
 use carbide::ui;
+use carbide::lens;
 use carbide::widget::*;
 
 use crate::meshes;
@@ -420,6 +421,11 @@ pub struct Options {
     /// The outlines' colour when `outline_color` is `Custom`.
     pub outline_custom: LocalState<Color>,
 
+    /// The side bar's material: its values, which the sliders and pickers below edit through
+    /// `lens!`. `Options::material` adds what comes from the other options: the colour, the
+    /// surface's maps, the vertex colours and the tiling.
+    pub material: LocalState<PbrMaterial>,
+    /// The model's colour, while the surface has no colour map.
     pub color: LocalState<Color>,
     /// What covers the model: the colour, an image in its place, or a set of material maps.
     pub surface: LocalState<Surface>,
@@ -432,28 +438,10 @@ pub struct Options {
     pub use_occlusion_map: LocalState<bool>,
     pub use_metallic_map: LocalState<bool>,
     pub use_emission_map: LocalState<bool>,
-    /// How strongly the normal map bends the surface (`PbrMaterial::normal_scale`): 0 is flat,
-    /// 1 as the map is, 2 twice as steep.
-    pub normal_scale: LocalState<Scalar>,
-    /// How much the occlusion map darkens (`PbrMaterial::occlusion_strength`), from 0 to 1.
-    pub occlusion_strength: LocalState<Scalar>,
     /// How many times the surface's maps repeat across each side or around the model.
     pub tiling: LocalState<Scalar>,
-    /// Whether the maps are sampled smoothly or show their pixels.
-    pub sampling: LocalState<SampleType>,
-    pub roughness: LocalState<Scalar>,
-    pub metallic: LocalState<Scalar>,
-    pub reflectance: LocalState<Scalar>,
-    pub clearcoat: LocalState<Scalar>,
-    pub clearcoat_roughness: LocalState<Scalar>,
-    pub ambient_occlusion: LocalState<Scalar>,
-    /// The colour the model glows in; black for none.
-    pub emissive: LocalState<Color>,
-    pub emissive_strength: LocalState<Scalar>,
     /// Whether the model's colour is multiplied by its vertex colours, which paint it by position.
     pub vertex_colors: LocalState<bool>,
-    /// Whether the back of the material's triangles is drawn too (`PbrMaterial::double_sided`).
-    pub double_sided: LocalState<bool>,
     /// Whether a model from a file has its file's materials, instead of the side bar's.
     pub file_materials: LocalState<bool>,
     /// Whether a glTF model with lights of its own is lit by them, instead of the side bar's
@@ -515,6 +503,11 @@ impl Options {
             outline_thickness: LocalState::new(2.0),
             outline_color: LocalState::new(OutlineColorKind::Accent),
             outline_custom: LocalState::new(ORANGE),
+            material: LocalState::new(
+                PbrMaterial::new()
+                    .roughness(0.5)
+                    .clearcoat(0.0, 0.1)
+            ),
             color: LocalState::new(RED),
             surface: LocalState::new(Surface::none()),
             surfaces: surfaces(),
@@ -524,20 +517,8 @@ impl Options {
             use_occlusion_map: LocalState::new(true),
             use_metallic_map: LocalState::new(true),
             use_emission_map: LocalState::new(true),
-            normal_scale: LocalState::new(1.0),
-            occlusion_strength: LocalState::new(1.0),
             tiling: LocalState::new(1.0),
-            sampling: LocalState::new(SampleType::Linear),
-            roughness: LocalState::new(0.5),
-            metallic: LocalState::new(0.0),
-            reflectance: LocalState::new(0.5),
-            clearcoat: LocalState::new(0.0),
-            clearcoat_roughness: LocalState::new(0.1),
-            ambient_occlusion: LocalState::new(1.0),
-            emissive: LocalState::new(BLACK),
-            emissive_strength: LocalState::new(1.0),
             vertex_colors: LocalState::new(false),
-            double_sided: LocalState::new(false),
             file_materials: LocalState::new(true),
             file_lights: LocalState::new(true),
             spin: LocalState::new(false),
@@ -705,40 +686,36 @@ impl Options {
         )
     }
 
-    fn material(&self) -> PbrMaterial {
-        let surface = self.active_surface();
-        let f32_of = |state: &LocalState<Scalar>| Map1::read_map(state.clone(), |value: &Scalar| *value as f32);
-        // The surface's colour map or the colour, alone or times the vertex colours.
-        let albedo = Map3::read_map(self.color.clone(), surface.clone(), self.vertex_colors.clone(), |color: &Color, surface: &Surface, vertex: &bool| {
-            match (surface.albedo.clone().map(MaterialTexture::new), *vertex) {
-                (Some(texture), true) => AlbedoComponent::TextureVertex { texture, srgb: true },
-                (Some(texture), false) => AlbedoComponent::Texture(texture),
-                (None, true) => AlbedoComponent::ValueVertex { value: *color, srgb: true },
-                (None, false) => AlbedoComponent::Value(*color),
-            }
-        });
+    /// The model's material: the side bar's, with the colour or the surface's colour map, alone or
+    /// times the vertex colours, the surface's other maps, and the tiling. One state, so every
+    /// object showing it follows any of these options.
+    fn material(&self) -> impl ReadState<T=PbrMaterial> + Clone + use<> {
+        Map5::read_map(
+            self.material.clone(),
+            self.color.clone(),
+            self.active_surface(),
+            self.vertex_colors.clone(),
+            self.tiling.clone(),
+            |material: &PbrMaterial, color: &Color, surface: &Surface, vertex: &bool, tiling: &Scalar| {
+                let albedo = match (surface.albedo.clone().map(MaterialTexture::new), *vertex) {
+                    (Some(texture), true) => AlbedoComponent::TextureVertex { texture, srgb: true },
+                    (Some(texture), false) => AlbedoComponent::Texture(texture),
+                    (None, true) => AlbedoComponent::ValueVertex { value: *color, srgb: true },
+                    (None, false) => AlbedoComponent::Value(*color),
+                };
+                // A surface's emission map glows white while Glow is None, and in the Glow colour
+                // otherwise.
+                let emissive = if surface.emission.is_some() && material.emissive == BLACK { WHITE } else { material.emissive };
 
-        PbrMaterial::new()
-            .color(albedo)
-            .roughness(Map1::read_map(self.roughness.clone(), |roughness: &Scalar| Some(*roughness as f32)))
-            .metallic(f32_of(&self.metallic))
-            .reflectance(f32_of(&self.reflectance))
-            .clearcoat(f32_of(&self.clearcoat), f32_of(&self.clearcoat_roughness))
-            .ambient_occlusion(f32_of(&self.ambient_occlusion))
-            .occlusion_strength(f32_of(&self.occlusion_strength))
-            .normal_scale(f32_of(&self.normal_scale))
-            // A surface's emission map glows white while Glow is None, and in the Glow colour
-            // otherwise.
-            .emissive(Map2::read_map(self.emissive.clone(), surface.clone(), |glow: &Color, surface: &Surface| {
-                if surface.emission.is_some() && *glow == BLACK { WHITE } else { *glow }
-            }))
-            .emissive_map(Map1::read_map(surface.clone(), |surface: &Surface| surface.emission.clone().map(MaterialTexture::new)))
-            .tiling(Map1::read_map(self.tiling.clone(), |tiling: &Scalar| Vector2::new(*tiling as f32, *tiling as f32)))
-            .sample_type(self.sampling.clone())
-            .double_sided(self.double_sided.clone())
-            .emissive_strength(f32_of(&self.emissive_strength))
-            .normal(Map1::read_map(surface.clone(), |surface: &Surface| surface.normal_texture()))
-            .aomr_textures(Map1::read_map(surface, |surface: &Surface| surface.aomr()))
+                material.clone()
+                    .color(albedo)
+                    .emissive(emissive)
+                    .emissive_map(surface.emission.clone().map(MaterialTexture::new))
+                    .normal(surface.normal_texture())
+                    .aomr_textures(surface.aomr())
+                    .tiling(Vector2::new(*tiling as f32, *tiling as f32))
+            },
+        )
     }
 
     /// `view` with the side bar's background, interactivity, exposure and tone mapping. A click on
@@ -814,7 +791,8 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
             let mut spheres: Vec<Box<dyn AnyNode3d>> = vec![];
             for (row, metallic) in GRID_STEPS.iter().enumerate() {
                 for (column, roughness) in GRID_STEPS.iter().enumerate() {
-                    let material = options.material().roughness(Some(*roughness)).metallic(*metallic);
+                    let (roughness, metallic) = (*roughness, *metallic);
+                    let material = Map1::read_map(options.material(), move |material: &PbrMaterial| material.clone().roughness(roughness).metallic(metallic));
                     let position = Vector3::new((column as f32 - 2.0) * GRID_SPACING, (2.0 - row as f32) * GRID_SPACING, 0.0);
                     spheres.push(Object::new(sphere.clone(), material).position(position).boxed());
                 }
@@ -1192,6 +1170,16 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
     let using_file = Map2::read_map(options.model.clone(), options.file_materials.clone(), |model: &Model, file: &bool| {
         model.from_file() && *file
     });
+    // The side bar's material values, each a state of its field (`lens!`): setting one sets the
+    // field in `options.material`, which every object showing the material follows.
+    let m = &options.material;
+    // The roughness is optional in the material, `None` leaving it to the roughness map; the side
+    // bar always sets it.
+    let roughness = Map1::map(
+        lens!(m.roughness_factor),
+        |roughness: &Option<f32>| roughness.unwrap_or(0.0),
+        |new: f32, mut roughness| *roughness = Some(new),
+    );
     let material = VStack::new((
         heading("Material"),
         shown_when(render_ball, Toggle::new("Materials from file", options.file_materials.clone())),
@@ -1209,10 +1197,10 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         VStack::new((
             map_toggle(options, "Colour map", &options.use_color_map, |surface| surface.albedo.is_some()),
             map_toggle(options, "Normal map", &options.use_normal_map, |surface| surface.normal.is_some()),
-            map_slider(options, "Strength", &options.normal_scale, 0.0, 2.0, |surface| surface.normal.is_some()),
+            map_slider(options, "Strength", &lens!(m.normal_scale), 0.0, 2.0, |surface| surface.normal.is_some()),
             map_toggle(options, "Roughness map", &options.use_roughness_map, |surface| surface.roughness.is_some()),
             map_toggle(options, "Occlusion map", &options.use_occlusion_map, |surface| surface.ambient_occlusion.is_some()),
-            map_slider(options, "Strength", &options.occlusion_strength, 0.0, 1.0, |surface| surface.ambient_occlusion.is_some()),
+            map_slider(options, "Strength", &lens!(m.occlusion_strength), 0.0, 1.0, |surface| surface.ambient_occlusion.is_some()),
             map_toggle(options, "Metallic map", &options.use_metallic_map, |surface| surface.metallic.is_some()),
             map_toggle(options, "Emission map", &options.use_emission_map, |surface| surface.emission.is_some()),
             // How the maps are laid out and filtered, for any surface with an image.
@@ -1220,7 +1208,7 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
                 Map1::read_map(options.surface.clone(), |surface: &Surface| surface.albedo.is_some() || surface.has_maps()),
                 VStack::new((
                     slider("Tiling", &options.tiling, 1.0, 8.0, two_places),
-                    Picker::new("Sampling", options.sampling.clone(), (
+                    Picker::new("Sampling", lens!(m.sample_type), (
                         Text::new("Smooth (linear)").tag(SampleType::Linear),
                         Text::new("Pixels (nearest)").tag(SampleType::Nearest),
                     )),
@@ -1243,21 +1231,21 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             ]),
         ),
         // The grid sets its own roughness and metallic, so their sliders give way to a note.
-        shown_when(not_grid.clone(), slider("Roughness", &options.roughness, 0.0, 1.0, two_places)),
-        shown_when(not_grid.clone(), slider("Metallic", &options.metallic, 0.0, 1.0, two_places)),
+        shown_when(not_grid.clone(), slider("Roughness", &roughness, 0.0, 1.0, two_places)),
+        shown_when(not_grid.clone(), slider("Metallic", &lens!(m.metallic), 0.0, 1.0, two_places)),
         shown_when(
             Map1::read_map(not_grid, |not_grid: &bool| !*not_grid),
             note("The grid: roughness 0 to 1 from left to right, metallic 0 to 1 from top to bottom."),
         ),
         VStack::new((
-        slider("Reflectance", &options.reflectance, 0.0, 1.0, two_places),
-        slider("Clear coat", &options.clearcoat, 0.0, 1.0, two_places),
+        slider("Reflectance", &lens!(m.reflectance), 0.0, 1.0, two_places),
+        slider("Clear coat", &lens!(m.clearcoat), 0.0, 1.0, two_places),
         shown_when(
-            Map1::read_map(options.clearcoat.clone(), |coat: &Scalar| *coat > 0.0),
-            slider("Coat roughness", &options.clearcoat_roughness, 0.0, 1.0, two_places),
+            Map1::read_map(lens!(m.clearcoat), |coat: &f32| *coat > 0.0),
+            slider("Coat roughness", &lens!(m.clearcoat_roughness), 0.0, 1.0, two_places),
         ),
-        slider("Ambient occl.", &options.ambient_occlusion, 0.0, 1.0, two_places),
-        color_choice("Glow", &options.emissive, &[
+        slider("Ambient occl.", &lens!(m.ambient_occlusion), 0.0, 1.0, two_places),
+        color_choice("Glow", &lens!(m.emissive), &[
             ("None", BLACK),
             ("Red", RED),
             ("Orange", ORANGE),
@@ -1266,11 +1254,11 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             ("White", WHITE),
         ]),
         shown_when(
-            Map1::read_map(options.emissive.clone(), |color: &Color| *color != BLACK),
-            slider("Glow strength", &options.emissive_strength, 0.0, 5.0, two_places),
+            Map1::read_map(lens!(m.emissive), |color: &Color| *color != BLACK),
+            slider("Glow strength", &lens!(m.emissive_strength), 0.0, 5.0, two_places),
         ),
         Toggle::new("Vertex colours", options.vertex_colors.clone()),
-        Toggle::new("Double-sided", options.double_sided.clone()),
+        Toggle::new("Double-sided", lens!(m.double_sided)),
         )).cross_axis_alignment(CrossAxisAlignment::Start),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
@@ -1400,7 +1388,7 @@ enum ColorChoice {
 
 /// A picker for `color` from `presets`, with a last choice, Custom, that shows a colour picker
 /// under it to pick any colour. A colour that isn't one of the presets shows as Custom.
-fn color_choice(label: &str, color: &LocalState<Color>, presets: &[(&str, Color)]) -> impl Widget + use<> {
+fn color_choice<C: State<T=Color> + Clone + 'static>(label: &str, color: &C, presets: &[(&str, Color)]) -> impl Widget + use<C> {
     // Whether Custom was chosen: it keeps the colour, which may be one of the presets.
     let custom = LocalState::new(false);
     let preset_colors: Vec<Color> = presets.iter().map(|(_, color)| *color).collect();
@@ -1438,7 +1426,7 @@ fn color_choice(label: &str, color: &LocalState<Color>, presets: &[(&str, Color)
 
 /// A colour picker for a custom colour, indented under the picker that chose Custom: clicking its
 /// swatch opens the colour dialog.
-fn custom_color(color: &LocalState<Color>) -> impl Widget + use<> {
+fn custom_color<C: State<T=Color> + Clone + 'static>(color: &C) -> impl Widget + use<C> {
     ColorPicker::new(Text::new("Custom colour".to_string()), color.clone())
         .padding(EdgeInsets::single(0.0, 0.0, 24.0, 0.0))
 }
@@ -1453,7 +1441,7 @@ fn map_toggle(options: &Options, label: &str, used: &LocalState<bool>, has: fn(&
 
 /// A slider for one of the surface's maps, indented under its checkbox, shown only while the map
 /// is used: the chosen surface has it, and its checkbox is on.
-fn map_slider(options: &Options, label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, has: fn(&Surface) -> bool) -> impl Widget + use<> {
+fn map_slider<V: SliderValue + AnyReadState<T=V> + Copy + Into<f64>, S: State<T=V> + Clone + 'static>(options: &Options, label: &str, value: &S, min: V, max: V, has: fn(&Surface) -> bool) -> impl Widget + use<V, S> {
     shown_when(
         Map1::read_map(options.active_surface(), move |surface: &Surface| has(surface)),
         slider(label, value, min, max, two_places).padding(EdgeInsets::single(0.0, 0.0, 24.0, 0.0)),
@@ -1482,7 +1470,9 @@ fn heading(title: &str) -> impl Widget + use<> {
         .padding(EdgeInsets::single(8.0, 0.0, 0.0, 0.0))
 }
 
-fn slider(label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, format: fn(&Scalar) -> String) -> impl Widget + use<> {
+/// A labelled slider for `value`, an `f64` or `f32` state, from `min` to `max`, showing its value
+/// as `format` writes it.
+fn slider<V: SliderValue + AnyReadState<T=V>, S: State<T=V> + Clone + 'static>(label: &str, value: &S, min: V, max: V, format: fn(&V) -> String) -> impl Widget + use<V, S> {
     HStack::new((
         Text::new(label.to_string()),
         Slider::new(value.clone(), min, max),
@@ -1490,8 +1480,8 @@ fn slider(label: &str, value: &LocalState<Scalar>, min: Scalar, max: Scalar, for
     )).frame_fixed_height(26.0)
 }
 
-fn two_places(value: &Scalar) -> String {
-    format!("{value:.2}")
+fn two_places<V: Copy + Into<f64>>(value: &V) -> String {
+    format!("{:.2}", (*value).into())
 }
 
 fn degrees(degrees: &Scalar) -> String {

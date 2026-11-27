@@ -10,7 +10,8 @@ use carbide_3d::{Mesh, Node3d, Node3dExt, Node3dSequence, Object, Scene3d};
 use carbide_core::color::{rgba, rgba_bytes, ORANGE, TRANSPARENT, WHITE};
 use carbide_core::draw::{Color, Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
 use carbide_core::math::{Deg, Euler, Point3, Vector3};
-use carbide_core::state::{LocalState, Map1, State};
+use carbide_core::state::{AnyReadState, IntoReadState, LocalState, Map1, State};
+use carbide_3d::material::Material;
 use carbide_core::widget::{HStack, Rectangle, WidgetExt, ZStack};
 use carbide_testing::Harness;
 use carbide_wgpu_core::WgpuImageContext;
@@ -145,14 +146,16 @@ fn store_hole(harness: &mut Harness) -> ImageId {
 #[test]
 fn cutout_and_blended_shadows_are_alpha_tested() {
     let hole = LocalState::new(None::<ImageId>);
-    let square = |material: PbrMaterial, x: f32| Object::new(Mesh::plane(0.5, 0.5), material).position(Vector3::new(x, 0.5, 0.0));
-    let blended = |alpha: f32| PbrMaterial::new().color(rgba(1.0, 0.55, 0.0, alpha)).transparency(Transparency::Blend);
-    let cutout = PbrMaterial::new()
-        .color(Map1::read_map(hole.clone(), |id: &Option<ImageId>| match id {
+    let square = |material: Box<dyn AnyReadState<T=Material>>, x: f32| Object::new(Mesh::plane(0.5, 0.5), material).position(Vector3::new(x, 0.5, 0.0));
+    let blended = |alpha: f32| IntoReadState::<Material>::into_dyn_read_state(PbrMaterial::new().color(rgba(1.0, 0.55, 0.0, alpha)).transparency(Transparency::Blend));
+    let cutout = Map1::read_map(hole.clone(), |id: &Option<ImageId>| {
+        let albedo = match id {
             Some(id) => carbide_3d::material::albedo_component::AlbedoComponent::TextureValue { texture: id.into(), value: ORANGE },
             None => carbide_3d::material::albedo_component::AlbedoComponent::Value(ORANGE),
-        }))
-        .transparency(Transparency::Cutout { cutout: 0.5 });
+        };
+        PbrMaterial::new().color(albedo).transparency(Transparency::Cutout { cutout: 0.5 })
+    });
+    let cutout = IntoReadState::<Material>::into_dyn_read_state(cutout);
 
     let scene = Scene3d::new((
         Object::new(Mesh::plane(4.0, 4.0), PbrMaterial::new().color(WHITE).roughness(Some(0.9f32))),

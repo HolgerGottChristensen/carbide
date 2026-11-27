@@ -95,16 +95,16 @@ mod tests {
         harness.render();
 
         // Every material value at once, then back.
-        *options.metallic.clone().value_mut() = 1.0;
-        *options.reflectance.clone().value_mut() = 1.0;
-        *options.clearcoat.clone().value_mut() = 0.8;
-        *options.ambient_occlusion.clone().value_mut() = 0.2;
-        *options.emissive.clone().value_mut() = carbide::color::GREEN;
-        *options.emissive_strength.clone().value_mut() = 2.0;
+        options.material.clone().value_mut().metallic = 1.0;
+        options.material.clone().value_mut().reflectance = 1.0;
+        options.material.clone().value_mut().clearcoat = 0.8;
+        options.material.clone().value_mut().ambient_occlusion = 0.2;
+        options.material.clone().value_mut().emissive = carbide::color::GREEN;
+        options.material.clone().value_mut().emissive_strength = 2.0;
         *options.vertex_colors.clone().value_mut() = true;
         harness.render();
-        *options.metallic.clone().value_mut() = 0.0;
-        *options.emissive.clone().value_mut() = carbide::color::BLACK;
+        options.material.clone().value_mut().metallic = 0.0;
+        options.material.clone().value_mut().emissive = carbide::color::BLACK;
         *options.vertex_colors.clone().value_mut() = false;
         harness.render();
 
@@ -123,11 +123,11 @@ mod tests {
 
         // Colours that aren't presets, so their pickers show Custom with a colour picker.
         *options.color.clone().value_mut() = carbide::color::rgba_bytes(30, 160, 140, 1.0);
-        *options.emissive.clone().value_mut() = carbide::color::rgba_bytes(90, 20, 10, 1.0);
+        options.material.clone().value_mut().emissive = carbide::color::rgba_bytes(90, 20, 10, 1.0);
         *options.ground.clone().value_mut() = carbide::color::rgba_bytes(40, 120, 40, 1.0);
         harness.render();
         *options.color.clone().value_mut() = carbide::color::RED;
-        *options.emissive.clone().value_mut() = carbide::color::BLACK;
+        options.material.clone().value_mut().emissive = carbide::color::BLACK;
         *options.ground.clone().value_mut() = carbide::color::WHITE;
         harness.render();
 
@@ -286,7 +286,7 @@ mod tests {
         let options = Options::new();
         *options.surface.clone().value_mut() = options.surfaces.iter().find(|surface| surface.name == "Ground068").unwrap().clone();
         // Rough enough that the roughness map shows, at its own values.
-        *options.roughness.clone().value_mut() = 1.0;
+        options.material.clone().value_mut().roughness_factor = Some(1.0);
 
         // The 3D view only: the side bar's checkboxes change too.
         let view = |harness: &mut Harness| -> Vec<u8> {
@@ -337,7 +337,7 @@ mod tests {
         let tiled = view(&mut harness);
         assert!(changed(&once, &tiled) > 1_000, "tiling changes only {} bytes of the view", changed(&once, &tiled));
 
-        *options.sampling.clone().value_mut() = carbide::d3::material::sample_type::SampleType::Nearest;
+        options.material.clone().value_mut().sample_type = carbide::d3::material::sample_type::SampleType::Nearest;
         harness.render();
         let nearest = view(&mut harness);
         assert!(changed(&tiled, &nearest) > 1_000, "nearest sampling changes only {} bytes of the view", changed(&tiled, &nearest));
@@ -360,18 +360,18 @@ mod tests {
         let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(x, y)| x != y).count();
         let full = view(&mut harness);
 
-        *options.normal_scale.clone().value_mut() = 0.0;
+        options.material.clone().value_mut().normal_scale = 0.0;
         harness.render();
         let flat = view(&mut harness);
         assert!(changed(&full, &flat) > 1_000, "a normal strength of 0 changes only {} bytes of the view", changed(&full, &flat));
 
-        *options.normal_scale.clone().value_mut() = 1.0;
-        *options.occlusion_strength.clone().value_mut() = 0.0;
+        options.material.clone().value_mut().normal_scale = 1.0;
+        options.material.clone().value_mut().occlusion_strength = 0.0;
         harness.render();
         let unoccluded = view(&mut harness);
         assert!(changed(&full, &unoccluded) > 1_000, "an occlusion strength of 0 changes only {} bytes of the view", changed(&full, &unoccluded));
 
-        *options.occlusion_strength.clone().value_mut() = 1.0;
+        options.material.clone().value_mut().occlusion_strength = 1.0;
         harness.render();
         assert_eq!(changed(&full, &view(&mut harness)), 0, "setting the strengths back doesn't restore the view");
     }
@@ -398,11 +398,11 @@ mod tests {
         assert_eq!(changed(&one_sided, &empty), 0, "the one-sided plane's back is drawn");
 
         *options.model.clone().value_mut() = Model::Plane;
-        *options.double_sided.clone().value_mut() = true;
+        options.material.clone().value_mut().double_sided = true;
         let double_sided = view(&mut harness);
         assert!(changed(&one_sided, &double_sided) > 10_000, "the double-sided back changes only {} bytes", changed(&one_sided, &double_sided));
 
-        *options.double_sided.clone().value_mut() = false;
+        options.material.clone().value_mut().double_sided = false;
         assert_eq!(changed(&one_sided, &view(&mut harness)), 0, "switching Double-sided off doesn't hide the back again");
     }
 

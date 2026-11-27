@@ -3,7 +3,7 @@ use crate::material::material_texture::MaterialTexture;
 use carbide::impl_state_value;
 
 /// How clearcoat values should be derived.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(Default)]
 pub enum ClearcoatTextures {
     GltfCombined {
