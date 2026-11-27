@@ -64,6 +64,37 @@ fn environment_light(pixel: PixelData, v: vec3<f32>) -> vec3<f32> {
     return (diffuse + specular) * uniforms.environment_intensity;
 }
 
+// The hemisphere's light in a direction (view space): the sky's facing `up`, the ground's facing
+// down, blended in between.
+fn hemisphere(direction: vec3<f32>, up: vec3<f32>) -> vec3<f32> {
+    return mix(uniforms.ground.rgb, uniforms.sky.rgb, dot(direction, up) * 0.5 + 0.5);
+}
+
+// The hemisphere's light on `pixel`, as a two-colour environment, as Bevy's ambient light
+// (`ambient.wgsl`): diffuse light from the normal's direction times the diffuse colour, and
+// reflected light times F0 · scale + bias from the DFG table, so metals reflect it in their colour
+// instead of being lit as if matte. The reflection is read along R leaned towards the normal as
+// roughness grows, as Filament's `getSpecularDominantDirection`: a blurred reflection of a smooth
+// gradient averages it around the normal. A clear coat as in `environment_light`.
+fn hemisphere_light(pixel: PixelData, v: vec3<f32>, up: vec3<f32>) -> vec3<f32> {
+    let nov = max(dot(pixel.normal, v), 0.0001);
+    let r = reflect(-v, pixel.normal);
+    let dominant = normalize(mix(r, pixel.normal, pixel.roughness));
+
+    let dfg = environment_dfg(nov, pixel.perceptual_roughness);
+    var specular = (pixel.f0 * dfg.x + dfg.y) * hemisphere(dominant, up);
+    var diffuse = hemisphere(pixel.normal, up) * pixel.diffuse_color;
+
+    if (pixel.clear_coat > 0.0) {
+        let fresnel = brdf_f_schlick_f32(nov, 0.04, 1.0) * pixel.clear_coat;
+        diffuse *= 1.0 - fresnel;
+        specular *= 1.0 - fresnel;
+        specular += hemisphere(r, up) * fresnel;
+    }
+
+    return diffuse + specular;
+}
+
 // The background, when a view shows the environment: a triangle covering the view at the far
 // plane (depth 0, reverse-Z), so it is drawn only where nothing else was, after the opaque meshes
 // and before the blended ones.

@@ -123,7 +123,8 @@ struct GpuState {
     /// no light casts shadows, since the main pass always binds them.
     shadow_maps: Option<((u32, u32), Texture, TextureView)>,
 
-    /// Bound in place of an environment's maps when the scene has none: never read.
+    /// Bound in place of an environment's reflections and harmonics when the scene has none: never
+    /// read. The DFG table is always the real one, which the hemisphere uses too.
     environment_stand_ins: EnvironmentViews,
 
     /// The outline passes, created on the first frame with something outlined.
@@ -799,9 +800,14 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             };
             let map = maps.prepare_from(id, &view, width, version, device, queue);
             let (radiance, harmonics, levels) = (map.radiance_view.clone(), map.harmonics_view.clone(), map.levels);
-            let dfg = maps.dfg(device, queue).clone();
-            Some((EnvironmentViews { radiance, harmonics, dfg }, levels, *intensity, *rotation))
+            Some((radiance, harmonics, levels, *intensity, *rotation))
         });
+        // The DFG table, made once per device: the environment's reflections and the hemisphere's
+        // both use it.
+        let dfg = match env.get_mut::<EnvironmentMaps>() {
+            Some(maps) => maps,
+            None => self.fallback_environment_maps.get_or_insert_with(EnvironmentMaps::new),
+        }.dfg(device, queue).clone();
 
         // The meshes' GPU copies, shared by every view; uploaded once, freed once dropped.
         let meshes = match env.get_mut::<MeshCache>() {
@@ -920,15 +926,18 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 Tonemapping::None => 2,
             },
             environment: environment.is_some() as u32,
-            environment_intensity: environment.as_ref().map_or(0.0, |(_, _, intensity, _)| *intensity),
-            environment_levels: environment.as_ref().map_or(1.0, |(_, levels, _, _)| *levels as f32),
-            environment_rotation: environment.as_ref().map_or(Vector2::new(1.0, 0.0), |(_, _, _, rotation)| {
+            environment_intensity: environment.as_ref().map_or(0.0, |(_, _, _, intensity, _)| *intensity),
+            environment_levels: environment.as_ref().map_or(1.0, |(_, _, levels, _, _)| *levels as f32),
+            environment_rotation: environment.as_ref().map_or(Vector2::new(1.0, 0.0), |(_, _, _, _, rotation)| {
                 let angle = Rad::from(*rotation).0;
                 Vector2::new(angle.cos(), angle.sin())
             }),
-            background_level: background_blur.unwrap_or(0.0) * environment.as_ref().map_or(0.0, |(_, levels, _, _)| (*levels - 1) as f32),
+            background_level: background_blur.unwrap_or(0.0) * environment.as_ref().map_or(0.0, |(_, _, levels, _, _)| (*levels - 1) as f32),
         });
-        let environment_views = environment.map_or_else(|| gpu.environment_stand_ins.clone(), |(views, ..)| views);
+        let environment_views = match environment {
+            Some((radiance, harmonics, ..)) => EnvironmentViews { radiance, harmonics, dfg },
+            None => EnvironmentViews { dfg, ..gpu.environment_stand_ins.clone() },
+        };
 
         // Each shadow map's view-projection, and the part of its layer it fills. Directional maps
         // follow the camera, so they are placed now.

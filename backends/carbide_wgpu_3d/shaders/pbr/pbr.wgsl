@@ -271,9 +271,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     if (uniforms.environment != 0u) {
         ambient_light = environment_light(pixel, v);
     } else {
-        let up = normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0));
-        let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
-        ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up) * pixel.albedo.rgb;
+        ambient_light = hemisphere_light(pixel, v, normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0)));
     }
     // Ambient occlusion darkens only the ambient light: it stands for the surroundings blocking
     // light from the sky, not for the scene's lights, whose shadows are separate.
