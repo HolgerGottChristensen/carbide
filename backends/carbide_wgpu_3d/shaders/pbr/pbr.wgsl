@@ -14,6 +14,7 @@
 //!include pbr/uniforms.wgsl
 //!include pbr/tonemapping.wgsl
 //!include pbr/shadow_lookup.wgsl
+//!include pbr/environment.wgsl
 
 const PI = 3.14159265358979323846;
 const PI_2 = 1.570796327;
@@ -53,6 +54,13 @@ var shadow_maps: texture_depth_2d_array;
 var shadow_sampler: sampler_comparison;
 @group(1) @binding(6)
 var nearest_sampler: sampler;
+// The environment's maps (`pbr/environment.wgsl`); 1-texel stand-ins, not read, without one.
+@group(1) @binding(7)
+var environment_radiance: texture_cube<f32>;
+@group(1) @binding(8)
+var environment_harmonics: texture_2d<f32>;
+@group(1) @binding(9)
+var environment_dfg_table: texture_2d<f32>;
 
 // The material's textures, one per slot. A slot whose bit in `texture_enable` is not set holds a
 // fallback texture, and is not sampled.
@@ -256,14 +264,20 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
         color += surface_shading(l, light.color, pixel, v, shadow_value);
     }
 
-    // Hemisphere ambient light: the sky's light on surfaces facing up, the ground's on surfaces
-    // facing down, blended in between.
-    let up = normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0));
-    let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
-    let ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up);
+    // Ambient light: the environment's, diffuse and reflected, when the scene has one; otherwise
+    // the hemisphere's: the sky's light on surfaces facing up, the ground's on surfaces facing
+    // down, blended in between.
+    var ambient_light: vec3<f32>;
+    if (uniforms.environment != 0u) {
+        ambient_light = environment_light(pixel, v);
+    } else {
+        let up = normalize(view_mat3 * vec3<f32>(0.0, 1.0, 0.0));
+        let facing_up = dot(pixel.normal, up) * 0.5 + 0.5;
+        ambient_light = mix(uniforms.ground.rgb, uniforms.sky.rgb, facing_up) * pixel.albedo.rgb;
+    }
     // Ambient occlusion darkens only the ambient light: it stands for the surroundings blocking
     // light from the sky, not for the scene's lights, whose shadows are separate.
-    let ambient = vec4<f32>(ambient_light * pixel.albedo.rgb * pixel.ambient_occlusion, pixel.albedo.a);
+    let ambient = vec4<f32>(ambient_light * pixel.ambient_occlusion, pixel.albedo.a);
 
     // Point and spot lights, in view space like everything else here.
     for (var i = 0; i < i32(punctual_lights.count); i += 1) {

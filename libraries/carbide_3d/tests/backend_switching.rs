@@ -7,7 +7,7 @@ use carbide_3d::material::Material;
 use carbide_3d::render::{ContextFactory3d, InnerRenderContext3d, LightShadow, RenderContext3dId, ViewSpec};
 use carbide_3d::{Mesh, Scene3d};
 use carbide_core::color::Color;
-use carbide_core::draw::Dimension;
+use carbide_core::draw::{Dimension, ImageId};
 use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, Matrix4, Vector3};
 use carbide_core::render::Layer;
@@ -59,6 +59,8 @@ impl InnerRenderContext3d for RecordingContext {
     fn spot(&mut self, _color: Color, _intensity: f32, _range: Option<f32>, _inner: Deg<f32>, _outer: Deg<f32>, _shadow: Option<LightShadow>) {}
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {}
+
+    fn environment(&mut self, _image: Option<&ImageId>, _intensity: f32, _rotation: Deg<f32>) {}
 }
 
 struct BackendA;

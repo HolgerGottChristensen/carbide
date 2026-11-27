@@ -87,15 +87,20 @@ impl EnvironmentMaps {
     /// since. `None` while the image isn't in the store.
     pub fn prepare(&mut self, id: &ImageId, store: Option<&WgpuTextureStore>, device: &Device, queue: &Queue) -> Option<&EnvironmentMap> {
         let stored = store?.get(id)?;
+        Some(self.prepare_from(id, &stored.srgb_view, stored.width, stored.version, device, queue))
+    }
 
-        if self.maps.get(id).is_none_or(|map| map.version != stored.version) {
+    /// As [`prepare`](Self::prepare), from the stored image's sRGB view, width and version, for a
+    /// caller that can't borrow the store at the same time as the maps.
+    pub fn prepare_from(&mut self, id: &ImageId, view: &TextureView, width: u32, version: u64, device: &Device, queue: &Queue) -> &EnvironmentMap {
+        if self.maps.get(id).is_none_or(|map| map.version != version) {
             let pipelines = self.pipelines.get_or_insert_with(|| Pipelines::new(device));
-            let map = pipelines.build(&stored.srgb_view, stored.width, stored.version, device, queue);
+            let map = pipelines.build(view, width, version, device, queue);
             self.maps.insert(id.clone(), map);
             self.builds += 1;
         }
 
-        self.maps.get(id)
+        &self.maps[id]
     }
 
     /// The maps of `id`, if they have been made.

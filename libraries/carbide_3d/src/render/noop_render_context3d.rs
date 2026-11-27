@@ -1,4 +1,5 @@
 use carbide::color::Color;
+use carbide::draw::ImageId;
 use carbide::environment::Environment;
 use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
@@ -45,5 +46,8 @@ impl InnerRenderContext3d for NoopRenderContext3d {
     }
 
     fn hemisphere(&mut self, _sky: Color, _ground: Color, _intensity: f32) {
+    }
+
+    fn environment(&mut self, _image: Option<&ImageId>, _intensity: f32, _rotation: Deg<f32>) {
     }
 }

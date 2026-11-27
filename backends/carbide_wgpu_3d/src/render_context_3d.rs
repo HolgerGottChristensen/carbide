@@ -7,13 +7,15 @@ use carbide_3d::material::Material;
 use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
 use carbide_3d::Mesh;
 use carbide_core::color::{Color, ColorExt, WHITE};
+use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
-use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector3, Vector4};
+use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector2, Vector3, Vector4};
 use carbide_core::render::{InnerLayer, Layer};
 use carbide_core::scene::SceneManager;
 use carbide_wgpu_core::{WgpuContextNew, WgpuRenderTarget, WgpuTextureStore};
 
 use crate::camera::WgpuCamera;
+use crate::environment_maps::{EnvironmentMaps, ENVIRONMENT_FORMAT, HARMONICS_FORMAT};
 use crate::directional_light::{WgpuDirectionalLight, WgpuDirectionalLightBuffer};
 use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
@@ -56,12 +58,16 @@ pub struct WgpuRenderContext3d {
     punctual_lights: Vec<WgpuPunctualLight>,
     /// The scene's hemisphere light: sky, ground and intensity, as last given.
     hemisphere: (Color, Color, f32),
+    /// The scene's environment image, intensity and rotation, as last given.
+    environment: Option<(ImageId, f32, Deg<f32>)>,
     /// The shadow maps to draw, one per light that casts shadows, in layer order.
     shadow_requests: Vec<ShadowRequest>,
 
     /// Used when the environment has no shared [`MeshCache`], for example when the context was
     /// created without the plugin.
     fallback_mesh_cache: Option<MeshCache>,
+    /// Used when the environment has no shared [`EnvironmentMaps`].
+    fallback_environment_maps: Option<EnvironmentMaps>,
 
     commands: Vec<RenderPassCommand>,
 
@@ -112,6 +118,9 @@ struct GpuState {
     /// no light casts shadows, since the main pass always binds them.
     shadow_maps: Option<((u32, u32), Texture, TextureView)>,
 
+    /// Bound in place of an environment's maps when the scene has none: never read.
+    environment_stand_ins: EnvironmentViews,
+
     /// The outline passes, created on the first frame with something outlined.
     outline: Option<OutlineState>,
     /// The picking pass and the last frame's picking buffer, created on the first frame that
@@ -130,10 +139,12 @@ impl WgpuRenderContext3d {
             directional_lights: vec![],
             punctual_lights: vec![],
             hemisphere: (WHITE, WHITE, 0.1),
+            environment: None,
             shadow_requests: vec![],
             fallback_mesh_cache: None,
+            fallback_environment_maps: None,
             commands: vec![],
-                    gpu: None,
+            gpu: None,
         }
     }
 
@@ -240,6 +251,40 @@ impl Clone for WgpuRenderContext3d {
     }
 }
 
+/// The views of an environment's maps the main pass binds: the reflection cube, the harmonics
+/// and the DFG table.
+#[derive(Debug, Clone)]
+struct EnvironmentViews {
+    radiance: TextureView,
+    harmonics: TextureView,
+    dfg: TextureView,
+}
+
+impl EnvironmentViews {
+    /// One-texel stand-ins, for a scene without an environment: the shader doesn't read them.
+    fn stand_ins(device: &Device) -> EnvironmentViews {
+        let texture = |label: &str, layers: u32, format: TextureFormat| device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size: Extent3d { width: 1, height: 1, depth_or_array_layers: layers },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format,
+            usage: TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        EnvironmentViews {
+            radiance: texture("carbide_3d_no_environment_radiance", 6, ENVIRONMENT_FORMAT).create_view(&TextureViewDescriptor {
+                dimension: Some(TextureViewDimension::Cube),
+                ..Default::default()
+            }),
+            harmonics: texture("carbide_3d_no_environment_harmonics", 1, HARMONICS_FORMAT).create_view(&Default::default()),
+            dfg: texture("carbide_3d_no_environment_dfg", 1, ENVIRONMENT_FORMAT).create_view(&Default::default()),
+        }
+    }
+}
+
 impl GpuState {
     fn new(device: &Device) -> GpuState {
         let shader = device.create_shader_module(preprocess_shader("pbr/pbr.wgsl"));
@@ -292,6 +337,38 @@ impl GpuState {
                     binding: 6,
                     visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Sampler(SamplerBindingType::Filtering),
+                    count: None,
+                },
+                // The environment's reflection cube, harmonics (32-bit floats, read texel by
+                // texel) and DFG table.
+                BindGroupLayoutEntry {
+                    binding: 7,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::Cube,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                BindGroupLayoutEntry {
+                    binding: 8,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                BindGroupLayoutEntry {
+                    binding: 9,
+                    visibility: ShaderStages::FRAGMENT,
+                    ty: BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: TextureViewDimension::D2,
+                        multisampled: false,
+                    },
                     count: None,
                 },
             ],
@@ -429,6 +506,7 @@ impl GpuState {
             shadow_pipeline,
             shadow_sampler,
             shadow_maps: None,
+            environment_stand_ins: EnvironmentViews::stand_ins(device),
             outline: None,
             picking: None,
             shader,
@@ -648,6 +726,24 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             self.materials.iter().map(|(_, textures)| textures.enabled(store)).collect::<Vec<_>>()
         };
 
+        // The environment's maps, made the first time its image is used, shared by every view;
+        // `None` without an environment, or until its image is loaded. With them, the levels, the
+        // intensity and the rotation.
+        let environment = self.environment.as_ref().and_then(|(id, intensity, rotation)| {
+            let (view, width, version) = {
+                let stored = env.get::<WgpuTextureStore>()?.get(id)?;
+                (stored.srgb_view.clone(), stored.width, stored.version)
+            };
+            let maps = match env.get_mut::<EnvironmentMaps>() {
+                Some(maps) => maps,
+                None => self.fallback_environment_maps.get_or_insert_with(EnvironmentMaps::new),
+            };
+            let map = maps.prepare_from(id, &view, width, version, device, queue);
+            let (radiance, harmonics, levels) = (map.radiance_view.clone(), map.harmonics_view.clone(), map.levels);
+            let dfg = maps.dfg(device, queue).clone();
+            Some((EnvironmentViews { radiance, harmonics, dfg }, levels, *intensity, *rotation))
+        });
+
         // The meshes' GPU copies, shared by every view; uploaded once, freed once dropped.
         let meshes = match env.get_mut::<MeshCache>() {
             Some(cache) => cache,
@@ -748,7 +844,15 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 Tonemapping::Aces => 1,
                 Tonemapping::None => 2,
             },
+            environment: environment.is_some() as u32,
+            environment_intensity: environment.as_ref().map_or(0.0, |(_, _, intensity, _)| *intensity),
+            environment_levels: environment.as_ref().map_or(1.0, |(_, levels, _, _)| *levels as f32),
+            environment_rotation: environment.as_ref().map_or(Vector2::new(1.0, 0.0), |(_, _, _, rotation)| {
+                let angle = Rad::from(*rotation).0;
+                Vector2::new(angle.cos(), angle.sin())
+            }),
         });
+        let environment_views = environment.map_or_else(|| gpu.environment_stand_ins.clone(), |(views, ..)| views);
 
         // Each shadow map's view-projection, and the part of its layer it fills. Directional maps
         // follow the camera, so they are placed now.
@@ -837,6 +941,18 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 BindGroupEntry {
                     binding: 6,
                     resource: BindingResource::Sampler(&gpu.nearest_sampler),
+                },
+                BindGroupEntry {
+                    binding: 7,
+                    resource: BindingResource::TextureView(&environment_views.radiance),
+                },
+                BindGroupEntry {
+                    binding: 8,
+                    resource: BindingResource::TextureView(&environment_views.harmonics),
+                },
+                BindGroupEntry {
+                    binding: 9,
+                    resource: BindingResource::TextureView(&environment_views.dfg),
                 },
             ],
         });
@@ -1133,5 +1249,9 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
 
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32) {
         self.hemisphere = (sky, ground, intensity);
+    }
+
+    fn environment(&mut self, image: Option<&ImageId>, intensity: f32, rotation: Deg<f32>) {
+        self.environment = image.map(|image| (image.clone(), intensity, rotation));
     }
 }

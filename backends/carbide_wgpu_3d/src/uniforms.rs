@@ -1,5 +1,5 @@
 use encase::ShaderType;
-use carbide_core::math::Vector4;
+use carbide_core::math::{Vector2, Vector4};
 
 #[derive(Debug, Copy, Clone, ShaderType)]
 pub struct WgpuUniforms {
@@ -11,4 +11,13 @@ pub struct WgpuUniforms {
     pub(crate) exposure: f32,
     /// 0: PBR Neutral, 1: ACES, 2: none (clamp).
     pub(crate) tonemapping: u32,
+    /// 1 when the scene has an environment, lighting it in place of the hemisphere.
+    pub(crate) environment: u32,
+    /// What the environment's light is multiplied by.
+    pub(crate) environment_intensity: f32,
+    /// The environment's reflection levels.
+    pub(crate) environment_levels: f32,
+    /// The cosine and sine of the environment's rotation; the shader turns world directions back
+    /// by it to read the environment.
+    pub(crate) environment_rotation: Vector2<f32>,
 }

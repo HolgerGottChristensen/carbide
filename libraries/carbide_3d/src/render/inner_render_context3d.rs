@@ -1,6 +1,7 @@
 use dyn_clone::DynClone;
 use carbide::any_debug::AnyDebug;
 use carbide::color::Color;
+use carbide::draw::ImageId;
 use carbide::environment::Environment;
 use carbide::math::{Deg, Matrix4, Vector3};
 use carbide::render::Layer;
@@ -52,6 +53,12 @@ pub trait InnerRenderContext3d: AnyDebug + DynClone + 'static {
     /// The scene's ambient light: `sky` lights surfaces facing up, `ground` surfaces facing down,
     /// blended by each surface's normal, both times `intensity`. Colours are in sRGB.
     fn hemisphere(&mut self, sky: Color, ground: Color, intensity: f32);
+
+    /// The scene's environment light, from an HDR panorama (equirectangular), in place of the
+    /// [`hemisphere`](Self::hemisphere) while set: diffuse light and reflections from the image,
+    /// times `intensity`, the image turned `rotation` around the vertical axis, counter-clockwise
+    /// seen from above. `None` for none. Until the image is loaded, the hemisphere lights the scene.
+    fn environment(&mut self, image: Option<&ImageId>, intensity: f32, rotation: Deg<f32>);
 }
 
 dyn_clone::clone_trait_object!(InnerRenderContext3d);
