@@ -19,9 +19,11 @@ use carbide_wgpu_core::WgpuContextNew;
 
 pub use render_context_3d::WgpuRenderContext3d;
 pub use mesh_cache::{CachedMesh, MeshCache};
+pub use environment_maps::{face_size, radiance_levels, EnvironmentMap, EnvironmentMaps, DFG_SIZE, ENVIRONMENT_FORMAT, HARMONICS_FORMAT};
 
 mod camera;
 mod directional_light;
+mod environment_maps;
 mod material;
 mod mesh_cache;
 mod object;
@@ -76,6 +78,8 @@ fn register<'a>(env: &'a mut Environment<'static>) -> Pin<Box<dyn Future<Output=
     Box::pin(async {
         // The meshes' GPU copies, shared by every view the renderer draws.
         env.insert_owned::<MeshCache>(MeshCache::new());
+        // The environment maps and the DFG table, shared by every view the renderer draws.
+        env.insert_owned::<EnvironmentMaps>(EnvironmentMaps::new());
 
         env.insert_owned::<ContextFactory3d>(ContextFactory3d {
             id: RenderContext3dId::of::<WgpuRenderContext3d>(),

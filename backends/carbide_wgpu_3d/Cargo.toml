@@ -22,6 +22,7 @@ dashmap.workspace = true
 
 [dev-dependencies]
 futures.workspace = true
+half.workspace = true
 
 [lints]
 workspace = true
