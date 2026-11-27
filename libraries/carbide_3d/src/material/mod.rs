@@ -10,6 +10,7 @@ pub mod transparency_type;
 pub mod pbr_material;
 pub mod material_component;
 pub mod material_texture;
+pub mod texture_sampler;
 mod material;
 
 pub use material::*;

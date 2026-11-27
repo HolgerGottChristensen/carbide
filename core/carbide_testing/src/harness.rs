@@ -1,12 +1,12 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::{Rc, Weak};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::rc::Rc;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 use carbide_core::accessibility::AccessibilityContext;
 use carbide_core::animation::AnimationManager;
-use carbide_core::asynchronous::{check_tasks, set_event_sink, AsyncContext};
+use carbide_core::asynchronous::{check_tasks, replace_event_sink, AsyncContext};
 use carbide_core::draw::theme::Theme;
 use carbide_core::draw::{Alignment, Dimension, ImageId, Position, Rect, Scalar};
 use carbide_core::environment::{Environment, EnvironmentColor};
@@ -63,40 +63,19 @@ fn shared_gpu() -> &'static WgpuContextNew {
     GPU.get_or_init(|| futures::executor::block_on(WgpuContextNew::new()))
 }
 
-/// Held by every live `Harness`, so harnesses on different threads never exist at the same time.
-///
-/// `cargo test` runs tests on parallel threads, and harnesses alive on several threads at once
-/// crash the test binary intermittently with SIGSEGV: in one measurement 1 run in 12 of
-/// carbide_testing's rendering tests crashed in parallel, and 0 in 12 with `--test-threads=1`.
-/// The root cause in the headless wgpu path is not yet known. Harnesses also share global state:
-/// `update_scale_factor` sets the scale factor for `WindowId::dummy()`, the same id for every
-/// harness. Holding this lock for a harness's whole lifetime gives every crate's rendering tests
-/// the serial behaviour without each having to remember `--test-threads=1`.
-static RENDER_LOCK: Mutex<()> = Mutex::new(());
-
-thread_local! {
-    /// The lock this thread already holds, if any. Several harnesses alive at once on one thread
-    /// (e.g. `toggle_accessible_and_mouse_paths_agree`) share it; the lock is released when the
-    /// last of them is dropped.
-    static HELD_RENDER_LOCK: RefCell<Weak<MutexGuard<'static, ()>>> = RefCell::new(Weak::new());
+/// A window id of a harness's own. Scale factors are kept per window id in a process-wide table
+/// (`carbide_winit::update_scale_factor`), and harnesses run on parallel test threads, so each
+/// gets an id no other harness, and no real window, uses: counted down from the top of the range.
+fn new_window_id() -> WindowId {
+    static NEXT: AtomicU64 = AtomicU64::new(u64::MAX);
+    WindowId::from(NEXT.fetch_sub(1, Ordering::Relaxed))
 }
 
-fn acquire_render_lock() -> Rc<MutexGuard<'static, ()>> {
-    HELD_RENDER_LOCK.with(|held| {
-        if let Some(guard) = held.borrow().upgrade() {
-            return guard;
-        }
-
-        // A failing snapshot panics in `Harness::drop` while holding the lock, which poisons it.
-        // The lock guards no data, only exclusivity, so a poisoned lock is still fine to take.
-        let guard = Rc::new(RENDER_LOCK.lock().unwrap_or_else(PoisonError::into_inner));
-        *held.borrow_mut() = Rc::downgrade(&guard);
-        guard
-    })
-}
-
-/// Installed as the global `carbide_core::asynchronous` event sink for a `Harness`'s lifetime, in
-/// place of the real `ProxyEventLoop`/winit event loop wakeup a live app uses. `CoreEvent::Async`
+/// A harness's own `carbide_core::asynchronous` event sink, in place of the real
+/// `ProxyEventLoop`/winit event loop wakeup a live app uses. The sink is per thread; the harness
+/// makes its own the thread's while it runs widget code (`with_event_sink`), and puts back the one
+/// before after, so tasks spawned by its widgets signal it, even with other harnesses alive on the
+/// same thread. `CoreEvent::Async`
 /// is the one signal both carbide's "proper" async API (`task!`/`spawn_task`/`check_tasks`) and
 /// hand-rolled background-thread patterns (a plain `mpsc::channel` + a manual
 /// `get_event_sink().send(CoreEvent::Async)` notify, e.g. the `mandelbrot` example) already funnel
@@ -137,6 +116,22 @@ impl EventSink for TestEventSink {
         *observed = true;
         condvar.notify_all();
     }
+}
+
+/// Run `f` with `sink` as this thread's event sink, then put back the one before, even if `f`
+/// panics.
+fn with_event_sink<R>(sink: &TestEventSink, f: impl FnOnce() -> R) -> R {
+    struct Restore(Option<Box<dyn EventSink>>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            if let Some(previous) = self.0.take() {
+                replace_event_sink(previous);
+            }
+        }
+    }
+
+    let _restore = Restore(Some(replace_event_sink(Box::new(sink.clone()))));
+    f()
 }
 
 /// `dimension` is always in logical units; every GPU-side resource (textures, readback buffers)
@@ -214,9 +209,6 @@ pub struct Harness {
     virtual_now: Instant,
     async_signal: TestEventSink,
     test_scope: Option<String>,
-    /// See `RENDER_LOCK`. Declared last, so it is dropped last: the renderer and every other
-    /// field are gone before another thread's harness can start.
-    _render_lock: Rc<MutexGuard<'static, ()>>,
 }
 
 impl Harness {
@@ -233,10 +225,8 @@ impl Harness {
     /// created would silently keep using the *first* sample count requested, not the new one.
     /// `resize()` keeps whatever `scale_factor`/`msaa` the `Harness` was constructed with.
     pub fn new_with_options<C: Widget>(root: C, dimension: Dimension, scale_factor: Scalar, msaa: WgpuMsaa) -> Self {
-        // Before anything else: `update_scale_factor` below already touches shared state.
-        let render_lock = acquire_render_lock();
 
-        let window_id = WindowId::dummy();
+        let window_id = new_window_id();
         update_scale_factor(window_id, scale_factor);
 
         let mut env: Environment<'static> = Environment::new();
@@ -271,12 +261,8 @@ impl Harness {
         let root = FontSizeManager::new(ThemeManager::new(root));
         let scene: Box<dyn AnyScene> = Box::new(TestScene::new(root, dimension));
 
-        // Claims the thread-local async event sink for this harness's lifetime. Thread-local, so
-        // a Harness must be constructed and used entirely on one OS thread; re-claiming it is
-        // fine for sequentially-used harnesses on the same thread (each `new()` re-installs its
-        // own), but concurrent harnesses on one thread are not a supported pattern.
+        // Installed while this harness runs widget code (`with_event_sink`).
         let async_signal = TestEventSink::new();
-        set_event_sink(async_signal.clone());
 
         Harness {
             env,
@@ -293,7 +279,6 @@ impl Harness {
             virtual_now: Instant::now(),
             async_signal,
             test_scope: current_test_scope(),
-            _render_lock: render_lock,
         }
     }
 
@@ -303,6 +288,11 @@ impl Harness {
     /// `NewEventHandler`'s dispatch methods and `HeadlessRenderer` both look these up via
     /// `env.get_mut::<...>()`.
     fn with_env_scope<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut NewEventHandler, &mut HeadlessRenderer) -> R) -> R {
+        let sink = self.async_signal.clone();
+        with_event_sink(&sink, || self.with_env_scope_inner(f))
+    }
+
+    fn with_env_scope_inner<R>(&mut self, f: impl FnOnce(&mut Environment, &mut [Box<dyn AnyScene>], &mut NewEventHandler, &mut HeadlessRenderer) -> R) -> R {
         let Harness {
             env,
             animation_manager,
@@ -381,14 +371,10 @@ impl Harness {
 
     /// `position` is in logical units (the same space `find_by_label`'s bounds and `dimension`
     /// use). `NewEventHandler::cursor_moved` takes *physical* pixels and internally converts back
-    /// to logical via `carbide_winit::scale_factor(window_id)` — a value looked up from a
-    /// process-wide (not per-`Harness`) table keyed by `WindowId`, which every `Harness` shares
-    /// since `WindowId::dummy()` always returns the same value. Re-registering this `Harness`'s
-    /// own scale factor immediately before the call (rather than only once, back in `new()`)
-    /// keeps the write-then-read adjacent on this thread, which is what actually matters: `cargo
-    /// test` runs different `#[test]` functions concurrently on separate threads by default, so a
-    /// `Harness` with a different scale factor running concurrently on another thread could
-    /// otherwise clobber this table between this `Harness`'s construction and its first event.
+    /// to logical via `carbide_winit::scale_factor(window_id)`, a process-wide table keyed by
+    /// `WindowId`. Each `Harness` has a window id of its own (`new_window_id`), so harnesses on
+    /// parallel threads don't overwrite each other's scale factor; it is registered again before
+    /// each event all the same, to keep the write next to the read.
     pub fn mouse_move(&mut self, position: Position) {
         let window_id = self.window_id;
         let scale_factor = self.scale_factor;
@@ -508,7 +494,8 @@ impl Harness {
     }
 
     fn refocus(&mut self) {
-        NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.env);
+        let sink = self.async_signal.clone();
+        with_event_sink(&sink, || NewEventHandler::handle_refocus(&mut self.scenes, &mut self.focus_manager, &mut self.env));
     }
 
     /// Drains completions for the `task!`/`SpawnTask`/`Task`-style async API
@@ -518,11 +505,14 @@ impl Harness {
     /// queues at all; for those, call `render()` after `wait_for_async_event` returns, so the
     /// widget's own polling (typically inside its `Render::render()`) picks up the result.
     pub fn run_async_tasks(&mut self) {
-        let mut ctx = AsyncContext {
-            image: &mut WgpuImageContext,
-            env: &mut self.env,
-        };
-        check_tasks(&mut ctx);
+        let sink = self.async_signal.clone();
+        with_event_sink(&sink, || {
+            let mut ctx = AsyncContext {
+                image: &mut WgpuImageContext,
+                env: &mut self.env,
+            };
+            check_tasks(&mut ctx);
+        });
     }
 
     /// Blocks (bounded by `timeout`, no busy-polling) until real background work signals
@@ -801,5 +791,53 @@ impl Drop for Harness {
         if !self.failures.is_empty() && !std::thread::panicking() {
             panic!("{}", self.failures.join("\n"));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use carbide_core::asynchronous::get_event_sink;
+    use carbide_core::draw::Dimension;
+    use carbide_core::event::CoreEvent;
+    use carbide_core::widget::Rectangle;
+
+    use super::Harness;
+
+    fn harness() -> Harness {
+        Harness::new(Rectangle::new(), Dimension::new(10.0, 10.0))
+    }
+
+    /// Two harnesses never share a window id, so their scale factors, kept per window id in a
+    /// process-wide table, can't overwrite each other.
+    #[test]
+    fn each_harness_has_its_own_window_id() {
+        let (a, b) = (harness(), harness());
+        assert_ne!(a.window_id, b.window_id);
+        assert_ne!(a.window_id, carbide_winit::window::WindowId::dummy());
+    }
+
+    /// With two harnesses alive on one thread, a sink taken while one runs widget code signals
+    /// that one, not the other, whichever was made last; and afterwards the thread's sink is what
+    /// it was before, so a sink taken outside any harness signals neither.
+    #[test]
+    fn each_harness_has_its_own_event_sink() {
+        let short = Duration::from_millis(50);
+        let mut a = harness();
+        let mut b = harness();
+
+        let from_a = a.with_env_scope(|_, _, _, _| get_event_sink());
+        from_a.send(CoreEvent::Async);
+        assert!(a.wait_for_async_event(short), "the sink taken in a's scope didn't signal a");
+        assert!(!b.wait_for_async_event(short), "the sink taken in a's scope signalled b");
+
+        let from_b = b.with_env_scope(|_, _, _, _| get_event_sink());
+        from_b.send(CoreEvent::Async);
+        assert!(b.wait_for_async_event(short), "the sink taken in b's scope didn't signal b");
+        assert!(!a.wait_for_async_event(short), "the sink taken in b's scope signalled a");
+
+        get_event_sink().send(CoreEvent::Async);
+        assert!(!a.wait_for_async_event(short) && !b.wait_for_async_event(short), "a harness's sink stayed the thread's");
     }
 }

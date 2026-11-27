@@ -52,8 +52,6 @@ var<storage> uniforms: Uniforms;
 var shadow_maps: texture_depth_2d_array;
 @group(1) @binding(5)
 var shadow_sampler: sampler_comparison;
-@group(1) @binding(6)
-var nearest_sampler: sampler;
 // The environment's maps (`pbr/environment.wgsl`); 1-texel stand-ins, not read, without one.
 @group(1) @binding(7)
 var environment_radiance: texture_cube<f32>;
@@ -81,6 +79,24 @@ var clear_coat_roughness_tex: texture_2d<f32>;
 @group(2) @binding(7)
 var emissive_tex: texture_2d<f32>;
 
+// Each slot's sampler, with the map's wrap modes and filtering.
+@group(2) @binding(8)
+var albedo_sampler: sampler;
+@group(2) @binding(9)
+var normal_sampler: sampler;
+@group(2) @binding(10)
+var ambient_occlusion_sampler: sampler;
+@group(2) @binding(11)
+var metallic_sampler: sampler;
+@group(2) @binding(12)
+var roughness_sampler: sampler;
+@group(2) @binding(13)
+var clear_coat_sampler: sampler;
+@group(2) @binding(14)
+var clear_coat_roughness_sampler: sampler;
+@group(2) @binding(15)
+var emissive_sampler: sampler;
+
 // The material bind group's slots, in binding order, as `map_transforms` and `uv_sets` index them.
 const SLOT_ALBEDO = 0u;
 const SLOT_NORMAL = 1u;
@@ -102,10 +118,10 @@ struct TexCoords {
     uv1_dy: vec2<f32>,
 }
 
-// Sample `tex`, the map in `slot`, at its coordinate set transformed by its transform, with the
-// material's sampler: nearest when the material asks for it (NEAREST), otherwise linear and
-// anisotropic. The transform is affine, so the derivatives transform with its linear part.
-fn sample_material_texture(tex: texture_2d<f32>, material: Material, slot: u32, uv: TexCoords) -> vec4<f32> {
+// Sample `tex`, the map in `slot`, at its coordinate set transformed by its transform, with its
+// own sampler `samp`: its wrap modes and filtering. The transform is affine, so the derivatives
+// transform with its linear part.
+fn sample_material_texture(tex: texture_2d<f32>, samp: sampler, material: Material, slot: u32, uv: TexCoords) -> vec4<f32> {
     let second = ((material.uv_sets >> slot) & 1u) != 0u;
     let coords = select(uv.uv0, uv.uv1, second);
     let ddx = select(uv.uv0_dx, uv.uv1_dx, second);
@@ -116,10 +132,7 @@ fn sample_material_texture(tex: texture_2d<f32>, material: Material, slot: u32, 
     let transformed_dx = (transform * vec3<f32>(ddx, 0.0)).xy;
     let transformed_dy = (transform * vec3<f32>(ddy, 0.0)).xy;
 
-    if ((material.flags & 0x4000u) != 0u) {
-        return textureSampleGrad(tex, nearest_sampler, transformed, transformed_dx, transformed_dy);
-    }
-    return textureSampleGrad(tex, primary_sampler, transformed, transformed_dx, transformed_dy);
+    return textureSampleGrad(tex, samp, transformed, transformed_dx, transformed_dy);
 }
 
 @vertex
@@ -303,7 +316,7 @@ fn main_fs(in: VertexOutput, @builtin(front_facing) front_facing: bool) -> @loca
     // read through the sRGB view as colours are.
     var emissive = material.emissive;
     if ((material.texture_enable & 0x80u) != 0u) {
-        emissive *= sample_material_texture(emissive_tex, material, SLOT_EMISSIVE, uv).rgb;
+        emissive *= sample_material_texture(emissive_tex, emissive_sampler, material, SLOT_EMISSIVE, uv).rgb;
     }
     let lit = ambient.rgb + color + emissive;
     // Premultiplied, as the pipeline blends: a blended surface fades as a whole, highlights too,

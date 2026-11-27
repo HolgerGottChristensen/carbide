@@ -12,14 +12,12 @@ var<storage> objects: array<Object>;
 var<storage> light_view_proj: mat4x4<f32>;
 @group(0) @binding(2)
 var<storage> materials: array<Material>;
-@group(0) @binding(3)
-var primary_sampler: sampler;
-@group(0) @binding(4)
-var nearest_sampler: sampler;
 
-// The material's textures, as the main pass binds them; only the albedo is read.
+// The material's textures and samplers, as the main pass binds them; only the albedo is read.
 @group(1) @binding(0)
 var albedo_tex: texture_2d<f32>;
+@group(1) @binding(8)
+var albedo_sampler: sampler;
 
 struct ShadowOutput {
     @builtin(position) position: vec4<f32>,
@@ -69,13 +67,7 @@ fn shadow_fs(in: ShadowOutput) {
     // vertex colour's when the material uses them, times the material's.
     var alpha = material.albedo.a;
     if ((material.texture_enable & 0x1u) != 0u) {
-        var texel: vec4<f32>;
-        if ((material.flags & 0x4000u) != 0u) {
-            texel = textureSampleGrad(albedo_tex, nearest_sampler, coords, ddx, ddy);
-        } else {
-            texel = textureSampleGrad(albedo_tex, primary_sampler, coords, ddx, ddy);
-        }
-        alpha *= texel.a;
+        alpha *= textureSampleGrad(albedo_tex, albedo_sampler, coords, ddx, ddy).a;
     }
     if ((material.flags & 0x2u) != 0u) {
         alpha *= in.color_0.a;

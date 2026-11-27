@@ -13,16 +13,16 @@ fn get_clear_coat(material: Material, uv: TexCoords) -> vec3<f32> {
 
     if ((material.flags & 0x400u) != 0u) {
         if (has_strength) {
-            let texel = sample_material_texture(clear_coat_tex, material, SLOT_CLEAR_COAT, uv);
+            let texel = sample_material_texture(clear_coat_tex, clear_coat_sampler, material, SLOT_CLEAR_COAT, uv);
             clear_coat *= texel.r;
             clear_coat_perceptual_roughness *= texel.g;
         }
     } else {
         if (has_strength) {
-            clear_coat *= sample_material_texture(clear_coat_tex, material, SLOT_CLEAR_COAT, uv).r;
+            clear_coat *= sample_material_texture(clear_coat_tex, clear_coat_sampler, material, SLOT_CLEAR_COAT, uv).r;
         }
         if (has_roughness) {
-            let texel = sample_material_texture(clear_coat_roughness_tex, material, SLOT_CLEAR_COAT_ROUGHNESS, uv);
+            let texel = sample_material_texture(clear_coat_roughness_tex, clear_coat_roughness_sampler, material, SLOT_CLEAR_COAT_ROUGHNESS, uv);
             if ((material.flags & 0x800u) != 0u) {
                 clear_coat_perceptual_roughness *= texel.g;
             } else {

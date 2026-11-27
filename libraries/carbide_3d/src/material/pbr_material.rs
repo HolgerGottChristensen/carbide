@@ -72,7 +72,8 @@ pub struct PbrMaterial {
     /// `doubleSided`. False by default: the back faces are skipped, as for closed shapes.
     pub double_sided: Box<dyn AnyReadState<T=bool>>,
     /// Whether maps are sampled linearly (smooth, with mipmaps and anisotropic filtering), the
-    /// default, or nearest (pixelated).
+    /// default, or nearest (pixelated): the filtering of every map without its own
+    /// ([`MaterialTexture::filtering`](crate::material::material_texture::MaterialTexture::filtering)).
     pub sample_type: Box<dyn AnyReadState<T=SampleType>>,
 }
 
@@ -306,7 +307,8 @@ impl PbrMaterial {
         self.uv_transform(transform)
     }
 
-    /// Whether maps are sampled linearly, the default, or nearest, which shows their pixels.
+    /// Whether maps are sampled linearly, the default, or nearest, which shows their pixels: for
+    /// every map that doesn't set its own filtering.
     pub fn sample_type<T: IntoReadState<SampleType>>(self, sample_type: T) -> PbrMaterial {
         PbrMaterial {
             sample_type: sample_type.into_dyn_read_state(),

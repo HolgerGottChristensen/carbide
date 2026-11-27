@@ -27,27 +27,27 @@ fn get_aomr(material: Material, uv: TexCoords) -> vec3<f32> {
 
     if ((material.flags & 0x40u) != 0u) {
         if (has_roughness) {
-            let orm = sample_material_texture(roughness_tex, material, SLOT_ROUGHNESS, uv);
+            let orm = sample_material_texture(roughness_tex, roughness_sampler, material, SLOT_ROUGHNESS, uv);
             ambient_occlusion *= occlusion_with_strength(material, orm.r);
             perceptual_roughness *= orm.g;
             metallic *= orm.b;
         }
     } else if ((material.flags & 0x200u) != 0u) {
         if (has_ao) {
-            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, material, SLOT_OCCLUSION, uv).r);
+            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, ambient_occlusion_sampler, material, SLOT_OCCLUSION, uv).r);
         }
         if (has_metallic) {
-            metallic *= sample_material_texture(metallic_tex, material, SLOT_METALLIC, uv).r;
+            metallic *= sample_material_texture(metallic_tex, metallic_sampler, material, SLOT_METALLIC, uv).r;
         }
         if (has_roughness) {
-            perceptual_roughness *= sample_material_texture(roughness_tex, material, SLOT_ROUGHNESS, uv).r;
+            perceptual_roughness *= sample_material_texture(roughness_tex, roughness_sampler, material, SLOT_ROUGHNESS, uv).r;
         }
     } else {
         if (has_ao) {
-            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, material, SLOT_OCCLUSION, uv).r);
+            ambient_occlusion *= occlusion_with_strength(material, sample_material_texture(ambient_occlusion_tex, ambient_occlusion_sampler, material, SLOT_OCCLUSION, uv).r);
         }
         if (has_roughness) {
-            let texel = sample_material_texture(roughness_tex, material, SLOT_ROUGHNESS, uv);
+            let texel = sample_material_texture(roughness_tex, roughness_sampler, material, SLOT_ROUGHNESS, uv);
             var roughness_metallic = texel.rg;
             if ((material.flags & 0x80u) != 0u) {
                 roughness_metallic = texel.gb;

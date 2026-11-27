@@ -7,7 +7,7 @@ use carbide::environment::Environment;
 use carbide::event::{KeyboardEvent, KeyboardEventContext, KeyboardEventHandler, MouseEvent, MouseEventContext, MouseEventHandler};
 use carbide::lifecycle::{Update, UpdateContext};
 use carbide::render::{LayerId, RenderContext};
-use carbide::color::{Color, TRANSPARENT, WHITE};
+use carbide::color::{Color, WHITE};
 use carbide::math::Deg;
 use carbide::state::{AnyReadState, IntoReadState, ReadState, StateSync};
 use carbide_core::draw::{Dimension, Position};

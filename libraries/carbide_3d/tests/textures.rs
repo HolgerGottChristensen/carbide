@@ -892,3 +892,58 @@ fn map_transforms_and_coordinate_sets() {
     *half.clone().value_mut() = Some(id);
     harness.snapshot("map_transforms");
 }
+
+/// Store a 4 × 4 image under `id`: its left half `left`, its right half `right`.
+fn store_halves(harness: &mut Harness, id: &ImageId, left: [u8; 4], right: [u8; 4]) {
+    let data: Vec<u8> = (0..16).flat_map(|i| if i % 4 < 2 { left } else { right }).collect();
+    let texture = Texture { width: 4, height: 4, bytes_per_row: 16, format: TextureFormat::RGBA8, data: &data };
+    WgpuImageContext.update_texture(id, texture, harness.environment_mut());
+}
+
+/// Three strips seen from above, each with a red and blue image whose coordinates run from −1 to
+/// 2 across it, so it covers the image three times over: repeated, clamped and mirrored. Six
+/// points along each strip, the middles of its sixths, tell them apart whichever way u runs on
+/// screen: repeated, the colour changes at every point; clamped, each end is one colour; mirrored,
+/// it changes at every other point (A BB AA B). The maps are nearest-filtered though the
+/// material's default is linear, so each point is exactly red or blue: a map's own filtering wins.
+#[test]
+fn maps_repeat_clamp_or_mirror() {
+    use carbide_3d::material::material_texture::MaterialTexture;
+    use carbide_3d::material::sample_type::SampleType;
+    use carbide_3d::material::texture_sampler::{Filtering, Wrap};
+    use carbide_core::math::{Rad, Vector2};
+
+    let id = ImageId::temp(ImageFormat::Png);
+    let strip = |wrap: Wrap, z: f32| {
+        let map = MaterialTexture::new(id.clone())
+            .offset_rotation_scale(Vector2::new(-1.0, 0.0), Rad(0.0), Vector2::new(3.0, 1.0))
+            .wrap(wrap)
+            .filtering(Filtering::NEAREST);
+        let material = PbrMaterial::new().color(map).sample_type(SampleType::Linear).unlit();
+        Object::new(Mesh::plane(3.0, 0.8), material).position(Vector3::new(0.0, 0.0, z))
+    };
+    let scene = Scene3d::new((strip(Wrap::Repeat, -1.1), strip(Wrap::ClampToEdge, 0.0), strip(Wrap::MirroredRepeat, 1.1)))
+        .camera(Camera::orthographic(3.6).look_at(Point3::new(0.0, 5.0, 0.001), Point3::new(0.0, 0.0, 0.0)));
+
+    let mut harness = Harness::new(scene, Dimension::new(300.0, 300.0));
+    store_halves(&mut harness, &id, [255, 0, 0, 255], [0, 0, 255, 255]);
+    harness.render();
+
+    // 300 pixels for 3.6 metres: the strips span x from 25 to 275, and lie at y 8.3 metres apart.
+    let picture = harness.pixels();
+    let row = |z: f32| -> Vec<bool> {
+        let y = (150.0 + z * 300.0 / 3.6).round() as u32;
+        (0..6).map(|i| {
+            let [r, g, b, _] = picture.get_pixel((25.0 + (i as f32 + 0.5) * 250.0 / 6.0).round() as u32, y).0;
+            assert!(g < 20 && (r > 235 && b < 20 || b > 235 && r < 20), "not pure red or blue at {i}, z {z}: {:?}", [r, g, b]);
+            r > 128
+        }).collect()
+    };
+    let changes = |points: &[bool]| points.windows(2).map(|pair| pair[0] != pair[1]).collect::<Vec<_>>();
+
+    assert_eq!(changes(&row(-1.1)), [true; 5], "repeated: {:?}", row(-1.1));
+    let clamped = row(0.0);
+    assert!(clamped[0] == clamped[1] && clamped[4] == clamped[5] && clamped[0] != clamped[5], "clamped: {clamped:?}");
+    assert_eq!(changes(&row(1.1)), [true, false, true, false, true], "mirrored: {:?}", row(1.1));
+    harness.snapshot("strips");
+}

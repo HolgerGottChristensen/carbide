@@ -6,7 +6,7 @@ fn get_albedo(material: Material, vs_out: VertexOutput, uv: TexCoords) -> vec4<f
     // colour is divided by alpha to light the surface's own colour. Read through the sRGB view, it
     // is already linear.
     if ((material.texture_enable & 0x1u) != 0u) {
-        let texel = sample_material_texture(albedo_tex, material, SLOT_ALBEDO, uv);
+        let texel = sample_material_texture(albedo_tex, albedo_sampler, material, SLOT_ALBEDO, uv);
         albedo = vec4<f32>(select(vec3<f32>(0.0), texel.rgb / texel.a, texel.a > 0.0), texel.a);
     }
 

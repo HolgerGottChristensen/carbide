@@ -29,9 +29,13 @@ thread_local! {
 
 /// Returns the old event_sink
 pub fn set_event_sink(sink: impl EventSink + 'static) -> Box<dyn EventSink> {
-    EVENT_SINK.with(|old_sink| {
-        old_sink.replace(Box::new(sink))
-    })
+    replace_event_sink(Box::new(sink))
+}
+
+/// Makes `sink` this thread's event sink, and returns the one it replaces, boxed as it was: to
+/// put a sink back as it was after using another for a while.
+pub fn replace_event_sink(sink: Box<dyn EventSink>) -> Box<dyn EventSink> {
+    EVENT_SINK.with(|old_sink| old_sink.replace(sink))
 }
 
 pub fn get_event_sink() -> Box<dyn EventSink> {

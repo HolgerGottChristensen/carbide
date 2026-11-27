@@ -14,7 +14,7 @@ fn get_normal(material: Material, vs_out: VertexOutput, uv: TexCoords) -> vec3<f
         return normal;
     }
 
-    let texel = sample_material_texture(normal_tex, material, SLOT_NORMAL, uv);
+    let texel = sample_material_texture(normal_tex, normal_sampler, material, SLOT_NORMAL, uv);
 
     var tangent_space: vec3<f32>;
     if ((material.flags & 0x8u) != 0u) {

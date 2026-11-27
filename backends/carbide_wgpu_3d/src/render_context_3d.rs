@@ -21,7 +21,7 @@ use crate::material::WgpuMaterial;
 use crate::object::WgpuObject;
 use crate::outline::OutlineState;
 use crate::picking::PickingState;
-use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, FallbackTextures, WgpuPbrMaterial, WgpuPbrMaterialTextures, SLOT_COUNT};
+use crate::pbr_material::{create_pbr_bind_group, create_pbr_bind_group_layout, FallbackTextures, SamplerCache, WgpuPbrMaterial, WgpuPbrMaterialTextures, SLOT_COUNT};
 use crate::point_light::{WgpuPunctualLight, WgpuPunctualLightBuffer};
 use crate::preprocess_shader;
 use crate::render_pass_command::{blend_variant, pipeline_variant, RenderPassCommand, BLEND_VARIANTS, PIPELINE_VARIANTS};
@@ -99,10 +99,10 @@ struct GpuState {
     /// The background pipeline for a colour format, made the first time a view shows the
     /// environment.
     background_pipeline: Option<(TextureFormat, RenderPipeline)>,
-    /// Repeating, linear and anisotropic: for textures, and the default for materials.
+    /// Repeating, linear and anisotropic: for the environment's maps.
     sampler: Sampler,
-    /// Repeating and nearest: for materials with `SampleType::Nearest`.
-    nearest_sampler: Sampler,
+    /// The materials' map samplers, one per setting asked for.
+    map_samplers: SamplerCache,
     depth_texture: Option<Texture>,
     depth_view: Option<TextureView>,
     /// The multisampled colour target, resolved into the layer, with its size and format.
@@ -184,8 +184,10 @@ impl WgpuRenderContext3d {
     }
 
     fn ensure_current_material(&mut self, material: &WgpuMaterial, tex: &WgpuPbrMaterialTextures) {
-        let needs_update = if let Some((current, _, _)) = &self.current_material {
-            current != material
+        // A new entry when the values or the textures differ: two materials with the same values
+        // can still sample other images, or the same ones with other samplers.
+        let needs_update = if let Some((current, current_textures, _)) = &self.current_material {
+            current != material || current_textures != tex
         } else {
             true
         };
@@ -339,12 +341,6 @@ impl GpuState {
                     ty: BindingType::Sampler(SamplerBindingType::Comparison),
                     count: None,
                 },
-                BindGroupLayoutEntry {
-                    binding: 6,
-                    visibility: ShaderStages::FRAGMENT,
-                    ty: BindingType::Sampler(SamplerBindingType::Filtering),
-                    count: None,
-                },
                 // The environment's reflection cube, harmonics (32-bit floats, read texel by
                 // texel) and DFG table.
                 BindGroupLayoutEntry {
@@ -409,17 +405,6 @@ impl GpuState {
             border_color: None,
         });
 
-        let nearest_sampler = device.create_sampler(&SamplerDescriptor {
-            label: Some("carbide_3d_nearest_sampler"),
-            address_mode_u: AddressMode::Repeat,
-            address_mode_v: AddressMode::Repeat,
-            address_mode_w: AddressMode::Repeat,
-            mag_filter: FilterMode::Nearest,
-            min_filter: FilterMode::Nearest,
-            mipmap_filter: FilterMode::Nearest,
-            ..Default::default()
-        });
-
         let shadow_shader = device.create_shader_module(preprocess_shader("pbr/shadow.wgsl"));
 
         let vertex_storage = |binding: u32| BindGroupLayoutEntry {
@@ -427,23 +412,14 @@ impl GpuState {
             ..storage(binding)
         };
 
-        let fragment_sampler = |binding: u32| BindGroupLayoutEntry {
-            binding,
-            visibility: ShaderStages::FRAGMENT,
-            ty: BindingType::Sampler(SamplerBindingType::Filtering),
-            count: None,
-        };
-
-        // Objects and the light, for placing meshes; materials and samplers, for alpha-testing
-        // cutout and blended materials.
+        // Objects and the light, for placing meshes; materials, for alpha-testing cutout and
+        // blended materials, whose albedo map and sampler come with the material bind group.
         let shadow_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: Some("carbide_3d_shadow_layout"),
             entries: &[
                 vertex_storage(0),
                 vertex_storage(1),
                 BindGroupLayoutEntry { visibility: ShaderStages::FRAGMENT, ..storage(2) },
-                fragment_sampler(3),
-                fragment_sampler(4),
             ],
         });
 
@@ -536,7 +512,7 @@ impl GpuState {
             multisampled: None,
             texture_bind_groups: HashMap::new(),
             fallback_textures: None,
-            nearest_sampler,
+            map_samplers: SamplerCache::default(),
         }
     }
 
@@ -778,7 +754,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 let versions = textures.versions(store);
                 let current = gpu.texture_bind_groups.get(textures).is_some_and(|(made_from, _)| *made_from == versions);
                 if !current {
-                    let bind_group = create_pbr_bind_group(textures, store, fallback, &gpu.pbr_layout, device);
+                    let bind_group = create_pbr_bind_group(textures, store, fallback, &mut gpu.map_samplers, &gpu.pbr_layout, device);
                     gpu.texture_bind_groups.insert(textures.clone(), (versions, bind_group));
                 }
             }
@@ -1024,10 +1000,6 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     resource: BindingResource::Sampler(&gpu.shadow_sampler),
                 },
                 BindGroupEntry {
-                    binding: 6,
-                    resource: BindingResource::Sampler(&gpu.nearest_sampler),
-                },
-                BindGroupEntry {
                     binding: 7,
                     resource: BindingResource::TextureView(&environment_views.radiance),
                 },
@@ -1063,14 +1035,6 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                     BindGroupEntry {
                         binding: 2,
                         resource: materials_buffer.binding().unwrap(),
-                    },
-                    BindGroupEntry {
-                        binding: 3,
-                        resource: BindingResource::Sampler(&gpu.sampler),
-                    },
-                    BindGroupEntry {
-                        binding: 4,
-                        resource: BindingResource::Sampler(&gpu.nearest_sampler),
                     },
                 ],
             });

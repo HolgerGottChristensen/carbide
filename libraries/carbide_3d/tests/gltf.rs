@@ -263,16 +263,49 @@ fn lights_come_from_their_extension() {
     assert!((color.green() - 0.816).abs() < 0.01, "{color:?}");
 }
 
-/// Which extensions and features each file uses that carbide leaves out, reported once.
+/// Which extensions and features each file uses that carbide leaves out, reported once: the lamp's
+/// glass uses transmission.
 #[test]
 fn unsupported_features_are_reported() {
-    // The texture settings test clamps and mirrors some textures.
-    let settings = scene("TextureSettingsTest");
-    assert!(settings.unsupported.iter().any(|what| what == "texture wrap modes other than repeat"), "{:?}", settings.unsupported);
+    let lamp = scene("LightsPunctualLamp");
+    for extension in ["KHR_materials_transmission"] {
+        assert!(lamp.unsupported.iter().any(|what| what.contains(extension)), "{extension} isn't reported: {:?}", lamp.unsupported);
+    }
     // Reported once each.
-    let mut deduplicated = settings.unsupported.clone();
+    let mut deduplicated = lamp.unsupported.clone();
     deduplicated.dedup();
-    assert_eq!(deduplicated, settings.unsupported);
+    assert_eq!(deduplicated, lamp.unsupported);
+}
+
+/// TextureSettingsTest gives each texture a sampler: repeat both ways, or repeat one way and
+/// clamp or mirror the other. Each map keeps its own. Their filters, linear up close and nearest
+/// within a mip level from afar, become linear throughout (the smooth floor, see `filtering` in
+/// `gltf.rs`). Nothing is unsupported.
+#[test]
+fn samplers_are_kept_per_map() {
+    use carbide_3d::material::texture_sampler::{Filtering, Wrap};
+
+    let settings = scene("TextureSettingsTest");
+    assert!(settings.unsupported.is_empty(), "{:?}", settings.unsupported);
+
+    let mut wraps: Vec<(Wrap, Wrap)> = settings.primitives().iter()
+        .filter_map(|(_, material, _)| material.albedo.value().to_texture().cloned())
+        .map(|texture| {
+            assert_eq!(texture.filtering, Some(Filtering::LINEAR));
+            (texture.wrap_u, texture.wrap_v)
+        })
+        .collect();
+    wraps.sort_by_key(|wrap| format!("{wrap:?}"));
+    wraps.dedup();
+    let mut expected = vec![
+        (Wrap::Repeat, Wrap::Repeat),
+        (Wrap::Repeat, Wrap::ClampToEdge),
+        (Wrap::ClampToEdge, Wrap::Repeat),
+        (Wrap::Repeat, Wrap::MirroredRepeat),
+        (Wrap::MirroredRepeat, Wrap::Repeat),
+    ];
+    expected.sort_by_key(|wrap| format!("{wrap:?}"));
+    assert_eq!(wraps, expected);
 }
 
 // --- Mirroring, in the renderer ---
@@ -341,7 +374,7 @@ fn texture_transform_multi_test() {
     snapshot("TextureTransformMultiTest", "texture_transform_multi_test", FRONT, (500.0, 400.0));
 }
 
-/// Wrap modes (clamped and mirrored, unsupported: they repeat) and nearest sampling.
+/// Wrap modes: repeated, clamped and mirrored textures, along u and along v.
 #[test]
 fn texture_settings_test() {
     snapshot("TextureSettingsTest", "texture_settings_test", FRONT, (450.0, 450.0));
@@ -366,7 +399,7 @@ fn normal_tangent_mirror_test() {
     snapshot("NormalTangentMirrorTest", "normal_tangent_mirror_test", FRONT, (640.0, 480.0));
 }
 
-/// Opaque, masked and blended materials. Blending isn't sorted yet (Materials, item 9).
+/// Opaque, masked and blended materials.
 #[test]
 fn alpha_blend_mode_test() {
     snapshot("AlphaBlendModeTest", "alpha_blend_mode_test", FRONT, (600.0, 300.0));

@@ -1,10 +1,12 @@
 use carbide::draw::ImageId;
 use carbide::impl_state_value;
 use carbide::math::{Matrix3, Rad, SquareMatrix, Vector2};
+use crate::material::texture_sampler::{Filtering, TextureSampler, Wrap};
 
 /// An image used as a material's map, with how the mesh's texture coordinates reach it: which of
 /// the mesh's two coordinate sets, and a 2D transform of them, as glTF's `textureInfo` with
-/// `KHR_texture_transform`, or three.js's `Texture.offset` and `repeat`.
+/// `KHR_texture_transform`, or three.js's `Texture.offset` and `repeat`; and how it is sampled:
+/// its wrap along u and v, and its filtering, as glTF's per-texture `sampler`.
 ///
 /// The material's own [`uv_transform`](crate::material::pbr_material::PbrMaterial::uv_transform)
 /// (or [`tiling`](crate::material::pbr_material::PbrMaterial::tiling)) applies after the map's,
@@ -19,12 +21,25 @@ pub struct MaterialTexture {
     /// Which of the mesh's texture coordinates are read: 0 (`texture_coords_0`, the default) or 1
     /// (`texture_coords_1`). Other values read 0.
     pub uv_set: u8,
+    /// What happens to coordinates outside 0 to 1, across (u) and down (v). Repeat by default.
+    pub wrap_u: Wrap,
+    pub wrap_v: Wrap,
+    /// How texels are filtered; `None` (the default) uses the material's
+    /// [`sample_type`](crate::material::pbr_material::PbrMaterial::sample_type).
+    pub filtering: Option<Filtering>,
 }
 
 impl MaterialTexture {
     /// `image`, with the identity transform, on the first coordinate set.
     pub fn new(image: impl Into<ImageId>) -> MaterialTexture {
-        MaterialTexture { image: image.into(), transform: Matrix3::identity(), uv_set: 0 }
+        MaterialTexture {
+            image: image.into(),
+            transform: Matrix3::identity(),
+            uv_set: 0,
+            wrap_u: Wrap::Repeat,
+            wrap_v: Wrap::Repeat,
+            filtering: None,
+        }
     }
 
     /// The map with its texture coordinates transformed by `transform`.
@@ -52,6 +67,29 @@ impl MaterialTexture {
     /// The map repeated `tiling.x` times across and `tiling.y` times down.
     pub fn tiling(self, tiling: Vector2<f32>) -> MaterialTexture {
         self.transform(Matrix3::from_nonuniform_scale(tiling.x, tiling.y))
+    }
+
+    /// The map wrapped by `wrap` along both axes.
+    pub fn wrap(self, wrap: Wrap) -> MaterialTexture {
+        self.wrap_uv(wrap, wrap)
+    }
+
+    /// The map wrapped by `u` across and `v` down.
+    pub fn wrap_uv(mut self, u: Wrap, v: Wrap) -> MaterialTexture {
+        self.wrap_u = u;
+        self.wrap_v = v;
+        self
+    }
+
+    /// The map filtered by `filtering`, whatever the material's sample type.
+    pub fn filtering(mut self, filtering: impl Into<Filtering>) -> MaterialTexture {
+        self.filtering = Some(filtering.into());
+        self
+    }
+
+    /// How the map is sampled, with `default` as its filtering if it has none of its own.
+    pub fn sampler(&self, default: Filtering) -> TextureSampler {
+        TextureSampler { wrap_u: self.wrap_u, wrap_v: self.wrap_v, filtering: self.filtering.unwrap_or(default) }
     }
 
     /// The map read with the mesh's coordinate set `uv_set`, 0 or 1.

@@ -1,11 +1,13 @@
 use encase::ShaderType;
 use wgpu::util::{DeviceExt, TextureDataOrder};
-use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Device, Extent3d, Queue, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension};
+use std::collections::HashMap;
+
+use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Device, Extent3d, FilterMode, Queue, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension};
 use carbide_wgpu_core::WgpuTextureStore;
 use carbide_3d::material::material_flags::MaterialFlags;
 use carbide_3d::material::material_texture::MaterialTexture;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::material::sample_type::SampleType;
+use carbide_3d::material::texture_sampler::{Filter, Filtering, TextureSampler, Wrap};
 use carbide_3d::material::transparency::Transparency;
 use carbide_core::color::ColorExt;
 use carbide_core::draw::ImageId;
@@ -100,14 +102,6 @@ impl WgpuPbrMaterial {
                 flags.set(MaterialFlags::UNLIT, material.unlit);
                 flags.set(MaterialFlags::ALPHA_BLEND, matches!(material.transparency, Transparency::Blend));
                 flags.set(MaterialFlags::DOUBLE_SIDED, *material.double_sided.value());
-                flags.set(
-                    MaterialFlags::NEAREST,
-                    match *material.sample_type.value() {
-                        SampleType::Nearest => true,
-                        SampleType::Linear => false,
-                    },
-                );
-                //println!("{:#?}", flags);
                 flags.bits()
             },
             // Set per frame from the texture store (`WgpuPbrMaterialTextures::enabled`).
@@ -118,10 +112,13 @@ impl WgpuPbrMaterial {
     }
 }
 
-/// The images a material samples, one per slot of the material bind group. `ImageId::None` is an
-/// empty slot, which gets a fallback texture.
+/// The images a material samples, one per slot of the material bind group, and how each is
+/// sampled. `ImageId::None` is an empty slot, which gets a fallback texture.
 #[derive(Debug, Clone, PartialEq, Hash, Eq, Default)]
 pub struct WgpuPbrMaterialTextures {
+    /// Each slot's sampler, in binding order: the map's wrap modes, and its filtering or the
+    /// material's default. An empty slot's is the default's.
+    pub(crate) samplers: [TextureSampler; SLOT_COUNT],
     pub(crate) albedo: ImageId,
     pub(crate) normal: ImageId,
     pub(crate) ambient_occlusion: ImageId,
@@ -142,10 +139,16 @@ enum SlotKind {
 
 impl WgpuPbrMaterialTextures {
     pub(crate) fn from_material(material: &PbrMaterial) -> Self {
+        let maps = slot_textures(material);
+        let default = Filtering::from(*material.sample_type.value());
+        let samplers = maps.each_ref().map(|map| match map {
+            Some(map) => map.sampler(default),
+            None => TextureSampler { filtering: default, ..TextureSampler::default() },
+        });
         let [albedo, normal, ambient_occlusion, metallic, roughness, clear_coat, clear_coat_roughness, emissive] =
-            slot_textures(material).map(|map| map.map(|map| map.image).unwrap_or_default());
+            maps.map(|map| map.map(|map| map.image).unwrap_or_default());
 
-        WgpuPbrMaterialTextures { albedo, normal, ambient_occlusion, metallic, roughness, clear_coat, clear_coat_roughness, emissive }
+        WgpuPbrMaterialTextures { samplers, albedo, normal, ambient_occlusion, metallic, roughness, clear_coat, clear_coat_roughness, emissive }
     }
 
     /// The slots in binding order, with how each is read.
@@ -195,8 +198,9 @@ fn slot_textures(material: &PbrMaterial) -> [Option<MaterialTexture>; SLOT_COUNT
 /// The number of texture slots in the material bind group.
 pub(crate) const SLOT_COUNT: usize = 8;
 
+/// The material bind group: a texture per slot at bindings 0 to 7, and its sampler at 8 to 15.
 pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
-    let entries: Vec<BindGroupLayoutEntry> = (0..SLOT_COUNT as u32).map(|binding| BindGroupLayoutEntry {
+    let textures = (0..SLOT_COUNT as u32).map(|binding| BindGroupLayoutEntry {
         binding,
         visibility: ShaderStages::FRAGMENT,
         ty: BindingType::Texture {
@@ -205,7 +209,14 @@ pub(crate) fn create_pbr_bind_group_layout(device: &Device) -> BindGroupLayout {
             multisampled: false,
         },
         count: None,
-    }).collect();
+    });
+    let samplers = (0..SLOT_COUNT as u32).map(|slot| BindGroupLayoutEntry {
+        binding: SLOT_COUNT as u32 + slot,
+        visibility: ShaderStages::FRAGMENT,
+        ty: BindingType::Sampler(SamplerBindingType::Filtering),
+        count: None,
+    });
+    let entries: Vec<BindGroupLayoutEntry> = textures.chain(samplers).collect();
 
     device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: Some("carbide_3d_pbr_textures_layout"),
@@ -243,7 +254,61 @@ impl FallbackTextures {
     }
 }
 
-pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, store: Option<&WgpuTextureStore>, fallback: &FallbackTextures, layout: &BindGroupLayout, device: &Device) -> BindGroup {
+/// A wgpu sampler for each setting a map has asked for, made the first time it is asked for. Few
+/// settings are ever used, so the cache stays small.
+#[derive(Debug, Default)]
+pub(crate) struct SamplerCache {
+    samplers: HashMap<TextureSampler, Sampler>,
+}
+
+impl SamplerCache {
+    /// Make the sampler for `setting` unless it is made already.
+    fn ensure(&mut self, setting: TextureSampler, device: &Device) {
+        self.samplers.entry(setting).or_insert_with(|| create_sampler(setting, device));
+    }
+
+    fn get(&self, setting: &TextureSampler) -> &Sampler {
+        &self.samplers[setting]
+    }
+}
+
+/// The wgpu sampler for `setting`. Without a mipmap filter only the full-size image is read (the
+/// level of detail is clamped to 0). Anisotropic filtering, 16 times, when every filter is
+/// linear, which wgpu requires for it.
+fn create_sampler(setting: TextureSampler, device: &Device) -> Sampler {
+    let address = |wrap: Wrap| match wrap {
+        Wrap::Repeat => AddressMode::Repeat,
+        Wrap::ClampToEdge => AddressMode::ClampToEdge,
+        Wrap::MirroredRepeat => AddressMode::MirrorRepeat,
+    };
+    let filter = |filter: Filter| match filter {
+        Filter::Nearest => FilterMode::Nearest,
+        Filter::Linear => FilterMode::Linear,
+    };
+    let Filtering { mag, min, mipmap } = setting.filtering;
+    let all_linear = mag == Filter::Linear && min == Filter::Linear && mipmap == Some(Filter::Linear);
+
+    device.create_sampler(&SamplerDescriptor {
+        label: Some("carbide_3d_map_sampler"),
+        address_mode_u: address(setting.wrap_u),
+        address_mode_v: address(setting.wrap_v),
+        address_mode_w: AddressMode::Repeat,
+        mag_filter: filter(mag),
+        min_filter: filter(min),
+        mipmap_filter: filter(mipmap.unwrap_or(Filter::Nearest)),
+        lod_min_clamp: 0.0,
+        lod_max_clamp: if mipmap.is_some() { 100.0 } else { 0.0 },
+        compare: None,
+        anisotropy_clamp: if all_linear { 16 } else { 1 },
+        border_color: None,
+    })
+}
+
+pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, store: Option<&WgpuTextureStore>, fallback: &FallbackTextures, samplers: &mut SamplerCache, layout: &BindGroupLayout, device: &Device) -> BindGroup {
+    for setting in textures.samplers {
+        samplers.ensure(setting, device);
+    }
+
     let views: Vec<&TextureView> = textures.slots().iter().map(|(id, kind)| {
         match (store.and_then(|store| store.get(id)), kind) {
             (Some(stored), SlotKind::Color) => &stored.srgb_view,
@@ -253,10 +318,15 @@ pub(crate) fn create_pbr_bind_group(textures: &WgpuPbrMaterialTextures, store: O
         }
     }).collect();
 
-    let entries: Vec<BindGroupEntry> = views.iter().enumerate().map(|(binding, view)| BindGroupEntry {
+    let texture_entries = views.iter().enumerate().map(|(binding, view)| BindGroupEntry {
         binding: binding as u32,
         resource: BindingResource::TextureView(view),
-    }).collect();
+    });
+    let sampler_entries = textures.samplers.iter().enumerate().map(|(slot, setting)| BindGroupEntry {
+        binding: (SLOT_COUNT + slot) as u32,
+        resource: BindingResource::Sampler(samplers.get(setting)),
+    });
+    let entries: Vec<BindGroupEntry> = texture_entries.chain(sampler_entries).collect();
 
     device.create_bind_group(&BindGroupDescriptor {
         label: Some("carbide_3d_pbr_textures"),

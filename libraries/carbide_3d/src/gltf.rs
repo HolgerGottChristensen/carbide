@@ -10,7 +10,9 @@
 //!   strength), normal maps (with their scale), emission, alpha modes, double-sided materials,
 //!   and the extensions `KHR_materials_unlit`, `KHR_materials_emissive_strength`,
 //!   `KHR_materials_ior` and `KHR_materials_clearcoat` (without its normal map).
-//! - **Textures:** every map keeps its own `KHR_texture_transform` and texture coordinate set.
+//! - **Textures:** every map keeps its own `KHR_texture_transform`, texture coordinate set and
+//!   sampler: its wrap modes along u and v, and its filters, smooth unless it asks for nearest
+//!   magnification (see `filtering`).
 //!   Images in separate files load through their paths, as other images do; images inside the file
 //!   (a `.glb`'s buffer views or `data:` URIs) are decoded the first time they are drawn.
 //! - **Meshes:** triangles (lists, strips and fans), with normals (flat ones calculated when
@@ -18,8 +20,8 @@
 //!   two texture coordinate sets and vertex colours.
 //! - **Lights:** `KHR_lights_punctual` point, spot and directional lights, placed by their node.
 //!
-//! What isn't supported yet (cameras, skins, animations, morph targets, other extensions, wrap
-//! modes other than repeat, points and lines) is listed in [`GltfScene::unsupported`] and
+//! What isn't supported yet (cameras, skins, animations, morph targets, other extensions, points
+//! and lines) is listed in [`GltfScene::unsupported`] and
 //! reported once, when the file is loaded.
 
 use std::collections::HashMap;
@@ -32,7 +34,7 @@ use ::gltf::json::Value;
 use ::gltf::khr_lights_punctual::Kind;
 use ::gltf::material::AlphaMode;
 use ::gltf::mesh::Mode;
-use ::gltf::texture::{MagFilter, WrappingMode};
+use ::gltf::texture::{MagFilter, MinFilter, WrappingMode};
 use base64::Engine;
 use carbide::color::rgba;
 use carbide::draw::{Color, ImageFormat, ImageId};
@@ -46,7 +48,7 @@ use crate::material::material_texture::MaterialTexture;
 use crate::material::normal_texture::NormalTexture;
 use crate::material::normal_texture_y_direction::NormalTextureYDirection;
 use crate::material::pbr_material::PbrMaterial;
-use crate::material::sample_type::SampleType;
+use crate::material::texture_sampler::{Filter, Filtering, Wrap};
 use crate::material::transparency::Transparency;
 use crate::node3d::{AnyNode3d, CommonNode3d, Node3dExt, NodeId};
 use carbide::state::ReadState;
@@ -255,8 +257,12 @@ fn load(path: &Path, index: Option<usize>) -> Result<GltfScene, GltfError> {
         buffers: &buffers,
         textures: document.textures().map(|texture| {
             let sampler = texture.sampler();
-            let repeats = sampler.wrap_s() == WrappingMode::Repeat && sampler.wrap_t() == WrappingMode::Repeat;
-            (images[texture.source().index()].clone(), repeats)
+            let sampling = Sampling {
+                wrap_u: wrap(sampler.wrap_s()),
+                wrap_v: wrap(sampler.wrap_t()),
+                filtering: filtering(sampler.mag_filter(), sampler.min_filter()),
+            };
+            (images[texture.source().index()].clone(), sampling)
         }).collect(),
         materials: HashMap::new(),
         unsupported: vec![],
@@ -341,8 +347,8 @@ fn percent_decode(uri: &str) -> PathBuf {
 
 struct Importer<'a> {
     buffers: &'a [::gltf::buffer::Data],
-    /// Each texture's image, and whether its sampler repeats both ways, by texture index.
-    textures: Vec<(ImageId, bool)>,
+    /// Each texture's image, and how its sampler samples it, by texture index.
+    textures: Vec<(ImageId, Sampling)>,
     /// Each glTF material, converted once, by index (`None` for glTF's default material).
     materials: HashMap<Option<usize>, PbrMaterial>,
     unsupported: Vec<String>,
@@ -488,14 +494,6 @@ impl Importer<'_> {
             .roughness(Some(pbr.roughness_factor()))
             .double_sided(material.double_sided());
 
-        // Nearest sampling when the base colour's sampler asks for it, as rend3 does: carbide has
-        // one sampler per material.
-        if let Some(info) = pbr.base_color_texture() {
-            if info.texture().sampler().mag_filter() == Some(MagFilter::Nearest) {
-                converted = converted.sample_type(SampleType::Nearest);
-            }
-        }
-
         // Occlusion, roughness and metallic: glTF packs roughness and metallic in green and blue
         // of one map, and occlusion in red of its own, often the same image.
         let metallic_roughness = pbr.metallic_roughness_texture().map(|info| self.info_texture(&info));
@@ -592,12 +590,10 @@ impl Importer<'_> {
 
     /// The texture with `index`, read with the coordinate set `tex_coord` and `transform`.
     fn texture(&mut self, index: usize, tex_coord: u32, transform: Option<TextureTransform>) -> MaterialTexture {
-        let (image, repeats) = self.textures[index].clone();
-        if !repeats {
-            self.report("texture wrap modes other than repeat");
-        }
+        let (image, sampling) = self.textures[index].clone();
 
-        let mut texture = MaterialTexture::new(image);
+        let mut texture = MaterialTexture::new(image).wrap_uv(sampling.wrap_u, sampling.wrap_v);
+        texture.filtering = sampling.filtering;
         let mut tex_coord = tex_coord;
         if let Some(transform) = transform {
             texture = texture.offset_rotation_scale(transform.offset, Rad(transform.rotation), transform.scale);
@@ -609,6 +605,48 @@ impl Importer<'_> {
             tex_coord = 0;
         }
         texture.uv_set(tex_coord as u8)
+    }
+}
+
+/// A texture's sampler: its wrap modes, and its filters, `None` when the file sets none, leaving
+/// the material's default (linear).
+#[derive(Debug, Copy, Clone)]
+struct Sampling {
+    wrap_u: Wrap,
+    wrap_v: Wrap,
+    filtering: Option<Filtering>,
+}
+
+fn wrap(mode: WrappingMode) -> Wrap {
+    match mode {
+        WrappingMode::Repeat => Wrap::Repeat,
+        WrappingMode::ClampToEdge => Wrap::ClampToEdge,
+        WrappingMode::MirroredRepeat => Wrap::MirroredRepeat,
+    }
+}
+
+/// A sampler's filters, with a floor of smooth filtering. glTF leaves both optional; both left out
+/// leave the material's default. A nearest magnification filter, which asks for sharp texels up
+/// close as pixel art does, keeps the file's filters as they are (a minification filter without a
+/// mipmap part, `NEAREST` or `LINEAR`, reads only the full-size image). Otherwise the map is
+/// linear throughout, with linear mipmaps (and anisotropic filtering): files often ask for
+/// `NEAREST_MIPMAP_LINEAR` or an unmipmapped `LINEAR` from afar, as most of Khronos's samples do,
+/// which aliases minified detail and text, and is unlikely to be meant.
+fn filtering(mag: Option<MagFilter>, min: Option<MinFilter>) -> Option<Filtering> {
+    match (mag, min) {
+        (None, None) => None,
+        (Some(MagFilter::Nearest), min) => {
+            let (min, mipmap) = match min {
+                Some(MinFilter::Nearest) => (Filter::Nearest, None),
+                Some(MinFilter::Linear) => (Filter::Linear, None),
+                Some(MinFilter::NearestMipmapNearest) => (Filter::Nearest, Some(Filter::Nearest)),
+                Some(MinFilter::LinearMipmapNearest) => (Filter::Linear, Some(Filter::Nearest)),
+                Some(MinFilter::NearestMipmapLinear) => (Filter::Nearest, Some(Filter::Linear)),
+                Some(MinFilter::LinearMipmapLinear) | None => (Filter::Linear, Some(Filter::Linear)),
+            };
+            Some(Filtering { mag: Filter::Nearest, min, mipmap })
+        }
+        _ => Some(Filtering::LINEAR),
     }
 }
 
@@ -759,5 +797,37 @@ mod tests {
         assert_eq!(percent_decode("my%20texture.png"), PathBuf::from("my texture.png"));
         assert_eq!(percent_decode("plain.png"), PathBuf::from("plain.png"));
         assert_eq!(percent_decode("bad%2"), PathBuf::from("bad%2"));
+    }
+}
+
+#[cfg(test)]
+mod filtering_tests {
+    use ::gltf::texture::{MagFilter, MinFilter};
+
+    use super::filtering;
+    use crate::material::texture_sampler::{Filter, Filtering};
+
+    /// A sampler that sets no filters leaves the material's default.
+    #[test]
+    fn no_filters_leave_the_default() {
+        assert_eq!(filtering(None, None), None);
+    }
+
+    /// Linear or unset magnification: linear throughout, whatever minification asks for.
+    #[test]
+    fn linear_magnification_is_smooth_throughout() {
+        for min in [None, Some(MinFilter::Nearest), Some(MinFilter::Linear), Some(MinFilter::NearestMipmapLinear), Some(MinFilter::LinearMipmapNearest)] {
+            assert_eq!(filtering(Some(MagFilter::Linear), min), Some(Filtering::LINEAR), "{min:?}");
+        }
+        assert_eq!(filtering(None, Some(MinFilter::Nearest)), Some(Filtering::LINEAR));
+    }
+
+    /// Nearest magnification, as pixel art asks for: the file's filters as they are, without
+    /// mipmaps for a minification filter without a mipmap part.
+    #[test]
+    fn nearest_magnification_keeps_the_files_filters() {
+        assert_eq!(filtering(Some(MagFilter::Nearest), Some(MinFilter::Nearest)), Some(Filtering { mag: Filter::Nearest, min: Filter::Nearest, mipmap: None }));
+        assert_eq!(filtering(Some(MagFilter::Nearest), Some(MinFilter::LinearMipmapNearest)), Some(Filtering { mag: Filter::Nearest, min: Filter::Linear, mipmap: Some(Filter::Nearest) }));
+        assert_eq!(filtering(Some(MagFilter::Nearest), None), Some(Filtering { mag: Filter::Nearest, min: Filter::Linear, mipmap: Some(Filter::Linear) }));
     }
 }
