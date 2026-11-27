@@ -2,6 +2,7 @@
 
 use carbide::color::{rgba_bytes, Color, BLACK, BLUE, GREEN, ORANGE, RED, TRANSPARENT, WHITE};
 use carbide::controls::button::{BorderedProminentStyle, Button};
+use carbide::controls::color_picker::ColorPicker;
 use carbide::controls::picker::{MenuStyle, Picker};
 use carbide::controls::slider::Slider;
 use carbide::controls::toggle::{CheckboxStyle, Toggle};
@@ -25,7 +26,7 @@ use carbide::d3::material::normal_texture::NormalTexture;
 use carbide::d3::material::sample_type::SampleType;
 use carbide::d3::material::normal_texture_y_direction::NormalTextureYDirection;
 use std::path::{Path, PathBuf};
-use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize};
+use carbide::environment::{Environment, EnvironmentColor, EnvironmentFontSize, IntoColorReadState};
 use carbide::math::{Deg, Euler, Matrix4, Point3, Quaternion, SquareMatrix, Vector2, Vector3};
 use carbide::state::{AnimatedState, LocalState, Map1, Map2, Map3, Map6, ReadState, State};
 use carbide::time::Duration;
@@ -367,6 +368,17 @@ pub enum LightColor {
     Blue,
     /// A black body's colour at the side bar's temperature.
     Temperature,
+    /// The side bar's custom colour, from its colour picker (`Options::light_custom`).
+    Custom,
+}
+
+/// The colour of the model's outline, when hovered or selected.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum OutlineColorKind {
+    /// The environment's accent colour, the library's default.
+    Accent,
+    /// The side bar's custom colour, from its colour picker (`Options::outline_custom`).
+    Custom,
 }
 
 /// How far point and spot lights are from the model, in metres.
@@ -403,6 +415,10 @@ pub struct Options {
     pub last_hit: LocalState<Option<Vector3<f32>>>,
     /// The outline's thickness, in logical pixels.
     pub outline_thickness: LocalState<Scalar>,
+    /// The colour of the hover and selection outlines.
+    pub outline_color: LocalState<OutlineColorKind>,
+    /// The outlines' colour when `outline_color` is `Custom`.
+    pub outline_custom: LocalState<Color>,
 
     pub color: LocalState<Color>,
     /// What covers the model: the colour, an image in its place, or a set of material maps.
@@ -458,6 +474,8 @@ pub struct Options {
     pub light_color: LocalState<LightColor>,
     /// The light's colour temperature in kelvin, used when the colour is `Temperature`.
     pub light_temperature: LocalState<Scalar>,
+    /// The light's colour when the colour is `Custom`.
+    pub light_custom: LocalState<Color>,
     /// Whether the directional and spot lights cast shadows.
     pub shadows: LocalState<bool>,
 
@@ -495,6 +513,8 @@ impl Options {
             hovered: LocalState::new(false),
             last_hit: LocalState::new(None),
             outline_thickness: LocalState::new(2.0),
+            outline_color: LocalState::new(OutlineColorKind::Accent),
+            outline_custom: LocalState::new(ORANGE),
             color: LocalState::new(RED),
             surface: LocalState::new(Surface::none()),
             surfaces: surfaces(),
@@ -530,6 +550,7 @@ impl Options {
             shadows: LocalState::new(true),
             light_color: LocalState::new(LightColor::White),
             light_temperature: LocalState::new(6500.0),
+            light_custom: LocalState::new(WHITE),
             background: LocalState::new(BackgroundKind::None),
             background_blur: LocalState::new(0.3),
             environment: LocalState::new(EnvironmentImage::None),
@@ -599,7 +620,7 @@ impl Options {
 
     /// The side bar's light colour: a fixed colour, or one from the temperature.
     fn light_color(&self) -> impl ReadState<T=Color> + Clone + use<> {
-        Map2::read_map(self.light_color.clone(), self.light_temperature.clone(), |color: &LightColor, kelvin: &Scalar| {
+        Map3::read_map(self.light_color.clone(), self.light_temperature.clone(), self.light_custom.clone(), |color: &LightColor, kelvin: &Scalar, custom: &Color| {
             match color {
                 LightColor::White => WHITE,
                 LightColor::Warm => Color::temperature(2700.0),
@@ -608,6 +629,7 @@ impl Options {
                 LightColor::Green => GREEN,
                 LightColor::Blue => BLUE,
                 LightColor::Temperature => Color::temperature(*kelvin),
+                LightColor::Custom => *custom,
             }
         })
     }
@@ -832,6 +854,16 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
     let thickness = Map2::read_map(options.outlined.clone(), options.outline_thickness.clone(), |selected: &bool, thickness: &Scalar| {
         if *selected { *thickness as f32 } else { 1.0 }
     });
+    // The accent colour unless a custom one is chosen.
+    let outline_color = Map3::read_map(
+        EnvironmentColor::Accent.color(),
+        options.outline_color.clone(),
+        options.outline_custom.clone(),
+        |accent: &Color, kind: &OutlineColorKind, custom: &Color| match kind {
+            OutlineColorKind::Accent => *accent,
+            OutlineColorKind::Custom => *custom,
+        },
+    );
     let select = {
         let (selected, last_hit) = (options.outlined.clone(), options.last_hit.clone());
         move |hit: &PickHit, _: &mut Environment| {
@@ -843,9 +875,9 @@ fn nodes(model: Model, file_materials: bool, hover: bool, options: &Options) -> 
     let group = Group::new(parts).rotation(options.rotation()).on_click(select);
     // Without hover, no hover handler: the views then pick only on clicks.
     let group: Box<dyn AnyNode3d> = if hover {
-        group.hovered(options.hovered.clone()).outlined(outlined).outline_thickness(thickness).boxed()
+        group.hovered(options.hovered.clone()).outlined(outlined).outline_thickness(thickness).outline_color(outline_color).boxed()
     } else {
-        group.outlined(outlined).outline_thickness(thickness).boxed()
+        group.outlined(outlined).outline_thickness(thickness).outline_color(outline_color).boxed()
     };
     nodes.push(group);
     nodes.push(floor(model, options).boxed());
@@ -1127,7 +1159,21 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         Toggle::new("Interactive", options.interactive.clone()),
         Toggle::new("Hover highlight", options.hover.clone()),
         Toggle::new("Selected (click the model)", options.outlined.clone()),
-        shown_when(options.outlined.clone(), slider("Outline width", &options.outline_thickness, 1.0, 10.0, |value| format!("{value:.0} px"))),
+        slider("Outline width", &options.outline_thickness, 1.0, 10.0, |value| format!("{value:.0} px")),
+        // One colour for both outlines, shown while either can be drawn.
+        shown_when(
+            Map2::read_map(options.hover.clone(), options.outlined.clone(), |hover: &bool, selected: &bool| *hover || *selected),
+            VStack::new((
+                Picker::new("Outline colour", options.outline_color.clone(), (
+                    Text::new("Accent").tag(OutlineColorKind::Accent),
+                    Text::new("Custom…").tag(OutlineColorKind::Custom),
+                )),
+                shown_when(
+                    Map1::read_map(options.outline_color.clone(), |kind: &OutlineColorKind| *kind == OutlineColorKind::Custom),
+                    custom_color(&options.outline_custom),
+                ),
+            )).cross_axis_alignment(CrossAxisAlignment::Start),
+        ),
         Text::new(Map3::read_map(options.hover.clone(), options.hovered.clone(), options.last_hit.clone(), |hover: &bool, hovered: &bool, hit: &Option<Vector3<f32>>| {
             let over = match (*hover, *hovered) {
                 (false, _) => "not tracked",
@@ -1188,13 +1234,13 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         // A colour map takes the colour's place, so the colour picker gives way while one is used.
         shown_when(
             Map1::read_map(options.active_surface(), |surface: &Surface| surface.albedo.is_none()),
-            Picker::new("Colour", options.color.clone(), (
-                Text::new("Red").tag(RED),
-                Text::new("Orange").tag(ORANGE),
-                Text::new("Green").tag(GREEN),
-                Text::new("Blue").tag(BLUE),
-                Text::new("White").tag(WHITE),
-            )),
+            color_choice("Colour", &options.color, &[
+                ("Red", RED),
+                ("Orange", ORANGE),
+                ("Green", GREEN),
+                ("Blue", BLUE),
+                ("White", WHITE),
+            ]),
         ),
         // The grid sets its own roughness and metallic, so their sliders give way to a note.
         shown_when(not_grid.clone(), slider("Roughness", &options.roughness, 0.0, 1.0, two_places)),
@@ -1211,14 +1257,14 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             slider("Coat roughness", &options.clearcoat_roughness, 0.0, 1.0, two_places),
         ),
         slider("Ambient occl.", &options.ambient_occlusion, 0.0, 1.0, two_places),
-        Picker::new("Glow", options.emissive.clone(), (
-            Text::new("None").tag(BLACK),
-            Text::new("Red").tag(RED),
-            Text::new("Orange").tag(ORANGE),
-            Text::new("Green").tag(GREEN),
-            Text::new("Blue").tag(BLUE),
-            Text::new("White").tag(WHITE),
-        )),
+        color_choice("Glow", &options.emissive, &[
+            ("None", BLACK),
+            ("Red", RED),
+            ("Orange", ORANGE),
+            ("Green", GREEN),
+            ("Blue", BLUE),
+            ("White", WHITE),
+        ]),
         shown_when(
             Map1::read_map(options.emissive.clone(), |color: &Color| *color != BLACK),
             slider("Glow strength", &options.emissive_strength, 0.0, 5.0, two_places),
@@ -1254,11 +1300,11 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         )),
         shown_when(environment_background, slider("Blur", &options.background_blur, 0.0, 1.0, |value| format!("{value:.2}"))),
         // The hemisphere lights the scene only without an environment.
-        Picker::new("Ground light", options.ground.clone(), (
-            Text::new("White, like the sky").tag(WHITE),
-            Text::new("Warm").tag(rgba_bytes(160, 90, 40, 1.0)),
-            Text::new("Cool").tag(rgba_bytes(60, 90, 160, 1.0)),
-        )),
+        color_choice("Ground light", &options.ground, &[
+            ("White, like the sky", WHITE),
+            ("Warm", rgba_bytes(160, 90, 40, 1.0)),
+            ("Cool", rgba_bytes(60, 90, 160, 1.0)),
+        ]),
         slider("Ambient", &options.ambient, 0.0, 1.0, |value| format!("{value:.2}")),
         slider("Exposure", &options.exposure, 0.1, 3.0, |value| format!("{value:.2}")),
         Picker::new("Tone mapping", options.tonemapping.clone(), (
@@ -1286,7 +1332,12 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
             Text::new("Green").tag(LightColor::Green),
             Text::new("Blue").tag(LightColor::Blue),
             Text::new("Temperature").tag(LightColor::Temperature),
+            Text::new("Custom…").tag(LightColor::Custom),
         )),
+        shown_when(
+            Map1::read_map(options.light_color.clone(), |color: &LightColor| *color == LightColor::Custom),
+            custom_color(&options.light_custom),
+        ),
         shown_when(
             Map1::read_map(options.light_color.clone(), |color: &LightColor| *color == LightColor::Temperature),
             slider("Temperature", &options.light_temperature, 1000.0, 12000.0, |kelvin| format!("{kelvin:.0} K")),
@@ -1338,6 +1389,58 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         Spacer::new(),
     ))
         .cross_axis_alignment(CrossAxisAlignment::Start)
+}
+
+/// A choice in a colour's picker: one of its presets, or a custom colour.
+#[derive(Copy, Clone, Debug, PartialEq)]
+enum ColorChoice {
+    Preset(Color),
+    Custom,
+}
+
+/// A picker for `color` from `presets`, with a last choice, Custom, that shows a colour picker
+/// under it to pick any colour. A colour that isn't one of the presets shows as Custom.
+fn color_choice(label: &str, color: &LocalState<Color>, presets: &[(&str, Color)]) -> impl Widget + use<> {
+    // Whether Custom was chosen: it keeps the colour, which may be one of the presets.
+    let custom = LocalState::new(false);
+    let preset_colors: Vec<Color> = presets.iter().map(|(_, color)| *color).collect();
+
+    let choice = Map2::map(
+        color.clone(),
+        custom,
+        move |color: &Color, custom: &bool| {
+            if *custom || !preset_colors.contains(color) {
+                ColorChoice::Custom
+            } else {
+                ColorChoice::Preset(*color)
+            }
+        },
+        |new: ColorChoice, mut color, mut custom| match new {
+            ColorChoice::Preset(preset) => {
+                *color = preset;
+                *custom = false;
+            }
+            ColorChoice::Custom => *custom = true,
+        },
+    );
+    let is_custom = Map1::read_map(choice.clone(), |choice: &ColorChoice| *choice == ColorChoice::Custom);
+
+    let mut choices = presets.iter()
+        .map(|(label, color)| Text::new(label.to_string()).tag(ColorChoice::Preset(*color)))
+        .collect::<Vec<_>>();
+    choices.push(Text::new("Custom…".to_string()).tag(ColorChoice::Custom));
+
+    VStack::new((
+        Picker::new(label.to_string(), choice, choices),
+        shown_when(is_custom, custom_color(color)),
+    )).cross_axis_alignment(CrossAxisAlignment::Start)
+}
+
+/// A colour picker for a custom colour, indented under the picker that chose Custom: clicking its
+/// swatch opens the colour dialog.
+fn custom_color(color: &LocalState<Color>) -> impl Widget + use<> {
+    ColorPicker::new(Text::new("Custom colour".to_string()), color.clone())
+        .padding(EdgeInsets::single(0.0, 0.0, 24.0, 0.0))
 }
 
 /// A checkbox for one of the surface's maps, shown only when the chosen surface has it.

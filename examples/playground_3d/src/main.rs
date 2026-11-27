@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{gltf_models, playground, BackgroundKind, EnvironmentImage, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
+    use super::playground::{gltf_models, playground, BackgroundKind, EnvironmentImage, LightColor, LightKind, Model, Options, OutlineColorKind, ProjectionKind, Renderer, Surface, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -116,7 +116,20 @@ mod tests {
         *options.light_color.clone().value_mut() = LightColor::Temperature;
         *options.light_temperature.clone().value_mut() = 2000.0;
         harness.render();
+        *options.light_color.clone().value_mut() = LightColor::Custom;
+        *options.light_custom.clone().value_mut() = carbide::color::rgba_bytes(200, 120, 255, 1.0);
+        harness.render();
         *options.light_color.clone().value_mut() = LightColor::White;
+
+        // Colours that aren't presets, so their pickers show Custom with a colour picker.
+        *options.color.clone().value_mut() = carbide::color::rgba_bytes(30, 160, 140, 1.0);
+        *options.emissive.clone().value_mut() = carbide::color::rgba_bytes(90, 20, 10, 1.0);
+        *options.ground.clone().value_mut() = carbide::color::rgba_bytes(40, 120, 40, 1.0);
+        harness.render();
+        *options.color.clone().value_mut() = carbide::color::RED;
+        *options.emissive.clone().value_mut() = carbide::color::BLACK;
+        *options.ground.clone().value_mut() = carbide::color::WHITE;
+        harness.render();
 
         // Shadows on a floor, from the directional and the spot light.
         *options.floor.clone().value_mut() = true;
@@ -547,6 +560,34 @@ mod tests {
         harness.mouse_move(Position::new(20.0, 20.0));
         harness.render();
         assert!(!*options.hovered.value(), "off the cube");
+    }
+
+    /// The outline colour reaches the selected model: a custom colour changes the outline from the
+    /// accent, and choosing the accent again restores it.
+    #[test]
+    fn the_outline_colour_reaches_the_model() {
+        let options = Options::new();
+        *options.outlined.clone().value_mut() = true;
+        *options.outline_thickness.clone().value_mut() = 6.0;
+
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        let view = |harness: &mut Harness| -> Vec<u8> {
+            let pixels = harness.pixels();
+            (0..800).flat_map(|y| (0..880).map(move |x| (x, y))).flat_map(|(x, y)| pixels.get_pixel(x, y).0).collect()
+        };
+        harness.render();
+        let accent = view(&mut harness);
+
+        *options.outline_custom.clone().value_mut() = carbide::color::GREEN;
+        *options.outline_color.clone().value_mut() = OutlineColorKind::Custom;
+        harness.render();
+        let custom = view(&mut harness);
+        let changed = accent.iter().zip(&custom).filter(|(a, b)| a != b).count();
+        assert!(changed > 1_000, "a custom outline colour changes only {changed} bytes of the view");
+
+        *options.outline_color.clone().value_mut() = OutlineColorKind::Accent;
+        harness.render();
+        assert!(view(&mut harness) == accent, "the accent again doesn't restore the outline");
     }
 
     /// The red cube rendered with wgpu, then with the renderer set to None. Pins down that the
