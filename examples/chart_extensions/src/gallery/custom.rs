@@ -3,11 +3,12 @@
 
 use carbide::chart::{Axis, BarController, CategoryScale, Chart, DataColor, DatasetExt, LinearScale, LineController, ScaleId, SnapMode, ZoomWindow};
 use carbide::draw::Scalar;
-use carbide::color::{BLUE, GREEN, PURPLE};
+use carbide::color::{Color, BLUE, GREEN, ORANGE, PURPLE};
+use carbide::controls::color_picker::ColorPicker;
 use carbide::controls::picker::Picker;
 use carbide::controls::toggle::Toggle;
 use carbide::controls::ControlsExt;
-use carbide::state::{LocalState, Map1, Map3, State};
+use carbide::state::{LocalState, Map1, Map2, Map3, State};
 use carbide::widget::*;
 use carbide::ui;
 use chart_extensions::{Blocks, BlocksExt, Kelvin, LogScale, LollipopController, ValueTicks};
@@ -39,16 +40,20 @@ enum LollipopColor {
     Blue,
     Green,
     Purple,
+    /// The side bar's custom colour, from its colour picker (`Options::custom_color`).
+    Custom,
 }
 
 impl LollipopColor {
-    fn data_color(&self) -> DataColor {
+    /// The lollipops' data colour, `custom` being the side bar's custom colour.
+    fn data_color(&self, custom: Color) -> DataColor {
         match self {
             LollipopColor::Palette => DataColor::ByDataSet,
             LollipopColor::ByPoint => DataColor::ByPoint,
             LollipopColor::Blue => DataColor::Color(BLUE),
             LollipopColor::Green => DataColor::Color(GREEN),
             LollipopColor::Purple => DataColor::Color(PURPLE),
+            LollipopColor::Custom => DataColor::Color(custom),
         }
     }
 }
@@ -59,6 +64,8 @@ pub(crate) struct Options {
     data: LocalState<CustomData>,
     log_scale: LocalState<bool>,
     color: LocalState<LollipopColor>,
+    /// The lollipops' colour when `color` is `Custom`.
+    custom_color: LocalState<Color>,
     /// What the x scale shows, which drags and the wheel pan and pinches zoom.
     x_zoom: LocalState<ZoomWindow>,
     /// What the y scale shows, the `LogScale` or the linear one.
@@ -87,6 +94,7 @@ impl Options {
             data: LocalState::new(CustomData::Temperature),
             log_scale: LocalState::new(true),
             color: LocalState::new(LollipopColor::Palette),
+            custom_color: LocalState::new(ORANGE),
             x_zoom: LocalState::new(ZoomWindow::WHOLE),
             y_zoom: LocalState::new(ZoomWindow::WHOLE),
             snap_mode: LocalState::new(SnapMode::Categories),
@@ -133,13 +141,22 @@ pub(crate) fn view(options: Options, shared: Shared) -> Box<dyn AnyWidget> {
             Text::new("Towns and cities").tag(CustomData::Towns),
             Text::new("Visits, in blocks").tag(CustomData::Visits),
         )),
-        shown_when(lollipops.clone(), Picker::new("Lollipops", options.color.clone(), (
-            Text::new("Palette").tag(LollipopColor::Palette),
-            Text::new("One per lollipop").tag(LollipopColor::ByPoint),
-            Text::new("Blue").tag(LollipopColor::Blue),
-            Text::new("Green").tag(LollipopColor::Green),
-            Text::new("Purple").tag(LollipopColor::Purple),
-        ))),
+        shown_when(lollipops.clone(), VStack::new((
+            Picker::new("Lollipops", options.color.clone(), (
+                Text::new("Palette").tag(LollipopColor::Palette),
+                Text::new("One per lollipop").tag(LollipopColor::ByPoint),
+                Text::new("Blue").tag(LollipopColor::Blue),
+                Text::new("Green").tag(LollipopColor::Green),
+                Text::new("Purple").tag(LollipopColor::Purple),
+                Text::new("Custom…").tag(LollipopColor::Custom),
+            )),
+            // A swatch under the picker: clicking it opens the colour dialog.
+            shown_when(
+                Map1::read_map(options.color.clone(), |color: &LollipopColor| *color == LollipopColor::Custom),
+                ColorPicker::new(Text::new("Custom colour"), options.custom_color.clone())
+                    .padding(EdgeInsets::single(0.0, 0.0, 24.0, 0.0)),
+            ),
+        )).cross_axis_alignment(CrossAxisAlignment::Start)),
         shown_when(Map1::read_map(options.data.clone(), |data: &CustomData| *data == CustomData::Towns),
             Toggle::new("On the LogScale", options.log_scale.clone())),
         shown_when(visits.clone(), VStack::new((
@@ -194,7 +211,7 @@ fn data_resetting_zoom(options: &Options) -> impl State<T=CustomData> + use<> {
 /// The custom chart of `data`, its values on the crate's `LogScale` when `log` is set, and lying
 /// along x when `horizontal` is, its index scale then the y scale and its value scale the x scale.
 pub(super) fn chart(options: Options, shared: Shared, data: CustomData, log: bool, horizontal: bool) -> Box<dyn AnyWidget> {
-    let color = Map1::read_map(options.color.clone(), |color: &LollipopColor| color.data_color());
+    let color = Map2::read_map(options.color.clone(), options.custom_color.clone(), |color: &LollipopColor, custom: &Color| color.data_color(*custom));
 
     // The ids and sides of the index and value scales, and the zoom of each id, whichever side it
     // is on.
