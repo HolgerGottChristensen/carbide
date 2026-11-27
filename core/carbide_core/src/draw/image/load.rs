@@ -96,12 +96,23 @@ fn upload_decoded(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn Im
     image.update_texture(id, texture, env);
 }
 
+/// `value`, clamped to what a 16-bit float holds as a finite number; 0 for NaN.
+fn to_finite_f16(value: f32) -> f32 {
+    if value.is_nan() {
+        0.0
+    } else {
+        value.clamp(-half::f16::MAX.to_f32(), half::f16::MAX.to_f32())
+    }
+}
+
 /// Upload `decoded`, a float image, as linear RGBA16F: values above 1 are kept, and alpha isn't
-/// premultiplied (HDR images usually have none).
+/// premultiplied (HDR images usually have none). Values are clamped to the largest finite 16-bit
+/// float, 65504, and NaN becomes 0: a sun in an HDR panorama can be brighter, and an infinite
+/// texel turns into NaN wherever it is filtered (0 × ∞), blacking out whole mip levels.
 fn upload_float(id: &ImageId, decoded: image::DynamicImage, image: &mut dyn ImageContext, env: &mut Environment) {
     let (width, height) = (decoded.width(), decoded.height());
     let pixels: Vec<u8> = decoded.into_rgba32f().into_raw().into_iter()
-        .flat_map(|value| half::f16::from_f32(value).to_le_bytes())
+        .flat_map(|value| half::f16::from_f32(to_finite_f16(value)).to_le_bytes())
         .collect();
 
     let texture = Texture {
@@ -125,5 +136,19 @@ pub fn resolve_asset_path(path: &Path) -> Result<PathBuf, ImageLoadError> {
         Ok(assets.join(path))
     } else {
         Ok(path.to_path_buf())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::to_finite_f16;
+
+    #[test]
+    fn floats_beyond_half_precision_are_clamped() {
+        assert_eq!(half::f16::from_f32(to_finite_f16(103_424.0)), half::f16::MAX);
+        assert_eq!(half::f16::from_f32(to_finite_f16(f32::INFINITY)), half::f16::MAX);
+        assert_eq!(half::f16::from_f32(to_finite_f16(-1e9)), half::f16::MIN);
+        assert_eq!(to_finite_f16(f32::NAN), 0.0);
+        assert_eq!(to_finite_f16(2.5), 2.5);
     }
 }

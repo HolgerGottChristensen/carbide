@@ -7,7 +7,11 @@
 // From a direction in view space to where to read the environment: world space, turned back by
 // the environment's rotation around the vertical axis (cosine and sine in the uniforms).
 fn environment_direction(view_direction: vec3<f32>) -> vec3<f32> {
-    let d = (camera.inv_view * vec4<f32>(view_direction, 0.0)).xyz;
+    return environment_turn((camera.inv_view * vec4<f32>(view_direction, 0.0)).xyz);
+}
+
+// From a direction in world space to where to read the environment.
+fn environment_turn(d: vec3<f32>) -> vec3<f32> {
     let c = uniforms.environment_rotation.x;
     let s = uniforms.environment_rotation.y;
     return vec3<f32>(c * d.x - s * d.z, d.y, s * d.x + c * d.z);
@@ -58,4 +62,35 @@ fn environment_light(pixel: PixelData, v: vec3<f32>) -> vec3<f32> {
     }
 
     return (diffuse + specular) * uniforms.environment_intensity;
+}
+
+// The background, when a view shows the environment: a triangle covering the view at the far
+// plane (depth 0, reverse-Z), so it is drawn only where nothing else was, after the opaque meshes
+// and before the blended ones.
+struct BackgroundOutput {
+    @builtin(position) position: vec4<f32>,
+    @location(0) clip: vec2<f32>,
+}
+
+@vertex
+fn background_vs(@builtin(vertex_index) vertex: u32) -> BackgroundOutput {
+    let clip = vec2<f32>(f32((vertex << 1u) & 2u), f32(vertex & 2u)) * 2.0 - 1.0;
+    var out: BackgroundOutput;
+    out.position = vec4<f32>(clip, 0.0, 1.0);
+    out.clip = clip;
+    return out;
+}
+
+// The environment in the pixel's direction: from a point on the near plane to one further along,
+// both finite with a perspective camera's infinite far plane. With an orthographic camera every
+// pixel looks the same way. At the background's blur, the environment's intensity, exposed and
+// tone mapped as the scene, and opaque.
+@fragment
+fn background_fs(in: BackgroundOutput) -> @location(0) vec4<f32> {
+    let near = camera.inv_view_proj * vec4<f32>(in.clip, 1.0, 1.0);
+    let further = camera.inv_view_proj * vec4<f32>(in.clip, 0.5, 1.0);
+    let direction = normalize(further.xyz / further.w - near.xyz / near.w);
+    let light = textureSampleLevel(environment_radiance, primary_sampler, environment_turn(direction), uniforms.background_level).rgb
+        * uniforms.environment_intensity;
+    return vec4<f32>(tonemap(light * uniforms.exposure, uniforms.tonemapping), 1.0);
 }

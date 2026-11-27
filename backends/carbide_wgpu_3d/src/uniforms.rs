@@ -20,4 +20,6 @@ pub struct WgpuUniforms {
     /// The cosine and sine of the environment's rotation; the shader turns world directions back
     /// by it to read the environment.
     pub(crate) environment_rotation: Vector2<f32>,
+    /// The reflection level the background reads, when it shows the environment.
+    pub(crate) background_level: f32,
 }

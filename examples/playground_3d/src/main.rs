@@ -32,7 +32,7 @@ mod tests {
     use carbide::state::{ReadState, State};
     use carbide::testing::Harness;
 
-    use super::playground::{gltf_models, playground, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
+    use super::playground::{gltf_models, playground, BackgroundKind, EnvironmentImage, LightColor, LightKind, Model, Options, ProjectionKind, Renderer, Surface, Views};
 
     /// Every model, in one and two views, with both projections and both renderers, renders, and
     /// the main view can be dragged. A smoke test: it renders each combination without comparing
@@ -154,6 +154,35 @@ mod tests {
 
         let changed = off.iter().zip(&on).filter(|(a, b)| a != b).count();
         assert!(changed > 10_000, "only {changed} bytes changed: the shadow should show on the floor");
+    }
+
+    /// The side bar's environment reaches the views: choosing the studio relights the sphere, the
+    /// environment background fills the view behind it, and turning the environment changes the
+    /// background.
+    #[test]
+    fn the_environment_options_reach_the_views() {
+        let options = Options::new();
+        *options.model.clone().value_mut() = Model::Sphere;
+        let mut harness = Harness::new(playground(options.clone()), Dimension::new(1200.0, 800.0));
+        harness.render();
+        let changed = |a: &[u8], b: &[u8]| a.iter().zip(b).filter(|(a, b)| a != b).count();
+
+        let hemisphere = harness.pixels().as_raw().to_vec();
+        *options.environment.clone().value_mut() = EnvironmentImage::Studio;
+        harness.render();
+        let studio = harness.pixels().as_raw().to_vec();
+        assert!(changed(&hemisphere, &studio) > 10_000, "the studio doesn't relight the sphere");
+
+        *options.background.clone().value_mut() = BackgroundKind::Environment;
+        harness.render();
+        let background = harness.pixels().as_raw().to_vec();
+        assert!(changed(&studio, &background) > 100_000, "the environment background doesn't fill the view");
+
+        *options.environment.clone().value_mut() = EnvironmentImage::Road;
+        *options.environment_rotation.clone().value_mut() = 90.0;
+        harness.render();
+        let turned = harness.pixels().as_raw().to_vec();
+        assert!(changed(&background, &turned) > 100_000, "the turned road looks as the studio");
     }
 
     /// A material folder's maps are recognised by the words material sites put in their file

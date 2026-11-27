@@ -4,7 +4,7 @@
 
 use carbide_3d::camera::Camera;
 use carbide_3d::material::pbr_material::PbrMaterial;
-use carbide_3d::render::Tonemapping;
+use carbide_3d::render::{Background, Tonemapping};
 use carbide_3d::{Mesh, Object, Scene3d};
 use carbide_core::color::WHITE;
 use carbide_core::draw::{Dimension, ImageContext, ImageFormat, ImageId, Texture, TextureFormat};
@@ -167,6 +167,90 @@ fn an_environment_not_loaded_leaves_the_hemisphere() {
     let mut with = rendered(sphere_scene(matte()).environment(Some(missing)), 200.0, &unused, sky);
     let mut without = rendered(sphere_scene(matte()), 200.0, &unused, sky);
     assert!(with.pixels().as_raw() == without.pixels().as_raw(), "an environment not loaded changes the picture");
+}
+
+/// An empty scene with the environment as its background, through a perspective camera at the
+/// origin looking along +Z: the red square in the middle, the sky above the horizon, the ground
+/// below it.
+#[test]
+fn the_background_shows_the_environment() {
+    let id = ImageId::temp(ImageFormat::Png);
+    let scene = Scene3d::new(())
+        .environment(Some(id.clone()))
+        .background(Background::Environment { blur: 0.0 })
+        .tonemapping(Tonemapping::None)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0)));
+    let mut harness = rendered(scene, 200.0, &id, sky);
+
+    let [r, g, b] = pixel(&mut harness, 100, 100);
+    assert!(r > 200 && g < 80 && b < 80, "the middle: {:?}, not the red square", [r, g, b]);
+    let [r, _, b] = pixel(&mut harness, 30, 30);
+    assert!(b > r + 40, "above the horizon: {:?}, not the sky", [r, b]);
+    let [r, _, b] = pixel(&mut harness, 30, 170);
+    assert!(r > b + 30, "below the horizon: {:?}, not the ground", [r, b]);
+    harness.snapshot("empty_scene");
+}
+
+/// A gold mirror sphere in front of the environment, as the background: the sphere hides it where
+/// it is drawn, and reflects what is behind the camera; around it the background shows the sky and
+/// the ground beyond the sphere. A white mirror would match the background at its rim, and hardly
+/// show.
+#[test]
+fn meshes_are_drawn_over_the_background() {
+    let id = ImageId::temp(ImageFormat::Png);
+    let gold = PbrMaterial::new().color(carbide_core::color::rgba(1.0, 0.8, 0.4, 1.0)).metallic(1.0).roughness(Some(0.0f32));
+    let scene = Scene3d::new(Object::new(Mesh::icosphere(1.0, 5), gold))
+        .environment(Some(id.clone()))
+        .background(Background::Environment { blur: 0.0 })
+        .tonemapping(Tonemapping::None)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 4.0), Point3::new(0.0, 0.0, 0.0)));
+    let mut harness = rendered(scene, 200.0, &id, sky);
+
+    let [r, g, b] = pixel(&mut harness, 100, 100);
+    assert!(r > 200 && g < 80 && b < 80, "the sphere's middle: {:?}, not the square behind the camera", [r, g, b]);
+    let [r, _, b] = pixel(&mut harness, 10, 10);
+    assert!(b > r + 40, "the background's top: {:?}, not the sky", [r, b]);
+    harness.snapshot("sphere");
+}
+
+/// Blurred, the background spreads the red square and softens the horizon: at a blur of 1, the
+/// square's middle is far from red, and the horizon is between sky and ground. Sharp, the square
+/// is red and the sky meets the ground within a few pixels.
+#[test]
+fn the_background_can_be_blurred() {
+    let id = ImageId::temp(ImageFormat::Png);
+    let scene = |blur: f32| Scene3d::new(())
+        .environment(Some(id.clone()))
+        .background(Background::Environment { blur })
+        .tonemapping(Tonemapping::None)
+        .camera(Camera::perspective().look_at(Point3::new(0.0, 0.0, 0.0), Point3::new(0.0, 0.0, 1.0)))
+        .frame(200.0, 200.0);
+    let mut harness = rendered(HStack::new((scene(0.0), scene(0.5), scene(1.0))).spacing(0.0), 600.0, &id, sky);
+
+    let sharp = pixel(&mut harness, 100, 100);
+    let blurred = pixel(&mut harness, 500, 100);
+    assert!(sharp[0] > 200 && sharp[1] < 80, "sharp, the square is {sharp:?}");
+    assert!(blurred[1] > 80, "blurred, the square is still {blurred:?}");
+
+    // Down the left edge, 30 pixels from the horizon on either side.
+    let above = |x: u32, harness: &mut Harness| pixel(harness, x, 70);
+    let below = |x: u32, harness: &mut Harness| pixel(harness, x, 130);
+    let sharp_contrast = above(30, &mut harness)[2] as i32 - below(30, &mut harness)[2] as i32;
+    let blurred_contrast = above(430, &mut harness)[2] as i32 - below(430, &mut harness)[2] as i32;
+    assert!(blurred_contrast < sharp_contrast - 40, "blurring doesn't soften the horizon: {sharp_contrast} against {blurred_contrast}");
+    harness.snapshot("blurs");
+}
+
+/// While the scene has no environment loaded, an environment background is transparent: the view
+/// looks as with a transparent colour.
+#[test]
+fn an_environment_background_without_an_environment_is_transparent() {
+    let missing = ImageId::temp(ImageFormat::Png);
+    let unused = ImageId::temp(ImageFormat::Png);
+    let scene = |background: Background| sphere_scene(matte()).environment(Some(missing.clone())).background(background);
+    let mut environment = rendered(scene(Background::Environment { blur: 0.3 }), 200.0, &unused, sky);
+    let mut transparent = rendered(scene(Background::Color(carbide_core::color::TRANSPARENT)), 200.0, &unused, sky);
+    assert!(environment.pixels().as_raw() == transparent.pixels().as_raw(), "the background isn't transparent");
 }
 
 /// Whether any channel of `a` and `b` differs by more than `tolerance`.

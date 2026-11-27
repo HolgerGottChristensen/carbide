@@ -1,8 +1,9 @@
 // Draws a level of the filtered reflection cube: the environment convolved with GGX for the
 // level's roughness, with the view along the normal, as the split-sum approximation assumes
 // (Karis, "Real Shading in Unreal Engine 4"). Samples read the source's mip level whose texels
-// cover about the sample's solid angle, so few samples don't alias ("filtered importance
-// sampling", as Bevy's `environment_filter.wesl`).
+// cover about the sample's solid angle, one level further, so few samples don't alias, and a
+// small, very bright sun doesn't show as blotches ("filtered importance sampling": Colbert and
+// Křivánek, GPU Gems 3, chapter 20, with its +1; Bevy's `environment_filter.wesl` leaves it out).
 //!include environment/face.wgsl
 
 struct Params {
@@ -41,7 +42,7 @@ fn radiance_fs(in: FaceOutput) -> @location(0) vec4<f32> {
             // The probability of `l`: D · N·H / (4 V·H), and V·H = N·H here.
             let pdf = d_ggx(h_local.z, alpha) / 4.0;
             let sample_angle = 1.0 / (f32(params.sample_count) * pdf + 0.0001);
-            let level = max(0.5 * log2(sample_angle / texel_angle), 0.0);
+            let level = max(0.5 * log2(sample_angle / texel_angle) + 1.0, 0.0);
             sum += textureSampleLevel(source, source_sampler, l, level).rgb * nol;
             weight += nol;
         }

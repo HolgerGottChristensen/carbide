@@ -15,7 +15,7 @@ use carbide::d3::node3d::{AnyNode3d, CommonNode3d, NodeId};
 use carbide::d3::render::{Render3d, RenderContext3d};
 use std::rc::Rc;
 use std::sync::OnceLock;
-use carbide::d3::render::{ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
+use carbide::d3::render::{Background, ContextFactory3d, NoopRenderContext3d, RenderContext3dId, Tonemapping};
 use carbide::d3::wgpu::WgpuRenderContext3d;
 use carbide::d3::{PickHit, AxisHelper, Group, Mesh, Node3dExt, Node3dSequence, Object, Rotation, Scene3d, ShadowsExt};
 use carbide::draw::{resolve_asset_path, ImageId, Scalar};
@@ -308,6 +308,42 @@ pub enum ProjectionKind {
     Orthographic,
 }
 
+/// What the views show behind the scene.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum BackgroundKind {
+    /// Transparent: the side bar's window shows through.
+    None,
+    Night,
+    Paper,
+    /// The scene's environment image, blurred by the blur slider.
+    Environment,
+}
+
+/// The HDR panorama lighting the scene, from `libraries/carbide_3d/ressources/hdri` (Poly Haven,
+/// CC0), or none, leaving the hemisphere.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum EnvironmentImage {
+    None,
+    /// `studio_small_09`: soft studio lights.
+    Studio,
+    /// `rural_asphalt_road`: outdoors, with a sun.
+    Road,
+}
+
+impl EnvironmentImage {
+    fn image(&self) -> Option<ImageId> {
+        let hdri = |name: &str| ImageId::new(Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../libraries/carbide_3d/ressources/hdri")
+            .join(name)
+            .join(format!("{name}_1k.hdr")));
+        match self {
+            EnvironmentImage::None => None,
+            EnvironmentImage::Studio => Some(hdri("studio_small_09")),
+            EnvironmentImage::Road => Some(hdri("rural_asphalt_road")),
+        }
+    }
+}
+
 /// The kind of light lighting the model.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LightKind {
@@ -425,8 +461,13 @@ pub struct Options {
     /// Whether the directional and spot lights cast shadows.
     pub shadows: LocalState<bool>,
 
-    /// The views' background.
-    pub background: LocalState<Color>,
+    /// The views' background, and its blur when it shows the environment.
+    pub background: LocalState<BackgroundKind>,
+    pub background_blur: LocalState<Scalar>,
+    /// The scene's environment image, its intensity, and its rotation in degrees.
+    pub environment: LocalState<EnvironmentImage>,
+    pub environment_intensity: LocalState<Scalar>,
+    pub environment_rotation: LocalState<Scalar>,
     /// The hemisphere's colour from below; the sky is white.
     pub ground: LocalState<Color>,
     pub ambient: LocalState<Scalar>,
@@ -489,7 +530,11 @@ impl Options {
             shadows: LocalState::new(true),
             light_color: LocalState::new(LightColor::White),
             light_temperature: LocalState::new(6500.0),
-            background: LocalState::new(TRANSPARENT),
+            background: LocalState::new(BackgroundKind::None),
+            background_blur: LocalState::new(0.3),
+            environment: LocalState::new(EnvironmentImage::None),
+            environment_intensity: LocalState::new(1.0),
+            environment_rotation: LocalState::new(0.0),
             ground: LocalState::new(WHITE),
             ambient: LocalState::new(0.1),
             exposure: LocalState::new(1.0),
@@ -678,7 +723,13 @@ impl Options {
     /// nothing in it clears the selection.
     fn look<N: Node3dSequence>(&self, view: Scene3d<N>) -> Scene3d<N> {
         let selected = self.outlined.clone();
-        view.background(self.background.clone())
+        let background = Map2::read_map(self.background.clone(), self.background_blur.clone(), |kind: &BackgroundKind, blur: &Scalar| match kind {
+            BackgroundKind::None => Background::Color(TRANSPARENT),
+            BackgroundKind::Night => Background::Color(rgba_bytes(20, 30, 70, 1.0)),
+            BackgroundKind::Paper => Background::Color(rgba_bytes(235, 232, 225, 1.0)),
+            BackgroundKind::Environment => Background::Environment { blur: *blur as f32 },
+        });
+        view.background(background)
             .interactive(self.interactive.clone())
             .on_missed_click(move |_: &mut Environment| selected.clone().set_value(false))
             .exposure(Map1::read_map(self.exposure.clone(), |exposure: &Scalar| *exposure as f32))
@@ -916,9 +967,12 @@ impl CommonNode3d for LazyObj {
 /// The views of `model`: the main view with an orbit controller, and in two-view mode a front
 /// orthographic view of the same scene, a clone with its own camera and controller.
 fn views(model: Model, file_materials: bool, hover: bool, options: &Options) -> Box<dyn AnyWidget> {
-    // The ambient light is the scene's, shared by both views.
+    // The ambient light and the environment are the scene's, shared by both views.
     let scene = Scene3d::new(nodes(model, file_materials, hover, options))
-        .hemisphere(WHITE, options.ground.clone(), Map1::read_map(options.ambient.clone(), |ambient: &Scalar| *ambient as f32));
+        .hemisphere(WHITE, options.ground.clone(), Map1::read_map(options.ambient.clone(), |ambient: &Scalar| *ambient as f32))
+        .environment(Map1::read_map(options.environment.clone(), |environment: &EnvironmentImage| environment.image()))
+        .environment_intensity(Map1::read_map(options.environment_intensity.clone(), |intensity: &Scalar| *intensity as f32))
+        .environment_rotation(Map1::read_map(options.environment_rotation.clone(), |degrees: &Scalar| *degrees as f32));
 
     // The height limits match the side bar's slider, so a pinch stays within what it shows.
     let main = options.look(scene.clone())
@@ -1181,13 +1235,25 @@ fn side_bar(options: &Options) -> impl Widget + use<> {
         shown_when(spin_off, slider("Turn", &options.turn, -180.0, 180.0, degrees)),
     )).cross_axis_alignment(CrossAxisAlignment::Start);
 
+    let with_environment = Map1::read_map(options.environment.clone(), |environment: &EnvironmentImage| *environment != EnvironmentImage::None);
+    let environment_background = Map1::read_map(options.background.clone(), |kind: &BackgroundKind| *kind == BackgroundKind::Environment);
     let environment = VStack::new((
         heading("Environment"),
-        Picker::new("Background", options.background.clone(), (
-            Text::new("None").tag(TRANSPARENT),
-            Text::new("Night").tag(rgba_bytes(20, 30, 70, 1.0)),
-            Text::new("Paper").tag(rgba_bytes(235, 232, 225, 1.0)),
+        Picker::new("Environment", options.environment.clone(), (
+            Text::new("None, the hemisphere").tag(EnvironmentImage::None),
+            Text::new("Studio").tag(EnvironmentImage::Studio),
+            Text::new("Road, with a sun").tag(EnvironmentImage::Road),
         )),
+        shown_when(with_environment.clone(), slider("Intensity", &options.environment_intensity, 0.0, 3.0, |value| format!("{value:.2}"))),
+        shown_when(with_environment, slider("Rotation", &options.environment_rotation, -180.0, 180.0, degrees)),
+        Picker::new("Background", options.background.clone(), (
+            Text::new("None").tag(BackgroundKind::None),
+            Text::new("Night").tag(BackgroundKind::Night),
+            Text::new("Paper").tag(BackgroundKind::Paper),
+            Text::new("Environment").tag(BackgroundKind::Environment),
+        )),
+        shown_when(environment_background, slider("Blur", &options.background_blur, 0.0, 1.0, |value| format!("{value:.2}"))),
+        // The hemisphere lights the scene only without an environment.
         Picker::new("Ground light", options.ground.clone(), (
             Text::new("White, like the sky").tag(WHITE),
             Text::new("Warm").tag(rgba_bytes(160, 90, 40, 1.0)),

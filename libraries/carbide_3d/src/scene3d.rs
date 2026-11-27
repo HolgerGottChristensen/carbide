@@ -23,7 +23,7 @@ use carbide::event::MouseButton;
 use carbide_core::animation::AnimationManager;
 use carbide_core::scene::SceneManager;
 use crate::node3d_sequence::Node3dSequence;
-use crate::render::{load_image, ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId, Tonemapping, ViewSpec};
+use crate::render::{load_image, Background, ContextFactory3d, InnerRenderContext3d, NoopRenderContext3d, RenderContext3d, RenderContext3dId, Tonemapping, ViewSpec};
 
 /// A view of a 3D scene: a widget that renders its nodes through its camera into a layer.
 ///
@@ -56,7 +56,7 @@ pub struct Scene3d<N> where N: Node3dSequence {
     controller: Option<Box<dyn CameraController>>,
 
     /// How this view looks at the scene.
-    background: Box<dyn AnyReadState<T=Color>>,
+    background: Box<dyn AnyReadState<T=Background>>,
     /// Whether the view responds to the pointer and keyboard (see `interactive`).
     interactive: Box<dyn AnyReadState<T=bool>>,
     exposure: Box<dyn AnyReadState<T=f32>>,
@@ -119,7 +119,7 @@ impl<N: Node3dSequence> Scene3d<N> {
             })),
             camera: Camera::default(),
             controller: None,
-            background: Box::new(TRANSPARENT),
+            background: Box::new(Background::default()),
             interactive: Box::new(true),
             exposure: Box::new(1.0f32),
             tonemapping: Box::new(Tonemapping::default()),
@@ -148,9 +148,11 @@ impl<N: Node3dSequence> Scene3d<N> {
         self
     }
 
-    /// Draw `background` behind everything in this view. Transparent by default, so the UI behind
-    /// the view shows through. It can be an `EnvironmentColor`, following the theme.
-    pub fn background<C: IntoReadState<Color>>(mut self, background: C) -> Scene3d<N> {
+    /// Draw `background` behind everything in this view: a colour, which can be an
+    /// `EnvironmentColor` following the theme, or the scene's environment image,
+    /// `Background::Environment { blur }`. Transparent by default, so the UI behind the view shows
+    /// through. This is the view's: other views of the scene keep their own.
+    pub fn background<C: IntoReadState<Background>>(mut self, background: C) -> Scene3d<N> {
         self.background = Box::new(background.into_read_state());
         self
     }

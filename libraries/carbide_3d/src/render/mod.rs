@@ -13,6 +13,6 @@ pub use noop_render_context3d::*;
 pub use inner_render_context3d::*;
 pub use render_context3d::*;
 pub(crate) use render_context3d::load_image;
-pub use view_spec::{Tonemapping, ViewSpec};
+pub use view_spec::{Background, Tonemapping, ViewSpec};
 pub use light_shadow::LightShadow;
 pub use mesh_settings::{MeshSettings, Outline, PickSample};

@@ -44,7 +44,10 @@ const MAX_FACE: u32 = 512;
 const SMALLEST_LEVEL: u32 = 8;
 /// The size of the source level the harmonics are projected from.
 const HARMONICS_LEVEL: u32 = 32;
-/// GGX samples per texel of the reflection cube's blurred levels.
+/// GGX samples per texel of the reflection cube's sharpest blurred level, doubling with each half
+/// of the roughness, to 4 times as many at roughness 1: rough levels gather light from wider, and
+/// a small, very bright sun shows as blotches with too few samples. Rough levels are small, so the
+/// cost hardly grows.
 const RADIANCE_SAMPLES: u32 = 256;
 
 /// The environment maps made from images, by `ImageId`, and the DFG table, shared by every view
@@ -281,8 +284,9 @@ impl Pipelines {
         let source_view = source.create_view(&TextureViewDescriptor { dimension: Some(TextureViewDimension::Cube), ..Default::default() });
         for level in 1..levels {
             let roughness = level as f32 / (levels - 1) as f32;
+            let samples = (RADIANCE_SAMPLES as f32 * 4f32.powf(roughness)).round() as u32;
             // The sample count is a `u32` in the shader: its bits, carried as an `f32`.
-            let params = [(size >> level) as f32, roughness, f32::from_bits(RADIANCE_SAMPLES), size as f32];
+            let params = [(size >> level) as f32, roughness, f32::from_bits(samples), size as f32];
             let bind_group = self.bind_group(&self.cube_layout, &source_view, Some(&params), device);
             draw_faces(&mut encoder, &self.radiance, &bind_group, &radiance, level);
         }

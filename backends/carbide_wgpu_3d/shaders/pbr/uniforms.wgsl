@@ -12,4 +12,6 @@ struct Uniforms {
     // The cosine and sine of the environment's rotation, which `environment_direction` turns
     // world directions back by.
     environment_rotation: vec2<f32>,
+    // The reflection level the background reads: its blur times the levels after the first.
+    background_level: f32,
 }

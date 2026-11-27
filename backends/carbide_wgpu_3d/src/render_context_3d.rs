@@ -4,9 +4,9 @@ use wgpu::{AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGrou
 
 use carbide_3d::camera::CameraSpec;
 use carbide_3d::material::Material;
-use carbide_3d::render::{InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
+use carbide_3d::render::{Background, InnerRenderContext3d, LightShadow, MeshSettings, PickSample, Tonemapping, ViewSpec};
 use carbide_3d::Mesh;
-use carbide_core::color::{Color, ColorExt, WHITE};
+use carbide_core::color::{Color, ColorExt, TRANSPARENT, WHITE};
 use carbide_core::draw::ImageId;
 use carbide_core::environment::Environment;
 use carbide_core::math::{Deg, InnerSpace, Matrix4, Rad, SquareMatrix, Vector2, Vector3, Vector4};
@@ -94,6 +94,11 @@ struct GpuState {
     /// The blending pipelines, for blended materials, in `blend_variant` order: they don't write
     /// depth.
     blend_pipelines: Option<(TextureFormat, [RenderPipeline; 4])>,
+    /// Draws the environment as the background: the scene and lighting groups only.
+    background_layout: PipelineLayout,
+    /// The background pipeline for a colour format, made the first time a view shows the
+    /// environment.
+    background_pipeline: Option<(TextureFormat, RenderPipeline)>,
     /// Repeating, linear and anisotropic: for textures, and the default for materials.
     sampler: Sampler,
     /// Repeating and nearest: for materials with `SampleType::Nearest`.
@@ -382,6 +387,12 @@ impl GpuState {
             push_constant_ranges: &[],
         });
 
+        let background_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("carbide_3d_background_pipeline_layout"),
+            bind_group_layouts: &[&scene_layout, &lighting_layout],
+            push_constant_ranges: &[],
+        });
+
         let sampler = device.create_sampler(&SamplerDescriptor {
             label: Some("carbide_3d_linear_sampler"),
             address_mode_u: AddressMode::Repeat,
@@ -514,6 +525,8 @@ impl GpuState {
             lighting_layout,
             pbr_layout,
             pipeline_layout,
+            background_layout,
+            background_pipeline: None,
             pipeline: None,
             blend_pipelines: None,
             sampler,
@@ -632,6 +645,52 @@ impl GpuState {
 
         let pipelines = BLEND_VARIANTS.map(|(cull_mode, front_face)| self.create_pipeline(device, format, cull_mode, front_face, false));
         self.blend_pipelines = Some((format, pipelines));
+    }
+
+    /// Create the background pipeline for `format` if it doesn't exist yet: a triangle at the far
+    /// plane, drawn where the depth is still clear, without writing it.
+    fn ensure_background_pipeline(&mut self, device: &Device, format: TextureFormat) {
+        if self.background_pipeline.as_ref().is_some_and(|(current, _)| *current == format) {
+            return;
+        }
+
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("carbide_3d_background_pipeline"),
+            layout: Some(&self.background_layout),
+            vertex: VertexState {
+                module: &self.shader,
+                entry_point: Some("background_vs"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: PrimitiveState::default(),
+            depth_stencil: Some(DepthStencilState {
+                format: DEPTH_FORMAT,
+                depth_write_enabled: false,
+                // At depth 0, the cleared value: passes only where nothing was drawn.
+                depth_compare: CompareFunction::GreaterEqual,
+                stencil: StencilState::default(),
+                bias: DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState {
+                count: SAMPLE_COUNT,
+                mask: !0,
+                alpha_to_coverage_enabled: false,
+            },
+            fragment: Some(FragmentState {
+                module: &self.shader,
+                entry_point: Some("background_fs"),
+                compilation_options: Default::default(),
+                targets: &[Some(ColorTargetState {
+                    format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview: None,
+            cache: None,
+        });
+        self.background_pipeline = Some((format, pipeline));
     }
 
     /// The PBR pipeline for `format`, culling `cull_mode`, with `front_face` facing the viewer,
@@ -766,14 +825,28 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
         if self.commands.iter().any(|command| matches!(command, RenderPassCommand::DrawMesh { blended: true, .. })) {
             gpu.ensure_blend_pipelines(device, render_target.texture_format());
         }
+        // The environment as the background: its blur, when the view shows it and the scene has
+        // one loaded.
+        let background_blur = match view.background {
+            Background::Environment { blur } if environment.is_some() => Some(blur.clamp(0.0, 1.0)),
+            _ => None,
+        };
+        if background_blur.is_some() {
+            gpu.ensure_background_pipeline(device, render_target.texture_format());
+        }
         gpu.shadow_maps(device, layer_size(&self.shadow_requests), self.shadow_requests.len().max(1) as u32);
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("carbide_3d_encoder"),
         });
 
-        // The background, converted as the 2D renderer converts colours: to linear, premultiplied.
-        let [r, g, b, a] = view.background.gamma_srgb_to_linear().pre_multiply().to_fsa();
+        // The background colour, converted as the 2D renderer converts colours: to linear,
+        // premultiplied. Transparent under the environment, and while it isn't loaded.
+        let background_color = match view.background {
+            Background::Color(color) => color,
+            Background::Environment { .. } => TRANSPARENT,
+        };
+        let [r, g, b, a] = background_color.gamma_srgb_to_linear().pre_multiply().to_fsa();
         let background = wgpu::Color { r: r as f64, g: g as f64, b: b as f64, a: a as f64 };
 
         let clear = Operations {
@@ -781,8 +854,9 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
             store: StoreOp::Store,
         };
 
-        // Nothing to draw: only clear the layer, so an empty scene is transparent.
-        if self.commands.is_empty() {
+        // Nothing to draw: only clear the layer, so an empty scene is transparent, or shows its
+        // background colour.
+        if self.commands.is_empty() && background_blur.is_none() {
             if let Some(picking) = &mut gpu.picking {
                 picking.clear();
             }
@@ -828,6 +902,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 Vector4::unit_w(),
             ),
             inv_view,
+            inv_view_proj: camera.view_projection.invert().unwrap_or(Matrix4::identity()),
             aspect_ratio,
         });
         let (sky, ground, intensity) = self.hemisphere;
@@ -851,6 +926,7 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                 let angle = Rad::from(*rotation).0;
                 Vector2::new(angle.cos(), angle.sin())
             }),
+            background_level: background_blur.unwrap_or(0.0) * environment.as_ref().map_or(0.0, |(_, levels, _, _)| (*levels - 1) as f32),
         });
         let environment_views = environment.map_or_else(|| gpu.environment_stand_ins.clone(), |(views, ..)| views);
 
@@ -1107,6 +1183,13 @@ impl InnerRenderContext3d for WgpuRenderContext3d {
                         current_textures = Some(pbr);
                     }
                 }
+            }
+
+            // The environment behind the opaque meshes, where they left the depth clear, and before
+            // the blended ones, which blend over it.
+            if background_blur.is_some() {
+                render_pass.set_pipeline(&gpu.background_pipeline.as_ref().unwrap().1);
+                render_pass.draw(0..3, 0..1);
             }
 
             // Then the blended meshes, farthest first: view-space depth is negative in front of

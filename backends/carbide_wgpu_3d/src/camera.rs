@@ -7,6 +7,8 @@ pub struct WgpuCamera {
     pub(crate) view_proj: Matrix4<f32>,
     pub(crate) orig_view: Matrix4<f32>,
     pub(crate) inv_view: Matrix4<f32>,
+    /// From clip space to world space: for the directions of the background's pixels.
+    pub(crate) inv_view_proj: Matrix4<f32>,
     pub(crate) aspect_ratio: f32,
 }
 
